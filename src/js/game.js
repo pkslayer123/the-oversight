@@ -141,9 +141,14 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests };
+      // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
+      try {
+        const D = globalThis.Scattering && globalThis.Scattering.Drama;
+        if (D) D.effectRegistry = dramaEffects;
+      } catch (e) {}
       return this.data;
     },
 
@@ -639,9 +644,34 @@
         // axis labels (the UI already shows "steady, fair"), and the closing
         // observation varies — "The others find this worth watching" on every
         // third character was the tell. Name-only (no pronouns) keeps it safe.
-        const _pools = this._assessPools(first);
-        const _ap = _pools.pool[temperament] || _pools.pool.steady;
-        const _ac = _pools.close[temperament] || _pools.close.steady;
+        const _assessPool = {
+          steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
+          bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
+          cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
+          warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
+          prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
+          restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
+          dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
+          gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
+          intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
+          withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
+          anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
+        };
+        const _assessClose = {
+          steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
+          bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
+          cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
+          warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
+          prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
+          restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
+          dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
+          gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
+          intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
+          withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
+          anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
+        };
+        const _ap = _assessPool[temperament] || _assessPool.steady;
+        const _ac = _assessClose[temperament] || _assessClose.steady;
         let sysAssess = _ap[Math.floor(Math.random() * _ap.length)] + ' ' + _ac[Math.floor(Math.random() * _ac.length)];
         let darkStored = null;
         if (dark && dark._tell) {
@@ -842,9 +872,34 @@
       const intelSecondary = secCands.length ? secCands[Math.floor(Math.random() * secCands.length)] : (intelPrimary === 'steady' ? 'practical' : 'steady');
 
       // System assessment: same natural prose pools.
-      const _pools = this._assessPools(first);
-      const _ap = _pools.pool[temperament] || _pools.pool.steady;
-      const _ac = _pools.close[temperament] || _pools.close.steady;
+      const _assessPool = {
+        steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
+        bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
+        cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
+        warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
+        prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
+        restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
+        dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
+        gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
+        intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
+        withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
+          anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
+      };
+      const _assessClose = {
+        steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
+        bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
+        cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
+        warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
+        prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
+        restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
+        dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
+        gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
+        intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
+        withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
+          anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
+      };
+      const _ap = _assessPool[temperament] || _assessPool.steady;
+      const _ac = _assessClose[temperament] || _assessClose.steady;
       let sysAssess = _ap[Math.floor(Math.random() * _ap.length)] + ' ' + _ac[Math.floor(Math.random() * _ac.length)];
       let darkStored = null;
       if (dark && dark._tell) {
@@ -6847,7 +6902,7 @@
       let msg = `Travel ${t.d} tile${t.d > 1 ? 's' : ''} to ${S.TILE_NAME[tile.type]}.`;
       if (!tile.visited) {
         tile.visited = true;
-        const arr = ARRIVAL[tile.type];
+        const arr = this.arrivalPoolFor(tile.type);
         msg += `\n— ${arr.title} —\n${tile.ruinStory || this.arrivalTextFor(tile)}`;
         // no free lessons on arrival — the land teaches when you work it, not when you walk in.
       }
@@ -6987,10 +7042,20 @@
     // itself, but each place has an identity. Ruin tiles keep their generated
     // ruinStory. Stored on the tile object so revisits and the node card
     // agree with the arrival log line.
+    // DATA-DRIVEN (Steve 2026-10-07): pools live in src/data/arrivalText.json.
+    // Regions override via regionOverrides — checked first, base tiles as fallback.
+    arrivalPoolFor(tileType) {
+      const at = (this.data && this.data.arrivalText) || {};
+      const region = (this.state && this.state.region) || null;
+      if (region && at.regionOverrides && at.regionOverrides[region] && at.regionOverrides[region][tileType]) {
+        return at.regionOverrides[region][tileType];
+      }
+      return (at.tiles && at.tiles[tileType]) || null;
+    },
     arrivalTextFor(tile) {
       if (!tile) return '';
       if (tile.type === 'ruin') return tile.ruinStory || '';
-      const arr = ARRIVAL[tile.type];
+      const arr = this.arrivalPoolFor(tile.type);
       if (!arr) return '';
       if (!tile.arrivalText) {
         const pool = (arr.texts && arr.texts.length) ? arr.texts : [''];
@@ -9238,38 +9303,6 @@
     displayName(vid) {
       if (this.state.systemArrived || this.nameKnown(vid)) return this.npcName(vid);
       return this.personDescriptor(vid);
-    },
-    // _assessPools: single source of truth for villager personality voice.
-    // (Steve 2026-10-07): was duplicated in two places — now one function.
-    // Takes first (name) and returns {pool, close} template arrays.
-    _assessPools(first) {
-      const pool = {
-        steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
-        bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
-        cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
-        warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
-        prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
-        restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
-        dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
-        gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
-        intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
-        withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
-        anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
-      };
-      const close = {
-        steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
-        bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
-        cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
-        warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
-        prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
-        restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
-        dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
-        gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
-        intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
-        withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
-        anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
-      };
-      return { pool, close };
     },
     // journalNote: the general journal. Personal notes the player keeps —
     // pre-System it's handwriting, post-System it's Codex. Deduped by cat+key
@@ -13126,7 +13159,7 @@
     // --- node detail: each tile is a node; arriving reveals its detail ---
     nodeDetail() {
       const t = this.playerTile();
-      const arr = ARRIVAL[t.type];
+      const arr = this.arrivalPoolFor(t.type);
       if (t.type === 'haven') {
         return {
           type: 'haven', title: arr.title, epithet: 'Haven', text: arr.text, here: ['home'],
