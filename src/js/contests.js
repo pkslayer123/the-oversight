@@ -2713,6 +2713,10 @@
     // WATCHER AGENCY (Steve 2026-10-06): cheering moves the needle for your
     // people. Capped at +15% — the audience's love is real but not rigged.
     const cheer = Math.min(0.15, ac.cheer || 0);
+    // ALIEN PLAYERS (Steve 2026-10-07): pilots rig and sway contests.
+    // _apWinMod set by apContestInterference wrap: sadistic rigging (-),
+    // fan favor (+/-). Capped so interference matters but doesn't decide.
+    const apMod = Math.max(-0.15, Math.min(0.15, ac._apWinMod || 0));
     const pids = (ac.participants && ac.participants.length) ? ac.participants.slice() : [ac.participant];
     const s = this.state.scholar;
     let anyWon = false;
@@ -2721,11 +2725,22 @@
       ac.participant = pid;
       // MULTI-TAKE learn pacing: only the primary's fate teaches.
       ac._suppressLearn = i > 0;
-      const winOdds = Math.min(0.95, winBase + cheer);
+      const winOdds = Math.min(0.95, Math.max(0.05, winBase + cheer + apMod));
       let outcome;
       if (dieBase > 0 && Math.random() < dieBase) {
-        this._contestDie(ac, 'The verdict came down hard.');
-        outcome = 'died';
+        // ALIEN PLAYERS (Steve 2026-10-07): benevolent lifeline
+        if (ac._apDeathSave && i === 0) {
+          ac._apDeathSave = false; // one-shot
+          this.say('📺 The killing blow... misses. The feed glitched for three seconds. No one can explain it.');
+          // Death avoided — fall through to normal win/loss roll
+          const won = Math.random() < winOdds;
+          this._contestEnd(ac, won ? 'won' : 'lost', won);
+          outcome = won ? 'won' : 'lost';
+          if (won) anyWon = true;
+        } else {
+          this._contestDie(ac, 'The verdict came down hard.');
+          outcome = 'died';
+        }
       } else {
         const won = Math.random() < winOdds;
         this._contestEnd(ac, won ? 'won' : 'lost', won);
