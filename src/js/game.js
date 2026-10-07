@@ -68,6 +68,7 @@
 //   - sleep_heal_ground: 12 (code: sleepPreview)
 //   - home_narration_presence: villageLives/ambientSocial/firesideTeaching narrate only when playerAtHaven(); sim still runs; home deaths queue to scholar.awayNews, delivered by returnToVillage (code: playerAtHaven)
 //   - homecoming_beat: returnToVillage says a return line after >=2 days away, tracked via scholar.lastHavenDay (code: returnToVillage)
+//   - broker_knowledge_presence: identifying a plant while away queues it in scholar.awayLearned — no home witness line, no home rumor, and the absent player is excluded from spreadPlantKnowledge; returnToVillage fires the broker's teaching beat and seeds the rumor only then (code: identifyPlant/spreadPlantKnowledge/returnToVillage, Steve 2026-10-07)
 //   - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 // consumes:
 //   - state.scholar, state.village, state.codex (central game state roots)
@@ -4862,6 +4863,31 @@
           this.say(`While you were gone — ${news.length === 1 ? 'one thing' : news.length + ' things'} you missed:`);
           for (const n of news.slice(0, 5)) this.say(n);
           if (news.length > 5) this.say(`...and ${news.length - 5} more. Ask around — they'll tell you.`);
+        }
+        // THE BROKER'S RETURN (drifter loop, Steve 2026-10-07): knowledge you
+        // learned while away comes home WITH you — never before. identifyPlant
+        // queues away-learned plants in scholar.awayLearned; here the fire
+        // gathers for them, the rumor seeds, and word of mouth takes it from
+        // there. This fires on a knowledge-only return too — the existing
+        // teaching moment below is gated on a food haul, but a drifter who
+        // brings KNOWLEDGE instead of calories still has something to teach.
+        const brokered = (s.awayLearned || []).filter(pid => this.plantKnown(pid));
+        s.awayLearned = [];
+        if (brokered.length) {
+          const vv = this.state.village;
+          vv.plantRumors = vv.plantRumors || {};
+          const fresh = [];
+          for (const pid of brokered) {
+            const otherKnows = (vv.roster || []).some(rid =>
+              rid !== this.villagerId && ((vv.taught || {})[rid] || []).includes(pid));
+            if (otherKnows) continue; // old news at home — no fanfare
+            if (!vv.plantRumors[pid]) vv.plantRumors[pid] = { day: dayNow };
+            const p = (this.data.plants || []).find(x => x.id === pid);
+            fresh.push(p ? p.name : pid);
+          }
+          if (fresh.length) {
+            this.say(`That night at the fire, they ask where you've been. You tell them — and what you learned out there: ${fresh.join(', ')}. Someone leans closer to the light. "Show us. Slowly." The knowledge is home now. It'll get around.`);
+          }
         }
       }
       // PENDING VILLAGE EVENT: if something happened while you were away, they tell you.
@@ -9701,10 +9727,16 @@
       v.taught = v.taught || {};
       const roster = v.roster || [];
       if (roster.length < 2) return;
+      // PRESENCE (drifter loop, Steve 2026-10-07): word of mouth needs mouths
+      // in the same place. The away player can neither teach the fire nor
+      // learn from it — their knowledge waits for the homecoming beat.
+      const away = !this.playerAtHaven();
+      const me = this.villagerId;
       for (const pid of Object.keys(v.plantRumors)) {
-        const knows = rid => (v.taught[rid] || []).includes(pid);
+        const knows = rid => (v.taught[rid] || []).includes(pid) && !(away && rid === me);
+        const canLearn = rid => !(away && rid === me);
         const knowers = roster.filter(knows);
-        const learners = roster.filter(rid => !knows(rid));
+        const learners = roster.filter(rid => !knows(rid) && canLearn(rid));
         if (!learners.length) { delete v.plantRumors[pid]; continue; }
         if (!knowers.length) continue;
         if (Math.random() < 0.35) {
@@ -25321,16 +25353,31 @@
       try {
         const v = this.state.village;
         this.villagerLearnsPlant(this.villagerId, pid, source);
-        const witnesses = (v.roster || []).filter(rid => rid !== this.villagerId);
-        if (witnesses.length && Math.random() < 0.5) {
-          const w = witnesses[Math.floor(Math.random() * witnesses.length)];
-          if (this.villagerLearnsPlant(w, pid, 'observed')) {
-            this.say(`${this.displayName(w)} was watching. Now they know ${p.name} too.`);
+        // PRESENCE (drifter loop, Steve 2026-10-07): witnesses are people who
+        // are actually HERE. If you identify a plant while away — studying a
+        // distant codex, foraging five tiles out — nobody at home "was
+        // watching," and the rumor does NOT seed at home. The knowledge
+        // travels in your head and reaches home on return (returnToVillage's
+        // broker beat). That's the drifter's job: the bridge, not a teleport.
+        const present = this.playerAtHaven();
+        if (present) {
+          const witnesses = (v.roster || []).filter(rid => rid !== this.villagerId);
+          if (witnesses.length && Math.random() < 0.5) {
+            const w = witnesses[Math.floor(Math.random() * witnesses.length)];
+            if (this.villagerLearnsPlant(w, pid, 'observed')) {
+              this.say(`${this.displayName(w)} was watching. Now they know ${p.name} too.`);
+            }
           }
+          // seed the slow rumor: this plant is "going around" now
+          v.plantRumors = v.plantRumors || {};
+          if (!v.plantRumors[pid]) v.plantRumors[pid] = { day: this.state.scholar.day };
+        } else {
+          // away: queue for the homecoming. returnToVillage teaches it around
+          // the fire, and only then does the rumor start.
+          const sc = this.state.scholar;
+          sc.awayLearned = sc.awayLearned || [];
+          if (!sc.awayLearned.includes(pid)) sc.awayLearned.push(pid);
         }
-        // seed the slow rumor: this plant is "going around" now
-        v.plantRumors = v.plantRumors || {};
-        if (!v.plantRumors[pid]) v.plantRumors[pid] = { day: this.state.scholar.day };
       } catch (e) {}
       return true;
     },
