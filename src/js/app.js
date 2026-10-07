@@ -7478,6 +7478,105 @@
       h1.start(t + 0.08); h2.start(t + 0.08);
       h1.stop(t + 1.35); h2.stop(t + 1.35);
     }
+    // ---- KNOWLEDGE REVEAL (Steve 2026-10-07): the "aha!" — you learned
+    // something. Bright ascending arpeggio (the lightbulb), but the System
+    // is alien: the top note arrives slightly sharp and keeps climbing past
+    // where it should resolve, like the universe just leaned in to whisper.
+    // A shimmer underneath that doesn't quite settle — curiosity, not closure.
+    function knowledgeReveal(d) {
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const peak = 0.16;
+      // the aha: quick ascending arpeggio, C-E-G, each note brighter
+      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+      notes.forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(f, t + i * 0.09);
+        g.gain.setValueAtTime(0.0001, t + i * 0.09);
+        g.gain.exponentialRampToValueAtTime(peak * (0.7 + i * 0.2), t + i * 0.09 + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.09 + 0.35);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + i * 0.09); o.stop(t + i * 0.09 + 0.4);
+      });
+      // the top note overshoots: G5 climbing sharp past resolution
+      const top = ctx.createOscillator(), tg = ctx.createGain();
+      top.type = 'sine';
+      top.frequency.setValueAtTime(783.99, t + 0.27);
+      top.frequency.exponentialRampToValueAtTime(830, t + 0.7); // drifts sharp, never lands
+      tg.gain.setValueAtTime(0.0001, t + 0.27);
+      tg.gain.exponentialRampToValueAtTime(peak * 0.6, t + 0.35);
+      tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      top.connect(tg); tg.connect(sfxBus);
+      top.start(t + 0.27); top.stop(t + 0.95);
+      // the shimmer: high harmonic that won't settle — detuned pair beating
+      [2093, 2105].forEach((f) => {
+        const s = ctx.createOscillator(), sg = ctx.createGain();
+        s.type = 'sine'; s.frequency.value = f;
+        sg.gain.setValueAtTime(0.0001, t + 0.2);
+        sg.gain.exponentialRampToValueAtTime(peak * 0.25, t + 0.5);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+        s.connect(sg); sg.connect(sfxBus);
+        s.start(t + 0.2); s.stop(t + 1.25);
+      });
+    }
+    // ---- SYNERGY DISCOVERED (Steve 2026-10-07): the hero fanfare — two
+    // things just became more than the sum. Triumphant layered ascending
+    // chords, but this is the Oversight: the fanfare has one note slightly
+    // flat, beating against the triumph. The alien audience is cheering,
+    // and they're cheering WRONG. That's what makes it yours.
+    function synergyDiscovered(d) {
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const peak = 0.20;
+      // the fanfare: two ascending chords, C major then F major, layered
+      const chords = [
+        [261.63, 329.63, 392.00], // C4, E4, G4
+        [349.23, 440.00, 523.25], // F4, A4, C5
+      ];
+      chords.forEach((chord, ci) => {
+        const ct = t + ci * 0.35;
+        chord.forEach((f, i) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'sawtooth';
+          o.frequency.value = f;
+          const fl = ctx.createBiquadFilter();
+          fl.type = 'lowpass'; fl.frequency.value = 1800;
+          g.gain.setValueAtTime(0.0001, ct + i * 0.03);
+          g.gain.exponentialRampToValueAtTime(peak * 0.5, ct + i * 0.03 + 0.08);
+          g.gain.exponentialRampToValueAtTime(0.0001, ct + 0.6);
+          o.connect(fl); fl.connect(g); g.connect(sfxBus);
+          o.start(ct + i * 0.03); o.stop(ct + 0.65);
+        });
+      });
+      // the wrong note: one flat fifth beating against the triumph
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'triangle';
+      w.frequency.value = 369.5; // F#4, slightly flat — the tritone against C
+      wg.gain.setValueAtTime(0.0001, t + 0.15);
+      wg.gain.exponentialRampToValueAtTime(peak * 0.7, t + 0.3);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      w.connect(wg); wg.connect(sfxBus);
+      w.start(t + 0.15); w.stop(t + 1.15);
+      // the cheer: noise swell like a crowd, filtered bright then gone
+      const nz = noise(0.8), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 1200; nf.Q.value = 0.8;
+        ng.gain.setValueAtTime(0.0001, t + 0.2);
+        ng.gain.exponentialRampToValueAtTime(peak * 0.4, t + 0.5);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.2); nz.stop(t + 1.05);
+      }
+      // the landing: deep root note, the earth under the fanfare
+      const r = ctx.createOscillator(), rg = ctx.createGain();
+      r.type = 'sine'; r.frequency.value = 65.41; // C2
+      rg.gain.setValueAtTime(0.0001, t + 0.7);
+      rg.gain.exponentialRampToValueAtTime(peak * 0.8, t + 0.75);
+      rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+      r.connect(rg); rg.connect(sfxBus);
+      r.start(t + 0.7); r.stop(t + 1.45);
+    }
     // ---- ROUND: the alien metronome. ROUND N! gets a tick — flat, clinical,
     // the System counting. Each round it gets a little heavier and a little
     // higher: the count is closing in.
@@ -9251,6 +9350,10 @@
       crash(d) { crash(d); },
       levelup(d) { levelup(d); },
       passiveUnlock(d) { passiveUnlock(d); },
+      // KNOWLEDGE + SYNERGY (Steve 2026-10-07): were orphaned hooks — 7
+      // knowledgeReveal sites and 1 synergyDiscovered site fired silence.
+      knowledgeReveal(d) { knowledgeReveal(d); },
+      synergyDiscovered(d) { synergyDiscovered(d); },
       // PATTERN SYNTHS (Steve 2026-10-06): generic-per-pattern beats for the
       // wave-2 flesh-out siblings — call directly, or let telegraph()/impact()
       // dispatch them by pattern. Patterns: beam, burst, charge, direct,
