@@ -2,33 +2,21 @@
 // system: convo-wants
 // description: Want-driven conversation architecture. Every conversation has an NPC want that gives it direction; beats acknowledge what the player said; endings plant seeds for next time.
 // provides:
-//   - Game.WANT_BEAT_TAGS / Game.wantBeatTag(wid) -> canonical want ID -> beat tag map (consumed by convo-beats.js)
 //   - convoSelectWant(vid) -> want object
 //   - convoWantOpener(vid, want) -> {line, thread}
 //   - convoComposeBeat(vid, rawBeat, playerSaid) -> composed beat that acknowledges the player
 //   - convoPlantSeed(vid, seed)
 //   - convoCheckSeeds(vid) -> pending seed or null
 //   - convoAdvanceWant(vid, playerChoiceKind)
-//   - convoTeachSkill(vid) -> {key, name, origin} from their lifeseed skill origins
-//   - convoTeachSkillLock(vid) -> fix this conversation's teach skill (sticky)
-//   - convoOpinionMatter(vid) -> live-village matter weighing on them
-//   - convoPrideDeed(vid) -> the good thing they did, from their memory
 // rules:
 //   - want_driven: every conversation selects one NPC want at start; the want shapes the opening and provides beats (code: convoSelectWant, Steve 2026-10-06)
-//   - ten_wants: share_news, ask_favor, seek_comfort, warn_you, curious, just_company + offer_teach, ask_opinion, make_amends, show_pride (code: WANTS, expanded 2026-10-07)
-//   - want_epistemics: a want's lines name only what the NPC actually knows — warn_you names their own threat memory, opinion matters come from live village state, pride deeds from their memory (code: WANTS openers/engage, 2026-10-07)
 //   - beat_acknowledgment: NPC beats must acknowledge the player's last utterance before delivering new content — no non-sequiturs (code: convoComposeBeat, Steve 2026-10-06)
-//   - want_beat_tagged: want-surfaced beats land through the untagged goon continuer, so the convoTurn wrapper stamps c.lastBeat + the transcript entry with the want's true tag when the opener delivers (code: convoTurn wrapper, 2026-10-07)
 //   - seeds: unresolved wants plant seeds; next conversation opens with the seed (code: convoPlantSeed/convoCheckSeeds, Steve 2026-10-06)
-//   - teach_skill_sticky: the teach skill is fixed per conversation (offer, engage, and "show me" all name the same skill); a resurfaced teach seed reuses its skill; a skill whose origin story was already told today wins the draw (code: convoTeachSkill/convoTeachSkillLock, Steve 2026-10-07)
 //   - arc: want stages 0 (unspoken) -> 1 (surfaced) -> 2 (engaged) -> 3 (resolved); endings record the resolution (code: convoAdvanceWant, Steve 2026-10-06)
-//   - want_engagement: engaging dlg: replies advance a surfaced+delivered want to stage 2 and queue its engage beat on the continuer (one-beat turns hold); declines move it to stage 3 with the deflect beat queued — unless the dlg: handler already spoke the beat. The mapper (convoWantEngage) runs in the OUTERMOST convoTurn wrapper because the dialogue layer intercepts dlg: choices and returns early (code: convo-wants.js, convo-beats.js, Steve 2026-10-07)
 // consumes:
 //   - village.villagers
 //   - state.convos
 //   - npcNeeds (hunger/fear/social/energy)
-//   - vpOf(vid) -> villager char incl. lifeseed
-//   - displayName(vid)
 // ============ CONVERSATION WANTS ============
 // Structural rethink (Steve 2026-10-06): conversations were a reactive
 // choice-menu with no direction — the NPC had nothing they wanted, beats
@@ -71,7 +59,6 @@
           '"You\'ll never guess what I saw by the treeline."',
           '"Okay, so — something happened this morning."',
           '"Have you heard? No? Good, I get to tell you first."',
-          '"I\'ve been holding this in all day. You\'re the first person I\'m telling."',
         ];
         return Game.convoPickCycle(vid, 'want:news:open', news);
       },
@@ -79,7 +66,6 @@
         return Game.convoPickCycle(vid, 'want:news:engage', [
           '"Right? I knew you\'d get it. Nobody else listens like that."',
           '"See, this is why I tell you things."',
-          '"I knew you\'d want to hear that one. I know my audience."',
         ]);
       },
       deflect(vid) {
@@ -114,16 +100,10 @@
         ]);
       },
       engage(vid) {
-        return Game.convoPickCycle(vid, 'want:favor:engage', [
-          '"Thank you. Seriously — thank you. I wouldn\'t ask if it wasn\'t important."',
-          '"You have no idea what that means. Thank you."',
-        ]) || '"Thank you. Seriously — thank you."';
+        return '"Thank you. Seriously — thank you. I wouldn\'t ask if it wasn\'t important."';
       },
       deflect(vid) {
-        return Game.convoPickCycle(vid, 'want:favor:deflect', [
-          '"No, yeah, of course. Forget I asked." They won\'t forget. They\'ll just stop asking.',
-          '"It\'s fine. I\'ll manage." They say it like they don\'t believe it.',
-        ]) || '"No, yeah, of course. Forget I asked."';
+        return '"No, yeah, of course. Forget I asked." They won\'t forget. They\'ll just stop asking.';
       },
       resolve(vid, how) {
         if (how === 'engaged') {
@@ -151,14 +131,10 @@
         return Game.convoPickCycle(vid, 'want:comfort:open', [
           '"Do you ever — no. Never mind." They don\'t look away, though. They want you to ask.',
           '"I\'m not okay. I\'m saying it out loud so it\'s real: I\'m not okay."',
-          '"Can I just... sit here? I don\'t need advice. I just don\'t want to be alone with it."',
         ]);
       },
       engage(vid) {
-        return Game.convoPickCycle(vid, 'want:comfort:engage', [
-          '"It helps. Just — saying it out loud to someone who\'s actually listening. It helps."',
-          '"I don\'t feel fixed. But I feel less alone in it. That counts."',
-        ]) || '"It helps. Just — saying it out loud. It helps."';
+        return '"It helps. Just — saying it out loud to someone who\'s actually listening. It helps."';
       },
       deflect(vid) {
         return '"Right. Sorry. I\'m fine." They are very obviously not fine.';
@@ -179,32 +155,10 @@
         return 0.5;
       },
       opener(vid) {
-        // KNOWLEDGE-GATED (2026-10-07): they name only what they actually
-        // know — their own recent threat memory. No second-hand certainty:
-        // a rumor is framed as a rumor, never as witnessed fact.
-        try {
-          const day = (Game.state.scholar || {}).day || 0;
-          const mem = ((Game.state.village.memory || {})[vid]) || [];
-          const threat = mem.filter(m => day - (m.day || 0) <= 5)
-            .find(m => /threat|attack|monster|treeline/i.test((m.t || '') + ' ' + (m.note || '')));
-          if (threat && threat.note) {
-            return Game.convoPickCycle(vid, 'want:warn:open:known', [
-              '"Listen — about ' + threat.note + '. I was there. Hear me before you go back out."',
-              '"' + threat.note + ' — that was real, and I don\'t want you walking into it blind."',
-            ]) || '"Listen. I need you to hear this before you go back out there."';
-          }
-        } catch (e) {}
-        return Game.convoPickCycle(vid, 'want:warn:open', [
-          '"Listen. I need you to hear this before you go back out there."',
-          '"I don\'t know what it was — I\'m not going to pretend I do. But stay off the far paths tonight."',
-          '"Word is something\'s moving out there. That\'s all I\'ve got — rumor, not witnessed. Still. Careful."',
-        ]);
+        return '"Listen. I need you to hear this before you go back out there."';
       },
       engage(vid) {
-        return Game.convoPickCycle(vid, 'want:warn:engage', [
-          '"Good. Just — be careful. I mean it."',
-          '"Thank you. I\'d rather warn ten people for nothing than miss the one who needed it."',
-        ]) || '"Good. Just — be careful. I mean it."';
+        return '"Good. Just — be careful. I mean it."';
       },
       deflect(vid) {
         return '"...Suit yourself. Don\'t say I didn\'t try."';
@@ -227,14 +181,10 @@
         return Game.convoPickCycle(vid, 'want:curious:open', [
           '"Can I ask you something? Something real?"',
           '"I realize I don\'t actually know much about you."',
-          '"What\'s the one thing nobody here knows about you? You don\'t have to answer. I just wonder."',
         ]);
       },
       engage(vid) {
-        return Game.convoPickCycle(vid, 'want:curious:engage', [
-          '"Huh. I wouldn\'t have guessed that about you."',
-          '"Filed away. I like knowing the real version."',
-        ]) || '"Huh. I wouldn\'t have guessed that about you."';
+        return '"Huh. I wouldn\'t have guessed that about you."';
       },
       deflect(vid) {
         return '"Fair enough. Some things aren\'t for sharing."';
@@ -260,216 +210,16 @@
         return Game.convoPickCycle(vid, 'want:company:open', [
           '"Hey. Got a minute? No reason. Just — hey."',
           '"Mind if I just sit with you for a bit?"',
-          '"Don\'t mind me. I just wanted to be near people for a while."',
         ]);
       },
       engage(vid) {
-        return Game.convoPickCycle(vid, 'want:company:engage', [
-          '"This is nice. Just — being around people. I forget how much I need it."',
-          '"Thanks. Company without an agenda. I\'d forgotten that was a thing."',
-        ]) || '"This is nice. Just — being around people."';
+        return '"This is nice. Just — being around people. I forget how much I need it."';
       },
       deflect(vid) {
         return '"Oh. Yeah, of course. I\'ll — I\'ll go."';
       },
       resolve() { return null; },
     },
-    // ---- NEW WANTS (Steve 2026-10-07: expand the smallest pool) ----
-    offer_teach: {
-      thread: 'small',
-      pick(vid) {
-        // They have something to pass on — higher at real trust, higher
-        // when their lifeseed says they actually know something.
-        let w = 1;
-        try {
-          const t = (Game.state.village.trust || {})[vid] || 10;
-          if (t >= 40) w += 2;
-          const vp = Game.vpOf(vid);
-          const so = vp && vp.lifeseed && vp.lifeseed.skillOrigins;
-          if (so && Object.keys(so).length) w += 1;
-        } catch (e) {}
-        return w;
-      },
-      opener(vid) {
-        const skill = Game.convoTeachSkillLock(vid);
-        const what = skill ? skill.name : 'a thing or two';
-        // Origin-first phrasing: the origin is a bare phrase ("haying
-        // season at the clinic", "in Mara's kitchen"), so it leads —
-        // "I learned X haying season" would garble.
-        const where = skill && skill.origin
-          ? skill.origin.charAt(0).toUpperCase() + skill.origin.slice(1) + ' — that\'s where I learned ' + skill.name + '.'
-          : null;
-        return Game.convoPickCycle(vid, 'want:teach:open', [
-          '"I could show you ' + what + ', if you want. Properly — not the half version."',
-          '"You ever learn ' + what + '? I could teach you. I\'m good at it — or I was, once."',
-          '"' + (where || 'I know a few things worth knowing.') + ' Want me to show you?"',
-        ]);
-      },
-      engage(vid) {
-        const skill = Game.convoTeachSkillLock(vid);
-        const origin = skill && skill.origin ? ' I learned it ' + skill.origin + '.' : '';
-        return Game.convoPickCycle(vid, 'want:teach:engage', [
-          '"Good.' + origin + ' Watch my hands — that\'s where the whole thing lives."',
-          '"Good. Here\'s the first thing' + (skill ? ' about ' + skill.name : '') + ': slow is smooth, smooth is fast. Try it."',
-        ]) || '"Good. Watch closely — I\'ll only show you once."';
-      },
-      deflect(vid) {
-        return Game.convoPickCycle(vid, 'want:teach:deflect', [
-          '"...Right. Everyone\'s busy. The offer stands."',
-          '"Okay. It\'s there if you ever want it."',
-        ]) || '"...Right. Everyone\'s busy. The offer stands."';
-      },
-      resolve(vid, how) {
-        if (how === 'engaged') return null;
-        // COHERENCE (Steve 2026-10-07): the seed carries the skill — next
-        // time they offer, it's the SAME lesson, not a re-rolled one.
-        let skey = null, sname = null;
-        try {
-          const s = Game.convoTeachSkill(vid);
-          if (s) { skey = s.key; sname = s.name; }
-        } catch (e) {}
-        return {
-          wantId: 'offer_teach',
-          note: sname ? ('the ' + sname + ' lesson') : 'they still want to teach you what they know',
-          skill: skey,
-        };
-      },
-    },
-    ask_opinion: {
-      thread: 'personal',
-      pick(vid) {
-        // A live village matter makes them want counsel. Weight by events —
-        // grief, tension, hunger, or a conflict they're personally in.
-        try {
-          const v = Game.state.village;
-          const t = (v.trust || {})[vid] || 10;
-          if (t < 25) return 0.5;
-          let w = 1;
-          if ((v.grief || 0) > 0) w += 2;
-          if (Object.values(v.heat || {}).some(h => h > 0)) w += 2;
-          const hungry = (v.roster || []).filter(id => {
-            try { return (Game.npcNeeds(id).hunger || 0) > 70; } catch (e) { return false; }
-          }).length;
-          if (hungry > 2) w += 2;
-          const cf = (v.conflicts || []).find(x => !x.resolved && (x.a === vid || x.b === vid));
-          if (cf) w += 2;
-          return w;
-        } catch (e) {}
-        return 1;
-      },
-      opener(vid) {
-        // The matter is generated from the live village — never invented.
-        const matter = Game.convoOpinionMatter(vid);
-        return Game.convoPickCycle(vid, 'want:opinion:open', [
-          '"Can I ask your take on something? ' + matter + ' I keep going back and forth."',
-          '"' + matter + ' What would you do? I need someone who isn\'t in the middle of it."',
-          '"I need a second head on this. ' + matter + '"',
-        ]);
-      },
-      engage(vid) {
-        return Game.convoPickCycle(vid, 'want:opinion:engage', [
-          '"That\'s... actually helpful. I hadn\'t looked at it that way."',
-          '"Hm. Okay. I\'m going to sit with that."',
-          '"Good. That\'s a real answer — most people just tell me what I want to hear."',
-        ]) || '"Thanks. That helps, honestly."';
-      },
-      deflect(vid) {
-        return Game.convoPickCycle(vid, 'want:opinion:deflect', [
-          '"Never mind — probably unfair to put it on you. I\'ll figure it out."',
-          '"Forget it. I shouldn\'t outsource my conscience."',
-        ]) || '"Never mind — probably unfair to put it on you."';
-      },
-      resolve(vid, how) {
-        if (how === 'engaged') return null;
-        return { wantId: 'ask_opinion', note: 'they never got your counsel on what\'s weighing on them' };
-      },
-    },
-    make_amends: {
-      thread: 'personal',
-      pick(vid) {
-        // Guilt drives this — their own recent wrongs, read from memory.
-        try {
-          const day = (Game.state.scholar || {}).day || 0;
-          const mem = ((Game.state.village.memory || {})[vid]) || [];
-          const guilt = mem.filter(m => day - (m.day || 0) <= 7)
-            .some(m => /theft_done|started_rumor|promise_broken|confronted|stingy_gift|deal_refused/i.test(m.t || ''));
-          if (guilt) return 4;
-        } catch (e) {}
-        return 0.3;
-      },
-      opener(vid) {
-        return Game.convoPickCycle(vid, 'want:amends:open', [
-          '"I did something. I haven\'t told anyone. ...Can I tell you?"',
-          '"There\'s something I did that I can\'t stop thinking about. I need to say it out loud."',
-          '"If I told you I did something I\'m not proud of — would you still be sitting here?"',
-        ]);
-      },
-      engage(vid) {
-        return Game.convoPickCycle(vid, 'want:amends:engage', [
-          '"Thank you for hearing it. I\'m going to make it right — I just needed to say it first."',
-          '"Saying it doesn\'t fix it. But it\'s a start. I\'ll do the rest."',
-        ]) || '"Thank you. I needed one person to know."';
-      },
-      deflect(vid) {
-        return Game.convoPickCycle(vid, 'want:amends:deflect', [
-          '"...Yeah. Forget it. It\'s probably too late anyway."',
-          '"No. You\'re right not to ask. Some things should stay buried."',
-        ]) || '"...Yeah. Forget it."';
-      },
-      resolve(vid, how) {
-        if (how === 'engaged') return { wantId: 'amends_owed', note: 'they confessed something to you — now they have to make it right' };
-        return { wantId: 'make_amends', note: 'they still haven\'t confessed what they did' };
-      },
-    },
-    show_pride: {
-      thread: 'small',
-      pick(vid) {
-        // They did something good and want one witness — from memory.
-        try {
-          const day = (Game.state.scholar || {}).day || 0;
-          const mem = ((Game.state.village.memory || {})[vid]) || [];
-          const good = mem.filter(m => day - (m.day || 0) <= 5)
-            .some(m => /promise_kept|mediated|hero|saved|gift|comforted|ally/i.test(m.t || ''));
-          if (good) return 3;
-        } catch (e) {}
-        return 0.5;
-      },
-      opener(vid) {
-        return Game.convoPickCycle(vid, 'want:pride:open', [
-          '"I did something good yesterday. Is it terrible that I want someone to know?"',
-          '"Nobody saw it, so it doesn\'t count — that\'s the rule, right? ...Can I tell you anyway?"',
-          '"I\'m proud of something and I feel guilty about being proud. That\'s where we are."',
-        ]);
-      },
-      engage(vid) {
-        const deed = Game.convoPrideDeed(vid);
-        return Game.convoPickCycle(vid, 'want:pride:engage', [
-          '"' + deed + 'Thanks for letting me say it. I don\'t need a medal — I just needed one witness."',
-        ]) || '"Thanks for letting me say it."';
-      },
-      deflect(vid) {
-        return Game.convoPickCycle(vid, 'want:pride:deflect', [
-          '"...Never mind. Forget I said anything."',
-          '"It\'s stupid. Bragging about decency. Forget it."',
-        ]) || '"...Never mind."';
-      },
-      resolve() { return null; },
-    },
-  };
-
-  // ============ WANT -> BEAT TAG MAP (canonical) ============
-  // convo-beats.js consumes Game.wantBeatTag — never duplicate this mapping
-  // there. offer_teach is an offer (they offer you a lesson); ask_opinion is
-  // news (they lay out the matter); make_amends is feeling (vulnerable);
-  // show_pride is news (they're telling you something good).
-  Game.WANT_BEAT_TAGS = {
-    share_news: 'news', ask_favor: 'offer', seek_comfort: 'feeling',
-    warn_you: 'news', curious: 'question', just_company: 'small',
-    offer_teach: 'offer', ask_opinion: 'news', make_amends: 'feeling',
-    show_pride: 'news',
-  };
-  Game.wantBeatTag = function (wid) {
-    return (Game.WANT_BEAT_TAGS || {})[wid] || 'offer';
   };
 
   const methods = {
@@ -479,10 +229,7 @@
       // 1. Seeds first — unfinished business takes priority.
       const seed = this.convoCheckSeeds(vid);
       if (seed && WANTS[seed.wantId]) {
-        // COHERENCE (Steve 2026-10-07): a resurfaced seed carries its
-        // specifics — the teach offer names the SAME skill next time, not
-        // a re-rolled one.
-        return { id: seed.wantId, def: WANTS[seed.wantId], fromSeed: true, seedNote: seed.note, seedSkill: seed.skill || null };
+        return { id: seed.wantId, def: WANTS[seed.wantId], fromSeed: true, seedNote: seed.note };
       }
       // 2. Weight by needs and context.
       let best = null, bestW = -1;
@@ -585,8 +332,7 @@
     },
 
     // convoPlantSeed: record unfinished business for next conversation.
-    // seed: { wantId, note, day, skill? } — skill lets a teach offer name
-    // the SAME skill when it resurfaces (coherence, Steve 2026-10-07).
+    // seed: { wantId, note, day }
     convoPlantSeed(vid, seed) {
       if (!seed || !seed.wantId) return;
       const v = this.state.village;
@@ -595,7 +341,6 @@
         wantId: seed.wantId,
         note: seed.note || '',
         day: this.state.scholar.day || 0,
-        skill: seed.skill || null,
       };
     },
 
@@ -657,33 +402,19 @@
     // surfaces organically after hello.)
     if (want && want.def) {
       const c = this.convoGet(vid);
-      c.want = { id: want.id, def: want.def, stage: 0, fromSeed: !!want.fromSeed, seedSkill: want.seedSkill || null };
+      c.want = { id: want.id, def: want.def, stage: 0, fromSeed: !!want.fromSeed };
       // If this want came from a seed, surface it immediately —
       // they have unfinished business and it shows.
       if (want.fromSeed) {
         try {
           const opener = this.convoWantOpener(vid, want);
           if (opener && opener.line) {
-            // One clean quoted utterance — the old form closed the quote
-            // after the em-dash and left the opener text dangling
-            // ("About X — " unquoted opener") which read broken.
-            const seedLine = `"About ${want.seedNote || 'last time'} — ` +
+            const seedLine = `"About ${want.seedNote || 'last time'} — " ` +
               opener.line.replace(/^"/, '').replace(/"$/, '') + '"';
             c.transcript.push({ who: 'them', text: seedLine });
             this.sayLine(vid, seedLine);
             result.line = seedLine;
             c.want.stage = 1; // surfaced
-            // Tag it — this bypasses the tagged generators in convo-beats.js
-            // just like the held-beat path, so stamp the tag here directly.
-            // The opener IS the delivered line here, so mark it tagged for
-            // the engagement mapper below.
-            try {
-              const tag = Game.wantBeatTag(want.id);
-              c.lastBeat = { tag, topic: 'want', line: seedLine };
-              const te = c.transcript[c.transcript.length - 1];
-              if (te) { te.beat = tag; te.topic = 'want'; }
-              c.want.beatTagged = true;
-            } catch (e) {}
           }
         } catch (e) {}
       }
@@ -721,29 +452,9 @@
           if (!already) {
             c.heldBeats.push({ text: opener.line, wantSurface: true });
             c.want.stage = 1; // surfaced
-            // Remember the exact opener text so we can tag the beat when it
-            // lands (below). The goon continuer delivers held beats verbatim.
-            c.want.openerText = opener.line;
             // The want's thread becomes the conversation thread if the
             // player engages — but we don't force it yet.
           }
-        }
-      }
-      // WANT BEAT TAGGING (Steve 2026-10-07): a want-surfaced held beat
-      // lands through the goon continuer, bypassing the tagged generators
-      // in convo-beats.js — so c.lastBeat would still describe the OLD
-      // beat and replies would answer the wrong thing. When the queued
-      // opener is delivered (its exact text is the newest them-line), stamp
-      // c.lastBeat and the transcript entry with the want's true tag.
-      if (c.want && c.want.openerText && !c.want.beatTagged) {
-        const t = c.transcript || [];
-        const lastThem = [...t].reverse().find(e => e.who === 'them');
-        if (lastThem && String(lastThem.text) === String(c.want.openerText)) {
-          const tag = Game.wantBeatTag(c.want.id);
-          c.lastBeat = { tag, topic: 'want', line: String(lastThem.text) };
-          lastThem.beat = tag;
-          lastThem.topic = 'want';
-          c.want.beatTagged = true;
         }
       }
       // BEAT COMPOSITION: wrap the returned line through the composer
@@ -765,44 +476,6 @@
       }
     } catch (e) {}
     return result;
-  };
-
-  // convoWantEngage: advance the want arc from a player's dlg: reply.
-  // Called by the OUTERMOST convoTurn wrapper (convo-beats.js) because the
-  // dialogue layer intercepts every 'dlg:' choice and returns early — a
-  // mapper inside the wants wrapper would never see them.
-  // Engaging replies move a surfaced, delivered want to stage 2; the
-  // want's own engage beat queues behind the turn's line (one-beat turns
-  // hold) unless the dlg: handler already spoke it (engageSpoken).
-  // Declines move it to stage 3 with the deflect beat queued.
-  Game.convoWantEngage = function (vid, choiceId) {
-    try {
-      const c = this.convoGet(vid);
-      if (!c.want || c.want.stage !== 1 || !c.want.beatTagged) return;
-      if (!choiceId || choiceId.indexOf('dlg:') !== 0) return;
-      const dlg = choiceId.slice(4);
-      const ENGAGE = ['more', 'react', 'help', 'details', 'learn', 'comfort', 'empathize', 'askwhy'];
-      const DEFLECT = ['cant', 'later'];
-      const queueWantBeat = (kind) => {
-        try {
-          const fn = c.want.def && c.want.def[kind];
-          if (!fn) return;
-          const b = fn.call(this, vid);
-          if (b) {
-            c.heldBeats = c.heldBeats || [];
-            if (!c.heldBeats.some(h => h.wantEngage)) c.heldBeats.push({ text: b, wantEngage: true });
-          }
-        } catch (e) {}
-      };
-      if (ENGAGE.indexOf(dlg) !== -1) {
-        c.want.stage = 2; // engaged
-        if (!c.want.engageSpoken) queueWantBeat('engage');
-      } else if (DEFLECT.indexOf(dlg) !== -1) {
-        c.want.stage = 3; // deflected
-        c.want.resolution = 'deflected';
-        queueWantBeat('deflect');
-      }
-    } catch (e) {}
   };
 
   // convoPlayerSaid: reconstruct what the player just said from the choiceId.
@@ -827,120 +500,6 @@
       }
       return { label: choiceId, isAnswer: false };
     } catch (e) { return null; }
-  };
-
-  // convoTeachSkill: what can this villager actually teach? From their
-  // lifeseed skill origins (who taught THEM, and where) — never invented
-  // wholesale. Returns {key, name, origin} or null.
-  //
-  // COHERENCE (Steve 2026-10-07): the skill is STICKY within a conversation
-  // — the offer, the engage, and "show me" all name the SAME skill. A
-  // villager who offers "finding food" doesn't teach "patching people up"
-  // two beats later. A resurfaced seed reuses its skill; a skill they
-  // already told their origin story about (said-fact 'skillstory', today)
-  // wins over a fresh draw — they teach what they talked about.
-  Game.convoTeachSkill = function (vid) {
-    try {
-      const c = (typeof this.convoGet === 'function') ? this.convoGet(vid) : null;
-      if (c && c.teachSkill) return c.teachSkill;
-      const vp = this.vpOf(vid);
-      const ls = vp && vp.lifeseed;
-      const so = (ls && ls.skillOrigins) || {};
-      const keys = Object.keys(so);
-      if (!keys.length) return null;
-      const names = {
-        food: 'finding food', medicinal: 'patching people up', mending: 'fixing things',
-        navigation: 'never getting lost', tracking: 'reading ground',
-        trapping: 'traps', forecast: 'reading the sky',
-      };
-      const mk = (k) => ({ key: k, name: names[k] || k, origin: so[k] });
-      // A resurfaced seed names the same skill — rebuild the object from
-      // the stored key so opener/engage/lesson all agree.
-      if (c && c.want && c.want.fromSeed && c.want.seedSkill && so[c.want.seedSkill]) {
-        c.teachSkill = mk(c.want.seedSkill);
-        return c.teachSkill;
-      }
-      // Prefer the skill whose origin story they already told today.
-      try {
-        const f = (typeof this.convoSaidFacts === 'function') ? this.convoSaidFacts(vid).skillstory : null;
-        const today = (this.state.scholar || {}).day || 1;
-        if (f && f.day === today && so[f.value]) return mk(f.value);
-      } catch (e) {}
-      const k = keys[Math.floor(Math.random() * keys.length)];
-      return mk(k);
-    } catch (e) {}
-    return null;
-  };
-
-  // convoTeachSkillLock: fix this conversation's skill at the FIRST speech
-  // about it (offer opener, engage, "show me") and put it on the record —
-  // every later mention this conversation agrees. Speech sites call this,
-  // never convoTeachSkill directly.
-  Game.convoTeachSkillLock = function (vid) {
-    try {
-      const c = (typeof this.convoGet === 'function') ? this.convoGet(vid) : null;
-      if (c && !c.teachSkill) {
-        const s = this.convoTeachSkill(vid);
-        if (s) {
-          c.teachSkill = s;
-          if (typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'skillstory', s.key);
-        }
-      }
-      return (c && c.teachSkill) || null;
-    } catch (e) { return null; }
-  };
-
-  // convoOpinionMatter: the thing weighing on them, generated from the LIVE
-  // village — grief, a conflict they're in, tension, hunger. Never invented.
-  Game.convoOpinionMatter = function (vid) {
-    try {
-      const v = this.state.village;
-      if ((v.grief || 0) > 0) {
-        const corpses = v.corpses || [];
-        const recent = corpses[corpses.length - 1];
-        const nm = recent ? String(recent.name || '').split(' ')[0] : null;
-        return nm ? 'Since ' + nm + ' died — how do we honor them properly?' : 'How do we grieve properly when there\'s still work to do?';
-      }
-      const cf = (v.conflicts || []).find(x => !x.resolved && (x.a === vid || x.b === vid));
-      if (cf) {
-        let onm = 'them';
-        try { const oid = cf.a === vid ? cf.b : cf.a; onm = this.displayName(oid).split(' ')[0]; } catch (e) {}
-        return 'This thing with ' + onm + ' — do I bend, or hold my ground?';
-      }
-      if (Object.values(v.heat || {}).some(h => h > 0)) return 'Everyone\'s picking sides and I don\'t want to. Is staying out of it cowardice?';
-      const hungry = (v.roster || []).filter(id => {
-        try { return id !== this.villagerId && (this.npcNeeds(id).hunger || 0) > 70; }
-        catch (e) { return false; }
-      }).length;
-      if (hungry > 2) return 'People are going hungry and the stores won\'t stretch. Who eats first — how do you even decide that?';
-    } catch (e) {}
-    return 'Whether I\'m pulling my weight here. Honestly — am I?';
-  };
-
-  // convoPrideDeed: the good thing they did, in their own words — from
-  // their memory, never invented.
-  Game.convoPrideDeed = function (vid) {
-    try {
-      const day = (this.state.scholar || {}).day || 0;
-      const mem = ((this.state.village.memory || {})[vid]) || [];
-      const good = mem.filter(m => day - (m.day || 0) <= 5)
-        .find(m => /promise_kept|mediated|hero|saved|gift|comforted|ally/i.test(m.t || ''));
-      if (good && good.note) {
-        const nm = good.note;
-        const map = {
-          promise_kept: 'I kept my word — ' + nm + '. ',
-          mediated: 'I talked people down — ' + nm + '. ',
-          hero: nm + ' — I was there. ',
-          saved: 'I saved ' + nm + '. ',
-          gift: 'I gave ' + nm + ' what I had. ',
-          comforted: 'I sat with someone who was scared — ' + nm + '. ',
-          ally: 'I stood up for someone — ' + nm + '. ',
-        };
-        if (map[good.t]) return map[good.t];
-        return 'I did right by someone — ' + nm + '. ';
-      }
-    } catch (e) {}
-    return 'I did the right thing when nobody was watching. ';
   };
 
 })();

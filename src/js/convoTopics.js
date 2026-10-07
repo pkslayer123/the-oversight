@@ -16,23 +16,14 @@
 //   - topic2AskLabel(vid, topic)
 //   - topic2Deep(topic)
 //   - topic2SubjectOpts(vid)
-//   - t2lifeseed(vid) -> their lifeseed or null
-//   - t2seedName(vid) -> a named person from their seed (coherence)
-//   - t2hasHardLived(vid) / t2hardAnchor(vid)
 // rules:
 //   - generated_not_pooled: topic lines are composed from villager identity + run state (code: convoTopics.js, t2gen_*)
-//   - seed_coherence: named people in topic lines come ONLY from the lifeseed (t2seedName) — the 'loved' topic no longer invents names (code: t2gen_loved, Steve 2026-10-07)
 //   - change_over_run: re-asking after events acknowledges the change (code: convoTopics.js, topic2Ask t2snap)
 //   - event_topic: 'lately' appears only while a run event is live (code: convoTopics.js, t2LatelyEvent)
 //   - no_repeat: openers and beats route through convoPick (code: convoTopics.js, topic2Ask/topic2Beat)
-//   - hardstory_once: the 'hardstory' topic is gated on deep trust + a hard lived event, is told exactly once (marked in topic2Ask, hidden by t2gate after), and speaks the lifeseed wound in their own words (code: t2gen_hardstory/t2fol_hardstory, Steve 2026-10-07)
-//   - said_facts_recorded: asserted claims go on the said-facts record — the hardstory's wound/anchor, the others-topic's grievance history and trust claims — so later talk extends the same thread instead of inventing a new past (code: t2gen_hardstory/t2gen_others via convoSaidFact, Steve 2026-10-07)
-//   - lived_gates: 'lived' topics need something hard actually lived — the gate is the run itself (code: t2gate/t2hasHardLived, Steve 2026-10-07)
 // consumes:
 //   - Game (characterGen.topicPack labels)
 //   - village.villagers
-//   - vpOf(vid) -> villager char incl. lifeseed
-//   - lifeseedWoundEuphemism, lifeseedKin
 // ============ GENERATED CONVERSATION TOPICS ============
 // Steve 2026-10-06 (unique-person law): topics generate from WHO this villager
 // is and WHAT they've lived through this run. Self-attaching module, same
@@ -55,32 +46,6 @@
       return t >= 75 ? 'devoted' : t >= 50 ? 'close' : t >= 30 ? 'warming' : 'wary';
     },
     t2mem(vid) { return ((this.state.village.memory || {})[vid]) || []; },
-    // t2lifeseed: the villager's lifeseed — backstory, named people, wound,
-    // lived events, voice taboos. Topics generate FROM this, never from
-    // random names (Steve 2026-10-06 unique-person law; the lifeseed voice-
-    // coherence rule: voice topics name ONLY seed people/places).
-    t2lifeseed(vid) {
-      try {
-        const vp = this.vpOf(vid);
-        return (vp && vp.lifeseed) || null;
-      } catch (e) { return null; }
-    },
-    // t2seedName: a named person from their lifeseed (first name). The
-    // 'loved' topic used to invent random names — incoherent with the seed
-    // (fixed Steve 2026-10-07). Someone waiting is someone from their life.
-    t2seedName(vid) {
-      try {
-        const ls = this.t2lifeseed(vid);
-        const p = ls && (ls.people || [])[0];
-        if (p && p.name) return p.name.split(' ')[0];
-        if (typeof this.lifeseedKin === 'function') {
-          const vp = this.vpOf(vid);
-          const k = this.lifeseedKin(vp, null);
-          if (k && k !== 'someone') return k;
-        }
-      } catch (e) {}
-      return null;
-    },
     t2pro(vp, vid) {
       if (vp && vp.pro) return vp.pro;
       try { return ['she', 'he', 'they'][this._hashStr(vid || 'x') % 3]; }
@@ -149,15 +114,6 @@
         { id: 'advice', minTrust: 20 },
         { id: 'oldworld', minTrust: 15 },
         { id: 'skills', minTrust: 0 },
-        { id: 'work', minTrust: 10,
-          labels: ['"What do you actually do around here?"', '"What\'s your work?"', '"How do you spend your days?"'],
-          moreLabels: ['"What\'s the hard part of it?"', '"Tell me more about the work."'] },
-        { id: 'hopes', minTrust: 30, deep: true,
-          labels: ['"What are you hoping for?"', '"What do you want, down the road?"', '"What does the future look like to you?"'],
-          moreLabels: ['"Tell me more about that."', '"What would it take?"'] },
-        { id: 'hardstory', minTrust: 60, deep: true, lived: true,
-          labels: ['"What\'s the hardest thing you\'ve lived through?"'],
-          moreLabels: ['"I\'m here."'] },
         { id: 'systemtake', system: true },
         { id: 'loved', minTrust: 40, deep: true },
       ];
@@ -172,69 +128,18 @@
     t2gate(vid, def) {
       if (def.event) return !!this.t2LatelyEvent(vid);
       if (def.system) return !!this.state.systemArrived;
-      const c = this.convoGet(vid);
-      // The hard story is told ONCE. After that the topic is gone —
-      // asking again would be cruel, and they'd never repeat it.
-      if (def.id === 'hardstory' && c.hardstoryTold) return false;
-      // 'lived' topics need something hard actually lived — the knowledge
-      // gate is the run itself, not a number.
-      if (def.lived && !this.t2hasHardLived(vid)) return false;
       const trust = this.t2trust(vid);
+      const c = this.convoGet(vid);
       const count = c.count || 0;
       const mt = def.minTrust || 0;
       if (mt <= 0) return true;
-      if (mt >= 60) return trust >= 60 || count >= 6;
       if (mt >= 40) return trust >= 40 || count >= 4;
       if (mt >= 30) return trust >= 30 || count >= 3;
       return trust >= mt || count >= 2;
     },
-    // t2hasHardLived: have they lived something hard this run? Read from
-    // the lifeseed lived record first, village memory second.
-    t2hasHardLived(vid) {
-      const HARD = /death_of_kin|betrayal|loss|kill|exile|theft_victim|theft_done|death_witnessed|hunger_survived/i;
-      try {
-        const lived = (this.t2lifeseed(vid) || {}).lived || [];
-        if (lived.some(e => HARD.test(e.kind || ''))) return true;
-        const mem = this.t2mem(vid);
-        if (mem.some(m => /promise_broken|you_threatened|caught_you_stealing|suspects_you|confronted/i.test(m.t || ''))) return true;
-      } catch (e) {}
-      return false;
-    },
-    // t2hardAnchor: the lived event the hard story hangs on, in their words.
-    t2hardAnchor(vid) {
-      try {
-        const lived = (((this.t2lifeseed(vid) || {}).lived) || []).slice().reverse();
-        const hard = lived.find(e => /death_of_kin|betrayal|loss|kill|exile|theft_victim|theft_done|death_witnessed|hunger_survived/i.test(e.kind || ''));
-        if (hard) {
-          const subj = hard.subject ? hard.subject.split(' ')[0] : null;
-          const map = {
-            death_of_kin: subj ? 'Since ' + subj + ' died' : 'Since the death',
-            betrayal: 'Since someone I trusted turned',
-            loss: 'Since I lost what I lost',
-            kill: 'Since the killing',
-            exile: 'Since I was cast out',
-            theft_victim: 'Since I was robbed',
-            theft_done: 'Since I stole',
-            death_witnessed: 'Since I watched someone die',
-            hunger_survived: 'Since the hungry days',
-          };
-          return map[hard.kind] || null;
-        }
-      } catch (e) {}
-      return null;
-    },
 
     // ---------- labels ----------
-    // Code-side labels: new topics (work/hopes/hardstory) carry their own
-    // labels here instead of the data topicPack, so they're per-topic voiced
-    // instead of falling back to a raw id. (The data file isn't this lane.)
     topic2Label(vid, topic) {
-      const def = this.t2defs().find(d => d.id === topic);
-      if (def && def.labels && def.labels.length) {
-        let h = 0;
-        try { h = this._hashStr(vid + ':t2:' + topic); } catch (e) {}
-        return def.labels[Math.abs(h) % def.labels.length];
-      }
       const vs = (this.t2pack().labels || {})[topic] || [topic];
       let h = 0;
       try { h = this._hashStr(vid + ':t2:' + topic); } catch (e) {}
@@ -242,8 +147,6 @@
     },
     topic2MoreLabel(vid) {
       const c = this.convoGet(vid);
-      const def = this.t2defs().find(d => d.id === c.thread);
-      if (def && def.moreLabels && def.moreLabels.length) return def.moreLabels[0];
       const vs = (this.t2pack().moreLabels || {})[c.thread] || ['"Tell me more."'];
       let h = 0;
       try { h = this._hashStr(vid + ':t2more:' + (c.thread || '')); } catch (e) {}
@@ -265,9 +168,6 @@
         return this.convoPickCycle(vid, 'exh', cg.exhausted || ['"I\'ve told you everything I know about that."']);
       }
       line = this.t2fill(line, this.vpOf(vid), vid);
-      // The hard story is told ONCE, ever — mark it so the topic vanishes
-      // from the menu and the gate never offers it again.
-      if (topic === 'hardstory') c.hardstoryTold = true;
       // Change acknowledgment: the same question, a different run.
       c.t2snap = c.t2snap || {};
       const now = this.t2clock(vid);
@@ -526,124 +426,6 @@
       return [f1, f2, f3];
     },
 
-    // ---------- WORK: what they actually do ----------
-    t2gen_work(vid) {
-      const vp = this.vpOf(vid);
-      const intel = ((vp && vp.intelligence) || {}).primary || 'steady';
-      const byIntel = {
-        analytical: 'figuring things out — the kind of problems that don\'t have manuals',
-        practical: 'fixing what breaks, building what doesn\'t exist yet',
-        social: 'keeping people from each other\'s throats, mostly',
-        observant: 'watching — the treeline, the stores, the moods',
-        creative: 'making things we need out of things we have',
-        steady: 'the unglamorous stuff. Someone has to.',
-      };
-      const cands = [
-        '"I was {an_occ}, before. Now? ' + this.t2cap(byIntel[intel] || byIntel.steady) + '."',
-        '"Officially? Whatever needs doing. Unofficially — ' + (byIntel[intel] || byIntel.steady) + '."',
-        '"My days? Work, watch, work. The work changes; the days don\'t."',
-      ];
-      if (this.t2band(vid) === 'wary') cands.push('"Why — taking attendance?" A tired grin. "I pull my weight. Ask anyone."');
-      return cands;
-    },
-    t2fol_work(vid) {
-      const vp = this.vpOf(vid);
-      const f1 = [
-        '"The hard part? It never ends. You finish one thing and the next one was already waiting."',
-        '"The hard part is doing it tired. Everything out here is done tired."',
-        '"The hard part isn\'t the work. It\'s watching other people do it wrong and keeping your mouth shut."',
-      ];
-      const f2 = [
-        '"Best part of the day? When something actually works. You forget how good that feels."',
-        '"I like the rhythm of it. Hands busy, head quiet. That\'s the closest thing to peace I get."',
-      ];
-      const f3 = [
-        '"Being {an_occ} taught me ' + this.t2intelTrait(vp) + '. Out here that\'s worth more than everything I left behind."',
-        '"If you want to learn it, I can show you sometime. Not now — but sometime."',
-      ];
-      return [f1, f2, f3];
-    },
-
-    // ---------- HOPES: what they want, down the road ----------
-    t2gen_hopes(vid) {
-      const p = this.t2pers(this.vpOf(vid));
-      const hope = p.hope || 'something better';
-      const cands = [
-        '"' + this.t2cap(hope) + '. That\'s the whole answer. Everything else is logistics."',
-        '"I want ' + hope + '. Saying it out loud makes it feel less stupid."',
-        '"Hope? I ration it. But if you\'re asking — ' + hope + '."',
-      ];
-      const ls = this.t2lifeseed(vid);
-      if (ls && ls.want) cands.push('"What I want? ' + ls.want.charAt(0).toUpperCase() + ls.want.slice(1) + '. That\'s the honest version."');
-      if (this.t2band(vid) === 'wary') cands.push('"Hopes are leverage. ...' + this.t2cap(hope) + '. Don\'t make me regret telling you."');
-      return cands;
-    },
-    t2fol_hopes(vid) {
-      const p = this.t2pers(this.vpOf(vid));
-      const hope = p.hope || 'something better';
-      const f1 = [
-        '"What would it take? Time. Luck. People not dying. The usual impossible list."',
-        '"It takes surviving first. Hope is a luxury good — you have to earn the shelf space."',
-      ];
-      const f2 = [
-        '"Some days I believe it. Some days I just say the words to keep the shape of it."',
-        '"I used to hope bigger. Now I hope specific. Specific hurts less when it doesn\'t happen."',
-      ];
-      const f3 = [
-        '"You? What are you hoping for — really?" A pause. "You don\'t have to answer. Just — have an answer."',
-        '"Hold onto yours. It\'s the one thing they can\'t take — the System, the winter, all of it."',
-      ];
-      return [f1, f2, f3];
-    },
-
-    // ---------- HARDSTORY: the thing they never talk about ----------
-    // THE REVEAL (Steve 2026-10-07): at deep trust, after they've lived
-    // something hard, they finally talk about the thing they never talk
-    // about — the lifeseed wound, spoken around in their own words,
-    // anchored to a lived event. Told ONCE, ever (topic2Ask marks it;
-    // t2gate hides the topic after). Never repeated, never farmed.
-    t2gen_hardstory(vid) {
-      const vp = this.vpOf(vid);
-      const first = (this.displayName(vid) || 'they').split(' ')[0];
-      let euph = null;
-      try {
-        const ls = this.t2lifeseed(vid);
-        if (ls && ls.wound && typeof this.lifeseedWoundEuphemism === 'function') {
-          euph = this.lifeseedWoundEuphemism(ls.wound, first);
-        }
-      } catch (e) {}
-      const anchor = this.t2hardAnchor(vid);
-      // COHERENCE (Steve 2026-10-07): the telling is once-only, so its facts
-      // go on the record verbatim — the wound as they named it, the lived
-      // anchor. Nothing later gets a second, contradictory version.
-      try {
-        if (euph && typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'hardstory:wound', euph);
-        if (anchor && typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'hardstory:anchor', anchor);
-      } catch (e) {}
-      const about = euph ? 'about ' + euph : 'about the thing I don\'t talk about';
-      const cands = [
-        '"I\'ve never told anyone this." A long pause. "' + (anchor ? anchor + ' — and ' : '') + 'I don\'t talk ' + about + '. I\'m talking about it now, and I don\'t know why."',
-        '"' + (anchor ? anchor + '. ' : '') + 'That\'s when it got quiet in me. I don\'t talk ' + about + ' — you know I don\'t talk ' + about + '. There. It\'s said."',
-      ];
-      if (anchor) cands.push('"' + anchor + '. You asked for the hardest thing — that\'s the door I don\'t open. I\'m opening it. Once."');
-      return cands;
-    },
-    t2fol_hardstory(vid) {
-      const f1 = [
-        '"Don\'t — don\'t look at me like that. I\'m fine. I just needed it said once."',
-        '"That\'s all of it. There isn\'t a second part. There\'s just... the rest of my life, with it in it."',
-      ];
-      const f2 = [
-        '"It changed how I am. I {habitI} when it gets loud in my head. That\'s the scar tissue."',
-        '"I\'m not the person I was before it. I keep meeting that person in my head, and they don\'t recognize me."',
-      ];
-      const f3 = [
-        '"Thank you for hearing it. I won\'t say it again — once was enough. Once was everything."',
-        '"Don\'t bring it up again. Not because I\'m angry — because it\'s done. It\'s out. Let it be out."',
-      ];
-      return [f1, f2, f3];
-    },
-
     // ---------- OTHERS: who's on their mind ----------
     t2pickOther(vid) {
       const v = this.state.village;
@@ -675,16 +457,7 @@
       const vp = this.vpOf(vid);
       const temp = this.npcTemper(vid);
       if (pick.why === 'grievance') {
-        // COHERENCE (Steve 2026-10-07): the grievance story doesn't
-        // reshuffle between conversations — once they've told you what the
-        // history IS, the record holds it and later talk extends the same
-        // thread instead of inventing a new past.
-        let hist = (pick.hist || ['old history'])[0];
-        try {
-          const rec = (typeof this.convoFactRecalled === 'function') ? this.convoFactRecalled(vid, 'otherhist:' + pick.id) : null;
-          if (rec) hist = rec;
-          else if (typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'otherhist:' + pick.id, hist);
-        } catch (e) {}
+        const hist = (pick.hist || ['old history'])[0];
         return [
           '"' + nm + '?" A muscle moves in their jaw. "' + hist + '"',
           '"' + nm + '. We don\'t... it\'s old. Older than the scattering, even. Some things you carry so long they grow into you."',
@@ -692,8 +465,6 @@
         ];
       }
       if (pick.why === 'close') {
-        // On the record: the trust claim, so nothing later contradicts it.
-        try { if (typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'othertrust:' + pick.id, 'pack'); } catch (e) {}
         return [
           '"' + nm + '? I\'d trust ' + nm + ' with my pack. That\'s the highest compliment I have."',
           '"' + nm + ' keeps me sane. Everyone needs one person who\'d notice if they stopped showing up."',
@@ -749,12 +520,10 @@
       const f1 = [
         '"If I could ask it one thing? Why us. Why here. Why like THIS."',
         '"I\'d ask it what it wants to happen. Not what it says — what it actually wants, underneath."',
-        '"I\'d ask if it\'s lonely. That\'s a stupid question. I\'d ask it anyway."',
       ];
       const f2 = [
         '"Do I trust it? I trust it the way I trust weather. It\'s real, it\'s powerful, and it doesn\'t care about my plans."',
         '"Trust is the wrong word. It\'s like trusting the tide. You don\'t — you learn to swim."',
-        '"It gave us powers and forgot food. I don\'t know what that means, but I know what it tells me."',
       ];
       const f3 = [
         '"It\'s changed me. I catch myself performing — for it, for the audience. Then I feel sick about it."',
@@ -793,14 +562,8 @@
       const mistakes = ['trusted too fast, once', 'ate something I shouldn\'t have', 'didn\'t say the thing when I had the chance',
         'tried to carry everything myself', 'assumed tomorrow would be like today'];
       const m = mistakes[Math.floor(Math.random() * mistakes.length)];
-      const f1 = [
-        '"My biggest mistake? I ' + m + '. Cost me. Still paying, some days."',
-        '"I ' + m + '. Don\'t. Whatever it costs you to not do that — pay it."',
-      ];
-      const f2 = [
-        '"What would I do differently? Everything slower. I rushed the beginning and I\'m still catching up."',
-        '"I\'d ask for help sooner. Pride is expensive out here."',
-      ];
+      const f1 = ['"My biggest mistake? I ' + m + '. Cost me. Still paying, some days."'];
+      const f2 = ['"What would I do differently? Everything slower. I rushed the beginning and I\'m still catching up."'];
       const f3 = [
         '"The real advice? Be useful. Not impressive — useful. Impressive fades by dinner."',
         '"And this: learn people\'s names. All of them. It\'s the cheapest thing you can give and the dearest."',
@@ -813,28 +576,22 @@
       const vp = this.vpOf(vid);
       const p = this.t2pers(vp);
       const grief = (this.state.village.grief || 0) > 0;
-      // The name comes from their lifeseed — a real person from their life,
-      // never an invented name (Steve 2026-10-07 coherence fix).
-      const seedName = this.t2seedName(vid);
       const cands = [
         '"There was someone. There\'s always someone, isn\'t there?" A small, private smile.',
         '"I tell myself ' + (p.hope || 'we\'ll find each other') + '. Some days I even believe it."',
       ];
       if (grief) cands.push('"After this week — losing people — I don\'t know. I hope they\'re somewhere warm. That\'s all I\'ve got."');
-      if (seedName && this.t2trust(vid) >= 60) cands.push('"Their name was ' + seedName + '. I haven\'t said that out loud in months."');
-      if (this.t2trust(vid) >= 75 && seedName) cands.push('"' + seedName + '. If you ever meet them — tell them I kept the fire going."');
+      if (this.t2trust(vid) >= 60) cands.push('"Their name was ' + ['Mara', 'Ellis', 'June', 'Theo', 'Wren', 'Silas'][Math.floor(Math.random() * 6)] + '. I haven\'t said that out loud in months."');
       return cands;
     },
     t2fol_loved(vid) {
       const f1 = [
         '"If I saw them tomorrow? I wouldn\'t even speak at first. I\'d just... check. Hands, face. Make sure they\'re real."',
         '"I rehearse it, you know. What I\'d say. It\'s never the right words. It never needs to be."',
-        '"I\'d know them anywhere. Even changed, even older. Some people you don\'t see with your eyes."',
       ];
       const f2 = [
         '"Do I think they\'re alive? ...I have to. The alternative doesn\'t leave room for anything else."',
         '"Some nights I\'m sure. Some nights I do the math and it doesn\'t work. I choose the sure nights."',
-        '"Alive? I don\'t know. Hoping? Every day. Those are different questions and I answer them differently."',
       ];
       const vp = this.vpOf(vid);
       const f3 = [
@@ -884,29 +641,21 @@
       const ev = this.t2LatelyEvent(vid);
       const kind = ev ? ev.kind : 'none';
       const cope = {
-        mourning: ['"I {habitI}. It doesn\'t bring anyone back. It just keeps my hands from shaking."',
-          '"I keep busy. Grief hates an idle pair of hands — I learned that fast."'],
-        threat: ['"I sleep with my boots on now. That\'s where we are."',
-          '"I check the treeline every hour. It\'s probably nothing. Probably."'],
+        mourning: ['"I {habitI}. It doesn\'t bring anyone back. It just keeps my hands from shaking."'],
+        threat: ['"I sleep with my boots on now. That\'s where we are."'],
         betrayal: ['"I\'m watching. That\'s what I do now — I watch."'],
-        tension: ['"I stay out of it. Mostly. It\'s getting harder."',
-          '"I talk to both sides and agree with neither. It\'s exhausting."'],
-        hunger: ['"Small meals. Slow. Pretend it\'s a choice."',
-          '"I chew longer. Tricks the stomach, a little. A little is something."'],
+        tension: ['"I stay out of it. Mostly. It\'s getting harder."'],
+        hunger: ['"Small meals. Slow. Pretend it\'s a choice."'],
         gratitude: ['"I\'ll pay it forward. That\'s the only math that works."'],
         cheer: ['"I\'m letting myself feel it. That\'s new."'],
         none: ['"Ask me tomorrow. Everything changes by tomorrow."'],
       };
       const next = {
-        mourning: ['"We bury, we grieve, we keep going. There\'s no step four."',
-          '"Someone should say something proper. I might. I\'m still finding the words."'],
-        threat: ['"We set a better watch. We always say that. This time we mean it."',
-          '"Nobody goes out alone. That\'s the rule now — I don\'t care who complains."'],
+        mourning: ['"We bury, we grieve, we keep going. There\'s no step four."'],
+        threat: ['"We set a better watch. We always say that. This time we mean it."'],
         betrayal: ['"Either it gets talked out or it festers. I know which one I\'d bet on."'],
-        tension: ['"Someone has to say the thing nobody\'s saying. Probably won\'t be me."',
-          '"It\'ll break or it won\'t. I\'m done trying to hold it together with my hands."'],
-        hunger: ['"We need food. Everything else is decoration until that\'s solved."',
-          '"Eat the ugly roots first. Save the good stuff for when it gets worse."'],
+        tension: ['"Someone has to say the thing nobody\'s saying. Probably won\'t be me."'],
+        hunger: ['"We need food. Everything else is decoration until that\'s solved."'],
         gratitude: ['"Maybe we\'re becoming something. Something that helps."'],
         cheer: ['"More of this. Whatever this was — more."'],
         none: ['"Same as always: we endure."'],

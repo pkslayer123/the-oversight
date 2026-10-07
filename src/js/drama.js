@@ -2,13 +2,13 @@
 // system: drama
 // description: Drama overlay — loosely-bound animation layer for emphasis.
 // provides:
-//   - ensureOverlay(): creates the .drama-overlay div over the grid
-//   - hit(x, y, opts): impact starburst at grid coords (tile center, but free-floating)
-//   - floatText(x, y, text, opts): damage numbers / labels that drift up and fade
-//   - flash(opts): full-screen color pulse for big moments
-//   - shake(opts): screen shake (transform on grid container, GPU-cheap)
-//   - heroCard(title, subtitle, icon): centered high-res moment card (synergy, integration)
-//   - soulWisp(x, y): death wisp floats up from tile
+//   - ensureOverlay: creates the .drama-overlay div over the grid
+//   - hit: impact starburst at grid coords (tile center, but free-floating)
+//   - floatText: damage numbers / labels that drift up and fade
+//   - flash: full-screen color pulse for big moments
+//   - shake: screen shake (transform on grid container, GPU-cheap)
+//   - heroCard: centered high-res moment card (synergy, integration)
+//   - soulWisp: death wisp floats up from tile
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).

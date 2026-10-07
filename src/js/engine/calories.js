@@ -77,8 +77,7 @@
     scholar.health = Math.max(0, scholar.health);
     // village metabolism lives in game.js (villageEats) — single owner, tuned net drain.
     // the engine only runs the scholar's own body here.
-    // burned: the gross basal number, so the caller can voice it — no silent actions.
-    return { ok: scholar.health > 0, warnings, burned: need };
+    return { ok: scholar.health > 0, warnings };
   }
 
   global.Scattering = global.Scattering || {};

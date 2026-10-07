@@ -1,6 +1,6 @@
 // @ontology
 // system: villager-agency
-// description: Villager AI. Villagers act on their own with goals, routines, and grid-visible daily rhythms.
+// description: Villager AI. Villagers act on their own with goals and routines.
 // provides:
 //   - agencyState(vid)
 //   - agencyTick()
@@ -8,25 +8,10 @@
 //   - agencyScore(vid)
 //   - recordDeed(vid, deed)
 //   - startExpedition(vid)
-//   - agencyDaylifeTick()
-//   - daylifeOf(vid)
-//   - daylifeLine(vid)
-//   - daylifeWeight(vid, id, ctx)
-//   - daylifePersonalityMult(vid, id)
-//   - daylifeSignature(vid)
-//   - villagerTileBadge(vid)
 // rules:
-//   - (daylife) at-Haven villagers get one activity per day-part, weighted by temperament, goal, occupation, age, needs, and village state (code: villager-agency.js)
-//   - (daylife) grid positions nudge one cell per part, never onto the player, another villager, or a blocking cell (code: villager-agency.js)
-//   - (daylife) the observed activity line prefixes the person sheet via the personActivityLine wrap; names stay knowledge-gated through displayName (code: villager-agency.js)
-//   - (daylife) downtime is scheduled: ~28% of part transitions become breathers instead of new jobs (code: villager-agency.js)
+//   - (none documented)
 // consumes:
-//   - village.pantry (pantryKcalLive)
-//   - scholar.dayPart
-//   - genDetail()
-//   - cellProps()
-//   - dominantNeed()
-//   - registerDeath()
+//   - village.villagers
 /* VILLAGER AGENCY — src/js/villager-agency.js
  *
  * Steve: "Villagers need to be encountering these and more as they wander
@@ -57,11 +42,6 @@
  * 4. INTEGRATION — the mantle: deeds earn trust, so the village's choice of
  *    successor (playerDeath sorts by trust) naturally favors the explorer
  *    who became someone.
- * 5. DAYLIFE — grid-visible daily rhythms. Once per day-part, every at-Haven
- *    villager gets an activity (fire-tending, mending, cooking, watching,
- *    resting, mourning...) derived from temperament, goal, occupation, age,
- *    needs, and village state. Positions nudge on the 9x9 grid, the person
- *    sheet shows what they're doing, downtime is scheduled in. Never blocks.
  *
  * Nothing here is artificial: achievements come from the sim doing real
  * things (expedition legs, encounter rolls, returns), reported honestly.
@@ -90,109 +70,6 @@
     mapped_far: 3, survived_hurt: 2, taught: 1,
   };
 
-  // DAYLIFE_ACTS: the visible daily rhythms. parts = weight per day-part
-  // [dawn, midday, dusk, night]. anchor = grid landmark to drift toward
-  // ('fire' | 'hall' | 'water' | 'edge' | 'any'). line = observed present-tense
-  // for the person sheet. say = rare ambient line when the player is at Haven.
-  var DAYLIFE_ACTS = {
-    // --- dawn ---
-    rekindle_fire: { e: '🔥', parts: [4, 0, 0, 0], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' coaxing the fire back to life, breath slow and steady.'; },
-      say: ['pokes the fire awake, not saying much yet.'] },
-    quiet_hour: { e: '🌅', parts: [3, 0, 0, 0], anchor: 'edge',
-      line: function (P) { return P.They + ' ' + P.are + ' sitting apart, watching the light come up.'; },
-      say: ['watches the sun come up, alone with it.'] },
-    early_forage: { e: '🌿', parts: [2, 1, 0, 0], anchor: 'edge',
-      line: function (P) { return P.They + ' ' + P.are + ' already at the treeline, basket in hand.'; },
-      say: ['heads for the treeline while the dew is still on.'] },
-    // --- midday ---
-    forage_near: { e: '🌿', parts: [0, 4, 2, 0], anchor: 'edge',
-      line: function (P) { return P.They + ' ' + P.are + ' working the near patches, bending and straightening.'; },
-      say: ['works the near patches, steady as rain.'] },
-    mend_gear: { e: '🧵', parts: [0, 3, 2, 0], anchor: 'any',
-      line: function (P) { return P.They + ' ' + P.are + ' mending straps and cordage, fingers quick.'; },
-      say: function (P) { return 'mends gear, humming under ' + P.their + ' breath.'; } },
-    cook_meal: { e: '🍲', parts: [1, 3, 0, 0], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' cooking, tasting, adjusting — the pot smells like survival.'; },
-      say: function (P) { return 'tends the cookpot like it owes ' + P.them + ' money.'; } },
-    chop_wood: { e: '🪓', parts: [0, 3, 1, 0], anchor: 'edge',
-      line: function (P) { return P.They + ' ' + P.are + ' splitting wood, each swing landing true.'; },
-      say: ['splits wood — the pile is getting respectable.'] },
-    repair_hall: { e: '🔨', parts: [0, 3, 2, 0], anchor: 'hall',
-      line: function (P) { return P.They + ' ' + P.are + ' fixing something in the hall, muttering at it fondly.'; },
-      say: ['fixes the hall, one muttered curse at a time.'] },
-    teach_kids: { e: '📖', parts: [0, 2, 0, 0], anchor: 'hall',
-      line: function (P) { return P.They + ' ' + P.are + ' showing the young ones something worth knowing.'; },
-      say: ['has the kids gathered, teaching something real.'] },
-    haul_water: { e: '💧', parts: [0, 3, 2, 0], anchor: 'water',
-      line: function (P) { return P.They + ' ' + P.are + ' hauling water, shoulders set against the weight.'; },
-      say: ['hauls water without being asked.'] },
-    tend_sick: { e: '🩹', parts: [0, 2, 2, 0], anchor: 'hall',
-      line: function (P) { return P.They + ' ' + P.are + ' checking on the hurt, gentle and unhurried.'; },
-      say: function (P) { return 'checks on the hurt — nobody asked ' + P.them + ' to.'; } },
-    watch_ridge: { e: '👀', parts: [0, 2, 3, 0], anchor: 'edge',
-      line: function (P) { return P.They + ' ' + P.are + ' standing the lookout, eyes on the far line.'; },
-      say: ['stands the lookout, not missing much.'] },
-    trade_talk: { e: '💬', parts: [0, 2, 2, 0], anchor: 'any',
-      line: function (P) { return P.They + ' ' + P.are + ' trading news and stories with whoever stops.'; },
-      say: ['trades stories for news, both directions.'] },
-    // --- dusk ---
-    cook_evening: { e: '🍲', parts: [0, 0, 4, 0], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' getting supper going — the smell pulls people in.'; },
-      say: ['starts supper. The smell does half the talking.'] },
-    tend_fire: { e: '🔥', parts: [0, 0, 3, 1], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' tending the fire, feeding it just enough.'; },
-      say: ['tends the fire like it is a person.'] },
-    story_fire: { e: '📜', parts: [0, 0, 3, 1], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' telling a story by the fire — people are leaning in.'; },
-      say: ['tells a story by the fire. People lean in.'] },
-    tune_gear: { e: '🎒', parts: [0, 0, 3, 0], anchor: 'any',
-      line: function (P) { return P.They + ' ' + P.are + ' going over ' + P.their + ' pack by feel, readying for tomorrow.'; },
-      say: ['repacks by feel, ready for tomorrow.'] },
-    settle_quarrel: { e: '⚖️', parts: [0, 1, 2, 0], anchor: 'hall',
-      line: function (P) { return P.They + ' ' + P.are + ' talking two people down from something stupid.'; },
-      say: ['talks two people down from something stupid.'] },
-    // --- night ---
-    sleep_hall: { e: '😴', parts: [0, 0, 0, 12], anchor: 'hall',
-      line: function (P) { return P.They + ' ' + P.are + ' asleep in the hall, breathing deep.'; },
-      say: null },
-    watch_night: { e: '🌙', parts: [0, 0, 0, 2], anchor: 'edge',
-      line: function (P) { return P.They + ' ' + P.are + ' on night watch, still as a post.'; },
-      say: ['takes the night watch without fanfare.'] },
-    sit_quiet: { e: '🌌', parts: [0, 0, 1, 1.5], anchor: 'any',
-      line: function (P) { return P.They + ' ' + P.are + ' sitting up with ' + P.their + ' thoughts, not sleeping.'; },
-      say: ['sits up late, not sleeping, not talking.'] },
-    tend_fire_late: { e: '🔥', parts: [0, 0, 0, 2], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' feeding the fire through the small hours.'; },
-      say: ['keeps the fire alive through the small hours.'] },
-    // --- downtime (scheduled, not a gap) ---
-    sit_breather: { e: '🌾', parts: [1, 1, 1, 0.5], anchor: 'any',
-      line: function (P) { return P.They + ' ' + P.are + ' taking a breather, watching the world go by.'; },
-      say: ['takes a breather, watching the world go by.'] },
-    // --- village-state reactions ---
-    worry_stores: { e: '😟', parts: [1, 2, 2, 0], anchor: 'hall',
-      line: function (P) { return P.They + ' ' + P.are + ' counting stores with ' + P.their + ' eyes, doing the math nobody likes.'; },
-      say: ['counts the stores twice. Does not like the number.'] },
-    mourn_quiet: { e: '🕯️', parts: [1, 2, 3, 1], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' quiet by the fire. The village is smaller than it was.'; },
-      say: ['sits by the fire, quiet. The village is smaller now.'] },
-    retell_story: { e: '📣', parts: [0, 2, 3, 1], anchor: 'fire',
-      line: function (P) { return P.They + ' ' + P.are + ' retelling what happened out there — the story is growing legs.'; },
-      say: ['retells the big story. It is growing legs.'] },
-  };
-
-  var DAYLIFE_SHORT = {
-    rekindle_fire: 'fire', cook_meal: 'cooking', cook_evening: 'cooking',
-    sleep_hall: 'asleep', watch_night: 'watch', watch_ridge: 'watch',
-    forage_near: 'forage', early_forage: 'forage', tend_fire: 'fire',
-    tend_fire_late: 'fire', story_fire: 'story', retell_story: 'story',
-    teach_kids: 'teaching', haul_water: 'water', mend_gear: 'mending',
-    repair_hall: 'repairing', chop_wood: 'wood', trade_talk: 'talking',
-    sit_breather: 'resting', sit_quiet: 'quiet', quiet_hour: 'quiet',
-    tune_gear: 'packing', tend_sick: 'tending', settle_quarrel: 'peacemaking',
-    worry_stores: 'worried', mourn_quiet: 'mourning',
-  };
-
   var methods = {
 
     // ---------- STATE ----------
@@ -210,8 +87,6 @@
       a.ach = a.ach || [];
       a.stats = a.stats || {};
       a.teachable = a.teachable || {};
-      a.daylife = a.daylife || {};       // vid -> { act, until, anchor }
-      a.recentDeaths = a.recentDeaths || []; // [{ vid, day, part, name }]
       // transfer high-potential seeds planted at genRoster time
       if (this._pendingPotential && !a._potTransferred) {
         for (var i = 0; i < this._pendingPotential.length; i++) {
@@ -325,8 +200,6 @@
       try { this.agencyLeadershipTick(); } catch (e) {}
       // the village talks about what its people did. Ambient, honest.
       try { if (playerAtHaven && R() < 0.12) this.agencyDeedTalk(); } catch (e) {}
-      // daily rhythms: who is doing what, where on the grid, right now.
-      try { this.agencyDaylifeTick(); } catch (e) {}
     },
     startExpedition(vid, hx, hy, announce) {
       var a = this.agencyOf(vid);
@@ -765,52 +638,19 @@
     },
     agencyChoices(vid) {
       try {
-        var out = [];
-        var rec = this.daylifeOf ? this.daylifeOf(vid) : null;
-        if (rec && rec.act !== 'sleep_hall') out.push({ id: 'agency:ask_daylife', label: '"What are you working on?"' });
         var lessons = this.npcFieldLessons(vid);
-        if (!lessons.length) return out;
+        if (!lessons.length) return [];
         var v = this.state.village;
         if (v.explorerNews && v.explorerNews[vid] && v.explorerNews[vid].agency) {
-          return [{ id: 'agency:ask_expedition', label: '"What did you see out there?"' }].concat(out);
+          return [{ id: 'agency:ask_expedition', label: '"What did you see out there?"' }];
         }
-        return [{ id: 'agency:ask_field', label: '"Teach me something from the wild."' }].concat(out);
+        return [{ id: 'agency:ask_field', label: '"Teach me something from the wild."' }];
       } catch (e) { return []; }
     },
     agencyTurn(vid, choiceId) {
       var st = this.agencyState();
       var nm = '';
       try { nm = this.displayName(vid).split(' ')[0]; } catch (e) { nm = 'They'; }
-      if (choiceId === 'agency:ask_daylife') {
-        var rec = null;
-        try { rec = this.daylifeOf(vid); } catch (e) {}
-        var work = {
-          cook_meal: '"Supper. Same job, different day. It matters more than it looks."',
-          cook_evening: '"Supper. People eat together or they drift apart — I pick together."',
-          rekindle_fire: '"Fire first. Everything else is negotiable."',
-          tend_fire: '"Somebody has to feed it. Today that is me."',
-          chop_wood: '"Wood. The pile does not lie about how the winter will go."',
-          haul_water: '"Water. Heavy, boring, and the reason we are all still here."',
-          mend_gear: '"Mending. Everything breaks; the trick is fixing it before it matters."',
-          repair_hall: '"The hall. It keeps us, so I keep it."',
-          watch_ridge: '"Watching. Boring is good. Boring means nothing is coming."',
-          watch_night: '"Night watch. Sleep is for people somebody is watching over."',
-          forage_near: '"Near patches. You learn what is close before you earn what is far."',
-          tend_sick: '"Checking on people. Somebody should."',
-          teach_kids: '"Teaching. They will need it longer than I will."',
-          story_fire: '"Stories. How else do we remember what the fire already knows?"',
-          trade_talk: '"News. A village that stops talking stops being one."',
-          sit_breather: '"Resting. Even the fire banks its coals."',
-          worry_stores: '"Counting. Somebody has to do the math nobody likes."',
-          mourn_quiet: '"...Just sitting. Some days that is the whole job."',
-          retell_story: '"Telling it again. The true parts get truer."',
-          tune_gear: '"Packing for tomorrow. Tomorrow comes whether you are ready or not."',
-          settle_quarrel: '"Peacemaking. Somebody has to be the adult in the room."',
-        };
-        var line = (rec && work[rec.act]) ? work[rec.act] : '"This. Whatever this is, somebody has to do it."';
-        try { this.bumpTrust(vid, 1); } catch (e) {}
-        return { line: line, choices: this.convoChoices(vid), ended: false };
-      }
       if (choiceId === 'agency:ask_expedition' || choiceId === 'agency:ask_field') {
         var v = this.state.village;
         var k = st.know[vid] || { plants: 0, monsters: 0, places: [] };
@@ -861,421 +701,6 @@
       var seeds = [];
       for (var k = 0; k < n; k++) seeds.push({ id: shuffled[k], kind: kinds[k % kinds.length] });
       this._pendingPotential = seeds;
-    },
-
-    // ---------- 6. DAYLIFE: grid-visible daily rhythms ----------
-    // Steve's interface directive: villagers behave like monsters — visible in
-    // the 9x9 grid with name + person emoji, going about their day turn-based
-    // with downtime, never blocking the player.
-    //
-    // Once per day-part (via agencyTick), every at-Haven villager gets a
-    // day-life activity: a visible behavior with a grid position, an observed
-    // line for the person sheet (through the personActivityLine wrap), and
-    // rarely an ambient say-line when you're there to hear it. Activities are
-    // weighted by temperament, goal, occupation, age, needs, and village
-    // state (pantry, recent deaths, big deeds) — people read as distinct
-    // individuals, not clones. ~28% of part transitions become breathers:
-    // downtime is part of the day, not a gap in it.
-    //
-    // GRID RULES (hard): positions nudge one cell per part, never onto the
-    // player's cell, never onto another villager, never onto a blocking cell.
-    // No scrolling-relevant changes — grid + person sheet only.
-    agencyDaylifeTick() {
-      if (this.over) return;
-      var v = this.state.village, s = this.state.scholar;
-      var a = this.agencyState();
-      var hx = v.px ?? 3, hy = v.py ?? 3;
-      var day = s.day || 0, part = this.dayPart || 0;
-      var key = day + ':' + part;
-      // village-state context, read once per part
-      var pop = Math.max(1, (v.roster || []).length);
-      var kcal = 0;
-      try { kcal = this.pantryKcalLive ? this.pantryKcalLive(v) : 0; } catch (e) {}
-      var pantryLow = kcal < 500 * pop;
-      var deathRecent = false;
-      try {
-        for (var di = 0; di < a.recentDeaths.length; di++) {
-          if ((day - a.recentDeaths[di].day) <= 2) { deathRecent = true; break; }
-        }
-      } catch (e) {}
-      var deedRecent = false;
-      try {
-        for (var ai = a.ach.length - 1; ai >= 0; ai--) {
-          if (a.ach[ai].mag >= 8 && (day - a.ach[ai].day) <= 2) { deedRecent = true; break; }
-        }
-      } catch (e) {}
-      var playerAtHaven = false;
-      try { playerAtHaven = (this.map.px === hx && this.map.py === hy); } catch (e) {}
-      var withYou = [];
-      try { withYou = this.travelingWith() || []; } catch (e) {}
-      // the night watch: two villagers, rotating nightly, drawn from the
-      // watchful. Everyone else sleeps. A village where half the roster
-      // stands watch every night doesn't read as night.
-      var watchers = [];
-      if (part === 3) {
-        try {
-          var cands = [];
-          var wroster = v.roster || [];
-          for (var wi = 0; wi < wroster.length; wi++) {
-            var wid = wroster[wi];
-            if (wid === this.villagerId) continue;
-            var wvp = null;
-            try { wvp = this.vpOf(wid); } catch (e) {}
-            if (wvp && wvp.dead) continue;
-            var wn = null;
-            try { wn = this.npcNode(wid); } catch (e) { continue; }
-            if (!wn || wn.nx !== hx || wn.ny !== hy) continue;
-            if (a.exped && a.exped[wid]) continue;
-            cands.push([wid, this.daylifePersonalityMult(wid, 'watch_night')]);
-          }
-          cands.sort(function (x, y) { return y[1] - x[1]; });
-          var n = Math.max(1, cands.length);
-          var h = 0;
-          try { h = this._hashStr ? this._hashStr('watch:' + day) : 0; } catch (e) {}
-          var off = ((h % n) + n) % n;
-          for (var k = 0; k < Math.min(2, cands.length); k++) watchers.push(cands[(off + k) % n][0]);
-        } catch (e) {}
-      }
-      var ctx = {
-        part: part, pantryLow: pantryLow, deathRecent: deathRecent,
-        deedRecent: deedRecent, challenge: !!v.challenge, watchers: watchers,
-      };
-      var said = 0;
-      var roster = v.roster || [];
-      for (var i = 0; i < roster.length; i++) {
-        var rid = roster[i];
-        if (rid === this.villagerId) continue;
-        var vp = null;
-        try { vp = this.vpOf(rid); } catch (e) {}
-        if (vp && vp.dead) continue;
-        try { if (this.isEngaged(rid)) continue; } catch (e) {}
-        if (withYou.indexOf(rid) !== -1) continue;
-        if (a.exped && a.exped[rid]) continue; // out on expedition — that IS their day
-        var node = null;
-        try { node = this.npcNode(rid); } catch (e) { continue; }
-        if (!node || node.nx !== hx || node.ny !== hy) continue;
-        var rec = a.daylife[rid];
-        if (rec && !this.daylifeExpired(rec, key)) { this.daylifeNudge(rid, rec); continue; }
-        // downtime: a breather between jobs reads as a real day. (Not at
-        // night — at night people sleep; the watch is a job, not a breather.)
-        if (rec && rec.act !== 'sit_breather' && R() < (part === 3 ? 0.06 : 0.28)) {
-          rec = this.daylifeSet(rid, 'sit_breather', key, 1);
-        } else {
-          rec = this.daylifeSet(rid, this.daylifePick(rid, ctx), key, 1);
-        }
-        // ambient say: the village sounds alive when you're there to hear it
-        if (playerAtHaven && said < 2) {
-          var def = DAYLIFE_ACTS[rec.act] || {};
-          if (def.say && R() < 0.35) {
-            said++;
-            var nm = '';
-            try { nm = this.displayName(rid).split(' ')[0]; } catch (e) { nm = 'Someone'; }
-            var txt = def.say;
-            if (typeof txt === 'function') { try { txt = [txt(this.daylifePro(rid))]; } catch (e) { txt = []; } }
-            if (txt && txt.length) this.say((def.e || '🧍') + ' ' + nm + ' ' + pick(txt));
-          }
-        }
-        this.daylifeNudge(rid, rec);
-      }
-    },
-    daylifeSet(vid, actId, key, dur) {
-      var a = this.agencyState();
-      a.daylife[vid] = {
-        act: actId,
-        until: this.daylifeAdvanceKey(key, dur || 1),
-        anchor: (DAYLIFE_ACTS[actId] || {}).anchor || 'any',
-      };
-      return a.daylife[vid];
-    },
-    daylifeAdvanceKey(key, n) {
-      var p = String(key).split(':');
-      var d = parseInt(p[0], 10) || 0, pt = parseInt(p[1], 10) || 0;
-      pt += n;
-      while (pt >= 4) { pt -= 4; d++; }
-      return d + ':' + pt;
-    },
-    daylifeExpired(rec, key) {
-      if (!rec || !rec.until) return true;
-      var ua = String(rec.until).split(':'), ub = String(key).split(':');
-      var da = parseInt(ua[0], 10) || 0, pa = parseInt(ua[1], 10) || 0;
-      var db = parseInt(ub[0], 10) || 0, pb = parseInt(ub[1], 10) || 0;
-      // an activity is valid for exactly its own part: expired once the
-      // current part reaches or passes `until` (set one part ahead).
-      return (db > da) || (db === da && pb >= pa);
-    },
-    // daylifeOf: the current activity record, or null if expired/absent.
-    // JSON-safe: { act, until, anchor }. Lines are computed, never stored.
-    daylifeOf(vid) {
-      var a = this.agencyState();
-      var rec = a.daylife[vid];
-      if (!rec) return null;
-      var s = this.state.scholar;
-      var key = (s.day || 0) + ':' + (this.dayPart || 0);
-      if (this.daylifeExpired(rec, key)) return null;
-      return rec;
-    },
-    daylifePick(vid, ctx) {
-      var ids = Object.keys(DAYLIFE_ACTS);
-      var total = 0, acc = [];
-      for (var i = 0; i < ids.length; i++) {
-        var w = this.daylifeWeight(vid, ids[i], ctx);
-        if (w > 0) { total += w; acc.push([ids[i], total]); }
-      }
-      if (!total) return 'sit_breather';
-      var r = R() * total;
-      for (var j = 0; j < acc.length; j++) if (r < acc[j][1]) return acc[j][0];
-      return acc[acc.length - 1][0];
-    },
-    // daylifePersonalityMult: who this person is, answered by their fields.
-    // Temperament, goal, occupation, age — no day-part, no village state.
-    // Also ranks the villager's SIGNATURE (top-3 affinity acts, cached):
-    // people have routines, and different people have different ones.
-    daylifePersonalityMult(vid, id) {
-      var w = 1;
-      var temp = 'steady', goal = null, occ = '', age = 35;
-      try {
-        var vp = this.vpOf(vid) || {};
-        var pers = vp.personality || {};
-        temp = pers.temperament || 'steady';
-        goal = vp.goal || this.npcGoal(vid);
-        occ = vp.occupationId || vp.occupation || '';
-        age = vp.age || 35;
-      } catch (e) {}
-      var mul = function (x) { w *= x; };
-      // temperament: the day bends around who they are
-      if (temp === 'bold') { if (id === 'watch_ridge' || id === 'watch_night' || id === 'early_forage') mul(2.2); }
-      else if (temp === 'withdrawn') {
-        if (id === 'quiet_hour' || id === 'sit_quiet') mul(2.6);
-        if (id === 'trade_talk' || id === 'story_fire' || id === 'retell_story') mul(0.35);
-      }
-      else if (temp === 'gentle') { if (id === 'tend_sick' || id === 'teach_kids') mul(2.2); if (id === 'chop_wood') mul(0.6); }
-      else if (temp === 'restless') { if (id === 'early_forage' || id === 'tend_fire_late' || id === 'forage_near') mul(2); if (id === 'sit_breather') mul(0.5); }
-      else if (temp === 'intense') { if (id === 'repair_hall' || id === 'chop_wood' || id === 'haul_water') mul(2); }
-      else if (temp === 'cautious') { if (id === 'watch_night' || id === 'watch_ridge') mul(2); if (id === 'early_forage') mul(0.5); }
-      else if (temp === 'warm') { if (id === 'cook_meal' || id === 'cook_evening' || id === 'story_fire' || id === 'trade_talk') mul(1.8); }
-      else if (temp === 'dry') { if (id === 'trade_talk') mul(2.2); }
-      else if (temp === 'prickly') { if (id === 'trade_talk' || id === 'teach_kids') mul(0.6); if (id === 'mend_gear' || id === 'tune_gear') mul(1.6); }
-      else if (temp === 'anxious') {
-        if (id === 'worry_stores' || id === 'sit_quiet') mul(2.2);
-        if (id === 'watch_ridge' || id === 'watch_night') mul(1.5);
-        if (id === 'trade_talk' || id === 'story_fire') mul(0.6);
-      }
-      // goal: what they're reaching for shapes the hours
-      if (goal === 'lead' && (id === 'settle_quarrel' || id === 'watch_ridge')) mul(2);
-      if (goal === 'heal' && id === 'tend_sick') mul(2.6);
-      if (goal === 'protect' && (id === 'watch_ridge' || id === 'watch_night')) mul(2.6);
-      if (goal === 'explore' && (id === 'early_forage' || id === 'tune_gear')) mul(2);
-      if (goal === 'prove' && (id === 'chop_wood' || id === 'haul_water')) mul(1.8);
-      if (goal === 'escape' && (id === 'early_forage' || id === 'forage_near')) mul(1.6);
-      if (goal === 'alone') {
-        if (id === 'quiet_hour' || id === 'sit_quiet') mul(2.5);
-        if (id === 'trade_talk' || id === 'story_fire' || id === 'retell_story') mul(0.4);
-      }
-      if (goal === 'feed') {
-        if (id === 'cook_meal' || id === 'cook_evening') mul(2.5);
-        if (id === 'forage_near' || id === 'worry_stores') mul(2);
-      }
-      if (goal === 'belong' && (id === 'trade_talk' || id === 'story_fire' || id === 'cook_evening')) mul(2);
-      if (goal === 'remember' && (id === 'story_fire' || id === 'retell_story')) mul(2.2);
-      if (goal === 'survive' && (id === 'forage_near' || id === 'chop_wood' || id === 'haul_water')) mul(1.8);
-      if (goal === 'understand' && (id === 'watch_ridge' || id === 'trade_talk' || id === 'tune_gear')) mul(1.6);
-      if (goal === 'family' && (id === 'trade_talk' || id === 'watch_ridge')) mul(1.8);
-      // occupation: hands remember their trade
-      if (/line_cook|baker|butcher|gardener|farmer|beekeeper|chef|bartender/.test(occ) && (id === 'cook_meal' || id === 'cook_evening')) mul(3);
-      if (/er_nurse|paramedic|midwife|dentist|pharmacist|veterinarian|physical_therapist|army_medic/.test(occ) && id === 'tend_sick') mul(3);
-      if (/carpenter|mechanic|plumber|electrician|welder|roofer|mason|hvac_tech|appliance_repair|locksmith|blacksmith|glazier/.test(occ) && id === 'repair_hall') mul(3);
-      if (/police_officer|firefighter|soldier/.test(occ) && (id === 'watch_ridge' || id === 'watch_night')) mul(2.5);
-      if (/esl_teacher|librarian|interpreter|social_worker/.test(occ) && (id === 'teach_kids' || id === 'settle_quarrel')) mul(2.5);
-      if (/hunting_guide|fishing_guide|trail_crew|fisherman|forager|mushroom_grower|rancher|farmer/.test(occ) && (id === 'forage_near' || id === 'early_forage' || id === 'mend_gear')) mul(2);
-      if (/tailor|sailor/.test(occ) && id === 'mend_gear') mul(2.5);
-      if (/sailor|truck_driver/.test(occ) && id === 'haul_water') mul(2);
-      if (/journalist|bartender/.test(occ) && id === 'trade_talk') mul(2.5);
-      if (/artist|musician/.test(occ) && id === 'story_fire') mul(2.5);
-      // age: elders teach and tell; the young carry and chop
-      if (age > 55) { if (id === 'story_fire' || id === 'teach_kids' || id === 'sit_breather') mul(2.2); if (id === 'chop_wood' || id === 'haul_water') mul(0.4); }
-      else if (age < 30) { if (id === 'chop_wood' || id === 'haul_water' || id === 'early_forage') mul(1.8); if (id === 'sit_breather') mul(0.6); }
-      return w;
-    },
-    // daylifeSignature: this person's top-3 affinity acts — their routine.
-    // Cached; deterministic. The signature boost is what makes villagers
-    // read as distinct individuals instead of weighted mush.
-    daylifeSignature(vid) {
-      var a = this.agencyState();
-      a._sig = a._sig || {};
-      if (a._sig[vid]) return a._sig[vid];
-      var ids = Object.keys(DAYLIFE_ACTS);
-      var scores = [];
-      for (var i = 0; i < ids.length; i++) {
-        var def = DAYLIFE_ACTS[ids[i]];
-        var span = (def.parts[0] || 0) + (def.parts[1] || 0) + (def.parts[2] || 0) + (def.parts[3] || 0);
-        // (mult - 1): only genuine affinities rank. A villager with no strong
-        // pulls gets a neutral fallback routine instead of amplified noise.
-        scores.push([ids[i], (this.daylifePersonalityMult(vid, ids[i]) - 1) * (1 + span)]);
-      }
-      scores.sort(function (x, y) { return y[1] - x[1]; });
-      var sig = [scores[0][0], scores[1][0], scores[2][0]];
-      a._sig[vid] = sig;
-      return sig;
-    },
-    // daylifeWeight: the full pick weight — day-part base, personality,
-    // signature routine, needs, and village state.
-    daylifeWeight(vid, id, ctx) {
-      var def = DAYLIFE_ACTS[id];
-      if (!def) return 0;
-      var base = def.parts[ctx.part] || 0;
-      if (base <= 0) return 0;
-      var w = base * this.daylifePersonalityMult(vid, id);
-      try {
-        var sig = this.daylifeSignature(vid);
-        if (sig.indexOf(id) !== -1) w *= 5;
-      } catch (e) {}
-      // night is for sleeping — unless you're on the watch rotation. The watch
-      // is two people, not a temperament; everyone else sleeps. That's what
-      // makes night read as night.
-      if (id === 'sleep_hall') {
-        var watchful = 1;
-        try { watchful = this.daylifePersonalityMult(vid, 'watch_night'); } catch (e) {}
-        w *= watchful > 1.5 ? 0.8 : 1.7;
-      }
-      if (id === 'watch_night') {
-        var onWatch = !!(ctx.watchers && ctx.watchers.indexOf(vid) !== -1);
-        w *= onWatch ? 3 : 0.12;
-      }
-      var need = null;
-      try { need = this.dominantNeed(vid); } catch (e) {}
-      // needs: the body gets a vote
-      if (need === 'hunger' && (id === 'forage_near' || id === 'cook_meal' || id === 'cook_evening' || id === 'early_forage')) w *= 2;
-      if (need === 'exhaustion' && (id === 'sit_breather' || id === 'sleep_hall' || id === 'sit_quiet')) w *= 2.5;
-      if (need === 'fear' && (id === 'watch_ridge' || id === 'watch_night' || id === 'sit_quiet' || id === 'sleep_hall')) w *= 1.8;
-      if (need === 'loneliness' && (id === 'trade_talk' || id === 'story_fire' || id === 'cook_evening')) w *= 2;
-      if (need === 'grief' && (id === 'mourn_quiet' || id === 'sit_quiet')) w *= 2.5;
-      // village state: the day reacts to what's real
-      if (ctx.pantryLow) { if (id === 'worry_stores') w *= 4; if (id === 'forage_near' || id === 'early_forage') w *= 2; if (id === 'sit_breather') w *= 0.6; }
-      if (ctx.deathRecent) { if (id === 'mourn_quiet') w *= 5; if (id === 'story_fire' || id === 'retell_story' || id === 'trade_talk') w *= 0.5; }
-      if (ctx.deedRecent && id === 'retell_story') w *= 4;
-      if (ctx.challenge && (id === 'trade_talk' || id === 'settle_quarrel' || id === 'watch_ridge')) w *= 2;
-      return w;
-    },
-    // daylifeNudge: one cell per part toward the activity's anchor. Hard rules:
-    // never onto the player, never onto another villager, never blocking.
-    daylifeNudge(rid, rec) {
-      try {
-        var v = this.state.village;
-        var pos = (v.positions || {})[rid];
-        if (!pos) return;
-        var anchor = this.daylifeAnchorCell((rec && rec.anchor) || 'any');
-        var gx = anchor ? anchor.x : pos.mx, gy = anchor ? anchor.y : pos.my;
-        var pmx = this.state.scholar.mx ?? 4, pmy = this.state.scholar.my ?? 4;
-        var cands = [];
-        for (var ox = -1; ox <= 1; ox++) for (var oy = -1; oy <= 1; oy++) {
-          if (!ox && !oy) continue;
-          cands.push({ x: pos.mx + ox, y: pos.my + oy });
-        }
-        cands.sort(function (p, q) {
-          var dp = Math.abs(p.x - gx) + Math.abs(p.y - gy);
-          var dq = Math.abs(q.x - gx) + Math.abs(q.y - gy);
-          return dp - dq;
-        });
-        for (var i = 0; i < cands.length; i++) {
-          var c = cands[i];
-          if (c.x < 0 || c.x > 8 || c.y < 0 || c.y > 8) continue;
-          if (c.x === pmx && c.y === pmy) continue; // never on the player
-          var taken = false;
-          var pids = v.positions || {};
-          for (var id in pids) {
-            if (id !== rid && pids[id].mx === c.x && pids[id].my === c.y) { taken = true; break; }
-          }
-          if (taken) continue;
-          var cell = this.daylifeCellAt(c.x, c.y);
-          var blocked = false;
-          try { blocked = cell != null && this.cellProps ? !!this.cellProps(cell).blocks : false; } catch (e) {}
-          if (blocked) continue;
-          pos.mx = c.x; pos.my = c.y;
-          return;
-        }
-      } catch (e) {}
-    },
-    // daylifeAnchorCell: first fire/hall/water/tent cell in the Haven detail.
-    // Cached per day — genDetail is cheap but there's no reason to rescan.
-    daylifeAnchors() {
-      var a = this.agencyState();
-      var v = this.state.village;
-      var key = (v.px ?? 3) + ',' + (v.py ?? 3) + ':' + (this.state.scholar.day || 0);
-      if (a._anchorKey !== key) {
-        a._anchorKey = key;
-        a._anchors = {};
-        try {
-          var detail = this.genDetail ? this.genDetail(v.px ?? 3, v.py ?? 3) : null;
-          var found = {};
-          if (detail) {
-            for (var y = 0; y < 9; y++) for (var x = 0; x < 9; x++) {
-              var c = detail[y] && detail[y][x];
-              if (typeof c !== 'string') continue;
-              if (c === 'fire' && !found.fire) found.fire = { x: x, y: y };
-              if ((c === 'hall' || c === 'lodge') && !found.hall) found.hall = { x: x, y: y };
-              if (c === 'water' && !found.water) found.water = { x: x, y: y };
-              if (c === 'tent' && !found.tent) found.tent = { x: x, y: y };
-            }
-          }
-          a._anchors = found;
-        } catch (e) { a._anchors = {}; }
-      }
-      return a._anchors || {};
-    },
-    daylifeAnchorCell(kind) {
-      var an = this.daylifeAnchors();
-      if (kind === 'fire') return an.fire || an.hall || null;
-      if (kind === 'hall') return an.hall || an.fire || null;
-      if (kind === 'water') return an.water || null;
-      return null; // 'edge' and 'any': drift locally
-    },
-    daylifeCellAt(x, y) {
-      try {
-        var v = this.state.village;
-        var detail = this.genDetail ? this.genDetail(v.px ?? 3, v.py ?? 3) : null;
-        return detail && detail[y] && detail[y][x];
-      } catch (e) { return null; }
-    },
-    daylifePro(vid) {
-      var pro = 'they';
-      try {
-        var vv = (this.data.villagers || []).find(function (x) { return x.id === vid; }) || {};
-        var h = this._hashStr ? this._hashStr(vid) : 0;
-        pro = vv.pro || (['she', 'he', 'they'][((h % 3) + 3) % 3]);
-      } catch (e) {}
-      if (pro === 'she') return { They: 'She', their: 'her', them: 'her', are: 'is' };
-      if (pro === 'he') return { They: 'He', their: 'his', them: 'him', are: 'is' };
-      return { They: 'They', their: 'their', them: 'them', are: 'are' };
-    },
-    // daylifeLine: the observed activity line for the person sheet.
-    // Quirk flavor is deterministic per part — no flicker between renders.
-    daylifeLine(vid) {
-      var rec = this.daylifeOf(vid);
-      if (!rec) return '';
-      var def = DAYLIFE_ACTS[rec.act];
-      if (!def) return '';
-      var P = this.daylifePro(vid);
-      var line = '';
-      try { line = def.line(P); } catch (e) { line = P.They + ' ' + P.are + ' busy.'; }
-      try {
-        var vp = this.vpOf(vid) || {};
-        var q = (vp.personality || {}).quirk;
-        var s = this.state.scholar;
-        var h = this._hashStr ? this._hashStr(vid + ':' + (s.day || 0) + ':' + (this.dayPart || 0)) : 1;
-        if (q && (((h % 4) + 4) % 4) === 0) line += ' ' + q.charAt(0).toUpperCase() + q.slice(1) + ' — as always.';
-      } catch (e) {}
-      return line;
-    },
-    // villagerTileBadge: compact grid badge for a villager's current activity.
-    // FOLLOW-UP: app.js tile render doesn't call this yet (dirty sibling WIP,
-    // not touched). One-line hook: in the villager cell branch, append
-    // Game.villagerTileBadge(villagerId) to the tile label.
-    villagerTileBadge(vid) {
-      var rec = null;
-      try { rec = this.daylifeOf(vid); } catch (e) {}
-      if (!rec) return '';
-      var def = DAYLIFE_ACTS[rec.act] || {};
-      return (def.e || '🧍') + ' ' + (DAYLIFE_SHORT[rec.act] || 'busy');
     },
   };
 
@@ -1336,37 +761,6 @@
         }
       } catch (e) {}
       return _convoTurn ? _convoTurn.call(this, vid, choiceId) : undefined;
-    };
-    // daylife: the person sheet shows what they're doing, in plain observed
-    // language, ahead of the need-based line. Names stay knowledge-gated
-    // through displayName inside daylifeLine's callers.
-    var _pal = G.personActivityLine;
-    G.personActivityLine = function (vid) {
-      var base = '';
-      try { base = _pal ? _pal.call(this, vid) : ''; } catch (e) {}
-      try {
-        var line = this.daylifeLine ? this.daylifeLine(vid) : '';
-        if (line) return line + (base ? ' ' + base : '');
-      } catch (e) {}
-      return base;
-    };
-    // daylife: recent deaths change the village's rhythm for a couple of days.
-    // Recorded here so mourning is a reaction, not a schedule.
-    var _rd = G.registerDeath;
-    G.registerDeath = function (info) {
-      var r = _rd ? _rd.call(this, info) : undefined;
-      try {
-        if (info && (info.kind === 'person' || info.kind === 'villager') && info.villagerId) {
-          var a = this.agencyState();
-          a.recentDeaths.push({
-            vid: info.villagerId, day: this.state.scholar.day || 0,
-            part: this.dayPart || 0, name: info.name || 'someone',
-          });
-          var cutoff = (this.state.scholar.day || 0) - 3;
-          a.recentDeaths = a.recentDeaths.filter(function (d) { return d.day >= cutoff; });
-        }
-      } catch (e) {}
-      return r;
     };
   })();
 })();

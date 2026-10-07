@@ -12,35 +12,13 @@
 //   - encAudio(name, data)
 //   - encKillLine(animal, kcal)
 //   - encButcherHonesty(kcal, animal)
-//   - encPatternStage(monsterId, patternId)
-//   - encPatternSeen(monsterId, patternId)
-//   - encPatternExposures(monsterId, patternId)
-//   - encPatternStageName(stage)
-//   - encPatternCue(monsterId, patternId, cues, label)
-//   - encMonsterRecall(id)
-//   - encMonsterRemember(id, outcome)
-//   - encMeetingRead(id, label)
-//   - encMemoryDelta(id)
-//   - encPatternTelegraph(type, label, stage, anatomy)
-//   - encTemperament(m)
-//   - encWoundState(m)
-//   - encWoundCheck(m, label)
-//   - encPackAssign(pack, labelFn)
-//   - encPackRoleOf(m)
-//   - encPackBeat(m, label, stage)
 //   - feedback(msg)
 //   - feedbackLines()
 //   - feedbackMark()
 // rules:
 //   - knowledge_gated: true (code: encounters.js)
-//   - graduated_coaching: true (pattern exposures 0/1-2/3+ -> sight/recognized/mastered) (code: encounters.js)
-//   - encounter_memory: true (monsters remember fled/hurt/packmate_killed; behavior deltas narrated) (code: encounters.js)
-//   - wound_states: true (half-HP temperament transition, always announced) (code: encounters.js)
-//   - pack_roles: true (fiction-gated driver/flanker/anchor) (code: encounters.js)
 // consumes:
 //   - state.encounters
-//   - state.codex.encPatterns
-//   - state.codex.encMonsterMem
 /* ENCOUNTER FRAMEWORK — src/js/encounters.js
  *
  * Steve: "Don't fix the deer. Fix the pattern." Every animal and every
@@ -73,16 +51,6 @@
  *     tactical warnings after earned. Implemented in game.js as
  *     encTelegraphKnown(m) (gate: "pattern" — survive a full Discharge);
  *     encPickCue() below picks the cue text by knowledge.
- *  7. GRADUATED COACHING, MEMORY, WOUNDS, PACKS — encPatternSeen/
- *     encPatternCue graduate coaching by survived pattern exposures
- *     (sight → recognized → mastered); encMonsterRecall/encMonsterRemember/
- *     encMeetingRead/encMemoryDelta give monsters cross-meeting memory
- *     (fled/hurt/packmate_killed reshape the next meeting, always narrated);
- *     encPatternTelegraph gives each attack shape (charge/burst/beam/rush/
- *     ambush) distinct anatomy-justifying telegraph text; encWoundCheck
- *     announces the half-HP temperament shift (enraged/cunning/desperate);
- *     encPackAssign/encPackBeat give fiction-gated packs driver/flanker/
- *     anchor roles instead of N copies of one AI.
  *
  * REGISTRATION CHECKLIST for a new animal or monster:
  *  1. Data: give it an "unknown" strange descriptor (animals.json /
@@ -538,9 +506,7 @@
     return true;
   };
   G.encMethodToolName = function (m) {
-    // ARTICLE-LESS (Steve 2026-10-06): the caller prefixes "no ", so these
-    // must not carry articles ("no a fishing line" was ungrammatical).
-    return { snare: 'snare wire', trap: 'trapping skill or cage', line: 'fishing line', bow: 'bow or sling', hands: 'your hands', chase: 'running it down', stick: 'forked stick' }[m] || m;
+    return { snare: 'snare wire', trap: 'the trapping skill or a cage', line: 'a fishing line', bow: 'a bow or sling', hands: 'your hands', chase: 'running it down', stick: 'a forked stick' }[m] || m;
   };
   // The flop. Shared by the strike path and the awareness path — one text,
   // one fiction. Pre-knowledge the player sees a dead opossum; post, they
@@ -1781,7 +1747,7 @@
     // teeth — not a fight, just the price of grabbing. Traps avoid this.
     // (Porcupines don't bite — the quills already answered. Bluegill don't
     // bite either — reaching into the bed is the whole point.)
-    if (dist <= 1 && hBeh !== 'quilled' && hBeh !== 'bedding' && String(animal.behavior || '').indexOf('aquatic') !== 0) {
+    if (dist <= 1 && hBeh !== 'quilled' && hBeh !== 'bedding') {
       var bBeh = animal.behavior || '';
       var biteP = bBeh === 'aggressive' ? 0.6 : bBeh === 'defensive' ? 0.6 : bBeh === 'constrictor' ? 0.5 : bBeh === 'plays_dead' ? 0.3 : 0.2;
       if (Math.random() < biteP) {
@@ -1796,8 +1762,6 @@
           ? 'It catches you with a tusk — ' + biteDmg + ' damage. Boars don\'t bite, they slash.'
           : bBeh === 'constrictor'
           ? 'It whips around and bites — ' + biteDmg + ' damage. Teeth, no venom. The insult is worse than the wound.'
-          : (animal.id === 'snapping_turtle')
-          ? 'It snaps — the beak closes on your hand, ' + biteDmg + ' damage. That beak can take a finger.'
           : 'It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
         if (bBeh === 'defensive') {
           // RATTLESNAKE: fangs, not teeth. The venom is in.
@@ -1841,7 +1805,7 @@
       if ((animal.behavior || '') === 'aquatic_defensive' && !charsMeat && Math.random() < 0.3) {
         var pinchDmg = 2 + Math.floor(Math.random() * 3);
         try { s.health = Math.max(0, (s.health || 100) - pinchDmg); } catch (e) {}
-        this.feedback('But the tiny boxer gets a pinch in first. (-' + pinchDmg + ' HP) Grab it right behind the claws next time.');
+        this.feedback('Got it — but the tiny boxer gets a pinch in first. (-' + pinchDmg + ' HP) Grab it right behind the claws next time.');
         try { this.audioEvent('animalPinch'); } catch (e) {}
       }
       try {
@@ -1868,291 +1832,15 @@
     var missVerb = this.encNeverBolt(mBeh) ? ' doesn\'t even flinch. (-100 kcal)'
       : (mBeh === 'aquatic' || mBeh === 'aquatic_ambush' || mBeh === 'aquatic_defensive')
       ? ' vanishes under the water — still in there, not gone. (-100 kcal)'
-      : (mBeh === 'plays_dead')
-      ? ' goes still. (-100 kcal)'
       : ' bolts. (-100 kcal)';
     this.feedback('Missed! ' + this.encCap(label) + missVerb);
     try { this.audioEvent('animalBolt'); } catch (e) {}
     this.encHuntPracticed('strike'); // a clean miss still teaches
-    // FUTILE GRIND (Steve 2026-10-06): never-bolting animals (snapping
-    // turtle) with the wrong tool are an HP/kcal grind with no exit. After
-    // 3 futile strikes, name the exit explicitly — once.
-    try {
-      a._futile = (a._futile || 0) + 1;
-      if (!a._futileTold && a._futile >= 3 && this.encNeverBolt(mBeh)) {
-        a._futileTold = true;
-        var _mm = animal.method || [];
-        var _mw = [];
-        for (var _mi = 0; _mi < _mm.length; _mi++) _mw.push(this.encMethodToolName(_mm[_mi]));
-        this.feedback('This isn\'t working — ' + label + ' isn\'t going anywhere and your ' + wname +
-          ' can\'t finish it. Come back with ' + (_mw.join(' or ') || 'the right tool') +
-          '. Walking away is free; bleeding out here isn\'t.');
-      }
-    } catch (e) {}
     var mEnded = this.encMissReact(a, animal);
     if (!mEnded) this.animalTurn();
     return true;
   };
   G.huntAnimal._wrapped = true;
-
-  // ================= 8. GRADUATED PATTERN COACHING =================
-  // knownCue was binary: known or not. Real learning is graduated — you see
-  // a pattern once and flinch; you survive it twice and you know the tell;
-  // you survive it a handful of times and you read the windup like a book.
-  // Coaching scales with demonstrated survival, not a flag. The loop
-  // (game.js) calls encPatternSeen(monsterId, patternId) when the player
-  // survives one full run of a pattern; this module turns the count into
-  // coaching. Stages: 0 'sight' (never seen the pattern complete — diegetic
-  // cue only), 1 'recognized' (1-2 survivals — the tell named, partial
-  // coaching), 2 'mastered' (3+ survivals — full tactical coaching).
-  // Storage lives on the codex (it IS knowledge): state.codex.encPatterns.
-  G.encPatternExposures = function (monsterId, patternId) {
-    try {
-      var P = this.state.codex.encPatterns || {};
-      var rec = P[monsterId + '|' + patternId];
-      return (rec && rec.n) || 0;
-    } catch (e) { return 0; }
-  };
-  G.encPatternSeen = function (monsterId, patternId) {
-    // The player survived one full run of the pattern. Recorded once per
-    // pattern-completion by the loop — this is the EARNED side of coaching.
-    // Returns the new stage (0/1/2).
-    try {
-      this.state.codex.encPatterns = this.state.codex.encPatterns || {};
-      var k = monsterId + '|' + patternId;
-      var rec = this.state.codex.encPatterns[k] || { n: 0 };
-      rec.n = (rec.n || 0) + 1;
-      this.state.codex.encPatterns[k] = rec;
-      return rec.n >= 3 ? 2 : 1;
-    } catch (e) { return 0; }
-  };
-  G.encPatternStage = function (monsterId, patternId) {
-    var n = 0;
-    try { n = this.encPatternExposures(monsterId, patternId); } catch (e) {}
-    return n >= 3 ? 2 : n >= 1 ? 1 : 0;
-  };
-  G.encPatternStageName = function (st) {
-    return st === 2 ? 'mastered' : st === 1 ? 'recognized' : 'sight';
-  };
-  // cues: { sight, recognized, mastered } — each a string or fn(label).
-  // Returns the coaching text for the player's current stage. Stage 0 is
-  // deliberately diegetic-only: "if you don't know, it doesn't show."
-  // Missing higher stages fall back DOWN the ladder, never to silence.
-  G.encPatternCue = function (monsterId, patternId, cues, label) {
-    var st = 0;
-    try { st = this.encPatternStage(monsterId, patternId); } catch (e) {}
-    var c = cues || {};
-    var order = st === 2 ? ['mastered', 'recognized', 'sight'] : st === 1 ? ['recognized', 'sight'] : ['sight'];
-    var raw = null;
-    for (var i = 0; i < order.length; i++) {
-      if (c[order[i]] != null) { raw = c[order[i]]; break; }
-    }
-    if (typeof raw === 'function') { try { raw = raw(label); } catch (e) { raw = ''; } }
-    return String(raw || '');
-  };
-
-  // ================= 9. ENCOUNTER MEMORY =================
-  // Monsters remember YOU. The fiction: they were sent to fight — curiosity
-  // escalates to hunger, caution circles, never sheepish disengagement.
-  // What happened last time shapes this meeting, and the game SAYS so — a
-  // behavior change with no narration is a silent mechanic (Steve's rule).
-  // Memory is monster-side knowledge: state.codex.encMonsterMem.
-  // Outcomes the loop reports: 'met' (a meeting happened), 'fled' (you ran),
-  // 'hurt' (you wounded it and it lived), 'drove_off' (you made it leave),
-  // 'packmate_killed' (you killed one of its pack).
-  G.encMonsterRecall = function (id) {
-    try {
-      this.state.codex.encMonsterMem = this.state.codex.encMonsterMem || {};
-      var m = this.state.codex.encMonsterMem[id];
-      if (!m) {
-        m = { meetings: 0, lastOutcome: null, fled: 0, hurt: 0, droveOff: 0, packmateKilled: 0 };
-        this.state.codex.encMonsterMem[id] = m;
-      }
-      return m;
-    } catch (e) {
-      return { meetings: 0, lastOutcome: null, fled: 0, hurt: 0, droveOff: 0, packmateKilled: 0 };
-    }
-  };
-  G.encMonsterRemember = function (id, outcome) {
-    var m = this.encMonsterRecall(id);
-    try {
-      if (outcome === 'met') m.meetings = (m.meetings || 0) + 1;
-      else if (outcome === 'fled') { m.fled = (m.fled || 0) + 1; m.lastOutcome = 'fled'; }
-      else if (outcome === 'hurt') { m.hurt = (m.hurt || 0) + 1; m.lastOutcome = 'hurt'; }
-      else if (outcome === 'drove_off') { m.droveOff = (m.droveOff || 0) + 1; m.lastOutcome = 'drove_off'; }
-      else if (outcome === 'packmate_killed') { m.packmateKilled = (m.packmateKilled || 0) + 1; m.lastOutcome = 'packmate_killed'; }
-    } catch (e) {}
-    return m;
-  };
-  // The opening read on a repeat meeting. Null on first meetings (the
-  // existing spawn text owns those) — otherwise one honest line about what
-  // it remembers, so the behavior shift is never silent.
-  G.encMeetingRead = function (id, label) {
-    var m = null;
-    try { m = this.encMonsterRecall(id); } catch (e) {}
-    if (!m || (m.meetings || 0) <= 1) return null;
-    var cap = this.encCap ? this.encCap(label) : String(label);
-    var lo = m.lastOutcome;
-    if (lo === 'fled') return cap + ' remembers you running. It comes in fast, certain — curiosity spent, hunger up.';
-    if (lo === 'hurt') return cap + ' remembers the wound — it circles wide, cautious. It respects your reach now.';
-    if (lo === 'drove_off') return cap + ' remembers being driven off. It hangs back at the treeline, weighing you.';
-    if (lo === 'packmate_killed') return cap + ' remembers the packmate you killed. This one is personal — it watches YOU, not the party.';
-    return null;
-  };
-  // Tactical delta for the loop, derived from memory. The loop applies it;
-  // encMeetingRead is what makes it honest. Curiosity escalates to hunger:
-  // fled-last-time shortens the stalk (approachBonus), hurt makes it keep
-  // range (keepsRange), drove_off makes it wary, packmate_killed focuses
-  // the player (focusesPlayer).
-  G.encMemoryDelta = function (id) {
-    var m = null;
-    try { m = this.encMonsterRecall(id); } catch (e) {}
-    var d = { approachBonus: 0, keepsRange: false, wary: false, focusesPlayer: false };
-    if (!m) return d;
-    if (m.lastOutcome === 'fled') d.approachBonus = 1;
-    if (m.lastOutcome === 'hurt') d.keepsRange = true;
-    if (m.lastOutcome === 'drove_off') d.wary = true;
-    if (m.lastOutcome === 'packmate_killed') d.focusesPlayer = true;
-    return d;
-  };
-
-  // ================= 10. PATTERN TELEGRAPHS =================
-  // One telegraph per attack-pattern SHAPE — distinct text, because the
-  // anatomy is distinct (Steve's visual-mechanical coherence rule: the
-  // telegraph must justify the anatomy). A charger telegraphs with its BODY
-  // (lane); a burst with SWELLING (radius); a beam with LIGHT (sweep); a
-  // rush with the RUSH itself; an ambusher with SILENCE. Pre-pattern
-  // (stage 0): diegetic only. Recognized+: the tactical read rides along —
-  // earned, never spoiled. Returns { text, audio }; the loop says the text
-  // and fires the audio. Never silent.
-  G.encPatternTelegraph = function (type, label, stage, anatomy) {
-    var cap = this.encCap ? this.encCap(label) : String(label || 'it');
-    stage = stage || 0;
-    var T = {
-      charge: {
-        audio: 'teleCharge',
-        sight: cap + ' lowers its head and paws the ground — dust rising. Something is about to come down that lane, fast.',
-        tact: ' Charge lane: sidestep, don\'t outrun. It can\'t turn mid-lane.'
-      },
-      burst: {
-        audio: 'teleBurst',
-        sight: cap + ' swells — throat, belly, the whole frame distending. The air around it feels wrong. Get clear of the radius.',
-        tact: ' Burst radius: the blast is centered on IT, not you — distance in any direction works.'
-      },
-      beam: {
-        audio: 'teleBeam',
-        sight: cap + ' goes rigid — light gathering at its ' + (anatomy || 'crown') + ', a brightening seam in the air. A sweep is coming.',
-        tact: ' Beam sweep: it pans slow. Move WITH the sweep\'s tail, not against its head.'
-      },
-      rush: {
-        audio: 'teleRush',
-        sight: cap + ' is already moving — no windup, just sudden speed, straight at you. The rush IS the warning.',
-        tact: ' Rush: it commits to the line it picked. A hard lateral cut beats it.'
-      },
-      ambush: {
-        audio: 'teleAmbush',
-        sight: 'The woods go quiet around ' + cap + ' — too quiet. Birds stop mid-note. It\'s already somewhere you aren\'t looking.',
-        tact: ' Ambush: the silence is the telegraph. Keep moving — a still target is a solved target.'
-      }
-    };
-    var t = T[type] || null;
-    if (!t) return { text: cap + ' tenses — something is coming.', audio: 'teleGeneric' };
-    return { text: t.sight + (stage >= 1 ? t.tact : ''), audio: t.audio };
-  };
-
-  // ================= 11. WOUND STATES =================
-  // At half HP a monster CHANGES — and the change is announced, loudly.
-  // Temperament comes from mdef.encounter.temperament (or the loop's pick):
-  // 'enraged' hits harder and telegraphs LOUDER, 'cunning' stops rushing
-  // and starts CHOOSING (targets, spacing), 'desperate' swings wild — big
-  // damage, big openings. Never silent: the transition gets a line AND an
-  // audio beat. Stored on the entity (m.encWound) — per encounter.
-  G.encTemperament = function (m) {
-    try {
-      var t = m && m.encounter && m.encounter.temperament;
-      if (t) return t;
-    } catch (e) {}
-    try {
-      var p = m && m.encounter && m.encounter.pattern;
-      if (p === 'ambush' || p === 'rush') return 'cunning';
-      if (p === 'burst') return 'desperate';
-    } catch (e) {}
-    return 'enraged';
-  };
-  G.encWoundState = function (m) { return (m && m.encWound) || 'fresh'; };
-  // Call after damage lands. Crosses the half-HP line once per encounter —
-  // narrates the temperament shift and returns the line (null: no crossing).
-  G.encWoundCheck = function (m, label) {
-    if (!m || m.encWound) return null;
-    var hp = (m.hp == null ? (m.health == null ? 100 : m.health) : m.hp);
-    var max = (m.maxHp == null ? (m.maxHealth == null ? 100 : m.maxHealth) : m.maxHp);
-    if (!(hp > 0) || !(hp <= max / 2)) return null;
-    var temp = 'enraged';
-    try { temp = this.encTemperament(m); } catch (e) {}
-    m.encWound = temp;
-    var cap = this.encCap ? this.encCap(label) : String(label || 'it');
-    var line = temp === 'cunning'
-      ? cap + ' is hurt — and it goes quiet and clever. It stops rushing. It starts CHOOSING. Watch the spacing.'
-      : temp === 'desperate'
-      ? cap + ' is hurt bad — and it knows it. Wild swings, everything committed, nothing held back. Dangerous and sloppy.'
-      : cap + ' is BLEEDING — and it likes it. Louder, faster, no more feints. The telegraphs get bigger because the rage is.';
-    try { if (this.audioEvent) this.audioEvent('wound' + temp.charAt(0).toUpperCase() + temp.slice(1)); } catch (e) {}
-    return line;
-  };
-
-  // ================= 12. PACK COORDINATION =================
-  // Packs that hunt together fight together — but with ROLES, not N copies
-  // of the same AI. Fiction-gated: mdef.encounter.packRoles must be set
-  // (lone hunters don't coordinate; the game doesn't pretend they do).
-  // Roles: 'driver' (flushes prey toward the others), 'flanker' (circles
-  // wide for the cut-off), 'anchor' (the big one — holds the line).
-  // The alpha (highest max HP) anchors; the rest split driver/flanker.
-  // Honest perception: you can SEE the split happen — the returned text is
-  // said once per encounter. The tactical read rides on pattern stage.
-  G.encPackAssign = function (pack, labelFn) {
-    var roles = [];
-    try {
-      var ps = (pack || []).slice();
-      if (!ps.length) return { roles: roles, text: null };
-      var alpha = 0, ahp = -1;
-      for (var i = 0; i < ps.length; i++) {
-        var h = (ps[i].maxHp == null ? 100 : ps[i].maxHp);
-        if (h > ahp) { ahp = h; alpha = i; }
-      }
-      var others = [];
-      for (var j = 0; j < ps.length; j++) if (j !== alpha) others.push(j);
-      for (var k = 0; k < ps.length; k++) {
-        var role = (k === alpha) ? 'anchor' : (others.indexOf(k) % 2 === 0 ? 'driver' : 'flanker');
-        try { ps[k].encPackRole = role; } catch (e) {}
-        roles.push({ index: k, role: role });
-      }
-      var nm = (typeof labelFn === 'function') ? labelFn() : 'They';
-      var text = ps.length >= 3
-        ? nm + ' split — one holds the line, one drives, one circles wide for the cut-off. This is a hunt, with parts.'
-        : nm + ' split — one drives at you, one circles wide. Two parts, one hunt.';
-      return { roles: roles, text: text };
-    } catch (e) { return { roles: roles, text: null }; }
-  };
-  G.encPackRoleOf = function (m) { return (m && m.encPackRole) || 'lone'; };
-  // Role-flavored turn beat, for the loop to say SPARINGLY (not every turn —
-  // a hunter doesn't narrate every step). Gated coaching rides on stage.
-  G.encPackBeat = function (m, label, stage) {
-    var role = 'lone';
-    try { role = this.encPackRoleOf(m); } catch (e) {}
-    if (role === 'lone') return null;
-    var cap = this.encCap ? this.encCap(label) : String(label || 'it');
-    var beats = {
-      driver: [cap + ' comes straight on, driving — herding you toward the others.',
-        ' Break the drive: sidestep early and it has nothing to herd you into.'],
-      flanker: [cap + ' circles wide, unhurried — the cut-off is the whole job.',
-        ' The flanker commits late. Punish the commitment, not the circle.'],
-      anchor: [cap + ' holds the middle, big and patient — the line you don\'t want to cross.',
-        ' The anchor doesn\'t chase. Make it come to you, or don\'t engage it at all.']
-    };
-    var b = beats[role];
-    if (!b) return null;
-    return b[0] + ((stage || 0) >= 1 ? b[1] : '');
-  };
 
   // ================= REGISTRATION CHECKLIST (see header) =================
   G.encChecklist = function () {
@@ -2163,9 +1851,7 @@
       '2c. Miss reactions: encMissReact owns what a miss means per behavior (boar charges, goose retaliates, bobcat slashes and leaves). encNeverBolt lists the animals that never bolt.',
       '2d. Flee styles (Steve 2026-10-06): deer bursts 2 tiles on fresh legs (costs 2 stamina), turkey flutters then regroups (pstate regroup = your window), rabbit zigzags never repeating a hop (a.lastZig). Trapped prey corners (pstate cornered): lashes out or breaks through — panic audio animalPanic (encAudio: real synth preferred, bolt+rustle fallback — never silent). Noise: stalk 0.35 / still 0.55 / walk 1.0 / run 1.4 on awareness; running extends notice +1. Hunt practice XP (encHuntXPBonus/encHuntPracticed): background seeds 3, strikes +1, kills +2, capped +0.2 — no permanent backstory buff.',
       '3. Threats: "encounter" config in monsters.json + game.js enc* interface.',
-      '3b. Memory/wounds/packs: encMonsterRemember(id, outcome) after each meeting (\'met\'/\'fled\'/\'hurt\'/\'drove_off\'/\'packmate_killed\'); encMeetingRead(id, label) opens repeat meetings (null on first — spawn text owns those); encMemoryDelta(id) feeds the loop\'s tactical shift. encWoundCheck(m, label) after damage — half-HP temperament (mdef.encounter.temperament: enraged/cunning/desperate) narrates once. encPackAssign(pack, labelFn) when a fiction-gated pack (mdef.encounter.packRoles) engages — driver/flanker/anchor, said once; encPackBeat(m, label, stage) sparingly.',
       '4. Telegraph: Game.encTelegraphKnown(m); cue via Game.encPickCue.',
-      '4b. Pattern telegraphs: Game.encPatternTelegraph(type, label, stage, anatomy) — type in charge/burst/beam/rush/ambush; distinct anatomy-justifying text per shape; tactical read appended at stage >= 1. Graduated coaching: Game.encPatternSeen(monsterId, patternId) when the player survives a full pattern; Game.encPatternCue(monsterId, patternId, {sight, recognized, mastered}, label) picks coaching by stage (0/1-2/3+ exposures -> sight/recognized/mastered). Stage 0 is diegetic-only.',
       '5. Phases: Game.encSetPhase / Game.encPhase(ent, phase, beats).',
       '6. Feedback: Game.feedback(text) for action results.',
       '7. Test: gating, loop, feedback-at-site. See test-encounters.js.'

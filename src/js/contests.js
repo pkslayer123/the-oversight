@@ -65,7 +65,6 @@
 //   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 16 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil, then sorting/witness/cache/longodds (code: _contestWatchBeat, Steve 2026-10-06)
 //   - risk_rebalance_20261006: HIGH RISK rebalance — brave choices now usually kill (~50% death across full aggressive runs), smart choices live but cost heavily. Pit aggressive: 0.08/0.12 -> 0.20/0.30. Hide: 0.20/0.18/0.25 -> 0.32/0.25/0.38. Siege/hold: 0.20 -> 0.30. Rewards NOT nerfed — high risk justifies high reward (code: contestChoose die odds, Steve 2026-10-06)
 //   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
-//   - pool_expansion_20261007: the three smallest pools (puzzle/detective/forage, 4 each) each gain two bespoke variants — lockpick (vault-lock, weight-order tumblers), wrongmap (the System lies about water), alibi (alibi chain, false link vouches loudest), echo (two tellings, noon adds danger), tidepool (tide clock, third gull-cry), windfall (rot race, preservation order). NOT reskins: lockpick is tension-and-listening not folding (box); wrongmap is terrain-truth not Q&A (riddle); alibi is chain-breaking not liar-hunting (informant); echo is version-drift not fabrication-hunt (witness); tidepool is an environmental clock not a race (calorie_run); windfall is preservation triage not harvest (honey) (code: contestPool, contestPlayable, Steve 2026-10-05)
 //   - pool_expansion_20261006b: the four smallest pools (puzzle/detective/forage/chance, 3 each) each gain a bespoke variant — sorting (conveyor triage), witness (fabrication hunt), cache (audit heist), longodds (push-your-luck dice). NOT reskins: sorting is triage-under-time not Q&A (riddle); witness is forgery-forensics not liar-hunting (informant); cache is hiding not gathering (calorie_run); longodds is stakes-escalation not pure draw (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
 //   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
@@ -372,33 +371,6 @@
         desc: 'The System auctions alien tech. Bid with memories, years, or body parts. Everyone pays their bid — winner takes the lot, losers take the loss.',
         participants: 3,
         arena: '🔨\n💰💰💰💰💰\n⬜🏺⬜🏺⬜\n👽🔨👽🔨👽\n👥👥👥👥👥' },
-      // CONTEST-POOL EXPANSION 3 (Steve 2026-10-05): the three smallest
-      // pools (puzzle/detective/forage, 4 each) each gain two bespoke
-      // variants. NOT reskins — see the ontology rule.
-      { id: 'lockpick', name: 'The Iron Pantry', cat: 'puzzle', risk: 'high',
-        desc: 'An alien vault-lock on a full pantry. Five tumblers, one hour of air. Pick it and the village eats. Jam it and the cameras watch you starve politely.',
-        participants: 1,
-        arena: '🔒\n⚙️⚙️⚙️⚙️⚙️\n⬛🔒⬛🔒⬛\n⚙️⚙️⚙️⚙️⚙️\n🥫🥫🥫🥫🥫' },
-      { id: 'wrongmap', name: 'The Wrong Map', cat: 'puzzle', risk: 'medium',
-        desc: 'The System hands you a map to buried alien rations. Exactly one thing on it is a lie. Find the lie, find the food.',
-        participants: 2,
-        arena: '🗺️\n🌲🌲🏔️🌲🌲\n🌲❌🌲❌🌲\n🌊🌊🌊🌊🌊\n📍📍📍📍📍' },
-      { id: 'alibi', name: 'The Alibi Chain', cat: 'detective', risk: 'medium',
-        desc: 'Five villagers, each vouched for by the next, a chain that ends at midnight. One link is false. Break the chain before the chain breaks the village.',
-        participants: 1,
-        arena: '⛓️\n👤👤👤👤👤\n🔗🔗🔗🔗🔗\n🌙🌙🌙🌙🌙\n⚖️⚖️⚖️⚖️⚖️' },
-      { id: 'echo', name: 'The Echo', cat: 'detective', risk: 'high',
-        desc: 'One witness, two tellings. The story of last night, told at dawn and told at noon — and the details moved between tellings. Find what the teller added for the cameras.',
-        participants: 1,
-        arena: '🔁\n🎤🎤🎤🎤🎤\n🌅🌅🌅🌅🌅\n🌞🌞🌞🌞🌞\n👥👥👥👥👥' },
-      { id: 'tidepool', name: 'The Tide Clock', cat: 'forage', risk: 'high',
-        desc: 'The tidal pools are rich and the causeway is drowning. Harvest while the water lets you. The tide doesn\'t negotiate, and the cameras love a deadline.',
-        participants: 2,
-        arena: '🌊\n🦀🐚🦀🐚🦀\n🌊🌊🌊🌊🌊\n🪨🪨🪨🪨🪨\n🏃🏃🏃🏃🏃' },
-      { id: 'windfall', name: 'Windfall', cat: 'forage', risk: 'medium',
-        desc: 'A storm dropped a fortune — fruit, game, a stranded fish haul — and every bit of it is rotting on camera. Beat the rot: eat, dry, haul. The clock is spoilage.',
-        participants: 3,
-        arena: '🍂\n🍎🍎🐟🍎🍎\n🍂🍂🍂🍂🍂\n🦌🍎🦌🍎🦌\n☀️☀️☀️☀️☀️' },
     ];
   };
 
@@ -876,12 +848,6 @@
     if (id === 'impress') return this._contestImpress(contest);
     if (id === 'exchange') return this._contestExchange(contest);
     if (id === 'auction') return this._contestAuction(contest);
-    if (id === 'lockpick') return this._contestLockpick(contest);
-    if (id === 'wrongmap') return this._contestWrongmap(contest);
-    if (id === 'alibi') return this._contestAlibi(contest);
-    if (id === 'echo') return this._contestEcho(contest);
-    if (id === 'tidepool') return this._contestTidepool(contest);
-    if (id === 'windfall') return this._contestWindfall(contest);
     const cat = contest.cat;
     if (cat === 'endurance') return this._contestEndurance(contest);
     if (cat === 'moot') return this._contestMoot(contest);
@@ -934,18 +900,6 @@
     contestCache: ['contestTaken', 'exileWalk'],
     // The Long Odds: the table — game-show call under the dice slam.
     contestDice: ['contestCall', 'rushHit'],
-    // The Iron Pantry: the lock — the call under the click of the tumbler.
-    contestLock: ['contestCall', 'levelup'],
-    // The Wrong Map: the lie on paper — a call over a wrongness.
-    contestMap: ['contestCall', 'contestSpared'],
-    // The Alibi Chain: breaking it — the verdict under relief's shadow.
-    contestAlibi: ['justiceVerdict', 'contestSpared'],
-    // The Echo: two tellings — a scream of wrongness under relief's shadow.
-    contestEcho: ['horrorSting', 'contestSpared'],
-    // The Tide Clock: the water — the grab-klaxon under pounding feet.
-    contestTide: ['contestTaken', 'rushHit'],
-    // Windfall: the rot race — the call under an unlock.
-    contestWind: ['contestCall', 'levelup'],
   };
   G._cxBeat = function(name) {
     try {
@@ -1033,13 +987,7 @@
       price: "Volunteering is the only move that doesn't fracture the village. The System respects the walk-up. The village never forgets it.",
       impress: "They've felt everything except being human. Don't perform — offer the thing you'd never show anyone. That's the only currency they don't have.",
       exchange: "Gray Hollow always fades late — they run proud, not patient. Let them burn out. The shortcut through the nest works once, for the cameras, and never again.",
-      auction: "The auctioneer can smell bluff but the rules bind it anyway. Bid what you'd actually pay — the winners are the ones who know their price before the hammer.",
-      lockpick: "The tumblers set in weight order — heavy to light, never 1-2-3. Force the door and the lock eats the attempt. Patience eats dinner.",
-      wrongmap: "The System's maps always lie about WATER — it draws rivers where the ground is dry. Trust the terrain, not the ink.",
-      alibi: "The false link vouches first and loudest. Pull the chain gently — every link you stress fractures something.",
-      echo: "The noon telling always adds DANGER — bravery for the cameras. The dawn telling is the scared truth. Believe the scared one.",
-      tidepool: "Third gull-cry, you turn back. No fourth pool is worth the causeway. The deep pools pay double and the tide charges double.",
-      windfall: "Berries rot first — eat them. Meat smokes, fish dries, fruit keeps. Work the rot order, not the haul order.", 
+      auction: "The auctioneer can smell bluff but the rules bind it anyway. Bid what you'd actually pay — the winners are the ones who know their price before the hammer.", 
     };
     return '\n\n📚 What you know: ' + (LINES[contest.id] || "You've seen this before. Trust your instincts.");
   };
@@ -2090,257 +2038,6 @@
     ];
   };
 
-  // --- THE IRON PANTRY (bespoke, puzzle/high) ---
-  // CONTEST-POOL EXPANSION 3 (Steve 2026-10-05): tension-and-listening, not
-  // folding (box), not Q&A (riddle), not triage (sorting). Five tumblers
-  // that set in WEIGHT order — heavy to light, never 1-2-3. Knowledge-gated:
-  // veterans know the order; first-timers only know to listen. Force jams
-  // the lock and the whole contest becomes about the jam. The fear isn't the
-  // puzzle — it's the village watching you starve politely through glass.
-  G._contestLockpick = function(contest) {
-    const intro = this._cxIntro(contest);
-    const knows = this.contestKnowledge('lockpick').level >= 2;
-    const rule = knows
-      ? `\n\n📚 What the last lock taught you: the tumblers set in WEIGHT order — heavy to light, never 1-2-3. Listen for the weight. Force one and the whole lock eats the attempt.`
-      : `\n\nThe veterans who've picked one before won't say the order. "You'll hear it," they say. "Or you'll jam it, and then you'll hear THAT."`;
-    return [
-      { beat: 'contestLock',
-        text: intro + `\n\nA vault door the size of weather. Behind a glass panel: a full pantry — grain, smoked meat, winter itself, stacked and lit like a museum.\n\nFive tumblers. One hour of air in the anteroom. The System, almost gentle: "PICK IT. EAT. THE CAMERAS LOVE HUNGER."` + rule,
-        choices: [
-          { label: 'Press your ear to the door', sub: 'listen first', do: { note: 'You press your ear to the cold metal and work the first tumbler with a wire. Click. Heavy. Then click. Lighter. The lock is telling you something — if you listen the way it wants to be heard.' }, next: 1 },
-          { label: 'Try 1-2-3-4-5', sub: 'the rookie sequence', do: { dmg: [4, 10], note: 'One, two — the tumblers turn easily. Three — resistance. Four — a grinding you feel in your teeth. The lock goes sullen. It remembers attempts.' }, next: 1 },
-          { label: 'Oil the mechanism', sub: 'slow and kind', do: { kcal: -100, note: 'You work oil into the mechanism from your kit, slow as weather. The tumblers turn sweeter. The audience boos — slow is excruciating. The lock, though. The lock likes it.' }, next: 1 },
-        ] },
-      { beat: 'contestLock',
-        text: `Three tumblers set. Two to go. The heavy ones are down — the remaining two feel light as breath, and light is harder.\n\nThe hour is half gone. The pantry glows through the glass. The village can smell it, which is the whole point of the glass.`,
-        choices: [
-          { label: 'Trust the weight order', sub: 'heavy to light', do: { note: 'Heavy to light. You set the fourth tumbler by feel — it seats with a click like a promise kept. The fifth turns. The door breathes.' }, next: 2 },
-          { label: 'Rush the last two', sub: 'force it', do: { dmg: [6, 14], note: 'You rush. The fourth tumbler turns — then the lock BITES. Something inside shifts wrong. The door doesn\'t open, but it doesn\'t mock you either. It waits. You have one attempt left before the mechanism seizes.' }, next: 2 },
-          { label: 'Back off and re-listen', sub: 'start the weight again', do: { note: 'You back off, breathe, and start the listening all over. The audience groans. The tumblers don\'t care about the audience. They turn. They turn true.' }, next: 2 },
-        ] },
-      { beat: 'contestLock',
-        text: `One tumbler left. Or one jam left — it depends on how the last hour went.\n\nThe pantry is a painting of food behind glass. The village is very quiet.`,
-        choices: [
-          { label: 'Set the last tumbler', sub: 'gentle, by weight', do: { prize: true, kcal: 400, note: 'You set it — gentle, by weight, the way the lock asked to be heard. The vault door swings open. The village EATS tonight. The cameras catch someone crying into a grain sack. Good television. Better dinner.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Force the door', sub: 'break it open', do: { prize: true, dmg: [10, 20], die: 0.12, note: 'You stop picking and start breaking. The lock fights, then — grudgingly, screaming — yields. The door hangs crooked. The pantry is open. Ugly. Effective. Edible.' }, next: 'WIN' },
-          { label: 'Walk away from the lock', sub: 'the glass stays closed', do: { trauma: 6, note: 'You step back from the door. The pantry stays behind glass, glowing, uneaten. The village watches the food it can\'t have. The System files the footage under: restraint, rare.' }, next: 'LOSE' },
-        ] },
-    ];
-  };
-
-  // --- THE WRONG MAP (bespoke, puzzle/medium) ---
-  // CONTEST-POOL EXPANSION 3 (Steve 2026-10-05): terrain-truth, not Q&A
-  // (riddle) and not conveyor triage (sorting). The System hands you a map
-  // with exactly one lie in it — and it always lies about WATER. It draws
-  // rivers where the ground is dry. Knowledge-gated: veterans know to
-  // distrust the blue; first-timers have to find the contradiction by
-  // walking. The skilled play is boots, not ink. The fear: digging at the
-  // X in front of the whole valley and finding nothing.
-  G._contestWrongmap = function(contest) {
-    const intro = this._cxIntro(contest);
-    const knows = this.contestKnowledge('wrongmap').level >= 2;
-    const rule = knows
-      ? `\n\n📚 What the last map taught you: the System always lies about WATER. It draws rivers where the ground is dry. Trust the terrain, not the ink.`
-      : `\n\nThe veterans who've read its maps before just say "don't trust the blue." They won't say why.`;
-    let partner = 'the other contestant';
-    try {
-      const r = (this.state.village.roster || []).find(id => id !== this.villagerId && this.isMember(id));
-      if (r) partner = this.displayName(r);
-    } catch (e) {}
-    return [
-      { beat: 'contestMap',
-        text: intro + `\n\nA map of the valley, drawn in alien ink that moves when you aren't looking. Buried alien rations, marked with an X. Exactly one thing on the map is a lie.\n\nYou and ${partner} have until the light goes.` + rule,
-        choices: [
-          { label: 'Study the map', sub: 'read it close', do: { note: 'You study it until the ink stops moving. The ridge lines check out. The treeline checks out. The river... the river runs through a valley you KNOW is dry. Or the map knows something you don\'t.' }, next: 1 },
-          { label: 'Walk the terrain first', sub: 'boots, not ink', do: { note: 'You walk. The ridge is where the map says. The treeline is where the map says. You reach the river\'s supposed bank and find dust. Dust, and old shell beds. This river has been dead for years.' }, next: 1 },
-          { label: 'Ask what they see', sub: 'two pairs of eyes', do: { note: `${partner} points at the X. "It\'s too clean," they say. "Everything else on this map is a little wrong. The X is perfect. Nobody\'s perfect on purpose."` }, next: 1 },
-        ] },
-      { beat: 'contestMap',
-        text: `The contradiction, found: the river is the lie. It's been dry for years — the map drew it wet anyway.\n\nSo where's the X? If the river's wrong, the X measured FROM the river is wrong too. The real site is somewhere along the dry bed, offset by the lie.`,
-        choices: [
-          { label: 'Dig where the water isn\'t', sub: 'offset from the lie', do: { kcal: 200, note: 'You pace the dry bed off from the false river and dig where the X WOULD be if the map told the truth about water. Your shovel hits metal on the third hole. The camera drone drops ten feet for the close-up.' }, next: 2 },
-          { label: 'Dig at the X', sub: 'trust the ink', do: { trauma: 4, note: 'You dig at the X. Dust. More dust. The light is going and the hole is empty — the lie was the whole map. The System calls it, very politely. The whole valley watched you dig at a rumor.' }, next: 'LOSE' },
-          { label: 'Split up the dry bed', sub: 'cover the offset', do: { note: `You and ${partner} split the dry bed into grids and work them fast. Two shovels, one truth. ${partner} whoops from the far grid — metal on metal.` }, next: 2 },
-        ] },
-      { beat: 'contestMap',
-        text: `The cache is up — alien ration tins, sealed, stamped with a date from before the scattering.\n\nOne tin for the finding. The rest for whoever the System says the rest is for.`,
-        choices: [
-          { label: 'Open it for the village', sub: 'the find feeds everyone', do: { prize: true, unity: 1, kcal: 300, note: 'You crack the cache for the village. Ration tins, real food, on camera. The lie on the map doesn\'t matter anymore — the truth in the ground does.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Split it with your partner', sub: 'finders share', do: { prize: true, kcal: 400, note: `You and ${partner} split it down the middle, finders' share, on camera. The village will hear about this. Some of them will approve. The smart ones will.` }, next: 'WIN' },
-          { label: 'Leave it buried', sub: 'the map wins', do: { note: 'You cover it back up. Let the lie keep its rations. You walk away, and the cameras don\'t know what to do with someone who won and refused the prize.' }, next: 'LOSE' },
-        ] },
-    ];
-  };
-
-  // --- THE ALIBI CHAIN (bespoke, detective/medium) ---
-  // CONTEST-POOL EXPANSION 3 (Steve 2026-10-05): chain-breaking, not
-  // liar-hunting (informant) and not accusation (confession). Five
-  // villagers, each vouched for by the next, a chain ending at midnight.
-  // One link is false. The false link vouches FIRST and LOUDEST — that's
-  // the knowledge gate. The fear is social: every link you pull fractures
-  // something, and the village has to live with the chain you leave.
-  G._contestAlibi = function(contest) {
-    const intro = this._cxIntro(contest);
-    const knows = this.contestKnowledge('alibi').level >= 2;
-    const rule = knows
-      ? `\n\n📚 What the last chain taught you: the false link vouches FIRST and LOUDEST. Pull the chain gently — every link you stress fractures something the village has to live with.`
-      : `\n\nThe veterans who've broken a chain before won't say how they spot the false link. "You'll hear it," they say. "It's always the loudest one. Or it isn't."`;
-    const names = (() => {
-      const out = [];
-      try {
-        const roster = (this.state.village.roster || []).filter(id => id !== this.villagerId && this.isMember(id));
-        for (const id of roster) { if (out.length >= 5) break; out.push(this.displayName(id)); }
-      } catch (e) {}
-      const fb = ['Mara', 'Tove', 'Sef', 'Rill', 'Dun'];
-      while (out.length < 5) out.push(fb[out.length]);
-      return out;
-    })();
-    const [n1, n2, n3, n4, n5] = names;
-    return [
-      { beat: 'contestAlibi',
-        text: intro + `\n\nThe chain, read aloud:\n\n${n1} vouches for ${n2}. ${n2} vouches for ${n3}. ${n3} vouches for ${n4}. ${n4} vouches for ${n5}.\n\nOne of those vouches is a lie. The System: "FIND THE FALSE LINK BEFORE MIDNIGHT. THE VILLAGE SLEEPS UNDER WHATEVER YOU LEAVE STANDING."` + rule,
-        choices: [
-          { label: `Pull the first link: ${n1}`, sub: 'start at the loud end', do: { note: `You pull ${n1} first — the one who vouched loudest and earliest. ${n1} goes very still. "I SAW them," ${n1} says, too fast. The chain rattles.` }, next: 1 },
-          { label: `Pull the middle link: ${n3}`, sub: 'the quiet center', do: { note: `You pull ${n3}, the quiet middle. ${n3} looks exhausted, not guilty. "I was asleep," ${n3} says. "Ask the lamp. It was lit. I was awake and then I wasn't." Honest, or well-rehearsed — you can't tell yet.` }, next: 1 },
-          { label: 'Watch who vouches loudest', sub: 'before you touch anything', do: { note: `You don't pull anything yet. You watch. ${n1} is already retelling the vouch to anyone who'll listen — louder each time, like volume is evidence. The others are quiet. Quiet people are either innocent or patient.` }, next: 1 },
-        ] },
-      { beat: 'contestAlibi',
-        text: `Midnight is coming. The chain is under tension now — every link you've touched is stressed, and the village can see the stress.\n\n${n1} is still vouching, louder. ${n2} has gone quiet. The false link is in here somewhere, holding the whole thing up.`,
-        choices: [
-          { label: `Press ${n1}`, sub: 'the loud one', do: { fracture: 1, note: `You press ${n1} on the details — the hour, the lamp, the door. The vouch comes apart like wet paper. ${n1} was never there. The chain was built on a loud voice and nobody checked. The village heard all of it.` }, next: 2 },
-          { label: `Follow the timeline`, sub: 'hours, not voices', do: { note: `You stop listening to voices and start checking hours. The lamp was lit at nine. ${n3} says they slept at ten. ${n1}'s vouch covers midnight. The hours don't fit ${n1} at all — the loud link is the false link.` }, next: 2 },
-          { label: 'Offer them an out', sub: 'confess quietly', do: { note: `You offer the chain a quiet way out: "If someone was covering for someone, say so now, privately." Silence. Then ${n1}'s voice, smaller: "...I didn't want them in trouble." The chain exhales. The village heard the exhale too.` }, next: 2 },
-        ] },
-      { beat: 'contestAlibi',
-        text: `The false link, found: ${n1}. The vouch was a kindness that became a lie that became a chain.\n\nNow: how you name it, on camera, is the whole rest of the contest.`,
-        choices: [
-          { label: `Name ${n1}, gently`, sub: 'kindness, televised', do: { prize: true, unity: 1, note: `You name ${n1} gently — a person who lied for someone, not against anyone. The village hears the difference. The chain breaks clean. ${n1} cries. The village holds them anyway.`, notability: 'contestWin' }, next: 'WIN' },
-          { label: `Name ${n1}, publicly`, sub: 'the full spotlight', do: { prize: true, fracture: 1, note: `You name ${n1} in the full spotlight, every detail. The village gets its truth and its fracture in the same breath. ${n1} doesn't come to the fire for a week.` }, next: 'WIN' },
-          { label: 'Let the chain stand', sub: 'midnight passes', do: { trauma: 4, note: `You let midnight pass. The chain stands — all of it, including the lie. The village sleeps under a false vouch. The System files it under: mercy, expensive.` }, next: 'LOSE' },
-        ] },
-    ];
-  };
-
-  // --- THE ECHO (bespoke, detective/high) ---
-  // CONTEST-POOL EXPANSION 3 (Steve 2026-10-05): version-drift, not
-  // fabrication-hunt (witness) and not liar-hunting (informant). ONE
-  // witness, TWO tellings — dawn and noon — and the details moved between
-  // them. The knowledge gate: the noon telling always adds DANGER, bravery
-  // for the cameras. The dawn telling is the scared truth. The social fear:
-  // accuse a real witness of performing and the village eats them alive;
-  // bless the performance and the village arms for a danger that isn't real.
-  G._contestEcho = function(contest) {
-    const intro = this._cxIntro(contest);
-    const knows = this.contestKnowledge('echo').level >= 2;
-    const rule = knows
-      ? `\n\n📚 What the last echo taught you: the noon telling always adds DANGER — bravery for the cameras. The dawn telling is the scared truth. Believe the scared one.`
-      : `\n\nThe veterans who've heard an echo before just say "believe the first one." They won't say why the second one changed.`;
-    let wit = 'the witness';
-    try {
-      const r = (this.state.village.roster || []).find(id => id !== this.villagerId && this.isMember(id));
-      if (r) wit = this.displayName(r);
-    } catch (e) {}
-    return [
-      { beat: 'contestEcho',
-        text: intro + `\n\n${wit} saw something last night at the far traps. Told it twice.\n\nDAWN: "It was big. I heard it breathing. I hid. I don't know what it was."\n\nNOON: "It was BIG — came right at the traps, I stood my ground, it saw me and turned. I think I scared it."\n\nThe details moved. The cameras were at the noon telling. They were not at the dawn one.` + rule,
-        choices: [
-          { label: 'Line up the two tellings', sub: 'find what moved', do: { note: 'You line them up word for word. Dawn: hid, didn\'t know. Noon: stood ground, scared it. What moved is the danger — and who was brave inside it. The noon version has an audience. The dawn version has fear.' }, next: 1 },
-          { label: 'Ask about the dawn', sub: 'the scared telling', do: { note: `You ask about the dawn — quietly, no cameras. ${wit}'s voice drops. "I hid," they say. "I hid and I was ashamed of hiding, so at noon I..." The sentence trails off. The shame is doing the talking now.` }, next: 1 },
-          { label: 'Ask about the noon', sub: 'the brave telling', do: { note: `You ask about the noon version, on camera. ${wit} brightens — performs it again, bigger. The audience loves it. You watch the performance happen in real time and feel a little sick.` }, next: 1 },
-        ] },
-      { beat: 'contestEcho',
-        text: `The village is splitting. Half believes the noon telling — arms for a monster that charged the traps. Half heard the dawn one and is quietly terrified of something that just... breathed, out there, in the dark.\n\nWhat you say next decides which village wakes up tomorrow.`,
-        choices: [
-          { label: 'Press the added danger', sub: 'name the performance', do: { fracture: 1, note: `You press on the added danger — gently, but on camera. ${wit} breaks a little. "I was ASHAMED," they say. "Of hiding." The village hears it. The performance ends. The shame is real and so is the relief.` }, next: 2 },
-          { label: 'Give them a way out', sub: 'private truth', do: { note: `You give ${wit} a private way out: "The dawn one was the true one, wasn't it." A nod. Off camera. You carry the truth back yourself — the witness keeps their dignity, and the village gets the scared, true version.` }, next: 2 },
-          { label: 'Let them perform', sub: 'the crowd loves it', do: { trauma: 3, note: `You let the noon telling stand. The crowd loves it. The village arms for a charging monster that never charged anything. Somewhere out there, the real thing — the breathing thing — goes unwatched.` }, next: 2 },
-        ] },
-      { beat: 'contestEcho',
-        text: `The verdict, televised: which telling was true.\n\nThe village waits. ${wit} waits. The cameras wait — they love this part most of all.`,
-        choices: [
-          { label: 'Say it plainly: the dawn was true', sub: 'believe the scared one', do: { prize: true, unity: 1, note: `You say it plainly: the dawn telling was the true one. ${wit} hid, and was ashamed, and performed bravery for the cameras. The village exhales — the danger was smaller than the performance. ${wit} is forgiven by dinner. Shame is a universal language.`, notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Bless the noon telling', sub: 'the brave version wins', do: { fracture: 2, trauma: 4, note: `You bless the noon telling. The village arms for a monster that charged the traps — a monster that doesn't exist. The real thing, the breathing thing, walks the treeline unopposed all week. The cameras got a great show.` }, next: 'LOSE' },
-          { label: 'Say both are true enough', sub: 'split the difference', do: { trauma: 2, note: `You split the difference. Both tellings get to live. The village gets half a truth and a whole confusion. The System files it under: diplomacy, televised, useless.` }, next: 'LOSE' },
-        ] },
-    ];
-  };
-
-  // --- THE TIDE CLOCK (bespoke, forage/high) ---
-  // CONTEST-POOL EXPANSION 3 (Steve 2026-10-05): an environmental clock,
-  // not a race against others (calorie_run), not a raid (pantry_raid), not
-  // a harvest (honey), not a heist (cache). The tide returns on a schedule
-  // and the causeway drowns. Knowledge-gated: the third gull-cry means
-  // turn back — veterans know; first-timers learn it from the water.
-  // High risk because the water is honest about what it does to people.
-  G._contestTidepool = function(contest) {
-    const intro = this._cxIntro(contest);
-    const knows = this.contestKnowledge('tidepool').level >= 2;
-    const rule = knows
-      ? `\n\n📚 What the last tide taught you: third gull-cry, you turn back. No fourth pool is worth the causeway. The deep pools pay double and the tide charges double.`
-      : `\n\nThe veterans who've worked a tide before just keep counting gull-cries. They won't say what number they're counting to.`;
-    return [
-      { beat: 'contestTide',
-        text: intro + `\n\nThe tidal pools at the causeway's end — crab, mussel, urchin, a whole drowned pantry, exposed for one low tide.\n\nThe water is already coming back. It does not hurry. It does not need to. You have until the causeway goes under.` + rule,
-        choices: [
-          { label: 'Work the deep pools', sub: 'rich and risky', do: { kcal: 250, dmg: [4, 12], note: 'You work the deep pools — the rich ones, the far ones. Crab the size of your head. Mussels by the handful. The water is at your ankles. Then your calves. You are getting rich and the tide is getting closer.' }, next: 1 },
-          { label: 'Work the shallow pools', sub: 'steady, near the road', do: { kcal: 150, note: 'You work the shallow pools near the causeway — steady, unglamorous, close to the way home. The haul is honest. The water is honest too: it\'s rising.' }, next: 1 },
-          { label: 'Set baskets, come back', sub: 'traps do the waiting', do: { kcal: 100, note: 'You set baited baskets in the deep pools and retreat to high ground. Let the traps do the waiting — traps don\'t drown. The cameras find this boring. The tide finds it irrelevant.' }, next: 1 },
-        ] },
-      { beat: 'contestTide',
-        text: `First gull-cry. Then the second. The causeway is wet stone now, the pools merging into one rising sheet.\n\nYour sack is heavy. The deep pools are still giving. The water is at your knees.`,
-        choices: [
-          { label: 'Push one more pool', sub: 'greed vs water', do: { kcal: 300, dmg: [8, 18], die: 0.08, note: 'One more pool. The richest one, of course. You fill the sack to bursting. The water is at your thighs and moving like it has somewhere to be. You have somewhere to be too: OUT.' }, next: 2 },
-          { label: 'Start back now', sub: 'the smart money leaves', do: { kcal: 100, note: 'You start back. The smart money leaves before the third cry. Your sack is respectably heavy. The causeway is slick and the current is pulling at your boots, but you are moving toward dinner.' }, next: 2 },
-          { label: 'Throw the heavy basket ahead', sub: 'lighten and run', do: { kcal: -150, note: 'You hurl the heaviest basket ahead onto high rock and run light. Half the haul, all of the life. The basket lands. You land right after it. The water takes the causeway behind you like it was always going to.' }, next: 2 },
-        ] },
-      { beat: 'contestTide',
-        text: `THIRD GULL-CRY. The causeway is going under — white water over black stone, the pools gone, the whole flat drowning in real time.\n\nYou are on it. The far side is a long, wet run.`,
-        choices: [
-          { label: 'Run the causeway', sub: 'faster than the water', do: { prize: true, kcal: 400, dmg: [10, 22], die: 0.12, note: 'You RUN. Water to the knees, then the waist, the sack held high like an offering. The far rocks. Your feet find them. You come out of the water hauling dinner for the whole village, soaked to the soul, grinning like a maniac. The crowd detonates.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Wade it, slow and sure', sub: 'the water wins slowly', do: { prize: true, kcal: 200, note: 'You wade — slow, braced, letting the water have its hurry. It takes an hour. It takes half your haul to the current. What arrives is enough. The village eats. You sleep for a day.' }, next: 'WIN' },
-          { label: 'Drop the haul and run', sub: 'live, empty-handed', do: { trauma: 5, note: 'You drop the sack and RUN. The water takes the haul — crab, mussel, urchin, all of it, back to the sea. You make the rocks empty-handed and breathing. The cameras respect the choice. The village will eat something else tonight.' }, next: 'LOSE' },
-        ] },
-    ];
-  };
-
-  // --- WINDFALL (bespoke, forage/medium) ---
-  // CONTEST-POOL EXPANSION 3 (Steve 2026-10-05): preservation triage, not
-  // harvest (honey), not a race (calorie_run), not hiding (cache). A storm
-  // dropped a fortune and ALL of it is rotting on camera. The clock is
-  // spoilage. Knowledge-gated: the rot order — berries first, then meat to
-  // smoke, fish to dry, fruit keeps longest. Work the rot order, not the
-  // haul order. The skilled play is processing, not gathering.
-  G._contestWindfall = function(contest) {
-    const intro = this._cxIntro(contest);
-    const knows = this.contestKnowledge('windfall').level >= 2;
-    const rule = knows
-      ? `\n\n📚 What the last windfall taught you: berries rot first — eat them. Meat smokes, fish dries, fruit keeps longest. Work the rot order, not the haul order.`
-      : `\n\nThe veterans who've beaten the rot before just mutter "rot order, not haul order." They won't explain what that means until you've lost a haul to it.`;
-    return [
-      { beat: 'contestWind',
-        text: intro + `\n\nThe storm's leavings, spread across the meadow: berry bushes stripped and scattered, a downed deer, a stranded fish haul flopping in a cut-off pool, fruit everywhere.\n\nAll of it is rotting. Right now. On camera. The System, cheerful: "BEAT THE ROT. EAT, DRY, HAUL. THE CLOCK IS SPOILAGE."` + rule,
-        choices: [
-          { label: 'Eat the berries now', sub: 'rot order first', do: { kcal: 250, note: 'You eat the berries — handfuls of them, right there in the meadow, on camera. They\'re perfect for another hour and gone after that. The audience watches you eat like it\'s a sport. It kind of is.' }, next: 1 },
-          { label: 'Smoke the meat', sub: 'the deer won\'t wait', do: { kcal: 150, note: 'You get a smoke fire going under the deer meat fast. Smoke first, questions later. The meat will keep for weeks now. The cameras love the fire — fire is always good television.' }, next: 1 },
-          { label: 'Haul everything raw', sub: 'haul order, not rot order', do: { kcal: 300, note: 'You haul it all raw — fast, greedy, impressive. The pile is enormous. The pile is also already softening at the edges. The veterans in the village are wincing.' }, next: 1 },
-        ] },
-      { beat: 'contestWind',
-        text: `The sun climbs. The berries are going. The fish pool is warming — the stranded fish won't survive the afternoon, and neither will their freshness.\n\nThe meadow smells like a decision.`,
-        choices: [
-          { label: 'Dry the fish', sub: 'salt, sun, speed', do: { kcal: 200, note: 'You gut and split the fish and get them drying in the sun, salted from your kit. Fish dried today feeds the village in deep winter. The rot loses this round.' }, next: 2 },
-          { label: 'Keep hauling', sub: 'more pile', do: { kcal: 150, note: 'You keep hauling — more pile, bigger pile. Some of it is turning as you stack it. The audience is doing rot-math in the chat. The chat is right.' }, next: 2 },
-          { label: 'Share the method', sub: 'teach on camera', do: { unity: 1, note: 'You narrate the rot order on camera — berries, smoke, dry, fruit last. The other contestants hear it. The village hears it. Knowledge, televised, beats a bigger pile.' }, next: 2 },
-        ] },
-      { beat: 'contestWind',
-        text: `Last light. What's saved is saved; what's rotting is compost with an audience.\n\nThe System tallies: preserved vs lost. The village watches the numbers.`,
-        choices: [
-          { label: 'Present the preserved haul', sub: 'smoked, dried, kept', do: { prize: true, kcal: 400, note: 'You lay it out: smoked venison, dried fish, the last of the fruit, berries eaten at their peak. The rot got some. The rot did not get the winter. The village eats for weeks because you worked the rot order.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Eat the victory', sub: 'the feast, now', do: { prize: true, kcal: 500, note: 'You call the feast — right there, in the meadow, everything at its peak, the village invited. Some of it won\'t keep. All of it will be remembered. The cameras stay for dessert.' }, next: 'WIN' },
-          { label: 'Let the rest rot', sub: 'the pile wins', do: { kcal: -200, trauma: 3, note: 'You let the rest go. The big raw pile slumps in the sun. The cameras got the whole slow disaster. The village will find berries in odd places for weeks — and remember who let the deer turn.' }, next: 'LOSE' },
-        ] },
-    ];
-  };
-
   // --- GENERIC fallback ---
   G._contestGeneric = function(contest) {
     const intro = this._cxIntro(contest);
@@ -2536,9 +2233,7 @@
       if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'lost'); } catch (e) {} }
       if (isWatch) {
         this.sysSay(`📺 ${contest.name} — over. ${pname} survived. The audience is polite.`);
-        // WATCH-COMFORT (Steve 2026-10-06): "Give them space" must be honored.
-        if (ac.comfort) this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
-        else this.sysSay(`📺 You give ${pname} space. The cameras move on. You don't.`);
+        this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
       } else {
         this.sysSay(`📺 ${contest.name} — over. You survived. The audience is polite.`);
         try { this.leadShift('showmanship', 1); } catch (e) {}
@@ -2597,12 +2292,6 @@
       witness: `${pname} named the wrong witness. The village armed against a monster that never came, and the real one walked in through the unguarded treeline. The System kept the footage. It always keeps the footage.`,
       cache: `The drone didn't miss. ${pname} is a tax the village couldn't afford. The cache made it home, though. That's something. It's not enough.`,
       longodds: `${pname} went all in on the last roll. The dice landed wrong. The champion bowed — a real bow, almost respectful. The house always collects.`,
-      lockpick: `${pname} forced the last tumbler. The lock had one more trick than the pantry had food. The vault ate the sound of it — which is the cruelest thing a door can do.`,
-      wrongmap: `${pname} dug at the X. The map kept its promise exactly once — the lie. The rations are still out there, buried under the truth nobody checked.`,
-      alibi: `${pname} pulled the wrong link and the chain held. The village trusts the lie now — it's the only version left standing. ${poss} name is the one the chain remembers.`,
-      echo: `${pname} accused the noon telling and the cameras agreed. The witness is gone — not dead, worse: disbelieved forever. The System kept both tellings. It plays them back to back, on a loop.`,
-      tidepool: `${pname} heard the third gull-cry and kept gathering. The tide doesn't negotiate. The pools are rich this year — everyone says so. Nobody says it out loud.`,
-      windfall: `${pname} chased the rot and the rot won. The storm's fortune is compost now, and the cameras got the whole slow disaster. The village still finds berries in odd places.`,
     };
     const CAT = {
       blood: `${pname} bled out for the cameras. The Death Reel thanks ${them} for the content.`,
@@ -2661,7 +2350,6 @@
     try { this.contestLearn(ac.contestId, 'refused'); } catch (e) {}
     // MULTI-TAKE (Steve 2026-10-06): the others were taken anyway —
     // refusal is yours alone.
-    ac._refused = true;
     if (ac.others && ac.others.length) {
       this.sysSay(`📺 You said no. They didn't get asked.`);
       try { this._contestResolveOthers(ac); } catch (e) {}
@@ -2888,43 +2576,6 @@
         end: p => `📺 The Long Odds — the last roll. Everything ${p} staked is in the middle of the table, and the dice are in the air.\n\nThe champion is watching the dice. For the first time tonight, it is not smiling.`,
         knows: p => `📚 You've sat at that table. The dice are fair; the champion isn't — it reads hesitation the way the scanner reads lies. Commit to the bit.`,
       },
-      // --- CONTEST-POOL EXPANSION 3 (Steve 2026-10-05) ---
-      lockpick: {
-        setup: p => `📺 The Iron Pantry. ${p} has been taken.\n\nA vault door the size of weather. Behind glass: a full pantry, lit like a museum. Five tumblers. One hour of air.\n\n${p} presses an ear to the cold metal. The lock is talking. Whether ${p} speaks its language is the whole contest.`,
-        turn: p => `📺 The Iron Pantry — three tumblers set. The heavy ones are down; the light ones fight.\n\n${p} is listening the way you listen to a sick animal — close, patient, braced. The pantry glows through the glass. The village can smell it. That's the point of the glass.`,
-        end: p => `📺 The Iron Pantry — one tumbler left. Or one jam.\n\nThe whole village is holding its breath. Dinner is one click away, or it's a painting of food behind glass. ${p}'s hands are shaking. The lock doesn't care.`,
-        knows: p => `📚 You've picked this lock. Heavy to light — that's the order. If ${p} forces it now, shout. The lock eats the attempt, and then the whole thing is about the jam.`,
-      },
-      wrongmap: {
-        setup: p => `📺 The Wrong Map. ${p} has been taken — with a partner, and a map, and a lie.\n\nThe map moves when you don't look at it. The X marks buried alien rations. Exactly one thing on it is a lie.\n\n${p} studies the ink. The cameras study ${p}. The valley holds still, keeping its secret.`,
-        turn: p => `📺 The Wrong Map — the contradiction. ${p} is standing on what the map calls a riverbank, holding dust.\n\nThe river is the lie. It's been dry for years. So the X, measured from the river, is wrong too. ${p} is pacing the dry bed, doing the map's own math back at it.`,
-        end: p => `📺 The Wrong Map — the digging. Shovels in the dry bed, the whole valley watching.\n\nSomewhere under that dust: alien ration tins, or nothing. The map kept its promise exactly once — the lie. The truth is under the shovel, or it isn't.`,
-        knows: p => `📚 You've read its maps. It always lies about WATER. ${p} knows — watch them work the dry bed. The blue on the map is a rumor. The dust is the truth.`,
-      },
-      alibi: {
-        setup: p => `📺 The Alibi Chain. ${p} has been taken.\n\nFive villagers. Each vouches for the next, a chain ending at midnight. One link is false.\n\nThe chain is read aloud. ${p} listens. The village listens to ${p} listening — because whatever chain ${p} leaves standing, the village sleeps under.`,
-        turn: p => `📺 The Alibi Chain — the pulling. ${p} is working the links, and the links are stressed.\n\nOne of them is vouching louder than ever — volume as evidence. The others have gone quiet. Quiet people are either innocent or patient. The village is taking notes on all of them.`,
-        end: p => `📺 The Alibi Chain — midnight is coming. The false link is in there, holding the whole thing up.\n\n${p} has one naming. Name it right and the chain breaks clean. Name it wrong and the village trusts a lie — it's the only version left standing.`,
-        knows: p => `📚 You've broken a chain. The false link vouches first and loudest — watch the loud one. And how ${p} names it matters as much as the naming: gently, or the village fractures with the truth.`,
-      },
-      echo: {
-        setup: p => `📺 The Echo. ${p} has been taken.\n\nOne witness. Two tellings. Dawn: "I hid. I don't know what it was." Noon: "I stood my ground. I think I scared it."\n\nThe details moved between tellings. The cameras were at the noon one. ${p} has to find what the teller added for them.`,
-        turn: p => `📺 The Echo — the lining-up. ${p} has the two tellings side by side, word for word.\n\nWhat moved is the danger — and who was brave inside it. The witness is performing the noon version again, bigger, for the cameras. ${p} is watching the performance happen in real time.`,
-        end: p => `📺 The Echo — the verdict. Which telling was true.\n\nThe village is splitting down the middle. Half arms for a monster that charged. Half is quietly terrified of something that just breathed in the dark. ${p}'s word decides which village wakes up tomorrow.`,
-        knows: p => `📚 You've heard an echo. The noon telling always adds DANGER — bravery for the cameras. Believe the scared one. Watch ${p} — if they bless the performance, the village arms for nothing.`,
-      },
-      tidepool: {
-        setup: p => `📺 The Tide Clock. ${p} has been taken — with a partner, and a sack, and a drowning causeway.\n\nThe tidal pools are rich: crab, mussel, urchin, a drowned pantry exposed for one low tide. The water is already coming back.\n\n${p} wades in. The tide doesn't negotiate. The cameras love a deadline.`,
-        turn: p => `📺 The Tide Clock — the water is at ${p}'s knees. The deep pools are still giving.\n\nFirst gull-cry. Then the second. ${p}'s sack is heavy and the causeway is wet stone. The village is counting cries out loud, all at once, like that could help. It can't.`,
-        end: p => `📺 The Tide Clock — THIRD GULL-CRY. The causeway is going under, white water over black stone.\n\n${p} is on it. The far side is a long, wet run. The sack is dinner for the whole village — or it's an anchor. This is the part the Death Reel replays in slow motion.`,
-        knows: p => `📚 You've worked a tide. Third gull-cry, turn back — no fourth pool is worth the causeway. ${p} knows. Whether they listen is the whole contest.`,
-      },
-      windfall: {
-        setup: p => `📺 Windfall. ${p} has been taken — with two others, and a meadow full of rot.\n\nThe storm dropped a fortune: berries, a downed deer, stranded fish, fruit everywhere. All of it rotting, right now, on camera.\n\n${p} stands in the middle of it, doing triage. The clock is spoilage.`,
-        turn: p => `📺 Windfall — the sun climbs. The berries are going. The fish pool is warming.\n\n${p} is working the rot order — berries eaten, meat smoking, fish drying. Or hauling it all raw, fast and greedy. The meadow smells like a decision. The chat is doing rot-math. The chat is right.`,
-        end: p => `📺 Windfall — last light. What's saved is saved; what's rotting is compost with an audience.\n\nThe System tallies: preserved vs lost. ${p}'s pile is laid out — smoked, dried, kept, or slumped. The village watches the numbers. Winter watches harder.`,
-        knows: p => `📚 You've beaten the rot. Berries first, meat to smoke, fish to dry, fruit keeps. ${p} is working the rot order — watch the smoking fire. That's where the winter is.`,
-      },
     };
     const b = T[contest.id];
     if (!b) return null;
@@ -3118,11 +2769,7 @@
     const winOdds = { low: 0.70, medium: 0.55, high: 0.40, extreme: 0.25 }[contest.risk] || 0.5;
     const s = this.state.scholar;
     this.sysSay(`📺 ───`);
-    // REFUSAL-HONEST (Steve 2026-10-06): if the player refused, they fought
-    // no fight — say so.
-    this.sysSay(ac._refused
-      ? `📺 While you stood your ground and said no, they fought theirs.`
-      : `📺 While you fought your fight, they fought theirs.`);
+    this.sysSay(`📺 While you fought your fight, they fought theirs.`);
     for (const pid of others) {
       const pname = this.displayName(pid);
       if (dieOdds > 0 && Math.random() < dieOdds) {

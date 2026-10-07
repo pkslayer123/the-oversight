@@ -1083,11 +1083,11 @@
       const outTile = !inside;
       if (exit && outTile) {
         const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
-        const nt = (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) ? Game.tileAt(nx, ny) : null;
+        const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
         const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the edge of the known world';
         const block = nt ? Game.travelBlockage(nx, ny) : null;
         // WORLD EDGE (explorer loop 2026-10-06): no travel button into the
-        // void — the 9x9 map is the whole known world. The old button called
+        // void — the 7x7 map is the whole known world. The old button called
         // Game.travelTo with out-of-bounds coords and crashed the tap.
         if (nt) {
           const label = block ? `➡️ Head ${exit.dir} (blocked!)` : `➡️ Head ${exit.dir}`;
@@ -1379,75 +1379,17 @@
   // bars — never scroll to read what just happened. The engine marks the log
   // at action start (Game.feedbackMark); every say() after the mark lands in
   // the feedback card. Wrap every action invocation with actAndRefresh.
-  //
-  // APP-SIDE FALLBACK (Steve 2026-10-07): the engine currently exposes no
-  // feedbackMark/feedbackLines, which silently no-ops the feedback card and
-  // every actAndRefresh call. The mark is purely presentation — a bookmark
-  // into Game.log, which the engine still maintains via say() — so app.js
-  // keeps its own. If the engine ever defines these, the engine wins: no
-  // clobber, no logic change, presentation only.
-  let _fbMarkIdx = 0;
-  if (typeof Game !== 'undefined' && Game) {
-    if (typeof Game.feedbackMark !== 'function') {
-      Game.feedbackMark = function() { try { _fbMarkIdx = (Game.log || []).length; } catch (e) {} };
-    }
-    if (typeof Game.feedbackLines !== 'function') {
-      Game.feedbackLines = function() { try { return (Game.log || []).slice(_fbMarkIdx); } catch (e) { return []; } };
-    }
-  }
   function actAndRefresh(fn) {
     try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
     try { fn(); } catch (e) { console.error(e); }
     refresh();
   }
 
-  // SYNERGY TEASE STRINGS currently alive: tease1 (attempt 1) / tease2
-  // (attempt 2) for undiscovered synergies with 1-2 attempts whose
-  // requirements are held. Used to style their moment-of-use log lines as a
-  // distinct block — a tease must land, not drown in log noise.
-  function _synTeaseSet() {
-    const set = new Set();
-    try {
-      const sch = Game.state.scholar;
-      const syns = Game.data.synergies || [];
-      const attempts = sch.synergyAttempts || {};
-      const discovered = sch.synergies || [];
-      for (const syn of syns) {
-        if (discovered.includes(syn.id)) continue;
-        const dm = syn.discovery_method || {};
-        const key = syn.id + (dm.type === 'sustained' ? '_days' : '');
-        const n = attempts[key] || 0;
-        if (n !== 1 && n !== 2) continue;
-        const minLvl = syn.minLevel || 1;
-        const held = (syn.requires || []).every(rid => { try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; } });
-        if (!held) continue;
-        if (n === 1 && dm.tease1) set.add(dm.tease1);
-        if (n === 2 && dm.tease2) set.add(dm.tease2);
-      }
-    } catch (e) {}
-    return set;
-  }
-
-  function _isSynTeaseLine(l, teases) {
-    if (teases.has(l)) return true;
-    // game.js's attempt-2 nudge ("Something wants to happen when you do...
-    // whatever you just did. (2/3)") is part of the tease beat.
-    return /^Something wants to happen when you do/.test(l);
-  }
-
   function feedbackInner() {
     let lines = [];
     try { lines = (Game.feedbackLines && Game.feedbackLines()) || []; } catch (e) {}
     if (!lines.length) return '';
-    const teases = _synTeaseSet();
-    return lines.map(l => {
-      if (_isSynTeaseLine(l, teases)) {
-        // IN-THE-MOMENT TEASE: distinct styled block, right under the action
-        // bars — the shiver you felt using those two abilities together.
-        return `<p class="fb-line fb-syntease" style="border-left:3px solid #b48cff;padding:6px 8px;background:rgba(150,100,255,.09);border-radius:6px;font-style:italic;margin:6px 0">🌀 ${esc(l)}</p>`;
-      }
-      return `<p class="fb-line">${esc(l)}</p>`;
-    }).join('');
+    return lines.map(l => `<p class="fb-line">${esc(l)}</p>`).join('');
   }
   function feedbackHTML() {
     const inner = feedbackInner();
@@ -1757,16 +1699,11 @@
   //   rushHit() diveImpact() ambushSnap()
   //   WAVE-2 BESPOKE (Steve 2026-10-06): staticScream() (voice_mimic reveal —
   //   wired: game.js fires it at the reveal-scream declare), serviceRush()
-  //   (service_mimic resolve — wired: game.js rush-resolve),
+  //   (service_mimic resolve — wired: game.js rush-resolve), contractBind()
+  //   (contract_golem strike — wired: monsters.json encounter.resolveAudio),
   //   monsterDown() (wired: game.js death fallthrough for monsters with no
   //   deathAudio) / monsterHurt() (wired: game.js tbDamage, solid hits,
-  //   once per round), delegateDebrief() (wired: game.js:19032 manager
-  //   death-line). contractBind() REMOVED 2026-10-07: dead synth (no
-  //   contract_golem in monsters.json) — design preserved in
-  //   evidence/2026-10-07/audio-hook-map-20261007.md.
-  //   WOUND TEMPERAMENTS (Steve 2026-10-07): woundEnraged()/woundCunning()/
-  //   woundDesperate() — wired: encounters.js fires on wound-state shifts
-  //   (were mute; registry entries added here, no emitter change needed).
+  //   once per round), delegateDebrief() (was fired by tbFifoBreather, silent).
   //   projectorFire() (memory_projector resolve: whine swelling into the cold
   //   pull tone, hard cut — the light has edges).
   //   WAVE-2 FLYER VOICES (Steve 2026-10-06): nevermoreCroak/nevermoreStrafe/
@@ -3141,6 +3078,71 @@
       w.connect(wg); wg.connect(sfxBus);
       w.start(t); w.stop(t + 1.35); lfo.start(t); lfo.stop(t + 1.35);
     }
+    function managerAnnounce() {
+      // MEETING CALLED TO ORDER: intercom crackle first — then the horn,
+      // DOUBLED a minor second apart so it beats against itself, under a
+      // fluorescent buzz that's slightly out of tune with the room. Three
+      // paper slaps: the agenda, the minutes, the action items. Attendance
+      // mandatory. There is no excuse form.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.85;
+      // intercom crackle: the PA clearing its throat
+      const cnb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.18), ctx.sampleRate);
+      const cch = cnb.getChannelData(0);
+      for (let i = 0; i < cch.length; i++) cch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (cch.length * 0.25));
+      const csrc = ctx.createBufferSource(); csrc.buffer = cnb;
+      const cbp = ctx.createBiquadFilter(); cbp.type = 'bandpass'; cbp.frequency.value = 1800; cbp.Q.value = 1.2;
+      const cg = ctx.createGain(); cg.gain.value = 0.16;
+      csrc.connect(cbp); cbp.connect(cg); cg.connect(sfxBus); csrc.start(t);
+      // the horn, doubled at a minor 2nd: G3 + G#3 — it disagrees with itself
+      for (const [f0, drop] of [[196, 147], [207.65, 155.56]]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.setValueAtTime(f0, t + 0.35);
+        o.frequency.setValueAtTime(drop, t + 0.36); // the final word
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+        g.gain.setValueAtTime(0.0001, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.15, t + 0.16);
+        g.gain.setValueAtTime(0.15, t + 0.55);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t + 0.1); o.stop(t + dur);
+      }
+      // fluorescent buzz: 120Hz + 118Hz, thin, sour — the room is wrong
+      for (const f of [120, 118]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.028, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + dur);
+      }
+      // the paperwork: three slaps, escalating
+      for (let i = 0; i < 3; i++) {
+        const dt = t + 0.45 + i * 0.07;
+        const nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.12), ctx.sampleRate);
+        const ch = nb.getChannelData(0);
+        for (let j = 0; j < ch.length; j++) ch[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ch.length * 0.15));
+        const src = ctx.createBufferSource(); src.buffer = nb;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2000;
+        const g2 = ctx.createGain(); g2.gain.value = 0.1 + i * 0.04;
+        src.connect(hp); hp.connect(g2); g2.connect(sfxBus); src.start(dt);
+      }
+      // intercom squelch tail: the PA hangs up on you. Chirps down and dies.
+      const q = ctx.createOscillator(), qg = ctx.createGain();
+      q.type = 'sawtooth';
+      q.frequency.setValueAtTime(1200, t + dur - 0.18);
+      q.frequency.exponentialRampToValueAtTime(300, t + dur);
+      const qbp = ctx.createBiquadFilter(); qbp.type = 'bandpass'; qbp.frequency.value = 900; qbp.Q.value = 2;
+      qg.gain.setValueAtTime(0.0001, t + dur - 0.18);
+      qg.gain.exponentialRampToValueAtTime(0.07, t + dur - 0.12);
+      qg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      q.connect(qbp); qbp.connect(qg); qg.connect(sfxBus);
+      q.start(t + dur - 0.18); q.stop(t + dur + 0.02);
+    }
     function managerCharge() {
       // THE CHARGE: thundering hooves, low and inevitable — plus the tie
       // flapping like a flag. It delegated the violence to itself.
@@ -3708,6 +3710,34 @@
       }
     }
     // WAVE-2 REDESIGN (Steve 2026-10-06): five new monsters, five new voices.
+    function understudyLearn() {
+      // LEARNING (deepened 2026-10-06): an echo that corrects itself — the
+      // first tone lands alone and sure. The second arrives as two throats
+      // nearly in unison, beating against each other, wobbling as they
+      // search. The third locks: one exact tone with a high shimmer. You
+      // can HEAR it figure you out.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const voice = (fq, dt, dur, peak, wobble) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        if (wobble) { // searching: the pitch hunts
+          const lfo = ctx.createOscillator(), lg = ctx.createGain();
+          lfo.type = 'sine'; lfo.frequency.value = 6; lg.gain.value = wobble;
+          lfo.connect(lg); lg.connect(o.frequency);
+          lfo.start(dt); lfo.stop(dt + dur);
+        }
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(peak, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + dur);
+        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + dur + 0.02);
+      };
+      voice(440, t, 0.2, 0.12);                    // sure
+      voice(445, t + 0.24, 0.24, 0.1, 14);          // searching, low
+      voice(447.8, t + 0.24, 0.24, 0.1, 14);        // searching, high: beats
+      voice(440, t + 0.5, 0.26, 0.12);              // locked
+      voice(880, t + 0.5, 0.3, 0.04);               // the shimmer of certainty
+    }
     function understudyCopy() {
       // THE COPY (deepened 2026-10-06): your move, played back at you — a
       // perfect mirror, then a semitone off AND sour: a third voice beating
@@ -3737,6 +3767,42 @@
       shg.gain.exponentialRampToValueAtTime(0.0001, dt2 + 0.25);
       sh.connect(shg); shg.connect(sfxBus);
       sh.start(dt2); sh.stop(dt2 + 0.27); am.start(dt2); am.stop(dt2 + 0.27);
+    }
+    function landlordStamp() {
+      // THE STAMP: a heavy official thud — wood on paper, final. Then the
+      // paper slides. Bureaucracy as percussion.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+      g.gain.setValueAtTime(0.3, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.16);
+      // paper slide
+      const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 4000;
+        ng.gain.setValueAtTime(0.06, t + 0.15);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.15); nz.stop(t + 0.5);
+      }
+      // the rubber squeak: the stamp gripping the paper, two detuned
+      // sawtooths beating through a bandpass — officialdom has a sound,
+      // and it is unpleasant
+      [1350, 1358].forEach((fq) => {
+        const sq = ctx.createOscillator(), sqf = ctx.createBiquadFilter(), sqg = ctx.createGain();
+        sq.type = 'sawtooth';
+        sq.frequency.setValueAtTime(fq, t + 0.05);
+        sq.frequency.exponentialRampToValueAtTime(fq * 1.35, t + 0.23);
+        sqf.type = 'bandpass'; sqf.frequency.value = 1500; sqf.Q.value = 4;
+        sqg.gain.setValueAtTime(0.0001, t + 0.05);
+        sqg.gain.exponentialRampToValueAtTime(0.045, t + 0.12);
+        sqg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        sq.connect(sqf); sqf.connect(sqg); sqg.connect(sfxBus);
+        sq.start(t + 0.05); sq.stop(t + 0.32);
+      });
     }
     function landlordClaim() {
       // JURISDICTION SPREADING (deepened 2026-10-06): a low brass note that
@@ -3896,6 +3962,98 @@
       g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
       o2.connect(g2); g2.connect(sfxBus);
       o2.start(t); o2.stop(t + 0.36); lfo.start(t); lfo.stop(t + 0.36);
+    }
+    function paparazzoFlash() {
+      // THE FLASH (deepened 2026-10-06): white burst, but personal — aimed
+      // at YOU, not a crowd. After it dies, an afterimage whine hangs in
+      // the air: two thin tones beating against each other, slowly fading,
+      // with a slow flutter. Underneath, a low thump: you have been seen.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.25;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.35, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(hp); hp.connect(g); g.connect(sfxBus);
+      src.start(t); src.stop(t + dur);
+      // afterimage: two thin tones, beating, with a slow flutter
+      [3520, 3531].forEach((fq) => {
+        const w = ctx.createOscillator(), wg = ctx.createGain();
+        w.type = 'sine'; w.frequency.value = fq;
+        const fl = ctx.createOscillator(), flg = ctx.createGain();
+        fl.type = 'sine'; fl.frequency.value = 4.5; flg.gain.value = 0.015;
+        fl.connect(flg); flg.connect(wg.gain);
+        wg.gain.setValueAtTime(0.0001, t + 0.05);
+        wg.gain.exponentialRampToValueAtTime(0.035, t + 0.2);
+        wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+        w.connect(wg); wg.connect(sfxBus);
+        w.start(t + 0.05); w.stop(t + 1.25); fl.start(t + 0.05); fl.stop(t + 1.25);
+      });
+      // you're exposed: a low thump under the whine
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine'; th.frequency.setValueAtTime(70, t + 0.1);
+      th.frequency.exponentialRampToValueAtTime(40, t + 0.35);
+      thg.gain.setValueAtTime(0.0001, t + 0.1);
+      thg.gain.exponentialRampToValueAtTime(0.18, t + 0.14);
+      thg.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      th.connect(thg); thg.connect(sfxBus); th.start(t + 0.1); th.stop(t + 0.45);
+    }
+    function unionRepChant() {
+      // THE CHANT (deepened 2026-10-06): a picket line finding its beat —
+      // not one voice but a crowd. Each pulse is three detuned throats
+      // (beating against each other) over a sub stomp that drops in pitch
+      // like a boot hitting dirt, with breath noise between the pulses.
+      // The fourth pulse lands harder: the crowd swells in behind it.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.26, 0.52, 0.78].forEach((dt, i) => {
+        const hard = i === 3;
+        // the throats: detuned, beating
+        [110, 111.5, 107].forEach((fq) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.value = fq;
+          const peak = hard ? 0.11 : 0.07;
+          g.gain.setValueAtTime(0.0001, t + dt);
+          g.gain.exponentialRampToValueAtTime(peak, t + dt + 0.04);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + (hard ? 0.3 : 0.2));
+          o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.32);
+        });
+        // the floor: a sub stomp that drops like a boot in dirt
+        const s = ctx.createOscillator(), sg = ctx.createGain();
+        s.type = 'sine';
+        s.frequency.setValueAtTime(60, t + dt);
+        s.frequency.exponentialRampToValueAtTime(36, t + dt + 0.22);
+        sg.gain.setValueAtTime(0.0001, t + dt);
+        sg.gain.exponentialRampToValueAtTime(hard ? 0.25 : 0.15, t + dt + 0.03);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.28);
+        s.connect(sg); sg.connect(sfxBus); s.start(t + dt); s.stop(t + dt + 0.3);
+        if (hard) {
+          // the swell: the crowd comes in behind the fourth pulse
+          const nz = noise(1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+          if (nz) {
+            nf.type = 'lowpass'; nf.frequency.value = 900;
+            ng.gain.setValueAtTime(0.0001, t + dt);
+            ng.gain.exponentialRampToValueAtTime(0.14, t + dt + 0.2);
+            ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.7);
+            nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+            nz.start(t + dt); nz.stop(t + dt + 0.75);
+          }
+        }
+      });
+      // breath between the pulses: the line is alive
+      const br = noise(1), bf = ctx.createBiquadFilter(), bg = ctx.createGain();
+      if (br) {
+        bf.type = 'bandpass'; bf.frequency.value = 700; bf.Q.value = 0.8;
+        bg.gain.setValueAtTime(0.0001, t + 0.1);
+        bg.gain.linearRampToValueAtTime(0.05, t + 0.4);
+        bg.gain.linearRampToValueAtTime(0.0001, t + 1.0);
+        br.connect(bf); bf.connect(bg); bg.connect(sfxBus);
+        br.start(t); br.stop(t + 1.05);
+      }
     }
     function unionRepWhistle() {
       // THE WHISTLE (deepened 2026-10-06): a pea-whistle blast — the line
@@ -4461,47 +4619,25 @@
       }
     }
     function modViolation(d) {
-      // THE FLAG, ANGRIER (Steve 2026-10-07): bitcrushed buzzes, a detuned
-      // fifth sliding up a semitone between buzzes (the second buzz knows
-      // more about you), a 31Hz AM stutter — prime, alien throat-clearing —
-      // and a paper-tear static sweep down before the stamp lands.
+      // THE FLAG (Steve 2026-10-06): you used a muted verb. Two harsh buzzes
+      // — the second angrier, pitched up by how many violations you've stacked
+      // — then the stamp comes down on the paperwork. With your name on it.
       if (!ensure()) return;
       const t = ctx.currentTime;
       const v = Math.min(8, Math.max(0, (d && d.violations) || 1));
-      const curve = new Float32Array(256);
-      for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(3 * x); }
       [0, 0.28].forEach((dt, i) => {
-        const bb = ctx.createGain(); bb.connect(sfxBus);
-        const f0 = 110 + v * 14 + i * 22;
-        [[f0, 1], [f0 * 1.5, 1.0595]].forEach(([fq, slide]) => {
-          const o = ctx.createOscillator(), g = ctx.createGain(), ws = ctx.createWaveShaper();
-          ws.curve = curve; ws.oversample = '2x';
-          o.type = 'sawtooth';
-          o.frequency.setValueAtTime(fq, t + dt);
-          o.frequency.exponentialRampToValueAtTime(fq * slide, t + dt + 0.22);
-          o.connect(ws); ws.connect(g); g.connect(bb);
-          g.gain.setValueAtTime(0.0001, t + dt);
-          g.gain.exponentialRampToValueAtTime(0.08, t + dt + 0.03);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
-          o.start(t + dt); o.stop(t + dt + 0.28);
-        });
-        const am = ctx.createOscillator(), amg = ctx.createGain();
-        am.type = 'square'; am.frequency.value = 31; amg.gain.value = 0.6;
-        am.connect(amg); amg.connect(bb.gain);
-        am.start(t + dt); am.stop(t + dt + 0.28);
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = 110 + v * 14 + i * 22;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.type = 'sine'; lfo.frequency.value = 28; lg.gain.value = 0.5;
+        lfo.connect(lg); lg.connect(g.gain);
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.11, t + dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.24);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + 0.28); lfo.start(t + dt); lfo.stop(t + dt + 0.28);
       });
-      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'highpass';
-        nf.frequency.setValueAtTime(6000, t + 0.5);
-        nf.frequency.exponentialRampToValueAtTime(800, t + 0.75);
-        ng.gain.setValueAtTime(0.0001, t + 0.5);
-        ng.gain.exponentialRampToValueAtTime(0.1, t + 0.58);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t + 0.5); nz.stop(t + 0.85);
-      }
-      thump(t + 0.8, 0.5);
+      thump(t + 0.55, 0.5);
     }
     function modRemoval(d) {
       // THE NOTICE (Steve 2026-10-06): "REMOVAL IMMINENT." A send-whoosh —
@@ -6235,6 +6371,25 @@
       o.connect(f); f.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + dur + 0.05); v.start(t); v.stop(t + dur + 0.05);
     }
+    function ducksRejoin() {
+      // REJOIN: the tail thrashes back into line — three relieved hisses
+      // falling into rhythm, then the lockstep resumes. The line is whole.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      duckHissAt(t, 0.3, 0.11);
+      duckHissAt(t + 0.3, 0.3, 0.12);
+      duckHissAt(t + 0.58, 0.3, 0.13);
+      duckHissAt(t + 0.82, 0.4, 0.16);
+      // formation click: the line snapping straight
+      const nz = noise(0.1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 3000;
+        ng.gain.setValueAtTime(0.12, t + 0.9);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.9); nz.stop(t + 1.02);
+      }
+    }
     function heronStatic() {
       // WHITE NOISE HERON: the air goes staticky — crackling wrongness.
       if (!ensure()) return;
@@ -6976,67 +7131,33 @@
       });
     }
     function exileWalk() {
-      // THE WALK, LONELIER (Steve 2026-10-07): each hum voice goes flat as it
-      // drops — the village forgets the note. A limping gait with gravel
-      // under every step. A lone wandering wind arrives after the voices are
-      // gone. One distant bell partial rings once and never resolves.
+      // THE WALK: footsteps receding, and the village hum dropping one voice
+      // at a time. Nobody follows. The hum thins until it's one voice, then
+      // none — then just the footsteps, then not even those.
       if (!ensure()) return;
       const t = ctx.currentTime;
+      // village hum: 4 detuned voices, dropping out one by one
       [130, 131.2, 138.5, 140].forEach((fq, i) => {
         const v = ctx.createOscillator(), vg = ctx.createGain();
-        v.type = 'triangle';
+        v.type = 'triangle'; v.frequency.value = fq;
         const stopAt = t + 0.6 + i * 0.7;
-        v.frequency.setValueAtTime(fq, t);
-        v.frequency.exponentialRampToValueAtTime(fq * 0.94, stopAt);
         vg.gain.setValueAtTime(0.0001, t);
         vg.gain.exponentialRampToValueAtTime(0.07, t + 0.4);
         vg.gain.setValueAtTime(0.07, stopAt - 0.15);
-        vg.gain.exponentialRampToValueAtTime(0.0001, stopAt);
+        vg.gain.exponentialRampToValueAtTime(0.0001, stopAt); // each voice drops
         v.connect(vg); vg.connect(sfxBus); v.start(t); v.stop(stopAt + 0.05);
       });
-      const gait = [0.55, 0.62, 0.51, 0.58, 0.66, 0.55];
-      let dt = t + 0.3;
-      gait.forEach((step, i) => {
+      // footsteps: 6 steps, getting quieter and further (lowpass closes)
+      for (let i = 0; i < 6; i++) {
+        const dt = t + 0.3 + i * 0.55;
         const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
-        o.type = 'sine';
-        o.frequency.setValueAtTime(120, dt);
+        o.type = 'sine'; o.frequency.setValueAtTime(120, dt);
         o.frequency.exponentialRampToValueAtTime(55, dt + 0.12);
-        f.type = 'lowpass'; f.frequency.value = 900 - i * 120;
-        g.gain.setValueAtTime(0.2 - i * 0.028, dt);
+        f.type = 'lowpass'; f.frequency.value = 900 - i * 120; // receding
+        g.gain.setValueAtTime(0.22 - i * 0.03, dt);
         g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
         o.connect(f); f.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.2);
-        const nz2 = noise(0.08), nf2 = ctx.createBiquadFilter(), ng2 = ctx.createGain();
-        if (nz2) {
-          nf2.type = 'highpass'; nf2.frequency.value = 2500;
-          ng2.gain.setValueAtTime(Math.max(0.012, 0.05 - i * 0.006), dt);
-          ng2.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
-          nz2.connect(nf2); nf2.connect(ng2); ng2.connect(sfxBus);
-          nz2.start(dt); nz2.stop(dt + 0.1);
-        }
-        dt += step;
-      });
-      [196, 196.9].forEach(fq => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = fq;
-        const lfo = ctx.createOscillator(), lg = ctx.createGain();
-        lfo.type = 'sine'; lfo.frequency.value = 0.07; lg.gain.value = 1.2;
-        lfo.connect(lg); lg.connect(o.frequency);
-        g.gain.setValueAtTime(0.0001, t + 1.5);
-        g.gain.exponentialRampToValueAtTime(0.035, t + 2.5);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 5.5);
-        o.connect(g); g.connect(sfxBus);
-        o.start(t + 1.5); o.stop(t + 5.6); lfo.start(t + 1.5); lfo.stop(t + 5.6);
-      });
-      const lastDrop = t + 0.6 + 3 * 0.7;
-      [[660, 0.05], [1320, 0.018]].forEach(([fq, peak]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = fq;
-        g.gain.setValueAtTime(0.0001, lastDrop);
-        g.gain.exponentialRampToValueAtTime(peak, lastDrop + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, lastDrop + 2.6);
-        o.connect(g); g.connect(sfxBus);
-        o.start(lastDrop); o.stop(lastDrop + 2.7);
-      });
+      }
     }
     // ---- HAVEN ARC (Steve 2026-10-06): a sibling's exile/betrayal system
     // fired joinVillage/claimSite/chopWood/buildShelter/foundHaven with no
@@ -8117,6 +8238,35 @@
       wg.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.2);
       w.connect(wg); wg.connect(sfxBus); w.start(t + dur * 0.6); w.stop(t + dur + 0.25);
     }
+    function contractBind() {
+      // BINDING AGREEMENT: fine print crawling, accelerating into a heavy
+      // STAMP. Paper becomes law becomes weight. (contract_golem strike)
+      if (!ensure()) return;
+      stopHeartbeat();
+      const t = ctx.currentTime;
+      // paper rattle accelerating: 8 hits, interval shrinking
+      let dt = t;
+      for (let i = 0; i < 8; i++) {
+        const nz = noise(0.09), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nz) {
+          nf.type = 'highpass'; nf.frequency.value = 4500;
+          ng.gain.setValueAtTime(0.16, dt);
+          ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
+          nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nz.start(dt); nz.stop(dt + 0.09);
+        }
+        dt += 0.16 - i * 0.016;
+      }
+      // the STAMP: low, official, final
+      const st = t + 0.85;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(95, st);
+      o.frequency.exponentialRampToValueAtTime(28, st + 0.4);
+      g.gain.setValueAtTime(0.6, st);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + 0.55);
+      o.connect(g); g.connect(sfxBus); o.start(st); o.stop(st + 0.6);
+    }
     function monsterDown() {
       // GENERIC DEATH (wave-2 siblings): a small collapse, a breath out,
       // and one wrong note hanging in the air after it.
@@ -8447,59 +8597,25 @@
     }
     // ============ AMBIENT STING (Steve 2026-10-06) ============
     function horrorSting() {
-      // THE STING THAT NOTICES YOU NOTICING (Steve 2026-10-07): tritone pair
-      // rising, never arriving — under it, three sines spiral DOWN an octave
-      // (your ear can't tell which way is up). Static gated at 17.3Hz — the
-      // System doesn't keep time like you do — then a sub drop: the flinch.
+      // THE MISSING STING: referenced by the UI dread-beat (app.js top),
+      // never defined until now. A detuned swell that never resolves —
+      // something noticed you noticing it.
       if (!ensure()) return;
       const t = ctx.currentTime, dur = 1.8;
-      [[110, 165], [155.56, 233]].forEach(([f0, f1]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+      [110, 116.5].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
         o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f0, t);
-        o.frequency.exponentialRampToValueAtTime(f1, t + dur);
-        f.type = 'lowpass';
-        f.frequency.setValueAtTime(320, t);
-        f.frequency.exponentialRampToValueAtTime(750, t + dur);
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 1.5, t + dur); // rising, never arriving
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+        f.frequency.setValueAtTime(400, t);
+        f.frequency.exponentialRampToValueAtTime(900, t + dur);
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.09, t + dur * 0.6);
+        g.gain.exponentialRampToValueAtTime(0.1, t + dur * 0.6);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         o.connect(f); f.connect(g); g.connect(sfxBus);
         o.start(t); o.stop(t + dur);
       });
-      [220, 440, 880].forEach((f0, i) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine';
-        o.frequency.setValueAtTime(f0, t);
-        o.frequency.exponentialRampToValueAtTime(f0 / 2, t + dur);
-        const a0 = t + i * 0.25;
-        g.gain.setValueAtTime(0.0001, a0);
-        g.gain.exponentialRampToValueAtTime(0.06, a0 + 0.3);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(g); g.connect(sfxBus);
-        o.start(a0); o.stop(t + dur);
-      });
-      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 2;
-        const gate = ctx.createOscillator(), gg = ctx.createGain();
-        gate.type = 'square'; gate.frequency.value = 17.3; gg.gain.value = 0.5;
-        gate.connect(gg); gg.connect(ng.gain);
-        ng.gain.setValueAtTime(0.0001, t);
-        ng.gain.exponentialRampToValueAtTime(0.12, t + 0.5);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t); nz.stop(t + 1.6); gate.start(t); gate.stop(t + 1.6);
-      }
-      const s = ctx.createOscillator(), sg = ctx.createGain();
-      s.type = 'sine';
-      s.frequency.setValueAtTime(64, t + 1.3);
-      s.frequency.exponentialRampToValueAtTime(27, t + 1.8);
-      sg.gain.setValueAtTime(0.0001, t + 1.3);
-      sg.gain.exponentialRampToValueAtTime(0.22, t + 1.42);
-      sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
-      s.connect(sg); sg.connect(sfxBus);
-      s.start(t + 1.3); s.stop(t + 1.95);
     }
 
     // on beam fire — brief, violent, unmistakable. The phone screen itself
@@ -8905,121 +9021,6 @@
       c.start(t + 0.4); c.stop(t + 0.85);
     }
 
-    // WOUND TEMPERAMENTS (Steve 2026-10-07): encounters.js fires these when a
-    // monster's wound-state changes the fight's personality — the registry
-    // entries never existed, so every temperament shift played mute. Three
-    // voices, three psychologies. All synthesis, bounded node counts.
-    function woundEnraged() {
-      // ENRAGED: BLEEDING — and it likes it. Louder, faster, no more feints.
-      // A low pounding that accelerates into a detuned saw-stack scream, a
-      // tritone apart and climbing, with a wet tearing noise underneath.
-      // The telegraphs get bigger because the rage is.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // the pounding: thumps accelerating, 0.3s apart closing to 0.12
-      let dt = t, gap = 0.3;
-      while (dt < t + 1.1) {
-        thump(dt, 0.26);
-        dt += gap; gap = Math.max(0.12, gap * 0.82);
-      }
-      // the scream: two saws a tritone apart, climbing together
-      [[220, 330], [311.1, 466.2]].forEach(([f0, f1]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f0, t);
-        o.frequency.exponentialRampToValueAtTime(f1, t + 1.0);
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.1, t + 0.15);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
-        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.22);
-      });
-      // the tear: wet noise ripping upward through a bandpass
-      const nz = noise(0.9), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.Q.value = 3;
-        nf.frequency.setValueAtTime(300, t);
-        nf.frequency.exponentialRampToValueAtTime(2800, t + 0.8);
-        ng.gain.setValueAtTime(0.0001, t);
-        ng.gain.exponentialRampToValueAtTime(0.08, t + 0.2);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t); nz.stop(t + 1.0);
-      }
-    }
-    function woundCunning() {
-      // CUNNING: hurt — and it goes quiet and clever. It stops rushing. It
-      // starts CHOOSING. Near-silence first (the hush IS the cue), then
-      // careful deliberate ticks at even intervals — something counting —
-      // under a low watchful tone whose slow LFO scans the room.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // the counting: six dry ticks, perfectly even — deliberate
-      for (let i = 0; i < 6; i++) {
-        const dt = t + 0.25 + i * 0.28;
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square'; o.frequency.value = 1900;
-        const f = ctx.createBiquadFilter();
-        f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 9;
-        g.gain.setValueAtTime(0.0001, dt);
-        g.gain.exponentialRampToValueAtTime(0.055, dt + 0.008);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.05);
-        o.connect(f); f.connect(g); g.connect(sfxBus);
-        o.start(dt); o.stop(dt + 0.07);
-      }
-      // the watcher: low tone scanning slowly, never settling
-      const w = ctx.createOscillator(), wg = ctx.createGain();
-      w.type = 'sine'; w.frequency.value = 82;
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.type = 'sine'; lfo.frequency.value = 0.5; lg.gain.value = 22;
-      lfo.connect(lg); lg.connect(w.frequency);
-      wg.gain.setValueAtTime(0.0001, t + 0.2);
-      wg.gain.exponentialRampToValueAtTime(0.11, t + 0.6);
-      wg.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
-      w.connect(wg); wg.connect(sfxBus);
-      w.start(t + 0.2); w.stop(t + 2.25); lfo.start(t + 0.2); lfo.stop(t + 2.25);
-    }
-    function woundDesperate() {
-      // DESPERATE: hurt bad — and it knows it. Wild swings, everything
-      // committed, nothing held back. Erratic flailing: detuned stabs at
-      // irregular intervals over a failing-engine sputter (a low saw
-      // choking on a prime-rate AM stutter), ending ragged, mid-gasp.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // the flailing: five stabs, irregular gaps, climbing sharper
-      const gaps = [0, 0.19, 0.47, 0.66, 1.02];
-      gaps.forEach((off, i) => {
-        const dt = t + off;
-        const base = 340 + i * 45;
-        [0, 7].forEach(det => {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = 'sawtooth'; o.frequency.value = base + det;
-          g.gain.setValueAtTime(0.0001, dt);
-          g.gain.exponentialRampToValueAtTime(0.11, dt + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
-          o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.18);
-        });
-      });
-      // the failing engine: low saw choking on 29Hz AM — prime, arrhythmic
-      const e = ctx.createOscillator(), eg = ctx.createGain();
-      e.type = 'sawtooth'; e.frequency.value = 65;
-      const am = ctx.createOscillator(), amg = ctx.createGain();
-      am.type = 'square'; am.frequency.value = 29; amg.gain.value = 0.05;
-      am.connect(amg); amg.connect(eg.gain);
-      eg.gain.setValueAtTime(0.08, t);
-      eg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
-      e.connect(eg); eg.connect(sfxBus);
-      e.start(t); e.stop(t + 1.35); am.start(t); am.stop(t + 1.35);
-      // the gasp: one breath that doesn't finish
-      const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 2;
-        ng.gain.setValueAtTime(0.0001, t + 1.1);
-        ng.gain.exponentialRampToValueAtTime(0.09, t + 1.25);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.45); // cut off — never finishes
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t + 1.1); nz.stop(t + 1.5);
-      }
-    }
     return {
       ensureAudio() { return ensure(); },
       combatStart() { combatStartHit(); heartbeat(72); }, // (Steve 2026-10-06): the opening now lands its own wrong-horn sting, then the heartbeat takes over
@@ -9094,7 +9095,9 @@
       swarmFilm() { swarmFilm(); },
       swarmBuild() { swarmBuild(); },
       swarmFlash() { swarmFlash(); },
+      understudyLearn() { understudyLearn(); },
       understudyCopy() { understudyCopy(); },
+      landlordStamp() { landlordStamp(); },
       landlordClaim() { landlordClaim(); },
       hecklerTaunt(d) { hecklerTaunt(d); },
       hecklerPileOn() { hecklerPileOn(); },
@@ -9103,6 +9106,8 @@
       // deepened taunt (closest existing voice).
       hecklerLaugh(d) { hecklerTaunt(d); },
       paparazzoShutter() { paparazzoShutter(); },
+      paparazzoFlash() { paparazzoFlash(); },
+      unionRepChant() { unionRepChant(); },
       unionRepWhistle() { unionRepWhistle(); },
       unionBullhorn() { unionBullhorn(); }, // (Steve 2026-10-06): solidarity — the bullhorn
       unionWalkout() { unionWalkout(); },   // (Steve 2026-10-06): the walkout — stomp + wail
@@ -9154,6 +9159,7 @@
       projectorPull() { projectorPull(); },
       projectorFire() { projectorFire(); },
       managerCircle() { managerCircle(); },
+      managerAnnounce() { managerAnnounce(); },
       managerCharge() { managerCharge(); },
       managerDebrief() { managerDebrief(); },
       managerFear() { managerFear(); },
@@ -9213,6 +9219,7 @@
       duckNip() { duckNip(); },
       duckRegroup() { duckRegroup(); },
       duckScreech() { duckScreech(); },
+      ducksRejoin() { ducksRejoin(); },
       stagConfused() { stagConfused(); },
       turtleBunker() { turtleBunker(); },
       wolfBreak() { wolfBreak(); },
@@ -9222,8 +9229,9 @@
       swarmEscalate() { swarmEscalate(); },
       swarmScatter() { swarmScatter(); },
       swarmShutters(d) { swarmShutters(d); }, // (Steve 2026-10-06): urgency now heard
-      // delegateCircle: the one delegate* name game.js actually fires (game.js:19087).
-      // delegateAnnounce/delegateCharge shims removed 2026-10-07 — never fired.
+      // Middle Manager fires delegate* names; the synths are the manager* set
+      delegateAnnounce() { managerAnnounce(); },
+      delegateCharge() { managerCharge(); },
       delegateCircle() { managerCircle(); },
       // System events
       confront() { confront(); },
@@ -9290,14 +9298,10 @@
       // WAVE-2 BESPOKE BEATS (Steve 2026-10-06): missing resolves for siblings
       staticScream() { staticScream(); }, // voice_mimic_radio reveal: the radio SCREAMS
       serviceRush() { serviceRush(); },   // service_mimic: hold music slammed into motion
+      contractBind() { contractBind(); }, // contract_golem: paper becomes law becomes weight
       monsterDown() { monsterDown(); },   // generic death — collapse, breath out, wrong note
       monsterHurt() { monsterHurt(); },   // generic wound — a flinch, cut off
       delegateDebrief() { delegateDebrief(); }, // (Steve 2026-10-06): was a pure alias of managerDebrief — now its own dictating-into-nothing synth
-      // WOUND TEMPERAMENTS (Steve 2026-10-07): encounters.js fires these on
-      // wound-state shifts — they were mute (no registry entries) until now.
-      woundEnraged() { woundEnraged(); },     // BLEEDING — and it likes it: accelerating pounding + tritone scream
-      woundCunning() { woundCunning(); },     // goes quiet and clever: hush, counting ticks, watcher tone
-      woundDesperate() { woundDesperate(); }, // hurt bad, knows it: erratic stabs + failing-engine sputter
       // WAVE-1 CONTRACT HOOKS (Steve 2026-10-06): promised in the HOOK
       // CONTRACT above, never defined until now
       boarNotice() { boarNotice(); },
@@ -10585,82 +10589,6 @@
     return html;
   }
 
-  // BUILD ARCHETYPE INDICATOR (Steve 2026-10-07): specialist/generalist are
-  // real bonuses (Game.buildBonus) but invisible. One compact line in the
-  // pack, next to the ability list — a badge you EARNED, not a label.
-  function renderBuildIndicator() {
-    try {
-      if (!Game.buildArchetype || !Game.buildBonus) return '';
-      const arch = Game.buildArchetype();
-      if (!arch) return '';
-      const bonus = Game.buildBonus();
-      const title = bonus ? esc(bonus.desc) : '';
-      if (arch.type === 'specialist') {
-        const icons = { combat: '\u2694\uFE0F', care: '\u{1F49A}', fieldcraft: '\u{1F33F}', craft: '\u{1F528}', social: '\u{1F4AC}', exploration: '\u{1F9ED}', investigation: '\u{1F50E}' };
-        const verbs = { combat: 'strikes hit harder', care: 'healing flows stronger', fieldcraft: 'the land yields more', craft: 'your craft holds true', social: 'your words carry weight', exploration: 'you cover ground faster', investigation: "the truth can't hide" };
-        const poolName = arch.pool.charAt(0).toUpperCase() + arch.pool.slice(1);
-        return `<p class="small buildbadge" title="${title}">${icons[arch.pool] || '\u{1F3AF}'} <b>${esc(poolName)} Specialist</b> <span style="color:#ffd166">+25%</span> <span style="opacity:.75">\u2014 ${esc(verbs[arch.pool] || 'your mastery deepens')}. Mastery has its rewards.</span></p>`;
-      }
-      return `<p class="small buildbadge" title="${title}">\u{1F310} <b>Versatile Generalist</b> <span style="color:#ffd166">+10%</span> <span style="opacity:.75">to everything \u2014 no lock you can't work around.</span></p>`;
-    } catch (e) { return ''; }
-  }
-
-  // SYNERGY STIRRINGS (Steve 2026-10-07): an undiscovered synergy with 1-2
-  // attempts whose requirements you hold is ALIVE — surface its tease in the
-  // pack so the thread stays warm between visits. The full hint is earned at
-  // attempt 2 (mirrors game.js: tease1 -> tease2 + hint) — showing it at
-  // attempt 1 would short-circuit the discovery loop. Knowledge gating holds.
-  function renderSynergyStirrings() {
-    try {
-      const sch = Game.state.scholar;
-      const syns = Game.data.synergies || [];
-      const attempts = sch.synergyAttempts || {};
-      const discovered = sch.synergies || [];
-      const rows = [];
-      for (const syn of syns) {
-        if (discovered.includes(syn.id)) continue;
-        const dm = syn.discovery_method || {};
-        const n = attempts[syn.id + (dm.type === 'sustained' ? '_days' : '')] || 0;
-        if (n < 1 || n > 2) continue;
-        // requirements held? same check game.js uses for activation.
-        const minLvl = syn.minLevel || 1;
-        const held = (syn.requires || []).every(rid => {
-          try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; }
-        });
-        if (!held) continue;
-        const tease = n === 1 ? dm.tease1 : dm.tease2;
-        const pips = '\u25CF'.repeat(n) + '\u25CB'.repeat(3 - n);
-        let line = `<b>\u{1F300} ${esc(syn.name)}</b> <span style="opacity:.7">${pips}</span>`;
-        if (tease) line += ` \u2014 <i>${esc(tease)}</i>`;
-        // attempt 2: the game itself nudges toward the hint — the HUD may
-        // name it outright. Attempt 1 keeps only the tease.
-        if (n === 2 && dm.hint) line += ` <span style="opacity:.85">\u{1F4A1} ${esc(dm.hint)}</span>`;
-        rows.push(`<p class="small">${line}</p>`);
-      }
-      return rows.join('');
-    } catch (e) { return ''; }
-  }
-
-  // SYSTEM INTEGRATION LEVEL (Steve 2026-10-07): game.js tracks linkedCodices
-  // -> systemIntegrationLevel 0-3. One compact line: pips, what the System
-  // sees at this level, and the next step. The level-up itself announces in
-  // the moment (feedback card) — this is the standing readout.
-  function renderIntegrationLevel() {
-    try {
-      if (!Game.systemIntegrationLevel) return '';
-      const sch = Game.state.scholar;
-      const linked = (sch.linkedCodices || []).length;
-      const lvl = Game.systemIntegrationLevel();
-      if (!Game.state.systemArrived && lvl === 0) return '';
-      const pips = '\u25CF'.repeat(lvl) + '\u25CB'.repeat(Math.max(0, 3 - lvl));
-      const sees = ['the System barely knows you', 'village power on the map', 'wildlife + travelers tracked', 'full rosters, codex summaries, strategy intel'];
-      const prog = lvl >= 3
-        ? 'fully integrated'
-        : `study 1 more village codex \u2192 L${lvl + 1}`;
-      return `<p class="small" title="Study village codices to link them. The System integrates — and the HUD literally gets smarter."><b>\u2B22 Integration</b> <span style="color:#b48cff">${pips}</span> <span style="opacity:.75">${esc(sees[Math.min(lvl, 3)] || sees[0])}</span> <span style="opacity:.6">\u00B7 ${esc(prog)}</span></p>`;
-    } catch (e) { return ''; }
-  }
-
   // inventory: your pack. Inline — one screen, no overlay hopping.
   function renderInvInline(slot, view) {
     const st = Game.status();
@@ -10673,9 +10601,6 @@
         ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; let cc = ''; try { const t = Game.challengeCountdownText ? Game.challengeCountdownText() : ''; if (t) cc = ` · <b style="color:#ff5d5d">${t}</b>`; } catch (e) {} return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)${Game.integrationStageName ? ` · ${Game.integrationStageName()}` : ''}${Game.arcName ? ` · ${Game.arcName()}` : ''}${cc}</p>`; })()}
         ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
-${renderBuildIndicator()}
-        ${renderSynergyStirrings()}
-        ${renderIntegrationLevel()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''}</p>`; })()}
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
@@ -10988,8 +10913,7 @@ ${renderBuildIndicator()}
         <div class="ord-ctx">${inCombat ? '' : contextBarHTML()}</div>
         <div class="ord-target">${targetBarHTML()}</div>
         <div class="ord-danger">${dangerBarHTML()}</div>
-        <div class="ord-ability">${abilityBarHTML()}</div>
-        ${feedbackHTML()}`;
+        <div class="ord-ability">${abilityBarHTML()}</div>`;
       // Re-wire the new buttons (each bar has its own wirer)
       try { wireSelfBar(); } catch (e) {}
       try { wireContextBar(); } catch (e) {}
@@ -11184,7 +11108,6 @@ ${renderBuildIndicator()}
               <div class="ord-target">${targetBarHTML()}</div>
               <div class="ord-danger">${dangerBarHTML()}</div>
               <div class="ord-ability">${abilityBarHTML()}</div>
-              ${feedbackHTML()}
             </div>
           </div>
           <button class="dpshow hidden" id="dpshow" aria-label="show walk pad">🧭</button>
@@ -12725,9 +12648,9 @@ ${renderBuildIndicator()}
     // SVG TILE SCENES (Steve 2026-10-06): tiles render as miniature scenes
     // when the module is loaded; glyph fallback otherwise.
     const TS = (typeof Scattering !== 'undefined' && Scattering.TileScenes) || null;
-    for (let y = 0; y < 9; y++) {
+    for (let y = 0; y < 7; y++) {
       html += '<div class="mrow">';
-      for (let x = 0; x < 9; x++) {
+      for (let x = 0; x < 7; x++) {
         // FOG OF WAR (Steve 2026-10-06): only tiles you've WALKED IN reveal.
         // Check seenTiles for visited status. No hardcoded visibility.
         let _seenSimple = false;
@@ -12745,8 +12668,8 @@ ${renderBuildIndicator()}
               if (_tl.type) _ttype = _tl.type;
             }
           } catch (e) {}
-          // Haven always shows 🏘️ (Steve 2026-10-06) — center of 9x9
-          if (x === 4 && y === 4) {
+          // Haven always shows 🏘️ (Steve 2026-10-06)
+          if (x === 3 && y === 3) {
             html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:#7cbd6b;width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">🏘️</div></div>`;
             continue;
           }
@@ -12801,7 +12724,7 @@ ${renderBuildIndicator()}
         let seen = null;
         let diagColor = null;
         if (x >= 2 && x <= 4 && y >= 2 && y <= 4) {
-          seen = (x === 4 && y === 4) ? 'visited' : 'shared';
+          seen = (x === 3 && y === 3) ? 'visited' : 'shared';
         }
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
@@ -12822,23 +12745,12 @@ ${renderBuildIndicator()}
         } else if (isW && seen) {
           g = '🐗';
         } else if (otherV) {
-          // SYSTEM INTEGRATION (Steve 2026-10-07): L1+ shows village power.
-          // The System sees more as you link codices. Your HUD sharpens.
-          let vInfo = '';
-          try {
-            const integ = Game.systemIntegrationLevel ? Game.systemIntegrationLevel() : 0;
-            if (integ >= 1 && Game.villagePower) {
-              const pw = Game.villagePower(otherV);
-              const focus = (otherV.knowledgeProfile || {}).focus || 'survivors';
-              vInfo = ` title="${otherV.name} (Pwr ${pw}, ${focus})"`;
-            }
-          } catch (e) {}
-          g = `<span${vInfo}>🏘️</span>`;
+          g = '🏘️';
         } else {
           // HAVEN/VILLAGE ICON (Steve 2026-10-06): havens and villages ALWAYS
           // show the 🏘️ icon, not terrain. You need to see where people are.
           // Haven is always at (3,3); check coords directly (tile data may be null).
-          const isHavenTile = (x === 4 && y === 4) || (tl && (tl.type === 'haven' || tl.village));
+          const isHavenTile = (x === 3 && y === 3) || (tl && (tl.type === 'haven' || tl.village));
           if (isHavenTile) {
             g = '🏘️';
           } else if (diagColor) {
@@ -12986,9 +12898,9 @@ ${renderBuildIndicator()}
       const n = Object.keys(seen).length;
       if (!n) return '';
       let cells = '';
-      for (let y = 0; y < 9; y++) {
+      for (let y = 0; y < 7; y++) {
         cells += '<div class="mrow">';
-        for (let x = 0; x < 9; x++) {
+        for (let x = 0; x < 7; x++) {
           const k = x + ',' + y;
           const tl = Game.tileAt(x, y);
           const mine = st.seenTiles && st.seenTiles[k];

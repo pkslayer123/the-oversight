@@ -1591,7 +1591,7 @@
       let pack = 0;
       try { pack = this.playerPackKcal(); } catch (e) {}
       card.actions.push({ id: 'petition', label: '🙏 Approach & petition', hint: `They've heard the gossip. (You carry ~${pack} kcal of food — offering some helps.)`, giftKcal: 0 });
-      if (pack >= 700) card.actions.push({ id: 'petition', label: '🙏 Petition + offer food (700 kcal)', hint: 'A real offering. Costs you. (The pack divides in whole portions — the gift may run over.)', giftKcal: 700 });
+      if (pack >= 700) card.actions.push({ id: 'petition', label: '🙏 Petition + offer food (700 kcal)', hint: 'A real offering. Costs you.', giftKcal: 700 });
       if (pack >= 1500) card.actions.push({ id: 'petition', label: '🙏 Petition + offer a feast (1500 kcal)', hint: 'More than a day\'s food. Hard to refuse.', giftKcal: 1500 });
     } else {
       // DRIFTER: you're a traveler, not an exile. If you're AT their fire,
@@ -1610,7 +1610,7 @@
         // as the petition offering.
         let pack = 0;
         try { pack = this.playerPackKcal(); } catch (e) {}
-        if (pack >= 700) card.actions.push({ id: 'sharefood', label: '🍲 Share a day\'s food (700 kcal)', hint: 'Feed their fire from your pack. They\'ll remember — especially if the pot is empty. (Whole portions — may run over 700.)', giftKcal: 700 });
+        if (pack >= 700) card.actions.push({ id: 'sharefood', label: '🍲 Share a day\'s food (700 kcal)', hint: 'Feed their fire from your pack. They\'ll remember — especially if the pot is empty.', giftKcal: 700 });
         if (pack >= 1500) card.actions.push({ id: 'sharefood', label: '🍲🍲 Lay down a feast (1500 kcal)', hint: 'More than a day\'s food from your pack. A gift nobody shrugs at.', giftKcal: 1500 });
       } else {
         card.hint = 'Walk to the edge of the map to travel there.';
@@ -2993,23 +2993,14 @@
       const broke = !!this.pressAccomplice(parts[2], parts[3]);
       // OUTCOME-AWARE (Steve 2026-10-06): the box must not claim a crack when
       // the story held. Rotate the held box line like the narration.
-      // NARRATION (Steve 2026-10-06): the crack/held verdict is investigation
-      // narration, not the accused speaking — finish() would voice it as
-      // `Grace: "..."`. Narrate directly.
-      const pline = broke ? 'Done — their story has a crack in it now.'
+      return finish(
+        broke ? 'Done — their story has a crack in it now.'
               : this.convoPickCycle(vid, 'pressheldbox', [
                   'Nothing new — their story holds. For now.',
                   'Their story holds. You file that away.',
                   'Same story, second telling. No crack — yet.',
-                ]);
-      try {
-        c.transcript.push({ who: 'you', text: '"Slowly."' });
-        c.transcript.push({ who: 'narr', text: pline });
-        while (c.transcript.length > 200) c.transcript.shift();
-        c.exchanges = (c.exchanges || 0) + 1;
-        this.say(pline);
-      } catch (e) {}
-      return { line: pline, choices: this.convoChoices(vid), ended: false, transcript: (c.transcript || []).slice() };
+                ]),
+        '"Slowly."');
     }
     if (act === 'approach') {
       const ok = this.approachWeakest(parts[2], true);

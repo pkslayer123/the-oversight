@@ -12,8 +12,6 @@
 //   - partyTrustFloor()
 //   - travelingWith()
 //   - placePartyAtPlayer()
-//   - partyBetrayalState(vid)
-//   - betrayalIntent(vid)
 // rules:
 //   - (none documented)
 // consumes:
@@ -369,27 +367,15 @@
     // Trust is not safety. Betrayal runs on personality + desperation +
     // opportunity. A high-trust backstab is MORE devastating, not less likely.
 
-    // partyBetrayalState: per-villager party-betrayal record.
-    // NOTE (2026-10-07): was `betrayalState(vid)` — shadowed by betrayal.js's
-    // village-level `betrayalState()` (same name, Object.assign order) in the
-    // full production module list. The shadow made every party caller read
-    // the VILLAGE betrayal object: one global intent for all members, and
-    // betrayalCueCheck crashed on undefined cuesSeen (swallowed by wrapper
-    // try/catch, so cues silently never fired). Renamed to survive load order.
-    partyBetrayalState(vid) {
+    betrayalState(vid) {
       const v = this.partyState();
       v.betray[vid] = v.betray[vid] || { intent: false, evaluated: false, suspicion: 0, cuesSeen: [] };
-      const bs = v.betray[vid];
-      // repair legacy/malformed entries (e.g. written while the old name was
-      // shadowed) so cues never crash on a missing array.
-      if (!Array.isArray(bs.cuesSeen)) bs.cuesSeen = [];
-      if (typeof bs.suspicion !== 'number') bs.suspicion = 0;
-      return bs;
+      return v.betray[vid];
     },
 
     // Do they plan to betray you? Evaluated on join, re-evaluated when desperate.
     betrayalIntent(vid, force) {
-      const bs = this.partyBetrayalState(vid);
+      const bs = this.betrayalState(vid);
       if (bs.evaluated && !force) return bs.intent;
       bs.evaluated = true;
       const temp = this.npcTemper(vid);
@@ -426,7 +412,7 @@
       const v = this.state.village;
       const pantryLow = (v.pantryKcal || 99999) < 2000;
       for (const vid of this.travelingWith()) {
-        const bs = this.partyBetrayalState(vid);
+        const bs = this.betrayalState(vid);
         if (!bs.intent && pantryLow && Math.random() < 0.15) {
           this.betrayalIntent(vid, true);
         }
@@ -461,7 +447,7 @@
     // Observant/social player intelligences pick these up more often.
     betrayalCueCheck() {
       for (const vid of this.travelingWith()) {
-        const bs = this.partyBetrayalState(vid);
+        const bs = this.betrayalState(vid);
         if (!bs.intent || bs.cuesSeen.length >= 3) continue;
         if (Math.random() > 0.18) continue;
         const dname = this.displayName(vid);
@@ -694,7 +680,7 @@
       const atHaven = this.map && this.map.px === 3 && this.map.py === 3;
       if (!atHaven) return;
       for (const vid of this.travelingWith()) {
-        const bs = this.partyBetrayalState(vid);
+        const bs = this.betrayalState(vid);
         if (!bs.intent) continue;
         if (Math.random() > 0.2) continue;
         const dname = this.displayName(vid);
@@ -720,7 +706,7 @@
       this.lureCheck();
       // Does anyone strike?
       for (const vid of this.travelingWith()) {
-        const bs = this.partyBetrayalState(vid);
+        const bs = this.betrayalState(vid);
         if (!bs.intent) continue;
         const opp = this.betrayalOpportunity(vid);
         if (opp >= 70 && Math.random() < 0.5) {
@@ -875,10 +861,10 @@
           `{n} catches {t} with a wild backhand and looks horrified at their own arm.`,
           `{n} barrels into {t} shoulder-first, the way you'd shove a door that's stuck.`,
           `{n} swings at {t} and keeps swinging after it lands, like stopping would be worse.`,
-          `{n} grabs for {t} weapon hand and they go down together, scrabbling.`,
+          `{n} grabs for {t}'s weapon hand and they go down together, scrabbling.`,
           `{n} strikes at {t} with a sound caught between a sob and a snarl.`,
         ];
-        this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate').replace('{n}', () => h.name).replace('{t} weapon hand', () => tgt === 'you' ? 'your weapon hand' : tgt + "'s weapon hand")}`);
+        this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate').replace('{n}', () => h.name).replace('{t}', () => tgt)}`);
         this.tbDamage(foe.key, dmg, h.name);
         // Hurting someone costs the hurter too. Even them.
       } else {
@@ -1087,13 +1073,6 @@
       if (p) s.health = Math.max(0, p.hp);
       for (const v of f.fighters) {
         if (v.kind === 'villager' && v.alive && !v.fled) this.tbVillagerSyncPos(v);
-      }
-      // UPRISING YIELD (Steve 2026-10-06): a mob yield belongs to
-      // uprisingAftermath() (justice.js: stage→3, fear for the living).
-      // The inline branch below is for a single betrayer only.
-      if (result === 'betrayal_yielded' && this._lastBetrayal && this._lastBetrayal.uprising) {
-        try { this.uprisingAftermath(); } catch (e) {}
-        return;
       }
       // The one who yielded: alive, broken, in the village. Everyone knows.
       const yielder = f.fighters.find(x => x.kind === 'hostile' && x.yielded && x.alive);

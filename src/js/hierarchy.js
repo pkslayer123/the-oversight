@@ -1,6 +1,6 @@
 // @ontology
 // system: hierarchy
-// description: Inter-village hierarchy. Villages have relationships: links with trust, tribute, feud, water-rights, exchange, marriage bonds, spy networks. Leaders are unique people.
+// description: Inter-village hierarchy. Villages have relationships, rivalries, trade.
 // provides:
 //   - hierarchyState()
 //   - linkWith(vid, other)
@@ -13,28 +13,10 @@
 //   - hierarchyDaily()
 //   - linkTick(a, b)
 //   - onLeaderDeath(vid)
-//   - villageIntel(vid)
-//   - scoutIntel(vid)
-//   - plantSpy(vid)
-//   - feudWith(vid)
-//   - waterRights(vid)
-//   - negotiateWater(linkId)
-//   - arrangeMarriage(linkId)
-//   - escalate(linkId)
-//   - coalitionTax()
-//   - tributeResentment()
-//   - leaderOf(vid)
-//   - rivalLeaderDied(vid)
 // rules:
-//   - Links are first-class relationship objects: trust, terms, dimensions, history, obligations — never flags. (code: hierarchy.js)
-//   - No free intel: other-village strength, intentions, and leader temperament reveal only through scouts, exchange, spies, or observed events; villageIntel is the only honest read path. (code: hierarchy.js)
-//   - Demands refused twice escalate to an ultimatum; a refused ultimatum can end the link. (code: hierarchy.js)
-//   - Tribute is real food; paying it builds villager resentment that can refuse the next payment outright. (code: hierarchy.js)
-//   - Feeding a coalition scales exponentially: tribute owed multiplies by 1.25 per link beyond the first. (code: hierarchy.js)
-//   - Leaders are unique people: temperament and goals generate per leader and change with events; succession brings a stranger. (code: hierarchy.js)
+//   - (none documented)
 // consumes:
 //   - state.otherVillages
-//   - state.village.mship
 /* INTER-VILLAGE HIERARCHY — src/js/hierarchy.js
  *
  * Steve: "Strong enough representatives can link to a haven and join them as
@@ -60,16 +42,6 @@
  *   the primary installs their own, the village renegotiates in the chaos,
  *   or the link snaps.
  *
- * DIMENSIONS (Steve 2026-10-07): a link is more than tribute. Feud,
- * water-rights, cultural exchange, marriage bonds, and our spy network each
- * run on the link and change what plays. Leaders are unique people —
- * temperament and goals generate per leader and evolve with events;
- * succession brings a stranger. Intel is knowledge-gated: villageIntel is
- * the only honest read path, and it shows only what scouts, exchange,
- * spies, or observed events revealed. Refusals escalate to ultimatums.
- * Tribute builds villager resentment. Coalitions tax exponentially: 1.25x
- * per link beyond the first. Empires eat.
- *
  * Self-attaching module. Load after membership.js. Chain-safe wraps.
  */
 (function () {
@@ -80,14 +52,6 @@
   var R = Math.random;
   var pick = function (a) { return a[Math.floor(R() * a.length)]; };
   var HOME = 'haven';
-
-  // Link dimensions + leader generation pools. Leaders are unique people —
-  // never a fixed cast. (Steve 2026-10-07: deepen toward scale transitions.)
-  var TEMPERAMENTS = ['proud', 'greedy', 'cautious', 'zealous', 'patient', 'volatile', 'mercantile'];
-  var LEADER_GOALS = ['expand', 'hoard', 'learn', 'endure', 'unite', 'prove'];
-  var LEADER_MOODS = ['pleased', 'content', 'wary', 'cold', 'hostile'];
-  var LEADER_FIRST = ['Mara', 'Joren', 'Sable', 'Tovin', 'Kessa', 'Dain', 'Ruelle', 'Bran', 'Isolde', 'Corvin', 'Tilda', 'Osmund', 'Petra', 'Hollis', 'Vesper', 'Ansel'];
-  var LEADER_LAST = ['Ash', 'Blackwood', 'Crow', 'Dunmore', 'Ellery', 'Flint', 'Gallow', 'Harlow', 'Irons', 'Kestrel', 'Lark', 'Morrow', 'Nettle', 'Osric', 'Pyke', 'Quill'];
 
   var methods = {
 
@@ -178,25 +142,15 @@
       if (opinion >= 20) reasons.push('They think well of Haven.');
       else if (opinion <= -20) reasons.push('They think poorly of Haven.');
       if (this.isAllied && this.isAllied(HOME, targetId)) { score += 15; reasons.push('Already allies — this is the next step.'); }
-      var ourS = 0;
-      try { ourS = this.regionalStanding(); } catch (e) {}
-      var intelS = null;
-      try { intelS = (this._intelState()[targetId] || {}).strength || null; } catch (e) {}
+      var ourS = 0, theirS = 0;
+      try { ourS = this.regionalStanding(); theirS = this.villageStandingOf(targetId); } catch (e) {}
       if (opts.asSubordinate) {
         score += 10;
         reasons.push('Haven offers itself as subordinate — a tributary, not a rival.');
-      } else if (intelS && intelS !== 'unknown') {
-        // knowledge-gated: the table only knows what scouts taught it
-        if (intelS === 'weaker') { score += 10; reasons.push('Haven is the stronger — the scouts are sure of it.'); }
-        else if (intelS === 'stronger') { score -= 10; reasons.push('They are stronger than Haven — the scouts are sure of it. Why would they bow?'); }
-        else { reasons.push('Evenly matched, by the scouts\' measure. This will be a negotiation, not a bowing.'); }
       } else {
-        reasons.push('Haven can\'t say how they\'d stand — no scout has measured them. Bidding blind is honest, not wise.');
+        if (ourS > theirS) { score += Math.min(15, (ourS - theirS) / 5); reasons.push('Haven is the stronger — they know it.'); }
+        else { score -= 10; reasons.push('Why would they bow to the weaker?'); }
       }
-      try {
-        var _tax = this.coalitionTax();
-        if (_tax > 1) reasons.push('Every link makes every tribute heavier — the coalition tax already runs ×' + _tax.toFixed(2) + '. Empires eat.');
-      } catch (e) {}
       var trib = opts.tributeKcalPerWeek || 0;
       if (opts.asSubordinate && trib >= 3000) { score += 8; reasons.push('The tribute offered is generous.'); }
       score += R() * 20 - 10;
@@ -224,15 +178,8 @@
           history: [], status: 'active',
           day: (this.state.scholar || {}).day || 0,
           pendingDemand: null,
-          refusals: 0,
         };
         this.hierarchyState().push(link);
-        this._ensureDims(link);
-        try {
-          this._genLeader(targetId);
-          var _ov2 = this._otherVillage(targetId);
-          if (_ov2) _ov2.leaderMet = true; // negotiated face to face — you know their name
-        } catch (e) {}
         this._linkNote(link, 'formed',
           opts.asSubordinate ? 'Haven joined ' + nm + ' as subordinate.' : nm + ' joined Haven as subordinate.');
         var rn = j.rep ? String(this.displayName(j.rep.id)).split(' ')[0] : 'Someone';
@@ -269,28 +216,18 @@
       return Math.floor(((this.state.scholar || {}).day || 0) / 7);
     },
 
-    // payTribute: the subordinate's due. Real food leaves the pantry — and
-    // the village resents every basket. Resentment is a meter, not a mood:
-    // at the boil, the pantry crew refuses the next payment outright.
+    // payTribute: the subordinate's due. Real food leaves the pantry.
     payTribute(linkId, kcal) {
       var link = null;
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active' || link.subordinate !== HOME) return null;
-      var m = null;
-      try { m = this.mshipState(); } catch (e) {}
-      if (m && m.tributeRefused) {
-        this.say('The pantry crew folds its arms: no tribute carts until the resentment cools. Paying is a village act — and the village refuses.');
-        return null;
-      }
-      var owed = this._tributeOwed(link);
+      var owed = link.tributeKcalPerWeek;
       var paid = this._removePantryKcal(kcal == null ? owed : kcal);
       var week = this._week();
-      if (m) m.tributeResentment = Math.min(120, (m.tributeResentment || 0) + 12);
       if (paid >= owed) {
         link.tributePaidWeek = week; link.arrears = 0;
         link.trust = Math.min(100, link.trust + 3);
-        try { this._evolveLeader(link.primary, 'paid'); } catch (e) {}
         this._linkNote(link, 'tribute', 'Paid ' + paid.toLocaleString() + ' kcal. Current.');
         this.say(`Tribute paid: ${paid.toLocaleString()} kcal walks out of the pantry toward ${this._ovName(link.primary)}. The relationship holds.`);
       } else {
@@ -309,85 +246,39 @@
     },
 
     // linkTick: weekly accounting. Paid → the relationship deepens; unpaid →
-    // arrears, and the primary notices. Dimensions breathe: feud decays in
-    // good weather and boils over into skirmishes at 70; contested water
-    // grates; exchange grows where trust holds and teaches you things at 40
-    // and 70. The coalition tax is felt. Runs inside membershipDaily.
+    // arrears, and the primary notices. Runs inside membershipDaily.
     linkTick() {
       try {
         var m = this.mshipState();
         var week = this._week();
         if (m.lastLinkWeek === week) return;
         m.lastLinkWeek = week;
-        // tribute refusal cools off once resentment drops
-        if (m.tributeRefused && (m.tributeResentment || 0) < 60) {
-          m.tributeRefused = false;
-          this.say('Cooler heads at the pantry: the tribute carts will roll again. For now.');
-        }
         var links = this.hierarchyState();
         for (var i = 0; i < links.length; i++) {
           (function (self, link) {
             try {
               if (link.status !== 'active') return;
-              self._ensureDims(link);
-              var other = self._linkOther(link);
               if (link.subordinate === HOME) {
-                var owed = self._tributeOwed(link);
                 if ((link.tributePaidWeek || -1) < week) {
-                  link.arrears += owed;
+                  link.arrears += link.tributeKcalPerWeek;
                   link.trust = Math.max(0, link.trust - 6);
-                  self._feudChange(link, 6);
                   self._linkNote(link, 'arrears', 'Tribute unpaid. Arrears ' + link.arrears.toLocaleString() + ' kcal.');
                   if (R() < 0.4) self.say(`⚠️ ${self._ovName(link.primary)} notices the missing tribute. Arrears: ${link.arrears.toLocaleString()} kcal. The air changes.`);
                 } else {
                   link.trust = Math.min(100, link.trust + 1);
                 }
-                // the primary calls, sometimes — patient leaders call rarely
-                var freq = 0.2;
-                try {
-                  var _pl = self._ovLeader(link.primary);
-                  if (_pl && _pl.temperament === 'patient') freq = 0.1;
-                  else if (_pl && _pl.temperament === 'greedy') freq = 0.3;
-                } catch (e) {}
-                if (R() < freq) self.primaryDemand(link.id);
+                // the primary calls, sometimes
+                if (R() < 0.2) self.primaryDemand(link.id);
               } else if (link.primary === HOME) {
-                // our subordinate pays us — real food into the pantry
+                // our subordinate pays us — abstracted, trust-weighted
                 if (R() < link.trust / 100) {
                   link.trust = Math.min(100, link.trust + 1);
-                  var _got = self._tributeOwed(link);
-                  self._addPantryKcal(_got, 'Tribute from ' + self._ovName(link.subordinate));
-                  self._linkNote(link, 'tribute', self._ovName(link.subordinate) + ' paid ' + _got.toLocaleString() + ' kcal.');
+                  self._linkNote(link, 'tribute', self._ovName(link.subordinate) + ' paid. The pantry grows.');
                 } else {
-                  link.arrears += self._tributeOwed(link);
+                  link.arrears += link.tributeKcalPerWeek;
                   link.trust = Math.max(0, link.trust - 4);
-                  self._feudChange(link, 4);
                   if (R() < 0.35) self.say(`⚠️ ${self._ovName(link.subordinate)} is late with tribute. The air changes.`);
                 }
-              }
-              // dimensions breathe
-              var dims = link.dims;
-              if (link.trust >= 60) dims.feud = Math.max(0, dims.feud - 2);
-              if (dims.water === 'contested') self._feudChange(link, 4);
-              var cur = link.subordinate === HOME ? ((link.tributePaidWeek || -1) >= week) : true;
-              if (link.trust >= 50 && cur) {
-                var exB = dims.exchange;
-                dims.exchange = Math.min(100, dims.exchange + 3);
-                if (exB < 40 && dims.exchange >= 40) {
-                  self._revealIntel(other, { intentions: self._intentionsWord(other) });
-                  try { (self._intelState()[other] || {}).temperKnown = true; } catch (e) {}
-                  self._linkNote(link, 'exchange', 'They talk freely now — intentions readable.');
-                }
-                if (exB < 70 && dims.exchange >= 70) {
-                  self._revealIntel(other, { demands: self._demandsWord(other) });
-                  self._linkNote(link, 'exchange', 'Deep exchange — their demands are an open book.');
-                }
-              }
-              if (dims.feud >= 50) dims.exchange = Math.max(0, dims.exchange - 4);
-              if (dims.feud >= 70 && R() < 0.3) self._skirmish(link.id);
-              // empires eat: the coalition tax, felt
-              var tax = self.coalitionTax();
-              if (tax >= 1.5 && R() < 0.25) {
-                self.say(`Feeding the coalition: Haven's links run ${Math.round((tax - 1) * 100)}% heavy on tribute. Nobody told the founders that empires eat.`);
               }
             } catch (e) {}
           })(this, links[i]);
@@ -403,18 +294,7 @@
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active' || link.subordinate !== HOME || link.pendingDemand) return null;
-      // the leader's temperament shapes what they ask for — unique people,
-      // not a fixed cast. Patient leaders call rarely.
-      var _pl = null;
-      try { _pl = this._ovLeader(link.primary); } catch (e) {}
-      var _temper = _pl ? _pl.temperament : null;
-      var pool = ['tribute', 'tribute', 'aid', 'counsel'];
-      if (_temper === 'greedy') pool = ['tribute', 'tribute', 'tribute', 'tribute', 'aid'];
-      else if (_temper === 'zealous') pool = ['aid', 'aid', 'counsel', 'tribute'];
-      else if (_temper === 'proud') pool = ['aid', 'counsel', 'counsel', 'tribute'];
-      else if (_temper === 'mercantile') pool = ['tribute', 'tribute', 'counsel', 'counsel'];
-      else if (_temper === 'patient') { if (R() < 0.5) return null; pool = ['counsel', 'tribute', 'aid']; }
-      var kind = pick(pool);
+      var kind = pick(['tribute', 'tribute', 'aid', 'counsel']);
       var d = { kind: kind };
       if (kind === 'tribute') {
         d.costKcal = Math.round(link.tributeKcalPerWeek * 0.5);
@@ -435,10 +315,8 @@
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || !link.pendingDemand) return null;
-      this._ensureDims(link);
       var d = link.pendingDemand;
       link.pendingDemand = null;
-      if (d.kind === 'ultimatum') return this._answerUltimatum(link, d, accept);
       if (accept) {
         if (d.kind === 'tribute') {
           var paid = this._removePantryKcal(d.costKcal || 0);
@@ -455,21 +333,13 @@
         } else {
           this.say('You give them your honest read. Counsel is cheap; honesty isn\'t.');
         }
-        link.refusals = 0;
-        this._feudChange(link, -5);
         link.trust = Math.min(100, link.trust + 8);
         this._linkNote(link, 'demand', 'Honored the call (' + d.kind + ').');
         this.say(`The obligation is honored. Trust with ${this._ovName(link.primary)}: ${link.trust}.`);
       } else {
-        link.refusals = (link.refusals || 0) + 1;
-        var _dl = null;
-        try { _dl = this._ovLeader(link.primary); } catch (e) {}
-        this._feudChange(link, 12 + (_dl && _dl.temperament === 'proud' ? 6 : 0));
-        try { this._evolveLeader(link.primary, 'refused'); } catch (e) {}
         link.trust = Math.max(0, link.trust - 15);
-        this._linkNote(link, 'demand', 'REFUSED the call (' + d.kind + '). Refusal #' + link.refusals + '.');
+        this._linkNote(link, 'demand', 'REFUSED the call (' + d.kind + ').');
         this.say(`You refuse ${this._ovName(link.primary)}. The air changes — trust: ${link.trust}. Refusals are remembered longer than payments.`);
-        if (link.refusals >= 2) this.escalate(link.id);
       }
       return true;
     },
@@ -508,10 +378,6 @@
       var hit = how === 'gambit' ? 30 : 15;
       if (ov) ov.opinion = Math.max(-100, Math.min(100, (ov.opinion || 0) - hit));
       this._linkNote(link, 'broken', 'Link broken (' + (how || 'severed') + ').');
-      try {
-        var _bdims = this._ensureDims(link);
-        if (_bdims.marriage > 0) this.say(`The marriages are severed too — ${_bdims.marriage} famil${_bdims.marriage > 1 ? 'ies' : 'y'} split between the villages. That wound outlives the politics.`);
-      } catch (e) {}
       try {
         this.seedGossip('broke_' + link.id, { loyal: -6 }, (this.npcIds ? this.npcIds().slice(0, 4) : []));
       } catch (e) {}
@@ -555,21 +421,15 @@
       if (!link || link.status !== 'active' || link.subordinate !== HOME) return null;
       var ourS = 0, theirS = 0;
       try { ourS = this.regionalStanding(); theirS = this.villageStandingOf(link.primary); } catch (e) {}
-      // knowledge-gating: bidding blind is allowed — blind is honest, not
-      // disabled — but blindness is billed in trust.
-      var blind = true;
-      try { var _istr = (this._intelState()[link.primary] || {}).strength; blind = !_istr || _istr === 'unknown'; } catch (e) {}
       if (ourS < theirS * 0.9) {
-        if (blind) this.say(`Not yet — and Haven can't even say where ${this._ovName(link.primary)} stands. Send a scout before bidding for the table.`);
-        else this.say(`Not yet. Haven's standing (${ourS}) against theirs (${theirS}) — they'd laugh. Grow first: deeds, tribute paid, trust.`);
+        this.say(`Not yet. Haven's standing (${ourS}) against theirs (${theirS}) — they'd laugh. Grow first: deeds, tribute paid, trust.`);
         return null;
       }
-      if (blind) this.say(`Haven bids blind — no scout has measured ${this._ovName(link.primary)} lately. The table respects boldness; it bills blindness. (Trust will cost extra either way.)`);
       if (link.trust >= 60) {
         // THE TABLE TURNS
         var old = link.primary;
         link.primary = HOME; link.subordinate = old;
-        link.trust = Math.max(0, link.trust - (blind ? 20 : 10));
+        link.trust = Math.max(0, link.trust - 10);
         link.arrears = 0; link.tributePaidWeek = -1;
         this._linkNote(link, 'flipped', 'Primacy flipped: Haven is primary.');
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'primacy:' + old); } catch (e) {}
@@ -578,7 +438,7 @@
       }
       // not trusted enough to flip — settle for better terms
       link.tributeKcalPerWeek = Math.max(500, Math.round(link.tributeKcalPerWeek * 0.5));
-      link.trust = Math.max(0, link.trust - (blind ? 15 : 10));
+      link.trust = Math.max(0, link.trust - 10);
       this._linkNote(link, 'renegotiated', 'Bid for primacy settled: tribute halved.');
       this.say(`Haven bids for primacy. They won't flip — not yet, not at this trust — but the tribute halves. The climb continues.`);
       return 'terms';
@@ -614,8 +474,6 @@
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active') return null;
       link.trust = Math.max(0, link.trust - 15);
-      this._ensureDims(link);
-      this._feudChange(link, 10); // chaos feeds the feud
       var other = link.subordinate === HOME ? link.primary : link.subordinate;
       if (link.subordinate === HOME) {
         // their leverage grows in our chaos: they install their own
@@ -639,33 +497,21 @@
 
     // theirLeaderDied: the mirror — called when word comes (gossip, catch-up
     // sim) that the other village's speaker is dead. Chaos is opportunity.
-    // A stranger takes the table: new temperament, new goals, and Haven
-    // knows NOTHING of them until it learns again.
     theirLeaderDied(linkId) {
       var links = this.hierarchyState();
       var link = null;
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active') return null;
-      this._ensureDims(link);
       link.trust = Math.max(0, link.trust - 15);
       var other = link.subordinate === HOME ? link.primary : link.subordinate;
-      var ov = this._otherVillage(other);
-      var old = (ov && ov.leader && ov.leader.name) || 'their speaker';
-      try { this._genLeader(other); } catch (e) {}
-      try {
-        var ist = this._intelState();
-        var ie = ist[other] || (ist[other] = {});
-        ie.temperKnown = false; ie.goalsKnown = false;
-        if (ov) ov.leaderMet = false;
-      } catch (e) {}
       if (link.subordinate === HOME) {
         link.tributeKcalPerWeek = Math.max(500, Math.round(link.tributeKcalPerWeek * 0.75));
         this._linkNote(link, 'succession', 'Their speaker died; Haven renegotiated in the chaos.');
-        this.say(`🕯️ Word comes: ${old} of ${this._ovName(other)} is dead. In the chaos, Haven renegotiates — tribute down to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. A stranger holds their table now — Haven knows nothing of them. The gambit would be cheap now, too. Remember that.`);
+        this.say(`Word comes: ${this._ovName(other)}'s speaker is dead. In the chaos, Haven renegotiates — tribute down to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. The gambit would be cheap now, too. Remember that.`);
       } else {
         link.tributeKcalPerWeek = Math.round(link.tributeKcalPerWeek * 1.5);
         this._linkNote(link, 'succession', 'Haven installed its own speaker at their table.');
-        this.say(`🕯️ Their speaker is dead. Haven installs its own at ${this._ovName(other)}'s table — the empire's manners. Tribute rises to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. A stranger holds their table now — and strangers are watched.`);
+        this.say(`Their speaker is dead. Haven installs its own at ${this._ovName(other)}'s table — the empire's manners. Tribute rises to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week.`);
       }
       return true;
     },
@@ -690,542 +536,10 @@
       return { eligible: false };
     },
 
-    // ---------- LINK DIMENSIONS ----------
-
-    // _ensureDims: backfills the dimension object on legacy links. Five
-    // dimensions run on every link: feud (warband pressure), water
-    // (water-rights), exchange (cultural exchange), marriage (bonds), and
-    // spies (our report network into them, held in the intel store).
-    _ensureDims(link) {
-      if (!link) return null;
-      link.dims = link.dims || {};
-      var d = link.dims;
-      if (d.feud == null) d.feud = 10;
-      if (d.water == null) d.water = 'none';
-      if (d.exchange == null) d.exchange = 5;
-      if (d.marriage == null) d.marriage = 0;
-      if (link.refusals == null) link.refusals = 0;
-      return d;
-    },
-
-    _linkOther(link) {
-      return link.subordinate === HOME ? link.primary : link.subordinate;
-    },
-
-    _ovLeader(vid) {
-      var ov = this._otherVillage(vid);
-      return (ov && ov.leader) || null;
-    },
-
-    // _feudChange: marriage bonds dampen feud RISES (families on both
-    // sides pull their people back). Falls are never dampened.
-    _feudChange(link, delta) {
-      var dims = this._ensureDims(link);
-      if (delta > 0 && dims.marriage > 0) delta = Math.max(1, Math.round(delta * (1 - 0.15 * dims.marriage)));
-      dims.feud = Math.max(0, Math.min(100, dims.feud + delta));
-      return dims.feud;
-    },
-
-    feudWith(vid) {
-      var link = this.linkWith(vid);
-      if (!link) return null;
-      return this._ensureDims(link).feud;
-    },
-
-    waterRights(vid) {
-      var link = this.linkWith(vid);
-      if (!link) return 'none';
-      return this._ensureDims(link).water;
-    },
-
-    // negotiateWater: water-rights are a dimension of the link — none →
-    // shared → formalized. Formalized water counts: tribute owed drops a
-    // tenth. Failure leaves the water contested, and contested water
-    // breeds feud every week.
-    negotiateWater(linkId) {
-      var links = this.hierarchyState();
-      var link = null;
-      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
-      if (!link || link.status !== 'active') return null;
-      var dims = this._ensureDims(link);
-      var other = this._linkOther(link);
-      if (dims.water === 'formalized') { this.say(`The water-rights with ${this._ovName(other)} are already formalized — the creek has two names and one law.`); return 'formalized'; }
-      var need = dims.water === 'shared' ? 45 : 40;
-      var score = link.trust / 2 + dims.exchange / 3 + R() * 20 - 10;
-      if (dims.water === 'shared' && link.trust < 55) score = -1; // formalizing takes real trust
-      if (score >= need) {
-        dims.water = dims.water === 'shared' ? 'formalized' : 'shared';
-        link.trust = Math.min(100, link.trust + 4);
-        this._linkNote(link, 'water', 'Water-rights: ' + dims.water + '.');
-        if (dims.water === 'formalized') this.say(`💧 Water-rights with ${this._ovName(other)} are FORMALIZED — the creek has two names and one law. (Tribute owed drops a tenth; water counts.)`);
-        else this.say(`💧 ${this._ovName(other)} agrees to share the creek water — for now. One more negotiation could formalize it.`);
-        return dims.water;
-      }
-      dims.water = 'contested';
-      this._feudChange(link, 10);
-      link.trust = Math.max(0, link.trust - 5);
-      this._linkNote(link, 'water', 'Talks failed — water contested.');
-      this.say('The water talks fail. Both villages drink from the same creek and glare across it — the water is CONTESTED now, and contested water breeds feud.');
-      return 'contested';
-    },
-
-    // arrangeMarriage: families across the link. Each bond dampens feud
-    // rises and steadies the link — and breaking a bonded link is a social
-    // wound, not just a political one (see breakLink).
-    arrangeMarriage(linkId) {
-      var links = this.hierarchyState();
-      var link = null;
-      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
-      if (!link || link.status !== 'active') return null;
-      var dims = this._ensureDims(link);
-      var other = this._linkOther(link);
-      if (dims.marriage >= 4) { this.say(`Four marriages bind Haven and ${this._ovName(other)} — the families are thoroughly tangled already.`); return dims.marriage; }
-      if (link.trust < 40) { this.say(`${this._ovName(other)} won't hear of marriages — not at this trust. Earn the table first.`); return null; }
-      var chance = 0.4 + dims.exchange / 200 + link.trust / 400;
-      if (R() < chance) {
-        dims.marriage++;
-        this._feudChange(link, -15);
-        link.trust = Math.min(100, link.trust + 5);
-        this._linkNote(link, 'marriage', 'A marriage bond formed (' + dims.marriage + ' total).');
-        try { this._evolveLeader(other, 'marriage'); } catch (e) {}
-        this.say(`💒 A marriage between Haven and ${this._ovName(other)} — the feast lasts three days and the feud ledgers lose a page. (${dims.marriage} bond${dims.marriage > 1 ? 's' : ''}.)`);
-        return dims.marriage;
-      }
-      link.trust = Math.max(0, link.trust - 3);
-      this.say('The marriage talks stall — wrong family, wrong season. Nobody is insulted. Yet.');
-      return null;
-    },
-
-    // plantSpy: grow our report network inside another village. +10 per
-    // planting (max 100); each planting risks discovery (feud +30, trust
-    // -20). Thresholds unlock intel: 30 = strength, 60 = intentions and
-    // demands, 85 = the leader's goals.
-    plantSpy(vid) {
-      var ov = this._otherVillage(vid);
-      if (!ov) { this.say('You don\'t know them well enough to plant anyone.'); return null; }
-      var ist = this._intelState();
-      var ie = ist[vid] || (ist[vid] = {});
-      ie.spies = Math.min(100, (ie.spies || 0) + 10);
-      var nm = ov.name || 'them';
-      if (R() < 0.18) {
-        var link = this.linkWith(vid);
-        if (link) {
-          this._ensureDims(link);
-          this._feudChange(link, 30);
-          link.trust = Math.max(0, link.trust - 20);
-          this._linkNote(link, 'spies', 'They caught one of ours.');
-        }
-        try { this._evolveLeader(vid, 'spycaught'); } catch (e) {}
-        this._revealIntel(vid, { lastSeen: (this.state.scholar || {}).day || 0 });
-        this.say(`🕵️ They caught one of ours inside ${nm}. The spy came home walking, which is the kind way to say it. Feud spikes.`);
-        return { spies: ie.spies, discovered: true };
-      }
-      this.say(`One of ours settles quietly into ${nm}. Eyes: ${ie.spies}.`);
-      return { spies: ie.spies, discovered: false };
-    },
-
-    // _skirmish: feud boils over at the border. Trust burns, feud vents,
-    // gossip travels. Villages mostly posture — but posture leaves marks.
-    _skirmish(linkId) {
-      var links = this.hierarchyState();
-      var link = null;
-      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
-      if (!link || link.status !== 'active') return null;
-      this._ensureDims(link);
-      var other = this._linkOther(link);
-      link.trust = Math.max(0, link.trust - 8);
-      link.dims.feud = Math.max(0, link.dims.feud - 20);
-      this._linkNote(link, 'skirmish', 'Border scuffle — trust burned, feud vented.');
-      try { this._evolveLeader(other, 'skirmish'); } catch (e) {}
-      try { this.seedGossip('skirmish_' + link.id, { loyal: -2 }, (this.npcIds ? this.npcIds().slice(0, 4) : [])); } catch (e) {}
-      this.say(`⚔️ Border scuffle at the creek line with ${this._ovName(other)} — stones, shouting, one split lip. Nobody died. Everybody will remember it anyway.`);
-      return true;
-    },
-
-    // ---------- LEADERS: unique people ----------
-
-    // _genLeader: temperament and goals generate per leader, never a fixed
-    // cast. Succession brings a stranger — the village does not have a
-    // static personality.
-    _genLeader(vid) {
-      var ov = this._otherVillage(vid);
-      if (!ov) return null;
-      var m = null;
-      try { m = this.mshipState(); } catch (e) {}
-      var seq = 0;
-      if (m) { m.leaderSeq = m.leaderSeq || {}; seq = (m.leaderSeq[vid] || 0) + 1; m.leaderSeq[vid] = seq; }
-      var prior = ov.leader || null;
-      var temper = pick(TEMPERAMENTS);
-      if (prior) { var g0 = 0; while (temper === prior.temperament && g0++ < 6) temper = pick(TEMPERAMENTS); }
-      var goals = pick(LEADER_GOALS);
-      if (prior) { var g1 = 0; while (goals === prior.goals && g1++ < 6) goals = pick(LEADER_GOALS); }
-      var nm = pick(LEADER_FIRST) + ' ' + pick(LEADER_LAST);
-      if (seq > 1) nm += ' ' + (['II', 'III', 'IV', 'the Younger'][seq % 4] || 'II');
-      var L = { name: nm, temperament: temper, goals: goals, mood: 'wary', age: Math.round(28 + R() * 30), sinceDay: (this.state.scholar || {}).day || 0 };
-      ov.leader = L;
-      return L;
-    },
-
-    // leaderOf: the knowledge-gated read. Strangers stay strangers until a
-    // scout, a negotiation, or the exchange network teaches you their name —
-    // temperament and goals longer still.
-    leaderOf(vid) {
-      var ov = this._otherVillage(vid);
-      if (!ov || !ov.leader) return { known: false };
-      var ie = {};
-      try { ie = this._intelState()[vid] || {}; } catch (e) {}
-      var met = !!ov.leaderMet || !!this.linkWith(vid);
-      if (!met && !ie.leaderKnown) return { known: false, note: 'No word of who speaks for ' + (ov.name || 'them') + '.' };
-      var L = ov.leader;
-      return {
-        known: true, name: L.name,
-        temperament: ie.temperKnown ? L.temperament : 'unknown',
-        goals: ie.goalsKnown ? L.goals : 'unknown',
-        mood: ie.temperKnown ? L.mood : 'unknown',
-        age: ie.temperKnown ? L.age : 'unknown',
-      };
-    },
-
-    // _evolveLeader: events change leaders. Mood slides along the scale;
-    // great shocks can redirect goals. People change during a run.
-    _evolveLeader(vid, evt) {
-      var L = this._ovLeader(vid);
-      if (!L) return null;
-      var mi = LEADER_MOODS.indexOf(L.mood);
-      if (mi < 0) mi = 2;
-      var d = 0;
-      if (evt === 'paid' || evt === 'marriage' || evt === 'honored') d = -1;
-      else if (evt === 'refused' || evt === 'spycaught') d = 1;
-      else if (evt === 'skirmish' || evt === 'ultimatum_refused') d = 2;
-      else if (evt === 'crisis') { d = 1; if (R() < 0.4) { var g = pick(LEADER_GOALS); if (g !== L.goals) L.goals = g; } }
-      L.mood = LEADER_MOODS[Math.max(0, Math.min(LEADER_MOODS.length - 1, mi + d))];
-      return L.mood;
-    },
-
-    // rivalLeaderDied: the day-engine-visible beat. A rival's speaker dies —
-    // of age, of winter, of politics — and a stranger takes the table.
-    // Knowledge-gated: if Haven never heard of them, the table turns
-    // silently in the sim.
-    rivalLeaderDied(vid) {
-      var ov = this._otherVillage(vid);
-      if (!ov) return null;
-      var ie = {};
-      try { ie = this._intelState()[vid] || {}; } catch (e) {}
-      var heard = !!ov.leaderMet || !!this.linkWith(vid) || !!ie.leaderKnown;
-      var old = (ov.leader && ov.leader.name) || 'their speaker';
-      var nm = ov.name || 'them';
-      if (!heard) {
-        try { this._genLeader(vid); ov.leaderMet = false; } catch (e) {}
-        return ov.leader;
-      }
-      var links = this.hierarchyState();
-      var any = false;
-      for (var i = 0; i < links.length; i++) {
-        if (links[i].status !== 'active') continue;
-        if (this._linkOther(links[i]) === vid) { any = true; try { this.theirLeaderDied(links[i].id); } catch (e) {} }
-      }
-      if (!any) {
-        try { this._genLeader(vid); } catch (e) {}
-        try {
-          var ist = this._intelState();
-          var i2 = ist[vid] || (ist[vid] = {});
-          i2.temperKnown = false; i2.goalsKnown = false;
-          ov.leaderMet = false;
-        } catch (e) {}
-        this.say(`🕯️ Word comes down the trade road: ${old} of ${nm} is dead. A stranger holds the table now — Haven knows nothing of them.`);
-      }
-      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'rivaldeath:' + vid); } catch (e) {}
-      return ov.leader;
-    },
-
-    // _leaderAging: leaders are mortal. The old die; the table turns over.
-    // Moods drift with the weather of the relationship.
-    _leaderAging() {
-      try {
-        var ovs = this.state.otherVillages || [];
-        for (var i = 0; i < ovs.length; i++) {
-          var ov = ovs[i];
-          if (!ov || !ov.leader) continue;
-          ov.leader.age += 1 / 365;
-          var age = ov.leader.age;
-          var p = age > 55 ? 0.004 : (age > 45 ? 0.001 : 0.0002);
-          if (R() < p) this.rivalLeaderDied(ov.id);
-          else if (R() < 0.02) {
-            var link = this.linkWith(ov.id);
-            if (link) {
-              if (link.trust >= 70) this._evolveLeader(ov.id, 'paid');
-              else if (link.trust <= 25) this._evolveLeader(ov.id, 'refused');
-            }
-          }
-        }
-      } catch (e) {}
-    },
-
-    // ---------- INTEL: knowledge-gated ----------
-
-    _intelState() {
-      var m = null;
-      try { m = this.mshipState(); } catch (e) { return {}; }
-      m.intel = m.intel || {};
-      return m.intel;
-    },
-
-    _revealIntel(vid, patch) {
-      var ist = this._intelState();
-      var ie = ist[vid] || (ist[vid] = {});
-      for (var k in patch) ie[k] = patch[k];
-      return ie;
-    },
-
-    // villageIntel: the ONLY honest read path for other-village facts.
-    // Unrevealed fields read 'unknown' — if you don't know, it doesn't show.
-    villageIntel(vid) {
-      var ov = this._otherVillage(vid);
-      if (!ov) return { known: false };
-      var ie = this._intelState()[vid] || {};
-      return {
-        known: true, name: ov.name || vid,
-        strength: ie.strength || 'unknown',
-        intentions: ie.intentions || 'unknown',
-        demands: ie.demands || 'unknown',
-        lastSeen: ie.lastSeen != null ? ie.lastSeen : 'never',
-        sources: (ie.sources || []).slice(),
-      };
-    },
-
-    // scoutIntel: send a scout for a day. They return at dusk tomorrow with
-    // what they saw — strength always; intentions and the leader's name when
-    // the network (spies/exchange) can place them. Costs a day; days are food.
-    scoutIntel(vid) {
-      var ov = this._otherVillage(vid);
-      if (!ov) { this.say('You don\'t know them well enough to scout.'); return null; }
-      var m = null;
-      try { m = this.mshipState(); } catch (e) {}
-      if (!m) return null;
-      if (m.scoutOut) { this.say('A scout is already out. One set of eyes at a time.'); return null; }
-      var day = 0;
-      try { day = (this.state.scholar || {}).day || 0; } catch (e) {}
-      m.scoutOut = { vid: vid, untilDay: day + 1 };
-      this.say(`🌲 A scout slips out at dawn toward ${ov.name || 'them'}. Word by tomorrow dusk — scouting costs a day, and days are food.`);
-      return true;
-    },
-
-    _scoutReturns() {
-      try {
-        var m = this.mshipState();
-        if (!m.scoutOut) return;
-        var day = 0;
-        try { day = (this.state.scholar || {}).day || 0; } catch (e) {}
-        if (day < m.scoutOut.untilDay) return;
-        var vid = m.scoutOut.vid;
-        m.scoutOut = null;
-        var ov = this._otherVillage(vid);
-        if (!ov) return;
-        try { if (!ov.leader) this._genLeader(vid); } catch (e) {}
-        var ie = this._revealIntel(vid, {});
-        ie.strength = this._strengthWord(vid);
-        ie.leaderKnown = true;
-        var link = this.linkWith(vid);
-        var dims = link ? this._ensureDims(link) : null;
-        var spies = ie.spies || 0;
-        var exch = dims ? dims.exchange : 0;
-        if (spies >= 30 || exch >= 40) { ie.temperKnown = true; ie.intentions = this._intentionsWord(vid); }
-        if (spies >= 60 || exch >= 70) ie.demands = this._demandsWord(vid);
-        if (spies >= 85) ie.goalsKnown = true;
-        ie.lastSeen = day;
-        ie.sources = ie.sources || [];
-        if (ie.sources.indexOf('scout') < 0) ie.sources.push('scout');
-        try { ov.leaderMet = true; } catch (e) {}
-        var bits = ['strength: ' + ie.strength];
-        if (ie.intentions && ie.intentions !== 'unknown') bits.push('intentions: ' + ie.intentions);
-        if (ie.demands && ie.demands !== 'unknown') bits.push('demands run ' + ie.demands);
-        var L = ov.leader ? ov.leader.name : 'their speaker';
-        this.say(`🌲 The scout returns from ${ov.name || 'them'}: ${bits.join('; ')}. Their speaker is ${L}.`);
-      } catch (e) {}
-    },
-
-    // _strengthWord: THEIR standing vs OURS, in words. The sim knows the
-    // numbers; the player gets the scout's honest read.
-    _strengthWord(vid) {
-      var theirs = 0, ours = 0;
-      try { theirs = this.villageStandingOf(vid); ours = this.regionalStanding(); } catch (e) {}
-      if (ours <= 0) return theirs > 0 ? 'weaker' : 'even';
-      var r = theirs / ours;
-      if (r < 0.8) return 'weaker';
-      if (r > 1.25) return 'stronger';
-      return 'even';
-    },
-
-    _intentionsWord(vid) {
-      var L = this._ovLeader(vid);
-      var g = L ? L.goals : null;
-      var map = {
-        expand: 'they mean to grow — watch the borders',
-        hoard: 'they are stacking food and grudges',
-        learn: 'they are curious about Haven, not hungry',
-        endure: 'they want to be left alone',
-        unite: 'they dream of one organization under them',
-        prove: 'they have something to prove, and Haven is convenient',
-      };
-      return (g && map[g]) || 'patient, for now';
-    },
-
-    _demandsWord(vid) {
-      var L = this._ovLeader(vid);
-      var t = L ? L.temperament : null;
-      if (t === 'greedy' || t === 'volatile') return 'heavy';
-      if (t === 'patient' || t === 'cautious') return 'patient';
-      return 'lean';
-    },
-
-    // ---------- ESCALATION & CONSEQUENCES ----------
-
-    // escalate: two refusals and patience ends. The ultimatum: pay arrears
-    // and a half, now, or the link snaps. The leader's temperament colors
-    // the threat.
-    escalate(linkId) {
-      var links = this.hierarchyState();
-      var link = null;
-      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
-      if (!link || link.status !== 'active' || link.pendingDemand) return null;
-      this._ensureDims(link);
-      var other = this._linkOther(link);
-      var leader = this._ovLeader(other);
-      var temper = leader ? leader.temperament : 'unknown';
-      var cost = Math.round((link.arrears || link.tributeKcalPerWeek) * 1.5);
-      link.pendingDemand = { kind: 'ultimatum', costKcal: cost, detail: `Pay ${cost.toLocaleString()} kcal — arrears and a half — or the link is dust.` };
-      this._feudChange(link, 15);
-      this._linkNote(link, 'demand', 'ULTIMATUM: ' + cost.toLocaleString() + ' kcal.');
-      var tline = temper === 'proud' ? 'Pride does not ask twice.'
-        : temper === 'volatile' ? 'Something in their voice says this is the last warning.'
-        : 'The message is short. That is the frightening part.';
-      this.say(`📯 ULTIMATUM from ${this._ovName(other)}: ${cost.toLocaleString()} kcal, now, or the link snaps. ${tline}`);
-      return link.pendingDemand;
-    },
-
-    _answerUltimatum(link, d, accept) {
-      var other = link.primary;
-      if (accept) {
-        var paid = this._removePantryKcal(d.costKcal || 0);
-        link.arrears = 0;
-        link.refusals = 0;
-        link.trust = Math.min(100, link.trust + 5);
-        this._feudChange(link, -20);
-        this._linkNote(link, 'demand', 'Swallowed the ultimatum: ' + paid.toLocaleString() + ' kcal.');
-        this.say(`You swallow it — ${paid.toLocaleString()} kcal walks out the gate. ${this._ovName(other)} stands down. The link holds, barely.`);
-      } else {
-        link.trust = Math.max(0, link.trust - 30);
-        this._feudChange(link, 30);
-        this._linkNote(link, 'demand', 'REFUSED THE ULTIMATUM.');
-        try { this._evolveLeader(other, 'ultimatum_refused'); } catch (e) {}
-        this.say(`You refuse the ultimatum. ${this._ovName(other)} goes very still. Trust: ${link.trust}.`);
-        if (link.trust < 30) {
-          this.say(`${this._ovName(other)} walks. "Then we are done being patient."`);
-          this.breakLink(link.id, 'ultimatum');
-        }
-      }
-      return true;
-    },
-
-    // coalitionTax: feeding a coalition gets exponentially harder — each
-    // link beyond the first multiplies every tribute owed by 1.25. Scale
-    // transitions are not speedrunnable: empires eat.
-    coalitionTax() {
-      var n = 0;
-      try {
-        var links = this.hierarchyState();
-        for (var i = 0; i < links.length; i++) if (links[i].status === 'active') n++;
-      } catch (e) {}
-      return Math.round(Math.pow(1.25, Math.max(0, n - 1)) * 100) / 100;
-    },
-
-    // _tributeOwed: base tribute × coalition tax, less a tenth when the
-    // water-rights are formalized (water counts as tribute).
-    _tributeOwed(link) {
-      var owed = Math.round((link.tributeKcalPerWeek || 0) * this.coalitionTax());
-      try { if (link.dims && link.dims.water === 'formalized') owed = Math.round(owed * 0.9); } catch (e) {}
-      return owed;
-    },
-
-    _addPantryKcal(kcal, label) {
-      try {
-        var v = this.state.village || {};
-        var pantry = v.pantry || (v.pantry = []);
-        var day = 0;
-        try { day = (this.state.scholar || {}).day || 0; } catch (e) {}
-        pantry.push({ name: label || 'Tribute stores', kcalEach: 400, units: Math.max(1, Math.round(kcal / 400)), spoilDay: day + 21 });
-      } catch (e) {}
-      return kcal;
-    },
-
-    tributeResentment() {
-      try { return this.mshipState().tributeResentment || 0; } catch (e) { return 0; }
-    },
-
-    // _resentmentTick: resentment cools slowly; grumbles surface at 70; at
-    // the boil, the village refuses the next tribute outright — paying is a
-    // village act, and the village can say no.
-    _resentmentTick() {
-      try {
-        var m = this.mshipState();
-        var r = m.tributeResentment || 0;
-        if (r > 0) m.tributeResentment = Math.max(0, r - 2);
-        if ((m.tributeResentment || 0) >= 70 && R() < 0.3) {
-          this.say('The pantry crew grumbles about the tribute carts again. Every basket that leaves is a meal someone here doesn\'t eat.');
-        }
-        if ((m.tributeResentment || 0) >= 100 && !m.tributeRefused) {
-          m.tributeRefused = true;
-          m.tributeResentment = 60;
-          this.say('🛑 The pantry crew folds its arms: NO MORE tribute carts until the resentment cools. The village refuses to feed its own leash.');
-        }
-      } catch (e) {}
-    },
-
-    // _caravanBeats: tribute you RECEIVE arrives as a visible caravan at the
-    // gate — day-engine-visible. Neutral villages send trade caravans too,
-    // and watching one teaches you their strength (observed events teach).
-    _caravanBeats() {
-      try {
-        var day = 0;
-        try { day = (this.state.scholar || {}).day || 0; } catch (e) {}
-        var links = this.hierarchyState();
-        for (var i = 0; i < links.length; i++) {
-          (function (self, link) {
-            try {
-              if (link.status !== 'active' || link.primary !== HOME) return;
-              if (link.lastCaravanWeek === self._week() || R() >= 0.4) return;
-              link.lastCaravanWeek = self._week();
-              self._linkNote(link, 'caravan', 'Tribute caravan seen at the gate.');
-              self.say(`🐪 A tribute caravan from ${self._ovName(link.subordinate)} winds through the gate — the pantry grows heavier.`);
-            } catch (e) {}
-          })(this, links[i]);
-        }
-        var ovs = this.state.otherVillages || [];
-        for (var j = 0; j < ovs.length; j++) {
-          (function (self, ov) {
-            try {
-              if (!ov || self.linkWith(ov.id)) return;
-              if (R() >= 0.05) return;
-              var ie = self._revealIntel(ov.id, {});
-              ie.strength = self._strengthWord(ov.id);
-              ie.lastSeen = day;
-              ie.sources = ie.sources || [];
-              if (ie.sources.indexOf('caravan') < 0) ie.sources.push('caravan');
-              self.say(`🐪 A trade caravan from ${ov.name || 'them'} passes on the old road — fat wagons, armed guards. The scouts make their measure: they look ${ie.strength} than Haven.`);
-            } catch (e) {}
-          })(this, ovs[j]);
-        }
-      } catch (e) {}
-    },
-
     // ---------- DAILY ----------
 
     hierarchyDaily() {
       try { this.linkTick(); } catch (e) {}
-      try { this._leaderAging(); } catch (e) {}
-      try { this._scoutReturns(); } catch (e) {}
-      try { this._caravanBeats(); } catch (e) {}
-      try { this._resentmentTick(); } catch (e) {}
     },
   };
 

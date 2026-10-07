@@ -1,31 +1,18 @@
 // @ontology
 // system: care-explore
-// description: Care and exploration decisions. Care was a vending machine — now it requires real choices: comfort has 11 approaches with honest consequences, food gifts carry social weight and can be stolen from the commons, and examination gates feature depth on knowledge.
+// description: Care and exploration decisions. Care was a vending machine — now it requires real choices.
 // provides:
-//   - giveFood(vid, amount, opts)
+//   - giveFood(vid, amount)
 //   - comfort(vid, approach)
 //   - giveFoodOptions()
-//   - giveFoodSourceOptions()
 //   - comfortOptions(vid)
 //   - examineCell(cx, cy)
 //   - tileFeature(nx, ny, cx, cy, cell)
-//   - lingerCell(cx, cy)
-//   - followTracks(cx, cy)
-//   - markForLater(cx, cy, note)
-//   - fieldMarksList()
 // rules:
-//   - comfort approaches have real tradeoffs: guard/ritual/listen cost 2 ticks, guard costs 12 energy, tough/distract can backfire and lower trust (code: carexplore.js Game.comfort)
-//   - failed comfort in public is witnessed and remembered by onlookers (code: carexplore.js Game.comfort social signal)
-//   - giveFood amounts carry social meaning: scraps can insult the proud, best is remembered, public gifts breed resentment in the unfed hungry (code: carexplore.js Game.giveFood)
-//   - stealing from the commons to give food is allowed and socially punished: public theft costs trust with witnesses and records a crime (code: carexplore.js Game.giveFood steal)
-//   - hidden tile features reveal depth by knowledge skill level; ignorant scholars get honest hints, never silence (code: carexplore.js featureText)
-//   - examine/linger/follow-tracks/mark name their time and energy costs; blind actions stay honest, never disabled (code: carexplore.js Game.lingerCell Game.followTracks Game.markForLater)
+//   - (none documented)
 // consumes:
 //   - scholar.energy
 //   - village.needs
-//   - village.commons
-//   - codex.skills
-//   - codex.fieldMarks
 // ============ CARE & EXPLORE ============
 // Steve: "Back to decisions." Care was a vending machine — one click, no
 // texture. Now giving food and comforting are DECISIONS with tradeoffs.
@@ -42,65 +29,29 @@
 // DESIGN — CARE AS DECISIONS:
 //
 // GIVE FOOD: how much? The world decides public/private (witnesses).
-//   - scraps (1 unit, the dregs): cheap for you — the proud may take it as
-//     an insult. To the starving it's still food.
 //   - a bite (1 unit): small. If they're starving, it can insult.
 //   - a meal (3 units): solid. The honest default.
-//   - your finest (1 unit, best stack): the highest cost to you, the
-//     deepest gratitude. They'll remember what you gave up.
 //   - until full: real cost, real gratitude.
-//   - SOURCE: your pack (honest) or skim the commons pot (theft). Theft is
-//     allowed — and socially punished. Seen = the village punishes you.
-//     Unseen = the recipient knows what you are.
 //   - PUBLIC (witnesses): reputation moves. Generosity is visible — and
-//     creates expectation. Others will ask. And the hungry who watched
-//     someone else get fed will REMEMBER being passed over.
+//     creates expectation. Others will ask.
 //   - PRIVATE (alone): deeper trust, no reputation. But secrets have weight.
 //
-// COMFORT: what do you SAY? Personality matching matters. Every approach
-// names its cost — time, energy, or risk. Comfort that fails has honest
-// consequences, not silent ones.
-//   - sit in silence: always safe, small. (1 tick)
-//   - reassure: needs trust, or it rings hollow. (1 tick)
-//   - be practical: lands for practical minds, cold otherwise. (1 tick)
-//   - share your own fear: vulnerable. Deep if it lands, awkward if not. (1 tick)
-//   - give them space: respecting boundaries IS care. (1 tick)
-//   - distract: cheap redirection. Lands for light temperaments (warm,
-//     gentle, bold, restless); flat for others; callous in real grief —
-//     and a wrong read is remembered. (1 tick)
-//   - keep watch: the oldest comfort. Costs your time AND your energy. An
-//     exhausted guard is a liability, not a comfort. (2 ticks, 12 energy)
-//   - hard truth: "we don't have time for this." Snaps them out of it IF
-//     you've earned the right — otherwise it's cruelty, witnessed. (1 tick)
-//   - small ritual: breathing together, naming the lost. For grief, this is
-//     the real medicine. (2 ticks)
-//   - listen: "tell me." Opens them up if they trust you; prying at a closed
-//     door teaches them to lock it. Teaches you about people. (2 ticks)
-//   - warm food: the oldest medicine. Costs real food from your pack. (1 tick + 1 food)
+// COMFORT: what do you SAY? Personality matching matters.
+//   - sit in silence: always safe, small.
+//   - reassure: needs trust, or it rings hollow.
+//   - be practical: lands for practical minds, cold otherwise.
+//   - share your own fear: vulnerable. Deep if it lands, awkward if not.
+//   - give them space: respecting boundaries IS care.
 //   - grieving ≠ scared: reassurance misses grief; practicality misses sorrow.
-//   - harshness witnessed is reputation too: fail in public and onlookers
-//     remember what they saw.
 //
 // DESIGN — EXAMINE:
 //   - 2 ticks, time-only. Adjacent cells only.
 //   - Depth: first examine = surface. Repeat (or observant) = deeper.
-//   - KNOWLEDGE DEPTH: hidden features reveal by skill level (featureText).
-//     An ignorant scholar sees honest hints — "if you don't know, it doesn't
-//     show" — but blind actions are never disabled, never silent.
 //   - Feeds knowledge: track_read, track_human, old_world_cache,
 //     system_theology. 4 encounters = learnSkill (existing pattern).
 //   - The world hides things: tracks, old camps, strange growths, remnants,
 //     hollows. Deterministic per tile (seeded hash) so they're consistent.
 //   - Discoveries: examining can FIND things — caches, story beats.
-//
-// DESIGN — EXPLORE BEATS (the linger/move-on decision):
-//   - linger: a careful second look (2 ticks). Surfaces a hidden feature you
-//     walked past. Honest when there's nothing: "nothing but what you saw."
-//   - follow tracks: requires found, readable tracks. (2 ticks, 5 energy).
-//     The trail can go cold (honest), lead to a find, or arrive somewhere
-//     that teaches you who runs this ground.
-//   - mark for later: fix a spot in memory (1 tick). Some places deserve a
-//     second visit. fieldMarksList() reads them back.
 
 (function () {
   const Game = (globalThis.Scattering || {}).Game;
@@ -148,104 +99,20 @@
     } catch (e) { return false; }
   }
 
-  // ---- knowledge-depth machinery (Steve 2026-10-07) ----
-  // Every hidden feature has a governing knowledge skill. The reveal is
-  // sight-gated: level 0 = honest hints ("if you don't know, it doesn't
-  // show"), level 1 = what it is, level 2+ = inference — what it MEANS.
-  // Blind is never disabled, never silent. Just honest about its limits.
-  const FEATURE_SKILL = {
-    tracks: 'track_read', banktracks: 'track_read', hollow: 'track_read',
-    oldcamp: 'track_human', strange: 'system_theology', remnant: 'old_world_cache',
-  };
-  function skillLevel(id) {
-    const sk = ((Game.state || {}).codex || {}).skills || {};
-    return ((sk[id] || {}).level) || 0;
-  }
-  function featureKnowledge(feature) {
-    // [skillId, encounters] fed when a feature is revealed
-    if (feature === 'tracks') return [['track_read', 2]];
-    if (feature === 'banktracks') return [['track_read', 2], ['nocturnal_patterns', 1]];
-    if (feature === 'oldcamp') return [['track_human', 2]];
-    if (feature === 'strange') return [['system_theology', 2]];
-    if (feature === 'remnant') return [['old_world_cache', 2]];
-    if (feature === 'hollow') return [['track_read', 1]];
-    return [];
-  }
-  // knowledge feeding — examining teaches. 4 encounters = learnSkill (the
-  // existing codex pattern). Module-level so examineCell, lingerCell and
-  // followTracks all feed the same way.
-  function feedExamKnowledge(skillId, amt) {
-    Game.state.codex.encounters = Game.state.codex.encounters || {};
-    const cur = (Game.state.codex.skills || {})[skillId];
-    if (cur && (cur.level || 0) >= 1) return;
-    Game.state.codex.encounters[skillId] = (Game.state.codex.encounters[skillId] || 0) + amt;
-    const enc = Game.state.codex.encounters[skillId];
-    if (enc >= 4 && Game.learnSkill) {
-      Game.learnSkill(skillId, 1, 'examining');
-    } else if (enc >= 2) {
-      const k = (Game.data.knowledge || []).find(x => x.id === skillId);
-      if (k) Game.say(`(Studying this teaches you. ${k.name}: ${enc}/4)`);
-    }
-  }
-  // featureText: the sight-gated reveal. Called AFTER feeding knowledge, so
-  // studying something can teach you mid-examination — you figure it out
-  // WHILE looking, which is exactly how learning works.
-  function featureText(feature, key) {
-    const lvl = skillLevel(FEATURE_SKILL[feature] || 'track_read');
-    if (feature === 'tracks') {
-      if (lvl < 1) return `The ground here is disturbed — something passed through. That's all you can honestly say. Your eyes aren't trained for this yet. (Studying tracks teaches track_read.)`;
-      const kinds = [
-        `Three toes, deep impression, heading north. Something heavy, moving with purpose. The stride is long — it wasn't hurrying, it just covers ground.`,
-        `Small paired prints, bounding. Rabbit — or something that wants you to think rabbit. You note the claw marks. Rabbits don't leave those.`,
-        `A drag mark through the grass, and beside it, prints too light to be the thing doing the dragging. Something was carried. Something that didn't want to go.`,
-      ];
-      let t = `You crouch. The ground here has a story. ${kinds[hashStr(key) % kinds.length]}`;
-      if (lvl >= 2) t += ` Heavy, unhurried — whatever made these wasn't hunting. It was commuting. You file that away.`;
-      return t;
-    }
-    if (feature === 'banktracks') {
-      if (lvl < 1) return `The mud at the water's edge is churned up. Something comes here to drink. What, you can't say — not yet.`;
-      let t = `Wait — at the muddy edge: prints. Three toes, splayed wide. Too big for any bird you know. They come down to the water at night, whatever they are. You memorize the shape.`;
-      if (lvl >= 2) t += ` The print edges are softened by morning dew — they drink in the dark, and they're regular about it.`;
-      return t;
-    }
-    if (feature === 'oldcamp') {
-      if (lvl < 1) return `A fire pit, cold for days. Someone camped here. Beyond that — how many, how long, which way they went — you don't know how to read what's left.`;
-      let t = `A fire pit, cold for days. Ash, a broken strap, a tin can with the label worried off. Someone camped here. Left in a hurry — or left not caring. You look for which direction they went. The grass doesn't say.`;
-      if (lvl >= 2) t += ` But the ash does: it's scattered east — kicked, not wind-blown. And the strap was cut, not broken. They left in a hurry, and they left east.`;
-      return t;
-    }
-    if (feature === 'strange') {
-      // the strangeness is visible to anyone — honest wonder is the L0 text.
-      let t = `The grass here grows in a spiral. The blades are blue at the tips, fading to green at the root — like the color is draining upward, or raining down. This isn't right. This isn't any kind of right. You step back. It keeps growing in its spiral, indifferent to your opinion.`;
-      if (lvl >= 1) t += ` This has the System's fingerprints on it — too precise to be natural, too pointless to be anything else.`;
-      if (lvl >= 2) t += ` A calibration scar. The System is learning this biome the way a child learns a face — by touching it wrong first.`;
-      return t;
-    }
-    if (feature === 'remnant') {
-      if (lvl < 1) return `Under the fresh breakage: older stone. Older than the Scattering — you're fairly sure — but you can't read it further than that.`;
-      let t = `Under the fresh breakage: older stone. Concrete, rebar rusted to lace. This isn't Scattering rubble — this is BEFORE. Someone built here. Lived here. The moss has had years. You sit with that for a moment — the world had a before, and it had befores before that.`;
-      if (lvl >= 2) t += ` The rebar pattern says load-bearing wall. This was a building — people lived or worked here, on purpose, for years. Decades, maybe.`;
-      return t;
-    }
-    return `You look closer. There's something here, but you can't quite read it yet.`;
-  }
-
   // ================================================================
   // GIVE FOOD — a decision, not a button.
   // amount: 'bite' | 'meal' | 'full'
   // ================================================================
   const _origGiveFood = Game.giveFood;
-  Game.giveFood = function (vid, amount, opts) {
+  Game.giveFood = function (vid, amount) {
     amount = amount || 'meal';
-    opts = opts || {};
-    const source = opts.source || 'pack'; // 'pack' = your food; 'store' = skim the commons (theft)
     const v = (this.data.villagers || []).find(x => x.id === vid)
       /* unified: hydrated seeds are in villagers */;
     if (!v) return null;
 
-    const steal = source === 'store';
     const stacks = edibleStacks();
+    if (!stacks.length) { this.say("You have no food to give."); return null; }
+
     const first = this.displayName(vid);
     const n = this.npcNeeds(vid);
     const hunger = n.hunger || 0;
@@ -254,56 +121,29 @@
     const temp = npcTemper.call(this, vid);
     const goal = this.npcGoal ? this.npcGoal(vid) : null;
 
-    // how much can we actually give? The supply is your pack — or the
-    // commons pot, if you're stealing.
+    // how much can we actually give?
     const totalUnits = stacks.reduce((s, i) => s + (i.units || 0), 0);
-    // THEFT, wired in concretely: the commons pot belongs to everyone.
-    // Skimming it to feed one person is allowed — and punished. Seen =
-    // the village punishes you. Unseen = the recipient knows what you are.
-    const commons = steal ? (this.state.village.commons = this.state.village.commons || { units: 12 }) : null;
-    const supply = steal ? (commons.units || 0) : totalUnits;
-    if (steal && supply <= 0) { this.say("The commons pot is scraped clean. There's nothing to steal."); return null; }
     let units = 1;
-    if (amount === 'meal') units = Math.min(3, supply);
-    else if (amount === 'full') units = Math.min(supply, Math.ceil(hunger / 25) + 1);
+    if (amount === 'meal') units = Math.min(3, totalUnits);
+    else if (amount === 'full') units = Math.min(totalUnits, Math.ceil(hunger / 25) + 1);
 
-    // take the food — from your pack, or from the commons pot
-    let taken = 0, takenName = null, takenKcal = 0;
-    if (steal) {
-      taken = Math.min(units, commons.units);
-      commons.units -= taken;
-      takenName = 'commons rations';
-      takenKcal = taken * 120;
-    } else {
-      if (!stacks.length) { this.say("You have no food to give."); return null; }
-      // scraps = the dregs (lowest kcal stack); best = your finest (highest).
-      // Amounts carry social meaning: what you give says what you think of them.
-      const ordered = stacks.slice().sort((a, b) => (a.kcalEach || 0) - (b.kcalEach || 0));
-      const pick = amount === 'scraps' ? ordered[0] : amount === 'best' ? ordered[ordered.length - 1] : null;
-      if (pick) {
-        const take = Math.min(pick.units, units);
-        pick.units -= take; taken += take; takenKcal += take * (pick.kcalEach || 0);
-        takenName = pick.name;
-      } else {
-        for (const st of stacks) {
-          if (taken >= units) break;
-          const take = Math.min(st.units, units - taken);
-          st.units -= take; taken += take; takenKcal += take * (st.kcalEach || 0);
-          if (!takenName) takenName = st.name;
-        }
-      }
-      this.state.scholar.inventory = this.state.scholar.inventory.filter(i => (i.units || 0) > 0);
+    // take the food — best stacks first (lowest kcal? no: use oldest/spoiling first is complex; just take in order)
+    let taken = 0, takenName = stacks[0].name, takenKcal = 0;
+    for (const st of stacks) {
+      if (taken >= units) break;
+      const take = Math.min(st.units, units - taken);
+      st.units -= take; taken += take; takenKcal += take * (st.kcalEach || 0);
+      if (!takenName) takenName = st.name;
     }
+    this.state.scholar.inventory = this.state.scholar.inventory.filter(i => (i.units || 0) > 0);
     if (taken === 0) { this.say("You have no food to give."); return null; }
 
     // ---- the decision's consequences ----
     const hungerRelief = amount === 'bite' ? 25 : amount === 'meal' ? 60 : 120;
     n.hunger = Math.max(0, hunger - hungerRelief);
 
-    let trustGain = amount === 'bite' ? 4 : amount === 'meal' ? 10
-      : amount === 'scraps' ? 3 : amount === 'best' ? 18 : 16;
+    let trustGain = amount === 'bite' ? 4 : amount === 'meal' ? 10 : 16;
     let note = null;
-    const req = (this.state.village.requests || {})[vid];
 
     // STARVING + BITE = insult risk. A crumb to a starving person can sting.
     const starving = hunger > 70;
@@ -314,86 +154,33 @@
       this.remember(vid, 'stingy_gift', 'gave a bite to a starving person');
     }
 
-    // SCRAPS: the dregs. To the proud it's an insult; to the starving it's
-    // still food. Either way, you both know what you gave.
-    if (amount === 'scraps' && !req && Math.random() < (temp === 'proud' || temp === 'prickly' ? 0.7 : 0.4)) {
-      trustGain = 1;
-      note = 'scraps';
-      this.say(`${first} looks at the ${takenName} — the dregs, and you both know it. "Thanks," they say, in a tone that means the opposite. Hunger will make them eat it. Memory will make them remember who gave it.`);
-      this.remember(vid, 'given_scraps', 'gave them the dregs of the pack');
-    }
-
-    // BEST: your finest. Costs you the most, means the most.
-    if (amount === 'best' && !note) {
-      this.remember(vid, 'gave_the_best', `gave them your finest (${takenName})`);
-    }
-
     // PRIVATE gifts cut deeper — no audience, just two people.
     if (!pub) {
       trustGain = Math.round(trustGain * 1.5);
       this.remember(vid, 'private_gift', `gave ${amount} with no one watching`);
     }
 
-    // THEFT CONSEQUENCES — allowed, punished. (Steve: theft allowed,
-    // socially punished — this is the wiring.)
-    if (steal) {
-      note = note || 'stolen';
-      try { this.recordCrime('theft', { victim: 'village', caught: pub }); } catch (e) {}
-      if (pub) {
-        try { this.observe('theft', { target: vid }); } catch (e) {}
-        const wits = ((this.witnesses && this.witnesses(3)) || []).filter(w => w !== vid && w !== this.villagerId);
-        wits.forEach(w => {
-          try { this.bumpTrust(w, -15); this.remember(w, 'saw_you_steal', `stole from the commons to feed ${first}`); } catch (e) {}
-        });
-        trustGain = Math.max(1, trustGain - 6);
-        this.remember(vid, 'complicit_in_theft', 'accepted stolen commons food');
-        this.say(`You take from the commons pot — openly — and hand it to ${first}. The watching faces go hard. Food given is kindness. Food STOLEN is a statement, and the whole village just heard it.`);
-      } else {
-        trustGain = Math.round(trustGain * 0.75);
-        this.remember(vid, 'knows_you_steal', 'knows you skim from the commons');
-        this.say(`No one sees. You skim from the commons pot and press it into ${first}'s hands. They eat — and they know exactly where it came from. Gratitude, tangled with something colder.`);
-      }
-    }
-
     // answered ask = gratitude (keep the existing beat)
+    const req = (this.state.village.requests || {})[vid];
     if (req && req.type === 'food') {
       delete this.state.village.requests[vid];
       this.remember(vid, 'gift', 'answered their hunger');
       if (!note) this.say(`${first} eats like it's the first time. "Thank you," they say, quiet. "I won't forget this."`);
     } else if (!note) {
-      this.remember(vid, 'gift', `unasked-for food (${amount}${steal ? ', stolen' : ''})`);
+      this.remember(vid, 'gift', `unasked-for food (${amount})`);
     }
 
     setTrust.call(this, vid, trust + this.trustGainMult(trustGain));
 
     // PUBLIC: the village watches. Generosity is visible — and it creates
     // expectation. Feed people publicly and the hungry will come asking.
-    // And the hungry who watched someone ELSE get fed will remember it.
     if (pub) {
-      if (!steal) this.observe('give_food', { target: vid });
-      if (amount === 'meal' || amount === 'full' || amount === 'best') {
+      this.observe('give_food', { target: vid });
+      if ((amount === 'meal' || amount === 'full')) {
         this.state.village.foodExpectation = true;
       }
       if (!note && !req) {
         this.say(`You give ${first} ${taken > 1 ? taken + ' portions of' : 'some'} ${takenName}${pub ? ', with the village watching' : ''}. They look at you differently now.`);
-      }
-      if (!steal) {
-        const others = (this.state.village.roster || []).filter(id => id !== vid && id !== this.villagerId);
-        const resentful = [];
-        others.forEach(oid => {
-          try {
-            if (((this.npcNeeds(oid) || {}).hunger || 0) > 60) {
-              this.remember(oid, 'passed_over', `watched you feed ${first} while they went hungry`);
-              // -6: the observe('give_food') generosity bump gives witnesses
-              // +4, so resentment must clear that to land net-negative.
-              try { this.bumpTrust(oid, -6); } catch (e) {}
-              resentful.push(oid);
-            }
-          } catch (e) {}
-        });
-        if (resentful.length && !note && !req) {
-          this.say(`${this.displayName(resentful[0])} watches. Says nothing. Hunger is quiet, but it has a memory.`);
-        }
       }
     } else if (!note && !req) {
       this.say(`Just you and ${first}. You press ${taken > 1 ? taken + ' portions of' : 'some'} ${takenName} into their hands. No one sees. That matters, somehow.`);
@@ -403,7 +190,7 @@
     this.socialTick(vid);
     this.tickAction(1); // a handoff is quick — the food is the real cost
     this.save();
-    return { ok: true, amount, units: taken, public: pub, trustGain, stolen: steal };
+    return { ok: true, amount, units: taken, public: pub, trustGain };
   };
 
   // ================================================================
@@ -424,9 +211,8 @@
     const intel = npcIntelPrimary.call(this, vid);
     const temp = npcTemper.call(this, vid);
     const grieving = mood === 'grieving';
-    const pub = isPublic.call(this, vid);
 
-    let fearDelta = 0, trustDelta = 0, line = '', ticks = 1;
+    let fearDelta = 0, trustDelta = 0, line = '';
 
     if (approach === 'silent') {
       // always safe. Presence is the whole thing.
@@ -472,95 +258,6 @@
       fearDelta = 0; trustDelta = 6;
       line = `"I'll be right over there if you need me." You give ${first} room. Later, they find you. "Thanks," they say. "For not... you know. For not pushing."`;
       this.remember(vid, 'given_space', 'respected their need for distance');
-    } else if (approach === 'distract') {
-      // cheap redirection. Personality matching matters: light souls
-      // (warm, gentle, bold, restless) can laugh through fear; withdrawn
-      // ones just find it noise. And at a graveside it's callous — a wrong
-      // read that's remembered.
-      if (grieving) {
-        fearDelta = 5; trustDelta = -3;
-        line = `You try to lighten it — a joke, a distraction. ${first}'s face closes. Wrong moment. Wrong read. The silence afterward is worse than the one before.`;
-        this.remember(vid, 'tone_deaf', 'tried to joke when it was serious');
-      } else if (['warm', 'gentle', 'bold', 'restless'].includes(temp)) {
-        fearDelta = -25; trustDelta = 5;
-        line = `You steer ${first} sideways — a story, a silly observation, anything but the fear. It works. Laughter is a doorway; fear has to go around it.`;
-      } else {
-        fearDelta = -10; trustDelta = 1;
-        line = `You try to lighten the mood. ${first} manages something almost like a smile — the effort counts, even if the joke doesn't quite land. Cheap comfort, cheap results.`;
-      }
-    } else if (approach === 'guard') {
-      // "I'll keep watch." Protection has a price: your time AND your energy.
-      // An exhausted guard is a liability, not a comfort — the game says so.
-      const energy = this.state.scholar.energy === undefined ? 100 : this.state.scholar.energy;
-      if (energy < 15) {
-        this.say(`You want to offer a watch, but you're running on fumes. An exhausted guard is a liability, not a comfort. You say so, honestly — ${first} nods. The honesty lands better than the watch would have.`);
-        return null;
-      }
-      this.state.scholar.energy = Math.max(0, energy - 12);
-      ticks = 2;
-      if (grieving) {
-        fearDelta = -10; trustDelta = 5;
-        line = `"I'll keep watch. You don't have to think about anything." Grief isn't afraid of the dark — but being guarded still lands. Someone standing between you and the world. That counts.`;
-      } else {
-        fearDelta = -40; trustDelta = 10;
-        line = `"Sleep. I'll keep watch." You mean it, and ${first} can tell. The fear drains out of them like water. Protection is the oldest comfort there is.`;
-        this.remember(vid, 'stood_watch', 'kept watch while they rested');
-      }
-    } else if (approach === 'tough') {
-      // "We don't have time for this." High risk, high reward. You need to
-      // have EARNED the right to say it — otherwise it's just cruelty.
-      if (trust >= 50) {
-        fearDelta = -45; trustDelta = 5;
-        line = `"Hey. Look at me. We're still here, and we don't have time to fall apart — so we won't." Blunt. True. ${first} blinks, then breathes. "Okay," they say. "Okay."`;
-      } else {
-        fearDelta = 12; trustDelta = -8;
-        line = `"We don't have time for this." The words land like a slap. ${first} stares at you — you haven't earned the right to say that yet. The fear gets worse, and now there's hurt under it.`;
-        this.remember(vid, 'harsh_words', 'told them to get over it');
-      }
-    } else if (approach === 'ritual') {
-      // breathing together, naming the lost. For grief, this is the real
-      // medicine. Takes time — rituals can't be rushed.
-      ticks = 2;
-      if (grieving) {
-        fearDelta = -35; trustDelta = 12;
-        line = `You sit close and breathe with ${first} — slow, together. Then you say the name of who they lost, out loud, like it matters. Because it does. ${first} cries, and it's the good kind of crying.`;
-        this.remember(vid, 'shared_ritual', 'grieved together, properly');
-      } else {
-        fearDelta = -12; trustDelta = 4;
-        line = `You breathe with ${first}, slow and deliberate — a small ritual against the fear. It doesn't fix anything. But the rhythm helps. Rhythms are older than fear.`;
-      }
-    } else if (approach === 'listen') {
-      // "Tell me." Asking is cheap; hearing is not. If they trust you,
-      // they open up — and you learn about people. If not, prying at a
-      // closed door teaches them to lock it.
-      ticks = 2;
-      if (trust >= 20) {
-        fearDelta = -30; trustDelta = 10;
-        line = `"Tell me," you say. And ${first} does — it comes out in a rush, the whole tangled knot of it. You listen. Really listen. Halfway through, their hands stop shaking.`;
-        this.remember(vid, 'told_you', 'told you what was really wrong');
-        feedExamKnowledge('read_people', 1);
-      } else {
-        fearDelta = 6; trustDelta = -2;
-        line = `"Tell me what's wrong." ${first} looks at you for a long moment — and says nothing. The trust isn't there yet. Prying at a closed door just teaches them to lock it.`;
-      }
-    } else if (approach === 'warmth') {
-      // warm food as comfort — the oldest medicine. Costs real food.
-      const stacks = edibleStacks();
-      if (!stacks.length) {
-        this.say(`You'd press something warm into ${first}'s hands, but your pack is empty. The gesture dies before it's born.`);
-        return null;
-      }
-      const st = stacks[0];
-      st.units -= 1;
-      this.state.scholar.inventory = this.state.scholar.inventory.filter(i => (i.units || 0) > 0);
-      fearDelta = -15; trustDelta = 6;
-      n.hunger = Math.max(0, (n.hunger || 0) - 20);
-      line = `You press something warm into ${first}'s hands — ${st.name}. They hold it like it's more than food. Sometimes it is. The shaking eases.`;
-      this.remember(vid, 'warm_food', 'comforted them with warm food');
-    } else {
-      // unknown approach: honest, never silent.
-      this.say(`You try something — but it doesn't come together. ${first} waits. The moment passes, a little awkward.`);
-      return null;
     }
 
     n.fear = Math.max(0, (n.fear || 0) + fearDelta);
@@ -570,22 +267,12 @@
     this.say(line);
     this.remember(vid, 'comforted', `via ${approach} when ${mood}`);
     this.observe('comfort', { target: vid });
-    // SOCIAL SIGNAL: comfort happens in front of people. Kindness witnessed
-    // is reputation — and harshness witnessed is too. Fail in public and
-    // the onlookers remember what they saw.
-    if (pub && trustDelta < 0) {
-      const wits = (this.witnesses ? this.witnesses(3) : []) || [];
-      wits.forEach(w => {
-        if (w === vid || w === this.villagerId) return;
-        try { this.remember(w, 'saw_harsh_comfort', `saw you be harsh with ${first}`); } catch (e) {}
-      });
-    }
     this.notePlaystyle('social');
     try { this.checkPromises('heal'); } catch (e) {}
     this.socialTick(vid);
-    this.tickAction(ticks);
+    this.tickAction(1);
     this.save();
-    return { ok: true, approach, fearDelta, trustDelta, ticks };
+    return { ok: true, approach, fearDelta, trustDelta };
   };
 
   // ================================================================
@@ -638,9 +325,20 @@
     this.state.codex.examined[key] = depth;
     const deep = depth >= 2;
 
-    // knowledge feeding: module-level feedExamKnowledge (shared with
-    // lingerCell/followTracks). Called BEFORE the reveal, so studying can
-    // teach you mid-examination — the sight gates on the new level.
+    // knowledge feeding helper
+    const feedKnowledge = (skillId, amt) => {
+      this.state.codex.encounters = this.state.codex.encounters || {};
+      const cur = (this.state.codex.skills || {})[skillId];
+      if (cur && (cur.level || 0) >= 1) return;
+      this.state.codex.encounters[skillId] = (this.state.codex.encounters[skillId] || 0) + amt;
+      const enc = this.state.codex.encounters[skillId];
+      if (enc >= 4 && this.learnSkill) {
+        this.learnSkill(skillId, 1, 'examining');
+      } else if (enc >= 2) {
+        const k = (this.data.knowledge || []).find(x => x.id === skillId);
+        if (k) this.say(`(Studying this teaches you. ${k.name}: ${enc}/4)`);
+      }
+    };
 
     const observant = (() => {
       try {
@@ -680,28 +378,19 @@
       }
       if (feature === 'hollow' && !featKnown) {
         this.state.codex.examined[featKey] = 1;
-        feedExamKnowledge('track_read', 1);
-        const sight = skillLevel('track_read');
-        if (sight < 1) {
-          text += ` And — a hollow at the base, half-hidden by roots. Could be nothing. Could be something's bedroom. You can't read it yet.`;
+        // a hollow tree — sometimes it holds something
+        const loot = hashStr(key + 'loot') % 100;
+        if (loot < 30) {
+          text += ` And — wait. A hollow at the base, half-hidden by roots. Inside: a tin box, rusted shut. You work it open: wire, a fishing hook, a photograph of people you'll never meet. Someone hid this. Someone who isn't coming back.`;
           this.say(text);
+          // small material find
+          try {
+            if (this.addMaterial) { this.addMaterial('fiber', 2); }
+          } catch (e) {}
+          this.remember && this.remember(null, 'found_cache', 'hollow tree cache');
         } else {
-          // a hollow tree — sometimes it holds something
-          const loot = hashStr(key + 'loot') % 100;
-          if (loot < 30) {
-            text += ` And — wait. A hollow at the base, half-hidden by roots. Inside: a tin box, rusted shut. You work it open: wire, a fishing hook, a photograph of people you'll never meet. Someone hid this. Someone who isn't coming back.`;
-            if (sight >= 2) text += ` The dust inside is undisturbed except for your hands. Whoever hid this is long gone.`;
-            this.say(text);
-            // small material find
-            try {
-              if (this.addMaterial) { this.addMaterial('fiber', 2); }
-            } catch (e) {}
-            this.remember && this.remember(null, 'found_cache', 'hollow tree cache');
-          } else {
-            text += ` And — a hollow at the base, half-hidden by roots. Empty. But the leaves inside are pressed flat, like something slept here. Recently.`;
-            if (sight >= 2) text += ` The pressed patch is big — bigger than you. You decide what that means.`;
-            this.say(text);
-          }
+          text += ` And — a hollow at the base, half-hidden by roots. Empty. But the leaves inside are pressed flat, like something slept here. Recently.`;
+          this.say(text);
         }
       } else {
         this.say(text);
@@ -728,7 +417,7 @@
           this.say(`You study the bark, the needles, what's dropped underneath. A pattern is settling in — the name of this one is close. One more careful look should do it.`);
         }
       }
-      feedExamKnowledge('track_read', observant ? 2 : 1);
+      feedKnowledge('track_read', observant ? 2 : 1);
     }
     // ---- WATER ----
     else if (cell === 'water') {
@@ -746,11 +435,11 @@
       this.say(text);
       if (feature === 'banktracks' && !featKnown) {
         this.state.codex.examined[featKey] = 1;
-        feedExamKnowledge('track_read', 2);
-        feedExamKnowledge('nocturnal_patterns', 1);
-        this.say(featureText('banktracks', key));
+        this.say(`Wait — at the muddy edge: prints. Three toes, splayed wide. Too big for any bird you know. They come down to the water at night, whatever they are. You memorize the shape.`);
+        feedKnowledge('track_read', 2);
+        feedKnowledge('nocturnal_patterns', 1);
       } else {
-        feedExamKnowledge('track_read', 1);
+        feedKnowledge('track_read', 1);
       }
     }
     // ---- RUBBLE ----
@@ -762,9 +451,9 @@
       }
       if (feature === 'remnant' && !featKnown) {
         this.state.codex.examined[featKey] = 1;
-        feedExamKnowledge('old_world_cache', 2);
-        text += featureText('remnant', key);
+        text += `Under the fresh breakage: older stone. Concrete, rebar rusted to lace. This isn't Scattering rubble — this is BEFORE. Someone built here. Lived here. The moss has had years. You sit with that for a moment — the world had a before, and it had befores before that.`;
         this.say(text);
+        feedKnowledge('old_world_cache', 2);
         // remnants sometimes hide old-world caches
         if (hashStr(key + 'cache') % 100 < 25) {
           this.say(`And in a cracked foundation stone: a hollow. Inside, wrapped in oilcloth that's somehow held: a multi-tool, pitted but whole. The old world, reaching forward.`);
@@ -775,23 +464,31 @@
       } else {
         if (deep) text += `Just broken rock and dust. But even dust was something, once.`;
         this.say(text);
-        feedExamKnowledge('old_world_cache', 1);
+        feedKnowledge('old_world_cache', 1);
       }
     }
     // ---- DIRT / GRASS ----
     else if (cell === 'dirt' || cell === 'grass') {
       if (feature === 'tracks' && !featKnown) {
         this.state.codex.examined[featKey] = 1;
-        feedExamKnowledge('track_read', 2);
-        this.say(featureText('tracks', key));
+        const kinds = [
+          `Three toes, deep impression, heading north. Something heavy, moving with purpose. The stride is long — it wasn't hurrying, it just covers ground.`,
+          `Small paired prints, bounding. Rabbit — or something that wants you to think rabbit. You note the claw marks. Rabbits don't leave those.`,
+          `A drag mark through the grass, and beside it, prints too light to be the thing doing the dragging. Something was carried. Something that didn't want to go.`,
+        ];
+        text = kinds[hashStr(key) % kinds.length];
+        this.say(`You crouch. The ground here has a story. ${text}`);
+        feedKnowledge('track_read', 2);
       } else if (feature === 'oldcamp' && !featKnown) {
         this.state.codex.examined[featKey] = 1;
-        feedExamKnowledge('track_human', 2);
-        this.say(featureText('oldcamp', key));
+        text = `A fire pit, cold for days. Ash, a broken strap, a tin can with the label worried off. Someone camped here. Left in a hurry — or left not caring. You look for which direction they went. The grass doesn't say.`;
+        this.say(text);
+        feedKnowledge('track_human', 2);
       } else if (feature === 'strange' && !featKnown) {
         this.state.codex.examined[featKey] = 1;
-        feedExamKnowledge('system_theology', 2);
-        this.say(featureText('strange', key));
+        text = `The grass here grows in a spiral. The blades are blue at the tips, fading to green at the root — like the color is draining upward, or raining down. This isn't right. This isn't any kind of right. You step back. It keeps growing in its spiral, indifferent to your opinion.`;
+        this.say(text);
+        feedKnowledge('system_theology', 2);
         try {
           // JOURNAL PACING (Steve 2026-10-05): passive observation doesn't
           // auto-record pre-codex. Post-codex the Codex remembers for you.
@@ -816,7 +513,7 @@
           `You find a feather. Barred brown and white. Too big for the birds you've seen. You tuck it away — evidence of something.`,
         ];
         this.say(deeps[hashStr(key) % deeps.length]);
-        feedExamKnowledge('track_read', 1);
+        feedKnowledge('track_read', 1);
       }
     }
     // ---- BUSH / PLANT ----
@@ -836,7 +533,7 @@
         else text += `A spider's web between two stems, perfect geometry. The bush is an ecosystem, not a plant.`;
       }
       this.say(text);
-      feedExamKnowledge('track_read', 1);
+      feedKnowledge('track_read', 1);
     }
     // ---- TENT ----
     else if (cell === 'tent') {
@@ -851,8 +548,8 @@
           : `You look closer. The ground inside is worn smooth in one spot — someone slept here many nights. There's a smell of old smoke. Whoever they were, they kept a careful camp. You wonder if they're still careful, wherever they are.`;
       }
       this.say(text);
-      feedExamKnowledge('track_human', 1);
-      feedExamKnowledge('read_people', 1);
+      feedKnowledge('track_human', 1);
+      feedKnowledge('read_people', 1);
     }
     // ---- FIRE ----
     else if (cell === 'fire') {
@@ -860,7 +557,7 @@
         this.say(`Fire. Heat, light, the oldest technology. You warm your hands.`);
       } else {
         this.say(`You watch the fire the way you've learned to watch things. The wood it's burning — someone split that, recently, with something sharp. The stone ring is deliberate, maintained. This fire is tended. This fire means someone's home.`);
-        feedExamKnowledge('track_human', 1);
+        feedKnowledge('track_human', 1);
       }
     }
     // ---- WALL / DOOR / BRIDGE ----
@@ -871,7 +568,7 @@
         bridge: deep ? `You test the planks. Solid, mostly. Someone maintains this crossing. Someone who needs it — which means someone comes through here.` : `A bridge. The only way across, which makes it important to everyone.`,
       };
       this.say(descs[cell] || 'You look it over.');
-      if (deep) feedExamKnowledge('track_human', 1);
+      if (deep) feedKnowledge('track_human', 1);
     }
     // ---- HALL / BUNK / LODGE — home has texture. Examining the inside of
     // Haven reads the people, not the architecture: whose mug is whose,
@@ -904,7 +601,7 @@
           text = t;
         }
         this.say(text);
-        feedExamKnowledge('track_human', observant ? 2 : 1);
+        feedKnowledge('track_human', observant ? 2 : 1);
       } else if (cell === 'bunk') {
         if (!deep) {
           text = `The sleeping row. Bedrolls in a line along the wall, boots tucked underneath, the whole quiet machinery of twelve people trying to rest at once.`;
@@ -914,7 +611,7 @@
           text = `You look closer — carefully, the way you'd want someone to look at yours. A bedroll with ${small[hashStr(key) % small.length]} tucked at the head. ${who}'s, probably. Nobody says what they carry to sleep. But everybody carries something.`;
         }
         this.say(text);
-        feedExamKnowledge('track_human', 1);
+        feedKnowledge('track_human', 1);
       } else { // lodge
         if (!deep) {
           text = `The lodge room. The threshold — coats on pegs, boots by the door, the worn step where every arrival and departure passes. You came through here. So did everyone.`;
@@ -922,7 +619,7 @@
           text = `You study the step. The wood is dished in the middle from years of boots — before the Scattering, this was someone's something, and now it's the place twelve people come home to. There's mud on it from this morning's patrol. The world outside leaves tracks on the inside too.`;
         }
         this.say(text);
-        feedExamKnowledge('track_human', 1);
+        feedKnowledge('track_human', 1);
       }
     }
     // ---- BUILDING ROOMS (pre-Burn interiors): gym, class, office, bay,
@@ -946,7 +643,7 @@
       const r = rooms[cell] || [`A room. The old world, being ordinary at you.`];
       text = deep ? (r[1] || r[0]) : r[0];
       this.say(text);
-      feedExamKnowledge('old_world_cache', deep ? 2 : 1);
+      feedKnowledge('old_world_cache', deep ? 2 : 1);
     }
     else {
       this.say(`You look at the ${cell} for a while. It declines to be interesting.`);
@@ -957,190 +654,28 @@
     return { ok: true, cell, depth, feature: featKnown ? null : feature };
   };
 
-  // expose the amounts for UI. Every option names its cost (no silent actions).
+  // expose the amounts for UI
   Game.giveFoodOptions = function () {
     const stacks = edibleStacks();
     const total = stacks.reduce((s, i) => s + (i.units || 0), 0);
     return [
-      { id: 'scraps', label: '🥄 Scraps (1)', units: Math.min(1, total), desc: 'The dregs of your pack. Cheap for you — but the proud may take it as an insult. 1 tick.' },
-      { id: 'bite', label: '🍽️ A bite (1)', units: Math.min(1, total), desc: 'Small. Enough to notice, not enough to matter — unless they\'re starving, when it can sting. 1 tick.' },
-      { id: 'meal', label: '🍲 A meal (3)', units: Math.min(3, total), desc: 'Solid. The honest default. Costs you real food. 1 tick.' },
-      { id: 'best', label: '🏆 Your finest (1)', units: Math.min(1, total), desc: 'Your best food, given away. The highest cost to you — and the deepest gratitude. 1 tick.' },
-      { id: 'full', label: '💝 Until they\'re full', units: total, desc: 'Generous. Real cost to you. They won\'t forget this. 1 tick.' },
+      { id: 'bite', label: '🍽️ A bite (1)', units: Math.min(1, total), desc: 'Small. Enough to notice, not enough to matter — unless they\'re starving, when it can sting.' },
+      { id: 'meal', label: '🍲 A meal (3)', units: Math.min(3, total), desc: 'Solid. The honest default. Costs you real food.' },
+      { id: 'full', label: '💝 Until they\'re full', units: total, desc: 'Generous. Real cost to you. They won\'t forget this.' },
     ].filter(o => o.units > 0);
-  };
-
-  // where the food comes from. Pack = honest. Commons = theft (allowed, punished).
-  Game.giveFoodSourceOptions = function () {
-    // the commons pot exists whether or not anyone has stolen from it yet
-    const pot = (this.state.village.commons = this.state.village.commons || { units: 12 });
-    const commons = pot.units || 0;
-    return [
-      { id: 'pack', label: '🎒 From your own pack', desc: 'Your food, your choice. Honest. No one can call it theft.' },
-      { id: 'store', label: '🏚️ Skim the commons pot', desc: commons > 0
-        ? `Theft, plainly — ${commons} units in the pot. Seen = the village punishes you (-15 trust with witnesses). Unseen = the recipient knows what you are.`
-        : 'The commons pot is empty. Nothing to steal.' },
-    ];
   };
 
   Game.comfortOptions = function (vid) {
     const mood = this.npcMood(vid);
     const trust = trustOf.call(this, vid);
     const intel = npcIntelPrimary.call(this, vid);
-    const energy = this.state.scholar.energy === undefined ? 100 : this.state.scholar.energy;
-    const grieving = mood === 'grieving';
     return [
-      { id: 'silent', label: '🪑 Sit with them in silence (1 tick)', desc: 'Always safe. Presence is the whole thing.' },
-      { id: 'reassure', label: '💬 "You\'re okay" (1 tick)', desc: trust >= 30 ? 'They trust you enough to believe it.' : 'Might ring hollow — they don\'t know you well yet.' + (grieving ? ' And they\'re grieving, not scared.' : '') },
-      { id: 'practical', label: '📋 "Here\'s what we do" (1 tick)', desc: (intel === 'practical' || intel === 'analytical') ? 'They think in plans. This will land.' : 'Practical comfort for an emotional moment — risky.' },
-      { id: 'share', label: '💔 Share your own fear (1 tick)', desc: trust >= 40 ? 'Vulnerable. They\'ll meet you there.' : 'Too soon — it could come out wrong.' },
-      { id: 'space', label: '🚪 Give them space (1 tick)', desc: '"I\'ll be here if you need me." Respecting boundaries is care too.' },
-      { id: 'distract', label: '😅 Lighten the mood (1 tick)', desc: grieving ? 'Dangerous — joking at grief reads as callous, and they\'ll remember.' : 'Cheap and fast. Lands for warm, gentle, bold, restless souls; flat for others.' },
-      { id: 'guard', label: '🛡️ Keep watch while they rest (2 ticks, 12 energy)', desc: energy < 15 ? 'You\'re too exhausted — an exhausted guard is a liability, not a comfort.' : 'The oldest comfort. Protection you can feel.' },
-      { id: 'tough', label: '🪨 Hard truth: "we don\'t have time" (1 tick)', desc: trust >= 50 ? 'You\'ve earned the right to say this. It will snap them out of it.' : 'You haven\'t earned this yet — it could backfire badly, in front of everyone.' },
-      { id: 'ritual', label: '🕯️ A small ritual, together (2 ticks)', desc: grieving ? 'For grief, this is the real medicine. Breathe together. Name the lost.' : 'Breathing together. Small, but rhythms are older than fear.' },
-      { id: 'listen', label: '👂 "Tell me" — really listen (2 ticks)', desc: trust >= 20 ? 'They\'ll open up. Listening teaches you about people.' : 'They won\'t open up yet — prying teaches them to lock the door.' },
-      { id: 'warmth', label: '🍵 Warm food as comfort (1 tick + 1 food)', desc: 'The oldest medicine. Costs real food from your pack.' },
+      { id: 'silent', label: '🪑 Sit with them in silence', desc: 'Always safe. Presence is the whole thing.' },
+      { id: 'reassure', label: '💬 "You\'re okay"', desc: trust >= 30 ? 'They trust you enough to believe it.' : 'Might ring hollow — they don\'t know you well yet.' + (mood === 'grieving' ? ' And they\'re grieving, not scared.' : '') },
+      { id: 'practical', label: '📋 "Here\'s what we do"', desc: (intel === 'practical' || intel === 'analytical') ? 'They think in plans. This will land.' : 'Practical comfort for an emotional moment — risky.' },
+      { id: 'share', label: '💔 Share your own fear', desc: trust >= 40 ? 'Vulnerable. They\'ll meet you there.' : 'Too soon — it could come out wrong.' },
+      { id: 'space', label: '🚪 Give them space', desc: '"I\'ll be here if you need me." Respecting boundaries is care too.' },
     ];
-  };
-
-  // ================================================================
-  // LINGER — a careful second look. 2 ticks, time-only.
-  // The linger/move-on decision: stay with a cell and look longer.
-  // Surfaces a hidden feature you walked past the first time. Honest
-  // when there's nothing: "nothing but what you already saw."
-  // ================================================================
-  Game.lingerCell = function (cx, cy) {
-    const s = this.state.scholar;
-    const px = s.mx === undefined || s.mx === null ? 4 : s.mx;
-    const py = s.my === undefined || s.my === null ? 4 : s.my;
-    const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
-    if (dist > 1) { this.say('Too far. Step closer.'); return null; }
-
-    const detail = this.genDetail(this.map.px, this.map.py);
-    const row = detail[cy];
-    const cell = row && row[cx];
-    if (!cell) { this.say('Nothing there to linger over.'); return null; }
-    const key = `${this.map.px},${this.map.py},${cx},${cy}`;
-
-    const feature = this.tileFeature(this.map.px, this.map.py, cx, cy, cell);
-    const featKey = key + ':feat';
-    const featKnown = (this.state.codex.examined || {})[featKey];
-
-    let found = false;
-    if (feature && !featKnown) {
-      (this.state.codex.examined = this.state.codex.examined || {})[featKey] = 1;
-      featureKnowledge(feature).forEach(([sk, amt]) => feedExamKnowledge(sk, amt));
-      this.say(`You linger, looking longer — and there it is, what you walked past the first time. ${featureText(feature, key)}`);
-      found = true;
-    } else {
-      this.say(`You linger a while, looking carefully. ${feature ? 'Nothing here beyond what you already found.' : 'Nothing here but what you already saw. The world keeps its secrets for another day.'}`);
-    }
-
-    this.tickAction(2); // lingering is time-only — looking, not labor
-    this.save();
-    return { ok: true, found, feature: found ? feature : null };
-  };
-
-  // ================================================================
-  // FOLLOW TRACKS — requires found, readable tracks. 2 ticks + 5 energy.
-  // The trail can go cold (honest), lead to a find, or ARRIVE somewhere
-  // that teaches you who runs this ground. Deterministic per tile.
-  // ================================================================
-  Game.followTracks = function (cx, cy) {
-    const s = this.state.scholar;
-    const px = s.mx === undefined || s.mx === null ? 4 : s.mx;
-    const py = s.my === undefined || s.my === null ? 4 : s.my;
-    const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
-    if (dist > 1) { this.say('Too far. Step closer.'); return null; }
-
-    const detail = this.genDetail(this.map.px, this.map.py);
-    const row = detail[cy];
-    const cell = row && row[cx];
-    if (!cell) { this.say('Nothing there to follow.'); return null; }
-    const key = `${this.map.px},${this.map.py},${cx},${cy}`;
-
-    const feature = this.tileFeature(this.map.px, this.map.py, cx, cy, cell);
-    const featKey = key + ':feat';
-    const featKnown = (this.state.codex.examined || {})[featKey];
-    if ((feature !== 'tracks' && feature !== 'banktracks') || !featKnown) {
-      this.say(`No trail here you can read. Find tracks first — examine the ground, and know enough to read what you find.`);
-      return null;
-    }
-
-    const energy = s.energy === undefined ? 100 : s.energy;
-    if (energy < 5) { this.say("You're too wiped to follow anything. The tracks will keep."); return null; }
-    s.energy = Math.max(0, energy - 5);
-
-    const dir = hashStr(key + 'trackdir') % 4;
-    const dnames = ['north', 'east', 'south', 'west'];
-    const dx = [0, 1, 0, -1][dir], dy = [-1, 0, 1, 0][dir];
-    // stay on interior tiles (1..7): grid edges are the flee-by-barrier
-    s.mx = Math.max(1, Math.min(7, px + dx));
-    s.my = Math.max(1, Math.min(7, py + dy));
-
-    const roll = hashStr(key + 'trackout') % 100;
-    let outcome;
-    if (roll < 55) {
-      outcome = 'cold';
-      this.say(`You follow the tracks ${dnames[dir]}, careful and quiet. Halfway across, the ground hardens and the signs scatter — whatever made these knew how to stop being followed. The trail goes cold. You learn the shape of a dead end.`);
-      feedExamKnowledge('track_read', 1);
-    } else if (roll < 80) {
-      outcome = 'find';
-      const finds = [
-        'a shed antler, gnawed at the base — bone, if you need it',
-        'a cache of nuts, buried and forgotten by something with more pressing concerns',
-        'a dropped snare, still set — someone\'s trap, someone\'s bad day',
-      ];
-      const fi = hashStr(key + 'trackfind') % finds.length;
-      this.say(`You follow the tracks ${dnames[dir]} — and find where something bedded down: ${finds[fi]}. The trail's loss is your gain.`);
-      try {
-        if (fi === 0 && this.addMaterial) this.addMaterial('bone', 1);
-        else if (fi === 1) (s.inventory = s.inventory || []).push({ itemId: 'tracknuts', name: 'Cached nuts', units: 2, kcalEach: 90, kg: 0.1 });
-        else if (this.addMaterial) this.addMaterial('fiber', 1);
-      } catch (e) {}
-      feedExamKnowledge('track_read', 2);
-    } else {
-      outcome = 'sign';
-      this.say(`You follow the tracks ${dnames[dir]} — and the trail doesn't end, it ARRIVES. A wallow. A rubbing post worn smooth. Territory, marked and meant. Whatever made these tracks lives here, and it wants things to know. You back away quietly — and you understand something new about who runs this ground.`);
-      feedExamKnowledge('track_read', 2);
-      feedExamKnowledge('system_theology', 1);
-    }
-
-    this.tickAction(2);
-    this.save();
-    return { ok: true, direction: dnames[dir], outcome };
-  };
-
-  // ================================================================
-  // MARK FOR LATER — fix a spot in memory. 1 tick.
-  // Some places deserve a second visit. fieldMarksList() reads them back.
-  // ================================================================
-  Game.markForLater = function (cx, cy, note) {
-    const s = this.state.scholar;
-    const px = s.mx === undefined || s.mx === null ? 4 : s.mx;
-    const py = s.my === undefined || s.my === null ? 4 : s.my;
-    const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
-    if (dist > 1) { this.say('Too far. Step closer.'); return null; }
-
-    const detail = this.genDetail(this.map.px, this.map.py);
-    const row = detail[cy];
-    const cell = row && row[cx];
-    if (!cell) { this.say('Nothing there to mark.'); return null; }
-    const key = `${this.map.px},${this.map.py},${cx},${cy}`;
-
-    this.state.codex.fieldMarks = this.state.codex.fieldMarks || {};
-    const cleanNote = String(note || '').slice(0, 60);
-    this.state.codex.fieldMarks[key] = { day: s.day || 0, cell, note: cleanNote };
-    this.say(`You fix this spot in your memory${cleanNote ? ` — "${cleanNote}"` : ''}. Some places deserve a second visit. You'll come back.`);
-
-    this.tickAction(1);
-    this.save();
-    return { ok: true, key };
-  };
-
-  Game.fieldMarksList = function () {
-    return Object.assign({}, (this.state.codex || {}).fieldMarks || {});
   };
 
 })();
