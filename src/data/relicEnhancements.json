@@ -309,5 +309,129 @@
    "target": "hunt.memory",
    "value": 0.2
   }
+ },
+ {
+  "id": "many_pockets",
+  "name": "Many Pockets",
+  "class": "clothing",
+  "description": "Seventeen pockets. You counted. Twice. Everything has a place, and every place is on you.",
+  "systemCommentary": "Pocket density: maximal. Carrying capacity +15%. We are unreasonably proud of the pockets.",
+  "effect": {
+   "op": "multiply",
+   "target": "carry.weight_mult",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "forest_scent",
+  "name": "Forest Scent",
+  "class": "clothing",
+  "hidden": true,
+  "rare": 0.3,
+  "affinity": {
+   "playstyle": "solitary"
+  },
+  "description": "Smells like leaf litter and rain. The forest keeps mistaking you for itself.",
+  "systemCommentary": "Olfactory camouflage deployed. Monster detection -8%. You smell like a Tuesday in the woods. This is a compliment.",
+  "effect": {
+   "op": "add",
+   "target": "monster.detect_chance",
+   "value": -0.08
+  }
+ },
+ {
+  "id": "warm_bones",
+  "name": "Warm Bones",
+  "class": "clothing",
+  "affinity": {
+   "temperament": "steady"
+  },
+  "description": "The cold gets tired before you do. Your bones stay warm and uncomplaining.",
+  "systemCommentary": "Thermoregulation: outsourced to fabric. Travel costs -10%. Your steadiness is load-bearing. Literally.",
+  "effect": {
+   "op": "multiply",
+   "target": "travel.cost_mult",
+   "value": 0.9
+  }
+ },
+ {
+  "id": "stay_put",
+  "name": "Stay-Put Bandages",
+  "class": "clothing",
+  "description": "Dressings that believe in staying on. Wounds close faster when they are not arguing with the bandage.",
+  "systemCommentary": "Adhesion improved 400%. Healing +4. The bandage believes in you. We believe in the bandage.",
+  "effect": {
+   "op": "add",
+   "target": "healing.amount",
+   "value": 4
+  }
+ },
+ {
+  "id": "rain_funnel",
+  "name": "Rain Funnel",
+  "class": "clothing",
+  "description": "Wide brim, clever channels. Rain runs off it and into your bottle. The sky is feeding you.",
+  "systemCommentary": "Precipitation redirected: +1 liter per storm, approximately. The clouds have not consented. We did not ask.",
+  "effect": {
+   "op": "add",
+   "target": "water.rain_catch",
+   "value": 1
+  }
+ },
+ {
+  "id": "light_feet",
+  "name": "Light Feet",
+  "class": "clothing",
+  "affinity": {
+   "temperament": "bold"
+  },
+  "description": "Soft soles, quiet steps. Your feet have opinions about being hit, and they vote with their absence.",
+  "systemCommentary": "Evasion +5%. Your feet are now 5% more philosophical about impact.",
+  "effect": {
+   "op": "add",
+   "target": "combat.dodge_chance",
+   "value": 0.05
+  }
+ },
+ {
+  "id": "butchers_friend",
+  "name": "Butcher's Friend",
+  "class": "tool",
+  "affinity": {
+   "temperament": "cautious"
+  },
+  "description": "It finds the joint. Every time. Nothing wasted, nothing rushed. The carcass almost thanks you.",
+  "systemCommentary": "Carcass utilization +15%. The animal would approve. We have not asked the animal. We will not ask the animal.",
+  "effect": {
+   "op": "multiply",
+   "target": "hunt.meat_yield",
+   "value": 1.15
+  }
+ },
+ {
+  "id": "smoke_keeper",
+  "name": "Smoke Keeper",
+  "class": "tool",
+  "description": "A little smoker that fits in your pack. Meat goes in fresh and comes out patient. Decay can wait.",
+  "systemCommentary": "Decay postponed 24 hours. The bacteria have filed a complaint. Denied.",
+  "effect": {
+   "op": "add",
+   "target": "food.spoilage_days",
+   "value": 1
+  }
+ },
+ {
+  "id": "calm_stone",
+  "name": "Calm Stone",
+  "class": "sentimental",
+  "hidden": true,
+  "rare": 0.35,
+  "description": "Smooth from years of thumbs \u2014 yours now. When voices rise, yours does not. It remembers calmer hands.",
+  "systemCommentary": "Conflict de-escalation +4. The stone has absorbed 11,000 worries. Capacity remaining: infinite.",
+  "effect": {
+   "op": "add",
+   "target": "drama.resolve_bonus",
+   "value": 4
+  }
  }
 ]
