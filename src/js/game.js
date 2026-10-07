@@ -144,9 +144,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects };
       // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
@@ -14167,14 +14167,14 @@
         if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return null; }
         if (!(s.diseases || []).length) { this.say('Not sick.'); return null; }
         s.herbalDay = s.day;
-        s.diseases = [];
-        this.say('Herbal remedy: bitter tea, steam, rest. The fever breaks.');
+        // CURE (statusEffects engine, Steve 2026-10-07): clears engine + legacy.
+        this.cureStatus('scholar', 'disease', 'herbal remedy');
       } else if (id === 'purify') {
         if (s.purifyDay === s.day) { this.say('Already purified today.'); return null; }
         if (!(s.poisons || []).length) { this.say('Not poisoned.'); return null; }
         s.purifyDay = s.day;
-        s.poisons = [];
-        this.say('Purify: charcoal, clean water, time. The poison leaves your system.');
+        // CURE (statusEffects engine, Steve 2026-10-07): clears engine + legacy.
+        this.cureStatus('scholar', 'poison', 'purify');
         const idx = (s.inventory || []).findIndex(i => (i.kcalEach || 0) > 0);
         if (idx === -1) { this.say('No food to bury.'); return null; }
         const it = s.inventory[idx];
@@ -15033,16 +15033,15 @@
         // Shown honestly before eating ("Risky: raw") — the gamble is informed.
         if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
-          // Track disease so herbal_remedy can cure it (Steve 2026-10-05)
-          scholar.diseases = scholar.diseases || [];
-          scholar.diseases.push({ name: it.diseaseRisk.note || 'food poisoning', day: scholar.day });
+          // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+          this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         // POISON: belltoad throat sac, etc. Purify cures it.
         if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - 10);
-          scholar.poisons = scholar.poisons || [];
-          scholar.poisons.push({ name: it.poisonRisk.note || 'toxin', day: scholar.day });
+          // POISON (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+          this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
           this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
         }
         scholar.kcal += kcal; ate += kcal;
@@ -15176,14 +15175,14 @@
       }
       if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
         scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
-        scholar.diseases = scholar.diseases || [];
-        scholar.diseases.push({ name: it.diseaseRisk.note || 'food poisoning', day: scholar.day });
+        // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+        this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
         this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
       }
       if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
         scholar.health = Math.max(0, (scholar.health || 100) - 10);
-        scholar.poisons = scholar.poisons || [];
-        scholar.poisons.push({ name: it.poisonRisk.note || 'toxin', day: scholar.day });
+        // POISON (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
+        this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
         this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
       }
       const kcal = it.kcalEach;
@@ -15339,6 +15338,8 @@
       try { this.npcNodeTravel(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
+      // STATUS EFFECTS (Steve 2026-10-07): dayPart-scale ticks (disease fever, poison).
+      try { this.tickStatuses('scholar', 'dayPart'); } catch (e) {}
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
       // (You're becoming a plant. The metabolic cost already took its cut.)
       if (this.hasAbility('photosynthesis') && this.dayPart < 3) {
@@ -17157,9 +17158,12 @@
           this.tbRefreshTelegraphUI();
           if (c.acted) { this.tbAdvance(); return; }
         } else {
-          c.moveLeft = c.speed; c.acted = false; c.beamTicks = 0;
+          // SLOW (statusEffects engine, Steve 2026-10-07): heavy limbs.
+          c.moveLeft = Math.max(0, Math.floor((c.speed || 0) * this.seMoveMod(c))); c.acted = false; c.beamTicks = 0;
         }
       }
+      // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks (bleed/burn), duration, expiry.
+      if (this.seTickFighter(c)) return;
       this.tbRefreshTelegraphUI();
     },
 
@@ -18471,7 +18475,8 @@
           this.say(`The Elder ${this.monsterDisplayName(m.monsterId)} doesn't even flinch — it has heard worse. (ELDER: immune to stun)`);
           continue;
         }
-        m.stunned = 1;
+        // STUN (statusEffects engine, Steve 2026-10-07): data-driven.
+        this.applyStatus(m, 'stun', { turns: 1, source: 'your scream', silent: true });
         if (m.telegraph) { m.telegraph = null; n++; }
       }
       this.say(`You SCREAM. Milk curdles somewhere.${n ? ' Its focus shatters — the attack fizzles.' : ''} It freezes. (stunned)`);
@@ -19466,6 +19471,8 @@
 
     tbVillagerTurn(v) {
       const f = this.tbfight;
+      // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks (bleed/burn), expiry.
+      if (this.seTickFighter(v)) return;
       // ON THE LINE (warranty caller, Steve 2026-10-06): a villager the
       // caller reached is stuck listening — they lose the turn. Hurting the
       // caller mid-call hangs it up (the bad-connection rule is the peel).
@@ -20138,8 +20145,8 @@
               if (p) {
                 p.moveLeft = 0;
                 p.acted = true;
-                p.stunned = 1;
-                p.stunFull = 1; // the toad's stun is a FULL turn loss — consumed in tbBeginTurn
+                // STUN (statusEffects engine, Steve 2026-10-07): full turn loss.
+                this.applyStatus(p, 'stun_full', { turns: 1, source: 'the belltoad croak', silent: true });
                 this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
                 this.audioEvent('belltoadStun');
               }
@@ -20972,6 +20979,9 @@
         if (this.tbEndCheck()) return;
         return;
       }
+      // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks, then fear fizzle.
+      if (this.seTickFighter(m)) return;
+      if (this.seFizzle(m)) return;
       // GRAVITY HELD: the well has it. No movement — it can still act at range.
       if (m.gravityHeld > 0) {
         m.gravityHeld -= 1;
@@ -21503,7 +21513,8 @@
           if (this.pzIs(m) && (tg.pattern || {}).type === 'burst') {
             for (const o of hitFighters) {
               if (o.kind === 'player' && o.alive) {
-                o.stunned = Math.max(o.stunned || 0, 1);
+                // STUN (statusEffects engine, Steve 2026-10-07): lose movement, keep action.
+                this.applyStatus(o, 'stun', { turns: 1, source: 'the paparazzo flash', silent: true });
                 this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`);
               }
             }
@@ -21524,8 +21535,8 @@
                 if (p) {
                   p.moveLeft = 0;
                   p.acted = true;
-                  p.stunned = 1;
-                  p.stunFull = 1; // the toad's stun is a FULL turn loss — consumed in tbBeginTurn
+                  // STUN (statusEffects engine, Steve 2026-10-07): full turn loss.
+                  this.applyStatus(p, 'stun_full', { turns: 1, source: 'the belltoad croak', silent: true });
                   this.say('Your ears ring — the world tilts. The croak hits like a wall. You lose your turn.');
                   this.audioEvent('belltoadStun');
                 }
@@ -23122,8 +23133,8 @@
           // music, no move, no act. The 2-3 turns of watching were the
           // warning; this is the price of letting it reach you.
           if (t.kind === 'player') {
-            t.stunned = Math.max(t.stunned || 0, 1);
-            t.stunFull = 1;
+            // STUN (statusEffects engine, Steve 2026-10-07): full turn loss.
+            this.applyStatus(t, 'stun_full', { turns: 1, source: 'the hold music', silent: true });
             this.say('"Please hold—" The music swells and the world tilts. You\'re on hold. (stunned: next turn lost)');
           }
           // AUDIO (Steve 2026-10-06): the rush resolve — hold music slammed into motion.

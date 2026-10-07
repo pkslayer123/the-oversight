@@ -691,6 +691,8 @@
       s.kcal = 1500;
       try { s.health = this.maxHealth(); } catch (e) { s.health = 100; }
       s.trauma = 10; // the shock of stepping up
+      // STATUS EFFECTS (Steve 2026-10-07): new body, no old afflictions.
+      s.statuses = []; s.diseases = []; s.poisons = [];
       s.mx = 4; s.my = 4;
       try {
         if (this.map) { this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4; }
