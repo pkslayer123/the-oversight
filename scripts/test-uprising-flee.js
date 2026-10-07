@@ -121,15 +121,12 @@ function setupUprising(insideHaven) {
   said.length = 0;
   let fledOutside = false;
   try {
-    // Stage the player on the west edge (a real player walks here over a
-    // couple of turns while the mob closes in), then push through the
-    // barrier. Barrier crossing is exit-only (Steve 2026-10-06): landing on
-    // an edge tile no longer flees — only the deliberate tbBarrierExit push
-    // does (the UI's off-grid step in combat).
-    p2.mx = 0; p2.my = 4;
-    Game.state.scholar.mx = 0; Game.state.scholar.my = 4;
-    const exitOk = Game.tbBarrierExit(-1, 0);
-    note(`barrier exit ok: ${exitOk}, player at ${p2.mx},${p2.my}`);
+    // Stage the player one step from the west edge (a real player walks here
+    // over a couple of turns while the mob closes in), then step through.
+    p2.mx = 1; p2.my = 4; p2.moveLeft = 3;
+    Game.state.scholar.mx = 1; Game.state.scholar.my = 4;
+    const stepOk = Game.tbPlayerMove(0, 4);
+    note(`step to edge ok: ${stepOk}, player at ${p2.mx},${p2.my}`);
     fledOutside = !Game.tbfight;
   } catch (e) { note('outside flee threw: ' + e.message); }
   Math.random = origRand;

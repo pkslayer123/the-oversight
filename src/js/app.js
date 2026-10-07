@@ -12643,7 +12643,17 @@
         try { tl = Game.tileAt(x, y); } catch (e) { tl = null; }
         const mpp = Game.map || {};
         const isP = (x === mpp.px && y === mpp.py);
-        const seen = Game.mapSeen ? Game.mapSeen(x, y) : (tl.revealed ? 'visited' : null);
+        // Steve 2026-10-06: use seenTiles directly (like header count).
+        // Game.mapSeen was inconsistent with the header's 9-seen count.
+        let seen = null;
+        try {
+          const st = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
+          const e = st[x + ',' + y];
+          if (e) seen = (e.k === 'v' ? 'visited' : 'shared');
+          // Player's current tile is always seen
+          const mp = Game.map || {};
+          if (x === mp.px && y === mp.py) seen = 'visited';
+        } catch (err) { seen = null; }
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
         const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
