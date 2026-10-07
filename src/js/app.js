@@ -12741,13 +12741,14 @@
             const isBlank = !g || g.length < 100 || g.indexOf('#0d120d') !== -1;
             if (isBlank) {
               const ttype = tl ? tl.type : 'unknown';
-              // MINECRAFT STYLE (Steve 2026-10-06): bright, saturated, readable.
+              // TRUE MINECRAFT PALETTE (Steve 2026-10-06): unmistakably bright.
               const colors = {
-                forest_floor: '#6b4a2a', grove: '#3d7a3d', meadow: '#7aaa4a',
-                thicket: '#2d5a2d', wetland: '#4a7a8a', creek: '#3a7aaa',
-                trail_edge: '#8a7a4a', ruin: '#7a7a7a', haven: '#5a8a4a',
-                forest: '#6b4a2a', field: '#7aaa4a', swamp: '#4a7a8a',
-                river: '#3a7aaa', path: '#8a7a4a'
+                forest_floor: '#8a5a3a', forest: '#5a8a3a', grove: '#7cbd6b',
+                meadow: '#7cbd6b', field: '#a0d060', thicket: '#4a8a3a',
+                wetland: '#5aa0b0', swamp: '#5aa0b0', creek: '#4a9ad0',
+                water: '#4a9ad0', river: '#4a9ad0', trail_edge: '#c0a060',
+                trail: '#c0a060', path: '#c0a060', ruin: '#9a9a9a',
+                haven: '#7cbd6b'
               };
               // If no tile data, use bright meadow default (Steve 2026-10-06).
               // Explored tiles must NEVER be dark.
