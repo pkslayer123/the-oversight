@@ -1,0 +1,94 @@
+{
+  "_docs": "First-visit arrival moments per tile type. Each tile rolls one flavor text on first visit and keeps it (see arrivalTextFor in game.js). Regions can override any tile type's title/texts via regionOverrides — the lookup checks the player's region first, then falls back to tiles. Add new regions here as they get arrival flavor; do not edit base tiles for regional variants.",
+  "_schema": "arrivalText/1",
+  "tiles": {
+    "forest_floor": {
+      "title": "Under the canopy",
+      "texts": [
+        "Leaf litter, birdcall, the smell of rot becoming soil. The woods, being the woods.",
+        "Old growth. The canopy closes overhead and the light comes down in shafts. Something rustled, and decided not to be seen.",
+        "Fallen trunks lie like sleeping animals, furred with moss. The ground gives underfoot — centuries of leaf-mold.",
+        "A woodpecker works somewhere you can't see. Down here it smells of mushrooms and cold shade.",
+        "Saplings push up through last year's deadfall, racing each other for the light. The forest never stops trying.",
+        "Mushrooms thumb up through the duff in a ring — a fairy ring, old as the path. You step around it, not through it. Some rules are older than knowledge."
+      ]
+    },
+    "grove": {
+      "title": "Nut trees",
+      "texts": [
+        "Hickories and oaks, heavy with mast. This is a pantry that grows.",
+        "The trees here fruit on their own schedule. Right now the schedule is generous.",
+        "Mast crunches underfoot — last season's nuts, sprouting or rotting. The trees don't waste anything.",
+        "The canopy here is a roof built by a thousand architects who never met. Light comes through in coins.",
+        "Bark stripped at deer height on a young hickory — teeth, winter, hunger. Somebody winters here. Maybe you will too.",
+        "A hollow log big enough to crawl into. You don't crawl in. You note where it is, in case the weather ever makes the offer again."
+      ]
+    },
+    "meadow": {
+      "title": "Open ground",
+      "texts": [
+        "Grasses head-high. Good greens, good visibility, nowhere to hide.",
+        "Wind moves through the grass in waves. Seeds catch on your clothes, hitching a ride.",
+        "Open sky for the first time in a while. Hawks circle — something down there is being watched.",
+        "Grasshoppers rise in a clicking wave ahead of you. Something fork-tailed rides the wind above them, waiting for the careless ones.",
+        "Wildflowers in clumps — purple, white, yellow. You don't know their names yet, and the not-knowing is a kind of hunger.",
+        "The grass is bent in a long smooth run, like something heavy slid through it. You walk the other way around."
+      ]
+    },
+    "thicket": {
+      "title": "Thick brush",
+      "texts": [
+        "Thorns and tangle. Things live in here that don't want to be seen.",
+        "The brush closes behind you like water. You learn to move sideways, leading with a shoulder.",
+        "Bramble over your head in places. Berries somewhere in the tangle, if you're willing to bleed for them.",
+        "Greenbrier wraps everything, armed and patient. You move like you're underwater — slow, deliberate, getting nowhere fast.",
+        "Something rustles ahead, then goes very still. You go very still too. After a while you both agree to pretend it didn't happen.",
+        "Old nests in the thorns, built and abandoned and built again. This tangle has been home to a hundred tenants. None of them are you."
+      ]
+    },
+    "wetland": {
+      "title": "Still water, cattails",
+      "texts": [
+        "Cattails mean starch. Still water means boil it first — the Codex insists.",
+        "Your boots sink and sigh. Frogs go silent in a widening ring around you.",
+        "Standing water, black as tea. Dragonflies stitch the air. Watch where you step — the ground lies.",
+        "Reeds taller than you. The wind makes them talk to each other, and you are not part of the conversation.",
+        "Black water under green duckweed. A turtle slides off a log with a sound like a sigh. This place has been unbothered for a long time.",
+        "The ground here is a rumor — solid until it isn't. You test every step and think about how far the deep parts go."
+      ]
+    },
+    "creek": {
+      "title": "Moving water",
+      "texts": [
+        "Cold, clear, moving. The best thing you've seen all day.",
+        "Water over stone, loud enough to cover your noise. You could drink here without announcing it.",
+        "The creek braids around gravel bars. Crawdads flick backward into the shadows of rocks.",
+        "Something big drank here recently — the mud is churned to soup on the far bank. You drink from the near side, upstream of whatever it was.",
+        "The water is cold enough to hurt your teeth. Downstream the creek bends out of sight, and you want to follow it. That's the problem with creeks.",
+        "A kingfisher works the far bank, patient as a tax collector. It catches something silver and is gone before you can envy it properly."
+      ]
+    },
+    "trail_edge": {
+      "title": "An old trail",
+      "texts": [
+        "Something walked here regularly, before. The path remembers even if no one does.",
+        "The trail is worn smooth as an old coin. Deer, probably. Probably.",
+        "A game trail crosses your path — two toes, heart-shaped, heading for water.",
+        "The trail splits around a boulder and rejoins — the world's oldest traffic decision. You follow the deeper-worn side.",
+        "Scat on the trail, still soft. You study it longer than is dignified and learn exactly one thing: walk louder.",
+        "Where the trail crosses bare rock, someone scratched a mark — an arrow, or a tally, or a prayer. Pre-Burn. You add nothing. You remember it."
+      ]
+    },
+    "ruin": {
+      "title": "Pre-Burn ruin",
+      "texts": []
+    },
+    "haven": {
+      "title": "Haven",
+      "texts": [
+        "Canvas, cookfire, twelve people who are glad you're back. Home is a tile on the map like any other — it just matters more."
+      ]
+    }
+  },
+  "regionOverrides": {}
+}
