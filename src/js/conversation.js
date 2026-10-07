@@ -57,7 +57,6 @@
 //   - village.topicLog
 //   - village.saidFacts
 //   - village.memory
-//   - lifeseedVoice(char)
 //   - npcNeeds(rid)
 // ============ CONVERSATIONS ============
 // Real back-and-forth dialogue. The player always has response choices —
