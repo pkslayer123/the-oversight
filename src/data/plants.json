@@ -147,6 +147,7 @@
       "trail_edge"
     ],
     "unit": "handful of berries",
+    "lookalikeNote": "No poisonous lookalikes in the Southeast — thorny cane with aggregate dark berries is a blackberry.",
     "waterContent": "high",
     "sources": [
       "Field validation pending — conservative well-known species"
@@ -267,6 +268,7 @@
       "grove"
     ],
     "unit": "handful of nuts",
+    "lookalikeNote": "Shagbark hickory is the sweet one. Bitternut hickory tastes like bitter soap — spit it out and try another tree.",
     "waterContent": "low",
     "sources": [
       "Field validation pending — conservative well-known species"
@@ -440,6 +442,7 @@
       "trail_edge"
     ],
     "unit": "handful of greens",
+    "lookalikeNote": "Scarlet pimpernel looks similar but has orange-red flowers. Chickweed flowers are white.",
     "waterContent": "high",
     "sources": [
       "Field validation pending — conservative well-known species"
@@ -558,6 +561,7 @@
       "grove"
     ],
     "unit": "handful",
+    "lookalikeNote": "Moonseed berries look like wild grapes but hold a single crescent seed and are toxic. Muscadine has several teardrop seeds.",
     "waterContent": "high",
     "sources": [
       "Field validation pending — conservative well-known species"
@@ -1541,6 +1545,9 @@
     "codex": "A parasite that eats fungus instead of sunlight. Rare, strange, and potent — the System finds it very interesting.",
     "preparation": "Dry carefully or tincture. Never eat fresh in quantity.",
     "lookalikeNote": "Nothing else looks like white wax pipes nodding in leaf litter. Unmistakable.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
     "uses": [
       {
         "kind": "medicine",
@@ -1565,6 +1572,671 @@
       "plant",
       "herb",
       "ghost_pipe"
+    ]
+  },
+  {
+    "id": "spicebush",
+    "name": "Spicebush",
+    "scientific": "Lindera benzoin",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 30,
+    "unit": "handful of berries",
+    "knowledgeLevels": {
+      "1": "Spicebush. Small oval leaves, red berry clusters on bare twigs. Crushed leaves smell spicy.",
+      "2": "Parts: berries (dry and grind as allspice), twigs and leaves (spicy tea).",
+      "3": "Uses: vitamin C in berries, flavoring, morale. Berries dry well.",
+      "4": "Mastery: pick berries fully red; dry whole, grind as needed. Twig tea in winter when leaves are gone."
+    },
+    "preparation": "Dry berries and grind as spice. Steep twigs/leaves for tea.",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 2,
+    "description": "a shrub with small oval leaves and clusters of bright red berries on bare twigs",
+    "seasons": [
+      "fall"
+    ],
+    "spoilageDays": 60,
+    "tileAffinity": [
+      "thicket",
+      "forest_floor"
+    ],
+    "lookalikeNote": "Crush a leaf — spicebush smells like allspice. No smell = not spicebush.",
+    "waterContent": "medium",
+    "codex": "Allspice grows on bushes in the Southeast. The berries smell like the spice aisle.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "dried ground berries as spice — the wild allspice"
+      },
+      {
+        "kind": "tea",
+        "minLevel": 2,
+        "note": "spicy twig and leaf tea"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "berry tea, traditional cold remedy"
+      }
+    ],
+    "form": "berries",
+    "edibility": "safe",
+    "medicinal": true,
+    "taxon": [
+      "bush",
+      "shrub",
+      "spicebush"
+    ]
+  },
+  {
+    "id": "american_hazelnut",
+    "name": "American Hazelnut",
+    "scientific": "Corylus americana",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 170,
+    "unit": "handful of nuts",
+    "knowledgeLevels": {
+      "1": "Hazelnut. Dense shrub, nuts in fringed papery husks.",
+      "2": "Parts: the nut inside the husk. Husk off, crack the shell. Fringe means American.",
+      "3": "Uses: high fat and protein, like the oil-rich walnut but smaller.",
+      "4": "Mastery: float test (sinkers good). Weevils drill shells — check for holes. Roast lightly."
+    },
+    "preparation": "Husk, dry, crack. Roast briefly to improve flavor.",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 3,
+    "description": "a dense shrub with rounded serrated leaves and clusters of nuts in fringed papery husks",
+    "seasons": [
+      "fall"
+    ],
+    "spoilageDays": 60,
+    "tileAffinity": [
+      "grove",
+      "thicket"
+    ],
+    "lookalikeNote": "Fringed papery husk = American hazelnut. Empty shells mean weevils — float-test.",
+    "waterContent": "low",
+    "codex": "Small nuts, big work — but they keep, and fat is fat.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "small sweet nuts — crack carefully, worth the trouble"
+      }
+    ],
+    "form": "nuts",
+    "edibility": "safe",
+    "taxon": [
+      "bush",
+      "shrub",
+      "hazelnut"
+    ]
+  },
+  {
+    "id": "sunchoke",
+    "name": "Jerusalem Artichoke",
+    "scientific": "Helianthus tuberosus",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 80,
+    "unit": "tuber",
+    "knowledgeLevels": {
+      "1": "Jerusalem artichoke. Tall sunflower stalks; dig at the base for knobby tubers.",
+      "2": "Parts: the tubers only. Wash, peel, cook like potatoes.",
+      "3": "Uses: starchy survival staple after frost sweetens them.",
+      "4": "Mastery: dig after first frost (sweetest). Cook well — raw causes painful gas. Small portions at first."
+    },
+    "preparation": "Scrub, peel, cook thoroughly. Eat small amounts first — inulin causes gas.",
+    "regions": [
+      "ohio",
+      "georgia",
+      "columbus"
+    ],
+    "confidence": "high",
+    "idDifficulty": 3,
+    "description": "tall sunflower-like stalks with knobby tubers at the base, found in sunny patches",
+    "seasons": [
+      "fall",
+      "winter"
+    ],
+    "spoilageDays": 7,
+    "tileAffinity": [
+      "meadow",
+      "creek"
+    ],
+    "lookalikeNote": "Dig only under tall sunflower-like stalks in sunny patches. If the tuber doesn't come from a sunflower stalk, don't eat it.",
+    "waterContent": "medium",
+    "codex": "The 'fartichoke' is honest work: starchy tubers, but cook them properly and start small.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "tubers cooked like potatoes — cook well, start small"
+      }
+    ],
+    "form": "roots",
+    "edibility": "caution",
+    "taxon": [
+      "plant",
+      "herb",
+      "sunchoke"
+    ]
+  },
+  {
+    "id": "stinging_nettle",
+    "name": "Stinging Nettle",
+    "scientific": "Urtica dioica",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 40,
+    "unit": "handful of tops",
+    "knowledgeLevels": {
+      "1": "Stinging nettle. It stung you. Now you know.",
+      "2": "Parts: young tops and leaves — COOK ONLY. Heat destroys the sting.",
+      "3": "Uses: iron-rich greens, spring tonic. Cooking or drying neutralizes the formic acid.",
+      "4": "Mastery: wear gloves; pick tops before flowering. Blanch 2 minutes. Nettle soup is a spring ritual."
+    },
+    "preparation": "MUST be cooked or dried — never eat raw. Blanch 2 minutes, then use like spinach.",
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw",
+      "columbus"
+    ],
+    "confidence": "high",
+    "idDifficulty": 2,
+    "description": "tall serrated leaves on square stems that sting your hand when you grab them",
+    "seasons": [
+      "spring",
+      "summer"
+    ],
+    "spoilageDays": 1,
+    "tileAffinity": [
+      "creek",
+      "wetland"
+    ],
+    "lookalikeNote": "The sting IS the identification. Dead nettle looks similar but doesn't sting (also edible, milder).",
+    "waterContent": "high",
+    "codex": "It announces itself with pain. Cook it and it feeds you better than spinach.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "cooked greens only — never raw"
+      },
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "iron-rich spring tonic tea"
+      }
+    ],
+    "form": "shoots",
+    "edibility": "cook",
+    "medicinal": true,
+    "taxon": [
+      "plant",
+      "herb",
+      "stinging_nettle"
+    ]
+  },
+  {
+    "id": "greenbrier",
+    "name": "Greenbrier Shoots",
+    "scientific": "Smilax rotundifolia",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 35,
+    "unit": "handful of tips",
+    "knowledgeLevels": {
+      "1": "Greenbrier. Thorny vines, tender spring tips that snap like asparagus.",
+      "2": "Parts: young shoot tips only. Snap them — if it bends, it's too old.",
+      "3": "Uses: spring green, asparagus-like. The thorns guard the tenderness.",
+      "4": "Mastery: harvest tips under 6 inches; snap, don't cut. Older vines give berries in fall."
+    },
+    "preparation": "Snap tender tips; eat raw or steamed.",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 3,
+    "description": "thorny climbing vines everywhere, with tender coiled tips in spring",
+    "seasons": [
+      "spring"
+    ],
+    "spoilageDays": 2,
+    "tileAffinity": [
+      "thicket",
+      "trail_edge"
+    ],
+    "lookalikeNote": "Thorns + tendrils = greenbrier. Don't confuse young shoots with pokeweed shoots (smooth, reddish — different rules).",
+    "waterContent": "medium",
+    "codex": "The Southeast's thorny gift: spring tips that taste like asparagus, free for the brave.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "tender spring tips, asparagus-like"
+      }
+    ],
+    "form": "shoots",
+    "edibility": "safe",
+    "taxon": [
+      "bush",
+      "vine",
+      "greenbrier"
+    ]
+  },
+  {
+    "id": "pokeweed",
+    "name": "Pokeweed",
+    "scientific": "Phytolacca americana",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 45,
+    "unit": "handful of shoots",
+    "knowledgeLevels": {
+      "1": "Pokeweed. Smooth stalks, purple-red stems, dark berry clusters.",
+      "2": "Parts: YOUNG spring shoots only (under 8 inches), boiled twice with water changes. Root, mature stems, berries = poison.",
+      "3": "Uses: 'poke sallet' — a traditional spring green IF processed exactly right.",
+      "4": "Mastery: never take shoots taller than your hand. Boil, drain, boil again. When in doubt, walk away."
+    },
+    "preparation": "Young shoots ONLY, boiled in two changes of water. Everything else is toxic — never eat berries or root.",
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw",
+      "columbus"
+    ],
+    "confidence": "high",
+    "idDifficulty": 4,
+    "description": "tall smooth stalks turning reddish-purple, with dark purple berry clusters in late summer",
+    "seasons": [
+      "spring"
+    ],
+    "spoilageDays": 1,
+    "tileAffinity": [
+      "meadow",
+      "trail_edge"
+    ],
+    "lookalikeNote": "CRITICAL: mature plant, berries, and root are POISONOUS. Only young green shoots, boiled twice. No shortcuts.",
+    "waterContent": "medium",
+    "codex": "The most dangerous green in this book. Processed right it's food; wrong, it's poison. Knowledge is the margin.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "spring shoots boiled twice — never raw, never berries"
+      }
+    ],
+    "form": "shoots",
+    "edibility": "caution",
+    "taxon": [
+      "plant",
+      "herb",
+      "pokeweed"
+    ]
+  },
+  {
+    "id": "maypop",
+    "name": "Maypop",
+    "scientific": "Passiflora incarnata",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 60,
+    "unit": "fruit",
+    "knowledgeLevels": {
+      "1": "Maypop. Ornate purple flowers, egg-sized fruit that ripens wrinkled and yellow.",
+      "2": "Parts: ripe fruit only (wrinkled, yellow, fragrant). Unripe = bitter and nauseating.",
+      "3": "Uses: sweet-tart pulp, eaten fresh. Leaves make a mild calming tea.",
+      "4": "Mastery: wait for the fruit to fall or wrinkle fully. One vine can feed you for a week in season."
+    },
+    "preparation": "Eat only fully ripe (wrinkled yellow) fruit. Unripe fruit will punish you.",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 2,
+    "description": "a vine with elaborate purple-and-white flowers and egg-sized green fruit that wrinkles yellow when ripe",
+    "seasons": [
+      "summer",
+      "fall"
+    ],
+    "spoilageDays": 3,
+    "tileAffinity": [
+      "trail_edge",
+      "thicket",
+      "meadow"
+    ],
+    "lookalikeNote": "The fringed purple-white flower is unmistakable. Only the wrinkled yellow fruit is food.",
+    "waterContent": "medium",
+    "codex": "The Southeast's passionfruit. Ugly flower, alien fruit, honest sugar.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "ripe wrinkled fruit — sweet-tart pulp"
+      },
+      {
+        "kind": "tea",
+        "minLevel": 3,
+        "note": "leaf tea, mild and calming"
+      }
+    ],
+    "form": "berries",
+    "edibility": "caution",
+    "medicinal": true,
+    "taxon": [
+      "bush",
+      "vine",
+      "maypop"
+    ]
+  },
+  {
+    "id": "wild_cherry",
+    "name": "Wild Black Cherry",
+    "scientific": "Prunus serotina",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 70,
+    "unit": "handful of cherries",
+    "knowledgeLevels": {
+      "1": "Wild black cherry. Tall tree, hanging clusters of small dark fruit.",
+      "2": "Parts: ripe fruit (dark purple-black). SPIT THE PITS — they contain cyanide compounds.",
+      "3": "Uses: sweet-tart fruit fresh or dried. Wilted leaves are dangerous to livestock.",
+      "4": "Mastery: pick fully dark fruit; one tree can fill a pack. Dry cherries for winter."
+    },
+    "preparation": "Eat ripe fruit raw. Always spit the pits. Never chew them.",
+    "regions": [
+      "ohio",
+      "georgia",
+      "pacific_nw",
+      "columbus"
+    ],
+    "confidence": "high",
+    "idDifficulty": 2,
+    "description": "a tall tree with dark peeling bark and long hanging clusters of small dark cherries",
+    "seasons": [
+      "summer"
+    ],
+    "spoilageDays": 3,
+    "tileAffinity": [
+      "grove",
+      "forest_floor"
+    ],
+    "lookalikeNote": "Ripe = dark purple-black and sweet-tart. Red fruit isn't ready. Pits and wilted leaves are toxic.",
+    "waterContent": "high",
+    "codex": "Cherry trees rain fruit in June. Eat the fruit, spit the pits — the rule is the recipe.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "ripe dark cherries — spit the pits"
+      },
+      {
+        "kind": "bait",
+        "minLevel": 3,
+        "note": "fallen fruit baits traps well"
+      }
+    ],
+    "form": "berries",
+    "edibility": "caution",
+    "taxon": [
+      "tree",
+      "fruit_tree",
+      "wild_cherry"
+    ]
+  },
+  {
+    "id": "serviceberry",
+    "name": "Serviceberry",
+    "scientific": "Amelanchier arborea",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 55,
+    "unit": "handful of berries",
+    "knowledgeLevels": {
+      "1": "Serviceberry. White spring flowers, clusters of red-purple berries in June.",
+      "2": "Parts: ripe berries (purple, soft). Seeds contain cyanide compounds like apple seeds — don't chew masses of them.",
+      "3": "Uses: blueberry-almond flavor, eaten fresh or dried. Early summer staple.",
+      "4": "Mastery: June harvest; berries ripen unevenly — pick the dark ones, leave the red. Dry for winter stores."
+    },
+    "preparation": "Eat raw when fully purple. Don't chew large quantities of seeds.",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 2,
+    "description": "a small tree with white starry flowers in spring and clusters of red-to-purple berries in early summer",
+    "seasons": [
+      "summer"
+    ],
+    "spoilageDays": 2,
+    "tileAffinity": [
+      "grove",
+      "trail_edge"
+    ],
+    "lookalikeNote": "Ripe = purple-black and soft. Don't gorge on the seeds (cyanide compounds, like apple seeds).",
+    "waterContent": "medium",
+    "codex": "June's gift. Tastes like blueberry met almond. The birds know the date before you do.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "sweet early-summer berries"
+      }
+    ],
+    "form": "berries",
+    "edibility": "safe",
+    "taxon": [
+      "tree",
+      "fruit_tree",
+      "serviceberry"
+    ]
+  },
+  {
+    "id": "groundnut",
+    "name": "Groundnut",
+    "scientific": "Apios americana",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 90,
+    "unit": "tuber",
+    "knowledgeLevels": {
+      "1": "Groundnut. Twining vine in wet ground; dig for strings of round tubers.",
+      "2": "Parts: the tubers. Cook well — raw causes stomach trouble. Exceptional protein.",
+      "3": "Uses: more protein than any tuber you know — the staple that fed whole villages.",
+      "4": "Mastery: dig in fall along creek banks. Boil or roast thoroughly. Leave some tubers to regrow."
+    },
+    "preparation": "Dig tubers in fall. Cook thoroughly — never eat raw.",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 3,
+    "description": "a twining vine in wet ground with brownish pea-flowers and strings of round tubers underground",
+    "seasons": [
+      "fall"
+    ],
+    "spoilageDays": 7,
+    "tileAffinity": [
+      "wetland",
+      "creek"
+    ],
+    "lookalikeNote": "Twining vine with compound leaves in wet soil = groundnut. Tubers grow in a string from the vine base.",
+    "waterContent": "medium",
+    "codex": "The Indian potato. Protein like a tuber shouldn't have. Cook it like you mean it.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "food",
+        "minLevel": 2,
+        "note": "protein-rich tubers — cook thoroughly"
+      }
+    ],
+    "form": "roots",
+    "edibility": "cook",
+    "taxon": [
+      "plant",
+      "vine",
+      "groundnut"
+    ]
+  },
+  {
+    "id": "american_ginseng",
+    "name": "American Ginseng",
+    "scientific": "Panax quinquefolius",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 5,
+    "unit": "root",
+    "knowledgeLevels": {
+      "1": "Ginseng. Whorled compound leaves, red berry cluster. You've only read about this.",
+      "2": "Parts: the slow-grown root. Harvesting wild roots is restricted in many states — it was poached near extinction.",
+      "3": "Uses: traditional adaptogen and tonic. The System notes it with interest; the forest keeps it rare.",
+      "4": "Mastery: you don't forage this. You learn it, respect it, and leave it. The knowledge is the harvest."
+    },
+    "preparation": "Not foraged. Traditional use is dried root tea — in tiny amounts, from cultivated sources only.",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 4,
+    "description": "a low woodland plant with a whorl of compound leaves and a small cluster of red berries — rare, and protected",
+    "seasons": [
+      "summer",
+      "fall"
+    ],
+    "spoilageDays": 30,
+    "tileAffinity": [
+      "forest_floor",
+      "grove"
+    ],
+    "lookalikeNote": "Virginia creeper seedlings and young hickory sprouts fool beginners. Ginseng's leaf whorl is distinctive — and it isn't yours to dig.",
+    "waterContent": "medium",
+    "codex": "Worth more than gold, rarer than honesty. The forest keeps its ginseng; so do you.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "medicine",
+        "minLevel": 3,
+        "note": "traditional tonic — cultivated only, never wild-harvested"
+      }
+    ],
+    "form": "roots",
+    "edibility": "caution",
+    "medicinal": true,
+    "taxon": [
+      "plant",
+      "herb",
+      "ginseng"
+    ]
+  },
+  {
+    "id": "wild_ginger",
+    "name": "Wild Ginger",
+    "scientific": "Asarum canadense",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "caloriesPerUnit": 5,
+    "unit": "rhizome",
+    "knowledgeLevels": {
+      "1": "Wild ginger. Heart-shaped leaves flat on the forest floor. You've only read about this.",
+      "2": "Parts: the rhizome smells exactly like ginger — but it isn't. Contains aristolochic acid: toxic to kidneys.",
+      "3": "Uses: none safe in quantity. The System logged it as 'spice-adjacent, do not ingest'. Smell it, enjoy it, leave it.",
+      "4": "Mastery: knowing what NOT to eat is the highest level. The scent is the lesson."
+    },
+    "preparation": "Do not use as food. Historical spice use is discontinued for good reason (kidney toxicity).",
+    "regions": [
+      "ohio",
+      "georgia"
+    ],
+    "confidence": "high",
+    "idDifficulty": 3,
+    "description": "low heart-shaped leaves hugging the forest floor, hiding small jug-shaped flowers at the base",
+    "seasons": [
+      "spring",
+      "summer"
+    ],
+    "spoilageDays": 3,
+    "tileAffinity": [
+      "forest_floor"
+    ],
+    "lookalikeNote": "Heart-shaped leaves with hidden jug flowers at the base. Gingery smell with NO culinary safety — leave it alone.",
+    "waterContent": "medium",
+    "codex": "Smells like ginger, acts like poison. The forest's reminder that smell is not a safety test.",
+    "sources": [
+      "Field validation pending — conservative well-known species"
+    ],
+    "uses": [
+      {
+        "kind": "medicine",
+        "minLevel": 4,
+        "note": "historical use only — aristolochic acid, toxic; do not ingest"
+      }
+    ],
+    "form": "roots",
+    "edibility": "avoid",
+    "taxon": [
+      "plant",
+      "herb",
+      "wild_ginger"
     ]
   }
 ]
