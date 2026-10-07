@@ -20,10 +20,25 @@
 Both: new-files-only, private-index commit-tree recipe (-p HEAD, --add, one triple per --cacheinfo, oldrev-checked update-ref), report SHA, no push, no concurrent jest, seeded PRNG, full-harness rules (window stub for eval then delete before play, interior tiles 1..7, no trailing tbAdvance after tbPlayerStrike/tbAfterPlayerAction).
 
 ## Handoffs received
+
+### Worker B — glasswing dive-and-bask play-audit (DONE 14:08 CDT)
+- Commit `f336291` (parent e19a2b29, no push by worker). Exactly 2 new files: scripts/play-feel-20261007-glasswing-audit.js + evidence/2026-10-07/glasswing-depth-notes-20261007.md.
+- **Verdict: dive and bask both work; the loop is playable and enjoyable.** 146/146 checks green on seeds 7/42/123. Dive = full trick (circle dread → shadow declare → dodge → crash → grounded punish); bask = charge 0→3, bite at 2+, spend on resolve; countered by positioning and pressure respectively. Knowledge gating holds, zero silent monster rounds, 8 audio hooks fire.
+- **CRITICAL FINDING (would-be live-breaker):** stale-base version bump dropped the `<script>` tags for abilityActions.js, monsterBehaviors.js, statusEffects.js from index.html → `this.seTickFighter` undefined → every combat throws on first monster turn. Present in HEAD tree, NOT yet deployed (live was still on 225321c whose index.html had the tags).
+- Engine backlog: dead `m.gwDive` modifier (written, never read); dead 'almost black' escalation text; codex "vulnerable 1 turn" vs 2 strikes text wrong; trap-hit 20–30 vs in-combat [10,16] needs Steve's call; unmapped-but-fired audio (telegraph/round/impact/humRise) by design.
+- STATUS: verified, sequenced.
+
+### Coordinator repair (live-breaker, 14:10 CDT)
+- Verified at HEAD: 3 files exist, index.html lacks tags; seTickFighter defined at statusEffects.js:225, called unguarded in game.js ×3 (monster/companion/villager turns).
+- Repair: re-added 3 tags after ledger.js in worktree index.html (order per 4174d39). Wrote scripts/proof-index-tags-20261007.js — asserts every src/js/**/*.js is tagged exactly once (sibling-sweep for the whole bug class); exit 1 on HEAD's index.html (flagged exactly the 3), exit 0 after repair. alienPlayers.js allowlisted (sibling's staged removal, never tagged).
+- Commit f39a811 via private index (2 files: index.html + proof script). Sibling pushed 962c74c (Drifter knowledge-leak fix) on top mid-bump → moved local master to origin/master (repair in ancestry), re-bumped to `962c74c-20261007-191243`, committed d11083d→superseded→44e46b8 (4 version files only), pushed.
+- **LIVE VERIFIED (14:15 CDT):** version.json serves 962c74c-20261007-191243; live index.html contains all 3 tags. Combat no longer at risk.
+
+### Worker A — wave-2c fight play-audit
 (pending)
 
 ## Incident (13:45 CDT)
 - Coordinator bare-`git commit` after `git add <run-note>` SWEPT the sibling's 206 staged deletions (their cleanup) into commit 812f265 (275 files, 54,142 deletions) — the documented BARE-COMMIT SWEEP hazard, repeated despite the standing rule. Caught immediately: HEAD was still 812f265 with no sibling commit on top (reflog check), so `git reset --soft 2275cc1` restored the shared index to its armed state intact; run note then committed via the private-index route as 76e4821 (exactly 1 file). Sibling's staged cleanup untouched.
 
 ## Completion flow
-(pending)
+- Repair + Worker B sequenced and live. Awaiting Worker A for final completion flow.
