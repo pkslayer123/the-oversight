@@ -32,17 +32,18 @@
   const SIZE = 64;
   const CELL = SIZE / 9; // detail cells are a 9x9 grid
 
-  // Terrain base colors per tile type (dark terminal aesthetic).
+  // Terrain base colors per tile type - MINECRAFT STYLE (Steve 2026-10-06).
+  // Bright, saturated, readable geography. Not dark terminal.
   const TILE_BASE = {
-    forest_floor: { base: '#241c12', tex: '#2e2417', dot: '#191309' },
-    grove:        { base: '#1b2f1c', tex: '#243d24', dot: '#12200f' },
-    meadow:       { base: '#28331b', tex: '#34401f', dot: '#1a200f' },
-    thicket:      { base: '#18291f', tex: '#213626', dot: '#0f1a12' },
-    wetland:      { base: '#1a2830', tex: '#23343d', dot: '#111a1f' },
-    creek:        { base: '#14303c', tex: '#1d4150', dot: '#0c1f26' },
-    trail_edge:   { base: '#322e1b', tex: '#413b22', dot: '#201d10' },
-    ruin:         { base: '#27272b', tex: '#333338', dot: '#1a1a1d' },
-    haven:        { base: '#20271f', tex: '#2b352a', dot: '#141a12' },
+    forest_floor: { base: '#6b4a2a', tex: '#7d5a35', dot: '#5a3d20' },
+    grove:        { base: '#3d7a3d', tex: '#4d8a4d', dot: '#2d5a2d' },
+    meadow:       { base: '#7aaa4a', tex: '#8aba5a', dot: '#5a8a3a' },
+    thicket:      { base: '#2d5a2d', tex: '#3d6a3d', dot: '#1d4a1d' },
+    wetland:      { base: '#4a7a8a', tex: '#5a8a9a', dot: '#3a5a6a' },
+    creek:        { base: '#3a7aaa', tex: '#4a8aba', dot: '#2a5a8a' },
+    trail_edge:   { base: '#8a7a4a', tex: '#9a8a5a', dot: '#6a5a3a' },
+    ruin:         { base: '#7a7a7a', tex: '#8a8a8a', dot: '#5a5a5a' },
+    haven:        { base: '#5a8a4a', tex: '#6a9a5a', dot: '#4a6a3a' },
   };
   const FALLBACK_BASE = { base: '#1c1c18', tex: '#26261f', dot: '#12120e' };
 
