@@ -12638,7 +12638,13 @@
       if (e.reported) return;
       e.reported = true;
       e.knowers = [(this.state.scholar || {}).villagerId || 'player'];
-      this.say(`You don't know what that was. ${mdef.unknown || 'Something moving.'} Someone at the haven should hear about this.`);
+      // PUNCTUATION (hunter playtest 2026-10-07): mdef.unknown is a bare
+      // descriptor ("a dog-shaped silence at the treeline") — without terminal
+      // punctuation the opener ran two sentences together ("...treeline
+      // Someone at the haven...").
+      const unk = mdef.unknown || 'Something moving.';
+      const unkP = /[.!?…]$/.test(unk) ? unk : unk + '.';
+      this.say(`You don't know what that was. ${unkP} Someone at the haven should hear about this.`);
     },
     // monsterTellActive: you have an encounter the village hasn't heard about.
     monsterTellActive() {
@@ -18416,7 +18422,10 @@
       const p = this.tbFighter('p');
       if (p.acted) { this.say('Already acted this turn.'); return false; }
       const t = this.tbFighter(targetKey);
-      if (!t || !t.alive || (t.kind !== 'monster' && t.kind !== 'hostile')) return false;
+      // HONEST TARGETING (hunter playtest 2026-10-07): striking a downed target
+      // was a silent no-op (return false, nothing said). No silent actions.
+      if (t && !t.alive && (t.kind === 'monster' || t.kind === 'hostile')) { this.say("It's already down."); return false; }
+      if (!t || (t.kind !== 'monster' && t.kind !== 'hostile')) return false;
       // THE MODERATOR (Steve 2026-10-06): muted verbs inside its suppression
       // field are violations — the attempt spends the turn (modVerbBlocked).
       if (this.modVerbBlocked('strike')) return true;

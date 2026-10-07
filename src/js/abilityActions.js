@@ -541,7 +541,16 @@
           return encounters[id] > 0;
         }).slice(0, 3);
         if (recent.length) {
-          findings.push('Sign of ' + recent.join(', ') + ' — fresh enough to follow.');
+          // KNOWLEDGE-GATED (hunter playtest 2026-10-07): the old line joined
+          // raw animal ids ("Sign of gray_squirrel") — builder text leaking
+          // onto the surface. Tracks say *something* passed; the species name
+          // is earned the same way everywhere else (encAnimalKnown).
+          var names = recent.map(function (id) {
+            var ad = (game.data.animals || []).find(function (x) { return x.id === id; });
+            if (ad && game.encAnimalKnown && game.encAnimalKnown(id)) return ad.name;
+            return 'something';
+          });
+          findings.push('Sign of ' + names.join(', ') + ' — fresh enough to follow.');
         }
       } catch (e) {}
       if (!findings.length) {
@@ -640,7 +649,43 @@
     },
 
     'tracker.track': function (game, target) {
-      game.say('You follow the trail — broken twigs, pressed grass, the story of where it went. It headed east, not long ago, and it wasn\'t alone. (Track)');
+      // STATE-HONEST (hunter playtest 2026-10-07): the old line always claimed
+      // a fresh eastward trail ("headed east, not long ago") — even on cold
+      // ground, and it contradicted read_sign's honest "nothing fresh" in the
+      // same kit. Track reads what's actually here: the live encounter,
+      // recent sign, or nothing — and says which. Names stay knowledge-gated.
+      var s = game.state.scholar;
+      var line = null;
+      try {
+        var a = s.animal;
+        if (a && a.id) {
+          var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
+          var dx = a.mx - px, dy = a.my - py;
+          var dist = Math.max(Math.abs(dx), Math.abs(dy));
+          var dir = Math.abs(dx) >= Math.abs(dy)
+            ? (dx > 0 ? 'east' : dx < 0 ? 'west' : '')
+            : (dy > 0 ? 'south' : dy < 0 ? 'north' : '');
+          var aname = 'something';
+          try {
+            var adef = (game.data.animals || []).find(function (x) { return x.id === a.id; });
+            if (adef && game.encAnimalKnown && game.encAnimalKnown(a.id)) aname = adef.name;
+          } catch (e) {}
+          line = 'Fresh sign — ' + aname + (dir ? ', ' + dist + ' square' + (dist === 1 ? '' : 's') + ' ' + dir : ', right under your feet') + '. Move careful.';
+        } else {
+          var encounters = (game.state.codex || {}).animalEncounters || {};
+          var recent = Object.keys(encounters).filter(function (id) { return encounters[id] > 0; }).slice(0, 3);
+          if (recent.length) {
+            var names = recent.map(function (id) {
+              var ad = (game.data.animals || []).find(function (x) { return x.id === id; });
+              if (ad && game.encAnimalKnown && game.encAnimalKnown(id)) return ad.name;
+              return 'something';
+            });
+            line = 'Sign of ' + names.join(', ') + ' — fresh enough to follow.';
+          }
+        }
+      } catch (e) {}
+      if (line) game.say('You follow the trail — ' + line + ' (Track)');
+      else game.say('Cold ground. Nothing fresh has passed here — no trail worth following. (Track)');
       return true;
     },
 
