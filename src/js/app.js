@@ -12202,8 +12202,9 @@ ${renderBuildIndicator()}
           const _alert = tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy).join(' ');
           const meVp = Game.data.villagers.find(v => v.id === Game.villagerId) || (Game.data.background_survivors || []).find(v => v.id === Game.villagerId);
           const _mspr = villagerSpriteHtml(meVp);
-          const meKnown = true; // you know your own name
-          const meName = meKnown && meVp ? meVp.name.split(' ')[0] : '';
+          // Steve 2026-10-07: player name ALWAYS shows above sprite. No flicker.
+          // Fall back to 'You' if villager record not found.
+          const meName = meVp ? meVp.name.split(' ')[0] : 'You';
           g = `<span class="vent${_alert ? ' ' + _alert : ''}" data-ent="me"><span class="vtoken">${_mspr || '🧍'}</span>` + (meName ? `<span class="vname">${esc(meName)}</span>` : '') + `</span>`;
           cls += ' me';
           entityHere = true;
@@ -12309,7 +12310,7 @@ ${renderBuildIndicator()}
           const _alert2 = tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy).join(' ');
           const meVp2 = Game.data.villagers.find(v => v.id === Game.villagerId) || (Game.data.background_survivors || []).find(v => v.id === Game.villagerId);
           const _mspr2 = villagerSpriteHtml(meVp2);
-          const meName2 = meVp2 ? meVp2.name.split(' ')[0] : '';
+          const meName2 = meVp2 ? meVp2.name.split(' ')[0] : 'You';
           g = `<span class="vent${_alert2 ? ' ' + _alert2 : ''}" data-ent="me"><span class="vtoken">${_mspr2 || '🧍'}</span>` + (meName2 ? `<span class="vname">${esc(meName2)}</span>` : '') + `</span>`;
         } else {
           // turn-based combat: fighters render from the fight, not scholar.monster
