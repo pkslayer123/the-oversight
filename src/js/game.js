@@ -95,71 +95,8 @@
     { id: 'can_soup', name: 'Canned soup', kcal: 450, kg: 0.35, text: 'Chicken soup. Tastes like before.' },
     { id: 'jar_peaches', name: 'Jarred peaches', kcal: 700, kg: 0.5, text: 'Home-canned. Whoever sealed this knew what they were doing.' },
   ];
-  // first-visit arrival moments — destinations reveal something.
-  // ARRIVAL POOLS (explorer loop 2026-10-05): one fixed copy per tile type
-  // got monotonous — every forest floor read identically. Each type now has
-  // a small pool; a node rolls its flavor once on first visit and keeps it,
-  // so the map doesn't repeat itself but each place has an identity.
-  const ARRIVAL = {
-    forest_floor: { title: 'Under the canopy', texts: [
-      'Leaf litter, birdcall, the smell of rot becoming soil. The woods, being the woods.',
-      'Old growth. The canopy closes overhead and the light comes down in shafts. Something rustled, and decided not to be seen.',
-      'Fallen trunks lie like sleeping animals, furred with moss. The ground gives underfoot — centuries of leaf-mold.',
-      'A woodpecker works somewhere you can\'t see. Down here it smells of mushrooms and cold shade.',
-      'Saplings push up through last year\'s deadfall, racing each other for the light. The forest never stops trying.',
-      'Mushrooms thumb up through the duff in a ring — a fairy ring, old as the path. You step around it, not through it. Some rules are older than knowledge.',
-    ] },
-    grove: { title: 'Nut trees', texts: [
-      'Hickories and oaks, heavy with mast. This is a pantry that grows.',
-      'The trees here fruit on their own schedule. Right now the schedule is generous.',
-      'Mast crunches underfoot — last season\'s nuts, sprouting or rotting. The trees don\'t waste anything.',
-      'The canopy here is a roof built by a thousand architects who never met. Light comes through in coins.',
-      'Bark stripped at deer height on a young hickory — teeth, winter, hunger. Somebody winters here. Maybe you will too.',
-      'A hollow log big enough to crawl into. You don\'t crawl in. You note where it is, in case the weather ever makes the offer again.',
-    ] },
-    meadow: { title: 'Open ground', texts: [
-      'Grasses head-high. Good greens, good visibility, nowhere to hide.',
-      'Wind moves through the grass in waves. Seeds catch on your clothes, hitching a ride.',
-      'Open sky for the first time in a while. Hawks circle — something down there is being watched.',
-      'Grasshoppers rise in a clicking wave ahead of you. Something fork-tailed rides the wind above them, waiting for the careless ones.',
-      'Wildflowers in clumps — purple, white, yellow. You don\'t know their names yet, and the not-knowing is a kind of hunger.',
-      'The grass is bent in a long smooth run, like something heavy slid through it. You walk the other way around.',
-    ] },
-    thicket: { title: 'Thick brush', texts: [
-      'Thorns and tangle. Things live in here that don\'t want to be seen.',
-      'The brush closes behind you like water. You learn to move sideways, leading with a shoulder.',
-      'Bramble over your head in places. Berries somewhere in the tangle, if you\'re willing to bleed for them.',
-      'Greenbrier wraps everything, armed and patient. You move like you\'re underwater — slow, deliberate, getting nowhere fast.',
-      'Something rustles ahead, then goes very still. You go very still too. After a while you both agree to pretend it didn\'t happen.',
-      'Old nests in the thorns, built and abandoned and built again. This tangle has been home to a hundred tenants. None of them are you.',
-    ] },
-    wetland: { title: 'Still water, cattails', texts: [
-      'Cattails mean starch. Still water means boil it first — the Codex insists.',
-      'Your boots sink and sigh. Frogs go silent in a widening ring around you.',
-      'Standing water, black as tea. Dragonflies stitch the air. Watch where you step — the ground lies.',
-      'Reeds taller than you. The wind makes them talk to each other, and you are not part of the conversation.',
-      'Black water under green duckweed. A turtle slides off a log with a sound like a sigh. This place has been unbothered for a long time.',
-      'The ground here is a rumor — solid until it isn\'t. You test every step and think about how far the deep parts go.',
-    ] },
-    creek: { title: 'Moving water', texts: [
-      'Cold, clear, moving. The best thing you\'ve seen all day.',
-      'Water over stone, loud enough to cover your noise. You could drink here without announcing it.',
-      'The creek braids around gravel bars. Crawdads flick backward into the shadows of rocks.',
-      'Something big drank here recently — the mud is churned to soup on the far bank. You drink from the near side, upstream of whatever it was.',
-      'The water is cold enough to hurt your teeth. Downstream the creek bends out of sight, and you want to follow it. That\'s the problem with creeks.',
-      'A kingfisher works the far bank, patient as a tax collector. It catches something silver and is gone before you can envy it properly.',
-    ] },
-    trail_edge: { title: 'An old trail', texts: [
-      'Something walked here regularly, before. The path remembers even if no one does.',
-      'The trail is worn smooth as an old coin. Deer, probably. Probably.',
-      'A game trail crosses your path — two toes, heart-shaped, heading for water.',
-      'The trail splits around a boulder and rejoins — the world\'s oldest traffic decision. You follow the deeper-worn side.',
-      'Scat on the trail, still soft. You study it longer than is dignified and learn exactly one thing: walk louder.',
-      'Where the trail crosses bare rock, someone scratched a mark — an arrow, or a tally, or a prayer. Pre-Burn. You add nothing. You remember it.',
-    ] },
-    ruin: { title: 'Pre-Burn ruin', texts: [] }, // ruinStory fills this
-    haven: { title: 'Haven', texts: ['Canvas, cookfire, twelve people who are glad you\'re back. Home is a tile on the map like any other — it just matters more.'] },
-  };
+  // ARRIVAL TEXT (Steve 2026-10-07): migrated to src/data/arrivalText.json.
+  // Regions can override per-tile flavor via regionOverrides. See arrivalPoolFor().
   // ruin wall examine: cheap discovery, knowledge sticks. no loot promised.
   const WALL_EXAMINE = [
     'The wall stands out of spite. Cinderblock, scorched. Someone built this square and true — you can feel the hands in it.',
@@ -204,14 +141,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions, dramaEffects, monsterBehaviors] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, alienPlayers, regions, dramaEffects, monsterBehaviors };
-      // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
-      try {
-        const D = globalThis.Scattering && globalThis.Scattering.Drama;
-        if (D) D.effectRegistry = dramaEffects;
-      } catch (e) {}
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText };
       return this.data;
     },
 
@@ -283,62 +215,17 @@
       return pool.length ? pool[Math.floor(Math.random() * pool.length)] : {};
     },
 
-    // REGIONS (Steve 2026-10-07): 8 American landing regions. Each works as both
-    // an origin (starting knowledge via asOrigin) and a haven location (biome gen
-    // via asHaven). See docs/REGIONS.md for the scaffold. regions.json is the
-    // source of truth; these helpers query it.
-    regionDef(id) {
-      return (this.data.regions || []).find(r => r.id === id) || null;
-    },
-    // regionsForOrigin: all regions whose originKeys overlap the given tags.
-    // A tag can map to multiple regions (e.g. kentucky -> middle_america +
-    // appalachian); callers merge.
-    regionsForOrigin(tags) {
-      const lower = (tags || []).map(t => String(t).toLowerCase());
-      return (this.data.regions || []).filter(r =>
-        (r.originKeys || []).some(k => lower.includes(String(k).toLowerCase())));
-    },
-    // regionKnownPlants: merged {plantId: level} across all matching regions
-    // (highest level wins on conflict).
-    regionKnownPlants(tags) {
-      const merged = {};
-      for (const r of this.regionsForOrigin(tags)) {
-        const kp = (r.asOrigin && r.asOrigin.knownPlants) || {};
-        for (const [pid, lvl] of Object.entries(kp)) {
-          if (!(pid in merged) || lvl > merged[pid]) merged[pid] = lvl;
-        }
-      }
-      return merged;
-    },
-    // regionKnownAnimals: merged list of animal IDs across matching regions.
-    regionKnownAnimals(tags) {
-      const seen = new Set(), out = [];
-      for (const r of this.regionsForOrigin(tags)) {
-        for (const aid of ((r.asOrigin && r.asOrigin.knownAnimals) || [])) {
-          if (!seen.has(aid)) { seen.add(aid); out.push(aid); }
-        }
-      }
-      return out;
-    },
-
     // locParams: genMap tuning for the chosen landing zone (with safe defaults).
-    // REGION GEN: the haven region (state.region, default middle_america)
-    // provides base gen params; the landing zone overrides per-key.
-    // middle_america's gen matches the old defaults, so existing behavior
-    // is unchanged until a region is explicitly chosen.
     locParams() {
       const loc = (this.data.locations || []).find(l => l.id === (this.state && this.state.startLocation));
       const g = (loc && loc.gen) || {};
-      const region = this.regionDef(this.state && this.state.region || 'middle_america');
-      const rg = (region && region.asHaven && region.asHaven.gen) || {};
-      const pick = (k, dflt) => g[k] ?? rg[k] ?? dflt;
       return {
-        creeks: pick('creeks', 1), wetlands: pick('wetlands', 3),
-        groveBlobs: pick('groveBlobs', 2), groveSize: pick('groveSize', 4),
-        meadowSize: pick('meadowSize', 5), thickets: pick('thickets', 5),
-        trailLines: pick('trailLines', 1), ruinMaxDist: pick('ruinMaxDist', 3),
-        lootMult: pick('lootMult', 1), stockMult: pick('stockMult', 1),
-        startReveal: pick('startReveal', 0),
+        creeks: g.creeks ?? 1, wetlands: g.wetlands ?? 3,
+        groveBlobs: g.groveBlobs ?? 2, groveSize: g.groveSize ?? 4,
+        meadowSize: g.meadowSize ?? 5, thickets: g.thickets ?? 5,
+        trailLines: g.trailLines ?? 1, ruinMaxDist: g.ruinMaxDist ?? 3,
+        lootMult: g.lootMult ?? 1, stockMult: g.stockMult ?? 1,
+        startReveal: g.startReveal ?? 0,
       };
     },
 
@@ -752,34 +639,9 @@
         // axis labels (the UI already shows "steady, fair"), and the closing
         // observation varies — "The others find this worth watching" on every
         // third character was the tell. Name-only (no pronouns) keeps it safe.
-        const _assessPool = {
-          steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
-          bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
-          cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
-          warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
-          prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
-          restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
-          dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
-          gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
-          intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
-          withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
-          anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
-        };
-        const _assessClose = {
-          steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
-          bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
-          cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
-          warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
-          prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
-          restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
-          dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
-          gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
-          intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
-          withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
-          anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
-        };
-        const _ap = _assessPool[temperament] || _assessPool.steady;
-        const _ac = _assessClose[temperament] || _assessClose.steady;
+        const _pools = this._assessPools(first);
+        const _ap = _pools.pool[temperament] || _pools.pool.steady;
+        const _ac = _pools.close[temperament] || _pools.close.steady;
         let sysAssess = _ap[Math.floor(Math.random() * _ap.length)] + ' ' + _ac[Math.floor(Math.random() * _ac.length)];
         let darkStored = null;
         if (dark && dark._tell) {
@@ -980,34 +842,9 @@
       const intelSecondary = secCands.length ? secCands[Math.floor(Math.random() * secCands.length)] : (intelPrimary === 'steady' ? 'practical' : 'steady');
 
       // System assessment: same natural prose pools.
-      const _assessPool = {
-        steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
-        bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
-        cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
-        warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
-        prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
-        restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
-        dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
-        gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
-        intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
-        withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
-          anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
-      };
-      const _assessClose = {
-        steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
-        bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
-        cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
-        warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
-        prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
-        restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
-        dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
-        gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
-        intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
-        withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
-          anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
-      };
-      const _ap = _assessPool[temperament] || _assessPool.steady;
-      const _ac = _assessClose[temperament] || _assessClose.steady;
+      const _pools = this._assessPools(first);
+      const _ap = _pools.pool[temperament] || _pools.pool.steady;
+      const _ac = _pools.close[temperament] || _pools.close.steady;
       let sysAssess = _ap[Math.floor(Math.random() * _ap.length)] + ' ' + _ac[Math.floor(Math.random() * _ac.length)];
       let darkStored = null;
       if (dark && dark._tell) {
@@ -1508,7 +1345,6 @@
         || {};
       this.state = S.state.newState();
       this.state.startLocation = loc.id || null;
-      this.state.region = 'middle_america'; // REGION: default until region selection UI exists (Steve 2026-10-07)
       this.state.startLocationName = loc.name || null;
       this.state.spawnType = loc.spawnType || 'countryside';
       this.state.runName = (runName && String(runName).trim()) || null;
@@ -1913,23 +1749,6 @@
         this.state.codex.encounters = this.state.codex.encounters || {};
         this.state.codex.encounters[pid] = 99;
       }
-      // REGIONAL ROOTS (Steve 2026-10-07): your origin region seeds starting
-      // plant knowledge. A kid from Columbus knows pawpaw at level 2
-      // ("you eat the custardy part, not the seeds"); a desert kid knows
-      // prickly pear. Driven by regions.json asOrigin.knownPlants.
-      // (Replaces the old ohio-only pawpaw block; middle_america keeps pawpaw:2.)
-      {
-        const myTags = (parsed.tags || []).map(t => String(t).toLowerCase());
-        const knownPlants = this.regionKnownPlants(myTags);
-        for (const [pid, level] of Object.entries(knownPlants)) {
-          const pl = (this.data.plants || []).find(p => p.id === pid);
-          if (pl) {
-            this.state.codex.plants[pid] = { identifiedDay: 0, level, harvests: 0, tastings: 0 };
-            this.state.codex.encounters = this.state.codex.encounters || {};
-            this.state.codex.encounters[pid] = 99;
-          }
-        }
-      }
       const famTier = this.familiarityTier(parsed.tags);
       if (famTier === 'stranger') this.say('Nothing here looks like home. You know none of these plants. Learn fast.');
       else if (famTier === 'visitor') this.say('Some of this country feels familiar. Not enough.');
@@ -2017,11 +1836,6 @@
     // --- village: people to talk to, things to do ---
     talkTo(vid) {
       // Legacy entry: now opens a real conversation, returns the opening line.
-      // TALK TRACKING (Steve 2026-10-07): increment talkIdx for conflict discovery.
-      try {
-        this.state.talkIdx = this.state.talkIdx || {};
-        this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1;
-      } catch (e) {}
       const st = this.startConvo(vid);
       return st ? st.line : null;
     },
@@ -3857,7 +3671,8 @@
     },
     // goalKnown: post-System it's displayed; pre-System it's learned via askAbout
     goalKnown(vid) {
-      return this.canShow('npc', vid, 'mechanics');
+      if (this.state.systemArrived) return true;
+      return !!((this.state.village.goalsKnown || {})[vid]);
     },
 
     // DISCOVERIES: social mechanics are learned through conversation, not
@@ -7598,34 +7413,24 @@
       if (!item) return null;
       const def = this.data.items.find(i => i.id === (item.itemId || item.id));
       if (!def) return null;
-      // validate slot (GEAR SLOTS 2026-10-07: melee/ranged/body/accessories)
-      if ((slot === 'melee' || slot === 'ranged' || slot === 'weapon') && def.class !== 'weapon') { this.say('That\'s not a weapon.'); return null; }
+      // validate slot (EQUIPMENT 2026-10-06: body-part slots + misc)
+      if (slot === 'weapon' && def.class !== 'weapon') { this.say('That\'s not a weapon.'); return null; }
       if (slot === 'armor' && !def.armor) { this.say('That\'s not armor.'); return null; }
       try {
         if (S.equipment) {
           const wantSlot = S.equipment.slotForItem(def);
-          const accOk = /^acc[1-4]$/.test(slot || '');
-          // Legacy slot names map forward
-          const canonSlot = (S.equipment.SLOT_ALIASES && S.equipment.SLOT_ALIASES[slot]) || slot;
-          if (!accOk && wantSlot && wantSlot !== canonSlot && !(slot === 'armor' && wantSlot === 'torso') && !(slot === 'weapon' && (wantSlot === 'melee' || wantSlot === 'ranged'))) {
-            this.say(`That goes on your ${S.equipment.slotLabel(wantSlot).toLowerCase()}, not your ${slot}.`);
+          const miscOk = /^misc[1-3]$/.test(slot || '');
+          if (!miscOk && wantSlot && wantSlot !== slot && !(slot === 'armor' && wantSlot === 'torso')) {
+            this.say(`That goes on your ${wantSlot}, not your ${slot}.`);
             return null;
           }
-          if (!accOk && !wantSlot && !['head'].includes(canonSlot)) {
+          if (!miscOk && !wantSlot && !['head'].includes(slot)) {
             this.say("You can't wear that there.");
             return null;
           }
           // full set anchors on torso
-          if (S.equipment.isFullSet(def.id, def) && canonSlot !== 'torso' && slot !== 'armor') {
+          if (S.equipment.isFullSet(def.id) && slot !== 'torso' && slot !== 'armor') {
             this.say('That covers everything — wear it as your armor.');
-            return null;
-          }
-          // FULL-BODY BLOCKING (Steve 2026-10-07): can't equip head/legs/shoes
-          // while a full-body set is on the torso. The UI greys these out.
-          const equipped = this.state.scholar.equipped || {};
-          if (S.equipment.isSlotBlocked(canonSlot, equipped)) {
-            const blocker = equipped.torso && equipped.torso.name;
-            this.say(`Your ${blocker} already covers your ${canonSlot} — take it off first.`);
             return null;
           }
         }
@@ -7717,8 +7522,7 @@
 
     isWeapon(item) {
       const def = this.data.items.find(i => i.id === (item.itemId || item.id));
-      // SENTIMENTAL GEAR (Steve 2026-10-07): sentimental weapons are weapons too.
-      return def && def.weapon && (def.class === 'weapon' || def.class === 'sentimental');
+      return def && def.class === 'weapon' && def.weapon;
     },
     isArmor(item) {
       const def = this.data.items.find(i => i.id === (item.itemId || item.id));
@@ -9332,7 +9136,7 @@
     // Every user-facing reference to a person goes through displayName() —
     // raw IDs (gen_a1b2c3) must NEVER reach the UI.
     nameKnown(vid) {
-      return this.canShow('npc', vid, 'name');
+      return !!((this.state.village.knownNames || {})[vid]);
     },
     revealName(vid, how) {
       const village = this.state.village;
@@ -9434,6 +9238,38 @@
     displayName(vid) {
       if (this.state.systemArrived || this.nameKnown(vid)) return this.npcName(vid);
       return this.personDescriptor(vid);
+    },
+    // _assessPools: single source of truth for villager personality voice.
+    // (Steve 2026-10-07): was duplicated in two places — now one function.
+    // Takes first (name) and returns {pool, close} template arrays.
+    _assessPools(first) {
+      const pool = {
+        steady: [`${first} doesn't rattle easily.`, `${first} keeps an even keel when things go sideways.`, `Whatever happens, ${first} is still standing in the same place.`],
+        bold: [`${first} says the thing nobody else will say.`, `${first} walks into a room like it was waiting.`, `Where ${first} stands is never a mystery.`],
+        cautious: [`${first} watches before wading in.`, `${first} trusts slowly and checks twice.`, `New faces get a nod from ${first}, not a life story.`],
+        warm: [`${first} remembers names and uses them.`, `Strangers relax around ${first} faster than they expect to.`, `${first} makes room — at the fire, in the conversation, everywhere.`],
+        prickly: [`${first} has edges and doesn't sand them down.`, `Small talk withers around ${first}; real talk survives.`, `${first} doesn't perform friendliness, which some people trust more.`],
+        restless: [`${first} is already thinking about the next thing.`, `Sitting still looks painful for ${first}.`, `${first} fidgets with tools, plans, anything in reach.`],
+        dry: [`${first}'s humor is bone-dry and easy to miss.`, `${first} says less than everyone and means more of it.`, `The driest comment in the room usually comes from ${first}.`],
+        gentle: [`${first} handles people the way ${first} handles fragile things.`, `There's nothing sharp in how ${first} talks to strangers.`, `${first} apologizes to furniture when bumping into it.`],
+        intense: [`${first} listens like the answer matters.`, `When ${first} focuses on someone, they feel it.`, `${first} doesn't do anything halfway, including conversation.`],
+        withdrawn: [`${first} keeps to the edges and watches.`, `Drawing ${first} out takes patience; it's usually worth it.`, `${first} is present but elsewhere, if that makes sense.`],
+        anxious: [`${first} worries the way other people breathe.`, `Everything is a worst case to ${first} until proven otherwise.`, `${first} checks the perimeter twice and still doesn't sleep well.`],
+      };
+      const close = {
+        steady: [`The others lean on that.`, `People notice, and stand a little closer.`, `It's the kind of steadiness people build plans around.`, `In a crisis, people look for ` + first + `.`, `Calm is contagious, apparently.`],
+        bold: [`The others find it bracing — or exhausting.`, `Nobody's neutral about ${first} for long.`, `It clears rooms and fills them, depending on the day.`, `Takes some getting used to, but nobody calls it dull.`, `Subtle was never the goal.`],
+        cautious: [`The others find it reassuring.`, `Nobody mistakes it for coldness twice.`, `Trust earned from ${first} actually means something.`, `Slow to warm, solid once warm.`, `Caution has kept ` + first + ` alive this long.`],
+        warm: [`The others gravitate toward it.`, `It's why strangers become neighbors fast around ${first}.`, `Nobody stays a stranger long.`, `The fire always has room when ${first} is tending it.`, `Warmth like that is rare out here.`],
+        prickly: [`The others learn to navigate it.`, `It's honest, which counts for more than charm out here.`, `Fewer friends, better ones.`, `The bark is worse than the bite. Usually.`, `An acquired taste, like strong coffee.`],
+        restless: [`The others find it contagious — or tiring.`, `Things get done around ${first}, one way or another.`, `Standing still was never an option anyway.`, `Exhausting to watch, useful to have.`, `The energy has to go somewhere.`],
+        dry: [`The others catch on eventually.`, `It's an acquired taste, like most good things.`, `The laugh always comes a beat late.`, `Worth listening closely for.`, `Dry humor, wetter than it looks.`],
+        gentle: [`The others are careful back.`, `It's disarming in a way that matters.`, `Nobody raises their voice around ${first} if they can help it.`, `A soft voice in a hard place.`, `Gentleness is a choice ` + first + ` keeps making.`],
+        intense: [`The others feel seen — or scrutinized.`, `It's a lot, but it's real.`, `Nobody doubts ${first} is paying attention.`, `Not everyone wants that much attention.`, `Intensity cuts both ways.`],
+        withdrawn: [`The others give ${first} space.`, `What's unsaid carries weight with ${first}.`, `The quiet ones notice everything.`, `Still waters, as they say.`, `The quiet is a decision, not an absence.`],
+        anxious: [`The others find it exhausting — or endearing.`, `Worry is ${first}'s love language.`, `Nobody doubts ${first} cares.`, `The fretting never stops, but neither does ${first}.`, `Anxiety keeps ${first} checking what others miss.`],
+      };
+      return { pool, close };
     },
     // journalNote: the general journal. Personal notes the player keeps —
     // pre-System it's handwriting, post-System it's Codex. Deduped by cat+key
@@ -10744,7 +10580,8 @@
 
     // skillKnown: do you know this skill at this level?
     skillKnown(skillId, minLevel) {
-      return this.canShow('skill', skillId, 'mechanics', { minLevel: minLevel || 1 });
+      const e = (this.state.codex.skills || {})[skillId];
+      return !!(e && (e.level || 0) >= (minLevel || 1));
     },
 
     // learnSkill: gain knowledge. One path, every source. Like identifyPlant for skills.
@@ -11766,7 +11603,6 @@
     // Works on ANY node you're on — positions are per-node (ensureVillagerPositions).
     villagerTurn() {
       const v = this.state.village;
-      this.ensureVillagerPositions(); // FIRST-IMPRESSION FIX (Steve 2026-10-07): villagers appear/act from game start, not just after first step.
       if (!v.positions) return;
       if (this._npcActing) return; // re-entrancy guard
       this._npcActing = true;
@@ -12428,7 +12264,8 @@
     // "Is that a deer or a Highbeam Deer? You don't want to get close enough
     // to find out." The descriptor system covers beasts too.
     monsterKnown(mid) {
-      return this.canShow('monster', mid, 'name');
+      const st = (this.state.codex.monsters || {})[mid];
+      return st && (st.stage === 'observed' || st.stage === 'slain');
     },
     monsterDesc(mid) {
       return this.monsterDisplayName(mid);
@@ -13884,42 +13721,18 @@
     },
 
     // accrueRelicBond: daily. Called during day resolution.
-    // SENTIMENTAL BOND (Steve 2026-10-07): bond grows ONLY while EQUIPPED.
-    // Sitting in inventory does nothing — out of sight, out of mind.
-    // +1/day survived while equipped (hardship). Meaningful moments (kills,
-    // beam survival) add more via bumpBond(). Unequipped bonded items decay
-    // slowly (-1 per 3 days, never below 0).
     accrueRelicBond() {
       const s = this.state.scholar;
       const used = s.relicUse || {};
-      const equipped = s.equipped || {};
-      const equippedIds = new Set();
-      for (const slot of Object.values(equipped)) {
-        if (slot && slot.itemId) equippedIds.add(slot.itemId);
-        else if (slot && slot.id) equippedIds.add(slot.id);
-      }
       for (const r of this.relicItems()) {
         const id = r.itemId || r.id;
         const def = this.data.items.find(i => i.id === id);
         const cls = def && def.class;
-        const isEquipped = equippedIds.has(id);
-        if (cls === 'sentimental') {
-          if (isEquipped) {
-            // Hardship: another day survived together.
-            r.bond = (r.bond || 0) + 1;
-            r.lastBondDay = s.day;
-          } else if ((r.bond || 0) > 0) {
-            // Decay: out of sight, out of mind. -1 per 3 days unequipped.
-            const lastDecay = r.lastDecayDay || s.day;
-            if ((s.day - lastDecay) >= 3) {
-              r.bond = Math.max(0, (r.bond || 0) - 1);
-              r.lastDecayDay = s.day;
-            }
-            continue; // no thresholds while decaying
-          } else continue;
-        } else if (used[id]) {
-          r.bond = (r.bond || 0) + 1; // meaningful use (1/day cap is inherent)
-        } else continue;
+        let gain = 0;
+        if (cls === 'sentimental') gain = 1; // kept close, every day
+        else if (used[id]) gain = 1; // meaningful use (1/day cap is inherent)
+        if (!gain) continue;
+        r.bond = (r.bond || 0) + gain;
         // KEEPSAKE REVEAL (Steve 2026-10-06): checked daily for every relic —
         // the gates are bond ≥ 10 and System arrival (integration stage 1+).
         if (cls === 'sentimental') this.checkKeepsakeReveal(r);
@@ -13931,38 +13744,8 @@
             break;
           }
         }
-        // HEIRLOOM (Steve 2026-10-07): bond 50 — the item is part of you now.
-        // +2 to its primary stat, and it can never be lost, stolen, or destroyed.
-        if (cls === 'sentimental' && r.bond >= 50 && !r.heirloom) {
-          r.heirloom = true;
-          try { this.say(`Your ${r.name || id} isn't just gear anymore. It's part of you. Nothing will take it from you.`); } catch (e) {}
-        }
       }
       s.relicUse = {};
-    },
-
-    // bumpBond: meaningful-moment bond growth for EQUIPPED sentimental gear.
-    // Called from kill sites, beam survival, crisis moments. Only fires if equipped.
-    bumpBond(itemId, amount, reason) {
-      if (!itemId || !amount) return;
-      try {
-        const s = this.state.scholar;
-        const equipped = s.equipped || {};
-        let target = null;
-        for (const slot of Object.values(equipped)) {
-          if (slot && (slot.itemId === itemId || slot.id === itemId)) { target = slot; break; }
-        }
-        if (!target) return; // must be equipped — no bond from the pack
-        target.bond = (target.bond || 0) + amount;
-        if (reason) {
-          try { this.say(`${target.name || itemId}: ${reason} (bond ${target.bond})`); } catch (e) {}
-        }
-        // Threshold check for heirloom
-        if (target.bond >= 50 && !target.heirloom) {
-          target.heirloom = true;
-          try { this.say(`Your ${target.name || itemId} isn't just gear anymore. It's part of you.`); } catch (e) {}
-        }
-      } catch (e) {}
     },
 
     // offerRelicEnhancement: the System noticed. Pick 1 of 3 from the class pool.
@@ -15306,7 +15089,7 @@
         } // end else (plant track) — meat took the animal branch above
       }
       // COMBAT: eating from pack costs an action (Steve 2026-10-05)
-      if (this.playerMonster() || this.inCombat()) { // FIX: use inCombat() method, not dead state field (Steve 2026-10-07)
+      if (this.playerMonster() || this.state.inCombat) {
         this.spendCombatAction('eat');
       } else {
         this.tickAction(1);
@@ -16413,7 +16196,7 @@
       const stability = starving > 0 ? 0.5 : 1;
       score += Math.round(popScore * stability * 25);
       // Integration: 25 pts (system level)
-      const sysLevel = Math.min(3, Math.floor(((this.state.scholar || {}).integration || 0) / 27)); // 0-3, derived from neural depth (Steve 2026-10-07)
+      const sysLevel = this.state.systemIntegration || 0; // 0-3
       score += Math.round((sysLevel / 3) * 25);
       return { score, max, ready: score >= 80 };
     },
@@ -16437,7 +16220,7 @@
         if (v > 5) rating += (v - 5) * 2;
       }
       // Party: each villager = 10
-      const party = ((this.state.village || {}).party || []).length; // FIX: party lives on village, not state (Steve 2026-10-07)
+      const party = (this.state.party || []).length;
       rating += party * 10;
       // Performance: win streak bonus (up to +20)
       const wins = (this.state.combatWins || 0);
@@ -17030,7 +16813,8 @@
     },
 
     tbPatternKnown(monsterId, attackName) {
-      return this.canShow('monster', monsterId, 'mechanics', { pattern: attackName });
+      const c = (this.state.codex.monsters || {})[monsterId];
+      return !!(c && c.patterns && c.patterns[attackName]);
     },
 
     // Called when an attack resolves and you live to think about it.
@@ -18173,10 +17957,7 @@
           if (t.usStealArmed === wname) {
             t.usStealArmed = null;
             d = Math.max(1, Math.ceil(d / 2));
-            const usKnown1c = this.tbPatternKnown(t.mdef.id, (t.mdef.attack || {}).name);
-            this.say(usKnown1c
-              ? `It knew that one was coming — it was already gone. Your ${wname} glances off its guard. (OPENING STEAL: anticipated — half damage. Switch weapons.)`
-              : `It knew that one was coming — it was already gone. Your ${wname} glances off its guard. (It read you — try something else.)`);
+            this.say(`It knew that one was coming — it was already gone. Your ${wname} glances off its guard. (OPENING STEAL: anticipated — half damage. Switch weapons.)`);
             const srec = (t.usSeen && t.usSeen[wname]) || { dmg: d };
             const cpy = S.combat.roll([Math.max(1, Math.round(srec.dmg * 0.8)), Math.max(2, Math.round(srec.dmg * 0.8 * 1.2))]);
             this.say(`It answers with YOUR ${wname}.`);
@@ -19095,17 +18876,6 @@
             this.say(`Your ${got} is still clutched in its clever hands. You take it back.`);
           }
           try { this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
-          // SENTIMENTAL BOND (Steve 2026-10-07): killing with an equipped
-          // sentimental weapon deepens the bond — a meaningful moment.
-          try {
-            const mw = (this.state.scholar.equipped || {}).melee || (this.state.scholar.equipped || {}).weapon;
-            if (mw && mw.itemId) {
-              const mdef = (this.data.items || []).find(i => i.id === mw.itemId);
-              if (mdef && mdef.class === 'sentimental') {
-                this.bumpBond(mw.itemId, 2, 'it drew blood for you');
-              }
-            }
-          } catch (e) {}
           const tdCfg = ((t.mdef || {}).encounter) || {};
           if (tdCfg.deathAudio) this.audioEvent(tdCfg.deathAudio);
           else if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
@@ -20830,16 +20600,56 @@
       // how long — but the cue escalates and the heartbeat tells you).
       // HIGHBEAM: threat scan first — anyone too close joins the list, and
       // the deer takes its turn deliberately. Each phase reads clearly.
+      const isDeer = this.deerIs(m);
       const useFifo = this.encUsesFifo(m);
       if (useFifo) this.encScanThreats(m);
-      // BEHAVIOR TABLE (monsterBehaviors.json + src/js/monsterBehaviors.js, Steve 2026-10-07):
-      // data-driven pre-turn hooks. Migrated species (gallowdeer, speedbump_turtle,
-      // hummice, review_drone) run their verbatim-extracted logic from the registry.
-      // mbRunPreTurn returns true if a hook consumed the turn.
-      if (this.mbRunPreTurn(m)) return;
-      // DEAD BRANCHES below (hornIs/swarmIs reference deleted monster ids
-      // hype_horn/camera_swarm — these never fire; kept for visibility, flagged
-      // for removal once Steve confirms the rename intent).
+      // HIGHBEAM (Steve 2026-10-05): closing in is risky EVERY turn, not just
+      // while the beam fires. The antlers thrash anyone adjacent IN ADDITION
+      // to whatever the deer is doing — you take damage standing next to it
+      // AND the beam keeps coming. You get in, you hit, you get OUT.
+      if (isDeer && m.beamPhase !== 'firing') {
+        this.tbAntlerThrash(m);
+        if (this.tbEndCheck()) return;
+      }
+      // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
+      // you out. Nearly invulnerable; the answer is patience, not force.
+      if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {
+        m.turtleBunker -= 1;
+        if (m.turtleBunker <= 0) {
+          m.bunkerNoted = false;
+          if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+          this.say('The shell unseals with a soft pop. The bad attitude is back.');
+        } else {
+          this.say('The boulder sits. Sealed. Waiting you out.');
+        }
+        this.tbRefreshTelegraphUI();
+        if (this.tbEndCheck()) return;
+        return;
+      }
+      // HUMMICE: the swarm checks itself every turn — deaths drop voices,
+      // distance thins the hum.
+      if (this.humiceIs(m)) this.tbHumSwarmCheck(m);
+      // CROWD OVERLOAD (drone): it can't grade a crowd. More live targets
+      // than crowdLimit on the queue and the evaluation stalls out.
+      // Bring friends. (The deer is unaffected.)
+      if (useFifo && this.droneIs(m)) {
+        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
+        const live = this.encThreatQueue(m).filter(k => {
+          const t = this.tbFighter(k); return t && t.alive && !t.fled;
+        });
+        // ADAPTATION: after 1 recalc the drone narrows scope and grades
+        // anyway (see the drone's bespoke block). Crowds buy time, not immunity.
+        if (live.length > limit && (m.drRecalcs || 0) < 1) {
+          m.drRecalcs = (m.drRecalcs || 0) + 1;
+          m.telegraph = null;
+          this.encSetPhase(m, 'recalc');
+          this.say('📊 "TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." The drone backs off, overwhelmed by the crowd.');
+          this.audioEvent('droneRecalc');
+          this.tbRefreshTelegraphUI();
+          if (this.tbEndCheck()) return;
+          return;
+        }
+      }
       // CROWD DEFLATE (horn): it can't encourage a crowd — it only does
       // one-on-one. The windup fizzles and it loses its nerve for two turns.
       if (useFifo && this.hornIs(m)) {
@@ -20932,7 +20742,7 @@
             const pcfg = this.encConfig(m) || {};
             if (this.deerIs(m) || (pcfg.phaseMap && pcfg.phaseMap.windup)) this.encSetPhase(m, this.encPhaseFor(m, 'windup'));
           }
-          if (this.deerIs(m)) {
+          if (isDeer) {
             if (!tg.chargeNarrated) {
               tg.chargeNarrated = true;
               this.say('The light behind its eyes swells to a painful glare. The whine climbs past hearing. It is done aiming — now it is only waiting to loose.');
@@ -21140,10 +20950,7 @@
               // UNDERSTUDY DESPERATE IMPROV (Steve 2026-10-06): the chain
               // reads as two of YOUR moves, not one generic hit.
               if (this.usIs(m) && tg.usImprov && tg.usImprovNames) {
-                const usKnown1e = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
-                this.say(usKnown1e
-                  ? `💥 ${this.encShortLabel(m) || m.name}'s DESPERATE IMPROV — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`
-                  : `💥 ${this.encShortLabel(m) || m.name}'s attack — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`);
+                this.say(`💥 ${this.encShortLabel(m) || m.name}'s DESPERATE IMPROV — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`);
                 this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s Desperate Improv", m.key);
               } else {
                 this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
@@ -21316,19 +21123,13 @@
             for (const o of hitFighters) {
               if (o.kind === 'player' && o.alive) {
                 o.stunned = Math.max(o.stunned || 0, 1);
-                const pzKnownHit = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
-                this.say(pzKnownHit
-                  ? `FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`
-                  : `FLASH. The world goes white — you're frozen mid-step.`);
+                this.say(`FLASH. The world goes white — you're frozen mid-step. (Prediction ${m.pzPrediction}/4 — it learns your dodge.)`);
               }
             }
             // LOS FIZZLE (Steve 2026-10-06): the fizzle line already said it —
             // don't also print the generic "it missed" line.
             if (!pzLosFizzle && !hitFighters.some(o => o.kind === 'player')) {
-              const pzKnownMiss = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
-              this.say(pzKnownMiss
-                ? `Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/4 anyway — it learns from the miss too.)`
-                : `Click. It missed — but the shutter keeps clicking.`);
+              this.say(`Click. It missed — but the shutter keeps clicking. (Prediction ${m.pzPrediction}/4 anyway — it learns from the miss too.)`);
             }
           }
           // BELLTOAD: the croak hits like a wall. 15% chance to stun (full turn
@@ -21617,7 +21418,7 @@
         if (useFifo) this.encSetPhase(m, 'cooldown');
         const bd = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         if (bd <= 1) {
-          if (this.tbRechargePaw(m) && this.deerIs(m)) this.audioEvent('deerSnort');
+          if (this.tbRechargePaw(m) && isDeer) this.audioEvent('deerSnort');
         } else if (m.beamCooldown <= 0) {
           if (useFifo) this.encSetPhase(m, 'stalk');
           this.say(`${this.encSubject(m)} shakes its head — the light behind its eyes rekindles.`);
@@ -22211,7 +22012,7 @@
         if ((m.beamPhase === 'brighten' || m.beamPhase === 'bloom') && !m.telegraph && m.biDeclared) {
           m.biDeclared = false;
           m.biCycles = (m.biCycles || 0) + 1;
-          this.encSetPhase(m, 'ember'); m.biEmber = Math.max(1, 3 - m.biCycles); // LOOT-AUDIT FIX (Steve 2026-10-07): ember window never 0 — the third cycle must give 1 punish turn or the fight is unwinnable.
+          this.encSetPhase(m, 'ember'); m.biEmber = Math.max(0, 3 - m.biCycles);
           this.say('The light gutters down to a dying ember. It\'s spent — dim, flickering, harmless.'
             + (m.biCycles >= 2 ? ' But it guttered faster this time. It\'s learning how to come back.' : ' For now.'));
           this.audioEvent('eurekaSpent');
@@ -22981,23 +22782,10 @@
           this.encSetPhase(m, 'dial'); m.wcRedial = 0;
         }
         // BAD CONNECTION: hurting it mid-call hangs it up. Track hp across
-        // turns — meaningful damage since its last turn is a bad connection.
-        // LOOT-AUDIT FIX (Steve 2026-10-07): chip damage (<5 HP or <10% max) from
-        // villagers no longer perma-locks it in redial. After 3 consecutive
-        // bad-connections it gets impatient and rushes instead of redialing.
-        const wcPrevHp = (m.wcLastHp === undefined ? m.hp : m.wcLastHp);
-        const wcDmg = wcPrevHp - m.hp;
-        const wcMaxHp = (m.mdef && m.mdef.hp && m.mdef.hp[1]) || 100;
-        const wcTookHit = wcDmg >= Math.max(5, wcMaxHp * 0.1);
+        // turns — any damage since its last turn is a bad connection.
+        const wcTookHit = m.hp < (m.wcLastHp === undefined ? m.hp : m.wcLastHp);
         m.wcLastHp = m.hp;
-        m.wcConsecutiveRedials = (wcTookHit && m.beamPhase !== 'redial') ? ((m.wcConsecutiveRedials || 0) + 1) : 0;
-        if (m.wcConsecutiveRedials >= 3) {
-          // Impatient: stops redialing, rushes the player directly.
-          m.wcConsecutiveRedials = 0;
-          this.encSetPhase(m, 'rush');
-          this.say('"—FORGET THE HOLD MUSIC—" It stops dialing. It is coming to you directly.');
-          this.audioEvent('lineCut', { dropped: true });
-        } else if (wcTookHit && m.beamPhase !== 'redial') {
+        if (wcTookHit && m.beamPhase !== 'redial') {
           this.encSetPhase(m, 'redial'); m.wcRedial = this.wcRedialFor(m); m.wcDialKey = null;
           this.say('"—BAD CONNECTION—" The voice fragments, furious. It hangs up. It is already redialing.');
           this.audioEvent('lineCut', { dropped: true });
@@ -23197,10 +22985,7 @@
         // has happened or the observations are undeniable.
         if (learned && hpFrac < 0.3 && m.beamPhase !== 'improv' && (m.usPerformed || totalSeen >= 4)) {
           this.encSetPhase(m, 'improv');
-          const usKnown1d = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
-          this.say(usKnown1d
-            ? '"No no no—" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (DESPERATE IMPROV: it chains everything it learned — two of your moves, badly, frantically.)'
-            : '"No no no—" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (It is falling apart — and lashing out.)');
+          this.say('"No no no—" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (DESPERATE IMPROV: it chains everything it learned — two of your moves, badly, frantically.)');
           try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
         }
         // OPENING STEAL (Steve 2026-10-06): the moment it starts performing,
@@ -23213,23 +22998,14 @@
           this.encSetPhase(m, 'performing');
           m.usPerformed = true;
           m.usStealArmed = best ? best.name : null;
-          const usKnown1b = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
           this.say('It stands the way you stand. Moves the way you move. "I\'ve got it now."'
-            + (usKnown1b
-              ? (m.usStealArmed
-                ? ` Your ${m.usStealArmed} — it has seen that one ${best.count} times. It knows where it lands. (OPENING STEAL: your next ${m.usStealArmed} strike is anticipated — switch weapons.)`
-                : ' (It copies at 80% — kill it or be unpredictable.)')
-              : ' (It has you now. Be unpredictable.)'));
+            + (m.usStealArmed
+              ? ` Your ${m.usStealArmed} — it has seen that one ${best.count} times. It knows where it lands. (OPENING STEAL: your next ${m.usStealArmed} strike is anticipated — switch weapons.)`
+              : ' (It copies at 80% — kill it or be unpredictable.)'));
           try { this.audioEvent('understudyPerform', {}); } catch (e) {}
-          // TEACH-MOMENT (Steve 2026-10-07): the performing transition reveals
-          // the pattern — like the heckler headliner, surviving the beat teaches it.
-          try { this.tbLearnPattern(m); } catch (e) {}
         } else if (totalSeen >= 2 && m.beamPhase === 'watching') {
           this.encSetPhase(m, 'rehearsing');
-          const usKnown1a = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
-          this.say(usKnown1a
-            ? 'It is doing the thing you do before you do it. Badly. But recognizably. (It copies at 50% — it learns fast.)'
-            : 'It is doing the thing you do before you do it. Badly. But recognizably. (It is studying you — end this fast.)');
+          this.say('It is doing the thing you do before you do it. Badly. But recognizably. (It copies at 50% — it learns fast.)');
           try { this.audioEvent('understudyRehearse', {}); } catch (e) {}
         }
         if (m.beamPhase === 'watching') {
@@ -23405,10 +23181,7 @@
           }
           if (m.llAddenda >= 2 && m.beamPhase !== 'foreclosing') {
             this.encSetPhase(m, 'foreclosing');
-            const llKnown = this.tbPatternKnown(m.mdef.id, (m.mdef.attack || {}).name);
-            this.say(llKnown
-              ? '"FORECLOSURE PROCEEDINGS INITIATED." The signs multiply. The rent climbs. (Its healing climbs too — end this.)'
-              : '"FORECLOSURE PROCEEDINGS INITIATED." The signs multiply. The rent climbs. (End this. Now.)');
+            this.say('"FORECLOSURE PROCEEDINGS INITIATED." The signs multiply. The rent climbs. (Its healing climbs too — end this.)');
           } else {
             if (m.beamPhase === 'claiming') this.encSetPhase(m, 'collecting');
             this.say(`"ADDENDUM #${m.llAddenda}: this agreement now covers a WIDER AREA." The leased ground spreads. The safe ground shrinks.`);
@@ -23577,9 +23350,7 @@
         const known = this.encTelegraphKnown(m);
         if (m.pzPrediction >= 4 && m.beamPhase !== 'exclusive') {
           this.encSetPhase(m, 'exclusive');
-          this.say(known
-            ? '"GOT IT. The money shot." It knows exactly where you\'ll go. (PREDICTION 4: the flash is now UNBLOCKABLE — break line of sight.)'
-            : '"GOT IT. The money shot." It knows exactly where you\'ll go. (There is nowhere to dodge. Break line of sight.)');
+          this.say('"GOT IT. The money shot." It knows exactly where you\'ll go. (PREDICTION 4: the flash is now UNBLOCKABLE — break line of sight.)');
           try { this.audioEvent('paparazzoExclusive', {}); } catch (e) {}
         } else if (m.pzPrediction >= 2 && m.beamPhase === 'candid') {
           this.encSetPhase(m, 'tracking');
@@ -23621,9 +23392,7 @@
           // saw the warning before the EXCLUSIVE).
           if (pzStill && !m.pzStillSaid && (m.pzPrediction || 0) < 4) {
             m.pzStillSaid = true;
-            this.say(known
-              ? '"Hold still. Yes. Just like that." Standing still makes it learn you FASTER. (Prediction climbing double.)'
-              : '"Hold still. Yes. Just like that." Do not stand still.');
+            this.say('"Hold still. Yes. Just like that." Standing still makes it learn you FASTER. (Prediction climbing double.)');
           }
           m.pzPrediction = Math.min(4, (m.pzPrediction || 0) + (pzStill ? 2 : 1));
           m.pzLastPx = t.mx; m.pzLastPy = t.my;
@@ -23698,9 +23467,7 @@
           this.encSetPhase(m, 'walkout');
           m.urWalkout = true;
           for (const a of allies) a.urDmgBonus = (a.urDmgBonus || 0) + 5;
-          this.say(known
-            ? '"WALKOUT! WALKOUT!" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (Allies +8 damage. The rep is UNTARGETABLE while coordinating.)'
-            : '"WALKOUT! WALKOUT!" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (You cannot reach it while it coordinates. Kill the allies first.)');
+          this.say('"WALKOUT! WALKOUT!" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (Allies +8 damage. The rep is UNTARGETABLE while coordinating.)');
           try { this.audioEvent('unionWalkout', {}); } catch (e) {}
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
@@ -23733,8 +23500,7 @@
           this.encSetPhase(m, 'picketing');
           const w1 = (this.data.monsters || []).filter(x => (x.wave || 1) === 1 && x.id !== 'bulldozer' && x.id !== 'gallowdeer');
           const pick = w1[Math.floor(Math.random() * w1.length)];
-          const pickLabel = this.canShow('monster', pick.id, 'name') ? pick.name : (pick.unknown || 'something');
-          this.say(`"PICKET LINE!" A ${pickLabel} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
+          this.say(`"PICKET LINE!" A ${pick.name} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
           try { this.audioEvent('unionPicket', {}); } catch (e) {}
           // Spawn adjacent to rep
           const spot = { x: Math.min(8, m.mx + 1), y: m.my };
@@ -24105,7 +23871,7 @@
           // alias played the same synth a third time per declare.
         }
         this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: each monster's own sound (Steve heard only beam; toad was playing deer bellow)
-        if (this.deerIs(m)) {
+        if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
       }
@@ -24191,50 +23957,31 @@
       return false;
     },
 
-    // LOOT TIERS vs MONSTER TIERS (Steve 2026-10-07): SEPARATE CONCEPTS.
-    // Never derive one from the other.
-    //
-    // LOOT TIERS — ITEM POWER. What the item does. From items.json
-    // `lootTier`, independent of any monster:
-    //   1 Curios — minor utility. 2 Tools — solid upgrades.
-    //   3 Relics — build-defining. 4 Apex — game-changing.
-    // A tier 4 item is tier 4 because of what it DOES, never because of
-    // which monster dropped it. Tier 4 is earned through the hardest
-    // challenges at very low rates — on loot's own terms (rarity,
-    // difficulty, progression gates), not by counting monster waves.
-    //
-    // MONSTER TIERS — MONSTER DIFFICULTY. How hard the fight is. From
-    // monsters.json `wave`, independent of loot:
-    //   Wave 1 — early monsters (Highbeam Deer, 160 HP, is the benchmark).
-    //   Wave 2 — genuine step up, not reskins.
-    //   Veterans — scarred/elder/pack-leader: tougher individuals.
-    //
-    // DROP TABLE — the explicit mapping between them. References both
-    // concepts, merges neither. Per-monster loot is DATA:
-    //   mdef.loot = {chance, tier}
-    //   - chance: LOW by design — "gift from a confused god, not a paycheck."
-    //   - tier: max LOOT tier this monster can drop (item power, not wave).
-    // Current table (data, not derived): wave-1 monsters drop tier 1-2,
-    // wave-2 monsters drop tier 2-3, the toughest monsters (gallowdeer,
-    // moderator) can drop tier 4. Veterans: see progression gate below.
-    //
-    // rollAlienLoot: shared roll for monster kills AND show/contest rewards
-    // (Steve 2026-10-05). Returns an item id or null.
+    // rollAlienLoot: shared loot table for monster kills AND future show/
+    // contest rewards (Steve 2026-10-05). mdef.loot = {chance, tier}.
+    // Returns an item id or null. Chances are LOW by design — alien loot
+    // should feel like a gift from a confused god, not a paycheck.
+    // LOOT TIERS (Steve 2026-10-06): difficulty gates reward.
+    // - Base wave-1 monsters: tier 1-2 max (data).
+    // - Wave-1 apex (gallowdeer, mdef.apex): tier 4 — one apex per wave.
+    // - Wave-1 VETERAN variants (fighter.veteranVariant: scarred/elder/
+    //   pack-leader): tier up to 3, ONLY after wave 2 unlocks
+    //   (unlockedWave() >= 2). Before that they drop wave-1 loot.
+    // - Wave-2 base: tier 2-3 (data).
+    // - Wave-2 apex (moderator, mdef.apex): tier 4.
     rollAlienLoot(mdef, fighter) {
       const loot = (mdef || {}).loot;
       if (!loot || !(loot.chance > 0)) return null;
       if (Math.random() >= loot.chance) return null;
-      // The monster's drop-table entry states its max loot tier directly.
-      // We do NOT derive loot tier from monster wave — the data says what
-      // this monster drops, full stop.
+      const wave = mdef.wave || 1;
       let maxTier = loot.tier || 1;
       const isVeteran = fighter && (fighter.veteranVariant || fighter.veteran);
-      if (isVeteran && this.unlockedWave() >= 2) {
-        // PROGRESSION GATE (loot logic, not wave=tier): veterans are tougher
-        // monsters; once the player has progressed past wave-1 (wave 2
-        // unlocked), their hoards run one loot tier deeper. Cap at Relics —
-        // Apex loot is earned from the toughest challenges, never bumped into.
-        maxTier = Math.min(maxTier + 1, 3);
+      if (wave <= 1 && !mdef.apex) {
+        maxTier = Math.min(maxTier, 2);
+        if (isVeteran && this.unlockedWave() >= 2) {
+          // Veterans are a tier harder: bump one, cap at 3.
+          maxTier = Math.min((loot.tier || 1) + 1, 3);
+        }
       }
       // Find the highest available tier <= maxTier (fallback if tier missing)
       let tier = Math.max(1, maxTier);
@@ -24671,110 +24418,10 @@
       }));
     },
 
-    // KNOWLEDGE GATE (Steve 2026-10-07): THE unified gate. Every "do I know
-    // this?" check routes through here. Domains: plant, animal, monster, npc,
-    // skill, alien, item. Aspects: name, stats, kcal, edibility, mechanics, lore.
-    // "If you don't know, it doesn't show."
-    //
-    // Aspect semantics per domain:
-    //   plant: name=L1, kcal/edibility=L2, stats=L3, lore/mechanics=L4
-    //   animal: name=region-known or 3+ encounters (all aspects gate on name for now)
-    //   monster: name=observed/slain, stats=slain, mechanics=patterns known, lore=village-named
-    //   npc: name=knownNames, mechanics=goalsKnown (or System arrived)
-    //   skill: mechanics=name=level>=minLevel (opts.minLevel, default 1)
-    //   alien: name=revealed
-    //   item: composite — delegates to plant/monster gates via pantryItemKnown logic
-    canShow(domain, id, aspect, opts) {
-      aspect = aspect || 'name';
-      const s = this.state;
-      try {
-        switch (domain) {
-          case 'plant': {
-            const e = (s.codex.plants || {})[id];
-            const lvl = e ? (e.level || 0) : 0;
-            switch (aspect) {
-              case 'name': return lvl >= 1;
-              case 'kcal':
-              case 'edibility': return lvl >= 2;
-              case 'stats': return lvl >= 3;
-              case 'lore':
-              case 'mechanics': return lvl >= 4;
-              default: return lvl >= 1;
-            }
-          }
-          case 'animal': {
-            // Region-aware: "common" means common for YOUR region. Mirrors the
-            // encAnimalKnown rule: region overlap, or 3+ encounters.
-            try {
-              const adef = (this.data.animals || []).find(a => a.id === id);
-              if (adef && adef.common) {
-                const tags = ((s.scholar || {}).originTags || []).map(t => String(t).toLowerCase());
-                const aregions = (adef.regions || ['north_america']).map(r => String(r).toLowerCase());
-                const overlap = tags.some(t => aregions.includes(t));
-                const isNorthAmerican = tags.includes('north_america') || tags.some(t =>
-                  ['united states', 'usa', 'america', 'canada'].includes(t));
-                if (overlap || (isNorthAmerican && aregions.includes('north_america'))) return true;
-              }
-            } catch (e) {}
-            return (((s.codex || {}).animalEncounters || {})[id] || 0) >= 3;
-          }
-          case 'monster': {
-            const e = (s.codex.monsters || {})[id] || {};
-            const pat = opts && opts.pattern;
-            switch (aspect) {
-              case 'name': return !!(e.stage === 'observed' || e.stage === 'slain');
-              case 'stats': return e.stage === 'slain';
-              case 'mechanics':
-                if (pat) return !!(e.patterns && e.patterns[pat]);
-                return !!(e.patterns && Object.keys(e.patterns).length);
-              case 'lore': return !!(e.villageName);
-              default: return !!(e.stage === 'observed' || e.stage === 'slain');
-            }
-          }
-          case 'npc': {
-            switch (aspect) {
-              case 'name': return !!(((s.village || {}).knownNames || {})[id]);
-              case 'mechanics': return !!(s.systemArrived || (((s.village || {}).goalsKnown || {})[id]));
-              default: return !!(((s.village || {}).knownNames || {})[id]);
-            }
-          }
-          case 'skill': {
-            const e = (s.codex.skills || {})[id];
-            const lvl = e ? (e.level || 0) : 0;
-            const min = (opts && opts.minLevel) || 1;
-            return lvl >= min;
-          }
-          case 'alien': {
-            const ap = (typeof this.apState === 'function') ? this.apState() : null;
-            return !!(ap && ap.known && ap.known[id]);
-          }
-          case 'item': {
-            // Composite gate for inventory/pantry items. Identity rides on
-            // plantId: foraged plants gate on plant kcal; monster meat gates
-            // on monster name; items with no identity are mundane (always shown).
-            const p = id; // id is the item object here
-            if (!p) return false;
-            const pid = p.plantId;
-            if (!pid) return true;
-            if (String(pid).indexOf('meat_') === 0) {
-              const mid = String(pid).slice(5);
-              const mdef = (this.data.monsters || []).find(m => m.id === mid);
-              if (!mdef) return true;
-              const e = (s.codex.monsters || {})[mid];
-              return !!((e && e.villageName) || s.systemArrived);
-            }
-            // Non-plant plantIds (tools, keepsakes stamped as plantId) show.
-            if (!(this.data.plants || []).some(x => x.id === pid)) return true;
-            return this.canShow('plant', pid, (opts && opts.itemAspect) || 'name');
-          }
-          default: return false;
-        }
-      } catch (e) { return false; }
-    },
-
     // KNOWLEDGE DISPLAY: names are earned, not given. Until L1, plants are descriptors.
     plantKnown(pid) {
-      return this.canShow('plant', pid, 'name');
+      const e = (this.state.codex.plants || {})[pid];
+      return !!(e && e.level >= 1);
     },
     // PANTRY KNOWLEDGE GATE (Steve 2026-10-06): the village stash must not
     // reveal counts of items you haven't discovered. Identity rides on plantId:
@@ -24785,7 +24432,17 @@
     // knowledge alone does NOT reveal: it stays hidden until they teach you,
     // which flows through identifyPlant into your codex.
     pantryItemKnown(p) {
-      return this.canShow('item', p, 'name');
+      if (!p) return false;
+      const pid = p.plantId;
+      if (!pid) return true;
+      if (String(pid).indexOf('meat_') === 0) {
+        const mid = String(pid).slice(5);
+        const mdef = (this.data.monsters || []).find(m => m.id === mid);
+        if (!mdef) return true;
+        const e = (this.state.codex.monsters || {})[mid];
+        return !!((e && e.villageName) || this.state.systemArrived);
+      }
+      return this.plantKnown(pid);
     },
     // MONSTER FOOD SAFETY (Steve 2026-10-05): if you don't know it's safe,
     // the UI doesn't show edibility or calories. Learned via cautious testing,
