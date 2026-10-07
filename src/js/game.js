@@ -2925,13 +2925,9 @@
 
     // LEARN RECIPE: like plants. Seen (L1), taught materials (L2), practiced (L3).
     learnRecipe(recipeId, level) {
-      this.state.codex.recipes = this.state.codex.recipes || {};
-      const cur = this.state.codex.recipes[recipeId] || { level: 0 };
-      if (level > cur.level) {
-        this.state.codex.recipes[recipeId] = { level };
-        const recipe = this.data.recipes.find(r => r.id === recipeId);
-        this.say(`Recipe: ${recipe.name}. ${recipe.knowledgeLevels[String(level)]}`);
-      }
+      // Delegates to the unified grant engine (Steve 2026-10-07).
+      // Preserves behavior; now records learnedFrom/learnedDay metadata.
+      return this.grantKnowledge('recipe', recipeId, level, { type: 'discovery' });
     },
 
     // SET TRAP: place a snare/deadfall. Check it later.
@@ -3113,25 +3109,18 @@
       if (!book) return null;
       this.say(`You open "${book.name}". ${book.flavor}`);
       const unlocks = book.unlocks || {};
-      // plants
+      // plants (via grantKnowledge engine — Steve 2026-10-07)
       for (const pid of (unlocks.plants || [])) {
         const level = unlocks.level || 1;
-        this.state.codex.plants[pid] = { identifiedDay: this.state.scholar.day, level, harvests: 0, tastings: 0 };
-        this.state.codex.encounters[pid] = 99;
-        this.refreshItemNames(pid);
-        const plant = this.data.plants.find(p => p.id === pid);
-        this.say(`\u2605 Learned: ${plant.name} (Level ${level}). ${plant.knowledgeLevels[String(level)]}`);
+        this.grantKnowledge('plant', pid, level, { type: 'read', by: book.name });
       }
-      // recipes
+      // recipes (via grantKnowledge engine — Steve 2026-10-07)
       for (const rid of (unlocks.recipes || [])) {
-        this.learnRecipe(rid, 3);
+        this.grantKnowledge('recipe', rid, 3, { type: 'read', by: book.name });
       }
-      // animals
+      // animals (via grantKnowledge engine — Steve 2026-10-07)
       for (const aid of (unlocks.animals || [])) {
-        this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
-        this.state.codex.animalEncounters[aid] = 99;
-        const animal = this.data.animals.find(a => a.id === aid);
-        this.say(`Learned: ${animal.name}.`);
+        this.grantKnowledge('animal', aid, 1, { type: 'read', by: book.name });
       }
       this.integrate(5, 'book');
       // KNOWLEDGE TAXONOMY: books can unlock skills too, not just plants.
@@ -4738,14 +4727,7 @@
       for (const [pid, entry] of Object.entries(shared)) {
         if ((this.state.codex.plants || {})[pid]) continue;
         const plant = (this.data.plants || []).find(p => p.id === pid);
-        this.state.codex.plants = this.state.codex.plants || {};
-        this.state.codex.plants[pid] = {
-          identifiedDay: this.state.scholar.day,
-          level: 1, harvests: 0, tastings: 0,
-          viaShare: 'village',
-          sharedHeadStart: true,
-        };
-        flowed++;
+        if (this.grantKnowledge('plant', pid, 1, { type: 'shared', by: 'village' })) flowed++;
         const dVill = (this.data.villagers || []).find(x => x.id === entry.discoveredBy)
           /* unified: getPerson */ || {};
         const discoverer = entry.discoveredBy ? (dVill.name || 'someone').split(' ')[0] : 'someone';
@@ -5215,45 +5197,31 @@
       const learnedCounts = { plants: 0, techniques: 0, recipes: 0, animals: 0 };
       const scholar = this.state.scholar;
       scholar.codex = scholar.codex || { plants: {}, techniques: {}, recipes: {}, animals: {} };
-      // plants: learn what they know deeper than you
+      // plants: learn what they know deeper than you (via grantKnowledge — Steve 2026-10-07)
       for (const [pid, entry] of Object.entries(v.codex.plants || {})) {
-        const mine = (scholar.codex.plants || {})[pid];
-        if (!mine || (mine.level || 0) < (entry.level || 0)) {
-          scholar.codex.plants = scholar.codex.plants || {};
-          scholar.codex.plants[pid] = { level: entry.level, learnedFrom: v.name };
+        if (this.grantKnowledge('plant', pid, entry.level || 1, { type: 'taught', by: v.name })) {
           const pdef = (this.data.plants || []).find(p => p.id === pid);
           learned.push(`🌿 ${(pdef || {}).name || pid} (L${entry.level})`);
           learnedCounts.plants++;
         }
       }
-      // techniques: learn their strategy's signature moves
+      // techniques: learn their strategy's signature moves (via grantKnowledge — Steve 2026-10-07)
       for (const [tid, entry] of Object.entries(v.codex.techniques || {})) {
-        const mine = (scholar.codex.techniques || {})[tid];
-        if (!mine) {
-          scholar.codex.techniques = scholar.codex.techniques || {};
-          scholar.codex.techniques[tid] = { level: entry.level, learnedFrom: v.name, strategy: entry.strategy };
+        if (this.grantKnowledge('technique', tid, entry.level || 1, { type: 'taught', by: v.name })) {
           learned.push(`🔧 ${tid.replace(/_/g, ' ')} (${entry.strategy})`);
           learnedCounts.techniques++;
-          // DRAMA (Steve 2026-10-07, Round D2): the scroll unrolls.
-          try { this.drama('techniqueLearned', this.map.px, this.map.py, tid); } catch (e) {}
         }
       }
-      // recipes: learn their food ways
+      // recipes: learn their food ways (via grantKnowledge — Steve 2026-10-07)
       for (const [rid, entry] of Object.entries(v.codex.recipes || {})) {
-        const mine = (scholar.codex.recipes || {})[rid];
-        if (!mine) {
-          scholar.codex.recipes = scholar.codex.recipes || {};
-          scholar.codex.recipes[rid] = { known: true, learnedFrom: v.name };
+        if (this.grantKnowledge('recipe', rid, 3, { type: 'taught', by: v.name })) {
           learned.push(`🍲 ${rid.replace(/_/g, ' ')}`);
           learnedCounts.recipes++;
         }
       }
-      // animals: learn their territory's wildlife
+      // animals: learn their territory's wildlife (via grantKnowledge — Steve 2026-10-07)
       for (const [aid, entry] of Object.entries(v.codex.animals || {})) {
-        const mine = (scholar.codex.animals || {})[aid];
-        if (!mine) {
-          scholar.codex.animals = scholar.codex.animals || {};
-          scholar.codex.animals[aid] = { level: entry.level, learnedFrom: v.name };
+        if (this.grantKnowledge('animal', aid, entry.level || 1, { type: 'taught', by: v.name })) {
           const adef = (this.data.animals || []).find(a => a.id === aid);
           learned.push(`🐾 ${(adef || {}).name || aid}`);
           learnedCounts.animals++;
@@ -10643,6 +10611,169 @@
       this.audioEvent('knowledgeReveal', { kind: 'skill', id: skillId, level: newLevel, via: via || 'discovery' });
       // knowledge-ability synergy check: does this unlock a technique?
       this.checkKnowledgeAbilitySynergy(skillId, newLevel);
+      return true;
+    },
+
+    // grantKnowledge: THE one path for gaining knowledge. Every domain, every source.
+    // (Steve 2026-10-07): 35 scattered grant sites with 12 distinct patterns unified here.
+    // Like identifyPlant for plants and learnSkill for skills — now one dispatcher.
+    //
+    // domain: 'plant' | 'animal' | 'recipe' | 'technique' | 'skill' | 'tree' | 'monster'
+    // id: the knowledge ID
+    // level: target level (1-4, or appropriate for domain)
+    // source: {type, by, day}
+    //   type: 'observed'|'taught'|'read'|'experiment'|'background'|'shared'|'discovery'
+    //   by: villager name/id who taught you (or null)
+    //   day: game day (defaults to current)
+    //
+    // Returns true if new knowledge was granted (level increased), false otherwise.
+    // Never downgrades. Records learnedFrom/learnedDay/via metadata consistently.
+    // Fires knowledgeReveal audio. Narrates the gain (this IS the learning moment,
+    // so it shows — knowledge gating applies to UNLEARNED things, not to the
+    // moment of learning).
+    grantKnowledge(domain, id, level, source) {
+      source = source || {};
+      const day = (this.state.scholar || {}).day || 0;
+      const src = {
+        type: source.type || 'discovery',
+        by: source.by || null,
+        day: (source.day != null) ? source.day : day,
+      };
+      level = level || 1;
+      switch (domain) {
+        case 'plant': return this._grantPlant(id, level, src);
+        case 'skill': return this.learnSkill(id, level, src.type);
+        case 'recipe': return this._grantRecipe(id, level, src);
+        case 'animal': return this._grantAnimal(id, level, src);
+        case 'technique': return this._grantTechnique(id, level, src);
+        case 'tree': return this._grantTree(id, level, src);
+        case 'monster': return this._grantMonster(id, level, src);
+        default: return false;
+      }
+    },
+
+    // _grantPlant: plant knowledge via the unified path.
+    // L1 identification goes through identifyPlant (rich logic: village spread,
+    // drama, audio, journal framing). Level-ups beyond L1 update directly.
+    _grantPlant(pid, level, src) {
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return false;
+      this.state.codex.plants = this.state.codex.plants || {};
+      const cur = this.state.codex.plants[pid];
+      const curLevel = cur ? (cur.level || 0) : 0;
+      if (level <= curLevel) return false; // no downgrade, no repeat
+      // L1 identification: use the rich path (unless already identified)
+      if (!cur && level >= 1) {
+        const teacherName = src.by || (src.type === 'taught' ? 'your teacher' : null);
+        const idSource = src.type === 'taught' ? 'taught'
+          : src.type === 'read' ? 'book'
+          : src.type === 'shared' ? 'shared'
+          : src.type === 'background' ? 'background'
+          : 'discovery';
+        return this.identifyPlant(pid, idSource, teacherName);
+      }
+      // Level-up beyond L1: update directly with metadata
+      this.state.codex.plants[pid] = Object.assign({}, cur, {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || (cur.learnedFrom || null),
+        via: src.type,
+      });
+      this.say(`\u2605 ${p.name} — deeper understanding (Level ${level}).`);
+      this.audioEvent('knowledgeReveal', { kind: 'plant', id: pid, level: level });
+      return true;
+    },
+
+    // _grantRecipe: recipe knowledge via the unified path.
+    // Records learnedFrom/learnedDay metadata consistently (learnRecipe didn't).
+    _grantRecipe(recipeId, level, src) {
+      const recipe = (this.data.recipes || []).find(r => r.id === recipeId);
+      if (!recipe) return false;
+      this.state.codex.recipes = this.state.codex.recipes || {};
+      const cur = this.state.codex.recipes[recipeId] || { level: 0 };
+      if (level <= (cur.level || 0)) return false;
+      this.state.codex.recipes[recipeId] = {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type,
+      };
+      const kl = (recipe.knowledgeLevels || {})[String(level)] || '';
+      this.say(`Recipe: ${recipe.name} (Level ${level}). ${kl}`);
+      this.audioEvent('knowledgeReveal', { kind: 'recipe', id: recipeId, level: level });
+      return true;
+    },
+
+    // _grantAnimal: animal knowledge via the unified path.
+    // Unifies direct writes, book unlocks, and villager sync.
+    _grantAnimal(aid, level, src) {
+      const animal = (this.data.animals || []).find(a => a.id === aid);
+      if (!animal) return false;
+      this.state.codex.animals = this.state.codex.animals || {};
+      const cur = this.state.codex.animals[aid];
+      const curLevel = cur ? (cur.level || 0) : 0;
+      if (level <= curLevel) return false;
+      this.state.codex.animals[aid] = {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type,
+      };
+      this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
+      this.state.codex.animalEncounters[aid] = Math.max(this.state.codex.animalEncounters[aid] || 0, 99);
+      this.say(`\uD83D\uDC3E Learned: ${animal.name} (Level ${level}).`);
+      this.audioEvent('knowledgeReveal', { kind: 'animal', id: aid, level: level });
+      return true;
+    },
+
+    // _grantTechnique: technique knowledge via the unified path.
+    // Preserves the drama beat (scroll unrolls) from villager sync.
+    _grantTechnique(tid, level, src) {
+      this.state.codex.techniques = this.state.codex.techniques || {};
+      const cur = this.state.codex.techniques[tid];
+      if (cur) return false; // techniques are binary (known/not known)
+      this.state.codex.techniques[tid] = {
+        level: level || 1,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type,
+      };
+      const label = tid.replace(/_/g, ' ');
+      this.say(`\uD83D\uDD27 Technique learned: ${label}.`);
+      try { this.drama('techniqueLearned', this.map.px, this.map.py, tid); } catch (e) {}
+      this.audioEvent('knowledgeReveal', { kind: 'technique', id: tid });
+      return true;
+    },
+
+    // _grantTree: tree knowledge via the unified path.
+    _grantTree(sp, level, src) {
+      this.state.codex.trees = this.state.codex.trees || {};
+      const cur = this.state.codex.trees[sp];
+      const curLevel = cur ? (cur.level || 0) : 0;
+      if (level <= curLevel) return false;
+      this.state.codex.trees[sp] = {
+        level: level,
+        learnedDay: src.day,
+        learnedFrom: src.by || null,
+        via: src.type || 'common knowledge',
+      };
+      return true;
+    },
+
+    // _grantMonster: monster codex entry via the unified path.
+    // Uses ensureMonsterEntry infrastructure. Level maps to encounter depth:
+    // 1 = encountered, 2 = observed (patterns), 3 = named by village.
+    _grantMonster(mid, level, src) {
+      const e = this.ensureMonsterEntry(mid);
+      const stages = ['encountered', 'observed', 'named'];
+      const targetStage = stages[Math.min(level, 3) - 1] || 'encountered';
+      const stageRank = { encountered: 1, observed: 2, named: 3 };
+      const curRank = stageRank[e.stage] || 0;
+      const newRank = stageRank[targetStage] || 1;
+      if (newRank <= curRank && e.learnedDay != null) return false;
+      e.stage = targetStage;
+      e.learnedDay = src.day;
+      if (src.by) e.learnedFrom = src.by;
       return true;
     },
 
