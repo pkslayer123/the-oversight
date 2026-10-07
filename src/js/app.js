@@ -12682,7 +12682,8 @@
             ruin: ['#9a9a9a', '🏚️'],
           };
           const _t = _terrain[_ttype] || _terrain['meadow'];
-          html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">${_t[1]}</div></div>`;
+          // Show type as text (diagnostic - Steve 2026-10-06)
+          html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#000">${_ttype}</div></div>`;
           continue;
         }
         let tl = null;
