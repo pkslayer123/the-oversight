@@ -16949,6 +16949,10 @@
       // Debt. (The audit found "once per fight" flags were once-per-save;
       // at minimum the ledger itself must reset or the debt is dishonest.)
       s.fightDamageTaken = 0;
+      // HAYMAKER WHIFF (brawler loop 2026-10-07): off-balance never leaks
+      // across fights. (Beside the ledger, not in the flag-hygiene block
+      // below, so the reset stands on its own.)
+      delete s.haymakerOffBalance;
       // BRAWLER FLAG HYGIENE (wired 2026-10-07): the remaining per-fight flags
       // must not leak across fights either. (fightRead is intentionally NOT
       // cleared — read_fight banks +2 speed for the NEXT fight when used out
@@ -18466,6 +18470,22 @@
         }
         this.spendAmmo(w.ammo, 1);
       }
+      // HAYMAKER WHIFF (brawler loop 2026-10-07): the wind-up gamble is real.
+      // throw_haymaker promises "-30% accuracy" — the strike engine had no
+      // accuracy roll, so the gamble was fake (the 2.5x was free). Now the
+      // readied haymaker can catch air: the turn is spent, the flag is
+      // consumed, and you're off-balance (no dodge on the next incoming hit).
+      // Dead-aim ("cannot miss") holds: aim wins over the whiff.
+      const _hr = (this.state.scholar || {}).haymakerReady;
+      if (_hr && _hr.accPenalty && !p.aimed && Math.random() < _hr.accPenalty) {
+        delete this.state.scholar.haymakerReady;
+        this.state.scholar.haymakerOffBalance = true;
+        this.say('You wind up WILD — the haymaker catches nothing but air. Off-balance, exposed: no slipping the next one. (Haymaker — missed.)');
+        try { this.audioEvent('miss', {}); } catch (e) {}
+        p.acted = true;
+        this.tbAfterPlayerAction();
+        return true;
+      }
       let d = S.combat.roll([10, 16]) + w.bonus;
       // TRUE SWING (passive): your strikes land cleaner.
       const tsBonus = this.passiveBonus('true_swing');
@@ -19278,7 +19298,17 @@
       // Only vs direct attacks, not beams/AoE (you can't dodge a flood).
       // ADRENALINE CONTROL: +15% dodge chance from the ability (combat.dodge_chance).
       if (t.kind === 'player' && !(opts && opts.undodgeable)) {
+        // HAYMAKER WHIFF (brawler loop 2026-10-07): "enemies hit easier next
+        // turn" — off-balance kills the slip-aside. Consumed on the next
+        // incoming damage evaluation, so it can't linger.
+        const _sch = this.state.scholar;
+        let _offBal = false;
+        if (_sch && _sch.haymakerOffBalance) { _sch.haymakerOffBalance = false; _offBal = true; }
         let dodgeCh = this.passiveBonus('footwork') + Math.max(0, (this.stat('agi') - 5) * 0.02);
+        if (_offBal) {
+          if (dodgeCh > 0) this.say('Off-balance from the whiffed haymaker — no slipping aside this time.');
+          dodgeCh = 0;
+        }
         try { dodgeCh += this.modTarget('combat.dodge_chance', 0); } catch (e) {}
         // BURDEN (Steve 2026-10-06): a heavy pack slows your slip-aside.
         // Laden -3%, heavy -8%, straining -15% dodge chance.
