@@ -14468,17 +14468,28 @@
         }
         if (kind === 'signature') D.abilitySignature(...args);
         else if (kind === 'commentary') D.systemCommentary(...args);
-        // AUDIO-VISUAL SYNC (Steve 2026-10-07, Drama E1): the visual's audio
-        // mate fires here — one central place, so call sites never double-fire.
-        // Kinds whose sites already fire audio (hit->monsterHurt via tbDamage,
-        // wisp->monsterDown, enrage->wound*, npcAlert->talkAttention, contest
-        // announce->contestCall) map to null in D.audioFor and stay silent.
+        // AUDIO-VISUAL SYNC (Steve 2026-10-07, Drama E1; wired 2026-10-07):
+        // the visual's audio mate fires here — one central place, so call
+        // sites never double-fire. D.audioFor (drama.js) maps the drama kind
+        // to its Game.audio voice, or null when the moment stays quiet.
+        // Quiet by design — kinds whose own sites already fire audio:
+        // hit->monsterHurt (tbDamage), wisp->monsterDown, lootSparkle->
+        // monsterDown on death, critHit->monsterHurt on the same damage,
+        // enrage->wound* temper voices, npcAlert->talkAttention, contest->
+        // contestCall announce, techniqueLearned/ahaMoment/skillGained->
+        // knowledgeReveal at their own sites, integration->knowledgeReveal,
+        // playerDeath->defeat on combat loss; plus pure-visual primitives
+        // (text/flash/shake/hero/exclaim/abilityBurst/signature/social/
+        // commentary/weather/trail/teaseFaint/villageBirth/villageDeath/
+        // newLife/systemCommentary). Voiced: secret->knowledgeReveal,
+        // ambush->ambushSnap (arming beat; the FIRE beat snaps on its own),
+        // wild->animalRustle, levelUp(ability)->levelup,
+        // synergyShimmer->synergyDiscovered, phaseShift->patternWindup,
+        // codexLinked->paperRustle, plantIdentified->knowledgeReveal.
         // The day-7 systemArrived gate above covers audio too: pre-System the
         // game is quiet as well as still.
-        try {
-          const syncName = D.audioFor(kind, args[0]);
-          if (syncName) this.audioEvent(syncName, { drama: kind });
-        } catch (e3) {}
+        const syncName = D.audioFor(kind, args[0]);
+        if (syncName) this.audioEvent(syncName, { drama: kind });
       } catch (e) {}
     },
     // buildBonus: the mechanical reward for your build archetype.
@@ -16938,6 +16949,17 @@
       // Debt. (The audit found "once per fight" flags were once-per-save;
       // at minimum the ledger itself must reset or the debt is dishonest.)
       s.fightDamageTaken = 0;
+      // BRAWLER FLAG HYGIENE (wired 2026-10-07): the remaining per-fight flags
+      // must not leak across fights either. (fightRead is intentionally NOT
+      // cleared — read_fight banks +2 speed for the NEXT fight when used out
+      // of combat.)
+      delete s.rageActive;
+      delete s.tradeOpen;
+      delete s.debtSettled;
+      delete s.settleDebtBonus;
+      delete s.braceActive;
+      delete s.shakeOffUsed;
+      delete s.haymakerReady;
       this.syncMonsterAlias();
       const px = s.mx ?? 4, py = s.my ?? 4;
       // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
@@ -21313,14 +21335,12 @@
       // data-driven pre-turn hooks. Migrated species run their verbatim-extracted logic from the registry.
       // mbRunPreTurn returns true if a hook consumed the turn.
       if (this.mbRunPreTurn && this.mbRunPreTurn(m)) return;
-      // HIGHBEAM (Steve 2026-10-05): closing in is risky EVERY turn, not just
-      // while the beam fires. The antlers thrash anyone adjacent IN ADDITION
-      // to whatever the deer is doing — you take damage standing next to it
-      // AND the beam keeps coming. You get in, you hit, you get OUT.
-      if (isDeer && m.beamPhase !== 'firing') {
-        this.tbAntlerThrash(m);
-        if (this.tbEndCheck()) return;
-      }
+      // HIGHBEAM (Steve 2026-10-05; hook-migrated 2026-10-07): the antler
+      // thrash runs exactly once via the preTurnHooks dispatch above
+      // (monsterBehaviors.js) — the inline branch here double-fired it.
+      // Closing in is risky EVERY turn: the antlers thrash anyone adjacent
+      // IN ADDITION to whatever the deer is doing. You get in, you hit,
+      // you get OUT.
       // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
       // you out. Nearly invulnerable; the answer is patience, not force.
       if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {

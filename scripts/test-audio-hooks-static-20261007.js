@@ -46,18 +46,14 @@ const note = (m) => console.log('  note ' + m);
 // in the audit note. The script stays green only while this set is EXACT — a
 // new gap fails, and a fixed gap fails too (update the backlog instead).
 // ---------------------------------------------------------------------------
-const KNOWN_GAPS = {
-  // Status-effect system audio: fired on every apply/cure, no synths exist.
-  statusApplied: 'src/js/statusEffects.js:167 (this.audioEvent on effect apply)',
-  statusCured: 'src/js/statusEffects.js:257 (this.audioEvent on cure)',
-  // Data-declared monster aggro/declare voices with no registry entry. These
-  // are WORSE than generic: the value is truthy, so the `|| 'deerAggro'`
-  // fallback never fires — the declare goes fully silent.
-  kiteUnfold: 'src/data/monsters.json statickite.encounter.aggroAudio',
-  nevermoreUnfold: 'src/data/monsters.json nevermore.encounter.aggroAudio',
-  nightcourtTurn: 'src/data/monsters.json nightcourt.encounter.aggroAudio',
-  nightcourtDive: 'src/data/monsters.json nightcourt.encounter.declareAudio',
-};
+// 2026-10-07: ALL SIX original gaps resolved and verified —
+//   statusApplied/statusCured: synths defined in the app.js registry
+//     (9544–9545), fired by statusEffects.js:167/:257.
+//   kiteUnfold/nevermoreUnfold/nightcourtTurn/nightcourtDive: defined in the
+//     app.js registry (9540–9543) with synths at 8548–8658; data declares
+//     match (monsters.json). Backlog emptied; the structure stays so the
+//     next gap has a documented home.
+const KNOWN_GAPS = {};
 
 // ---------------------------------------------------------------------------
 // INVENTORY 1: defined voices (CombatAudio registry export block, app.js)
@@ -172,6 +168,19 @@ function inventoryFired() {
     const audios = [...specsBlock[1].matchAll(/,\s*'([A-Za-z_][A-Za-z0-9_]*)'\s*\],/g)].map((m) => m[1]);
     if (!audios.length) fail('tbFifoBreather specs audio extraction found nothing');
     for (const a of audios) add(a, 'src/js/game.js tbFifoBreather specs table');
+  }
+
+  // DRAMA_AUDIO_MATES (drama.js): dynamic dispatch — game.js drama() resolves
+  // the kind to a Game.audio voice at runtime via D.audioFor. Count the mate
+  // voices as fired; the fired-but-undefined check then proves every mate is
+  // a real registry voice (a typo here would fail the proof).
+  const dramaSrc = JS('js/drama.js');
+  const matesBlock = /const DRAMA_AUDIO_MATES = \{([\s\S]*?)\};/.exec(dramaSrc);
+  if (!matesBlock) { fail('DRAMA_AUDIO_MATES not found in drama.js'); }
+  else {
+    for (const m of matesBlock[1].matchAll(/:\s*'([A-Za-z_][A-Za-z0-9_]*)'/g)) {
+      add(m[1], 'src/js/drama.js DRAMA_AUDIO_MATES (dynamic drama dispatch)');
+    }
   }
 
   // encAudio fallback composition keys (encounters.js): by design, resolved.

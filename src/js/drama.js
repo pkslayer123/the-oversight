@@ -63,6 +63,21 @@
   'use strict';
   const S = global.Scattering = global.Scattering || {};
 
+  // DRAMA_AUDIO_MATES (Steve 2026-10-07, Drama E1): game.js drama kind ->
+  // Game.audio voice name, or null when the moment stays quiet. Kinds whose
+  // own call sites already fire audio (see the E1 comment in game.js) and
+  // pure-visual primitives map to null — the dispatcher never double-fires.
+  const DRAMA_AUDIO_MATES = {
+    secret: 'knowledgeReveal',      // SECRET FOUND shimmer + card
+    ambush: 'ambushSnap',           // arming-beat warning (the FIRE beat snaps on its own)
+    wild: 'animalRustle',           // wildlife appears — subtle green ripple
+    levelUp: 'levelup',             // an ability deepens (stat growth fires its own levelup)
+    synergyShimmer: 'synergyDiscovered', // 2nd-tease pre-reveal (unlock fanfares separately)
+    phaseShift: 'patternWindup',    // monster phase-transition cue
+    codexLinked: 'paperRustle',     // the book opens — a village's knowledge is yours
+    plantIdentified: 'knowledgeReveal', // identification is a SEEING moment
+  };
+
   const Drama = {
     effectRegistry: null, // Scaffold #4 (Steve 2026-10-07): data-driven effect definitions from src/data/dramaEffects.json. Set by game.js after data load.
     overlay: null,
@@ -1655,6 +1670,15 @@
         1600 + (integration * 200)
       );
       if (integration >= 2) this.systemCommentary('"Oh. OH. That\'s how it works."', { integration });
+    },
+
+    // audioFor(kind, arg): AUDIO-VISUAL SYNC mate lookup (Steve 2026-10-07,
+    // Drama E1). Returns the Game.audio voice for a drama kind, or null when
+    // the moment stays quiet. game.js calls this once per drama visual so
+    // audio mates fire centrally — call sites never fire both. (arg is the
+    // drama's first arg, reserved for per-instance mates; unused for now.)
+    audioFor(kind, arg) {
+      return DRAMA_AUDIO_MATES[kind] || null;
     },
   };
 

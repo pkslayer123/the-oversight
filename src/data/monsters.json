@@ -732,7 +732,6 @@
     "id": "hummice",
     "activity": "nocturnal",
     "name": "Hummice",
-    "aggroAudio": "humRise",
     "biomes": [
       "se_woodlands"
     ],
@@ -795,6 +794,7 @@
     "wave": 1,
     "encounter": {
       "fifo": true,
+      "aggroAudio": "humRise",
       "noticeRange": 5,
       "phases": [
         "stalk",
