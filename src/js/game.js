@@ -11737,6 +11737,14 @@
       const RESTFUL = (cell) => cell === 'tent' || cell === 'bunk' || cell === 'fire';
       const greenName = (cell) => cell === 'plant' ? 'greens' : cell === 'bush' ? 'the bushes' : 'the trees';
 
+      // CHILDREN (Steve 2026-10-07): kids live the same turn — 1 action per
+      // turn, same energy costs — but choose like kids: play, follow a
+      // grown-up, watch and learn, hide when scared. Never adult foraging.
+      if (this.npcAge(rid) < 15) {
+        return this.npcChildAction(rid, detail, ctx,
+          { pos, n, name, announce, nearestCell, depleted, RESTFUL });
+      }
+
       // 1. FEAR: run from danger. Low trust + you're close = you're the scary thing.
       if ((n.fear || 0) > 70) {
         const trust = (v.trust && v.trust[rid]) || 0;
@@ -11775,6 +11783,11 @@
           n.hunger = Math.max(0, n.hunger - 25);
           n.energy = Math.max(0, (n.energy || 0) - 3);
           // they eat some, bring some home for the village
+          // WORK VISIBLE (Steve 2026-10-07): kids watch grown-ups work.
+          // ctx.worked records who did real work this turn — npcChildAction
+          // reads it for the learn-by-watching beat.
+          ctx.worked = ctx.worked || {};
+          ctx.worked[rid] = true;
           if (Math.random() < 0.4) this.stockPantry(80 + Math.floor(Math.random() * 120), 'Foraged food');
           announce(`${name} forages ${greenName(adj.cell)}.`);
           return;
@@ -11860,6 +11873,168 @@
           n.energy = Math.max(0, (n.energy || 0) - 1);
         }
       }
+    },
+
+    // npcChildAction: a child's turn. Same structure as adults — 1 action per
+    // turn, same energy costs — but a kid's priorities, in order:
+    //   1. HIDE when scared: to the nearest grown-up, or the tents. Kids
+    //      never flee into the wilds.
+    //   2. EAT: the village feeds its kids first — pantry threshold ~zero,
+    //      not the adult 200. Kids don't forage; that's grown-up work. If
+    //      the pantry's bare, they find a grown-up (someone figures it out).
+    //   3. REST when tired, like everyone else.
+    //   4. LEARN: adjacent to a grown-up who worked this turn (ctx.worked)
+    //      → watch, eyes wide. Builds trust with the teacher.
+    //   5. PLAY: other kids first — chase, tumble, butterfly hunts.
+    //   6. FOLLOW: orbit a grown-up at a step or two.
+    //   7. IDLE near the fire. Kids never meander to the edges.
+    // Safety: all movement is interior-only (1..7) and stays 3+ tiles from
+    // any node monster. A child is never alone in danger.
+    npcChildAction(rid, detail, ctx, H) {
+      const v = this.state.village;
+      const { pos, n, name, announce, nearestCell, RESTFUL } = H;
+
+      const alive = (id) => id !== rid && id !== this.villagerId &&
+        v.positions[id] && !(this.vpOf(id) || {}).dead;
+      const isKid = (id) => alive(id) && this.npcAge(id) < 15;
+      const isAdult = (id) => alive(id) && this.npcAge(id) >= 15;
+      const cheb = (a, b) => Math.max(Math.abs(a.mx - b.mx), Math.abs(a.my - b.my));
+
+      // the node monster, if any — kids give it a wide berth
+      let mon = null;
+      try {
+        const m = this.playerMonster && this.playerMonster();
+        if (m && m.mx !== undefined) mon = m;
+      } catch (e) {}
+
+      // one child-safe step: interior only, never toward a monster.
+      // Same energy cost as everyone else — movement is never free.
+      const childStep = (tx, ty) => {
+        const dx = Math.sign(tx - pos.mx), dy = Math.sign(ty - pos.my);
+        if (!dx && !dy) return false;
+        const nx = Math.max(1, Math.min(7, pos.mx + dx));
+        const ny = Math.max(1, Math.min(7, pos.my + dy));
+        if (nx === pos.mx && ny === pos.my) return false;
+        if (mon && Math.max(Math.abs(nx - mon.mx), Math.abs(ny - mon.my)) <= 2) return false;
+        const cell = detail[ny] && detail[ny][nx];
+        if (cell && !this.cellProps(cell).blocks) {
+          pos.mx = nx; pos.my = ny;
+          n.energy = Math.max(0, (n.energy || 0) - 1);
+          n.hunger = Math.min(100, (n.hunger || 0) + 0.5);
+          return true;
+        }
+        return false;
+      };
+
+      const nearestWho = (pred) => {
+        let best = null, bd = 99;
+        for (const oid of Object.keys(v.positions)) {
+          if (!pred(oid)) continue;
+          const d = cheb(pos, v.positions[oid]);
+          if (d < bd) { bd = d; best = oid; }
+        }
+        return best ? { id: best, d: bd } : null;
+      };
+      const nearestAdult = () => nearestWho(isAdult);
+      const nearestKid = () => nearestWho(isKid);
+
+      // 1. FEAR: hide — with a grown-up, or small near the tents.
+      if ((n.fear || 0) > 70) {
+        const a = nearestAdult();
+        if (a) {
+          if (a.d > 1) childStep(v.positions[a.id].mx, v.positions[a.id].my);
+          announce(`${name} hides behind ${this.displayName(a.id)}.`);
+        } else {
+          const tent = nearestCell((c) => c === 'tent' || c === 'bunk');
+          if (tent) childStep(tent.cx, tent.cy);
+          announce(`${name} curls up small near the tents.`);
+        }
+        n.fear = Math.max(0, n.fear - 8);
+        return;
+      }
+
+      // 2. HUNGER: kids eat first — the pantry threshold is ~zero for them.
+      if ((n.hunger || 0) > 60) {
+        const item = (v.pantry || []).find(i => (i.kcalEach || 0) > 0 && (i.units || 1) > 0);
+        if (item) {
+          item.units = (item.units || 1) - 1;
+          if (item.units <= 0) v.pantry.splice(v.pantry.indexOf(item), 1);
+          n.hunger = Math.max(0, n.hunger - 30);
+          announce(`${name} eats from the pantry.`);
+          return;
+        }
+        // pantry bare: find a grown-up — someone will figure it out
+        const a = nearestAdult();
+        if (a) {
+          if (a.d > 1) childStep(v.positions[a.id].mx, v.positions[a.id].my);
+          announce(`${name} tugs at ${this.displayName(a.id)}'s sleeve, hungry.`);
+          return;
+        }
+      }
+
+      // 3. ENERGY: rest, like everyone else.
+      if ((n.energy || 0) < 30) {
+        const spot = nearestCell((c, cx, cy) =>
+          RESTFUL(c) && Math.max(Math.abs(cx - pos.mx), Math.abs(cy - pos.my)) <= 1);
+        if (spot) {
+          n.energy = Math.min(100, n.energy + 8);
+          announce(`${name} naps by the ${spot.cell === 'fire' ? 'fire' : spot.cell}.`);
+          return;
+        }
+        const rs = nearestCell(RESTFUL);
+        if (rs) { childStep(rs.cx, rs.cy); return; }
+        n.energy = Math.min(100, n.energy + 3);
+        return;
+      }
+
+      // 4. LEARN: a grown-up worked this turn and you're close enough to
+      // watch — eyes wide. Watching builds the bond with the teacher.
+      const worked = ctx.worked || {};
+      let teacher = null, td = 99;
+      for (const oid of Object.keys(worked)) {
+        if (!isAdult(oid)) continue;
+        const d = cheb(pos, v.positions[oid]);
+        if (d <= 1 && d < td) { td = d; teacher = oid; }
+      }
+      if (teacher && Math.random() < 0.5) {
+        n.social = Math.max(0, (n.social || 0) - 10);
+        n.learned = (n.learned || 0) + 1;
+        try { this.bumpTrust(teacher, 1); } catch (e) {}
+        announce(`${name} watches ${this.displayName(teacher)} work, eyes wide.`);
+        return;
+      }
+
+      // 5. PLAY: other kids first.
+      const k = nearestKid();
+      if (k) {
+        if (k.d <= 1) {
+          const kn = this.npcNeeds(k.id);
+          n.social = Math.max(0, (n.social || 0) - 15);
+          kn.social = Math.max(0, (kn.social || 0) - 10);
+          const bits = [
+            `${name} and ${this.displayName(k.id)} chase each other around the fire.`,
+            `${name} chases a butterfly through the grass.`,
+            `${name} and ${this.displayName(k.id)} tumble in the dirt, laughing.`,
+          ];
+          announce(bits[Math.floor(Math.random() * bits.length)]);
+          return;
+        }
+        childStep(v.positions[k.id].mx, v.positions[k.id].my);
+        return;
+      }
+
+      // 6. FOLLOW: no kids around — orbit a grown-up at a step or two.
+      const a = nearestAdult();
+      if (a && a.d > 2) { childStep(v.positions[a.id].mx, v.positions[a.id].my); return; }
+
+      // 7. IDLE: drift to the fire's warmth. Kids don't meander outward.
+      const fire = nearestCell((c) => c === 'fire');
+      if (fire && Math.max(Math.abs(fire.cx - pos.mx), Math.abs(fire.cy - pos.my)) > 2) {
+        childStep(fire.cx, fire.cy);
+        return;
+      }
+      const dx = Math.floor(Math.random() * 3) - 1, dy = Math.floor(Math.random() * 3) - 1;
+      if (dx || dy) childStep(pos.mx + dx, pos.my + dy);
     },
 
     // searchRoom: examine + loot in ONE action. You look, you take what's there.
