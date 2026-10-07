@@ -1438,16 +1438,7 @@
       const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
       const fa = this.displayName(c.a), fb = this.displayName(c.b);
       const incidents = [
-        () => {
-          this.say(`You find ${fa} and ${fb} in a sharp, quiet argument. It stops when you approach. Neither explains.`);
-          c.tension = Math.min(100, c.tension + 5);
-          // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): red crackle between them.
-          try {
-            const pos = (this.state.village || {}).positions || {};
-            const pa = pos[c.a] || {}, pb = pos[c.b] || {};
-            this.drama('village', { type: 'argue', x1: pa.mx, y1: pa.my, x2: pb.mx, y2: pb.my });
-          } catch (e) {}
-        },
+        () => { this.say(`You find ${fa} and ${fb} in a sharp, quiet argument. It stops when you approach. Neither explains.`); c.tension = Math.min(100, c.tension + 5); },
         () => { this.say(`${fa} corners you by the fire: "Don't share your haul with ${fb}." It's not a request.`); trust[c.a] = Math.min(100, (trust[c.a] || 10) + 2); trust[c.b] = Math.max(0, (trust[c.b] || 10) - 2); },
         () => { this.say(`${fb} eats apart from the others tonight. ${fa} doesn't look up. The fire feels smaller.`); },
         () => { this.say(`You carry a message from ${fa} to ${fb}. It's not kind. You deliver it anyway. That's what neighbors do, apparently.`); trust[c.a] = Math.min(100, (trust[c.a] || 10) + 2); trust[c.b] = Math.max(0, (trust[c.b] || 10) - 3); c.tension = Math.min(100, c.tension + 3); },
@@ -4884,8 +4875,6 @@
       const first = this.data.villagers.find(x => x.id === this.villagerId).name.split(' ')[0];
       this.say(`You tell the others you're heading out. Someone nods. "Come back before dark."`);
       this.say(`— DAY 1 DAWN — ${DAY_PART_HINT.dawn}`);
-      // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): dawn wash.
-      try { this.drama('village', { type: 'dawn' }); } catch (e) {}
       this.save();
       return this.status();
     },
@@ -6229,20 +6218,21 @@
           for (let cy = 0; cy < 9; cy++) {
             const row = [];
             for (let cx = 0; cx < 9; cx++) {
-              // lodge footprint: rows 0-1, cols 3-5
-              if (cy <= 1 && cx >= 3 && cx <= 5) { row.push('lodge'); continue; }
+              // lodge footprint: CENTERED — rows 3-4, cols 3-5
+              // Steve 2026-10-07: haven should be center of its detail grid
+              if (cy >= 3 && cy <= 4 && cx >= 3 && cx <= 5) { row.push('lodge'); continue; }
               const r = ornd();
               row.push(r < 0.35 ? 'dirt' : 'grass');
             }
             cells.push(row);
           }
-          // clear the lodge doorstep: walkable ground at (4,2)
-          cells[2][4] = 'dirt';
-          // fire pit near the lodge, not blocking
-          cells[2][2] = 'fire';
+          // clear the lodge doorstep: walkable ground south of lodge at (4,5)
+          cells[5][4] = 'dirt';
+          // fire pit near the lodge, not blocking — west side
+          cells[4][2] = 'fire';
           // THE CAMP: a few tents, placed deliberately in a loose cluster west
           // of the lodge — homes, not a maze. Spots jitter with the seed.
-          const tentSpots = [[1, 3], [2, 4], [1, 5]];
+          const tentSpots = [[3, 3], [4, 4], [3, 5]];
           for (const [tx, ty] of tentSpots) {
             const jx = tx + Math.floor(ornd() * 2), jy = ty + Math.floor(ornd() * 2);
             if (cells[jy] && cells[jy][jx] !== 'lodge') cells[jy][jx] = 'tent';
@@ -6251,7 +6241,7 @@
           // teaching patch, not a farm. A new player learns the forage verb
           // HERE, then understands food is OUT THERE. (Barren Haven fix.)
           // Clustered SE so it's findable but not central.
-          const garden = [[6,5],[7,5],[6,6],[7,6],[5,6]];
+          const garden = [[6,6],[7,6],[6,7],[7,7],[5,7]];
           for (const [gx, gy] of garden) {
             if (cells[gy] && cells[gy][gx] !== 'lodge') cells[gy][gx] = (gx + gy) % 2 ? 'plant' : 'bush';
           }
@@ -10398,18 +10388,8 @@
           `${fa} set out an extra bowl before catching themself. Nobody mentioned it.`,
           `Someone is crying, quietly, in one of the bunks. ${fb} goes to sit with them.`,
         ][Math.floor(Math.random() * 3)];
-        // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): gray veil — the village grieves.
-        if (present) { try { this.drama('village', { type: 'mourn' }); } catch (e) {} }
       } else if (r < 0.2 && (ta === 'bold' || tb === 'bold')) {
         line = `${fa} and ${fb} are arguing about the watch rotation. Again. It's almost comforting.`;
-        // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): red crackle between the two.
-        if (present) {
-          try {
-            const pos = (this.state.village || {}).positions || {};
-            const pa = pos[a] || {}, pb = pos[b] || {};
-            this.drama('village', { type: 'argue', x1: pa.mx, y1: pa.my, x2: pb.mx, y2: pb.my });
-          } catch (e) {}
-        }
       } else if (r < 0.35) {
         line = [
           `Someone told a joke by the fire. You hear ${fa} laugh — a real one.`,
@@ -10417,24 +10397,12 @@
           `${fa} is showing ${fb} how to tie a snare. Hands patient. It takes three tries.`,
           `${fa} and ${fb} are comparing scars like trading cards.`,
         ][Math.floor(Math.random() * 4)];
-        // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): laughter sparkles — small joy.
-        if (present && line.indexOf('laugh') !== -1) {
-          try {
-            const pos = (this.state.village || {}).positions || {};
-            const pa = pos[a] || {};
-            this.drama('village', { type: 'play', x: pa.mx, y: pa.my });
-          } catch (e) {}
-        }
       } else if (r < 0.5 && cheer) {
         line = `${fa} got the fire going big tonight. There's almost a party feeling. Almost.`;
-        // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): music notes — high spirits.
-        if (present) { try { this.drama('village', { type: 'celebrate' }); } catch (e) {} }
       } else if (r < 0.6) {
         // practical: someone does something useful, visibly
         this.stockPantry(100, 'Foraged food');
         line = `${fa} came back with an armful of something edible, unprompted. (+100 kcal pantry)`;
-        // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): wheat-gold motes — the harvest comes home.
-        if (present) { try { this.drama('village', { type: 'harvest' }); } catch (e) {} }
       } else {
         line = [
           `${fa} is staring into the fire like it owes them answers.`,
@@ -13932,13 +13900,6 @@
           if (spec && typeof spec === 'object') { spec.integration = spec.integration || integ; }
           D.socialFlash(...args);
         }
-        // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): spec object carries
-        // type + integration — inject integration like the social dispatcher.
-        else if (kind === 'village') {
-          const spec = args[0];
-          if (spec && typeof spec === 'object') { spec.integration = spec.integration || integ; }
-          D.villageFlash(...args);
-        }
         // ABILITY SIGNATURES (Steve 2026-10-07, Drama D1): signature(abilityId, x, y, color, pool)
         // — append integration as the last arg.
         if (kind === 'signature') {
@@ -14870,8 +14831,6 @@
       try { this.theftNoticeSweep(); } catch (e) {}
       this.ap = 1;
       this.say(`— ${DAY_PARTS[this.dayPart].toUpperCase()} — ${DAY_PART_HINT[DAY_PARTS[this.dayPart]]}`);
-      // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): dusk settles — purple-orange fade.
-      try { if (DAY_PARTS[this.dayPart] === 'dusk') this.drama('village', { type: 'dusk' }); } catch (e) {}
       // NIGHTFALL: the village reacts. Fear rises in everyone a little, people pull
       // toward the fire, watches get posted. The dark has its own animals —
       // everyone knows it. (Fear is per-NPC, in the existing needs system.)
@@ -15818,8 +15777,6 @@
       this.dayPart = 0; this.ap = 1;
       scholar.dayTicks = 0; scholar.actionClock = 0; // action clock: new day, fresh budget
       this.say(`— DAY ${scholar.day} DAWN — ${DAY_PART_HINT.dawn}`);
-      // VILLAGE RHYTHMS (Steve 2026-10-07, Drama D3): dawn wash — soft gold.
-      try { this.drama('village', { type: 'dawn' }); } catch (e) {}
       // SPOILAGE (hunter loop): overnight, rotten food leaves the pack —
       // announced, never silent. Neglect has a visible cost.
       try { this.sweepSpoiled(); } catch (e) {}
