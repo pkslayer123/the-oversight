@@ -7366,6 +7366,21 @@
         this.say(line);
         return true;
       }
+      // DIRT / GRASS (forager loop 2026-10-07): re-tapping a swept patch or
+      // tapping empty ground was completely silent — a tap is an action and
+      // gets an honest read, never nothing. (Steve: no silent actions.)
+      if (cell === 'dirt') {
+        if (t.detailRegrow && t.detailRegrow[key]) {
+          this.say('Worked earth. This patch is picked clean — it\'ll recover in a few days.');
+        } else {
+          this.say('Bare dirt. Nothing growing here.');
+        }
+        return true;
+      }
+      if (cell === 'grass') {
+        this.say('Just grass. Forage where it\'s green.');
+        return true;
+      }
       return null;
     },
 
