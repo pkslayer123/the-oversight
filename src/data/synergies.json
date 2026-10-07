@@ -1375,14 +1375,15 @@
         "target": "combat.damage_taken",
         "op": "multiply",
         "value": 0.7
-      },
-      {
-        "target": "combat.morale_break_resist",
-        "op": "add",
-        "value": 0.5
       }
     ],
     "discovery": "The hits stop mattering. Not because they don't hurt \u2014 because you've decided they don't stop you.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Take the hit. Stay standing. Refuse the floor.",
+      "tease1": "A blow landed that should have put you down \u2014 and you were still standing when the ringing stopped. Your knees filed a complaint. You overruled them.",
+      "tease2": "Three times now the ground has reached for you and missed. The pain arrives, you read it, and you keep moving. Something is crystallizing."
+    },
     "paths": [
       "brawler"
     ]
@@ -1420,6 +1421,12 @@
       }
     ],
     "discovery": "You walk into the room and the argument ends. Nobody remembers deciding to stop.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Let them see you coming. Be the thing they were afraid of.",
+      "tease1": "The clearing went quiet when you stood up. Not the fight-quiet. The other kind \u2014 the kind where everyone decides, privately, not to be first.",
+      "tease2": "Twice now, something has backed down before you raised a hand. They are not afraid of what you do anymore. They are afraid of what you are."
+    },
     "paths": [
       "brawler"
     ]
@@ -1459,6 +1466,12 @@
       }
     ],
     "discovery": "They surrounded you. That was their mistake \u2014 now you don't have to aim.",
+    "discovery_method": {
+      "type": "simultaneous",
+      "hint": "Stand alone in the middle of everything. Hold.",
+      "tease1": "Outnumbered, unafraid, unbowed \u2014 for one heartbeat the fight bent around you instead of through you. The others felt it too. You saw it in their faces.",
+      "tease2": "Twice now you have been the whole line. Not the strongest fighter \u2014 the whole army, in one body. The System is taking notes. So is everyone else."
+    },
     "paths": [
       "brawler"
     ]

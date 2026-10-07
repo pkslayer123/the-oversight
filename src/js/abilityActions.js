@@ -351,8 +351,13 @@
       }
       // HAYMAKER: 2.5x, -30% accuracy (handled at roll time via flag).
       if (s.haymakerReady) {
-        d = Math.round(d * s.haymakerReady.mult);
-        this.say('HAYMAKER: a wild, devastating swing. ×' + s.haymakerReady.mult + '.');
+        // HEAVY DAMAGE (wired 2026-10-07): combat.heavy_damage sharpens the
+        // heavy swing for a brawler who holds the haymaker ability.
+        var heavyMult = 1;
+        try { heavyMult = this.modTarget('combat.heavy_damage', 1, {}); } catch (e) {}
+        d = Math.round(d * s.haymakerReady.mult * heavyMult);
+        this.say('HAYMAKER: a wild, devastating swing. ×' + s.haymakerReady.mult + '.' +
+          (heavyMult !== 1 ? ' Heavy hands hit harder still (×' + heavyMult + ').' : ''));
         delete s.haymakerReady;
       }
       // TRADE OPEN: +50% for 3 attacks.
@@ -377,6 +382,34 @@
           this.say('The rage burns out. You\'re yourself again — shaking, but yourself.');
         }
       }
+      // ONE PERSON ARMY (wired 2026-10-07): the synergy's modifiers fire here.
+      // Outnumbered (2+ living foes): bonus scales the strike. Alone with a
+      // single foe and no allies standing: solo damage. Needs a live fight.
+      try {
+        var _f = this.tbfight;
+        if (_f && !_f.over && _f.fighters) {
+          var foes = 0, allies = 0;
+          for (var _i = 0; _i < _f.fighters.length; _i++) {
+            var _w = _f.fighters[_i];
+            if (!_w || !_w.alive) continue;
+            if (_w.kind === 'monster' || _w.kind === 'hostile') foes++;
+            else if (_w !== p) allies++;
+          }
+          if (foes >= 2) {
+            var _ob = this.modTarget('combat.outnumbered_bonus', 0, {});
+            if (_ob) {
+              d = Math.round(d * (1 + _ob));
+              this.say('ONE PERSON ARMY: surrounded — good. +' + Math.round(_ob * 100) + '% for the crowd.');
+            }
+          } else if (foes >= 1 && allies === 0) {
+            var _sm = this.modTarget('combat.solo_damage', 1, {});
+            if (_sm !== 1) {
+              d = Math.round(d * _sm);
+              this.say('ONE PERSON ARMY: alone in it — ×' + _sm + '. The whole army, in one body.');
+            }
+          }
+        }
+      } catch (e) {}
       return d;
     },
 
@@ -384,7 +417,14 @@
     // Checks braceActive and other defensive flags.
     _applyAbilityDefenseMods: function (dmg, source) {
       var s = this.state.scholar;
-      // BRACE: 60% reduction, no knockdown.
+      // UNSTOPPABLE (wired 2026-10-07): combat.damage_taken — pain is
+      // information; you read it and keep moving. Passive while held. First.
+      try {
+        var _dtm = this.modTarget('combat.damage_taken', 1, {});
+        if (_dtm !== 1) dmg = Math.round(dmg * _dtm);
+      } catch (e) {}
+      // BRACE: 60% reduction. (Knockdown clause removed 2026-10-07: no
+      // knockdown mechanic exists in src/js — the text no longer promises it.)
       if (s.braceActive) {
         var reduced = Math.round(dmg * (1 - s.braceActive.reduce));
         this.say('BRACE: you take it on the shoulder, rolling with it. ' + dmg + ' → ' + reduced + '.');
@@ -688,8 +728,12 @@
     'trade_of_blows.open_trade': function (game, target) {
       var s = game.state.scholar;
       // HP cost already paid via cost: {hp: 10}
-      s.tradeOpen = { attacksLeft: 3, bonus: 0.5 };
-      game.say('You let one through — take the hit, feel where it lands. The pain focuses you. Your next 3 attacks deal +50% damage. (Open the Trade — the exchange rate favors the bold.)');
+      // TRADE WINDOW (wired 2026-10-07): combat.trade_window extends how many
+      // strikes the +50% window covers (3 base + modifier).
+      var attacks = 3;
+      try { attacks = 3 + game.modTarget('combat.trade_window', 0, {}); } catch (e) {}
+      s.tradeOpen = { attacksLeft: attacks, bonus: 0.5 };
+      game.say('You let one through — take the hit, feel where it lands. The pain focuses you. Your next ' + attacks + ' attacks deal +50% damage. (Open the Trade — the exchange rate favors the bold.)');
       return true;
     },
 
@@ -713,8 +757,10 @@
 
     'unbreakable.brace': function (game, target) {
       var s = game.state.scholar;
-      s.braceActive = { reduce: 0.6, noKnockdown: true };
-      game.say('You plant your feet, set your jaw, become a wall. Next incoming damage reduced 60%. You cannot be knocked down this turn. (Brace)');
+      // HONESTY (2026-10-07): no knockdown mechanic exists in src/js, so the
+      // old noKnockdown flag promised immunity to a non-existent system.
+      s.braceActive = { reduce: 0.6 };
+      game.say('You plant your feet, set your jaw, become a wall. Next incoming damage reduced 60%. (Brace)');
       return true;
     },
 
@@ -755,11 +801,18 @@
         return false;
       }
       var affected = 0, fled = 0;
+      // ENEMY MORALE (wired 2026-10-07): combat.enemy_morale — fear_itself
+      // guts their nerve; the courage check fails more often when your
+      // reputation precedes you.
+      var morale = 1;
+      try { morale = game.modTarget('combat.enemy_morale', 1, {}); } catch (e) {}
+      var failChance = Math.min(0.95, 0.6 / morale);
       for (var i = 0; i < f.fighters.length; i++) {
         var m = f.fighters[i];
         if (m.kind !== 'monster' || !m.alive || m.fled) continue;
-        // Courage check: 60% fail. Skittish/curious beasts may bolt outright.
-        if (Math.random() < 0.6) {
+        // Courage check: 60% fail (worse for them when morale is broken).
+        // Skittish/curious beasts may bolt outright.
+        if (Math.random() < failChance) {
           var fearless = m.fearless || (m.mdef && m.mdef.fearless);
           var skittish = m.mdef && (m.mdef.aggression === 'skittish' || m.mdef.aggression === 'curious');
           if (!fearless && skittish && Math.random() < 0.25) {
@@ -801,8 +854,11 @@
 
     'rage.unleash_rage': function (game, target) {
       var s = game.state.scholar;
-      s.rageActive = { rounds: 3, dmgMult: 2.0, frenzy: true };
-      game.say('The red comes down. +100% damage for 3 rounds — but you attack the NEAREST thing, friend or foe. You cannot retreat while it lasts. (Unleash Rage — hold on.)');
+      // HONESTY (2026-10-07): the old frenzy:true flag and "nearest thing,
+      // friend or foe / cannot retreat" text promised targeting and
+      // retreat-lock mechanics that don't exist. What it does: +100% x3.
+      s.rageActive = { rounds: 3, dmgMult: 2.0 };
+      game.say('The red comes down. +100% damage for 3 rounds. (Unleash Rage — hold on.)');
       return true;
     },
 
@@ -893,13 +949,17 @@
         game.say('No one to stare down. (Stare Down)');
         return false;
       }
-      // Courage check: 50% back off, unless fearless.
+      // Courage check: 50% back off, unless fearless. Your menace
+      // (social.intimidate modifiers) makes the stare land harder.
       var fearless = m.fearless || (m.mdef && m.mdef.fearless);
       if (fearless) {
         game.say('You lock eyes. It doesn\'t blink. This one doesn\'t know fear — or doesn\'t care. It\'s still coming. (Stare Down — truly fearless.)');
         return true; // Action worked (you tried), effect failed honestly
       }
-      if (Math.random() < 0.5) {
+      var intim = 0;
+      try { intim = game.modTarget('social.intimidate', 0, {}); } catch (e) {}
+      var backOff = Math.min(0.95, 0.5 + intim);
+      if (Math.random() < backOff) {
         game.say('You lock eyes and don\'t look away. It falters — then backs off, disengaging. Smart. (Stare Down — it backed down.)');
         // DISENGAGE (Steve 2026-10-07): was m.disengaging, which nothing
         // read. m.fled is the engine's real disengage (cf. lockpick raccoon).

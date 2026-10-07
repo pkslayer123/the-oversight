@@ -698,7 +698,7 @@
           "turn": true,
           "kcal": 60
         },
-        "effect": "+100% damage for 3 rounds, but you attack the nearest thing (friend or foe). You cannot retreat while raging."
+        "effect": "+100% damage for 3 rounds. The red comes down \u2014 hold on."
       }
     ],
     "name": "Berserker Rage",
@@ -1482,14 +1482,7 @@
     "name": "Brawler's Instinct",
     "pool": "combat",
     "description": "You read a fight before it starts. The body tells you what the mouth won't.",
-    "modifiers": [
-      {
-        "target": "combat.initiative",
-        "op": "add",
-        "value": 2,
-        "scale": "level"
-      }
-    ],
+    "modifiers": [],
     "unlock": {
       "type": "granted"
     },
@@ -1999,18 +1992,7 @@
     "unlock": {
       "type": "system_offer"
     },
-    "modifiers": [
-      {
-        "target": "combat.knockdown_resist",
-        "op": "add",
-        "value": 0.4
-      },
-      {
-        "target": "combat.stun_duration",
-        "op": "multiply",
-        "value": 0.5
-      }
-    ],
+    "modifiers": [],
     "actions": [
       {
         "id": "brace",
@@ -2019,7 +2001,7 @@
         "cost": {
           "turn": true
         },
-        "effect": "Plant your feet. Reduce next incoming damage by 60%. You cannot be knocked down this turn."
+        "effect": "Plant your feet. Reduce next incoming damage by 60%."
       },
       {
         "id": "shake_off",

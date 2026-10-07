@@ -16,7 +16,9 @@
 //
 // This script dispositions each prior finding as FIXED / STILL BROKEN /
 // PARTIAL with live behavioral evidence, and plays the loop as a player.
-// Engine is READ-ONLY: failures here are flagged, never fixed.
+// PIN HISTORY: written pre-repair pinning the BROKEN state (9 stale FAILs at
+// ea5072f); inverted 2026-10-07 after the wiring backlog was fixed — every
+// check now asserts the FIXED state. A FAIL here is a real regression.
 // Exit code: non-zero if ANY observed state deviates from the documented
 // expected state (i.e. an unexpected regression).
 //
@@ -76,7 +78,8 @@ function endTurn() { // playtest turn hygiene (wave2a pattern)
 function use(ab, act, target) { clearSays(); return Game.useAbility(ab, act, target); }
 function ensureFight(monId) {
   if (Game.inCombat()) { try { Game.tbfight.over = true; } catch (e) {} }
-  // harness isolation: clear per-fight flags (startCombat does NOT clear most)
+  // harness isolation: clear per-fight flags (startCombat now clears the brawler
+  // set too — belt and suspenders for fight-to-fight isolation)
   for (const k of ['tradeOpen', 'settleDebtBonus', 'debtSettled', 'braceActive', 'shakeOffUsed',
     'haymakerReady', 'rageActive', 'fightRead', 'loomActive', 'fightDamageTaken']) delete Game.state.scholar[k];
   const s = Game.state.scholar;
@@ -123,15 +126,15 @@ function strikeFor(mkey) {
   const present = [['trade_of_blows', 'open_trade'], ['trade_of_blows', 'settle_debt'],
     ['unbreakable', 'brace'], ['unbreakable', 'shake_off'],
     ['war_cry', 'bellow'], ['war_cry', 'challenge'], ['haymaker', 'throw_haymaker']];
-  const absent = [['iron_stomach', 'push_through'], ['second_wind', 'refuse_death'],
+  const restored = [['iron_stomach', 'push_through'], ['second_wind', 'refuse_death'],
     ['rage', 'unleash_rage'], ['fear_aura', 'loom'], ['fear_aura', 'menace'],
     ['brawler_instinct', 'read_fight'], ['intimidating_presence', 'stare_down'],
     ['intimidating_presence', 'end_it_before']];
   check('7 actions present in HEAD data (partial restore)', present.every(([a, b]) => !!Game.abilityActionDef(a, b)),
     present.filter(([a, b]) => !Game.abilityActionDef(a, b)).map(([a, b]) => a + '.' + b).join(','));
-  check('8 actions ABSENT from HEAD data (84a6c4c re-added 4; 7b49fc5 bulk-restore reverted abilities.json to the 2c2d6c5 partial state)',
-    absent.every(([a, b]) => !Game.abilityActionDef(a, b)),
-    absent.filter(([a, b]) => Game.abilityActionDef(a, b)).map(([a, b]) => a + '.' + b).join(','));
+  check('8 restored actions PRESENT in data (2907a57 repair held — pins inverted 2026-10-07)',
+    restored.every(([a, b]) => !!Game.abilityActionDef(a, b)),
+    restored.filter(([a, b]) => !Game.abilityActionDef(a, b)).map(([a, b]) => a + '.' + b).join(','));
 
   // ============ B. LIVE: the 7 present actions ============
   note('\n=== B. LIVE FIGHT: the 7 present actions ===');
@@ -142,14 +145,14 @@ function strikeFor(mkey) {
   const hpBeforeTrade = s.health;
   let r = use('trade_of_blows', 'open_trade');
   check('open_trade executes', r === true);
-  check('open_trade sets tradeOpen {3, +50%}', !!(s.tradeOpen && s.tradeOpen.attacksLeft === 3 && s.tradeOpen.bonus === 0.5));
+  check('open_trade sets tradeOpen {4, +50%} (combat.trade_window wired: 3 base + 1)', !!(s.tradeOpen && s.tradeOpen.attacksLeft === 4 && s.tradeOpen.bonus === 0.5), JSON.stringify(s.tradeOpen));
   check('open_trade paid 10 HP', s.health === hpBeforeTrade - 10, `health ${hpBeforeTrade} -> ${s.health}`);
   check('open_trade narrates (never silent)', said().length > 20);
   endTurn();
   const dmgTrade = [], tradeLeft = [];
-  for (let i = 0; i < 3; i++) { dmgTrade.push(strikeFor(mkey)); tradeLeft.push(s.tradeOpen ? s.tradeOpen.attacksLeft : 0); endTurn(); }
-  note(`   3 strikes with trade open: ${JSON.stringify(dmgTrade)} (attacksLeft after each: ${JSON.stringify(tradeLeft)})`);
-  check('tradeOpen decrements per strike and clears after 3 attacks', !s.tradeOpen && JSON.stringify(tradeLeft) === '[2,1,0]');
+  for (let i = 0; i < 4; i++) { dmgTrade.push(strikeFor(mkey)); tradeLeft.push(s.tradeOpen ? s.tradeOpen.attacksLeft : 0); endTurn(); }
+  note(`   4 strikes with trade open: ${JSON.stringify(dmgTrade)} (attacksLeft after each: ${JSON.stringify(tradeLeft)})`);
+  check('tradeOpen decrements per strike and clears after 4 attacks', !s.tradeOpen && JSON.stringify(tradeLeft) === '[3,2,1,0]', JSON.stringify(tradeLeft));
   check('trade strikes actually deal damage (loop is real)', dmgTrade.every(d => d > 0), JSON.stringify(dmgTrade));
 
   // --- settle_debt (prior: DEAD — fightDamageTaken had zero writers) ---
@@ -175,7 +178,7 @@ function strikeFor(mkey) {
   check('throw_haymaker executes', r === true && !!s.haymakerReady);
   endTurn();
   const hmDmg = strikeFor(mkey); endTurn();
-  note(`   haymaker strike damage: ${hmDmg} (expect ~2.5x base)`);
+  note(`   haymaker strike damage: ${hmDmg} (expect ~2.5x base x1.2 heavy_damage)`);
   check('haymakerReady consumed on strike', !s.haymakerReady);
   check('haymaker strike deals damage', hmDmg > 0, String(hmDmg));
 
@@ -228,16 +231,17 @@ function strikeFor(mkey) {
   // ============ C. PER-FIGHT FLAG HYGIENE ============
   note('\n=== C. PER-FIGHT FLAG HYGIENE ===');
   s.rageActive = { rounds: 3 }; s.tradeOpen = { attacksLeft: 2, bonus: 0.5 };
-  s.debtSettled = true; s.shakeOffUsed = true; s.fightDamageTaken = 99; s.health = 100;
+  s.debtSettled = true; s.settleDebtBonus = 12; s.braceActive = { reduce: 0.6 };
+  s.shakeOffUsed = true; s.haymakerReady = { mult: 2.5 }; s.fightDamageTaken = 99; s.health = 100;
   const hpBeforeStart = s.health;
   Game.startCombat('gallowdeer');
-  const leaked = ['rageActive', 'tradeOpen', 'debtSettled', 'shakeOffUsed'].filter(k => s[k]);
+  const leaked = ['rageActive', 'tradeOpen', 'debtSettled', 'settleDebtBonus', 'braceActive', 'shakeOffUsed', 'haymakerReady'].filter(k => s[k]);
   note(`   flags surviving into the new fight: ${leaked.join(', ') || '(none)'} | fightDamageTaken=${s.fightDamageTaken} (hp ${hpBeforeStart} -> ${s.health})`);
   // startCombat zeroes the ledger; the faster monster's opener then re-accumulates its own damage.
   check('fightDamageTaken resets on startCombat (PARTIAL — ledger fixed; stale 99 gone, only opener damage remains)',
     s.fightDamageTaken !== 99 && (s.fightDamageTaken || 0) === Math.max(0, hpBeforeStart - s.health),
     `fightDamageTaken=${s.fightDamageTaken}`);
-  check('other per-fight flags STILL leak across fights (STILL BROKEN — audit finding 4 unresolved)', leaked.length === 4, leaked.join(','));
+  check('all 7 per-fight flags reset on startCombat (wiring backlog fixed — none leak)', leaked.length === 0, leaked.join(',') || '(none leaked)');
   for (const k of leaked) delete s[k];
   try { Game.tbfight.over = true; } catch (e) {}
   s.health = 100;
@@ -247,7 +251,9 @@ function strikeFor(mkey) {
   const syns = Game.data.synergies;
   const three = ['unstoppable', 'fear_itself', 'one_person_army'].map(id => syns.find(x => x.id === id));
   check('3 brawler synergies present at HEAD (data restored)', three.every(Boolean));
-  check('3 synergies STILL lack discovery_method (STILL BROKEN — checkSynergyDiscovery skips them)', three.every(sy => !sy.discovery_method));
+  check('3 synergies HAVE discovery_method (wiring backlog fixed — checkSynergyDiscovery no longer skips)', three.every(sy => !!sy.discovery_method),
+    three.filter(sy => !sy.discovery_method).map(sy => sy.id).join(','));
+  check('discovery_methods are well-formed (type+hint+tease1+tease2)', three.every(sy => sy.discovery_method && sy.discovery_method.type && sy.discovery_method.hint && sy.discovery_method.tease1 && sy.discovery_method.tease2));
   ['rage', 'iron_stomach', 'trade_of_blows', 'second_wind', 'unbreakable', 'haymaker',
    'fear_aura', 'intimidating_presence', 'war_cry', 'brawler_instinct'].forEach(id => grant(id, 2));
   // deliberate combined-use attempts: unstoppable path [rage+iron_stomach] over 3 days
@@ -259,14 +265,12 @@ function strikeFor(mkey) {
   }
   attemptLegs(['rage', 'iron_stomach']);
   attemptLegs(['trade_of_blows', 'second_wind']);
+  grant('rage', 3); grant('war_cry', 3); // one_person_army is minLevel 3
   attemptLegs(['fear_aura', 'war_cry']);
   const discovered = Game.state.scholar.synergies || [];
-  check('unstoppable NEVER unlocks via play (no discovery_method — STILL BROKEN)', !discovered.includes('unstoppable'));
-  check('fear_itself NEVER unlocks via play', !discovered.includes('fear_itself'));
-  check('one_person_army NEVER unlocks via play', !discovered.includes('one_person_army'));
-  // machinery: requires_any + synergy-legs now evaluated (hunter-loop fix) — verify via forced unlock
-  Game.unlockSynergy(three[0]);
-  check('forced unlock works (unlockSynergy ceremony fires)', discovered.includes('unstoppable'));
+  check('unstoppable UNLOCKS via play (simultaneous rage+iron_stomach x3 days)', discovered.includes('unstoppable'), discovered.join(','));
+  check('fear_itself UNLOCKS via play (simultaneous fear_aura+war_cry x3 days)', discovered.includes('fear_itself'), discovered.join(','));
+  check('one_person_army UNLOCKS via play (unstoppable held + rage+war_cry x3 days)', discovered.includes('one_person_army'), discovered.join(','));
   Game.recomputeActiveSynergies();
   const activeNow = (Game.state.scholar.activeSynergies || []).includes('unstoppable');
   check('recomputeActiveSynergies honors requires_any (unstoppable active while holding [rage+iron_stomach] — machinery FIXED)', activeNow === true);
@@ -287,28 +291,37 @@ function strikeFor(mkey) {
   Game.recomputeActiveSynergies();
 
   // ============ E. MODIFIERS ============
-  note('\n=== E. MODIFIER SWEEP: 10 brawler targets ===');
-  const targets = ['combat.trade_window', 'combat.knockdown_resist', 'combat.stun_duration',
-    'combat.heavy_damage', 'combat.damage_taken', 'combat.morale_break_resist',
+  note('\n=== E. MODIFIER SWEEP: 7 wired + 4 honestly removed ===');
+  const esrc = order.map(f => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch (e) { return ''; } }).join('\n');
+  const wired = ['combat.trade_window', 'combat.heavy_damage', 'combat.damage_taken',
     'social.intimidate', 'combat.enemy_morale', 'combat.outnumbered_bonus', 'combat.solo_damage'];
-  const src = order.map(f => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch (e) { return ''; } }).join('\n');
-  let zeroCount = 0;
-  for (const t of targets) {
+  let wiredOk = 0;
+  for (const t of wired) {
     const re = new RegExp("modTarget\\(['\"]" + t.replace('.', '\\.') + "['\"]", 'g');
-    const hits = (src.match(re) || []).length;
-    if (hits === 0) zeroCount++;
-    note(`   ${hits === 0 ? 'pipelined-only' : 'CONSUMED'} ${t}: call sites=${hits}`);
+    const hits = (esrc.match(re) || []).length;
+    if (hits >= 1) wiredOk++;
+    note(`   ${hits >= 1 ? 'CONSUMED' : 'MISSING'} ${t}: call sites=${hits}`);
   }
-  check('all 10 brawler modifier targets STILL have zero engine consumers (STILL BROKEN — backlog item 5 open)', zeroCount === 10, `${10 - zeroCount}/10 consumed`);
+  check('all 7 wired brawler modifier targets have engine call sites (backlog fixed)', wiredOk === wired.length, `${wiredOk}/${wired.length} consumed`);
+  // Honestly removed (no mechanic to wire into — documented, not silent):
+  // combat.knockdown_resist (no knockdown system), combat.morale_break_resist
+  // (no player morale-break), combat.stun_duration (stuns are 1-turn integers;
+  // halving unrepresentable), combat.initiative (superseded by +2 speed).
+  const dataText = JSON.stringify(Game.data.abilities) + JSON.stringify(Game.data.synergies);
+  const removed = ['combat.knockdown_resist', 'combat.morale_break_resist', 'combat.stun_duration', 'combat.initiative'];
+  const stillDeclared = removed.filter(t => dataText.includes(t));
+  check('4 unwirable modifiers removed from data (no silent dead data)', stillDeclared.length === 0, stillDeclared.join(','));
 
-  // ============ F. THE MISSING 8: useAbility rejects them ============
-  note('\n=== F. THE MISSING 8: useAbility rejects (regression vs audit pin) ===');
-  for (const [ab, act] of absent) {
+  // ============ F. THE RESTORED 8: defs resolve, useAbility narrates ============
+  note('\n=== F. THE RESTORED 8: useAbility resolves + narrates (pins inverted) ===');
+  kit.forEach(id => grant(id, 2)); // section D dropped the kit; a real player holds it
+  for (const [ab, act] of restored) {
     clearSays();
+    const def = Game.abilityActionDef(ab, act);
     const rr = use(ab, act);
     const msg = said();
-    const dead = rr === false && /doesn't exist/.test(msg);
-    check(`${ab}.${act}: useAbility rejects honestly ("doesn't exist")`, dead, JSON.stringify(msg.slice(0, 80)));
+    const honest = !!def && msg.length > 20 && !/doesn't exist/.test(msg);
+    check(`${ab}.${act}: def resolves + useAbility narrates honestly`, honest, JSON.stringify(msg.slice(0, 80)));
   }
 
   // ============ G. PLAY AS A PLAYER: the 7-action loop ============
@@ -323,7 +336,7 @@ function strikeFor(mkey) {
   function gst(tag) { const q = p(); note(`   [${tag}] inCombat=${Game.inCombat()} php=${q ? q.hp : 'DEAD'} mhp=${(Game.tbfight && !Game.tbfight.over) ? Game.tbFighter(mkey).hp : '-'} playerTurn=${(Game.tbfight && !Game.tbfight.over) ? Game.tbIsPlayerTurn() : '-'}`); }
   function refight(tag) { if (!Game.inCombat()) { note(`   (fight ended ${tag} — fresh fight)`); mkey = ensureFight(); kit.forEach(id => grant(id, 2)); topUp(); } }
   note('   You square up on a gallowdeer. Your kit: Trade of Blows, Unbreakable, War Cry, Haymaker.');
-  note('   T1: open_trade (pay 10 HP for +50% x3):');
+  note('   T1: open_trade (pay 10 HP for +50% x4 — trade_window wired):');
   use('trade_of_blows', 'open_trade'); note(`   | ${said().slice(0, 150)}`);
   endTurn(); topUp(); gst('t1');
   note('   The deer answers — antlers rake you. Now cash in the bruises:');
