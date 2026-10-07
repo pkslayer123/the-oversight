@@ -1,0 +1,862 @@
+{
+  "iterations": [
+    {
+      "target": "tg2-deer-firing-unknown",
+      "iter": 1,
+      "declared": true,
+      "says": 0
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "iter": 3,
+      "declared": true,
+      "firing": true,
+      "says": 0
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "iter": 1,
+      "declared": true,
+      "says": 0
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "iter": 3,
+      "declared": true,
+      "firing": true,
+      "says": 0
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "iter": 1,
+      "declared": true,
+      "says": 0
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "iter": 8,
+      "declared": false,
+      "recovery": true,
+      "says": 0
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "iter": 1,
+      "declared": true,
+      "says": 0
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "iter": 8,
+      "declared": false,
+      "recovery": true,
+      "says": 0
+    }
+  ],
+  "says": [
+    {
+      "target": null,
+      "msg": "📖 LEARNED: Boiling Water (Level 1). Rolling boil for 1 minute kills most pathogens. The simplest safe water."
+    },
+    {
+      "target": null,
+      "msg": "📖 LEARNED: Food Preservation (Level 1). Salt, smoke, dry. The big three. Salt draws water out; bacteria can't live without it."
+    },
+    {
+      "target": null,
+      "msg": "📖 Your old life taught you things. 2 skills from your past — check your Journal."
+    },
+    {
+      "target": null,
+      "msg": "Nothing here looks like home. You know none of these plants. Learn fast."
+    },
+    {
+      "target": null,
+      "msg": "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone."
+    },
+    {
+      "target": null,
+      "msg": "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty."
+    },
+    {
+      "target": null,
+      "msg": "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Kira Fischer. Line cook. From Minneapolis, USA. That was yeste"
+    },
+    {
+      "target": null,
+      "msg": "A woman, maybe 30s, with a slouched posture: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\""
+    },
+    {
+      "target": null,
+      "msg": "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp."
+    },
+    {
+      "target": null,
+      "msg": "🐞 SCENARIO: headlight deer. Grazing, five tiles east. It has not seen you."
+    },
+    {
+      "target": null,
+      "msg": "Walk toward it. A person, maybe 40s and A man, maybe 60s are out there too."
+    },
+    {
+      "target": null,
+      "msg": "You don't know what that was. the thing with headlights for eyes, standing too still Someone at the haven should hear about this."
+    },
+    {
+      "target": null,
+      "msg": "⚔ THE THING WITH HEADLIGHTS FOR EYES, STANDING TOO STILL! A person, maybe 40s, A man, maybe 60s join you!"
+    },
+    {
+      "target": null,
+      "msg": "Turn-based now. Tap a tile to move — speed is squares. Then act."
+    },
+    {
+      "target": null,
+      "msg": "A person, maybe 40s doesn't look away. \"About time someone fought back.\""
+    },
+    {
+      "target": null,
+      "msg": "Too close. The deer's gaze SNAPS to A man, maybe 60s — proximity overrules patience."
+    },
+    {
+      "target": null,
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 40s — getting close has a price. (12)"
+    },
+    {
+      "target": null,
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 40s for 12."
+    },
+    {
+      "target": null,
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A man, maybe 60s — getting close has a price. (15)"
+    },
+    {
+      "target": null,
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A man, maybe 60s for 15."
+    },
+    {
+      "target": null,
+      "msg": "It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "A man, maybe 60s harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "A man, maybe 60s hits the thing with headlights for eyes, standing too still for 4."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "A person, maybe 40s harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "A person, maybe 40s hits the thing with headlights for eyes, standing too still for 2."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "It staggers — and its burning gaze fixes on A person, maybe 40s. Pain gets noticed."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "Too close. The deer's gaze SNAPS to A man, maybe 60s — proximity overrules patience."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 40s — getting close has a price. (11)"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 40s for 11."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A man, maybe 60s — getting close has a price. (14)"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A man, maybe 60s for 14."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "💥 A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The light touches the ground where you were standing. It has not found you yet."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 40s — getting close has a price. (14)"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 40s for 14."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "☠ A person, maybe 40s falls."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A man, maybe 60s — getting close has a price. (12)"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A man, maybe 60s for 12."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "☠ A man, maybe 60s falls."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "You escape. The thicket keeps its secrets."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "📖 LEARNED: Reading Weather (Level 2). Falling pressure = weather coming. Your joints ache? That's a barometer. So are the birds — silent birds mean storm."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "📖 LEARNED: Star Navigation (Level 2). The sun is a clock: east at dawn, south at noon (northern hemisphere), west at dusk. Shadows tell time."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "📖 LEARNED: Cordage (Level 2). Reverse-wrap technique makes rope strong enough to hold weight. Braid for more strength."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "📖 Your old life taught you things. 3 skills from your past — check your Journal."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "Nothing here looks like home. You know none of these plants. Learn fast."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Tomás Weiss. Sailor. From Minneapolis, USA. That was yesterday"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "A woman, maybe 30s, with a long braid: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\""
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "🐞 SCENARIO: headlight deer. Grazing, five tiles east. It has not seen you."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "Walk toward it. A person, maybe 50s and A person, maybe 60s, with tattooed arms are out there too."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "You don't know what that was. the thing with headlights for eyes, standing too still Someone at the haven should hear about this."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "⚔ THE THING WITH HEADLIGHTS FOR EYES, STANDING TOO STILL! A person, maybe 50s, A person, maybe 60s, with tattooed arms join you!"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "Turn-based now. Tap a tile to move — speed is squares. Then act."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "A person, maybe 50s doesn't look away. \"About time someone fought back.\""
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "Too close. The deer's gaze SNAPS to A person, maybe 60s, with tattooed arms — proximity overrules patience."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 50s — getting close has a price. (15)"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 50s for 15."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 60s, with tattooed arms — getting close has a price. (13)"
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 60s, with tattooed arms for 13."
+    },
+    {
+      "target": "tg2-deer-firing-unknown",
+      "msg": "It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "A person, maybe 50s harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "A person, maybe 50s hits the thing with headlights for eyes, standing too still for 2."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "It staggers — and its burning gaze fixes on A person, maybe 50s. Pain gets noticed."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "A person, maybe 60s, with tattooed arms harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "A person, maybe 60s, with tattooed arms hits the thing with headlights for eyes, standing too still for 4."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "It staggers — and its burning gaze fixes on A person, maybe 60s, with tattooed arms. Pain gets noticed."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "Too close. The deer's gaze SNAPS to A person, maybe 50s — proximity overrules patience."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 50s — getting close has a price. (16)"
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 50s for 16."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "☠ A person, maybe 50s falls."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 60s, with tattooed arms — getting close has a price. (15)"
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 60s, with tattooed arms for 15."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "💥 Ocular Discharge! A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The light touches the ground where you were standing. It has not found you yet."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 60s, with tattooed arms — getting close has a price. (14)"
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 60s, with tattooed arms for 14."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "☠ A person, maybe 60s, with tattooed arms falls."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "You escape. The thicket keeps its secrets."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "📖 LEARNED: Animal Behavior (Level 2). Predators test: they approach, watch, decide. Prey freezes or bolts. Learn which you're looking at."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "📖 Your old life taught you things. 1 skill from your past — check your Journal."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "Nothing here looks like home. You know none of these plants. Learn fast."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Ines Delgado. Exterminator. From Minneapolis, USA. That was ye"
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "A man, maybe 50s, with sun-creased eyes: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\""
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "🐞 SCENARIO: headlight deer. Grazing, five tiles east. It has not seen you."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "Walk toward it. A person, maybe 30s, with a long braid and A person, maybe 30s, with restless hands are out there too."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "You don't know what that was. the thing with headlights for eyes, standing too still Someone at the haven should hear about this."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "⚔ THE THING WITH HEADLIGHTS FOR EYES, STANDING TOO STILL! A person, maybe 30s, with a long braid, A person, maybe 30s, with restless hands join you!"
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "Turn-based now. Tap a tile to move — speed is squares. Then act."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "A person, maybe 30s, with restless hands freezes. \"What IS that?\""
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "Too close. The deer's gaze SNAPS to A person, maybe 30s, with restless hands — proximity overrules patience."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 30s, with a long braid — getting close has a price. (14)"
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 30s, with a long braid for 14."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 30s, with restless hands — getting close has a price. (11)"
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 30s, with restless hands for 11."
+    },
+    {
+      "target": "tg2-deer-firing-known",
+      "msg": "It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "A person, maybe 30s, with a long braid harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "A person, maybe 30s, with a long braid hits the thing with headlights for eyes, standing too still for 4."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "It staggers — and its burning gaze fixes on A person, maybe 30s, with a long braid. Pain gets noticed."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "A person, maybe 30s, with restless hands harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "A person, maybe 30s, with restless hands hits the thing with headlights for eyes, standing too still for 2."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "It staggers — and its burning gaze fixes on A person, maybe 30s, with restless hands. Pain gets noticed."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "Too close. The deer's gaze SNAPS to A person, maybe 30s, with a long braid — proximity overrules patience."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 30s, with a long braid — getting close has a price. (13)"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 30s, with a long braid for 13."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 30s, with restless hands — getting close has a price. (10)"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 30s, with restless hands for 10."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "💥 Ocular Discharge! A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The light touches the ground where you were standing. It has not found you yet."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 30s, with a long braid — getting close has a price. (13)"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 30s, with a long braid for 13."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "☠ A person, maybe 30s, with a long braid falls."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A person, maybe 30s, with restless hands — getting close has a price. (15)"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A person, maybe 30s, with restless hands for 15."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "☠ A person, maybe 30s, with restless hands falls."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam holds its line, burning where you were. It did not have to move at all."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The beam gutters out. the thing with headlights for eyes, standing too still sags — the light behind its eyes dims to embers. It needs a moment."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "You escape. The thicket keeps its secrets."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 LEARNED: Boiling Water (Level 1). Rolling boil for 1 minute kills most pathogens. The simplest safe water."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 LEARNED: Wound Care (Level 1). Clean it, close it, cover it. Pressure stops bleeding. Clean water is better than dirty hands."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "⚡ TECHNIQUE UNLOCKED: Precise Mend! Your healing knows where to go. +50% effectiveness. (Your knowledge of Wound Care amplifies your triage.)"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 LEARNED: Anatomy (Level 1). You know where the important bits are. Arteries, joints, organs. Useful for healing or hurting."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 LEARNED: Herbal Medicine (Level 1). Willow bark = aspirin. Yarrow stops bleeding. Plantain draws out infection. The pharmacy is outside."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 LEARNED: Calming Panic (Level 1). Ground them: 5 things you see, 4 you hear, 3 you touch. Breathe with them. Slow is fast."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 Your old life taught you things. 5 skills from your past — check your Journal."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "Nothing here looks like home. You know none of these plants. Learn fast."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Talia Vega. Er nurse. From Minneapolis, USA. That was yesterda"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "A person, maybe 60s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\""
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "🐞 SCENARIO: headlight deer. Grazing, five tiles east. It has not seen you."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "Walk toward it. A woman, maybe 40s and A man, maybe 50s, with ink-stained fingers are out there too."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "You don't know what that was. the thing with headlights for eyes, standing too still Someone at the haven should hear about this."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "⚔ THE THING WITH HEADLIGHTS FOR EYES, STANDING TOO STILL! A woman, maybe 40s, A man, maybe 50s, with ink-stained fingers join you!"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "Turn-based now. Tap a tile to move — speed is squares. Then act."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "A woman, maybe 40s squares up to watch. \"Give it hell.\""
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "Too close. The deer's gaze SNAPS to A woman, maybe 40s — proximity overrules patience."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A woman, maybe 40s — getting close has a price. (13)"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A woman, maybe 40s for 13."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A man, maybe 50s, with ink-stained fingers — getting close has a price. (16)"
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A man, maybe 50s, with ink-stained fingers for 16."
+    },
+    {
+      "target": "tg2-deer-recovery-known",
+      "msg": "It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "A man, maybe 50s, with ink-stained fingers harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "A man, maybe 50s, with ink-stained fingers hits the thing with headlights for eyes, standing too still for 2."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "It staggers — and its burning gaze fixes on A man, maybe 50s, with ink-stained fingers. Pain gets noticed."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "A woman, maybe 40s harries the thing with headlights for eyes, standing too still."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "A woman, maybe 40s hits the thing with headlights for eyes, standing too still for 2."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "It staggers — and its burning gaze fixes on A woman, maybe 40s. Pain gets noticed."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "Too close. The deer's gaze SNAPS to A man, maybe 50s, with ink-stained fingers — proximity overrules patience."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A woman, maybe 40s — getting close has a price. (15)"
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A woman, maybe 40s for 15."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A man, maybe 50s, with ink-stained fingers — getting close has a price. (11)"
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A man, maybe 50s, with ink-stained fingers for 11."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "💥 A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The light touches the ground where you were standing. It has not found you yet."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A woman, maybe 40s — getting close has a price. (11)"
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A woman, maybe 40s for 11."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "☠ A woman, maybe 40s falls."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The the thing with headlights for eyes, standing too still thrashes its antlers at A man, maybe 50s, with ink-stained fingers — getting close has a price. (10)"
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The thing with headlights for eyes, standing too still's antlers hits A man, maybe 50s, with ink-stained fingers for 10."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "☠ A man, maybe 50s, with ink-stained fingers falls."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "You carry the weight of it. They died beside you."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam carves a bright arc across the ground, swinging after its target. It does not blink. It does not hurry."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam swings wide, scorching the earth where you were."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "🔥 the beam SITS on you! (72)"
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The attack hits you for 72."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "📖 Codex: Ocular Discharge — fires a sweeping beam that tracks you while it burns — outrun it sideways, block it with walls, or close in and break its aim. You won't forget this."
+    },
+    {
+      "target": "tg2-deer-recovery-unknown",
+      "msg": "The beam gutters out. the thing with headlights for eyes, standing too still sags — the light behind its eyes dims to embers. It needs a moment."
+    }
+  ]
+}
