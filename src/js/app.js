@@ -12793,17 +12793,27 @@ ${renderBuildIndicator()}
         // VISIBILITY - ROOT CAUSE FIX (Steve 2026-10-06):
         // The seenTiles lookup was unreliable in the render context (tiles
         // showed as unseen despite the counter saying "3 seen").
-        // Tiles within Chebyshev distance 1 of the PLAYER's current position (3x3)
-        // are visible. Uses seenTiles as primary, falls back to player proximity.
-        // FIX (Steve 2026-10-07): was hardcoded to (2-4, 2-4), showing nodes
-        // around haven regardless of player position.
+        // VISIBILITY (Steve 2026-10-07):
+        // - 3x3 around player is VISIBLE (not fog)
+        // - 'visited' (player was there): full SVG detail node
+        // - 'shared' (villager/codex shared, pre-codex): biome tile color only, NOT detailed SVG
+        // - null (never visited/shared): fog/dark
+        // Fog of war until visited personally or via a connection.
         let seen = null;
         let diagColor = null;
+        let inProximity = false;
         try {
           const px = (Game.map && Game.map.px) || 4;
           const py = (Game.map && Game.map.py) || 4;
-          if (Math.abs(x - px) <= 1 && Math.abs(y - py) <= 1) {
-            seen = (x === px && y === py) ? 'visited' : 'shared';
+          inProximity = Math.abs(x - px) <= 1 && Math.abs(y - py) <= 1;
+          // Check actual visit history from seenTiles
+          const st = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
+          const entry = st[x + ',' + y];
+          if (entry) {
+            seen = entry.k === 'v' ? 'visited' : 'shared';
+          } else if (inProximity) {
+            // In 3x3 but never visited/shared: visible as terrain, not detailed
+            seen = 'proximity';
           }
         } catch (e) {}
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
@@ -12850,6 +12860,17 @@ ${renderBuildIndicator()}
         } else if (!seen) {
             g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
               `<rect x="2" y="2" width="60" height="60" rx="8" fill="#0d120d" stroke="#1a2a1a" stroke-width="1"/></svg>`;
+          } else if (seen === 'shared' || seen === 'proximity') {
+            // Steve 2026-10-07: shared/proximity tiles show as BIOME COLOR ONLY,
+            // not detailed SVG. Fog of war for detail until visited personally
+            // or via codex connection.
+            const biomeColors = {
+              haven: '#7cbd6b', meadow: '#7cbd6b', forest: '#2d6a2d', grove: '#3a7d3a',
+              wetland: '#4a8a8a', creek: '#5a9aba', thicket: '#2d5a2d', trail_edge: '#8a7a5a',
+              forest_floor: '#3a5a3a'
+            };
+            const bg = biomeColors[(tl && tl.type) || 'meadow'] || '#7cbd6b';
+            g = `<div style="background:${bg};width:100%;height:100%;min-height:40px;border-radius:4px;opacity:0.7"></div>`;
           } else {
             try {
               if (TS && TS.svgFor && tl) {
