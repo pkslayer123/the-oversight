@@ -492,8 +492,11 @@
       };
       if (opts.field) doubt.field = opts.field;
       cx.doubts.push(doubt);
-      // surface in the journal as a ❓ note — visible in the current UI
-      try { this.journalLearn(vid, 'note', '❓ ' + text, { via: 'doubt', quiet: false }); } catch (e) {}
+      // surface in the journal as a ❓ note — visible in the current UI.
+      // quiet:true (used by the cache-theft gossip, which says the payload
+      // outright first) skips the generic "jotted down" label — the note is
+      // still recorded, just not double-announced.
+      try { this.journalLearn(vid, 'note', '❓ ' + text, { via: 'doubt', quiet: opts.quiet === true }); } catch (e) {}
       return doubt;
     },
 

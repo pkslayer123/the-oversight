@@ -24,6 +24,7 @@
 //   - stashLedgerText()
 //   - buryCache()
 //   - digUpCache()
+//   - takeFromCache(cacheId, itemIdx, qty)
 //   - playerCaches()
 //   - cachesHtml()
 //   - cacheTheftChance()
@@ -508,6 +509,71 @@
       this.say(`Dug up: ${dugLabel}. Still yours.`);
       return this.tickAction(16) || this.status();
     },
+    // takeFromCache(cacheId, itemIdx, qty): draw rations from a buried cache
+    // without digging it all up. Location-gated like digUpCache — you walk
+    // back out there like everyone else. Weight-checked on the PORTION, not
+    // the whole cache: a winter stockpile shouldn't brick because it's heavy,
+    // and a miser with a full pack can still draw a few days' food.
+    // A take attempted on a robbed cache discovers the theft at the hole —
+    // reaching into the earth IS checking it (same rule as digUpCache).
+    takeFromCache(cacheId, itemIdx, qty) {
+      const caches = this.playerCaches();
+      const c = caches.find(x => x.id === cacheId);
+      if (!c) return null;
+      // LOCATION: a cache is where you buried it. No drawing rations from
+      // the hall couch — you walk back out there like everyone else.
+      const cn = c.node || {};
+      if (cn.x !== this.map.px || cn.y !== this.map.py) {
+        let where = 'somewhere else';
+        try { where = this.nodeEpithet(cn.x, cn.y) || where; } catch (e) {}
+        this.say(`Not here. Your ${this.journalName()} says: ${c.desc || ('buried at ' + where)}.`);
+        return null;
+      }
+      if (c.found) {
+        // DISCOVERY (Steve 2026-10-06): the hole is where the player LEARNS.
+        this.say('You scrape at the buried spot. Disturbed earth. Nothing. Someone got here first.');
+        c.discovered = true;
+        try {
+          const cxd = this.state.codex;
+          cxd.places = cxd.places || [];
+          cxd.places.push({ day: day(), text: `Cache robbed: ${c.desc}` });
+        } catch (e) {}
+        caches.splice(caches.indexOf(c), 1);
+        return this.tickAction(8) || this.status();
+      }
+      const it = c.items[itemIdx];
+      if (!it) return null;
+      qty = Math.min(Math.floor(qty || 0), it.units || 1);
+      if (qty <= 0) { this.say('Take how many?'); return null; }
+      // SPOILAGE UNDERGROUND: same rule as digUpCache — the rotted portion
+      // goes to the worms, the rest stays buried.
+      const today = day();
+      if (!it.material && it.spoilDay !== undefined && it.spoilDay !== null && it.spoilDay <= today) {
+        this.say(`${qty}× ${it.name} went bad underground — left for the worms.`);
+        it.units -= qty;
+        if (it.units <= 0) c.items.splice(itemIdx, 1);
+        if (!c.items.length) caches.splice(caches.indexOf(c), 1);
+        return this.tickAction(8) || this.status();
+      }
+      // weight check — on what you're actually carrying home, not the cache
+      const inv = this.state.scholar.inventory || [];
+      const carry = inv.reduce((t2, i) => t2 + (i.kg || 0) * (i.units || 1), 0) + (this.waterWeight ? this.waterWeight() : 0);
+      const max = this.carryCapacity ? this.carryCapacity() : 20;
+      const need = (it.kg || 0) * qty;
+      if (carry + need > max) { this.say('Too heavy for that much. Take less, or lighten your pack.'); return null; }
+      it.units -= qty;
+      if (it.material) this.addMaterial(it.material, qty);
+      else {
+        const ex = inv.find(e => e.name === it.name && !e.material);
+        if (ex) ex.units = (ex.units || 0) + qty;
+        else inv.push(Object.assign({}, it, { units: qty }));
+      }
+      const left = it.units;
+      if (left <= 0) c.items.splice(itemIdx, 1);
+      if (!c.items.length) caches.splice(caches.indexOf(c), 1);
+      this.say(`Took ${qty}× ${it.name} from the cache${left > 0 ? `. ${left}× stays buried.` : '.'}`);
+      return this.tickAction(8) || this.status();
+    },
     // pickCacheRobber: the culprit is a real villager, weighted by appetite.
     // Selfish sharers and low-trust villagers are likelier; a villager whose
     // goal is survival is hungrier than most. Never the player.
@@ -547,11 +613,18 @@
       const wName = this.displayName(witness);
       const rName = this.displayName(vid);
       const text = `${wName} mentioned seeing ${rName} out by ${place} around day ${day()} — pack heavy, walking fast. Your cache at ${place} was robbed around then.`;
+      // SAID OUTRIGHT (Steve 2026-10-06, miser loop): every other gossip path
+      // in truth.js says the payload with ❓ before planting the doubt.
+      // addDoubt alone only journals a generic "jotted down what they said"
+      // label — the player would see DISTURBED on the caches screen with no
+      // in-fiction idea why, and the gut-punch never lands. The gossip tells
+      // the player outright, so the DISTURBED marker is knowledge-consistent
+      // from here on. quiet:true keeps the generic label from double-posting.
+      try { this.say(`❓ ${text}`); } catch (e) {}
       const d = this.addDoubt(vid, 'observation', text,
-        [`${wName} saw them near ${place} (day ${day()})`, `cache robbed: ${c.label}`]);
+        [`${wName} saw them near ${place} (day ${day()})`, `cache robbed: ${c.label}`],
+        { quiet: true });
       if (d) d.theft = { cacheId: c.id, label: c.label, place, day: day(), witness };
-      // The gossip told the player outright: this cache's DISTURBED marker
-      // is knowledge-consistent from here on.
       c.discovered = true;
       return d;
     },
@@ -572,8 +645,19 @@
       // player digs.) The button reads "Check" once the player knows.
       const list = caches.length ? caches.map(c => {
         const disturbed = c.found && c.discovered;
-        return `<p class="small">📍 ${c.desc}${disturbed ? ' — <b style="color:#e05c5c">DISTURBED</b>' : ''} ` +
+        const head = `<p class="small">📍 ${c.desc}${disturbed ? ' — <b style="color:#e05c5c">DISTURBED</b>' : ''} ` +
           `<button class="btn ghost sm" data-cache-dig="${c.id}">${disturbed ? 'Check' : 'Dig up'}</button></p>`;
+        // RATION DRAWER (miser): take some without digging it all up. One
+        // qty input per cache, a Take per item — mirrors the bury form below.
+        const items = (!c.found && (c.items || []).length) ? `<div style="margin:2px 0 8px 16px">` +
+          c.items.map((it, idx) => {
+            const kcal = (it.kcalEach || 0) * (it.units || 1);
+            const nm = `${it.units || 1}× ${it.name}${kcal > 0 ? ` (${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})` : ''}`;
+            return `<span class="small">${nm} <button class="btn ghost sm" data-cache-take="${c.id}:${idx}">Take</button></span>`;
+          }).join(' · ') +
+          ` <input id="take-qty-${c.id}" type="number" min="1" value="1" style="width:44px" class="small" title="how many">` +
+          `</div>` : '';
+        return head + items;
       }).join('') : '<p class="small" style="opacity:.6">No caches. Bury something and it\'ll be here.</p>';
       // bury form: materials you carry + food you carry
       const inv = this.state.scholar.inventory || [];
