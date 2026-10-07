@@ -59,7 +59,8 @@
         "I've been meaning to ask — is the dirt here always this red, or is that me?",
         "You fight like my third wife. She also left me."
       ]
-    }
+    },
+    "experience": "veteran"
   },
   {
     "backstory": "Meridian aristocracy. Doesn't collect objects — collects emotional states, preserved in crystal. Despair is her specialty. Earth's apocalypse is a vintage year. She finds your struggle... aesthetic.",
@@ -121,7 +122,8 @@
         "I've preserved stronger wills than yours in smaller jars.",
         "Do you dream? I do hope you dream. I collect those too."
       ]
-    }
+    },
+    "experience": "veteran"
   },
   {
     "backstory": "Not actually a dentist. Not actually licensed for anything. K'thari pleasure-seekers experience pain as data — rich, textured data. Rax paid for the most sensitive avatar sleeve available and turned every safety off. This is research. Probably.",
@@ -183,7 +185,8 @@
         "I've mapped 4,000 pain responses. Yours is in the top 50. Top 50!",
         "Is it weird that I'm enjoying this? Don't answer. It's data."
       ]
-    }
+    },
+    "experience": "veteran"
   },
   {
     "backstory": "Burlap are small, fuzzy, and pathologically curious. Pip saved for six years to afford a tourist-grade avatar sleeve for Earth. This is the trip of a lifetime. Has a camera. Will absolutely ask for a selfie after trying to kill you.",
@@ -249,7 +252,8 @@
         "What's that smell? Is that me? Is that YOU?",
         "After this, can you show me where the bathrooms are? Asking for the vlog."
       ]
-    }
+    },
+    "experience": "rookie"
   },
   {
     "backstory": "Twenty years in the K'thari Expeditionary. Retired with honors and nightmares. Came to Earth because peace was killing him slower than war did. Fights because it's the only thing that makes sense. Respects anyone who stands their ground.",
@@ -311,7 +315,8 @@
         "Breathe. You're holding your breath.",
         "I've seen worse. Not much worse."
       ]
-    }
+    },
+    "experience": "veteran"
   },
   {
     "backstory": "Studies humans the way humans study ants — with genuine fascination and questionable ethics. The avatar sleeve is a research grant. Every fight is data. Every conversation is data. You are the most interesting thing Dr. Fenwick has ever met.",
@@ -373,7 +378,8 @@
         "Your cortisol levels are fascinating. Can I get a sample?",
         "Hold on, I need to write this down. Don't go anywhere. Actually, keep fighting."
       ]
-    }
+    },
+    "experience": "veteran"
   },
   {
     "backstory": "Young Vexari on a cultural exchange. Was supposed to observe. Started actually watching — really watching — and got sick. The games are wrong. Everyone knows it. Nobody says it. Wren says it, quietly, to you, in dead drops and warnings.",
@@ -401,7 +407,8 @@
     "title": "Student, Vexari Exchange Program",
     "victoryLines": [],
     "voice": "Young, earnest, scared but determined",
-    "wealth": "broke"
+    "wealth": "broke",
+    "experience": "veteran"
   },
   {
     "backstory": "Hunted for sport for thirty years. Then on some forgotten planet, something looked back at him — really looked — and he put down the spear. Came to Earth to make amends the only way he knows: by losing, gracefully, to those who deserve to win.",
@@ -465,6 +472,7 @@
         "I used to be good at this. The winning. It never felt like this.",
         "Eat something after. You look thin."
       ]
-    }
+    },
+    "experience": "veteran"
   }
 ]

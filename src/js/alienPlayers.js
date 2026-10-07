@@ -27,6 +27,19 @@
 //   - apStartGroupEncounter(pids)
 //   - apOnCombatEnd(pid, outcome)
 //   - apDailyTick()
+//   - apPlaygroundTick()
+//   - apMaybeActivate()
+//   - apMaybeDeactivate()
+//   - apPlaygroundAction()
+//   - apPlaygroundKill()
+//   - apPlaygroundBurn()
+//   - apPlaygroundRaid()
+//   - apPlaygroundRookieMistake()
+//   - apPlaygroundDuel()
+//   - apFactionAligned()
+//   - apVillagerFear()
+//   - apIsArsonist()
+//   - apExperience()
 //   - apFavor()
 //   - apAdjustFavor(n, why)
 //   - apContestInterference(ac)
@@ -51,6 +64,9 @@
 //   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
 //   - (progression) alien players level alongside you: kit grows 3->6 abilities, tech upgrades; rich progress faster (buy), broke slower (earn) (code: alienPlayers.js)
 //   - (groups) rare late-game 2-3 persona team encounters (day 40+, 3%, 14-day cooldown, needs 2+ established rivals) with inter-alien banter (code: alienPlayers.js)
+//   - (playground) active aliens persist for days: kill villagers/monsters/animals, burn map (Sable/Vex), raid pantry/fire/trust (veterans), fight each other; max 3 active (code: alienPlayers.js)
+//   - (factions) sadistic coordinate loosely (70%), benevolent solid (90%), neutral opportunistic; sadistic+benevolent never align (code: alienPlayers.js)
+//   - (veterans) most aliens played before: exploit pantry/fire/trust mechanics; Pip is the rookie who makes charming mistakes (code: alienPlayers.js)
 // consumes:
 //   - state.systemArrived, unlockedWave(), endDay (wrapped)
 //   - sysSay, say, displayName
@@ -845,6 +861,8 @@
       try { this.apFeedMessage(); } catch (e) {}
       // Care packages are rarer — check every day, gate inside
       try { if (Math.random() < 0.25) this.apCarePackage(); } catch (e) {}
+      // Playground: persistent aliens act (kill, burn, raid, duel)
+      try { this.apPlaygroundTick(); } catch (e) {}
       // Deep integration ticks
       try { this.apVillageGossip(); } catch (e) {}
       try { this.apContactWarning(); } catch (e) {}
@@ -1119,6 +1137,472 @@
       this.say('💬 ' + warnings[Math.floor(Math.random() * warnings.length)]);
       return true;
     },
+    // ============ PLAYGROUND (Steve 2026-10-07) ============
+    // Alien players are PERSISTENT. Once they enter your game, they stay for
+    // days — killing villagers, monsters, and animals, burning the map,
+    // fighting each other, raiding your pantry, and exploiting every mechanic
+    // they know. Most have played before. This is their playground.
+
+    // Active presence: pids currently "in the game" (not just encountered).
+    // active[pid] = { enteredDay, lastActionDay }
+    apActive: function () {
+      var ap = this.apState();
+      ap.active = ap.active || {};
+      return ap.active;
+    },
+
+    // Maybe an alien player ENTERS the game (becomes persistent).
+    // Called from the daily tick. Separate from encounter rolls.
+    apMaybeActivate: function () {
+      if (!this.apEncounterEligible()) return null;
+      var ap = this.apState();
+      var active = this.apActive();
+      var day = (this.state.scholar || {}).day || 1;
+
+      // Max 3 active at once (balance: spice, not the whole meal)
+      var count = Object.keys(active).length;
+      if (count >= 3) return null;
+
+      // Don't activate too often — max 1 new per 4 days
+      if (day - (ap.lastActivateDay || -999) < 4) return null;
+      if (Math.random() > 0.3) return null;
+
+      // Pick from combat personas not already active
+      var candidates = [];
+      var personas = this.apPersonas();
+      for (var i = 0; i < personas.length; i++) {
+        var cp = personas[i];
+        if (COMBAT_PILOTS.indexOf(cp.id) < 0) continue;
+        if (active[cp.id]) continue;
+        // Weight: sadistic more likely to go active (they're here to play)
+        var w = cp.disposition === 'sadistic' ? 3 : cp.disposition === 'neutral' ? 2 : 1;
+        candidates.push({ p: cp, w: w });
+      }
+      if (!candidates.length) return null;
+
+      var total = 0, k;
+      for (k = 0; k < candidates.length; k++) total += candidates[k].w;
+      var r = Math.random() * total, chosen = null;
+      for (k = 0; k < candidates.length; k++) { r -= candidates[k].w; if (r <= 0) { chosen = candidates[k].p.id; break; } }
+      if (!chosen) chosen = candidates[candidates.length - 1].p.id;
+
+      active[chosen] = { enteredDay: day, lastActionDay: day };
+      ap.lastActivateDay = day;
+
+      var per = this.apPersona(chosen);
+      if (per && this.state.systemArrived) {
+        // They don't announce themselves — you hear about it
+        this.sysSay('◈ The System feed flickers: "' + per.name + ' has entered the game. The odds just got interesting."');
+      }
+      return chosen;
+    },
+
+    // Maybe an active alien LEAVES (they get bored, they die, they move on).
+    apMaybeDeactivate: function (pid) {
+      var active = this.apActive();
+      var rec = active[pid];
+      if (!rec) return;
+      var ap = this.apState();
+      var day = (this.state.scholar || {}).day || 1;
+      var per = this.apPersona(pid);
+
+      // Rich ones stay longer (they can afford to). Broke ones leave sooner.
+      var wealth = this.apWealthOf(pid);
+      var maxStay = wealth === 'rich' ? 12 : wealth === 'comfortable' ? 8 : 5;
+      var daysIn = day - rec.enteredDay;
+
+      // Leave if: been too long, or random boredom (neutral especially)
+      var bored = per && per.disposition === 'neutral' && Math.random() < 0.15;
+      if (daysIn >= maxStay || bored) {
+        delete active[pid];
+        if (per && this.state.systemArrived && Math.random() < 0.5) {
+          this.sysSay('◈ "' + per.name + ' has left the game. ' +
+            (bored ? 'Said something about dinner reservations.' : 'The feed goes quiet.') + '"');
+        }
+      }
+    },
+
+    // THE PLAYGROUND TICK: each active alien does something every day.
+    // Called from apDailyTick.
+    apPlaygroundTick: function () {
+      if (!this.apEncounterEligible()) return;
+      var active = this.apActive();
+      var pids = Object.keys(active);
+      if (!pids.length) {
+        // No one active — maybe someone enters
+        try { this.apMaybeActivate(); } catch (e) {}
+        return;
+      }
+
+      for (var i = 0; i < pids.length; i++) {
+        var pid = pids[i];
+        try {
+          // Each active alien acts (not every day — they're busy)
+          if (Math.random() < 0.6) this.apPlaygroundAction(pid);
+          // Maybe they leave
+          this.apMaybeDeactivate(pid);
+        } catch (e) {}
+      }
+
+      // Aliens may fight EACH OTHER (rare, dramatic)
+      try { this.apPlaygroundDuel(); } catch (e) {}
+
+      // Maybe someone new enters
+      try { this.apMaybeActivate(); } catch (e) {}
+    },
+
+    // One active alien's daily off-screen action.
+    apPlaygroundAction: function (pid) {
+      var per = this.apPersona(pid);
+      if (!per) return;
+      var active = this.apActive();
+      var day = (this.state.scholar || {}).day || 1;
+      if (active[pid]) active[pid].lastActionDay = day;
+
+      var disp = per.disposition;
+      var exp = this.apExperience(pid); // 'veteran' or 'rookie'
+
+      // Choose an action (weighted by disposition and personality)
+      var roll = Math.random();
+
+      // VETERANS exploit mechanics. Rookies make mistakes.
+      var isVeteran = (exp === 'veteran');
+
+      if (disp === 'sadistic') {
+        if (roll < 0.25) return this.apPlaygroundKill(pid, 'villager');
+        if (roll < 0.40) return this.apPlaygroundKill(pid, 'monster');
+        if (roll < 0.50) return this.apPlaygroundKill(pid, 'animal');
+        if (roll < 0.65 && this.apIsArsonist(pid)) return this.apPlaygroundBurn(pid);
+        if (roll < 0.80 && isVeteran) return this.apPlaygroundRaid(pid);
+        return this.apPlaygroundKill(pid, 'monster'); // default: hunt
+      } else if (disp === 'neutral') {
+        if (roll < 0.20) return this.apPlaygroundKill(pid, 'monster'); // hunting
+        if (roll < 0.30) return this.apPlaygroundKill(pid, 'animal'); // foraging/fun
+        if (roll < 0.40 && isVeteran) return this.apPlaygroundRaid(pid); // opportunistic
+        if (roll < 0.45 && !isVeteran) return this.apPlaygroundRookieMistake(pid); // Pip!
+        return null; // neutral often just... watches
+      } else {
+        // Benevolent: they don't kill. They help, they warn, they watch.
+        // Old Tam might hunt monsters (he's atoning, not passive)
+        if (pid === 'old_tam' && roll < 0.3) return this.apPlaygroundKill(pid, 'monster');
+        return null; // Wren stays hidden
+      }
+    },
+
+    // Who's an arsonist? Sable always. Vex sometimes (spectacle).
+    apIsArsonist: function (pid) {
+      if (pid === 'countess_sable') return true;
+      if (pid === 'vex_marlowe' && Math.random() < 0.4) return true;
+      return false;
+    },
+
+    // Experience: most have played before. Pip is new.
+    apExperience: function (pid) {
+      var per = this.apPersona(pid);
+      if (per && per.experience) return per.experience;
+      // Default: veterans. Pip is the rookie.
+      return (pid === 'pip_quindle') ? 'rookie' : 'veteran';
+    },
+
+    // KILL: an active alien kills something off-screen.
+    apPlaygroundKill: function (pid, target) {
+      var per = this.apPersona(pid);
+      if (!per) return false;
+      var ap = this.apState();
+      var day = (this.state.scholar || {}).day || 1;
+
+      if (target === 'villager') {
+        // Kill a villager (not the player — that's a direct encounter)
+        var v = this.state.village || {};
+        var roster = (v.roster || []).filter(function (rid) {
+          return rid !== this.villagerId && !(this.vpOf(rid) || {}).dead;
+        }, this);
+        if (!roster.length) return false;
+        // Don't kill too often — max 1 villager per 5 days per alien
+        if (day - (ap.lastVillagerKillDay || -999) < 5) return false;
+
+        var victim = roster[Math.floor(Math.random() * roster.length)];
+        var vp = this.vpOf(victim) || {};
+        var vname = this.displayName ? this.displayName(victim) : (vp.name || 'a villager');
+
+        // Mark dead and register
+        try {
+          vp.dead = true;
+          if (this.registerDeath) {
+            this.registerDeath({ kind: 'person', villagerId: victim, name: vname, cause: 'alien', killerId: 'ap_' + pid });
+          }
+        } catch (e) {}
+
+        ap.lastVillagerKillDay = day;
+        // Villagers react: fear, gossip
+        try { this.apVillagerFear(pid, vname); } catch (e) {}
+
+        // System feed reports it (if you have the feed)
+        if (this.state.systemArrived && Math.random() < 0.7) {
+          var known = this.apKnowsAlien(pid);
+          var who = known ? per.name : 'a stranger';
+          this.sysSay('◈ "' + vname + ' was found dead near the treeline. ' + who + ' was seen in the area. The village is terrified."');
+        }
+        return true;
+
+      } else if (target === 'monster') {
+        // Kill a monster (competing for the hunt, or clearing the board)
+        // This is abstract — we don't track individual off-screen monsters,
+        // but we report it and it affects the monster population feel
+        if (this.state.systemArrived && Math.random() < 0.5) {
+          var known2 = this.apKnowsAlien(pid);
+          var who2 = known2 ? per.name : 'Someone';
+          var msgs = [
+            '◈ "' + who2 + ' just took down a monster near the ridge. Show-off."',
+            '◈ "Another monster down. ' + who2 + ' is clearing the board."',
+            '◈ "The feed shows ' + who2 + ' standing over a monster corpse. They\'re not even breathing hard."',
+          ];
+          this.sysSay(msgs[Math.floor(Math.random() * msgs.length)]);
+        }
+        return true;
+
+      } else if (target === 'animal') {
+        // Kill an animal (fun, resources, or accident)
+        if (this.state.systemArrived && Math.random() < 0.3) {
+          this.sysSay('◈ "Something\'s hunting the wildlife. The deer are nervous."');
+        }
+        return true;
+      }
+      return false;
+    },
+
+    // BURN: an arsonist burns part of the map.
+    apPlaygroundBurn: function (pid) {
+      var per = this.apPersona(pid);
+      if (!per) return false;
+      var ap = this.apState();
+      var day = (this.state.scholar || {}).day || 1;
+
+      // Limit: max 1 burn per 7 days (balance)
+      if (day - (ap.lastBurnDay || -999) < 7) return false;
+      ap.lastBurnDay = day;
+
+      // Burn some tiles — mark them as burned in the detail
+      // We do this abstractly: the next time the player visits, tiles are ash
+      try {
+        var s = this.state.scholar;
+        s.burnedTiles = s.burnedTiles || {};
+        // Burn 3-5 random tiles on the current node
+        var key = this.map.px + ',' + this.map.py;
+        s.burnedTiles[key] = s.burnedTiles[key] || [];
+        for (var i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
+          s.burnedTiles[key].push({
+            mx: Math.floor(Math.random() * 9),
+            my: Math.floor(Math.random() * 9),
+            day: day, by: pid
+          });
+        }
+      } catch (e) {}
+
+      // Villagers are terrified
+      try { this.apVillagerFear(pid, null, 'burn'); } catch (e) {}
+
+      if (this.state.systemArrived) {
+        var known = this.apKnowsAlien(pid);
+        var who = known ? per.name : 'Someone';
+        this.say('🔥 You smell smoke. A column rises from the treeline. ' + who + ' is burning the map. For fun. For the spectacle. Because they can.');
+        this.sysSay('◈ "' + who + ' just torched the old camp area. The feed is eating it up. Sickos."');
+      }
+      return true;
+    },
+
+    // RAID: veterans exploit game mechanics they know.
+    apPlaygroundRaid: function (pid) {
+      var per = this.apPersona(pid);
+      if (!per) return false;
+      var ap = this.apState();
+      var day = (this.state.scholar || {}).day || 1;
+
+      // Limit: max 1 raid per 6 days
+      if (day - (ap.lastRaidDay || -999) < 6) return false;
+
+      var roll = Math.random();
+      var didSomething = false;
+
+      if (roll < 0.35) {
+        // PANTRY RAID: they know about the pantry
+        try {
+          var v = this.state.village || {};
+          var pantry = v.pantry || { kcal: 0 };
+          var steal = Math.min(pantry.kcal || 0, 500 + Math.floor(Math.random() * 500));
+          if (steal > 0) {
+            pantry.kcal = (pantry.kcal || 0) - steal;
+            v.pantry = pantry;
+            ap.lastRaidDay = day;
+            didSomething = true;
+            this.say('🥷 Your pantry is lighter. Someone knew exactly where it was. Someone who\'s played this game before.');
+            if (this.state.systemArrived) {
+              var known = this.apKnowsAlien(pid);
+              this.sysSay('◈ "' + (known ? per.name : 'Someone') + ' just raided a pantry. Textbook. They\'ve done this before."');
+            }
+          }
+        } catch (e) {}
+      } else if (roll < 0.60) {
+        // FIRE SABOTAGE: extinguish the fire to hurt you
+        try {
+          // We mark it abstractly — the fire goes out
+          var s = this.state.scholar;
+          s.fireSabotaged = { day: day, by: pid };
+          ap.lastRaidDay = day;
+          didSomething = true;
+          this.say('🔥 Your fire is out. Not burned down — doused. Deliberately. Someone knows that fire is life out here.');
+        } catch (e) {}
+      } else {
+        // TRUST SABOTAGE: turn villagers against you
+        try {
+          var v2 = this.state.village || {};
+          var roster = (v2.roster || []).filter(function (rid) {
+            return rid !== this.villagerId && !(this.vpOf(rid) || {}).dead;
+          }, this);
+          if (roster.length) {
+            var target = roster[Math.floor(Math.random() * roster.length)];
+            v2.trust = v2.trust || {};
+            v2.trust[target] = Math.max(-100, (v2.trust[target] || 0) - 15);
+            ap.lastRaidDay = day;
+            didSomething = true;
+            var tname = this.displayName ? this.displayName(target) : 'Someone';
+            this.say('🗣️ ' + tname + ' is giving you strange looks. Someone\'s been talking. Someone who knows how trust works here.');
+          }
+        } catch (e) {}
+      }
+      return didSomething;
+    },
+
+    // ROOKIE MISTAKE: Pip does something newbie and charming.
+    apPlaygroundRookieMistake: function (pid) {
+      var per = this.apPersona(pid);
+      if (!per || pid !== 'pip_quindle') return false;
+
+      var mistakes = [
+        '◈ "Pip just tried to pet a monster. It did not go well. Pip is fine. The monster is confused."',
+        '◈ "Pip set up camp in a monster den. By accident. They\'re having a great time. The monster left."',
+        '◈ "Pip tried to trade with a villager using alien currency. The villager now thinks Pip is a god. Pip is delighted."',
+        '◈ "Pip got lost. Again. The System had to give them directions. The feed is laughing WITH them, not at them. Mostly."',
+      ];
+      if (this.state.systemArrived && Math.random() < 0.6) {
+        this.sysSay(mistakes[Math.floor(Math.random() * mistakes.length)]);
+      }
+      return true;
+    },
+
+    // DUEL: two active aliens encounter each other and fight.
+    // Rare, dramatic, reported on the feed.
+    apPlaygroundDuel: function () {
+      var active = this.apActive();
+      var pids = Object.keys(active);
+      if (pids.length < 2) return false;
+      if (Math.random() > 0.15) return false; // rare
+
+      // Pick two
+      var a = pids[Math.floor(Math.random() * pids.length)];
+      var b = pids[Math.floor(Math.random() * pids.length)];
+      if (a === b) return false;
+
+      var pa = this.apPersona(a), pb = this.apPersona(b);
+      if (!pa || !pb) return false;
+
+      var ap = this.apState();
+      var day = (this.state.scholar || {}).day || 1;
+      if (day - (ap.lastDuelDay || -999) < 10) return false; // max 1 per 10 days
+      ap.lastDuelDay = day;
+
+      // Faction check: are they aligned or rivals?
+      var aligned = this.apFactionAligned(a, b);
+
+      if (this.state.systemArrived) {
+        var na = this.apKnowsAlien(a) ? pa.name : 'a stranger';
+        var nb = this.apKnowsAlien(b) ? pb.name : 'another stranger';
+        if (aligned) {
+          this.sysSay('◈ "' + na + ' and ' + nb + ' were seen together. Coordinating. That\'s... not great for you."');
+        } else {
+          // They fight! One might get hurt, might leave
+          var loser = Math.random() < 0.5 ? a : b;
+          var winner = loser === a ? b : a;
+          var pw = this.apPersona(winner), pl = this.apPersona(loser);
+
+          this.sysSay('◈ "' + na + ' and ' + nb + ' just threw down. ' +
+            (this.apKnowsAlien(winner) ? pw.name : 'One of them') + ' walked away. The other... didn\'t."');
+
+          // Loser leaves the game (they lost, they're done)
+          // Unless they're rich — rich ones come back
+          var lw = this.apWealthOf(loser);
+          if (lw !== 'rich' || Math.random() < 0.5) {
+            delete active[loser];
+            if (this.state.systemArrived && Math.random() < 0.5) {
+              this.sysSay('◈ "' + (this.apKnowsAlien(loser) ? pl.name : 'The loser') + ' has left the game. Even aliens have limits. Well, some of them."');
+            }
+          }
+        }
+      }
+      return true;
+    },
+
+    // FACTION ALIGNMENT: are two aliens inclined to team up?
+    // Sadistic coordinate (loosely). Benevolent warn each other.
+    // Neutral goes with whoever benefits them. But alliances are fragile.
+    apFactionAligned: function (pidA, pidB) {
+      var pa = this.apPersona(pidA), pb = this.apPersona(pidB);
+      if (!pa || !pb) return false;
+
+      var da = pa.disposition, db = pb.disposition;
+
+      // Same disposition: likely aligned (but not guaranteed)
+      if (da === db) {
+        // Sadistic alliances are fragile — 70% aligned, 30% they turn
+        if (da === 'sadistic') return Math.random() < 0.7;
+        // Benevolent are solid — 90% aligned
+        if (da === 'benevolent') return Math.random() < 0.9;
+        // Neutral: 50/50, depends on mood
+        return Math.random() < 0.5;
+      }
+
+      // Sadistic + Neutral: neutral might join for profit (40%)
+      if ((da === 'sadistic' && db === 'neutral') || (da === 'neutral' && db === 'sadistic')) {
+        return Math.random() < 0.4;
+      }
+
+      // Benevolent + Neutral: neutral might help for goodwill (30%)
+      if ((da === 'benevolent' && db === 'neutral') || (da === 'neutral' && db === 'benevolent')) {
+        return Math.random() < 0.3;
+      }
+
+      // Sadistic + Benevolent: NEVER aligned. They're enemies.
+      return false;
+    },
+
+    // VILLAGER FEAR: villagers react to alien activity.
+    apVillagerFear: function (pid, victimName, kind) {
+      var per = this.apPersona(pid);
+      if (!per) return;
+      var v = this.state.village || {};
+      var roster = (v.roster || []).filter(function (rid) {
+        return rid !== this.villagerId && !(this.vpOf(rid) || {}).dead;
+      }, this);
+
+      // Everyone's fear goes up
+      for (var i = 0; i < roster.length; i++) {
+        var rid = roster[i];
+        try {
+          var needs = this.npcNeeds ? this.npcNeeds(rid) : null;
+          if (needs) needs.fear = Math.min(100, (needs.fear || 0) + 20);
+        } catch (e) {}
+      }
+
+      // They talk about it (gossip)
+      if (victimName && Math.random() < 0.6) {
+        var known = this.apKnowsAlien(pid);
+        var who = known ? per.name : 'that stranger';
+        this.say('😨 The village is whispering. "' + victimName + ' is dead. ' + who + ' did it. We\'re not safe."');
+      } else if (kind === 'burn' && Math.random() < 0.6) {
+        this.say('😨 "Did you see the fire? They\'re burning everything. What do they WANT?" The village huddles closer to the fire.');
+      }
+    },
+
   };
 
   Object.assign(G, methods);
