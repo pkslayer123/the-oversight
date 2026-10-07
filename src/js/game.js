@@ -1717,6 +1717,12 @@
         this.state.village.taught[rid] = plantsByFamiliarity(tags).slice(0, tierCount[tier] || 1);
       }
       const scholar = S.state.newScholar(this.villagerId);
+      // REGION KNOWLEDGE (Steve 2026-10-07): the scholar carries the player's
+      // origin tags — "common" means common for YOUR region. canShow('animal')
+      // reads these: a Columbus native auto-knows common North American
+      // animals at life start; an outsider doesn't. Without this copy the
+      // region branch was unreachable (scholar.originTags never populated).
+      scholar.originTags = parsed.tags;
       // MAP KNOWLEDGE (Steve 2026-10-06): you start knowing only home.
       // The world map fills in as you walk it or compare maps with people.
       // (Seeded after genMap below — this.map doesn't exist yet here.)

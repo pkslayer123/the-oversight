@@ -363,7 +363,7 @@
   // Every bolt turn gets a line — what the animal does, how it moves, what
   // it sounds like. Species-specific, not generic. Knowledge-gated like the
   // flee text: the vivid version is earned; the ignorant get the plain one.
-  G.encChaseText = function (a) {
+  G.encChaseText = function (a, hold) {
     var beh = '';
     try {
       var d = this.encAnimalDef(a.id);
@@ -426,12 +426,167 @@
       sentinel_mob: [ // CROW: wingbeats
         'beats away — cawing — wings loud against the sky.',
         'flies off, cawing.'
+      ],
+      curious: [ // RACCOON: bursts, pausing to look back at your pockets
+        'scampers off in bursts — pausing to look back, weighing your pockets.',
+        'scampers away in bursts, pausing to look back.'
+      ],
+      plays_dead: [ // OPOSSUM: the trick failed — the run is real, waddling and hissing
+        'shambles off — waddling, hissing, playing nothing now. The trick failed; the legs are real.',
+        'runs — waddling, hissing.'
+      ],
+      cautious: [ // BLACK BEAR: not scared, just done with you
+        'lopes off, unhurried — it is not scared of you, it is done with you.',
+        'ambles away, unhurried.'
+      ],
+      patient: [ // ALLIGATOR: slow, deliberate, gone when it chooses
+        'slides toward the water — slow, deliberate, gone when it chooses.',
+        'slides toward the water.'
+      ],
+      unpredictable: [ // BISON/MOOSE: the ground tells you
+        'thunders off — the ground telling you what the eyes already did.',
+        'charges away, the ground shaking.'
+      ],
+      semiaquatic: [ // MINK: in the water, out, gone between the reeds
+        'ripples along the bank — in the water, out, gone between the reeds.',
+        'darts along the bank.'
+      ],
+      aerial: [ // BAT: erratic, untouchable
+        'flutters up and away — erratic, untouchable, laughing in ultrasound.',
+        'flutters away into the dark.'
+      ],
+      ambush: [ // OWL: no wingbeat, just gone
+        'lifts off silent — no wingbeat, just gone between the trunks.',
+        'lifts off silently, gone.'
+      ],
+      wading: [ // HERON: heavy liftoff, further down the creek
+        'lifts off heavy — wings slow and huge — settling further down the creek.',
+        'lifts off, wings beating slow.'
+      ],
+      burrowing: [ // CHIPMUNK: stop-start bursts, cheek pouches bouncing
+        'dashes for the burrow in stop-start bursts — cheek pouches bouncing.',
+        'dashes for its burrow.'
+      ],
+      pack: [ // COYOTE: the pack answers back
+        "lopes off, yipping — the pack's answer coming back through the trees.",
+        'lopes away, yipping.'
+      ],
+      social: [ // PRAIRIE DOG: one last bark as it goes under
+        'dives for the burrow — one last bark as it goes under.',
+        'dives into its burrow.'
+      ],
+      constrictor: [ // RAT SNAKE: no hurry, no sound, just gone
+        'flows away through the grass — no hurry, no sound, just gone.',
+        'slides away through the grass.'
       ]
     };
-    var pair = LINES[beh];
+    // HELD-AT-EDGE LINES (Steve 2026-10-07): the chase turn where the animal
+    // reaches the treeline but doesn't exit — it's deciding whether to risk
+    // it. Still species-distinct, still knowledge-gated. The player reads
+    // the decision, not a moving icon.
+    var HOLD = {
+      wary: [ // DEER: measuring the gap past you
+        'stands at the treeline, head high — tail flicking, measuring the gap past you.',
+        'halts at the treeline, tail up, deciding.'
+      ],
+      skittish: [ // RABBIT: a brown statue, coiled for the jink
+        'freezes at the treeline — a brown statue — every muscle coiled for the jink.',
+        'freezes at the treeline, twitching, ready to bolt.'
+      ],
+      cunning: [ // FOX: weighing the woods against the chase
+        'stops at the treeline and looks back at you, weighing the woods against the chase.',
+        'pauses at the treeline, watching you.'
+      ],
+      flock: [ // TURKEY: the flock bunches behind
+        'crowds the treeline, wings half-open, clucking — the flock bunches behind.',
+        'bunches at the treeline, wings half-open.'
+      ],
+      alarmed: [ // GROUNDHOG: nearly at its hole, whistle building
+        'is nearly at its hole — rearing up, the whistle building in its throat.',
+        'rears up near its burrow, about to whistle.'
+      ],
+      aquatic: [ // FISH: one flick from deeper water
+        'hangs in the shallows, gills working — one flick from deeper water.',
+        'hovers at the edge of deeper water.'
+      ],
+      aquatic_ambush: [ // FROG: throat pulsing, ready to slide under
+        "crouches at the water's edge, throat pulsing — ready to slide under.",
+        "crouches at the water's edge."
+      ],
+      aquatic_defensive: [ // CRAYFISH: daring you to reach
+        'backs against its rock, claws high — daring you to reach.',
+        'backs under cover, claws raised.'
+      ],
+      arboreal: [ // SQUIRREL: one leap from the bark
+        "pauses at the trunk's base, tail jerking — one leap from the bark.",
+        'hesitates at the nearest trunk.'
+      ],
+      architect: [ // MUSKRAT: deciding whether to dive
+        "slides to the water's lip, sleek and low — deciding whether to dive.",
+        "pauses at the water's edge."
+      ],
+      camouflaged: [ // WOODCOCK: already half-vanished
+        'settles into the leaf litter at the treeline — already half-vanished.',
+        'melts into the leaf litter at the treeline.'
+      ],
+      curious: [ // RACCOON: still more curious than scared
+        'pauses at the treeline, head cocked — still more curious than scared.',
+        'hesitates at the treeline, watching you.'
+      ],
+      plays_dead: [ // OPOSSUM: backing toward the treeline, teeth bared
+        'is up and backing toward the treeline, teeth bared, hissing — the trick failed, the run is real.',
+        'backs toward the treeline, hissing.'
+      ],
+      cautious: [ // BLACK BEAR: deciding if you're worth the trouble
+        "rises at the treeline, testing the air — deciding if you're worth the trouble.",
+        'rises at the treeline, watching you.'
+      ],
+      patient: [ // ALLIGATOR: only the eyes move
+        "slides to the water's edge and goes still — only the eyes move.",
+        "goes still at the water's edge."
+      ],
+      unpredictable: [ // BISON/MOOSE: do not press this
+        'stops at the treeline, massive head swinging toward you — do not press this.',
+        'turns toward you at the treeline. Do not press it.'
+      ],
+      semiaquatic: [ // MINK: never quite catchable
+        'dances along the bank, in and out of the reeds — never quite catchable.',
+        'weaves along the bank.'
+      ],
+      aerial: [ // BAT: it can outlast you in the air
+        'wheels overhead, circling tighter — it can outlast you in the air.',
+        'circles overhead.'
+      ],
+      ambush: [ // OWL: watching for the move
+        'lifts off its branch and hangs in the air, silent — watching for the move.',
+        'lifts off, circling silently.'
+      ],
+      wading: [ // HERON: a statue with opinions
+        "stalks to the water's edge and freezes, neck coiled — a statue with opinions.",
+        "freezes at the water's edge."
+      ],
+      burrowing: [ // CHIPMUNK: scolding
+        'dashes to its burrow mouth and pops back up, cheeks full, scolding.',
+        'darts to its burrow, scolding.'
+      ],
+      pack: [ // COYOTE: the others answer from the dark
+        'falls back to the treeline, yipping — the others answer from the dark.',
+        'falls back, yipping.'
+      ],
+      social: [ // PRAIRIE DOG: barking the alarm
+        'pops up at the burrow mouth, barking the alarm — the town goes quiet.',
+        'barks the alarm from its burrow.'
+      ],
+      constrictor: [ // RAT SNAKE: the old trick, still running
+        "freezes at the treeline, hoping you'll walk past — the old trick, still running.",
+        'goes still at the treeline.'
+      ]
+    };
+    var pair = (hold ? HOLD : LINES)[beh];
     var cap = this.encCap(label);
     if (!pair) {
       // Generic fallback for behaviors without specific chase text
+      if (hold) return cap + (known ? ' holds at the treeline — deciding whether to risk it.' : ' holds at the treeline, deciding.');
       return cap + (known ? ' runs — putting distance between you, fast.' : ' runs, putting distance between you.');
     }
     return cap + ' ' + (known ? pair[0] : pair[1]);
@@ -984,13 +1139,18 @@
     // The spray is its answer; bolting is for animals with something to lose.
     if (beh === 'curious' && dist >= cfg.notice) {
       // RACCOON: not afraid. Watches with clever hands. Sometimes approaches.
+      // NO-SILENT-TURNS (Steve 2026-10-07): the chase dissolving into
+      // curiosity narrates — it was never really scared of you.
+      var wasChase2 = (a.pstate === 'bolt' || a.pstate === 'regroup' || a.pstate === 'taunt');
       a.pstate = 'graze'; a.aware = Math.max(0, a.aware - 0.25); a.edgeTurns = 0;
+      var said2 = false;
       if (Math.random() < 0.3) {
         var rdx = Math.sign(px - a.mx), rdy = Math.sign(py - a.my);
-        if (tryMove(a.mx + rdx, a.my + rdy)) this.say(this.encCap(label) + ' ambles closer, curious. Clever hands.');
+        if (tryMove(a.mx + rdx, a.my + rdy)) { this.say(this.encCap(label) + ' ambles closer, curious. Clever hands.'); said2 = true; }
       } else if (Math.random() < 0.3) {
         tryMove(a.mx + rnd3(), a.my + rnd3());
       }
+      if (wasChase2 && !said2) this.say(this.encCap(label) + ' slows — was never really scared of you — and goes back to watching. Clever hands.');
       return;
     }
     if (beh === 'curious' && dist <= 1 && Math.random() < 0.15) {
@@ -1241,7 +1401,14 @@
     if (a.pstate === 'taunt') {
       // FOX: holding at range, toying with you. Close in and it runs for real.
       if (dist < 4) { a.pstate = 'bolt'; }
-      else { a.aware = Math.max(0.4, (a.aware || 0.6) - 0.1); return; }
+      else {
+        a.aware = Math.max(0.4, (a.aware || 0.6) - 0.1);
+        // NO-SILENT-TURNS (Steve 2026-10-07): the toying turn narrates too —
+        // the fox is performing, and the player reads the performance.
+        // (The label already carries "— watching you, just out of reach".)
+        this.say(this.encCap(label) + ' trots in place — still toying with you.');
+        return;
+      }
     }
     // BEAVER (Steve 2026-10-06): the tail-slap ends the hunt. At aware 0.7 the
     // flat tail rises — the slap is already decided: CRACK, it dives, and
@@ -1301,9 +1468,18 @@
     var grazeRange = (beh === 'camouflaged') ? 2 : noticeRange;
     if (dist >= grazeRange) {
       // grazing. it doesn't know you're here. or doesn't care yet.
+      // NO-SILENT-TURNS (Steve 2026-10-07): a chase that ends in a calm-down
+      // narrates the transition — it lost you, and the player sees the
+      // decision. An already-grazing animal stays quiet (grazing is the
+      // default silence, not a transition).
+      var wasChase = (a.pstate === 'bolt' || a.pstate === 'regroup' || a.pstate === 'taunt');
       a.pstate = 'graze';
       a.aware = Math.max(0, a.aware - 0.25);
       a.edgeTurns = 0;
+      if (wasChase) {
+        this.say(this.encCap(label) + " slows — decides you're not following — and goes back to grazing.");
+        try { this.audioEvent('animalRustle'); } catch (e) {}
+      }
       // ANIMAL HUNGER: grazing is for real now. Hungry animals eat the tile
       // underfoot (shared depletion); with nothing in reach they drift toward
       // the nearest green. Full animals just amble, decorative as before.
@@ -1382,6 +1558,14 @@
     if (a.pstate === 'regroup') {
       // TURKEY REGROUP: landed, gathering itself. One turn of stillness —
       // the window the flutter-rhythm buys you. Then back in the air.
+      // NO-SILENT-TURNS (Steve 2026-10-07): the gathering turn narrates too —
+      // the window is still open, and the player reads the rhythm. Label is
+      // recomputed from the raw descriptor: encAnimalLabel at the top of
+      // animalTurn already carries the "— regrouping, wings half-folded"
+      // suffix, which this line says itself.
+      var rdef = null;
+      try { rdef = this.encAnimalDef(a.id); } catch (e) {}
+      this.say(this.encCap(rdef ? this.encDescribeAnimal(rdef) : label) + ' gathers itself — wings half-folded, breast heaving. The window holds.');
       a.pstate = 'bolt'; a.aware = Math.max(0.4, (a.aware || 0) - 0.3);
       return;
     }
@@ -1434,8 +1618,16 @@
         return;
       }
       if (dashed > 0) {
-        a.pstate = 'bolt'; // it broke the trap — back to the chase
+        var shovedSaid = !!a.shovedOnce; // the shove-past-you line fired above
+        a.pstate = 'bolt'; // it broke the corner — back to the chase
         a.shovedOnce = false;
+        // NO-SILENT-TURNS (Steve 2026-10-07): breaking the corner IS the
+        // turn's story — the chase is back on. (Skipped when the shove line
+        // already told it.)
+        if (!shovedSaid) {
+          this.say(this.encCap(label) + ' breaks through and runs — the chase is back on!');
+          try { this.audioEvent('animalBolt'); } catch (e) {}
+        }
       } else {
         // still trapped, still narrated — no silent turns (Steve's rule).
         this.say(this.encCap(label) + ' wheels, snorting — looking for a way out. There isn\'t one.');
@@ -1535,15 +1727,22 @@
       } else {
         a.edgeTurns = 0;
       }
-      // MID-CHASE NARRATION (Steve 2026-10-07): no-silent-turns. The animal
-      // moved but didn't wind, corner, or escape — the chase continues, and
-      // the player sees HOW it runs. Species-specific, knowledge-gated.
-      // Only narrate if it actually moved; a walled-in animal is cornered,
-      // not "fleeing in place" (the cornered branch above owns that turn).
-      if (movedAny && dist <= 6 && Math.random() < 0.75) {
+      // MID-CHASE NARRATION (Steve 2026-10-07): no-silent-turns is a HARD
+      // rule — EVERY bolt turn narrates, unconditionally. The animal ran but
+      // didn't wind, corner, or escape: the chase continues and the player
+      // sees HOW it runs. Species-specific, knowledge-gated (encChaseText).
+      // A turn held at the treeline narrates too (the first edgeTurns++
+      // turn included): it's deciding whether to risk the exit, and the
+      // player deserves that read. A turn spent wheeling for a gap narrates
+      // as well — never a moving icon with no text.
+      if (movedAny) {
         this.say(this.encChaseText(a));
-        try { this.audioEvent('animalBolt'); } catch (e) {}
+      } else if (atEdge) {
+        this.say(this.encChaseText(a, true));
+      } else {
+        this.say(this.encCap(label) + ' wheels, looking for a gap — there isn\'t one.');
       }
+      try { this.audioEvent('animalBolt'); } catch (e) {}
     }
   };
 
