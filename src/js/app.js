@@ -12211,8 +12211,9 @@
         // known secrets override the look: knowledge is visible.
         const sec = secrets[cx + ',' + cy];
         if (sec && sec.known && !entityHere) {
-          if ((cell === 'tree' || cell === 'bigtree') && sec.yield === 0) { g = '🌿'; cls += ' ivy'; }
-          else if (cell === 'water' && sec.safe === false) { g = '☠️'; cls += ' poison'; }
+          // Trees stay trees even when known to have no yield (Steve 2026-10-06).
+          // A non-fruit tree is still a tree, not a plant.
+          if (cell === 'water' && sec.safe === false) { g = '☠️'; cls += ' poison'; }
           else if (cell === 'tent' && sec.condition === 'shredded') { g = '💨'; cls += ' shredded'; }
         }
         // TERRAFORM (Steve 2026-10-06): monster-reshaped ground. The visuals
