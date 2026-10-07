@@ -70,11 +70,13 @@
     },
 
     // impact starburst at grid coords
+    // Steve 2026-10-07: scales with integration — bigger, more dramatic
     hit(x, y, opts) {
       opts = opts || {};
       const c = this.tileCenter(x, y);
       const color = opts.color || '#ffd54a';
-      const size = opts.size || 60;
+      const integ = opts.integration || 0;
+      const size = (opts.size || 60) + (integ * 15); // 60 → 105
       this.spawn(
         `<svg width="${size}" height="${size}" viewBox="0 0 60 60"><g fill="${color}"><polygon points="30,0 35,20 55,15 40,30 55,45 35,40 30,60 25,40 5,45 20,30 5,15 25,20"/></g></svg>`,
         `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
@@ -162,15 +164,27 @@
     },
 
     // abilityBurst: radial pulse when an ability fires (color by pool)
-    abilityBurst(x, y, color) {
+    // Steve 2026-10-07: scales with system integration — L0 subtle, L3 spectacle
+    abilityBurst(x, y, color, integration) {
       const c = this.tileCenter(x, y);
       color = color || '#4df3ff';
+      integration = integration || 0;
+      // Scale: size and rings grow with integration
+      const size = 80 + (integration * 20); // 80 → 140
+      const rings = integration >= 2 ? 2 : 1;
+      const ringsSvg = rings === 2
+        ? `<circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="3" opacity="0.8"/><circle cx="40" cy="40" r="25" fill="none" stroke="${color}" stroke-width="2" opacity="0.5"/>`
+        : `<circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="3" opacity="0.8"/>`;
       this.spawn(
-        `<svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="35" fill="none" stroke="${color}" stroke-width="3" opacity="0.8"/></svg>`,
-        `position:absolute;left:${c.x - 40}px;top:${c.y - 40}px;`,
+        `<svg width="${size}" height="${size}" viewBox="0 0 80 80">${ringsSvg}</svg>`,
+        `position:absolute;left:${c.x - size/2}px;top:${c.y - size/2}px;`,
         'drama-burst',
-        500
+        500 + (integration * 100)
       );
+      // L3: the System acknowledges the action
+      if (integration >= 3) {
+        this.flash(color.replace(')', ',0.1)').replace('#', 'rgba(').replace(/([0-9a-f]{2})/gi, m => parseInt(m, 16) + ','), 300);
+      }
     },
 
     // contestFlash: TV show moment — full-screen colored pulse + banner

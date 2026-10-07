@@ -13725,12 +13725,28 @@
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
         if (!D) return;
+        // Steve 2026-10-07: all drama scales with system integration.
+        // Higher integration = more elaborate effects. The System watches more closely.
+        let integ = 0;
+        try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+        if ((kind === 'abilityBurst' || kind === 'hit') && args.length >= 3) {
+          const lastArg = args[args.length - 1];
+          if (typeof lastArg === 'string') {
+            args.push(integ);
+          } else if (typeof lastArg === 'object' && lastArg !== null) {
+            lastArg.integration = lastArg.integration || integ;
+          }
+        }
         if (kind === 'hit') D.hit(...args);
         else if (kind === 'text') D.floatText(...args);
         else if (kind === 'flash') D.flash(...args);
         else if (kind === 'shake') D.shake(...args);
         else if (kind === 'hero') D.heroCard(...args);
         else if (kind === 'wisp') D.soulWisp(...args);
+        else if (kind === 'exclaim') D.exclaim(...args);
+        else if (kind === 'abilityBurst') D.abilityBurst(...args);
+        else if (kind === 'contest') D.contestFlash(...args);
+        else if (kind === 'integration') D.integrationPulse(...args);
       } catch (e) {}
     },
     // buildBonus: the mechanical reward for your build archetype.
