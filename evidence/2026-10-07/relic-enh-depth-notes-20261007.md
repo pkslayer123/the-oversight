@@ -83,3 +83,28 @@ application of all 9 new + 3 legacy effects through the REAL `resolve()` from
 a seeded mirror of the 1-of-3 offer draw proving every non-secret new id is
 reachable (hidden/rare ones provably rarer). The pending-wiring manifest is
 printed as a loud WARN, not a silent skip.
+
+---
+
+# Relic enhancements depth — 32 → 48 (worker A, 2026-10-07)
+
+## What was added
+16 new entries appended to `src/data/relicEnhancements.json` (APPEND-ONLY — first 32 byte-identical vs HEAD, verified by proof test). Class split evened out: tool 10→16, clothing 12→16, sentimental 10→16.
+
+**Tool (+6):** true_measure (craft.success ×1.15, affinity cautious), patient_wire (hunt.trap_catch +0.08, hidden/rare 0.3, affinity solitary), glass_eye (hunt.find_chance +0.10), hot_stone (cook.kcal ×1.1), field_guide (forage.learn_threshold ×0.9), tasters_spoon (food.poison_chance ×0.7)
+
+**Clothing (+4):** grey_cloak (travel.encounter_chance ×0.75, affinity steady), winter_lining (travel.cost_mult ×0.92), quiet_soles (monster.hear_mult ×0.85, hidden/rare 0.3, affinity solitary), spare_plating (armor.flat +2, affinity bold)
+
+**Sentimental (+6):** lucky_coin (luck.global ×1.15, affinity bold), come_home (health.max_add +10), ledger_of_debts (drama.resolve_bonus +5), hearth_song (rest.energy ×1.2), mothers_compass (trust.gain_mult ×1.3), harvest_memory (forage.gift_chance +0.05)
+
+## Engine-honesty verification
+All 16 new JSON effects use targets with ≥1 REAL consumption call site (modTarget/resolve across src/js), scraped by the proof test itself: craft.success (game.js:2953), hunt.trap_catch (3049), hunt.find_chance, cook.kcal (game.js:8500 resolve), forage.learn_threshold, food.poison_chance, travel.encounter_chance (13084), travel.cost_mult (7151), monster.hear_mult (14800), armor.flat, luck.global (8892), health.max_add (15197), drama.resolve_bonus (14200), rest.energy (14582), trust.gain_mult (15212), forage.gift_chance (14517). Semantics checked: zero-base targets (hunt.find_chance, armor.flat, drama.resolve_bonus, health.max_add, forage.gift_chance) use `add`; unit-base targets (mults) use `multiply`. No travel.kcal entries — confirmed inert per the earlier side finding.
+
+## Secrets: deliberately skipped
+Secret evolutions trigger only via items.json `secretEvolution` referencing the enhancement id (bond 50, 65% chance, unnamed 4th option). No item def references any new id and src/js + items.json are off-limits to this worker, so a new secret:true entry would be unreachable (excluded from the normal pool). Skipped per the verified-trigger rule.
+
+## ⚠ PENDING: RELIC_MOD_MAP wiring (now 25 ids, mechanical)
+Same follow-up as worker B's: the map in src/js/engine/modifiers.js covers only 21 of 48 ids. The 16 new JSON effects declare engine-consumed targets directly, so the map entries are a straight port of the JSON {op,target,value} values (listed above). Until wired, `collectModifiers()` won't pick up the new ids in-game — nothing is a placebo in the data, but the engine half is pending a sibling with src/js access.
+
+## Test results
+scripts/test-relic-enhancements-20261007.js — ALL GREEN. Covers: parses, exactly 48, first 32 deep-equal HEAD, ids unique, class split 16/16/16, all new effects on scraped engine-honored targets (32-target allowlist from applier code; old 32 grandfathered — their evocative targets are documented, real behavior via RELIC_MOD_MAP/special-cases), no empty strings, schema-conformant. validate-data.js: 0 relicEnhancements errors (its 629 errors are pre-existing animals.json etc.).
