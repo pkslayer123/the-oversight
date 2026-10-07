@@ -12643,17 +12643,10 @@
         try { tl = Game.tileAt(x, y); } catch (e) { tl = null; }
         const mpp = Game.map || {};
         const isP = (x === mpp.px && y === mpp.py);
-        // Steve 2026-10-06: use seenTiles directly (like header count).
-        // Game.mapSeen was inconsistent with the header's 9-seen count.
-        let seen = null;
-        try {
-          const st = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
-          const e = st[x + ',' + y];
-          if (e) seen = (e.k === 'v' ? 'visited' : 'shared');
-          // Player's current tile is always seen
-          const mp = Game.map || {};
-          if (x === mp.px && y === mp.py) seen = 'visited';
-        } catch (err) { seen = null; }
+        // Steve 2026-10-06: FOG DISABLED until it works. Show all geography.
+        // The fog logic was broken (header said 9 seen, render showed 0).
+        // Map must reflect geography first; fog can be re-added when reliable.
+        let seen = 'visited';
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
         const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
