@@ -10661,6 +10661,204 @@
     } catch (e) { return ''; }
   }
 
+
+  // ABILITIES MENU (Steve 2026-10-07): full loadout below Equipment.
+  // 6 slots, each with name, active/passive badge, level/xp, path tags.
+  // Tap for detail. Swap only at camp (not in combat).
+  function renderAbilitiesSection() {
+    try {
+      const sch = Game.state.scholar;
+      const equipped = sch.abilities || [];
+      const bg = sch.backgroundAbilities || [];
+      const maxSlots = Game.abilitySlots ? Game.abilitySlots() : 6;
+      const defs = Game.data.abilities || [];
+
+      const pathColors = {
+        hunter: '#7cfc9a', brawler: '#ff6b6b', forager: '#ffd166',
+        survivalist: '#4df3ff', detective: '#c792ea', socialite: '#ff9ff3',
+        miser: '#feca57', explorer: '#54a0ff', drifter: '#a4b0be', caregiver: '#ff7979'
+      };
+
+      const renderSlot = (ab, idx, isBg) => {
+        if (!ab) {
+          return `<div style="border:1px dashed #444;border-radius:6px;padding:8px;margin:4px 0;opacity:.5">
+            <p class="small" style="margin:0"><b>Empty slot ${idx + 1}</b> — learn abilities through trials, mentors, or the System.</p>
+          </div>`;
+        }
+        const def = defs.find(d => d.id === (ab.id || ab)) || {};
+        const name = ab.name || def.name || ab.id || 'Unknown';
+        const level = ab.level || 1;
+        const xp = ab.xp || 0;
+        const xpNeed = level * 100; // rough
+        const xpPct = Math.min(100, Math.round((xp / xpNeed) * 100));
+        const isActive = !!(def.actions && def.actions.length);
+        const badge = isActive
+          ? `<span style="background:#4df3ff22;border:1px solid #4df3ff;border-radius:3px;padding:1px 5px;font-size:10px;color:#4df3ff">ACTIVE</span>`
+          : `<span style="background:#8882;border:1px solid #888;border-radius:3px;padding:1px 5px;font-size:10px;color:#aaa">PASSIVE</span>`;
+        const paths = (def.paths || []).map(p => {
+          const c = pathColors[p] || '#aaa';
+          return `<span style="color:${c};font-size:11px">● ${esc(p)}</span>`;
+        }).join(' ');
+        const canSwap = !Game.inCombat || !Game.inCombat();
+        // Detail: description, actions, modifiers
+        let detail = `<p class="small" style="opacity:.8">${esc(ab.desc || def.description || '')}</p>`;
+        if (def.actions && def.actions.length) {
+          detail += `<p class="small"><b>Actions:</b></p>` + def.actions.map(a => {
+            const cost = a.cost ? Object.entries(a.cost).map(([k, v]) => `${k}: ${v}`).join(', ') : '—';
+            return `<p class="small" style="margin-left:12px">⚡ <b>${esc(a.name)}</b> <span style="opacity:.6">(${esc(a.context)})</span><br><span style="opacity:.75">${esc(a.effect || '')}</span><br><span style="opacity:.5">Cost: ${esc(cost)}</span></p>`;
+          }).join('');
+        }
+        if (def.modifiers && def.modifiers.length) {
+          detail += `<p class="small" style="opacity:.6"><b>Passive:</b> ${def.modifiers.map(m => `${esc(m.target)} ${esc(m.op)} ${esc(m.value)}`).join('; ')}</p>`;
+        }
+        const swapBtn = (!isBg && canSwap)
+          ? ` <button class="btn ghost sm" data-ability-swap="${ab.id || ab}">Swap</button>`
+          : (!isBg ? ` <span class="small" style="opacity:.5">(swap at camp)</span>` : '');
+        return `<details style="border:1px solid #333;border-radius:6px;padding:6px 8px;margin:4px 0">
+          <summary style="cursor:pointer;list-style:none">
+            <b>${esc(name)}</b> ${badge} <span style="opacity:.7">L${level}</span>
+            <div style="background:#222;border-radius:3px;height:4px;margin:4px 0"><div style="background:#4df3ff;height:4px;border-radius:3px;width:${xpPct}%"></div></div>
+            ${paths ? `<div>${paths}</div>` : ''}
+          </summary>
+          <div style="margin-top:6px">${detail}${swapBtn}</div>
+        </details>`;
+      };
+
+      let html = `<details open style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
+        <summary style="cursor:pointer;font-size:15px;font-weight:bold">🎒 Abilities <span style="opacity:.6;font-weight:normal">(${equipped.length}/${maxSlots})</span></summary>
+        <div style="margin-top:6px">`;
+
+      // System abilities (the 6 slots)
+      for (let i = 0; i < maxSlots; i++) {
+        html += renderSlot(equipped[i] || null, i, false);
+      }
+      // Background abilities (separate, not in slots)
+      if (bg.length) {
+        html += `<p class="small" style="margin-top:8px;opacity:.7"><b>Background</b> (yours — not slotted):</p>`;
+        bg.forEach((ab, i) => { html += renderSlot(ab, i, true); });
+      }
+      html += `</div></details>`;
+      return html;
+    } catch (e) { return `<p class="small" style="opacity:.5">Abilities unavailable.</p>`; }
+  }
+
+  // SKILLS MENU (Steve 2026-10-07): Codex browser below Abilities.
+  // Grouped by domain. Knowledge-gated: unknown shows as ???.
+  function renderSkillsSection() {
+    try {
+      const codexSkills = (Game.state.codex || {}).skills || {};
+      const defs = Game.data.knowledge || [];
+      if (!defs.length) return '';
+
+      // Group by domain
+      const byDomain = {};
+      for (const def of defs) {
+        const d = def.domain || 'general';
+        if (!byDomain[d]) byDomain[d] = [];
+        byDomain[d].push(def);
+      }
+
+      let html = `<details style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
+        <summary style="cursor:pointer;font-size:15px;font-weight:bold">📖 Skills <span style="opacity:.6;font-weight:normal">(Codex)</span></summary>
+        <div style="margin-top:6px">`;
+
+      for (const [domain, skills] of Object.entries(byDomain)) {
+        const known = skills.filter(s => {
+          try { return Game.canShow('skill', s.id, 'name'); } catch (e) { return !!codexSkills[s.id]; }
+        });
+        html += `<details style="margin:6px 0">
+          <summary style="cursor:pointer"><b style="text-transform:capitalize">${esc(domain)}</b> <span style="opacity:.6">(${known.length}/${skills.length})</span></summary>
+          <div style="margin:4px 0 4px 8px">`;
+        for (const sk of skills) {
+          let showName = true;
+          try { showName = Game.canShow('skill', sk.id, 'name'); } catch (e) { showName = !!codexSkills[sk.id]; }
+          if (!showName) {
+            html += `<p class="small" style="opacity:.4">??? <span style="opacity:.6">(undiscovered)</span></p>`;
+            continue;
+          }
+          const entry = codexSkills[sk.id] || {};
+          const lvl = entry.level || 0;
+          const pips = '\u25CF'.repeat(lvl) + '\u25CB'.repeat(Math.max(0, 4 - lvl));
+          const levels = sk.levels || {};
+          let levelDetail = '';
+          for (let l = 1; l <= 4; l++) {
+            if (levels[String(l)]) {
+              const unlocked = lvl >= l;
+              levelDetail += `<p class="small" style="margin:2px 0 2px 12px;${unlocked ? '' : 'opacity:.4'}"><b>L${l}:</b> ${unlocked ? esc(levels[String(l)]) : '???'}</p>`;
+            }
+          }
+          // Techniques from abilitySynergies
+          let techHtml = '';
+          const syns = sk.abilitySynergies || [];
+          if (syns.length) {
+            techHtml = `<p class="small" style="margin-top:4px"><b>Techniques:</b></p>` + syns.map(t => {
+              const tKnown = lvl >= (t.minLevel || 1);
+              return `<p class="small" style="margin-left:12px;${tKnown ? '' : 'opacity:.4'}">🔧 <b>${tKnown ? esc(t.technique || t.ability) : '???'}</b>${tKnown && t.effect ? ` — ${esc(t.effect)}` : ''}</p>`;
+            }).join('');
+          }
+          html += `<details style="margin:4px 0">
+            <summary style="cursor:pointer"><b>${esc(sk.name)}</b> <span style="color:#ffd166">${pips}</span></summary>
+            <div style="margin-top:4px">${levelDetail}${techHtml}</div>
+          </details>`;
+        }
+        html += `</div></details>`;
+      }
+      html += `</div></details>`;
+      return html;
+    } catch (e) { return `<p class="small" style="opacity:.5">Skills unavailable.</p>`; }
+  }
+
+  // SYNERGIES MENU (Steve 2026-10-07): Discoveries below Skills.
+  // Three states: Active (firing), Near (1 away), Discovered (known, inactive).
+  function renderSynergiesSection() {
+    try {
+      const active = Game.getActiveSynergies ? Game.getActiveSynergies() : [];
+      const near = Game.getNearSynergies ? Game.getNearSynergies() : [];
+      const discovered = Game.getDiscoveredSynergies ? Game.getDiscoveredSynergies() : [];
+
+      let html = `<details style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
+        <summary style="cursor:pointer;font-size:15px;font-weight:bold">✦ Synergies <span style="opacity:.6;font-weight:normal">(${active.length} active)</span></summary>
+        <div style="margin-top:6px">`;
+
+      // ACTIVE
+      if (active.length) {
+        html += `<p class="small" style="color:#7cfc9a"><b>● Active</b></p>`;
+        for (const s of active) {
+          const triggers = (s.triggers || []).map(t => esc(t.name || t.id)).join(' + ');
+          html += `<details style="margin:4px 0;border:1px solid #2a4d2a;border-radius:6px;padding:6px 8px">
+            <summary style="cursor:pointer"><b>${esc(s.name)}</b> ${triggers ? `<span style="opacity:.6;font-size:11px">${triggers}</span>` : ''}</summary>
+            <p class="small" style="opacity:.8;margin-top:4px">${esc(s.flavor)}</p>
+          </details>`;
+        }
+      }
+
+      // NEAR (1 away)
+      if (near.length) {
+        html += `<p class="small" style="color:#ffd166;margin-top:8px"><b>◐ Near</b> <span style="opacity:.6">(one piece away)</span></p>`;
+        for (const s of near) {
+          html += `<p class="small" style="margin:4px 0">🔶 <b>${esc(s.name)}</b> <span style="opacity:.7">${s.have}/${s.total}</span> — need <b>${esc(s.needName)}</b></p>`;
+        }
+      }
+
+      // DISCOVERED (known, inactive)
+      if (discovered.length) {
+        html += `<p class="small" style="opacity:.6;margin-top:8px"><b>○ Discovered</b> <span style="opacity:.6">(dormant)</span></p>`;
+        for (const s of discovered) {
+          html += `<details style="margin:4px 0;opacity:.7">
+            <summary style="cursor:pointer">${esc(s.name)}</summary>
+            <p class="small" style="opacity:.7;margin-top:4px">${esc(s.flavor)}</p>
+          </details>`;
+        }
+      }
+
+      if (!active.length && !near.length && !discovered.length) {
+        html += `<p class="small" style="opacity:.5">No synergies yet. Combine abilities and skills — the resonances will find you.</p>`;
+      }
+      html += `</div></details>`;
+      return html;
+    } catch (e) { return `<p class="small" style="opacity:.5">Synergies unavailable.</p>`; }
+  }
+
   // inventory: your pack. Inline — one screen, no overlay hopping.
   function renderInvInline(slot, view) {
     const st = Game.status();
@@ -10692,9 +10890,9 @@
             return `<div style="margin:8px 0"><b>Equipped</b>${rows}</div>`;
           } catch (e) { return ''; }
         })()}
-        ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
-        ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; let cc = ''; try { const t = Game.challengeCountdownText ? Game.challengeCountdownText() : ''; if (t) cc = ` · <b style="color:#ff5d5d">${t}</b>`; } catch (e) {} return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)${Game.integrationStageName ? ` · ${Game.integrationStageName()}` : ''}${Game.arcName ? ` · ${Game.arcName()}` : ''}${cc}</p>`; })()}
-        ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
+        ${renderAbilitiesSection()}
+        ${renderSkillsSection()}
+        ${renderSynergiesSection()}
 ${renderBuildIndicator()}
         ${renderSynergyStirrings()}
         ${renderIntegrationLevel()}
