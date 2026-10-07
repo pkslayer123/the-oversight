@@ -1326,5 +1326,122 @@
     "paths": [
       "hunter"
     ]
+  },
+  {
+    "id": "unstoppable",
+    "name": "Unstoppable",
+    "description": "Pain is information. You read it and keep moving.",
+    "flavor": "They hit you. You noticed. Then you hit back harder.",
+    "requires_any": [
+      [
+        "rage",
+        "iron_stomach"
+      ],
+      [
+        "trade_of_blows",
+        "second_wind"
+      ],
+      [
+        "unbreakable",
+        "haymaker"
+      ],
+      [
+        "rage",
+        "unbreakable"
+      ]
+    ],
+    "minLevel": 2,
+    "modifiers": [
+      {
+        "target": "combat.damage_taken",
+        "op": "multiply",
+        "value": 0.7
+      },
+      {
+        "target": "combat.morale_break_resist",
+        "op": "add",
+        "value": 0.5
+      }
+    ],
+    "discovery": "The hits stop mattering. Not because they don't hurt \u2014 because you've decided they don't stop you.",
+    "paths": [
+      "brawler"
+    ]
+  },
+  {
+    "id": "fear_itself",
+    "name": "Fear Itself",
+    "description": "You don't fight. You arrive, and the fight is over.",
+    "flavor": "The scariest thing about you isn't what you do. It's what everyone knows you could do.",
+    "requires_any": [
+      [
+        "fear_aura",
+        "intimidating_presence"
+      ],
+      [
+        "war_cry",
+        "brawler_instinct"
+      ],
+      [
+        "fear_aura",
+        "war_cry"
+      ]
+    ],
+    "minLevel": 2,
+    "modifiers": [
+      {
+        "target": "social.intimidate",
+        "op": "add",
+        "value": 0.4
+      },
+      {
+        "target": "combat.enemy_morale",
+        "op": "multiply",
+        "value": 0.6
+      }
+    ],
+    "discovery": "You walk into the room and the argument ends. Nobody remembers deciding to stop.",
+    "paths": [
+      "brawler"
+    ]
+  },
+  {
+    "id": "one_person_army",
+    "name": "One-Person Army",
+    "description": "You are the line. You are the reinforcements. You are enough.",
+    "flavor": "Armies have supply lines. You have spite and scar tissue.",
+    "requires_any": [
+      [
+        "unstoppable",
+        "fear_itself"
+      ],
+      [
+        "unstoppable",
+        "rage",
+        "war_cry"
+      ],
+      [
+        "trade_of_blows",
+        "unbreakable",
+        "haymaker"
+      ]
+    ],
+    "minLevel": 3,
+    "modifiers": [
+      {
+        "target": "combat.outnumbered_bonus",
+        "op": "add",
+        "value": 0.5
+      },
+      {
+        "target": "combat.solo_damage",
+        "op": "multiply",
+        "value": 1.4
+      }
+    ],
+    "discovery": "They surrounded you. That was their mistake \u2014 now you don't have to aim.",
+    "paths": [
+      "brawler"
+    ]
   }
 ]
