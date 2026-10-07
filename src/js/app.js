@@ -12669,22 +12669,29 @@
         // are visible. Simple, robust, no fragile data dependency.
         // This is the PRIMARY visibility logic.
         let seen = null;
+        let diagColor = null; // DIAGNOSTIC: color-code the failure
         try {
-          // Use Game.map.px/py (same source as player sprite) - Steve 2026-10-06
-          // The player sprite works, so this is valid.
-          const mpp2 = Game.map || {};
-          const ppx = mpp2.px ?? 3, ppy = mpp2.py ?? 3;
-          const dx = Math.abs(x - ppx);
-          const dy = Math.abs(y - ppy);
-          if (dx <= 1 && dy <= 1) {
-            seen = (dx === 0 && dy === 0) ? 'visited' : 'shared';
-          } else {
-            // Also check seenTiles for previously visited far tiles
-            const seenTiles = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
-            const se = seenTiles[x + ',' + y];
-            if (se) seen = (se.k === 'v' ? 'visited' : 'shared');
+          if (typeof Game === 'undefined') { diagColor = '#ff0000'; } // RED: Game undefined
+          else {
+            const mpp2 = Game.map || {};
+            if (!Game.map) { diagColor = '#ff8800'; } // ORANGE: Game.map null
+            else {
+              const ppx = mpp2.px, ppy = mpp2.py;
+              if (ppx == null || ppy == null) { diagColor = '#ffff00'; } // YELLOW: pos null
+              else {
+                const dx = Math.abs(x - ppx);
+                const dy = Math.abs(y - ppy);
+                if (dx <= 1 && dy <= 1) {
+                  seen = (dx === 0 && dy === 0) ? 'visited' : 'shared';
+                } else {
+                  const seenTiles = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
+                  const se = seenTiles[x + ',' + y];
+                  if (se) seen = (se.k === 'v' ? 'visited' : 'shared');
+                }
+              }
+            }
           }
-        } catch (err) { seen = null; }
+        } catch (err) { seen = null; diagColor = '#ff00ff'; } // PURPLE: exception
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
         const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
@@ -12712,7 +12719,10 @@
           const isHavenTile = (x === 3 && y === 3) || (tl && (tl.type === 'haven' || tl.village));
           if (isHavenTile) {
             g = '🏘️';
-          } else if (!seen) {
+          } else if (diagColor) {
+            // DIAGNOSTIC: show the failure color
+            g = `<div style="background:${diagColor};width:100%;height:100%;border-radius:4px"></div>`;
+        } else if (!seen) {
             g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
               `<rect x="2" y="2" width="60" height="60" rx="8" fill="#0d120d" stroke="#1a2a1a" stroke-width="1"/></svg>`;
           } else {
