@@ -1735,7 +1735,7 @@
       this.state.village.nodePos = {};
       this.state.village.away = {}; // rid -> {nx, ny, purpose, returnPart, returnDay}: NPCs out in the world
       {
-        const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+        const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
         for (const rid of this.state.village.roster) {
           if (rid === this.villagerId) continue;
           this.state.village.nodePos[rid] = { nx: hx, ny: hy };
@@ -3028,7 +3028,7 @@
         const dir = [ns, ew].filter(Boolean).join('-') || 'here';
         return `${d} ${d === 1 ? 'tile' : 'tiles'} ${dir}`;
       };
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t.traps || !t.traps.length) continue;
         for (const trap of [...t.traps]) {
@@ -3098,7 +3098,7 @@
       return this.tickAction(16) || this.status();
     },
     checkNets() {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t.nets || !t.nets.length) continue;
         for (const net of [...t.nets]) {
@@ -3136,7 +3136,7 @@
       return this.tickAction(16) || this.status();
     },
     checkGenesis() {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t.genesis || t.genesis.daysLeft <= 0) continue;
         t.genesis.daysLeft -= 1;
@@ -4567,7 +4567,7 @@
         // reveal tiles around haven + small chance of a find
         let revealed = 0;
         try {
-          const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+          const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
           for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
             const nx = hx + dx, ny = hy + dy;
             if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
@@ -4712,7 +4712,7 @@
       const vp = (this.data.villagers || []).find(v => v.id === vid)
         || (this.data.background_survivors || []).find(v => v.id === vid) || {};
       const temp = (vp.personality && vp.personality.temperament) || 'steady';
-      // rings are Manhattan distance from haven (3,3). Ring 0 = haven itself (no forage).
+      // rings are Manhattan distance from haven (4,4). Ring 0 = haven itself (no forage).
       if (temp === 'bold') return { min: 2, max: 3, label: 'far afield' };
       if (temp === 'cautious') return { min: 1, max: 1, label: 'close to home' };
       return { min: 1, max: 2, label: 'the near wilds' };
@@ -4722,7 +4722,7 @@
     forageTilesInZone(zone, count) {
       const hx = 3, hy = 3; // haven
       const candidates = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (x === hx && y === hy) continue;
         const dist = Math.abs(x - hx) + Math.abs(y - hy);
         if (dist < zone.min || dist > zone.max) continue;
@@ -4880,7 +4880,7 @@
       // no day advance here — endDay owns the clock. this is just coming home.
       const s = this.state.scholar;
       // PIN: you are at the village now (safe even when called without walking).
-      try { this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3; } catch (e) {}
+      try { this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4; } catch (e) {}
       // HOMECOMING (drifter loop, Steve 2026-10-06): walking back into Haven
       // after days away lands as a beat. No leaks: this names nothing you
       // didn't live. Sets homecomingSaid so the haul block below doesn't
@@ -5161,8 +5161,8 @@
       // loop burned out and dropped villages in corners or on haven itself.
       // Relative to the map always resolves.)
       const cands = [];
-      for (let vy = 0; vy < 7; vy++) for (let vx = 0; vx < 7; vx++) {
-        if (Math.abs(vx - 3) + Math.abs(vy - 3) < 3) continue; // not too close to haven
+      for (let vy = 0; vy < 9; vy++) for (let vx = 0; vx < 9; vx++) {
+        if (Math.abs(vx - 4) + Math.abs(vy - 4) < 3) continue; // not too close to haven
         cands.push({ x: vx, y: vy, tk: this.turfKcal(vx, vy) });
       }
       cands.sort((a, b) => b.tk - a.tk);
@@ -5215,7 +5215,7 @@
     // works). Home-village convention: 1 stock ≈ 200 kcal.
     turfKcal(x, y) {
       let cap = 0;
-      for (let ty = 0; ty < 7; ty++) for (let tx = 0; tx < 7; tx++) {
+      for (let ty = 0; ty < 9; ty++) for (let tx = 0; tx < 9; tx++) {
         const t = this.tileAt(tx, ty);
         if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
         if (Math.abs(tx - x) + Math.abs(ty - y) <= 4) cap += (t.stock || 0);
@@ -5438,37 +5438,53 @@
       }
     },
 
+    // mulberry32: seeded PRNG for deterministic world generation.
+    // Same seed → same world. The seed is saved with the map.
+    mulberry32(seed) {
+      let a = seed >>> 0;
+      return function() {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    },
     genMap() {
       // Procedural with logic: creek flows, wetlands hug water, groves cluster,
       // thickets edge, meadows open, one ruin with a story.
       // The LANDING ZONE shapes the map: creek bottoms are wet and rich,
       // ridgelines are exposed, old suburbs are scavenger country.
+      // WORLD SEED (Steve 2026-10-07): the 9x9 world is generated from a seed
+      // once per game. The seed is saved with the map — the world stays put
+      // when you come back. Minecraft-like: same seed, same world.
+      const worldSeed = Math.floor(Math.random() * 2147483647);
+      const R = this.mulberry32(worldSeed);
       const P = this.locParams();
       const tiles = [];
-      for (let y = 0; y < 7; y++) {
+      for (let y = 0; y < 9; y++) {
         const row = [];
-        for (let x = 0; x < 7; x++) row.push({ type: 'forest_floor', revealed: false, stock: 1, maxStock: 1, visited: false });
+        for (let x = 0; x < 9; x++) row.push({ type: 'forest_floor', revealed: false, stock: 1, maxStock: 1, visited: false });
         tiles.push(row);
       }
-      const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < 7 && y < 7) tiles[y][x].type = t; };
-      const at = (x, y) => (x >= 0 && y >= 0 && x < 7 && y < 7) ? tiles[y][x].type : null;
+      const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < 9 && y < 9) tiles[y][x].type = t; };
+      const at = (x, y) => (x >= 0 && y >= 0 && x < 9 && y < 9) ? tiles[y][x].type : null;
 
       // creeks: random walks top→bottom (some landing zones have more water)
       for (let cw = 0; cw < P.creeks; cw++) {
-        let cx = 1 + Math.floor(Math.random() * 5), cy = 0;
+        let cx = 1 + Math.floor(R() * 7), cy = 0;
         set(cx, cy, 'creek');
-        while (cy < 6) {
-          const mv = Math.random();
+        while (cy < 8) {
+          const mv = R();
           if (mv < 0.45) cy++;
           else if (mv < 0.7) cx = Math.max(0, cx - 1);
-          else cx = Math.min(6, cx + 1);
+          else cx = Math.min(8, cx + 1);
           set(cx, cy, 'creek');
         }
       }
       // wetlands: adjacent to creek
       let placed = 0, guard = 0;
       while (placed < P.wetlands && guard++ < 80) {
-        const x = Math.floor(Math.random() * 7), y = Math.floor(Math.random() * 7);
+        const x = Math.floor(R() * 9), y = Math.floor(R() * 9);
         if (at(x, y) !== 'forest_floor') continue;
         const nearWater = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy) === 'creek');
         if (nearWater) { set(x, y, 'wetland'); placed++; }
@@ -5477,50 +5493,50 @@
       const blob = (sx, sy, t, n) => {
         let p = 0, g = 0;
         while (p < n && g++ < 40) {
-          const x = sx + Math.floor(Math.random() * 3) - 1, y = sy + Math.floor(Math.random() * 3) - 1;
+          const x = sx + Math.floor(R() * 3) - 1, y = sy + Math.floor(R() * 3) - 1;
           if (at(x, y) === 'forest_floor') { set(x, y, t); p++; }
         }
       };
       for (let gb = 0; gb < P.groveBlobs; gb++) {
-        blob(Math.floor(Math.random() * 7), Math.floor(Math.random() * 7), 'grove', P.groveSize);
+        blob(Math.floor(R() * 9), Math.floor(R() * 9), 'grove', P.groveSize);
       }
       // meadow: one open blob
-      blob(2 + Math.floor(Math.random() * 3), 2 + Math.floor(Math.random() * 3), 'meadow', P.meadowSize);
+      blob(3 + Math.floor(R() * 3), 3 + Math.floor(R() * 3), 'meadow', P.meadowSize);
       // thickets: edges
       placed = 0; guard = 0;
       while (placed < P.thickets && guard++ < 80) {
-        const edge = Math.random() < 0.5;
-        const x = edge ? (Math.random() < 0.5 ? 0 : 6) : Math.floor(Math.random() * 7);
-        const y = edge ? Math.floor(Math.random() * 7) : (Math.random() < 0.5 ? 0 : 6);
+        const edge = R() < 0.5;
+        const x = edge ? (R() < 0.5 ? 0 : 8) : Math.floor(R() * 9);
+        const y = edge ? Math.floor(R() * 9) : (R() < 0.5 ? 0 : 8);
         if (at(x, y) === 'forest_floor') { set(x, y, 'thicket'); placed++; }
       }
       // trails: old paths through the land (suburbs have more)
       for (let tl = 0; tl < P.trailLines; tl++) {
-        const tx = Math.max(1, Math.min(5, 3 + (tl - (P.trailLines - 1) / 2) * 2));
-        for (let i = 1; i < 6; i++) { if (at(tx, i) === 'forest_floor') set(tx, i, 'trail_edge'); }
+        const tx = Math.max(1, Math.min(7, 4 + (tl - (P.trailLines - 1) / 2) * 2));
+        for (let i = 1; i < 8; i++) { if (at(tx, i) === 'forest_floor') set(tx, i, 'trail_edge'); }
       }
       // ruin: one, deliberate, with a story. GUARANTEED.
-      // SCAVENGER VIABILITY: the ruin must be within Manhattan d<=3 of haven (3,3),
+      // SCAVENGER VIABILITY: the ruin must be within Manhattan d<=3 of haven (4,4),
       // i.e. reachable via revealed tiles in week 1. Scavenging is a real path now.
       // (The old try-60-times loop silently failed ~2% of the time, leaving worlds
       // with no ruin at all — and scavengers with nowhere to go.)
       const ruinCandidates = [];
-      for (let ry2 = 0; ry2 < 7; ry2++) for (let rx2 = 0; rx2 < 7; rx2++) {
-        const dHaven = Math.abs(rx2 - 3) + Math.abs(ry2 - 3);
+      for (let ry2 = 0; ry2 < 9; ry2++) for (let rx2 = 0; rx2 < 9; rx2++) {
+        const dHaven = Math.abs(rx2 - 4) + Math.abs(ry2 - 4);
         if (dHaven <= P.ruinMaxDist && dHaven > 0 && at(rx2, ry2) === 'forest_floor' &&
             at(rx2 + 1, ry2) !== 'creek' && at(rx2 - 1, ry2) !== 'creek') ruinCandidates.push([rx2, ry2]);
       }
       let ruinXY;
       if (ruinCandidates.length) {
-        ruinXY = ruinCandidates[Math.floor(Math.random() * ruinCandidates.length)];
+        ruinXY = ruinCandidates[Math.floor(R() * ruinCandidates.length)];
       } else {
         // degenerate map: force it. pick a ring cell, make it forest_floor, put the ruin there.
         const ring = [];
-        for (let ry2 = 0; ry2 < 7; ry2++) for (let rx2 = 0; rx2 < 7; rx2++) {
-          const dHaven = Math.abs(rx2 - 3) + Math.abs(ry2 - 3);
+        for (let ry2 = 0; ry2 < 9; ry2++) for (let rx2 = 0; rx2 < 9; rx2++) {
+          const dHaven = Math.abs(rx2 - 4) + Math.abs(ry2 - 4);
           if (dHaven <= 3 && dHaven > 0) ring.push([rx2, ry2]);
         }
-        ruinXY = ring[Math.floor(Math.random() * ring.length)];
+        ruinXY = ring[Math.floor(R() * ring.length)];
         set(ruinXY[0], ruinXY[1], 'forest_floor');
       }
       {
@@ -5528,17 +5544,17 @@
         set(rx3, ry3, 'ruin');
         tiles[ry3][rx3].ruinStory = ['A collapsed barn. Pre-Burn. The wiring is gone — everything is gone — but the stones remember the shape of work.',
           'A farmhouse foundation. Someone\'s kitchen. The Burn took the wires from the walls; the walls kept standing out of spite.',
-          'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(Math.random() * 3)];
+          'A gas station. The pumps are sculptures now. Nothing combustible within miles — the Burn was thorough.'][Math.floor(R() * 3)];
         // finite pantry: 3-5 cans, scaled by landing zone. the houses feed you until they don't.
-        const nLoot = Math.max(1, Math.round((3 + Math.floor(Math.random() * 3)) * P.lootMult));
+        const nLoot = Math.max(1, Math.round((3 + Math.floor(R() * 3)) * P.lootMult));
         tiles[ry3][rx3].loot = [];
-        for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(SCAVENGED[Math.floor(Math.random() * SCAVENGED.length)].id);
+        for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(SCAVENGED[Math.floor(R() * SCAVENGED.length)].id);
       }
       // stock: rich ground gives more pulls. number of times depends on the biome and landing zone.
       // (computed inline — this.map doesn't exist yet during gen)
       const RICH = { grove: 1.5, wetland: 1.4, creek: 1.3, meadow: 1.3, thicket: 1.2, trail_edge: 1.0, forest_floor: 0.8 };
       for (const k of Object.keys(RICH)) RICH[k] = RICH[k] * P.stockMult;
-      for (let yy = 0; yy < 7; yy++) for (let xx = 0; xx < 7; xx++) {
+      for (let yy = 0; yy < 9; yy++) for (let xx = 0; xx < 9; xx++) {
         let r = RICH[tiles[yy][xx].type] || 1;
         for (let dy = -1; dy <= 1 && r < 1.8; dy++) for (let dx = -1; dx <= 1; dx++) {
           if (!dx && !dy) continue;
@@ -5553,7 +5569,7 @@
       // Haven was built where the land is good — guarantee a breadbasket by the door.
       // twelve people didn't settle on barren ground, and the first lesson shouldn't be a bad map roll.
       const doors = [[2, 3], [4, 3], [3, 2], [3, 4]];
-      const door = doors[Math.floor(Math.random() * doors.length)];
+      const door = doors[Math.floor(R() * doors.length)];
       if (tiles[door[1]][door[0]].type !== 'ruin') {
         tiles[door[1]][door[0]].type = 'grove';
         // breadbasket is safety, not sufficiency: stock 2, not 3. a full day's work means ranging out.
@@ -5562,38 +5578,38 @@
       // Haven is a tile, not a separate screen. home is a place you walk to.
       tiles[3][3].type = 'haven';
       tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
-      tiles[3][3].revealed = true; tiles[3][3].visited = true;
+      tiles[4][4].revealed = true; tiles[3][3].visited = true;
       // FOG OF WAR: unexplored tiles are fully hidden. No hints, no guesses —
       // if you haven't been there, you don't see it. Revealed on visit.
       // BLOCKED ROADS: some paths in are obstructed. Always multiple solutions:
       // cut (fallen tree), clear (rubble), bridge (washed out / hard creek), swim, or go around.
       // CONSTRUCTION (future): tile.structures[] holds anything built here — walls, palisades, etc.
       const DIRS = [[0,-1],[1,0],[0,1],[-1,0]]; // n,e,s,w
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = tiles[y][x];
         t.structures = []; // future: walls, palisades, shelters
         // blockages: ~12% of wild tiles have one obstructed approach.
         // never block haven, never block the ruin approach (scavengers need in).
-        if (t.type !== 'haven' && t.type !== 'ruin' && Math.random() < 0.12) {
-          const [dx, dy] = DIRS[Math.floor(Math.random() * 4)];
+        if (t.type !== 'haven' && t.type !== 'ruin' && R() < 0.12) {
+          const [dx, dy] = DIRS[Math.floor(R() * 4)];
           const nx = x + dx, ny = y + dy;
-          if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
           if (tiles[ny][nx].type === 'haven') continue;
-          const roll = Math.random();
+          const roll = R();
           // -dx,-dy: the direction you'd be coming FROM to enter this tile
           t.blockFrom = { dx: -dx, dy: -dy, type: roll < 0.4 ? 'fallen_tree' : roll < 0.7 ? 'rubble' : 'washed_out' };
         }
         // hard creek crossings: ~35% of creek tiles need a bridge or a swimmer.
-        if (t.type === 'creek' && Math.random() < 0.35) t.needsBridge = true;
+        if (t.type === 'creek' && R() < 0.35) t.needsBridge = true;
       }
-      this.map = { tiles, px: 3, py: 3 };
+      this.map = { tiles, px: 4, py: 4, worldSeed, worldSize: 9 };
       // STRICT FOG: at start you see haven and the ground south of it — the
       // door faces south, so south is all you can see. Everything else is
       // dark until you walk there. (reveal() is still used on travel: arriving
       // somewhere maps its surroundings.)
-      tiles[3][3].revealed = true;
-      tiles[4][3].revealed = true;
-      const start = this.tileAt(3, 3);
+      tiles[4][4].revealed = true;
+      tiles[5][4].revealed = true;
+      const start = this.tileAt(4, 4);
       start.visited = true;
     },
 
@@ -6046,7 +6062,7 @@
     },
 
     reveal(cx, cy) {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (Math.abs(x - cx) + Math.abs(y - cy) <= 2) this.map.tiles[y][x].revealed = true;
       }
     },
@@ -6226,7 +6242,7 @@
     // You don't know what's there until you arrive. Hope nothing's waiting.
     travelTargets() {
       const out = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
         const t = this.tileAt(x, y);
         // revealed within 3, OR adjacent unrevealed (walking into fog)
@@ -6533,7 +6549,7 @@
       this.state.scholar.insideHaven = false;
       // Party/followers travel with you — they're outside too, same sub-state.
       try { for (const vid of this.travelingWith()) this.npcSetInside(vid, false); } catch (e) {}
-      const ht = this.tileAt(3, 3);
+      const ht = this.tileAt(4, 4);
       if (ht && ht.type === 'haven') ht.detail = null;
       // WORLD MONSTERS (Steve 2026-10-06): monsters live on tiles, not on
       // you. The one you left behind STAYS behind (continuity — it's still
@@ -6558,7 +6574,13 @@
           oldMonster.mx = fe.x; oldMonster.my = fe.y;
           oldMonster.lostSight = 0; // it saw you cross. it's on your trail.
           this.touchTileScene(fromX, fromY); this.touchTileScene(x, y);
-          this.say(`It followed you. The ${this.monsterNoun(mdef.id)} is here.`);
+          // Explorer loop 2026-10-06 (bug 2): monsterNoun may return a vague
+          // descriptor rather than a noun ("something huge, rooting in the
+          // underbrush", or the 'something' fallback) — never compose
+          // "The something…" or "The something huge…".
+          const mn = this.monsterNoun(mdef.id);
+          if (/^something\b/i.test(mn)) this.say(`It followed you. ${mn.charAt(0).toUpperCase() + mn.slice(1)} is here.`);
+          else this.say(`It followed you. The ${mn} is here.`);
         }
         // else: it stays on the old tile. Continuity — the world must live.
       }
@@ -6607,7 +6629,11 @@
         else this.say(`${hereV.name}'s clearing. Voices, a cookfire, somebody else's home. You're a guest here — act like it.`);
       }
       // TIME ECONOMY: moving between nodes is a BIG time step on the unified clock.
-      // travelTimeStep ticks 32 (a "bigger tick"): NPC batch + day timer advance
+      // travelTimeStep: cost-free by Steve's rule (node travel costs no kcal and
+      // no day ticks — the NPC-batch + day-timer advance it performs is a
+      // "bigger tick" of world time, not a player cost). Previously this comment
+      // said "ticks 32"; the player-time cost was removed, the world-time
+      // batch remains.
       // proportionally, like everything else. No separate clock, no free moves.
       // (Tuning: if travel feels free, raise the needs tick / energy cost
       // in travelTimeStep. If punishing, lower it. See docs/TIME-ECONOMY.md.)
@@ -6810,6 +6836,9 @@
         // Learning the bush: it gets a species (game truth), neighbors chain-reveal.
         // The NAME is knowledge-gated: you recognize the patch only if you
         // know the species. Otherwise it's berries of unknown kind.
+        // LECTURE ONCE (forager loop 2026-10-07): the description says only
+        // when it teaches something new — unknown->unknown and known->known
+        // taps stay quiet; unknown->known (learned at camp since) names it.
         const species = this.revealBush(cx, cy);
         const wantNote = this.plantKnown(species) ? species : 'unknown';
         t.bushNotes = t.bushNotes || {};
@@ -6822,6 +6851,9 @@
           }
           t.bushNotes[key] = wantNote;
         }
+        // THORN HONESTY (forager loop 2026-10-07): thorns scratch only when
+        // there's actually a harvest — taxing blood on a picked-clean bush
+        // while saying "you get the berries" is a lie and a punishment.
         const pickedClean = t.detailRegrow && t.detailRegrow[key];
         if (!pickedClean && secret && secret.thorns) {
           this.state.scholar.kcal -= 20; // thorns scratch
@@ -7703,6 +7735,8 @@
       }
       // FAILURE IS HONEST: attempts 1-2 tease what practice earns, the way
       // synergy discovery does — a hint of what could happen, never the how.
+      // Failures feed the pity above (fc.failures), so the hands learn even
+      // when the spark doesn't catch.
       fc.failures = (fc.failures || 0) + 1;
       const hints = [
         "Sparks, then nothing. The tinder's too coarse — shred it finer next time.",
@@ -8442,7 +8476,7 @@
       const v = this.state.village;
       v.nodePos = v.nodePos || {};
       if (!v.nodePos[vid]) {
-        const hx = v.px ?? 3, hy = v.py ?? 3;
+        const hx = v.px ?? 4, hy = v.py ?? 4;
         v.nodePos[vid] = { nx: hx, ny: hy };
       }
       return v.nodePos[vid];
@@ -8499,7 +8533,7 @@
       v.positions = v.positions || {};
       // On the Haven node, the door is real: only NPCs on YOUR side of it
       // render. Inside villagers don't teleport out when you step outside.
-      const havenNode = (px === (v.px ?? 3) && py === (v.py ?? 3));
+      const havenNode = (px === (v.px ?? 4) && py === (v.py ?? 4));
       const playerInside = havenNode ? (this.state.scholar.insideHaven !== false) : true;
       // Clear positions for NPCs who aren't on this node anymore — or who are
       // on the other side of the Haven door.
@@ -8541,7 +8575,7 @@
       const v = this.state.village;
       const s = this.state.scholar;
       if (this.over) return;
-      const hx = v.px ?? 3, hy = v.py ?? 3;
+      const hx = v.px ?? 4, hy = v.py ?? 4;
       const night = this.isNight();
       for (const rid of (v.roster || [])) {
         if (rid === this.villagerId) continue;
@@ -9412,7 +9446,7 @@
     villageEvent(type, opts) {
       opts = opts || {};
       const v = this.state.village;
-      const atHaven = this.map.px === 3 && this.map.py === 3;
+      const atHaven = this.map.px === 4 && this.map.py === 4;
       if (type === 'monster_attack') {
         if (!atHaven) return;
         for (const rid of (v.roster || [])) { if (rid !== this.villagerId) this.npcNeeds(rid).fear = Math.min(100, this.npcNeeds(rid).fear + 35); }
@@ -10522,7 +10556,7 @@
       const px = this.map.px, py = this.map.py;
       const aff = (mdef && mdef.waterAffinity) || null;
       const cands = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (x === px && y === py) continue;
         if (this.isSafeTile(x, y)) continue;
         const t = this.tileAt(x, y);
@@ -11089,7 +11123,7 @@
 
     villagerTurn() {
       const v = this.state.village;
-      if (this.map.px !== 3 || this.map.py !== 3) return;
+      if (this.map.px !== 4 || this.map.py !== 4) return;
       if (!v.positions) return;
       const detail = this.genDetail(3, 3);
       for (const rid of Object.keys(v.positions)) {
@@ -11290,7 +11324,7 @@
     // heavily pressured land recovers slower; detail cells come back in 3 days.
     // Called by endDay() and by the distant-village catch-up sim per simulated day.
     regrowTiles() {
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.map.tiles[y][x];
         if (t.maxStock > 0) {
           const pressure = t.foragePressure || 0;
@@ -11351,7 +11385,7 @@
     depleteRandomTile(amount, cx, cy) {
       // find tiles with stock, deplete near the foragers first
       const near = [], mid = [];
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
         const d = (cx == null || cy == null) ? 99 : Math.abs(x - cx) + Math.abs(y - cy);
@@ -11452,9 +11486,17 @@
         // grass is humming in harmony" composed as "The grass is humming in
         // harmony is here"). A finite verb in the descriptor means it's a
         // sentence, not a name — fall back to 'something' (dread, not
-        // grammar). Participles (", rooting in the underbrush") are fine:
-        // they modify a noun head.
+        // grammar).
         if (/\b(am|is|are|was|were|has|have|had|do|does|did|will|would|shall|should|can|could|may|might|must)\b/i.test(n)) return 'something';
+        // COMMA = the descriptor continues into a clause (explorer loop
+        // 2026-10-06: "The moth the size of a dinner plate, catching light
+        // wrong is here", "The phone ringing in the trees, and no phone
+        // anywhere is here"). monsterNoun needs a noun phrase: keep only
+        // what's before the first comma — the head noun composes clean
+        // ("the moth the size of a dinner plate"), the clause after it
+        // doesn't. Convention for content workers: head noun phrase first.
+        const commaAt = n.indexOf(',');
+        if (commaAt > 0) n = n.slice(0, commaAt);
         const stripped = n.replace(/^((an?)|the)\s+/i, '');
         const base = stripped !== n ? stripped : n;
         return base.charAt(0).toLowerCase() + base.slice(1);
@@ -12402,7 +12444,7 @@
       if (scholar.day >= 3 && scholar.day >= wNext && !this.wanderer) {
         // spawn at a random revealed-edge thicket, or near player
         const spots = [];
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           if (this.map.tiles[y][x].type === 'thicket') spots.push({ x, y });
         }
         const s = spots.length ? spots[Math.floor(Math.random() * spots.length)] : { x: 5, y: 5 };
@@ -12595,7 +12637,7 @@
         // Haven sits at 3,3; village.px/py may be unset on older saves — same
         // ?? 3 convention as returnToVillage/travel code, so standing at Haven
         // actually counts as being there.
-        const hx = this.state.village.px ?? 3, hy = this.state.village.py ?? 3;
+        const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
         const atHaven = this.map && this.map.px === hx && this.map.py === hy;
         if (!atHaven) {
           s.pendingVillageEvent = {
@@ -12698,7 +12740,7 @@
       s.dayTicks = 0;
       s.actionClock = 0;
       this.dayPart = 0;
-      this.map.px = v.px ?? 3; this.map.py = v.py ?? 3;
+      this.map.px = v.px ?? 4; this.map.py = v.py ?? 4;
       s.mx = 4; s.my = 4;
       this.ensureVillagerPositions();
       this.say('');
@@ -13034,7 +13076,7 @@
       } else if (id === 'hive_mind') {
         trustAll(-10, 'You know what everyone is doing. They can feel you knowing. (hive_mind: trust -10)');
         // the map opens. Every tile revealed — you see the whole board.
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) this.reveal(x, y);
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) this.reveal(x, y);
         this.say('HIVE MIND: the map is open. Every tile, revealed. They know you\'re watching.');
       }
     },
@@ -13096,7 +13138,7 @@
         if (this.state.weather === 'rain') this.noteAbilityUse('rain_dancer');
         // 70%: reveal the nearest water tile. Nobody knows why it works. Including us.
         let best = null, bestD = 99;
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           const t = this.tileAt(x, y);
           if (t.type === 'creek' || t.type === 'wetland') {
             const d = Math.abs(x - this.map.px) + Math.abs(y - this.map.py);
@@ -13113,7 +13155,7 @@
         s.echoDay = s.day;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const nx = this.map.px + dx, ny = this.map.py + dy;
-          if (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) this.reveal(nx, ny);
+          if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) this.reveal(nx, ny);
         }
         this.say('You clap once. The echo comes back with the shape of the land — 3x3 revealed. (echo_location)');
       } else if (id === 'field_medicine') {
@@ -14105,7 +14147,7 @@
     playerAtHaven() {
       const v = this.state.village || {};
       if (!this.map) return true;
-      const hx = v.px ?? 3, hy = v.py ?? 3;
+      const hx = v.px ?? 4, hy = v.py ?? 4;
       return Math.abs(this.map.px - hx) + Math.abs(this.map.py - hy) <= 1;
     },
 
@@ -14143,13 +14185,13 @@
           // COMPETITION: they depleted a real tile. the world is shared.
           // (2026-10-05: was called without coords — a silent no-op. Home turf
           // is the village's turf: pass haven so the depletion is real.)
-          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
+          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
           if (present) this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
         } else if (r < 0.35) {
           // brings food: a real haul. from the world, not thin air.
           const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
           this.stockPantry(kcal, 'Foraged food');
-          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 3, v.py ?? 3);
+          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
           if (present) this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
         } else if (r < 0.5) {
           // wounded: health bars. -20 to -35 per bad day.
@@ -14847,7 +14889,7 @@
       this.socialSimmer();
       // depletion: every 5 days, the easy food is gone. the land gets tired.
       if (this.state.scholar.day % 5 === 0) {
-        for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           const t = this.tileAt(x, y);
           if (t.type !== 'haven' && t.type !== 'ruin' && t.maxStock > 1) {
             t.maxStock -= 1;
@@ -20274,6 +20316,10 @@
           this.audioEvent('staticCry', { close: true });
         } else if (vmPhase !== 'reveal' && (m.vmResist || 0) >= 2) {
           this.encSetPhase(m, 'reveal'); vmPhase = 'reveal'; m.vmResist = 0;
+          // REVEAL BREATH (Steve 2026-10-06): the pending Distress Call
+          // resolves this same turn — the rush must wait one round, or the
+          // reveal double-dips (call damage + rush in one monster turn).
+          m.vmRushCd = 1;
           this.say('You don\'t move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It\'s a radio. It was always a radio.');
           this.audioEvent('staticBreak');
         }
@@ -22101,11 +22147,16 @@
           this.say('"Hold the line! Hold the LINE!"');
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
-        // PICKET LINE: summon a wave-1 monster (once per fight per missing ally)
-        if (allies.length < 2 && !m.urSummoned) {
+        // PICKET LINE: summon a wave-1 monster (once per fight per missing ally).
+        // ORGANIZING WINDOW (Steve 2026-10-06): the rep must visibly organize
+        // for 2 turns before the line forms — "union-bust it before the picket
+        // forms" needs to be true. No apex on the picket line: gallowdeer is
+        // not picket fodder.
+        m.urOrgTurns = (m.urOrgTurns || 0) + 1;
+        if (allies.length < 2 && !m.urSummoned && m.urOrgTurns >= 2) {
           m.urSummoned = true;
           this.encSetPhase(m, 'picketing');
-          const w1 = (this.data.monsters || []).filter(x => (x.wave || 1) === 1 && x.id !== 'bulldozer');
+          const w1 = (this.data.monsters || []).filter(x => (x.wave || 1) === 1 && x.id !== 'bulldozer' && x.id !== 'gallowdeer');
           const pick = w1[Math.floor(Math.random() * w1.length)];
           this.say(`"PICKET LINE!" A ${pick.name} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
           try { this.audioEvent('unionPicket', {}); } catch (e) {}
@@ -22921,7 +22972,7 @@
           this.say('PHOENIX CLAUSE: you EXPLODE — 60 damage to everything nearby.');
         }
         s.health = 1; s.kcal = 500;
-        this.map.px = this.state.village.px ?? 3; this.map.py = this.state.village.py ?? 3;
+        this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4;
         s.mx = 4; s.my = 4; this.fight = null; this.syncMonsterAlias();
         this.say('You wake at Haven, 1 HP, ash in your mouth. The audience applauds. (phoenix_clause: once per run)');
         this.noteAbilityUse('phoenix_clause');

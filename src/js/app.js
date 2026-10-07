@@ -1083,7 +1083,7 @@
       const outTile = !inside;
       if (exit && outTile) {
         const nx = Game.map.px + exit.dx, ny = Game.map.py + exit.dy;
-        const nt = (nx >= 0 && nx < 7 && ny >= 0 && ny < 7) ? Game.tileAt(nx, ny) : null;
+        const nt = (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) ? Game.tileAt(nx, ny) : null;
         const nm = nt ? (nt.revealed ? (S.TILE_NAME[nt.type] || nt.type) : 'unexplored ground') : 'the edge of the known world';
         const block = nt ? Game.travelBlockage(nx, ny) : null;
         // WORLD EDGE (explorer loop 2026-10-06): no travel button into the
@@ -12586,9 +12586,9 @@
     // SVG TILE SCENES (Steve 2026-10-06): tiles render as miniature scenes
     // when the module is loaded; glyph fallback otherwise.
     const TS = (typeof Scattering !== 'undefined' && Scattering.TileScenes) || null;
-    for (let y = 0; y < 7; y++) {
+    for (let y = 0; y < 9; y++) {
       html += '<div class="mrow">';
-      for (let x = 0; x < 7; x++) {
+      for (let x = 0; x < 9; x++) {
         // FOG OF WAR (Steve 2026-10-06): only tiles you've WALKED IN reveal.
         // Check seenTiles for visited status. No hardcoded visibility.
         let _seenSimple = false;
@@ -12606,8 +12606,8 @@
               if (_tl.type) _ttype = _tl.type;
             }
           } catch (e) {}
-          // Haven always shows 🏘️ (Steve 2026-10-06)
-          if (x === 3 && y === 3) {
+          // Haven always shows 🏘️ (Steve 2026-10-06) — center of 9x9
+          if (x === 4 && y === 4) {
             html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:#7cbd6b;width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">🏘️</div></div>`;
             continue;
           }
@@ -12662,7 +12662,7 @@
         let seen = null;
         let diagColor = null;
         if (x >= 2 && x <= 4 && y >= 2 && y <= 4) {
-          seen = (x === 3 && y === 3) ? 'visited' : 'shared';
+          seen = (x === 4 && y === 4) ? 'visited' : 'shared';
         }
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
@@ -12688,7 +12688,7 @@
           // HAVEN/VILLAGE ICON (Steve 2026-10-06): havens and villages ALWAYS
           // show the 🏘️ icon, not terrain. You need to see where people are.
           // Haven is always at (3,3); check coords directly (tile data may be null).
-          const isHavenTile = (x === 3 && y === 3) || (tl && (tl.type === 'haven' || tl.village));
+          const isHavenTile = (x === 4 && y === 4) || (tl && (tl.type === 'haven' || tl.village));
           if (isHavenTile) {
             g = '🏘️';
           } else if (diagColor) {
@@ -12836,9 +12836,9 @@
       const n = Object.keys(seen).length;
       if (!n) return '';
       let cells = '';
-      for (let y = 0; y < 7; y++) {
+      for (let y = 0; y < 9; y++) {
         cells += '<div class="mrow">';
-        for (let x = 0; x < 7; x++) {
+        for (let x = 0; x < 9; x++) {
           const k = x + ',' + y;
           const tl = Game.tileAt(x, y);
           const mine = st.seenTiles && st.seenTiles[k];
