@@ -569,7 +569,7 @@ Village membership. Joining, leaving, exile status — plus the exile arc (momen
 ### move-anim (`move-anim.js`)
 Movement animation. Step-by-step tile transitions.
 
-**Provides:** enqueue(anim), pump(), purgeKind(kind), setHold(id), clearHold(id), stopAll(), capture(), flip(), lungeAt(dir, opts), recoil(dir, opts), knockback(dir, n, opts), windupShift(dir, opts), chargeStride(lane, opts)
+**Provides:** enqueue(anim), pump(), purgeKind(kind), setHold(id), clearHold(id), purgeHold(), stopAll(), capture(), flip(), now(), lungeAt(dir, opts), recoil(dir, opts), knockback(dir, n, opts), windupShift(dir, opts), chargeStride(lane, opts)
 
 **Rules:**
 - Attack primitives are single steps through the same pump/queue, so the three step guarantees (one step at a time, visible beat, FLIP glide) apply to attacks too (code: move-anim.js).
@@ -580,6 +580,7 @@ Movement animation. Step-by-step tile transitions.
 - windupShift(dir): anticipation step AWAY from the upcoming attack direction (dir is where the strike will go; shift is -dir) — telegraphs the telegraph with one slow, readable beat (code: move-anim.js).
 - chargeStride(lane): burst of n steps along lane {dx, dy, n}; defaults to a paw-the-ground windup beat first (opts.paw, kind 'windup', step.paw) so chargers feel distinct from rushers (code: move-anim.js).
 - opts.blur on lungeAt marks a rusher-style blurred strike (shorter beats + step.blur flag for the renderer to motion-blur the sprite) (code: move-anim.js).
+- TAP-vs-HOLD (Steve 2026-10-07): hold-to-walk chains only when the hold began at or before the landing step started (holdSince <= step._startT). A tap's brief finger-down straddling a step boundary must not spawn a phantom hold-step — that was the dpad overshoot bug. purgeHold() drops hold-generated queue on release (code: move-anim.js).
 
 **Consumes:** (none documented)
 
