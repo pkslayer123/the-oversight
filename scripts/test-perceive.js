@@ -143,7 +143,7 @@ ok('non-observant misses far monster', !has('something moves') && !has('close'))
 
 // 13. stash at Haven
 freshGame();
-Game.map.px = 3; Game.map.py = 3; // Haven
+Game.map.px = 4; Game.map.py = 4; // Haven (the haven tile; was 3,3 pre-map-rework)
 Game.stashState().materials.branch = 12;
 Game.stashState().materials.wood = 3;
 ok('stash hint lists contents', has('12 branches') && has('3 logs'));

@@ -3088,7 +3088,8 @@
         if (!t.genesis || t.genesis.daysLeft <= 0) continue;
         t.genesis.daysLeft -= 1;
         const kcal = 500;
-        const atHaven = (x === 0 && y === 0);
+        // HAVEN COORD (fix 2026-10-07): tile type, not coordinates.
+        const atHaven = !!(t && (t.type === 'haven' || t.isHaven));
         const px = this.map.px, py = this.map.py;
         if (x === px && y === py) {
           this.state.scholar.inventory.push({ name: 'Genesis fruit', kcalEach: kcal, units: 1, spoilDay: this.state.scholar.day + 3, safe: true, kg: 0.5, unit: 'fruit' });
@@ -3337,7 +3338,7 @@
             this.bumpTrust(vid, -25);
             markBully();
             this.say(`🥊 ${dname} swings. Desperate, not skilled. Nobody wanted this — least of all them.`);
-            try { if (this.npcBetrays) this.npcBetrays(vid); } catch (e) {}
+            try { if (this.npcBetrays) this.npcBetrays(vid, { reason: 'snap' }); } catch (e) {}
             return 'fight';
           }
           // RUN: they leave. Haven isn't worth this.
@@ -3383,7 +3384,7 @@
         const fear = (this.npcNeeds(vid).fear || 0);
         if (fear < 30 && Math.random() < 0.4 && this.npcBetrays) {
           this.say(`🥊 ${dname} swings first. Desperate, not skilled. Nobody wanted this.`);
-          this.npcBetrays(vid);
+          this.npcBetrays(vid, { reason: 'rage' });
           return 'fight';
         }
         try { this.seedGossip('bully', { honest: -12, generous: -10, brave: 2 }, [vid]); } catch (e) {}

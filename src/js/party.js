@@ -421,7 +421,10 @@
 
     // Is the moment right? Isolation + your weakness + something worth taking.
     betrayalOpportunity(vid) {
-      const atHaven = this.map && this.map.px === 3 && this.map.py === 3;
+      // HAVEN COORD (fix 2026-10-07): haven is the tile with type 'haven'
+      // (world center since the map rework) — never hardcode coordinates.
+      let atHaven = false;
+      try { const t = this.playerTile(); atHaven = !!(t && (t.type === 'haven' || t.isHaven)); } catch (e) {}
       if (atHaven) return 0; // too many witnesses at home
       const vpos = (this.state.village.positions || {});
       let witnesses = 0;
@@ -481,17 +484,41 @@
     },
 
     // The NPC strikes. No more warnings.
-    npcBetrays(vid) {
+    // opts.reason: 'cold' (calculated betrayal — the default), 'snap' (cornered
+    // and desperate, e.g. the intimidate breaking point: no arithmetic, just
+    // terror with hands), 'rage' (provoked swing, e.g. a bold villager pushed
+    // too far: fury, not calculation).
+    npcBetrays(vid, opts) {
+      opts = opts || {};
       if (this.tbfight) return; // not mid-fight
       const v = this.partyState();
       const dname = this.displayName(vid);
-      this.say(`🔪 ${dname}'s expression changes. Not anger — arithmetic.`);
-      const lines = [
-        `"Nothing personal. I need what's in your pack more than you do."`,
-        `"You should've seen this coming. That's the worst part — you COULD have."`,
-        `"The System loves a betrayal arc. I'm just giving the audience what they want."`,
-      ];
-      this.say(`${dname}: ${lines[Math.floor(Math.random() * lines.length)]}`);
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      if (opts.reason === 'snap') {
+        // Cornered swing: there is no plan here. Don't narrate one.
+        this.say(`🔪 ${dname} isn't thinking anymore. No plan in their eyes — just the corner you backed them into.`);
+        this.say(`${dname}: ${pick([
+          `"GET OFF — GET AWAY FROM ME!"`,
+          `"I can't — I can't do this anymore!"`,
+          `"You did this. YOU did this."`,
+        ])}`);
+      } else if (opts.reason === 'rage') {
+        // Provoked swing: fury, not math.
+        this.say(`🔪 ${dname}'s control snaps. Not calculation — fury.`);
+        this.say(`${dname}: ${pick([
+          `"You wanted a fight? HERE'S your fight."`,
+          `"I've had ENOUGH of you."`,
+          `"Come on, then. COME ON."`,
+        ])}`);
+      } else {
+        this.say(`🔪 ${dname}'s expression changes. Not anger — arithmetic.`);
+        const lines = [
+          `"Nothing personal. I need what's in your pack more than you do."`,
+          `"You should've seen this coming. That's the worst part — you COULD have."`,
+          `"The System loves a betrayal arc. I'm just giving the audience what they want."`,
+        ];
+        this.say(`${dname}: ${pick(lines)}`);
+      }
       // They're out of the party. They're a hostile now.
       v.party = (v.party || []).filter(id => id !== vid);
       v.followers = (v.followers || []).filter(id => id !== vid);
@@ -677,7 +704,9 @@
     lureCheck() {
       const v = this.partyState();
       if (v.lure) return; // one lure at a time
-      const atHaven = this.map && this.map.px === 3 && this.map.py === 3;
+      // HAVEN COORD (fix 2026-10-07): tile type, not coordinates.
+      let atHaven = false;
+      try { const t = this.playerTile(); atHaven = !!(t && (t.type === 'haven' || t.isHaven)); } catch (e) {}
       if (!atHaven) return;
       for (const vid of this.travelingWith()) {
         const bs = this.betrayalState(vid);

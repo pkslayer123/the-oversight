@@ -25,6 +25,7 @@ function freshGame() {
     Game.genRoster('Columbus, Ohio');
     Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
     Game.depart();
+    Game.tbfight = null; // harness: the previous section's fight must not leak (fix 2026-10-07)
     Game.log.length = 0;
   })();
 }
@@ -119,17 +120,27 @@ function startFight(vid) {
     const vid = others()[0];
     Game.npcBetrays(vid); // they come at you
     ok('E: betrayal combat started', !!(Game.tbfight && Game.tbfight.betrayal));
-    // player flees the ambush by motion (Steve 2026-10-05: FLEE button was
-    // removed — you run for the grid edge; 50% escape per try, else pursued).
-    // The haven grid has walls, so try every edge until one has a path.
-    const edgeTargets = (p) => [[0, p.my], [8, p.my], [p.mx, 0], [p.mx, 8]];
+    // player flees the ambush via the node barrier (Steve 2026-10-05, refined
+    // 2026-10-06: no FLEE button — you push THROUGH the grid edge with
+    // tbBarrierExit. Landing on an edge tile does NOT flee; only a deliberate
+    // exit attempt does. 50% escape per try, else pursued to the next node.)
+    const savedRandom = Math.random;
+    Math.random = () => 0.1; // force the 50% escape branch: the verb is under test, not the odds
     for (let i = 0; i < 8 && Game.tbfight; i++) {
       Game.tbfight.turnIdx = Game.tbfight.order.indexOf('p');
       const p = Game.tbFighter('p'); p.moveLeft = 20; p.acted = false;
-      const tgt = edgeTargets(p).find(([x, y]) => Game.findPath(p.mx, p.my, x, y));
-      if (!tgt) break; // walled in — can't run (a real outcome, not a hang)
-      Game.tbPlayerMove(tgt[0], tgt[1]);
+      // walk to an edge tile with a path...
+      const et = [[0, p.my], [8, p.my], [p.mx, 0], [p.mx, 8]].find(([x, y]) => Game.findPath(p.mx, p.my, x, y));
+      if (!et) break; // walled in — can't run (a real outcome, not a hang)
+      Game.tbPlayerMove(et[0], et[1]);
+      if (!Game.tbfight) break;
+      // ...then push through the edge you're standing on.
+      const pp = Game.tbFighter('p');
+      const dx = pp.mx === 0 ? -1 : pp.mx === 8 ? 1 : 0;
+      const dy = pp.my === 0 ? -1 : pp.my === 8 ? 1 : 0;
+      Game.tbBarrierExit(dx, dy);
     }
+    Math.random = savedRandom;
     ok('E: survived', !Game.tbfight);
   }
 
