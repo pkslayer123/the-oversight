@@ -16,6 +16,9 @@
 //   - tbAfterPlayerAction()
 //   - contestTick() (delegates to contests.js)
 //   - fireShow(event) -> show (delegates to contests.js)
+//   - triggerEvent(ev) (event engine: generic dispatcher reading events.json; checks once/cooldown, calls named handler)
+//   - evFirstHunt(ev), evStranger(ev), evHushwolfPack(ev), evSystemTask(ev) (event handlers; pure extraction from old if/else chain)
+//   - scheduleSystemEvents() (schedules from events.json scheduledDay; data-driven)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
 //   - tbSeedAmbushZone(m, pattern, opts) -> zone | null, tbAmbushZoneTick() (seeded-ground ambush: visible arming beat when stepped in, fires a beat later; fight-scoped; code: combat.js 'ambush-zone'/zoneArmed)
@@ -141,9 +144,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events };
       // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
@@ -14311,10 +14314,15 @@
     scheduleSystemEvents() {
       const s = this.state.scholar;
       s.timedEvents = s.timedEvents || [];
-      s.timedEvents.push({ day: 8, type: 'challenge', id: 'first_hunt', done: false });
-      s.timedEvents.push({ day: 9, type: 'drama', id: 'stranger', done: false });
-      s.timedEvents.push({ day: 10, type: 'monster', id: 'hushwolf_pack', done: false });
-      s.timedEvents.push({ day: 12, type: 'quest', id: 'system_task', done: false });
+      // EVENT ENGINE (Steve 2026-10-07): schedule from events.json data.
+      // New events are data-only: add to events.json with scheduledDay, done.
+      const events = (this.data.events && this.data.events.events) || [];
+      for (const def of events) {
+        if (def.scheduledDay == null) continue;
+        // Don't double-schedule on re-entry (e.g., newGame called twice)
+        if (s.timedEvents.some(e => e.id === def.id)) continue;
+        s.timedEvents.push({ day: def.scheduledDay, type: def.type, id: def.id, done: false });
+      }
       // JACKPOT: knowledgeable stranger. Rare, exciting, memorable.
       // Not scheduled — random chance each day after day 5 (5% per day).
       // "Occasionally you hit a vein."
@@ -14341,26 +14349,63 @@
         }
       }
     },
+    // EVENT ENGINE (Steve 2026-10-07): generic dispatcher.
+    // triggerEvent(ev) looks up the event definition in events.json,
+    // checks once/repeatable + cooldown, dispatches to the named handler,
+    // and records the firing. New events: add to events.json + implement
+    // the handler method. No if/else chain to extend.
     triggerEvent(ev) {
-      if (ev.id === 'first_hunt') {
-        this.say('\u{1F4E2} SYSTEM CHALLENGE: "Catch something! Anything! We want to see how you do it!" (Hunt an animal today for a reward.)');
-        this.state.scholar.activeChallenge = { id: 'first_hunt', desc: 'Hunt an animal', reward: 'Ability point' };
-      } else if (ev.id === 'stranger') {
-        this.say('\u{1F6B6} A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
-        // mediator: peace is a skill. You talk the village through it.
-        if (this.hasAbility('mediator')) {
-          const bonus = this.trustGainMult(Math.round(this.modTarget('drama.resolve_bonus', 8)));
-          const v = this.state.village; v.trust = v.trust || {};
-          for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
-          this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
-          this.noteAbilityUse('mediator');
-        }
-      } else if (ev.id === 'hushwolf_pack') {
-        this.say('\u{1F43A} HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
-      } else if (ev.id === 'system_task') {
-        this.say('\u{1F4DC} SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
-        this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
+      const eid = ev && ev.id;
+      if (!eid) return;
+      const events = (this.data.events && this.data.events.events) || [];
+      const def = events.find(e => e.id === eid);
+      if (!def) return; // unknown event — ignore silently (defensive)
+      // Once-events: check if already fired
+      this.state.firedEvents = this.state.firedEvents || {};
+      const fired = this.state.firedEvents[eid] || {};
+      if (def.once && fired.done) return;
+      // Cooldown for repeatable events
+      if (def.repeatable && def.cooldownDays > 0) {
+        const lastDay = fired.lastDay || -999;
+        const today = (this.state.scholar || {}).day || 0;
+        if (today - lastDay < def.cooldownDays) return;
       }
+      // Dispatch to named handler
+      const handler = def.handler;
+      if (handler && typeof this[handler] === 'function') {
+        this[handler](ev);
+      }
+      // Record firing
+      this.state.firedEvents[eid] = {
+        done: !!def.once,
+        lastDay: (this.state.scholar || {}).day || 0,
+        count: (fired.count || 0) + 1
+      };
+    },
+    // Event handlers — one per event id in events.json.
+    // Pure extraction from the old triggerEvent if/else chain (Steve 2026-10-07).
+    // Behavior is IDENTICAL; only the dispatch mechanism changed.
+    evFirstHunt(ev) {
+      this.say('\u{1F4E2} SYSTEM CHALLENGE: "Catch something! Anything! We want to see how you do it!" (Hunt an animal today for a reward.)');
+      this.state.scholar.activeChallenge = { id: 'first_hunt', desc: 'Hunt an animal', reward: 'Ability point' };
+    },
+    evStranger(ev) {
+      this.say('\u{1F6B6} A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
+      // mediator: peace is a skill. You talk the village through it.
+      if (this.hasAbility('mediator')) {
+        const bonus = this.trustGainMult(Math.round(this.modTarget('drama.resolve_bonus', 8)));
+        const v = this.state.village; v.trust = v.trust || {};
+        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
+        this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
+        this.noteAbilityUse('mediator');
+      }
+    },
+    evHushwolfPack(ev) {
+      this.say('\u{1F43A} HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
+    },
+    evSystemTask(ev) {
+      this.say('\u{1F4DC} SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
+      this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
     },
 
     // CODEX NETWORKING: codexes talk within friendly organizations.
