@@ -12,6 +12,8 @@
 //   - partyTrustFloor()
 //   - travelingWith()
 //   - placePartyAtPlayer()
+//   - partyBetrayalState(vid)
+//   - betrayalIntent(vid)
 // rules:
 //   - (none documented)
 // consumes:
@@ -367,15 +369,27 @@
     // Trust is not safety. Betrayal runs on personality + desperation +
     // opportunity. A high-trust backstab is MORE devastating, not less likely.
 
-    betrayalState(vid) {
+    // partyBetrayalState: per-villager party-betrayal record.
+    // NOTE (2026-10-07): was `betrayalState(vid)` — shadowed by betrayal.js's
+    // village-level `betrayalState()` (same name, Object.assign order) in the
+    // full production module list. The shadow made every party caller read
+    // the VILLAGE betrayal object: one global intent for all members, and
+    // betrayalCueCheck crashed on undefined cuesSeen (swallowed by wrapper
+    // try/catch, so cues silently never fired). Renamed to survive load order.
+    partyBetrayalState(vid) {
       const v = this.partyState();
       v.betray[vid] = v.betray[vid] || { intent: false, evaluated: false, suspicion: 0, cuesSeen: [] };
-      return v.betray[vid];
+      const bs = v.betray[vid];
+      // repair legacy/malformed entries (e.g. written while the old name was
+      // shadowed) so cues never crash on a missing array.
+      if (!Array.isArray(bs.cuesSeen)) bs.cuesSeen = [];
+      if (typeof bs.suspicion !== 'number') bs.suspicion = 0;
+      return bs;
     },
 
     // Do they plan to betray you? Evaluated on join, re-evaluated when desperate.
     betrayalIntent(vid, force) {
-      const bs = this.betrayalState(vid);
+      const bs = this.partyBetrayalState(vid);
       if (bs.evaluated && !force) return bs.intent;
       bs.evaluated = true;
       const temp = this.npcTemper(vid);
@@ -412,7 +426,7 @@
       const v = this.state.village;
       const pantryLow = (v.pantryKcal || 99999) < 2000;
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent && pantryLow && Math.random() < 0.15) {
           this.betrayalIntent(vid, true);
         }
@@ -447,7 +461,7 @@
     // Observant/social player intelligences pick these up more often.
     betrayalCueCheck() {
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent || bs.cuesSeen.length >= 3) continue;
         if (Math.random() > 0.18) continue;
         const dname = this.displayName(vid);
@@ -680,7 +694,7 @@
       const atHaven = this.map && this.map.px === 3 && this.map.py === 3;
       if (!atHaven) return;
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent) continue;
         if (Math.random() > 0.2) continue;
         const dname = this.displayName(vid);
@@ -706,7 +720,7 @@
       this.lureCheck();
       // Does anyone strike?
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent) continue;
         const opp = this.betrayalOpportunity(vid);
         if (opp >= 70 && Math.random() < 0.5) {

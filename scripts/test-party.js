@@ -110,7 +110,7 @@ function ok(name, cond) {
   // Force intent true on a high-trust member to prove the point.
   const loyal = Game.partyMembers()[0] || B;
   v.trust[loyal] = 100; // maximum trust
-  const bs = Game.betrayalState(loyal);
+  const bs = Game.partyBetrayalState(loyal);
   bs.intent = true; bs.evaluated = true; // simulate a hidden backstabber
   eq('high trust does not clear intent', Game.betrayalIntent(loyal), true);
   ok('opportunity zero at haven (witnesses)', Game.betrayalOpportunity(loyal) === 0);
@@ -154,7 +154,7 @@ function ok(name, cond) {
   const snake = roster.find(id => (Game.state.village.roster || []).includes(id) && !Game.inParty(id));
   if (snake) {
     Game.state.village.party.push(snake);
-    const sbs = Game.betrayalState(snake);
+    const sbs = Game.partyBetrayalState(snake);
     sbs.intent = true; sbs.evaluated = true;
     Game.npcBetrays(snake);
     ok('npc betrayal starts combat', !!(Game.tbfight && Game.tbfight.betrayal));
