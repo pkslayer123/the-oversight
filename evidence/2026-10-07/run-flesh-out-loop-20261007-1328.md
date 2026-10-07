@@ -22,5 +22,8 @@ Both: new-files-only, private-index commit-tree recipe (-p HEAD, --add, one trip
 ## Handoffs received
 (pending)
 
+## Incident (13:45 CDT)
+- Coordinator bare-`git commit` after `git add <run-note>` SWEPT the sibling's 206 staged deletions (their cleanup) into commit 812f265 (275 files, 54,142 deletions) — the documented BARE-COMMIT SWEEP hazard, repeated despite the standing rule. Caught immediately: HEAD was still 812f265 with no sibling commit on top (reflog check), so `git reset --soft 2275cc1` restored the shared index to its armed state intact; run note then committed via the private-index route as 76e4821 (exactly 1 file). Sibling's staged cleanup untouched.
+
 ## Completion flow
 (pending)
