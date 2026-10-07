@@ -18007,6 +18007,10 @@
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
       let wasCrit = false; // DRAMA B1: crits get the full spectacle
       if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; wasCrit = true; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
+      // ABILITY ACTIONS (Steve 2026-10-07): consume take_aim, ambush, haymaker,
+      // trade_of_blows, rage, etc. flags set by Game.useAbility(). Each flag
+      // is single-use unless noted; the hook narrates and clears.
+      try { if (typeof this._applyAbilityActionMods === 'function') d = this._applyAbilityActionMods(d, p, t); } catch (e) {}
       // PATIENT AIM: 2x damage on round 1 (combat.strike_damage modifier)
       try {
         if (f.round === 1) {

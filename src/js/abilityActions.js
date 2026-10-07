@@ -321,6 +321,79 @@
       return 'something violent';
     },
 
+    // _applyAbilityActionMods: called from tbPlayerStrike to consume action flags.
+    // Each flag is set by a useAbility() action and consumed here on the next strike.
+    // Returns the modified damage. Narrates via say().
+    _applyAbilityActionMods: function (d, p, t) {
+      var s = this.state.scholar;
+
+      // TAKE AIM: 2.5x, cannot miss. Consumed on use.
+      if (s.aimBonus) {
+        d = Math.round(d * s.aimBonus.mult);
+        this.say('TAKE AIM: the shot lands exactly where you pictured it. ×' + s.aimBonus.mult + '.');
+        delete s.aimBonus;
+      }
+      // DEAD AIM SHOT: 3x, ignores armor.
+      if (s.deadAimShot) {
+        d = Math.round(d * s.deadAimShot.mult);
+        // Armor ignore is handled by setting a flag the armor block checks.
+        s.ignoreArmorNext = true;
+        this.say('DEAD AIM: one perfect shot. ×' + s.deadAimShot.mult + ', armor means nothing.');
+        delete s.deadAimShot;
+      }
+      // AMBUSH: 2x, target can't dodge.
+      if (s.ambushReady) {
+        d = Math.round(d * s.ambushReady.mult);
+        // No-dodge: set flag for the dodge check.
+        s.noDodgeNext = true;
+        this.say('AMBUSH: they never saw it coming. ×' + s.ambushReady.mult + '.');
+        delete s.ambushReady;
+      }
+      // HAYMAKER: 2.5x, -30% accuracy (handled at roll time via flag).
+      if (s.haymakerReady) {
+        d = Math.round(d * s.haymakerReady.mult);
+        this.say('HAYMAKER: a wild, devastating swing. ×' + s.haymakerReady.mult + '.');
+        delete s.haymakerReady;
+      }
+      // TRADE OPEN: +50% for 3 attacks.
+      if (s.tradeOpen && s.tradeOpen.attacksLeft > 0) {
+        d = Math.round(d * (1 + s.tradeOpen.bonus));
+        s.tradeOpen.attacksLeft--;
+        this.say('TRADE OF BLOWS: the pain pays out. +' + Math.round(s.tradeOpen.bonus * 100) + '%. (' + s.tradeOpen.attacksLeft + ' left.)');
+        if (s.tradeOpen.attacksLeft <= 0) delete s.tradeOpen;
+      }
+      // SETTLE DEBT: flat bonus from damage taken.
+      if (s.settleDebtBonus) {
+        d += s.settleDebtBonus;
+        this.say('SETTLE THE DEBT: +' + s.settleDebtBonus + ' from everything you endured.');
+        delete s.settleDebtBonus;
+      }
+      // RAGE: +100% while active.
+      if (s.rageActive && s.rageActive.rounds > 0) {
+        d = Math.round(d * s.rageActive.dmgMult);
+        s.rageActive.rounds--;
+        if (s.rageActive.rounds <= 0) {
+          delete s.rageActive;
+          this.say('The rage burns out. You\'re yourself again — shaking, but yourself.');
+        }
+      }
+      return d;
+    },
+
+    // _applyAbilityDefenseMods: called when the player takes damage.
+    // Checks braceActive and other defensive flags.
+    _applyAbilityDefenseMods: function (dmg, source) {
+      var s = this.state.scholar;
+      // BRACE: 60% reduction, no knockdown.
+      if (s.braceActive) {
+        var reduced = Math.round(dmg * (1 - s.braceActive.reduce));
+        this.say('BRACE: you take it on the shoulder, rolling with it. ' + dmg + ' → ' + reduced + '.');
+        delete s.braceActive;
+        return reduced;
+      }
+      return dmg;
+    },
+
     // _legacyActivatables: the OLD hardcoded activatable abilities that don't
     // yet have actions arrays in abilities.json. Kept for backward compat
     // until they're migrated to data. Each maps to useAbility when migrated.
