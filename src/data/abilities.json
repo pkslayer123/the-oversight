@@ -20,7 +20,7 @@
     }
   },
   {
-    "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares \u2014 no shake.",
+    "description": "Fine work under pressure. Dressing game, stitching wounds, tying snares — no shake.",
     "id": "steady_hands",
     "modifiers": [
       {
@@ -94,7 +94,7 @@
     }
   },
   {
-    "description": "You think in shelf life. Smoking, drying, salting \u2014 food that lasts is food that saves.",
+    "description": "You think in shelf life. Smoking, drying, salting — food that lasts is food that saves.",
     "id": "preservation_instinct",
     "modifiers": [
       {
@@ -510,7 +510,7 @@
   {
     "id": "extra_stomach",
     "name": "Extra Stomach",
-    "description": "You grow a second stomach. Bank twice the calories \u2014 but the hunger doubles too. (It's always hungry.)",
+    "description": "You grow a second stomach. Bank twice the calories — but the hunger doubles too. (It's always hungry.)",
     "flavor": "Two tummies! Twice the hunger! Twice the... we didn't think this through! But WOW!",
     "pool": "system",
     "tier": "body_horror",
@@ -531,7 +531,7 @@
   {
     "id": "deep_reserves",
     "name": "Deep Reserves",
-    "description": "Your body learns to bank calories like a war chest. Bank 5\u00d7 the energy. The furnace is always lit \u2014 but it must be FED.",
+    "description": "Your body learns to bank calories like a war chest. Bank 5× the energy. The furnace is always lit — but it must be FED.",
     "flavor": "FIVE stomachs?! We lost count! The furnace DEMANDS tribute! FEED IT! (It's worth it. Probably.)",
     "pool": "system",
     "tier": "body_horror",
@@ -887,7 +887,7 @@
     "id": "dead_aim",
     "name": "Dead Aim",
     "description": "First attack in any combat is a guaranteed critical if you waited 1 round. Patience, then thunder.",
-    "flavor": "You WAIT! You BREATHE! Then \u2014 BOOM! The audience gasps! We gasped!",
+    "flavor": "You WAIT! You BREATHE! Then — BOOM! The audience gasps! We gasped!",
     "pool": "system",
     "tier": "combat",
     "unlock": {
@@ -1038,7 +1038,7 @@
     "id": "phoenix_clause",
     "name": "Phoenix Clause",
     "description": "Once per run: when you die, you explode (damaging everything nearby) and respawn at Haven with 1 HP. The System calls it 'great television.'",
-    "flavor": "You DIE! Then \u2014 KABOOM! \u2014 you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
+    "flavor": "You DIE! Then — KABOOM! — you're BACK! The audience LOVED it! The ratings! THE RATINGS!",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
@@ -1190,6 +1190,191 @@
     "active": {
       "type": "cure_poison",
       "cooldown": "day"
+    }
+  },
+  {
+    "id": "brawler_instinct",
+    "name": "Brawler's Instinct",
+    "pool": "combat",
+    "description": "You read a fight before it starts. The body tells you what the mouth won't.",
+    "modifiers": [
+      {
+        "target": "combat.initiative",
+        "op": "add",
+        "value": 2,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "granted"
+    },
+    "synergyHints": [
+      "With Adrenaline Control: act first, hit hard"
+    ]
+  },
+  {
+    "id": "adrenaline_control",
+    "name": "Adrenaline Control",
+    "pool": "combat",
+    "description": "Your hands don't shake. Your heart hammers, but your hands don't shake.",
+    "modifiers": [
+      {
+        "target": "combat.strike_damage",
+        "op": "multiply",
+        "value": 1.3,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "trial",
+      "trial": "win_a_fight"
+    },
+    "synergyHints": [
+      "Triage + Adrenaline: stabilize then fight on"
+    ]
+  },
+  {
+    "id": "intimidating_presence",
+    "name": "Intimidating Presence",
+    "pool": "combat",
+    "description": "You don't have to fight. Most people decide not to, just looking at you.",
+    "modifiers": [
+      {
+        "target": "social.intimidate",
+        "op": "add",
+        "value": 0.25,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "trial",
+      "trial": "intimidate_someone"
+    }
+  },
+  {
+    "id": "silver_tongue",
+    "name": "Silver Tongue",
+    "pool": "social",
+    "description": "Words are tools. You've got a whole workshop.",
+    "modifiers": [
+      {
+        "target": "social.persuade",
+        "op": "add",
+        "value": 0.2,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "id": "gossip_network",
+    "name": "Gossip Network",
+    "pool": "social",
+    "description": "You hear things. People tell you things. You remember who told you what.",
+    "modifiers": [
+      {
+        "target": "social.gossip_chance",
+        "op": "add",
+        "value": 0.3,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "trial",
+      "trial": "hear_10_rumors"
+    }
+  },
+  {
+    "id": "peacemaker",
+    "name": "Peacemaker",
+    "pool": "social",
+    "description": "You can walk into a fight and walk out with friends. It's a gift.",
+    "modifiers": [
+      {
+        "target": "social.deescalate",
+        "op": "add",
+        "value": 0.35,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "trial",
+      "trial": "stop_a_fight"
+    }
+  },
+  {
+    "id": "pathfinder",
+    "name": "Pathfinder",
+    "pool": "exploration",
+    "description": "You don't get lost. The land tells you where you are.",
+    "modifiers": [
+      {
+        "target": "travel.speed",
+        "op": "multiply",
+        "value": 1.2,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "granted"
+    }
+  },
+  {
+    "id": "eagle_eye",
+    "name": "Eagle Eye",
+    "pool": "exploration",
+    "description": "You see the ruin on the horizon. The smoke. The movement. Before anyone else.",
+    "modifiers": [
+      {
+        "target": "explore.spot_chance",
+        "op": "add",
+        "value": 0.25,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "trial",
+      "trial": "discover_5_locations"
+    }
+  },
+  {
+    "id": "lie_detector",
+    "name": "Lie Detector",
+    "pool": "investigation",
+    "description": "The mouth says one thing. The hands say another. You watch the hands.",
+    "modifiers": [
+      {
+        "target": "truth.detect_chance",
+        "op": "add",
+        "value": 0.2,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "granted"
+    },
+    "synergyHints": [
+      "With read_people skill: no one fools you"
+    ]
+  },
+  {
+    "id": "evidence_board",
+    "name": "Evidence Board",
+    "pool": "investigation",
+    "description": "You keep track. Who said what, when. The contradictions surface.",
+    "modifiers": [
+      {
+        "target": "truth.contradiction_spot",
+        "op": "add",
+        "value": 0.3,
+        "scale": "level"
+      }
+    ],
+    "unlock": {
+      "type": "trial",
+      "trial": "catch_3_lies"
     }
   }
 ]

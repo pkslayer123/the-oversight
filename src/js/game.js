@@ -4570,7 +4570,7 @@
           const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
           for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
             const nx = hx + dx, ny = hy + dy;
-            if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+            if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue; // 9x9 world (2026-10-07)
             const t = this.tileAt(nx, ny);
             // SCOUT = mapping, not visiting. A scout's report reveals the tile
             // on the map (revealed) but never marks it visited — the player's
@@ -5581,7 +5581,7 @@
       const tileTypes = {};
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
         const tx = village.x + dx, ty = village.y + dy;
-        if (tx < 0 || tx > 6 || ty < 0 || ty > 6) continue;
+        if (tx < 0 || tx > 8 || ty < 0 || ty > 8) continue; // 9x9 world (2026-10-07)
         const t = this.tileAt(tx, ty);
         if (t) tileTypes[t.type] = (tileTypes[t.type] || 0) + 1;
       }
@@ -5901,7 +5901,7 @@
         for (let dy = -1; dy <= 1 && r < 1.8; dy++) for (let dx = -1; dx <= 1; dx++) {
           if (!dx && !dy) continue;
           const nx = xx + dx, ny = yy + dy;
-          if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+          if (nx < 0 || ny < 0 || nx > 8 || ny > 8) continue; // 9x9 world (2026-10-07)
           const nt = tiles[ny][nx].type;
           if (nt === 'creek' || nt === 'wetland') { r += 0.3; break; }
         }
@@ -6188,7 +6188,7 @@
       }
       const nType = (dx, dy) => {
         const nx = x + dx, ny = y + dy;
-        return (nx < 0 || ny < 0 || nx > 6 || ny > 6) ? t.type : this.tileAt(nx, ny).type;
+        return (nx < 0 || ny < 0 || nx > 8 || ny > 8) ? t.type : this.tileAt(nx, ny).type; // 9x9 world (2026-10-07)
       };
       // base cell picker by tile type
       const pick = (type) => {
@@ -6756,7 +6756,7 @@
       // WORLD EDGE (explorer loop 2026-10-06): the known world ends at the
       // map border. NO SILENT ACTIONS — say so once per game, not on every
       // hold-to-walk bump into the edge.
-      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) {
+      if (nx < 0 || nx > 8 || ny < 0 || ny > 8) { // 9x9 world (2026-10-07)
         if (!this.state.worldEdgeTold) {
           this.state.worldEdgeTold = true;
           this.say('The known world ends here — beyond is unmapped, no path. Turn back.');
@@ -6795,7 +6795,7 @@
       return { x: 4, y: 4 }; // unreachable in practice — every detail has walkable cells
     },
     travelTo(x, y, force) {
-      // WORLD EDGE (explorer loop 2026-10-06): the 7x7 map is the whole
+      // WORLD EDGE (explorer loop 2026-10-06): the 9x9 map is the whole
       // known world. A rim tap on a border node passes out-of-bounds coords
       // (e.g. (-1,3)) — tileAt is undefined there, and the old order crashed
       // on dest.revealed BEFORE the travelTargets guard. Guard first: no
@@ -10966,7 +10966,7 @@
         const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         const d = dirs[Math.floor(Math.random() * dirs.length)];
         const nx = m.tx + d[0], ny = m.ty + d[1];
-        if (nx < 0 || nx > 6 || ny < 0 || ny > 6) continue;
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue; // 9x9 world (2026-10-07)
         if (this.isSafeTile(nx, ny)) continue;
         const ox = m.tx, oy = m.ty;
         m.tx = nx; m.ty = ny;
@@ -11015,7 +11015,7 @@
         const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => Math.random() - 0.5);
         for (const d of dirs) {
           const nx = m.tx + d[0], ny = m.ty + d[1];
-          if (nx < 0 || nx > 6 || ny < 0 || ny > 6 || this.isSafeTile(nx, ny)) continue;
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || this.isSafeTile(nx, ny)) continue; // 9x9 world (2026-10-07)
           const ox = m.tx, oy = m.ty;
           m.tx = nx; m.ty = ny;
           this.touchTileScene(ox, oy); this.touchTileScene(nx, ny);
@@ -12605,7 +12605,7 @@
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dy) continue;
         const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+        if (nx < 0 || ny < 0 || nx > 8 || ny > 8) continue; // 9x9 world (2026-10-07)
         nb.add(this.tileAt(nx, ny).type);
       }
       const has = (...ts) => ts.some(t => nb.has(t));
@@ -12651,7 +12651,7 @@
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dy) continue;
         const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx > 6 || ny > 6) continue;
+        if (nx < 0 || ny < 0 || nx > 8 || ny > 8) continue; // 9x9 world (2026-10-07)
         const nt = this.tileAt(nx, ny).type;
         if (nt === 'creek' || nt === 'wetland') { bonus = 0.3; break; }
       }
@@ -12858,7 +12858,7 @@
       const w = this.wanderer;
       if (!w) return;
       const nx = w.x + w.dir;
-      if (nx < 0 || nx > 6) { w.dir *= -1; return; }
+      if (nx < 0 || nx > 8) { w.dir *= -1; return; } // 9x9 world (2026-10-07)
       w.x = nx;
       // contact check after it moves (it can walk into you)
       if (w.x === this.map.px && w.y === this.map.py && !this.encounterDone) {
@@ -13601,13 +13601,88 @@
         this.recomputeActiveSynergies();
       }
     },
+    // buildArchetype: are you a SPECIALIST or GENERALIST?
+    // SPECIALIST: 3+ abilities in one pool, average L3+ → deep mastery bonus.
+    // GENERALIST: abilities in 4+ different pools → versatile adaptability bonus.
+    // Both are rewarded. Specializing gives power; generalizing gives flexibility.
+    // (Steve 2026-10-07: "specializing should have rewards just like generalizing should")
+    buildArchetype() {
+      const s = this.state.scholar;
+      const held = s.abilities || [];
+      if (held.length < 3) return null;
+      // count by pool
+      const byPool = {};
+      for (const aid of held) {
+        const adef = (this.data.abilities || []).find(a => a.id === aid);
+        if (!adef) continue;
+        const pool = adef.pool || 'unknown';
+        byPool[pool] = byPool[pool] || { count: 0, levels: [] };
+        byPool[pool].count++;
+        byPool[pool].levels.push(this.abilityLevel(aid));
+      }
+      // SPECIALIST: 3+ in one pool, avg L3+
+      for (const [pool, data] of Object.entries(byPool)) {
+        if (data.count >= 3) {
+          const avg = data.levels.reduce((a,b) => a+b, 0) / data.levels.length;
+          if (avg >= 3) return { type: 'specialist', pool, avgLevel: Math.round(avg) };
+        }
+      }
+      // GENERALIST: 4+ different pools
+      const pools = Object.keys(byPool).filter(p => p !== 'system' && p !== 'fallback');
+      if (pools.length >= 4) return { type: 'generalist', pools };
+      return null;
+    },
+    // buildBonus: the mechanical reward for your build archetype.
+    // Specialists get +25% to their pool's core action. Generalists get +10% to everything.
+    buildBonus() {
+      const arch = this.buildArchetype();
+      if (!arch) return null;
+      if (arch.type === 'specialist') {
+        const poolTargets = {
+          combat: 'combat.strike_damage',
+          care: 'healing.amount',
+          fieldcraft: 'forage.yield',
+          craft: 'craft.success',
+          social: 'social.persuade',
+          exploration: 'travel.speed',
+          investigation: 'truth.detect_chance',
+        };
+        return {
+          name: `${arch.pool} Specialist`,
+          target: poolTargets[arch.pool] || 'all',
+          mult: 1.25,
+          desc: `Specialist (${arch.pool} L${arch.avgLevel}): +25% to ${arch.pool} actions. Mastery has its rewards.`
+        };
+      }
+      // generalist
+      return {
+        name: 'Versatile Generalist',
+        target: 'all',
+        mult: 1.1,
+        desc: 'Generalist (4+ pools): +10% to everything. Breadth has its rewards.'
+      };
+    },
     // abilityLevelBonus: what does leveling up give? (Per ability.)
     abilityLevelBonus(id, level) {
       const bonuses = {
-        green_thumb: { 2: '+100% yield (was +50%).', 3: 'You sense rich ground. Forage spots glow.' },
-        tracker: { 2: '+50% hunt success (was +30%).', 3: 'You see tracks from 2 tiles away.' },
-        diplomat: { 2: 'Trust builds 3x (was 2x).', 3: 'Villagers tell you secrets unprompted.' },
-        camp_cook: { 2: 'No water needed for cooking.', 3: '+25% kcal (was +10%).' },
+        green_thumb: { 2: '+100% yield (was +50%).', 3: 'You sense rich ground. Forage spots glow.', 4: '+150% yield. You can smell ripeness.', 5: 'MASTER: Plants yield double. The green recognizes you.' },
+        tracker: { 2: '+50% hunt success (was +30%).', 3: 'You see tracks from 2 tiles away.', 4: 'You read age, weight, and mood from tracks.', 5: 'MASTER: The wild tells you where everything is.' },
+        diplomat: { 2: 'Trust builds 3x (was 2x).', 3: 'Villagers tell you secrets unprompted.', 4: 'You can end feuds with a conversation.', 5: 'MASTER: Your word is law. Villages follow you.' },
+        camp_cook: { 2: 'No water needed for cooking.', 3: '+25% kcal (was +10%).', 4: '+40% kcal. You can cook for 20.', 5: 'MASTER: Your food heals wounds. People travel for your fire.' },
+        // BRAWLER (Steve 2026-10-07): mid/late game fighter progression
+        brawler_instinct: { 2: 'You act first in every fight.', 3: 'You see the killing blow before they do.', 4: 'Fights end before they start. You choose.', 5: 'MASTER: You are the fight. Others just attend.' },
+        adrenaline_control: { 2: '+60% damage (was +30%).', 3: 'You fight through pain. Wounds don\'t slow you.', 4: 'You can take a killing blow and keep standing.', 5: 'MASTER: Death has to ask permission.' },
+        intimidating_presence: { 2: 'Most back down. Some join you.', 3: 'Monsters hesitate. They feel you.', 4: 'You can rout a pack with a look.', 5: 'MASTER: Your name ends fights.' },
+        // SOCIAL (Steve 2026-10-07)
+        silver_tongue: { 2: 'You can talk your way out of anything.', 3: 'People believe you. Even when they shouldn\'t.', 4: 'You can turn enemies into allies mid-fight.', 5: 'MASTER: Your words reshape villages.' },
+        gossip_network: { 2: 'You hear everything. Nothing is secret.', 3: 'Travelers seek you out with news.', 4: 'You know things before they happen.', 5: 'MASTER: The world whispers to you.' },
+        peacemaker: { 2: 'You can stop any fight.', 3: 'Warring villages ask you to mediate.', 4: 'Your presence prevents violence.', 5: 'MASTER: Peace follows you like weather.' },
+        // EXPLORATION (Steve 2026-10-07)
+        pathfinder: { 2: 'You travel 50% faster.', 3: 'You never get lost. Ever.', 4: 'You find shortcuts no one else sees.', 5: 'MASTER: Distance is a suggestion.' },
+        eagle_eye: { 2: 'You spot from 3 tiles away.', 3: 'You see through fog. The System is impressed.', 4: 'You can see a village\'s smoke from across the map.', 5: 'MASTER: Nothing hides. Nowhere.' },
+        // INVESTIGATION (Steve 2026-10-07)
+        lie_detector: { 2: 'You catch 50% of lies.', 3: 'You know WHY they\'re lying.', 4: 'You can see the truth they\'re hiding.', 5: 'MASTER: No one lies to you. Ever.' },
+        evidence_board: { 2: 'Contradictions glow.', 3: 'You reconstruct events from fragments.', 4: 'You can prove guilt with whispers.', 5: 'MASTER: Truth is your weapon.' },
       };
       return (bonuses[id] && bonuses[id][level]) || 'Stronger. The System is pleased.';
     },
@@ -14855,7 +14930,16 @@
     // mods: all active ability modifiers for the scholar (system + background + synergies).
     mods() {
       const base = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
-      return base.concat(this.synergyMods());
+      const mods = base.concat(this.synergyMods());
+      // BUILD BONUS (Steve 2026-10-07): specialists and generalists both get
+      // rewarded. The bonus applies as a modifier so it stacks with everything.
+      try {
+        const bb = this.buildBonus();
+        if (bb) {
+          mods.push({ target: bb.target, op: 'multiply', value: bb.mult, source: bb.name });
+        }
+      } catch (e) {}
+      return mods;
     },
 
     // modTarget: resolve one computed value through the modifier pipeline.
@@ -16817,7 +16901,7 @@
       }
       const nx = this.map.px + dx, ny = this.map.py + dy;
       // World edge: can't leave the map.
-      if (nx < 0 || nx > 6 || ny < 0 || ny > 6) {
+      if (nx < 0 || nx > 8 || ny < 0 || ny > 8) { // 9x9 world (2026-10-07)
         this.say('The known world ends here — no pushing through. Turn back.');
         return true; // consumed the push attempt
       }
