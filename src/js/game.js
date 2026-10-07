@@ -15070,10 +15070,16 @@
         // iron_stomach: unsafe food is a gamble. Base 20% chance of -5 health;
         // an iron stomach shrugs most of it off.
         if (it.safe === false) {
-          const pChance = this.modTarget('food.poison_chance', 0.2);
-          if (Math.random() < pChance) {
-            scholar.health = Math.max(0, scholar.health - 5);
-            this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
+          // PUSH THROUGH (iron_stomach, Steve 2026-10-07): while the gut is
+          // settled, unsafe food can't poison you. The action does something.
+          if ((scholar.pushThroughParts || 0) > 0) {
+            this.say(`The ${it.name} is suspect — but your gut is settled. You push through. (Push Through)`);
+          } else {
+            const pChance = this.modTarget('food.poison_chance', 0.2);
+            if (Math.random() < pChance) {
+              scholar.health = Math.max(0, scholar.health - 5);
+              this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
+            }
           }
         }
         // FOOD REALITY: state-based disease risk. Raw meat, must-cook plants.
@@ -15214,10 +15220,16 @@
         this.say(`Your gut churns a warning — the ${it.name} is wrong. (symbiote: unsafe food)`);
       }
       if (it.safe === false) {
-        const pChance = this.modTarget('food.poison_chance', 0.2);
-        if (Math.random() < pChance) {
-          scholar.health = Math.max(0, scholar.health - 5);
-          this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
+        // PUSH THROUGH (iron_stomach, Steve 2026-10-07): while the gut is
+        // settled, unsafe food can't poison you. The action does something.
+        if ((scholar.pushThroughParts || 0) > 0) {
+          this.say(`The ${it.name} is suspect — but your gut is settled. You push through. (Push Through)`);
+        } else {
+          const pChance = this.modTarget('food.poison_chance', 0.2);
+          if (Math.random() < pChance) {
+            scholar.health = Math.max(0, scholar.health - 5);
+            this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
+          }
         }
       }
       if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
@@ -15385,6 +15397,15 @@
       try { this.npcNodeTravel(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
+      // PUSH THROUGH (iron_stomach, Steve 2026-10-07): the gut-settle wears
+      // off with the day part. Expedition clock, not wall clock.
+      try {
+        const psc = this.state.scholar;
+        if (psc.pushThroughParts > 0) {
+          psc.pushThroughParts--;
+          if (psc.pushThroughParts <= 0) this.say('Your gut unclenches — back to normal. The push-through has worn off.');
+        }
+      } catch (e) {}
       // STATUS EFFECTS (Steve 2026-10-07): dayPart-scale ticks (disease fever, poison).
       try { this.tickStatuses('scholar', 'dayPart'); } catch (e) {}
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
@@ -16867,6 +16888,10 @@
 
     startCombat(monsterId) {
       const s = this.state.scholar;
+      // BRAWLER (Steve 2026-10-07): per-fight damage ledger for Settle the
+      // Debt. (The audit found "once per fight" flags were once-per-save;
+      // at minimum the ledger itself must reset or the debt is dishonest.)
+      s.fightDamageTaken = 0;
       this.syncMonsterAlias();
       const px = s.mx ?? 4, py = s.my ?? 4;
       // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
@@ -18802,6 +18827,16 @@
         f.turnIdx++;
         if (f.turnIdx >= f.order.length) {
           f.turnIdx = 0; f.round++;
+          // READ THE FIGHT (Steve 2026-10-07): speed changed mid-fight —
+          // re-sort the order from the new round. Nobody gains or loses a
+          // turn mid-round; the new speed bites next round.
+          if (f.orderDirty) {
+            try {
+              const SC = globalThis.Scattering;
+              if (SC && SC.combat && SC.combat.turnOrder) f.order = SC.combat.turnOrder(f.fighters);
+            } catch (e) {}
+            f.orderDirty = false;
+          }
           this.sysSay(`ROUND ${f.round}!`);
           this.audioEvent('round', { round: f.round });
           // AMBUSH-ZONE (Steve 2026-10-07): the ground ticks with the round.
@@ -19316,6 +19351,19 @@
       if (tPat && tPat.sweep && windingUp && t.hp > 0 && t.hp - final <= 0) {
         final = t.hp - 1;
         this.say(`It should drop — but the light behind ${t.name}'s eyes is already gathered. The body won't fall until it fires.`);
+      }
+      // ABILITY DEFENSE (Steve 2026-10-07): Brace (unbreakable) and other
+      // defensive flags. _applyAbilityDefenseMods had zero callers — the
+      // 60% reduction never fired. Wired here, the single incoming-damage
+      // integration point, after armor and before HP is removed.
+      if (t.kind === 'player' && typeof this._applyAbilityDefenseMods === 'function') {
+        try { final = this._applyAbilityDefenseMods(final, sourceLabel); } catch (e) {}
+      }
+      // TRADE OF BLOWS (Steve 2026-10-07): Settle the Debt read
+      // s.fightDamageTaken, which nothing wrote. Track real damage taken
+      // this fight (post-armor, post-brace). Reset in startCombat.
+      if (t.kind === 'player' && final > 0) {
+        this.state.scholar.fightDamageTaken = (this.state.scholar.fightDamageTaken || 0) + final;
       }
       t.hp -= final;
       if (t.kind === 'player') {
@@ -21183,6 +21231,14 @@
       if (m.stunned > 0) {
         m.stunned -= 1;
         this.say(`${this.encSubject(m)} is still frozen from your scream.`);
+        if (this.tbEndCheck()) return;
+        return;
+      }
+      // LOOM (fear_aura, Steve 2026-10-07): you stood still and let it look.
+      // It hesitates one full round instead of acting.
+      if (m.loomHesitate) {
+        m.loomHesitate = false;
+        this.say(`${this.encSubject(m)} hesitates — still seeing you standing there, not moving. (Loom)`);
         if (this.tbEndCheck()) return;
         return;
       }
