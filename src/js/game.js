@@ -8111,7 +8111,11 @@
         // TENDING A FIRE IS WORK. 30 kcal. (prevents free infinite purification)
         s.kcal = Math.max(0, (s.kcal || 0) - 30);
       }
-      this.say(n ? `Boiled ${n}L. Bacteria dead.${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      // COST HONESTY (survivalist loop 2026-10-07): the 30 kcal charge was
+      // silent. Name it. Moss-tinder boiling (no fire) still costs the work —
+      // coaxing damp moss into enough heat to boil a liter is real labor.
+      const mossBoil = n > 0 && !this.nearFire() && this.hasAbility('beard_moss');
+      this.say(n ? `Boiled ${n}L. Bacteria dead. (-30 kcal ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       return null;
     },
     // gatherCharcoal: rake charcoal from a campfire's ashes. Wood fires make
@@ -11735,10 +11739,18 @@
       } else if (trauma > 0) {
         s.trauma = Math.max(0, trauma - 2); // time dulls it, slightly
       }
+      // NET HEALTH (survivalist loop 2026-10-07): the old line reported only
+      // the sleep's own healing ("+10 health") while the night's full books
+      // could be negative — midnight spiral damage, nightmares stealing half
+      // the heal. The player compares the number to their health bar, so the
+      // wake line reports the NET change across the whole night. The parts
+      // (spiral warnings at midnight, nightmare note) are still narrated.
+      const netHealth = Math.round(s.health || 0) - healthBefore;
+      const netTxt = (netHealth >= 0 ? '+' : '') + netHealth;
       const wakeAcct = exposureNote
-        ? (exposed ? `(-18 health, restless night.${conservedNote}${exposureNote})`
-                   : `(+${crisisHeal} health, wrung-out morning.${conservedNote}${exposureNote})`)
-        : `(+${prev.heal} health, energy restored.${conservedNote} ${prev.note})`;
+        ? (exposed ? `(${netTxt} health, restless night.${conservedNote}${exposureNote})`
+                   : `(${netTxt} health, wrung-out morning.${conservedNote}${exposureNote})`)
+        : `(${netTxt} health, energy restored.${conservedNote} ${prev.note})`;
       this.say(`Dawn. You wake ${rested}. ${wakeAcct}${nightmareNote}`);
       // DIAGNOSTIC: log health after
       if (typeof console !== 'undefined') console.log(`[SLEEP] health after: ${Math.round(s.health || 0)}, expected gain: ${prev.heal}`);
@@ -15931,16 +15943,21 @@
       }
       scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
       // WATER with the meal (from village storage).
+      // HONEST (survivalist loop 2026-10-07): the old message said "+1L water"
+      // whenever vw.clean >= 0 — which is true even when the cistern is dry
+      // and no bottle was given. Track the gift with a boolean instead.
       const vw = v.water || { clean: 0 };
+      let gotWater = false;
       if (vw.clean >= 1) {
         vw.clean -= 1;
         scholar.water = scholar.water || [];
         scholar.water.push({ liters: 1, quality: 'clean', source: 'Village meal' });
+        gotWater = true;
       }
       if (taken > 0) {
-        this.say(`Village meal: +${Math.round(taken)} kcal${vw.clean >= 0 ? ', +1L water' : ''} from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
+        this.say(`Village meal: +${Math.round(taken)} kcal${gotWater ? ', +1L water' : ''} from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
       } else {
-        this.say('No food in the pantry. The village is hungry.');
+        this.say(`No food in the pantry. The village is hungry.${gotWater ? ' You still get your 1L water.' : ''}`);
       }
     },
 
