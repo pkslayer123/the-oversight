@@ -4617,7 +4617,7 @@
       const s = this.state.scholar;
       // WORLD MONSTERS (Steve 2026-10-06): patrols hunt the nearest roaming
       // threat to Haven, not a single player-tethered monster.
-      const hx = (this.state.village || {}).px ?? 3, hy = (this.state.village || {}).py ?? 3;
+      const hx = (this.state.village || {}).px ?? 4, hy = (this.state.village || {}).py ?? 4;
       const m = this.nearestWorldMonster(hx, hy);
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         /* unified: getPerson */ || {};
@@ -5289,8 +5289,6 @@
           scholar.codex.techniques[tid] = { level: entry.level, learnedFrom: v.name, strategy: entry.strategy };
           learned.push(`🔧 ${tid.replace(/_/g, ' ')} (${entry.strategy})`);
           learnedCounts.techniques++;
-          // DRAMA (Steve 2026-10-07, Round D2): the scroll unrolls.
-          try { this.drama('techniqueLearned', this.map.px, this.map.py, tid); } catch (e) {}
         }
       }
       // recipes: learn their food ways
@@ -5347,8 +5345,6 @@
             3: `⬢ SYSTEM INTEGRATION L3: "Three codices. Full rosters, strategy intel, codex summaries. You are my favorite cartographer."`,
           };
           this.say(tierLines[newLevel] || `⬢ SYSTEM INTEGRATION L${newLevel}: The System sees more now. Your HUD sharpens.`);
-          // DRAMA (Steve 2026-10-07, Round D2): the book opens. A village's knowledge is yours.
-          try { this.drama('codexLinked', v.name); } catch (e) {}
           // 3. THE SLOT REMINDER — honestly tied to the NEURAL scale.
           const integ = Math.round(scholar2.integration || 5);
           const slots = this.abilitySlots();
@@ -6008,7 +6004,7 @@
       }
       // Haven was built where the land is good — guarantee a breadbasket by the door.
       // twelve people didn't settle on barren ground, and the first lesson shouldn't be a bad map roll.
-      const doors = [[2, 3], [4, 3], [3, 2], [3, 4]];
+      const doors = [[3, 4], [5, 4], [4, 3], [4, 5]];
       const door = doors[Math.floor(R() * doors.length)];
       if (tiles[door[1]][door[0]].type !== 'ruin') {
         tiles[door[1]][door[0]].type = 'grove';
@@ -6016,9 +6012,15 @@
         tiles[door[1]][door[0]].maxStock = 2; tiles[door[1]][door[0]].stock = 2;
       }
       // Haven is a tile, not a separate screen. home is a place you walk to.
-      tiles[3][3].type = 'haven';
-      tiles[3][3].stock = 0; tiles[3][3].maxStock = 0;
-      tiles[4][4].revealed = true; tiles[3][3].visited = true;
+      // (9x9 migration 2026-10-07: haven sits at the 9x9 center 4,4, where the
+      // player spawns — the map UI, atCamp, playerAtHaven, and returnToVillage
+      // all assume 4,4. Leaving the tile at 3,3 split haven's identity: the
+      // player woke on a wild tile wearing haven's costume — no dawn meal
+      // (pantryInReach), no camp ritual (atCamp), villagers simulated on the
+      // wrong detail grid.)
+      tiles[4][4].type = 'haven';
+      tiles[4][4].stock = 0; tiles[4][4].maxStock = 0;
+      tiles[4][4].revealed = true; tiles[4][4].visited = true;
       // FOG OF WAR: unexplored tiles are fully hidden. No hints, no guesses —
       // if you haven't been there, you don't see it. Revealed on visit.
       // BLOCKED ROADS: some paths in are obstructed. Always multiple solutions:
@@ -6557,7 +6559,7 @@
     seedVillagerMaps() {
       try {
         const v = this.state.village;
-        const hx = (v && v.px !== undefined) ? v.px : 3, hy = (v && v.py !== undefined) ? v.py : 3;
+        const hx = (v && v.px !== undefined) ? v.px : 4, hy = (v && v.py !== undefined) ? v.py : 4;
         const all = (this.data.villagers || []).concat(this.data.background_survivors || []);
         for (const vp of all) {
           if (vp.visitedTiles && vp.visitedTiles.length) continue;
@@ -10652,8 +10654,6 @@
       };
       const journalWord = this.state.systemArrived ? 'Codex' : 'Journal';
       this.say(`📖 LEARNED: ${k.name} (Level ${newLevel}). ${k.levels[String(newLevel)] || ''}`);
-      // DRAMA (Steve 2026-10-07, Round D2): learning should FEEL like learning.
-      try { this.drama('skillGained', this.map.px, this.map.py, k.name); } catch (e) {}
       // KNOWLEDGE REVEAL AUDIO (Round 2 wiring, Steve 2026-10-07): skill level-up.
       // learnSkill is the one path for every source (practice, books, background,
       // codex study, jackpots), so the hook fires exactly once per genuine gain.
@@ -10786,8 +10786,6 @@
           unlockedDay: this.state.scholar.day,
         };
         this.say(`⚡ TECHNIQUE UNLOCKED: ${syn.technique}! ${syn.effect} (Your knowledge of ${k.name} amplifies your ${syn.ability}.)`);
-        // DRAMA (Steve 2026-10-07, Round D2): the click of understanding.
-        try { this.drama('ahaMoment', this.map.px, this.map.py); } catch (e) {}
         // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): codex technique unlock.
         this.audioEvent('knowledgeReveal', { kind: 'technique', id: techId });
         if (this.state.systemArrived) {
@@ -11643,7 +11641,7 @@
       const v = this.state.village;
       if (this.map.px !== 4 || this.map.py !== 4) return;
       if (!v.positions) return;
-      const detail = this.genDetail(3, 3);
+      const detail = this.genDetail(4, 4);
       for (const rid of Object.keys(v.positions)) {
         const pos = v.positions[rid];
         // 50% chance to move (downtime), else stay
@@ -13152,9 +13150,9 @@
         this.scheduleSystemEvents();
         // If you're NOT at Haven, the village talks about it without you.
         // When you return, they'll tell you what happened. (Drama: you missed it.)
-        // Haven sits at 3,3; village.px/py may be unset on older saves — same
-        // ?? 3 convention as returnToVillage/travel code, so standing at Haven
-        // actually counts as being there.
+        // Haven sits at 4,4 (9x9 center); village.px/py may be unset on older
+        // saves — same ?? 4 convention as returnToVillage/travel code, so
+        // standing at Haven actually counts as being there.
         const hx = this.state.village.px ?? 4, hy = this.state.village.py ?? 4;
         const atHaven = this.map && this.map.px === hx && this.map.py === hy;
         if (!atHaven) {
@@ -13846,12 +13844,6 @@
              kind === 'synergyShimmer' || kind === 'villageBirth' || kind === 'villageDeath')) {
           args.push(integ);
         }
-        // KNOWLEDGE (Steve 2026-10-07, Drama D2): learning moments — integration
-        // is the last parameter of every D2 method. Append unconditionally.
-        if ((kind === 'plantIdentified' || kind === 'techniqueLearned' || kind === 'codexLinked' ||
-             kind === 'skillGained' || kind === 'teaseFaint' || kind === 'ahaMoment')) {
-          args.push(integ);
-        }
         if (kind === 'hit') D.hit(...args);
         else if (kind === 'text') D.floatText(...args);
         else if (kind === 'flash') D.flash(...args);
@@ -13880,12 +13872,6 @@
         else if (kind === 'synergyShimmer') D.synergyShimmer(...args);
         else if (kind === 'villageBirth') D.villageBirth(...args);
         else if (kind === 'villageDeath') D.villageDeath(...args);
-        else if (kind === 'plantIdentified') D.plantIdentified(...args);
-        else if (kind === 'techniqueLearned') D.techniqueLearned(...args);
-        else if (kind === 'codexLinked') D.codexLinked(...args);
-        else if (kind === 'skillGained') D.skillGained(...args);
-        else if (kind === 'teaseFaint') D.teaseFaint(...args);
-        else if (kind === 'ahaMoment') D.ahaMoment(...args);
         // SOCIAL SPECTACLE (Steve 2026-10-07, Drama C1): spec object carries
         // type + integration — inject integration like other object forms.
         else if (kind === 'social') {
@@ -13893,6 +13879,12 @@
           if (spec && typeof spec === 'object') { spec.integration = spec.integration || integ; }
           D.socialFlash(...args);
         }
+        // ABILITY SIGNATURES (Steve 2026-10-07, Drama D1): signature(abilityId, x, y, color, pool)
+        // — append integration as the last arg.
+        if (kind === 'signature') {
+          args.push(integ);
+        }
+        if (kind === 'signature') D.abilitySignature(...args);
         else if (kind === 'commentary') D.systemCommentary(...args);
       } catch (e) {}
     },
@@ -15049,6 +15041,18 @@
       sch.abilityUseLog = sch.abilityUseLog || [];
       sch.abilityUseLog.push({ id: abilityId, day, part, target: context.target || null });
       if (sch.abilityUseLog.length > 40) sch.abilityUseLog.shift();
+      // DRAMA D1 (Steve 2026-10-07): every ability fires its SIGNATURE visual —
+      // unique for the 10 core abilities, pool-styled for the rest. The day-7
+      // systemArrived gate and integration scaling live inside Game.drama.
+      try {
+        const adef = (this.data.abilities || []).find(a => a.id === abilityId);
+        const poolColors = { combat: '#ff5252', care: '#7cfc9a', fieldcraft: '#7cfc9a', craft: '#d4a017', social: '#ff6b9d', exploration: '#4df3ff', investigation: '#c792ea', system: '#4df3ff', fallback: '#9e9e9e' };
+        const pool = (adef || {}).pool || 'system';
+        const sigColor = poolColors[pool] || '#4df3ff';
+        const px = (this.map && this.map.px != null) ? this.map.px : 4;
+        const py = (this.map && this.map.py != null) ? this.map.py : 4;
+        this.drama('signature', abilityId, px, py, sigColor, pool);
+      } catch (e) {}
       this.checkSynergyDiscovery(abilityId, { day, part, target: context.target || null, synthetic: !!context.synthetic });
     },
 
@@ -15196,11 +15200,6 @@
       const seenKey = syn.id + '_teased_' + n;
       if (sch.synergyAttempts[seenKey]) return;
       sch.synergyAttempts[seenKey] = 1;
-      if (n === 1) {
-        // DRAMA (Steve 2026-10-07, Round D2): the 1st tease is a whisper, not a shimmer.
-        // Escalation reads: whisper (1st) -> shimmer (2nd) -> hero card (unlock).
-        try { this.drama('teaseFaint'); } catch (e) {}
-      }
       this.say(tease);
       if (n === 2 && dm.hint) {
         // DRAMA (Steve 2026-10-07, Round C2): the pre-reveal — something is happening.
@@ -24260,8 +24259,6 @@
       // match the name ("Lamb's Quarters" vs "Lamb's quarters.").
       kl1 = kl1.replace(new RegExp('^' + p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.\\s:\u2014-]*', 'i'), '');
       this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1} Uses unknown — harvest, taste, and learn.`);
-      // DRAMA (Steve 2026-10-07, Round D2): identification is a SEEING moment.
-      try { this.drama('plantIdentified', this.map.px, this.map.py, p.name); } catch (e) {}
       // RECOGNITION (Steve 2026-10-06): if you examined this species before it
       // was named, the vague description CLICKS. The observation memory
       // resolves into the name — a revelation, not a database unlock.

@@ -2,6 +2,8 @@
 // system: drama
 // description: Drama overlay — loosely-bound animation layer for emphasis.
 // provides:
+//   - abilitySignature: per-ability signature visuals — 10 unique + pool-styled fallbacks (Steve 2026-10-07, Drama D1)
+//   - poolSignature: pool-styled fallback visuals (combat/social/exploration/investigation/system/care/fieldcraft/craft)
 //   - ensureOverlay: creates the .drama-overlay div over the grid
 //   - hit: impact starburst — L1 standard, L2 larger+secondary, L3 massive+shockwave (Steve 2026-10-07, Drama C3)
 //   - floatText: damage numbers / labels that drift up and fade
@@ -52,12 +54,6 @@
 //   - synergyShimmer: pre-reveal shimmer — "something is happening" (Steve 2026-10-07, Drama C2)
 //   - villageBirth: soft pink glow + baby (Steve 2026-10-07, Drama C2)
 //   - villageDeath: gray wisp + bell toll (Steve 2026-10-07, Drama C2)
-//   - plantIdentified: leaf unfurl + name reveal (Steve 2026-10-07, Drama D2)
-//   - techniqueLearned: scroll unroll + golden name (Steve 2026-10-07, Drama D2)
-//   - codexLinked: book-open card + page-flip shimmer (Steve 2026-10-07, Drama D2)
-//   - skillGained: rising light beam + skill name (Steve 2026-10-07, Drama D2)
-//   - teaseFaint: 1st-tease whisper shimmer (Steve 2026-10-07, Drama D2)
-//   - ahaMoment: lightbulb + radiating lines on knowledge unlocks (Steve 2026-10-07, Drama D2)
 //   - socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1)
 //   - mootGather: village gathers — fire pulse + banner (Steve 2026-10-07, Drama C1)
 //   - mootVote: vote tally bar with visual weight (Steve 2026-10-07, Drama C1)
@@ -1204,119 +1200,416 @@
         2400 + (integration * 200)
       );
     },
-    // plantIdentified: a leaf unfurls, the name blooms. Learning you can see.
-    // Steve 2026-10-07: knowledge drama (Round D2). Green is the color of knowing what's edible.
-    plantIdentified(x, y, plantName, integration) {
-      integration = integration || 0;
+
+    // _sigXY: resolve a tile center to pixel numbers for signature math.
+    // tileCenter can return '50%' strings when the tile isn't in the DOM —
+    // fall back to the overlay center so signature geometry never NaNs.
+    _sigXY(x, y) {
       const c = this.tileCenter(x, y);
-      const size = 54 + (integration * 12);
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 50 50"><path d="M25 45 C25 30 25 20 25 8 M25 30 C15 28 8 20 6 10 C18 12 24 18 25 30 Z M25 30 C35 28 42 20 44 10 C32 12 26 18 25 30 Z" fill="rgba(124,252,154,0.9)" stroke="#2d7a3f" stroke-width="1.5"/></svg>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2}px;`,
-        'drama-leafunfurl',
-        1400 + (integration * 200)
-      );
-      this.floatText(x, y, `\u{1F33F} ${plantName || 'identified'}`, { color: '#7cfc9a', size: 16 + (integration * 2) });
-      // L3: the System celebrates your learning.
-      if (integration >= 3) this.flash('rgba(124,252,154,0.12)', 400);
+      const ov = this.ensureOverlay();
+      const cx = (typeof c.x === 'number' && isFinite(c.x)) ? c.x : (ov.clientWidth || 390) / 2;
+      const cy = (typeof c.y === 'number' && isFinite(c.y)) ? c.y : (ov.clientHeight || 400) / 2;
+      return { cx, cy };
     },
 
-    // techniqueLearned: a scroll unrolls, the name lands in gold.
-    // Steve 2026-10-07: knowledge drama (Round D2).
-    techniqueLearned(x, y, techName, integration) {
+    // abilitySignature: per-ability SIGNATURE visuals (Steve 2026-10-07, Drama D1).
+    // The 10 most-used abilities get unique signatures; everything else gets a
+    // pool-styled visual. All scale with integration:
+    //   L1: minimal — one clean element. The System observes.
+    //   L2: richer — extra elements, accents. The System participates.
+    //   L3: spectacular — flash, sparkles, System eye. The System celebrates.
+    abilitySignature(abilityId, x, y, color, pool, integration) {
       integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 40 + (integration * 8);
-      this.spawn(
-        `<div style="font-size:${size}px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8));">\u{1F4DC}</div>`,
-        `position:absolute;left:${c.x}px;top:${c.y - 10}px;transform:translate(-50%,-50%);`,
-        'drama-scroll',
-        1500 + (integration * 200)
-      );
-      this.floatText(x, y, `\u26A1 ${(techName || 'technique').replace(/_/g, ' ')}`, { color: '#ffd54a', size: 16 + (integration * 2) });
-      if (integration >= 2) this.systemCommentary(`"${(techName || 'technique').replace(/_/g, ' ')} — filed under things that keep you alive."`, { integration });
+      color = color || '#4df3ff';
+      const MAP = {
+        triage: 'sigTriage',
+        forage_identification: 'sigForageId',
+        brawler_instinct: 'sigBrawler',
+        patient_aim: 'sigPatientAim',
+        silver_tongue: 'sigSilverTongue',
+        diplomat: 'sigDiplomat',
+        pathfinder: 'sigPathfinder',
+        eagle_eye: 'sigEagleEye',
+        lie_detector: 'sigLieDetector',
+        game_sense: 'sigGameSense',
+      };
+      const m = MAP[abilityId];
+      if (m && typeof this[m] === 'function') return this[m](x, y, color, integration);
+      return this.poolSignature(pool, x, y, color, integration);
     },
 
-    // codexLinked: the book opens. Pages flip. A village's knowledge is yours now.
-    // Steve 2026-10-07: knowledge drama (Round D2). This is the big one — linking a codex.
-    codexLinked(villageName, integration) {
+    // poolSignature: pool-styled fallback for abilities without a unique signature.
+    // Brawler: cracks + shockwave. Social: warm waves + bubble. Exploration:
+    // compass ticks + trail sparkles. Investigation: magnifier pulse + clue
+    // sparkles. System: rotating geometry + eye. Care/fieldcraft/craft: themed
+    // bursts. Unknown: the standard abilityBurst.
+    poolSignature(pool, x, y, color, integration) {
       integration = integration || 0;
-      this.spawn(
-        `<div style="text-align:center;padding:22px;background:rgba(12,14,8,0.94);border:2px solid #d4a017;border-radius:10px;max-width:280px;">
-           <div style="font-size:44px;margin-bottom:6px;">\u{1F4D6}</div>
-           <div style="font-size:18px;font-weight:bold;color:#ffd54a;margin-bottom:4px;">CODEX LINKED</div>
-           <div style="font-size:14px;color:#ccc;line-height:1.4;">${villageName || 'A village'} shares its knowledge.</div>
-           ${integration >= 3 ? '<div style="font-size:13px;color:#4df3ff;margin-top:8px;font-style:italic;">\u2B22 "Another shelf in the library of staying alive."</div>' : ''}
-         </div>`,
-        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(0.85);',
-        'drama-codexcard',
-        2400 + (integration * 300)
-      );
-      // page-flip shimmer across the screen
-      this.spawn(
-        '',
-        'position:absolute;inset:0;background:linear-gradient(100deg, transparent 30%, rgba(212,160,23,0.18) 45%, rgba(212,160,23,0.18) 55%, transparent 70%);',
-        'drama-pageflip',
-        1200 + (integration * 200)
-      );
-      this.flash('rgba(212,160,23,0.10)', 500);
+      color = color || '#4df3ff';
+      const { cx, cy } = this._sigXY(x, y);
+      const n2 = integration >= 2, n3 = integration >= 3;
+      if (pool === 'combat') {
+        // ground cracks + shockwave
+        for (let i = 0; i < (n3 ? 7 : 5); i++) {
+          const ang = (i / (n3 ? 7 : 5)) * 360 + 12;
+          this.spawn(
+            `<div style="width:34px;height:3px;background:${color};border-radius:2px;box-shadow:0 0 6px ${color};"></div>`,
+            `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateX(26px);`,
+            'drama-sig-pop', 550
+          );
+        }
+        this.spawn(
+          `<div style="width:90px;height:90px;border:3px solid ${color};border-radius:50%;"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-shockwave', 700
+        );
+        if (n2) this.shake(6);
+      } else if (pool === 'social') {
+        // warm radiating waves + speech bubble
+        const waves = n3 ? 4 : 3;
+        for (let i = 0; i < waves; i++) {
+          this.spawn(
+            `<div style="width:${50 + i * 26}px;height:${50 + i * 26}px;border:2px solid ${color};border-radius:50%;opacity:0.7;"></div>`,
+            `position:absolute;left:${cx}px;top:${cy}px;`,
+            'drama-sig-expand', 800 + i * 150
+          );
+        }
+        this.spawn(
+          `<div style="font-size:26px;">\uD83D\uDCAC</div>`,
+          `position:absolute;left:${cx}px;top:${cy - 34}px;`,
+          'drama-sig-pop', 900
+        );
+      } else if (pool === 'exploration') {
+        // compass ticks + trail sparkles
+        const dirs = ['N', 'E', 'S', 'W'];
+        dirs.forEach((d, i) => {
+          const ang = i * 90;
+          this.spawn(
+            `<div style="font-size:13px;font-weight:bold;color:${color};text-shadow:0 1px 4px rgba(0,0,0,0.8);">${d}</div>`,
+            `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateY(-30px) rotate(${-ang}deg);`,
+            'drama-sig-pop', 800
+          );
+        });
+        for (let i = 0; i < (n2 ? 4 : 2); i++) {
+          this.spawn(
+            `<div style="width:7px;height:7px;background:${color};border-radius:50%;box-shadow:0 0 6px ${color};"></div>`,
+            `position:absolute;left:${cx - 24 + i * 14}px;top:${cy + 26}px;`,
+            'drama-sparkle', 700 + i * 120
+          );
+        }
+      } else if (pool === 'investigation') {
+        // magnifier pulse + clue sparkles
+        this.spawn(
+          `<div style="width:64px;height:64px;border:3px solid ${color};border-radius:50%;"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-sig-expand', 750
+        );
+        this.spawn(
+          `<div style="font-size:24px;">\uD83D\uDD0D</div>`,
+          `position:absolute;left:${cx + 22}px;top:${cy - 22}px;`,
+          'drama-sig-pop', 850
+        );
+        const clues = n2 ? 4 : 2;
+        for (let i = 0; i < clues; i++) {
+          const ang = (i / clues) * Math.PI * 2;
+          this.spawn(
+            `<div style="font-size:15px;color:${color};">\u2726</div>`,
+            `position:absolute;left:${cx + Math.cos(ang) * 44}px;top:${cy + Math.sin(ang) * 44}px;`,
+            'drama-sparkle', 700 + i * 100
+          );
+        }
+      } else if (pool === 'system') {
+        // rotating geometry + eye
+        this.spawn(
+          `<svg width="72" height="72" viewBox="0 0 72 72"><polygon points="36,6 66,60 6,60" fill="none" stroke="${color}" stroke-width="2.5" opacity="0.9"/><circle cx="36" cy="42" r="8" fill="none" stroke="${color}" stroke-width="2" opacity="0.7"/></svg>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-sig-spin', n3 ? 1600 : 1100
+        );
+        if (n3) this.spawn(
+          `<div style="font-size:22px;">\uD83D\uDC41\uFE0F</div>`,
+          `position:absolute;left:${cx}px;top:${cy - 52}px;`,
+          'drama-sig-pop', 1200
+        );
+      } else if (pool === 'care') {
+        // soft cross + healing wash
+        this.spawn(
+          `<div style="width:40px;height:12px;background:${color};border-radius:6px;box-shadow:0 0 12px ${color};"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-sig-bar', 800
+        );
+        this.spawn(
+          `<div style="width:12px;height:40px;background:${color};border-radius:6px;box-shadow:0 0 12px ${color};"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-sig-bar', 950
+        );
+      } else if (pool === 'fieldcraft') {
+        // leaf-ish sparkles
+        for (let i = 0; i < (n2 ? 5 : 3); i++) {
+          const ang = (i / (n2 ? 5 : 3)) * Math.PI * 2;
+          this.spawn(
+            `<div style="width:9px;height:9px;background:${color};border-radius:50% 0;box-shadow:0 0 6px ${color};"></div>`,
+            `position:absolute;left:${cx + Math.cos(ang) * 30}px;top:${cy + Math.sin(ang) * 30}px;`,
+            'drama-sparkle', 700 + i * 100
+          );
+        }
+      } else if (pool === 'craft') {
+        // hammer sparks
+        for (let i = 0; i < (n2 ? 6 : 4); i++) {
+          const ang = (i / (n2 ? 6 : 4)) * Math.PI * 2 + 0.4;
+          this.spawn(
+            `<div style="width:6px;height:6px;background:${color};box-shadow:0 0 8px ${color};"></div>`,
+            `position:absolute;left:${cx + Math.cos(ang) * 34}px;top:${cy + Math.sin(ang) * 34}px;`,
+            'drama-sparkle', 650 + i * 90
+          );
+        }
+      } else {
+        return this.abilityBurst(x, y, color, integration);
+      }
+      if (n3) this.flash('rgba(255,255,255,0.08)', 250);
     },
 
-    // skillGained: a shaft of rising light, the skill's name ascending.
-    // Steve 2026-10-07: knowledge drama (Round D2).
-    skillGained(x, y, skillName, integration) {
+    // sigTriage: the healer's cross assembles — two green bars snap together,
+    // then a soft healing wash. L2+: pulsing halo. L3: white flash.
+    sigTriage(x, y, color, integration) {
       integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const w = 44 + (integration * 10);
-      const h = 110 + (integration * 20);
+      color = '#7cfc9a';
+      const { cx, cy } = this._sigXY(x, y);
       this.spawn(
-        `<svg width="${w}" height="${h}" viewBox="0 0 44 110"><rect x="14" y="0" width="16" height="110" fill="url(#skillgrad)" opacity="0.85"/><defs><linearGradient id="skillgrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#4df3ff" stop-opacity="0.1"/><stop offset="100%" stop-color="#4df3ff" stop-opacity="0.9"/></linearGradient></defs></svg>`,
-        `position:absolute;left:${c.x - w / 2}px;top:${c.y - h + 20}px;`,
-        'drama-skillbeam',
-        1300 + (integration * 200)
+        `<div style="width:52px;height:14px;background:${color};border-radius:7px;box-shadow:0 0 14px ${color};"></div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-bar', 850
       );
-      this.floatText(x, y, `\u{1F4D6} ${(skillName || 'skill').replace(/_/g, ' ')}`, { color: '#4df3ff', size: 15 + (integration * 2) });
-      if (integration >= 3) this.flash('rgba(77,243,255,0.10)', 400);
+      this.spawn(
+        `<div style="width:14px;height:52px;background:${color};border-radius:7px;box-shadow:0 0 14px ${color};"></div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-bar', 1000
+      );
+      this.spawn(
+        `<div style="width:110px;height:110px;background:radial-gradient(circle, rgba(124,252,154,0.35) 0%, rgba(124,252,154,0) 70%);border-radius:50%;"></div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-expand', 1100
+      );
+      if (integration >= 2) this.spawn(
+        `<div style="width:70px;height:70px;border:2px solid ${color};border-radius:50%;"></div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-expand', 1300
+      );
+      if (integration >= 3) this.flash('rgba(124,252,154,0.15)', 350);
     },
 
-    // teaseFaint: the 1st synergy tease — barely there. A whisper, not a shimmer.
-    // Steve 2026-10-07: knowledge drama (Round D2). Round C2 added the 2nd-tease shimmer;
-    // the 1st tease gets something fainter so the escalation reads: whisper -> shimmer -> hero card.
-    teaseFaint(integration) {
+    // sigForageId: a leaf unfurls — rotating in with green-gold sparkles.
+    // L2+: a second leaf. L3: golden flash.
+    sigForageId(x, y, color, integration) {
       integration = integration || 0;
+      color = '#7cfc9a';
+      const { cx, cy } = this._sigXY(x, y);
       this.spawn(
-        '',
-        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(199,146,234,0.07) 0%, transparent 55%);',
-        'drama-faintshimmer',
-        900 + (integration * 150)
+        `<svg width="56" height="56" viewBox="0 0 56 56"><path d="M28 4 C44 16 46 36 28 52 C10 36 12 16 28 4 Z" fill="rgba(124,252,154,0.85)" stroke="#2d7a3f" stroke-width="2"/><line x1="28" y1="8" x2="28" y2="48" stroke="#2d7a3f" stroke-width="1.5"/></svg>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-pop', 900
       );
+      for (let i = 0; i < (integration >= 2 ? 5 : 3); i++) {
+        const ang = (i / (integration >= 2 ? 5 : 3)) * Math.PI * 2 + 0.5;
+        this.spawn(
+          `<div style="width:8px;height:8px;background:${i % 2 ? '#ffd54a' : color};border-radius:50% 0;box-shadow:0 0 6px ${color};"></div>`,
+          `position:absolute;left:${cx + Math.cos(ang) * 36}px;top:${cy + Math.sin(ang) * 36}px;`,
+          'drama-sparkle', 750 + i * 100
+        );
+      }
+      if (integration >= 3) this.flash('rgba(255,213,74,0.12)', 300);
     },
 
-    // ahaMoment: the lightbulb. Radiating lines. The click of understanding.
-    // Steve 2026-10-07: knowledge drama (Round D2). Fires on knowledge->ability unlocks.
-    ahaMoment(x, y, integration) {
+    // sigBrawler: impact — ground cracks radiate from the fist point.
+    // L2+: screen shake. L3: bigger shake + flash.
+    sigBrawler(x, y, color, integration) {
       integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 64 + (integration * 14);
+      color = '#ff5252';
+      const { cx, cy } = this._sigXY(x, y);
       this.spawn(
-        `<div style="position:relative;width:${size}px;height:${size}px;">
-           <svg width="${size}" height="${size}" viewBox="0 0 64 64">
-             <g stroke="#ffd54a" stroke-width="2.5" opacity="0.9">
-               <line x1="32" y1="2" x2="32" y2="10"/><line x1="32" y1="54" x2="32" y2="62"/>
-               <line x1="2" y1="32" x2="10" y2="32"/><line x1="54" y1="32" x2="62" y2="32"/>
-               <line x1="11" y1="11" x2="16" y2="16"/><line x1="48" y1="48" x2="53" y2="53"/>
-               <line x1="53" y1="11" x2="48" y2="16"/><line x1="16" y1="48" x2="11" y2="53"/>
-             </g>
-           </svg>
-           <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:${28 + integration * 4}px;">\u{1F4A1}</div>
-         </div>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2 - 14}px;`,
-        'drama-aha',
-        1600 + (integration * 200)
+        `<div style="font-size:34px;">\uD83D\uDCAA</div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-pop', 700
       );
-      if (integration >= 2) this.systemCommentary('"Oh. OH. That\'s how it works."', { integration });
+      const cracks = integration >= 3 ? 8 : 6;
+      for (let i = 0; i < cracks; i++) {
+        const ang = (i / cracks) * 360 + 8;
+        this.spawn(
+          `<div style="width:30px;height:3px;background:${color};border-radius:2px;box-shadow:0 0 8px ${color};"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateX(30px);`,
+          'drama-sig-pop', 650 + (i % 3) * 80
+        );
+      }
+      this.spawn(
+        `<div style="width:100px;height:100px;border:3px solid ${color};border-radius:50%;"></div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-shockwave', 700
+      );
+      if (integration >= 2) this.shake(integration >= 3 ? 10 : 6);
+      if (integration >= 3) this.flash('rgba(255,82,82,0.12)', 300);
     },
 
+    // sigPatientAim: crosshair ticks converge on the point — the shot is lined up.
+    // L3: gold ticks.
+    sigPatientAim(x, y, color, integration) {
+      integration = integration || 0;
+      color = integration >= 3 ? '#ffd54a' : '#ff5252';
+      const { cx, cy } = this._sigXY(x, y);
+      const far = 46, near = 18;
+      const ticks = [
+        { x0: 0, y0: -far, x1: 0, y1: -near, w: '3px', h: '14px' },
+        { x0: 0, y0: far, x1: 0, y1: near, w: '3px', h: '14px' },
+        { x0: -far, y0: 0, x1: -near, y1: 0, w: '14px', h: '3px' },
+        { x0: far, y0: 0, x1: near, y1: 0, w: '14px', h: '3px' },
+      ];
+      ticks.forEach((t, i) => {
+        this.spawn(
+          `<div style="width:${t.w};height:${t.h};background:${color};border-radius:2px;box-shadow:0 0 8px ${color};--tx0:${t.x0}px;--ty0:${t.y0}px;--tx1:${t.x1}px;--ty1:${t.y1}px;"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-sig-tick', 800 + i * 60
+        );
+      });
+      this.spawn(
+        `<div style="width:8px;height:8px;background:${color};border-radius:50%;box-shadow:0 0 10px ${color};"></div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-pop', 950
+      );
+    },
+
+    // sigSilverTongue: golden speech waves radiate outward + a speech bubble pops.
+    sigSilverTongue(x, y, color, integration) {
+      integration = integration || 0;
+      color = '#ffd54a';
+      const { cx, cy } = this._sigXY(x, y);
+      const waves = integration >= 2 ? 4 : 3;
+      for (let i = 0; i < waves; i++) {
+        this.spawn(
+          `<div style="width:${56 + i * 30}px;height:${56 + i * 30}px;border:2px solid ${color};border-radius:50%;opacity:0.75;"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-sig-expand', 850 + i * 160
+        );
+      }
+      this.spawn(
+        `<div style="font-size:28px;">\uD83D\uDCAC</div>`,
+        `position:absolute;left:${cx}px;top:${cy - 40}px;`,
+        'drama-sig-pop', 1000
+      );
+      if (integration >= 3) this.flash('rgba(255,213,74,0.1)', 300);
+    },
+
+    // sigDiplomat: two arcs sweep in from the sides and meet — the bridge is built.
+    sigDiplomat(x, y, color, integration) {
+      integration = integration || 0;
+      color = '#ff6b9d';
+      const { cx, cy } = this._sigXY(x, y);
+      this.spawn(
+        `<div style="width:44px;height:44px;border:3px solid ${color};border-right-color:transparent;border-bottom-color:transparent;border-radius:50%;"></div>`,
+        `position:absolute;left:${cx - 30}px;top:${cy}px;`,
+        'drama-sig-pop', 800
+      );
+      this.spawn(
+        `<div style="width:44px;height:44px;border:3px solid ${color};border-left-color:transparent;border-top-color:transparent;border-radius:50%;"></div>`,
+        `position:absolute;left:${cx + 30}px;top:${cy}px;`,
+        'drama-sig-pop', 900
+      );
+      this.spawn(
+        `<div style="font-size:26px;">\uD83E\uDD1D</div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-pop', 1050
+      );
+      if (integration >= 2) this.flash('rgba(255,107,157,0.1)', 350);
+    },
+
+    // sigPathfinder: a compass rose spins in — N/E/S/W lock on, then a sparkle
+    // trail marks the way forward.
+    sigPathfinder(x, y, color, integration) {
+      integration = integration || 0;
+      color = '#4df3ff';
+      const { cx, cy } = this._sigXY(x, y);
+      this.spawn(
+        `<svg width="84" height="84" viewBox="0 0 84 84"><g stroke="${color}" stroke-width="2.5" opacity="0.9"><line x1="42" y1="6" x2="42" y2="20"/><line x1="42" y1="64" x2="42" y2="78"/><line x1="6" y1="42" x2="20" y2="42"/><line x1="64" y1="42" x2="78" y2="42"/></g><circle cx="42" cy="42" r="26" fill="none" stroke="${color}" stroke-width="2" opacity="0.7"/><polygon points="42,22 47,42 42,62 37,42" fill="${color}" opacity="0.85"/></svg>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-spin', integration >= 3 ? 1800 : 1200
+      );
+      const trail = integration >= 2 ? 4 : 3;
+      for (let i = 0; i < trail; i++) {
+        this.spawn(
+          `<div style="width:7px;height:7px;background:${color};border-radius:50%;box-shadow:0 0 6px ${color};"></div>`,
+          `position:absolute;left:${cx - 30 + i * 18}px;top:${cy + 34}px;`,
+          'drama-sparkle', 700 + i * 130
+        );
+      }
+    },
+
+    // sigEagleEye: the eye opens — ellipse + pupil scale in, then sight rays
+    // extend to the horizon.
+    sigEagleEye(x, y, color, integration) {
+      integration = integration || 0;
+      color = '#4df3ff';
+      const { cx, cy } = this._sigXY(x, y);
+      this.spawn(
+        `<svg width="76" height="44" viewBox="0 0 76 44"><ellipse cx="38" cy="22" rx="34" ry="18" fill="rgba(77,243,255,0.15)" stroke="${color}" stroke-width="2.5"/><circle cx="38" cy="22" r="10" fill="${color}" opacity="0.9"/><circle cx="38" cy="22" r="4" fill="#0a0f0a"/></svg>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-pop', 950
+      );
+      const rays = integration >= 2 ? 6 : 4;
+      for (let i = 0; i < rays; i++) {
+        const ang = (i / rays) * 360;
+        this.spawn(
+          `<div style="width:26px;height:2px;background:${color};box-shadow:0 0 8px ${color};"></div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) rotate(${ang}deg) translateX(48px);`,
+          'drama-sig-pop', 750 + (i % 3) * 90
+        );
+      }
+      if (integration >= 3) this.flash('rgba(77,243,255,0.1)', 300);
+    },
+
+    // sigLieDetector: the magnifier sweeps — a ring pulses out while "?" clue
+    // marks pop around the point. L2+: extra clue sparkles.
+    sigLieDetector(x, y, color, integration) {
+      integration = integration || 0;
+      color = '#c792ea';
+      const { cx, cy } = this._sigXY(x, y);
+      this.spawn(
+        `<div style="width:60px;height:60px;border:3px solid ${color};border-radius:50%;"></div>`,
+        `position:absolute;left:${cx}px;top:${cy}px;`,
+        'drama-sig-expand', 800
+      );
+      this.spawn(
+        `<div style="font-size:26px;">\uD83D\uDD0D</div>`,
+        `position:absolute;left:${cx + 24}px;top:${cy - 24}px;`,
+        'drama-sig-pop', 900
+      );
+      const clues = integration >= 2 ? 4 : 3;
+      for (let i = 0; i < clues; i++) {
+        const ang = (i / clues) * Math.PI * 2 + 0.7;
+        this.spawn(
+          `<div style="font-size:17px;font-weight:bold;color:${color};text-shadow:0 1px 4px rgba(0,0,0,0.8);">?</div>`,
+          `position:absolute;left:${cx + Math.cos(ang) * 46}px;top:${cy + Math.sin(ang) * 46}px;`,
+          'drama-sig-pop', 700 + i * 110
+        );
+      }
+    },
+
+    // sigGameSense: paw prints appear in a trail — something was here, and now
+    // you know what and how long ago.
+    sigGameSense(x, y, color, integration) {
+      integration = integration || 0;
+      color = '#7cfc9a';
+      const { cx, cy } = this._sigXY(x, y);
+      const prints = integration >= 2 ? 4 : 3;
+      for (let i = 0; i < prints; i++) {
+        this.spawn(
+          `<div style="font-size:${20 - i * 2}px;opacity:${1 - i * 0.2};">\uD83D\uDC3E</div>`,
+          `position:absolute;left:${cx - 28 + i * 22}px;top:${cy + 18 - i * 8}px;`,
+          'drama-sig-pop', 700 + i * 160
+        );
+      }
+      if (integration >= 3) this.spawn(
+        `<div style="font-size:15px;color:${color};font-style:italic;text-shadow:0 1px 4px rgba(0,0,0,0.8);">sign read</div>`,
+        `position:absolute;left:${cx}px;top:${cy + 44}px;`,
+        'drama-float', 1100
+      );
+    },
   };
 
   S.Drama = Drama;
@@ -1463,24 +1756,18 @@
     .drama-belltoll { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: all 0.8s ease-out; }
     .drama-belltoll.drama-belltoll { opacity: 1; transform: translate(-50%, -50%) scale(1); animation: drama-bell-sway 1.6s ease-in-out infinite; }
     @keyframes drama-bell-sway { 0%, 100% { margin-left: 0; } 25% { margin-left: -4px; } 75% { margin-left: 4px; } }
+    .drama-sig-pop { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: all 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .drama-sig-pop.drama-sig-pop { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    .drama-sig-expand { opacity: 0; transform: translate(-50%, -50%) scale(0.5); transition: all 0.9s ease-out; }
+    .drama-sig-expand.drama-sig-expand { opacity: 0.8; transform: translate(-50%, -50%) scale(1.7); }
+    .drama-sig-spin { opacity: 0; transition: opacity 0.4s ease-out; }
+    .drama-sig-spin.drama-sig-spin { opacity: 1; animation: drama-sig-rotate 2.2s linear infinite; }
+    @keyframes drama-sig-rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+    .drama-sig-tick { opacity: 0; transform: translate(var(--tx0, 0px), var(--ty0, 0px)); transition: all 0.55s cubic-bezier(0.2, 1.2, 0.4, 1); }
+    .drama-sig-tick.drama-sig-tick { opacity: 1; transform: translate(var(--tx1, 0px), var(--ty1, 0px)); }
+    .drama-sig-bar { opacity: 0; transform: translate(-50%, -50%) scale(0.2); transition: all 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .drama-sig-bar.drama-sig-bar { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     .drama-shake { animation: drama-shake-anim 0.4s ease-out; }
-    /* Knowledge drama (Steve 2026-10-07, Drama D2) — all GPU transform/opacity */
-    .drama-leafunfurl { opacity: 0; transform: scale(0.3) rotate(-30deg); transition: all 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
-    .drama-leafunfurl.drama-leafunfurl { opacity: 1; transform: scale(1.15) rotate(8deg); }
-    .drama-scroll { opacity: 0; transform: translate(-50%,-50%) scaleX(0.2); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
-    .drama-scroll.drama-scroll { opacity: 1; transform: translate(-50%,-50%) scaleX(1); }
-    .drama-codexcard { opacity: 0; transform: translate(-50%,-50%) scale(0.85); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
-    .drama-codexcard.drama-codexcard { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-    .drama-pageflip { opacity: 0; transition: opacity 0.5s ease-out; }
-    .drama-pageflip.drama-pageflip { opacity: 1; animation: drama-pageflip-sweep 1.2s ease-in-out infinite; }
-    @keyframes drama-pageflip-sweep { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
-    .drama-skillbeam { opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
-    .drama-skillbeam.drama-skillbeam { opacity: 1; transform: translateY(-30px); }
-    .drama-faintshimmer { opacity: 0; transition: opacity 0.6s ease-out; }
-    .drama-faintshimmer.drama-faintshimmer { opacity: 1; }
-    .drama-aha { opacity: 0; transform: scale(0.4); transition: all 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
-    .drama-aha.drama-aha { opacity: 1; transform: scale(1.1); animation: drama-aha-glow 0.8s ease-in-out infinite; }
-    @keyframes drama-aha-glow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
     @keyframes drama-shake-anim {
       0%, 100% { transform: translate(0, 0); }
       20% { transform: translate(calc(var(--shake-intensity) * -1), calc(var(--shake-intensity) * 0.5)); }
