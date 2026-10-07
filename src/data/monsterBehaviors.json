@@ -1,216 +1,216 @@
 {
- "_docs": "Data-driven monster behavior tables (Steve 2026-10-07, scaffold audit). Each monster gets a behavior entry: archetype (tactical style), aggroRange/preferredRange/fleeAt (numeric tuning, currently documentary \u2014 the interpreter reads preTurnHooks for behavior), and preTurnHooks (ordered list of registered hook names run at the top of tbMonsterTurn; a hook returning true consumes the turn). To migrate a species: (1) add its hook names here, (2) register the hook functions in src/js/monsterBehaviors.js (verbatim extraction from tbMonsterTurn), (3) remove the inline branch. Behavior must be IDENTICAL \u2014 this is relocation, not redesign.",
- "_schema": "monsterBehaviors/v1",
- "behaviors": {
-  "belltoad": {
-   "aggroRange": 5,
-   "archetype": "pack_singer",
-   "fleeAt": 0.3,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "bright_idea": {
-   "aggroRange": 6,
-   "archetype": "bloomer",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "bulldozer": {
-   "aggroRange": 6,
-   "archetype": "charger",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 2
-  },
-  "ducks_in_a_row": {
-   "aggroRange": 5,
-   "archetype": "snake",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 2
-  },
-  "gallowdeer": {
-   "aggroRange": 8,
-   "archetype": "beam_sniper",
-   "fleeAt": 0,
-   "notes": "Highbeam Deer \u2014 the benchmark. Antlers thrash anyone adjacent every turn the beam isn't firing.",
-   "preTurnHooks": [
-    "antlerThrash"
-   ],
-   "preferredRange": 4
-  },
-  "glasswing": {
-   "aggroRange": 8,
-   "archetype": "diver",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "heckler": {
-   "aggroRange": 6,
-   "archetype": "hype",
-   "fleeAt": 0.3,
-   "notes": "Renamed from hype_horn; the old hornIs crowd-deflate branch is dead code (flagged).",
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "hummice": {
-   "aggroRange": 6,
-   "archetype": "swarm",
-   "fleeAt": 0.3,
-   "notes": "Swarm self-check every turn \u2014 deaths drop voices, distance thins the hum.",
-   "preTurnHooks": [
-    "humSwarmCheck"
-   ],
-   "preferredRange": 3
-  },
-  "hushwolf": {
-   "aggroRange": 7,
-   "archetype": "pack_hunter",
-   "fleeAt": 0.25,
-   "preTurnHooks": [],
-   "preferredRange": 2
-  },
-  "landlord": {
-   "aggroRange": 6,
-   "archetype": "territorial",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "lockpick_raccoon": {
-   "aggroRange": 4,
-   "archetype": "trickster",
-   "fleeAt": 0.5,
-   "preTurnHooks": [],
-   "preferredRange": 2
-  },
-  "memory_projector": {
-   "aggroRange": 6,
-   "archetype": "projector",
-   "fleeAt": 0.2,
-   "preTurnHooks": [],
-   "preferredRange": 4
-  },
-  "mirror_stag": {
-   "aggroRange": 7,
-   "archetype": "charger",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "mirrormoth": {
-   "aggroRange": 5,
-   "archetype": "drifter",
-   "fleeAt": 0.4,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "moderator": {
-   "aggroRange": 7,
-   "archetype": "censor",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 4
-  },
-  "nevermore": {
-   "aggroRange": 8,
-   "archetype": "strafer",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 4
-  },
-  "nightcourt": {
-   "aggroRange": 7,
-   "archetype": "ambusher",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "nightlight_catfish": {
-   "aggroRange": 5,
-   "archetype": "ambusher",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 2
-  },
-  "paparazzo": {
-   "aggroRange": 8,
-   "archetype": "swarmer",
-   "fleeAt": 0,
-   "notes": "Renamed from camera_swarm; the old swarmIs fire-scatter branch is dead code (flagged).",
-   "preTurnHooks": [],
-   "preferredRange": 5
-  },
-  "review_drone": {
-   "aggroRange": 7,
-   "archetype": "evaluator",
-   "fleeAt": 0,
-   "notes": "Can't grade a crowd \u2014 more live targets than crowdLimit stalls the evaluation.",
-   "preTurnHooks": [
-    "droneCrowdOverload"
-   ],
-   "preferredRange": 4
-  },
-  "speedbump_turtle": {
-   "aggroRange": 2,
-   "archetype": "bunker",
-   "fleeAt": 0,
-   "notes": "Seals in its shell and waits you out. Nearly invulnerable; the answer is patience.",
-   "preTurnHooks": [
-    "turtleBunker"
-   ],
-   "preferredRange": 1
-  },
-  "statickite": {
-   "aggroRange": 8,
-   "archetype": "kite",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 5
-  },
-  "sunbasker": {
-   "aggroRange": 5,
-   "archetype": "basker",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 2
-  },
-  "understudy": {
-   "aggroRange": 6,
-   "archetype": "mimic",
-   "fleeAt": 0.2,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "union_rep": {
-   "aggroRange": 6,
-   "archetype": "organizer",
-   "fleeAt": 0.2,
-   "preTurnHooks": [],
-   "preferredRange": 3
-  },
-  "voice_mimic_radio": {
-   "aggroRange": 6,
-   "archetype": "mimic",
-   "fleeAt": 0.2,
-   "preTurnHooks": [],
-   "preferredRange": 4
-  },
-  "warranty_caller": {
-   "aggroRange": 6,
-   "archetype": "caller",
-   "fleeAt": 0.1,
-   "preTurnHooks": [],
-   "preferredRange": 4
-  },
-  "white_noise_heron": {
-   "aggroRange": 7,
-   "archetype": "striker",
-   "fleeAt": 0,
-   "preTurnHooks": [],
-   "preferredRange": 4
+  "_docs": "Data-driven monster behavior tables (Steve 2026-10-07, scaffold audit). Each monster gets a behavior entry: archetype (tactical style), aggroRange/preferredRange/fleeAt (numeric tuning, currently documentary \u2014 the interpreter reads preTurnHooks for behavior), and preTurnHooks (ordered list of registered hook names run at the top of tbMonsterTurn; a hook returning true consumes the turn). To migrate a species: (1) add its hook names here, (2) register the hook functions in src/js/monsterBehaviors.js (verbatim extraction from tbMonsterTurn), (3) remove the inline branch. Behavior must be IDENTICAL \u2014 this is relocation, not redesign.",
+  "_schema": "monsterBehaviors/v1",
+  "behaviors": {
+    "belltoad": {
+      "aggroRange": 5,
+      "archetype": "pack_singer",
+      "fleeAt": 0.3,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "bright_idea": {
+      "aggroRange": 6,
+      "archetype": "bloomer",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "bulldozer": {
+      "aggroRange": 6,
+      "archetype": "charger",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 2
+    },
+    "ducks_in_a_row": {
+      "aggroRange": 5,
+      "archetype": "snake",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 2
+    },
+    "gallowdeer": {
+      "aggroRange": 8,
+      "archetype": "beam_sniper",
+      "fleeAt": 0,
+      "notes": "Highbeam Deer \u2014 the benchmark. Antlers thrash anyone adjacent every turn the beam isn't firing.",
+      "preTurnHooks": [
+        "antlerThrash"
+      ],
+      "preferredRange": 4
+    },
+    "glasswing": {
+      "aggroRange": 8,
+      "archetype": "diver",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "heckler": {
+      "aggroRange": 6,
+      "archetype": "hype",
+      "fleeAt": 0.3,
+      "notes": "Renamed from hype_horn; the old hornIs crowd-deflate branch is dead code (flagged).",
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "hummice": {
+      "aggroRange": 6,
+      "archetype": "swarm",
+      "fleeAt": 0.3,
+      "notes": "Swarm self-check every turn \u2014 deaths drop voices, distance thins the hum.",
+      "preTurnHooks": [
+        "humSwarmCheck"
+      ],
+      "preferredRange": 3
+    },
+    "hushwolf": {
+      "aggroRange": 7,
+      "archetype": "pack_hunter",
+      "fleeAt": 0.25,
+      "preTurnHooks": [],
+      "preferredRange": 2
+    },
+    "landlord": {
+      "aggroRange": 6,
+      "archetype": "territorial",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "lockpick_raccoon": {
+      "aggroRange": 4,
+      "archetype": "trickster",
+      "fleeAt": 0.5,
+      "preTurnHooks": [],
+      "preferredRange": 2
+    },
+    "memory_projector": {
+      "aggroRange": 6,
+      "archetype": "projector",
+      "fleeAt": 0.2,
+      "preTurnHooks": [],
+      "preferredRange": 4
+    },
+    "mirror_stag": {
+      "aggroRange": 7,
+      "archetype": "charger",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "mirrormoth": {
+      "aggroRange": 5,
+      "archetype": "drifter",
+      "fleeAt": 0.4,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "moderator": {
+      "aggroRange": 7,
+      "archetype": "censor",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 4
+    },
+    "nevermore": {
+      "aggroRange": 8,
+      "archetype": "strafer",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 4
+    },
+    "nightcourt": {
+      "aggroRange": 7,
+      "archetype": "ambusher",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "nightlight_catfish": {
+      "aggroRange": 5,
+      "archetype": "ambusher",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 2
+    },
+    "paparazzo": {
+      "aggroRange": 8,
+      "archetype": "swarmer",
+      "fleeAt": 0,
+      "notes": "Renamed from camera_swarm; the old swarmIs fire-scatter branch is dead code (flagged).",
+      "preTurnHooks": [],
+      "preferredRange": 5
+    },
+    "review_drone": {
+      "aggroRange": 7,
+      "archetype": "evaluator",
+      "fleeAt": 0,
+      "notes": "Can't grade a crowd \u2014 more live targets than crowdLimit stalls the evaluation.",
+      "preTurnHooks": [
+        "droneCrowdOverload"
+      ],
+      "preferredRange": 4
+    },
+    "speedbump_turtle": {
+      "aggroRange": 2,
+      "archetype": "bunker",
+      "fleeAt": 0,
+      "notes": "Seals in its shell and waits you out. Nearly invulnerable; the answer is patience.",
+      "preTurnHooks": [
+        "turtleBunker"
+      ],
+      "preferredRange": 1
+    },
+    "statickite": {
+      "aggroRange": 8,
+      "archetype": "kite",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 5
+    },
+    "sunbasker": {
+      "aggroRange": 5,
+      "archetype": "basker",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 2
+    },
+    "understudy": {
+      "aggroRange": 6,
+      "archetype": "mimic",
+      "fleeAt": 0.2,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "union_rep": {
+      "aggroRange": 6,
+      "archetype": "organizer",
+      "fleeAt": 0.2,
+      "preTurnHooks": [],
+      "preferredRange": 3
+    },
+    "voice_mimic_radio": {
+      "aggroRange": 6,
+      "archetype": "mimic",
+      "fleeAt": 0.2,
+      "preTurnHooks": [],
+      "preferredRange": 4
+    },
+    "warranty_caller": {
+      "aggroRange": 6,
+      "archetype": "caller",
+      "fleeAt": 0.1,
+      "preTurnHooks": [],
+      "preferredRange": 4
+    },
+    "white_noise_heron": {
+      "aggroRange": 7,
+      "archetype": "striker",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 4
+    }
   }
- }
 }
