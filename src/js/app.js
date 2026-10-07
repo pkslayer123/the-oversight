@@ -12670,9 +12670,10 @@
         // This is the PRIMARY visibility logic.
         let seen = null;
         try {
-          // Player pos is in scholar.mx/my (NOT Game.map.px/py) - Steve 2026-10-06
-          const sch = (Game.state && Game.state.scholar) || {};
-          const ppx = sch.mx ?? 3, ppy = sch.my ?? 3;
+          // Use Game.map.px/py (same source as player sprite) - Steve 2026-10-06
+          // The player sprite works, so this is valid.
+          const mpp2 = Game.map || {};
+          const ppx = mpp2.px ?? 3, ppy = mpp2.py ?? 3;
           const dx = Math.abs(x - ppx);
           const dy = Math.abs(y - ppy);
           if (dx <= 1 && dy <= 1) {
