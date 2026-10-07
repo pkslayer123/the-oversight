@@ -494,7 +494,15 @@
     justiceExileGuards() {
       // Called when exiled player tries Haven-only comforts. Returns a refusal string or null.
       if (!this.justiceExiled()) return null;
-      if (!(this.map && this.map.px === 3 && this.map.py === 3)) return null;
+      // HAVEN COORDS (Steve 2026-10-07): same systemic (3,3) hardcode as the
+      // defied-exile uprising — the village node is (v.px ?? 4, v.py ?? 4)
+      // (game.js: "Haven sits at 4,4 (9x9 center)"). Before this the guard
+      // NEVER fired at real Haven, so an exiled player could raid the pantry
+      // freely. party.js (betrayalOpportunity, lureCheck) and perceive.js
+      // (stash) have the same hardcode — flagged, left for their owners
+      // (active sibling hunks in both files).
+      const vNode = this.state.village || {};
+      if (!(this.map && this.map.px === (vNode.px ?? 4) && this.map.py === (vNode.py ?? 4))) return null;
       return 'You\'re exiled. They watch you from the fire, hands on whatever\'s sharp. Take nothing.';
     },
 
