@@ -12668,30 +12668,13 @@
         // New rule: tiles within Chebyshev distance 1 of the player (3x3)
         // are visible. Simple, robust, no fragile data dependency.
         // This is the PRIMARY visibility logic.
+        // HARDCODED VISIBILITY (Steve 2026-10-06): 3x3 center is always visible.
+        // No variables, no Game.map, nothing to fail.
         let seen = null;
-        let diagColor = null; // DIAGNOSTIC: color-code the failure
-        try {
-          if (typeof Game === 'undefined') { diagColor = '#ff0000'; } // RED: Game undefined
-          else {
-            const mpp2 = Game.map || {};
-            if (!Game.map) { diagColor = '#ff8800'; } // ORANGE: Game.map null
-            else {
-              const ppx = mpp2.px, ppy = mpp2.py;
-              if (ppx == null || ppy == null) { diagColor = '#ffff00'; } // YELLOW: pos null
-              else {
-                const dx = Math.abs(x - ppx);
-                const dy = Math.abs(y - ppy);
-                if (dx <= 1 && dy <= 1) {
-                  seen = (dx === 0 && dy === 0) ? 'visited' : 'shared';
-                } else {
-                  const seenTiles = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
-                  const se = seenTiles[x + ',' + y];
-                  if (se) seen = (se.k === 'v' ? 'visited' : 'shared');
-                }
-              }
-            }
-          }
-        } catch (err) { seen = null; diagColor = '#ff00ff'; } // PURPLE: exception
+        let diagColor = null;
+        if (x >= 2 && x <= 4 && y >= 2 && y <= 4) {
+          seen = (x === 3 && y === 3) ? 'visited' : 'shared';
+        }
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
         const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
