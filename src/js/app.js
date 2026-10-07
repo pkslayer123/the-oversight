@@ -12690,8 +12690,21 @@
             ruin: ['#9a9a9a', '🏚️'],
           };
           const _t = _terrain[_ttype] || _terrain['meadow'];
-          // Show type + TS status (diagnostic - Steve 2026-10-06)
-          html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000">${_ttype}<br>${_tsStatus}</div></div>`;
+          // Try TileScenes SVG (status is ok, so it should work)
+          let _svgOut = null;
+          if (_tsStatus === 'ok') {
+            try {
+              _svgOut = Scattering.TileScenes.svgFor(x, y, { seen: true, tile: _tl });
+            } catch (e) { _svgOut = null; }
+          }
+          const _svgValid = _svgOut && _svgOut.length > 100 && _svgOut.indexOf('#0d120d') === -1;
+          if (_svgValid) {
+            // Use the SVG!
+            html += `<div class="tile" data-x="${x}" data-y="${y}">${_svgOut}</div>`;
+          } else {
+            // Fallback DIV with status (diagnostic)
+            html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:${_t[0]};width:100%;height:100%;min-height:40px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#000">${_ttype}<br>${_tsStatus}<br>svg:${_svgOut ? _svgOut.length : 'null'}</div></div>`;
+          }
           continue;
         }
         let tl = null;
