@@ -456,31 +456,15 @@
     // L3 INTEGRATED: 👁️ prefix + white-gold glow, longer — the System celebrates.
     // Silent below L2: the System only speaks once Attuned.
     systemCommentary(text, opts) {
-      opts = opts || {};
-      const integ = opts.integration || 0;
-      if (integ < 2) return;
-      const body = integ >= 3
-        ? `<div style="font-size:15px;font-style:italic;color:#fff3c4;text-shadow:0 0 12px #ffd54a,0 2px 6px rgba(0,0,0,0.9);">👁️ ${text}</div>`
-        : `<div style="font-size:14px;font-style:italic;color:#9be8ff;text-shadow:0 2px 6px rgba(0,0,0,0.9);">${text}</div>`;
-      this.spawn(
-        body,
-        `position:absolute;left:50%;top:18%;transform:translate(-50%,-50%);max-width:300px;text-align:center;`,
-        'drama-commentary',
-        integ >= 3 ? 2600 : 2000
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('systemCommentary', {text: text, opts: opts});
     },
 
     // integrationPulse: the System is watching — evolves with integration level
     // L1: subtle blue pulse. L2: eye opens. L3: full overlay presence.
     integrationPulse(level) {
-      if (level >= 3) {
-        this.heroCard('⬢ SYSTEM', 'Full integration. I see everything you see.', '👁️');
-      } else if (level >= 2) {
-        this.flash('rgba(77,243,255,0.2)', 800);
-        this.floatText('50%', '35%', '👁️ The System watches', { color: '#4df3ff', size: 16 });
-      } else if (level >= 1) {
-        this.flash('rgba(77,243,255,0.08)', 400);
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('integrationPulse', {level: level});
     },
 
     // CONTEST DRAMA (Steve 2026-10-07): contests are UNAVOIDABLE televised
@@ -488,20 +472,8 @@
 
     // Contest announcement: full-screen banner with dramatic flash
     contestAnnounce(contestName, integration) {
-      integration = integration || 0;
-      this.flash('rgba(255,107,157,0.25)', 800);
-      this.shake(6 + integration * 2);
-      this.spawn(
-        `<div style="text-align:center;padding:32px;background:rgba(20,5,12,0.95);border:3px solid #ff6b9d;border-radius:16px;max-width:320px;box-shadow:0 0 40px rgba(255,107,157,0.5);">
-          <div style="font-size:56px;margin-bottom:12px;">📺</div>
-          <div style="font-size:22px;font-weight:bold;color:#ff6b9d;letter-spacing:3px;margin-bottom:8px;">CONTEST INCOMING</div>
-          <div style="font-size:16px;color:#fff;font-weight:bold;">${contestName}</div>
-          <div style="font-size:12px;color:#ff9dc0;margin-top:8px;">The village holds its breath.</div>
-        </div>`,
-        `position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.7);`,
-        'drama-contest-announce',
-        2200 + (integration * 400)
-      );
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      return this.renderEffect('contestAnnounce', {contestName: contestName, integration: integration});
     },
 
     // Audience cheers: gold sparkles rain
@@ -526,39 +498,16 @@
     // phaseShift: monster shifts combat phase — edge pulse + readable label.
     // Scales with integration: L0 silent-ish, L3 full banner.
     phaseShift(x, y, phaseLabel, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const colors = { windup: '#ffd54a', strike: '#ff5252', recovery: '#7cfc9a' };
-      const color = colors[phaseLabel] || '#4df3ff';
-      // edge pulse ring
-      const size = 70 + integration * 15;
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 80 80"><rect x="5" y="5" width="70" height="70" rx="8" fill="none" stroke="${color}" stroke-width="4" opacity="0.9"/></svg>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2}px;`,
-        'drama-phase',
-        600 + integration * 150
-      );
-      if (integration >= 1) {
-        const label = { windup: '⚡ WINDUP', strike: '💥 STRIKE', recovery: '🌿 RECOVERY' }[phaseLabel] || String(phaseLabel).toUpperCase();
-        this.floatText(c.x, c.y - 30, label, { color: color, size: 14 + integration * 2 });
-      }
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      // NOTE: reproduces the double-tileCenter bug.
+      return this.renderEffect('phaseShift', {x: x, y: y, phaseLabel: phaseLabel, integration: integration});
     },
 
     // enrage: monster crosses half-HP temperament — red aura + shake + 💢.
     enrage(x, y, temper, integration) {
-      integration = integration || 0;
-      const c = this.tileCenter(x, y);
-      const size = 90 + integration * 20;
-      this.spawn(
-        `<svg width="${size}" height="${size}" viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="rgba(255,40,40,0.25)" stroke="#ff3030" stroke-width="3" opacity="0.9"/></svg>`,
-        `position:absolute;left:${c.x - size / 2}px;top:${c.y - size / 2}px;`,
-        'drama-enrage',
-        1000 + integration * 200
-      );
-      this.floatText(c.x, c.y - 35, '💢', { color: '#ff5252', size: 28 + integration * 6 });
-      const tname = { enraged: 'ENRAGED', cunning: 'CUNNING', desperate: 'DESPERATE' }[temper] || 'ENRAGED';
-      this.floatText(c.x, c.y + 30, tname, { color: '#ff6b6b', size: 13 + integration * 2 });
-      this.shake(6 + integration * 3);
+      // Scaffold #4 (Steve 2026-10-07): data-driven via renderEffect — visual output identical.
+      // NOTE: reproduces the double-tileCenter bug.
+      return this.renderEffect('enrage', {x: x, y: y, temper: temper, integration: integration});
     },
 
     // lootSparkle: monster death — gold sparkles where it fell.

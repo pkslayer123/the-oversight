@@ -647,5 +647,218 @@
     ],
     "audio": null,
     "_note": "floatText('50%','50%') -> tileCenter returns 50%/50% (NaN index). Name at screen center."
+  },
+  "phaseShift": {
+    "anchor": "tile",
+    "params": [
+      "x",
+      "y",
+      "phaseLabel",
+      "integration"
+    ],
+    "computed": {
+      "integration": "integration || 0",
+      "colors": "{windup: '#ffd54a', strike: '#ff5252', recovery: '#7cfc9a'}",
+      "color": "colors[phaseLabel] || '#4df3ff'",
+      "size": "70 + integration * 15",
+      "duration": "600 + integration * 150",
+      "labels": "{windup: '⚡ WINDUP', strike: '💥 STRIKE', recovery: '🌿 RECOVERY'}",
+      "label": "labels[phaseLabel] || String(phaseLabel).toUpperCase()",
+      "labelSize": "14 + integration * 2",
+      "svg": "'<svg width=\"' + size + '\" height=\"' + size + '\" viewBox=\"0 0 80 80\"><rect x=\"5\" y=\"5\" width=\"70\" height=\"70\" rx=\"8\" fill=\"none\" stroke=\"' + color + '\" stroke-width=\"4\" opacity=\"0.9\"/></svg>'"
+    },
+    "steps": [
+      {
+        "do": "spawn",
+        "html": "{svg}",
+        "css": "position:absolute;left:{cx - size / 2}px;top:{cy - size / 2}px;",
+        "animClass": "drama-phase",
+        "duration": "{duration}"
+      },
+      {
+        "do": "call",
+        "when": "integration >= 1",
+        "method": "floatText",
+        "args": [
+          "{cx}",
+          "{cy - 30}",
+          "{label}",
+          "{color: color, size: labelSize}"
+        ]
+      }
+    ],
+    "audio": null,
+    "_bug": "BUG REPRODUCED: floatText gets pixel coords."
+  },
+  "enrage": {
+    "anchor": "tile",
+    "params": [
+      "x",
+      "y",
+      "temper",
+      "integration"
+    ],
+    "computed": {
+      "integration": "integration || 0",
+      "size": "90 + integration * 20",
+      "duration": "1000 + integration * 200",
+      "emojiSize": "28 + integration * 6",
+      "tnames": "{enraged: 'ENRAGED', cunning: 'CUNNING', desperate: 'DESPERATE'}",
+      "tname": "tnames[temper] || 'ENRAGED'",
+      "tnameSize": "13 + integration * 2",
+      "shakeAmt": "6 + integration * 3",
+      "svg": "'<svg width=\"' + size + '\" height=\"' + size + '\" viewBox=\"0 0 80 80\"><circle cx=\"40\" cy=\"40\" r=\"36\" fill=\"rgba(255,40,40,0.25)\" stroke=\"#ff3030\" stroke-width=\"3\" opacity=\"0.9\"/></svg>'"
+    },
+    "steps": [
+      {
+        "do": "spawn",
+        "html": "{svg}",
+        "css": "position:absolute;left:{cx - size / 2}px;top:{cy - size / 2}px;",
+        "animClass": "drama-enrage",
+        "duration": "{duration}"
+      },
+      {
+        "do": "call",
+        "method": "floatText",
+        "args": [
+          "{cx}",
+          "{cy - 35}",
+          "{'💢'}",
+          "{color: '#ff5252', size: emojiSize}"
+        ]
+      },
+      {
+        "do": "call",
+        "method": "floatText",
+        "args": [
+          "{cx}",
+          "{cy + 30}",
+          "{tname}",
+          "{color: '#ff6b6b', size: tnameSize}"
+        ]
+      },
+      {
+        "do": "call",
+        "method": "shake",
+        "args": [
+          "{shakeAmt}"
+        ]
+      }
+    ],
+    "audio": null,
+    "_bug": "BUG REPRODUCED: floatText gets pixel coords."
+  },
+  "contestAnnounce": {
+    "anchor": "screen",
+    "params": [
+      "contestName",
+      "integration"
+    ],
+    "computed": {
+      "integration": "integration || 0",
+      "shakeAmt": "6 + integration * 2",
+      "duration": "2200 + (integration * 400)",
+      "html": "'<div style=\"text-align:center;padding:32px;background:rgba(20,5,12,0.95);border:3px solid #ff6b9d;border-radius:16px;max-width:320px;box-shadow:0 0 40px rgba(255,107,157,0.5);\">' + '<div style=\"font-size:56px;margin-bottom:12px;\">📺</div>' + '<div style=\"font-size:22px;font-weight:bold;color:#ff6b9d;letter-spacing:3px;margin-bottom:8px;\">CONTEST INCOMING</div>' + '<div style=\"font-size:16px;color:#fff;font-weight:bold;\">' + contestName + '</div>' + '<div style=\"font-size:12px;color:#ff9dc0;margin-top:8px;\">The village holds its breath.</div>' + '</div>'"
+    },
+    "steps": [
+      {
+        "do": "call",
+        "method": "flash",
+        "args": [
+          "rgba(255,107,157,0.25)",
+          "800"
+        ]
+      },
+      {
+        "do": "call",
+        "method": "shake",
+        "args": [
+          "{shakeAmt}"
+        ]
+      },
+      {
+        "do": "spawn",
+        "html": "{html}",
+        "css": "position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.7);",
+        "animClass": "drama-contest-announce",
+        "duration": "{duration}"
+      }
+    ],
+    "audio": null
+  },
+  "systemCommentary": {
+    "anchor": "screen",
+    "params": [
+      "text",
+      "opts"
+    ],
+    "computed": {
+      "integration": "(opts && opts.integration) || 0",
+      "show": "integration >= 2",
+      "body": "integration >= 3 ? '<div style=\"font-size:15px;font-style:italic;color:#fff3c4;text-shadow:0 0 12px #ffd54a,0 2px 6px rgba(0,0,0,0.9);\">👁️ ' + text + '</div>' : '<div style=\"font-size:14px;font-style:italic;color:#9be8ff;text-shadow:0 2px 6px rgba(0,0,0,0.9);\">' + text + '</div>'",
+      "duration": "integration >= 3 ? 2600 : 2000"
+    },
+    "steps": [
+      {
+        "do": "spawn",
+        "when": "show",
+        "html": "{body}",
+        "css": "position:absolute;left:50%;top:18%;transform:translate(-50%,-50%);max-width:300px;text-align:center;",
+        "animClass": "drama-commentary",
+        "duration": "{duration}"
+      }
+    ],
+    "audio": null
+  },
+  "integrationPulse": {
+    "anchor": "screen",
+    "params": [
+      "level"
+    ],
+    "computed": {
+      "level": "level || 0"
+    },
+    "steps": [
+      {
+        "do": "call",
+        "when": "level >= 3",
+        "method": "heroCard",
+        "args": [
+          "{'⬢ SYSTEM'}",
+          "{'Full integration. I see everything you see.'}",
+          "{'👁️'}"
+        ]
+      },
+      {
+        "do": "call",
+        "when": "level === 2",
+        "method": "flash",
+        "args": [
+          "rgba(77,243,255,0.2)",
+          "800"
+        ]
+      },
+      {
+        "do": "call",
+        "when": "level === 2",
+        "method": "floatText",
+        "args": [
+          "{'50%'}",
+          "{'35%'}",
+          "{'👁️ The System watches'}",
+          "{color: '#4df3ff', size: 16}"
+        ]
+      },
+      {
+        "do": "call",
+        "when": "level === 1",
+        "method": "flash",
+        "args": [
+          "rgba(77,243,255,0.08)",
+          "400"
+        ]
+      }
+    ],
+    "audio": null
   }
 }
