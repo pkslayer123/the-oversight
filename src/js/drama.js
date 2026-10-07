@@ -705,6 +705,19 @@
       );
     },
 
+    // beamHorror: the alien beam goes through your armor like it isn't there.
+    // The "oh shit" moment (alienPlayers.js) — the one drama kind that was
+    // fired with no dispatch branch, so the horror beat never appeared.
+    // Composes existing primitives only: red-white flash (indifference),
+    // shake (impact), and the floatText the moment deserves. Audio stays
+    // quiet — the beam's own fire audio already covers the hit.
+    beamHorror(x, y, integration) {
+      integration = integration || 0;
+      this.flash('rgba(255,60,60,0.45)', 700);
+      this.shake(10 + integration * 2);
+      this.floatText(x, y, '💀 YOUR ARMOR MEANS NOTHING', { color: '#ff5252', size: 20 + integration * 2, dy: -30 });
+    },
+
     // Winner: confetti burst + hero card
     contestWinner(name, integration) {
       integration = integration || 0;
