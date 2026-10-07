@@ -13,6 +13,19 @@ global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(f
 ].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
 
+// Seeded RNG (PROOF-TEST RNG STABILITY lesson, AGENTS.md): aggregate theft
+// assertions must be deterministic. SEED env override for exploration.
+{
+  const SEED = parseInt(process.env.SEED || '20261007', 10);
+  let a = SEED;
+  Math.random = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 let pass = 0, fail = 0;
 function ok(name, cond) {
   if (cond) { pass++; }
@@ -119,7 +132,9 @@ const ME = () => Game.state.scholar.villagerId;
   const TRIALS = 30;
   for (let t = 0; t < TRIALS; t++) {
     for (const c of Game.playerCaches()) { c.found = false; c.items = [{ name: 'x' }]; }
-    for (let b = 0; b < 120; b++) Game.npcBatchTurn();
+    // THEFT NOW ROLLS DAILY (Steve 2026-10-07): dailyCacheCheck from endDay,
+    // not per-batch in npcBatchTurn. One season = 45 daily rolls per cache.
+    for (let d = 0; d < 45; d++) Game.dailyCacheCheck();
     if (Game.playerCaches()[0].found) nearHit++;
     if (Game.playerCaches()[1].found) farHit++;
   }
