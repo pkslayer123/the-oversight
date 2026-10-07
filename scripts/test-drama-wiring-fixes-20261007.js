@@ -9,15 +9,13 @@
 //            recipe, animal, technique, synergy) and both DRAMA_AUDIO_MATES
 //            mappings (secret, plantIdentified); the synth is the distinctive
 //            alien "aha" (not a stub).
-//   Part C — Inspiration ember timing: EXPECTED-FAIL pin. Design (monsters.json
-//            codex + REKINDLE comment): ember safe window is 2 turns, then 1,
-//            then 0. Observed: the transition turn double-counts (sets biEmber
-//            then immediately decrements), so the player-visible window is
-//            1 / 0 / 0. Fails until the ember fix lands (flagged to coordinator;
-//            game.js tbMonsterTurn is a sibling's active area — not edited here).
+//   Part C — Inspiration ember timing: pin RETIRED. The ember fix landed
+//            (commit ce0864b, 2026-10-07) — the transition-turn double-count is
+//            fixed, so the player-visible window is 2 / 1 / 0 as designed.
+//            Part C is kept as a PASSING regression assertion.
 //
 // Seeded PRNG (mulberry32, fixed default, SEED env override). Exit 0 = PASS,
-// exit 1 = FAIL (Part C failing alone still exits 1 — see note above).
+// exit 1 = FAIL. (The Part C EXPECTED-FAIL pin is retired; all parts assert green.)
 // Full src/js list in index.html order, minus DOM-only modules (AGENTS.md).
 // window stubbed for eval only, then deleted (async-flip bug).
 
@@ -210,7 +208,7 @@ ok('harness loaded ' + nFiles + ' modules; Game.drama + Drama.floatText live');
 
 // ---------------------------------------------------------------- Part C ----
 (function partC() {
-  console.log('== Part C: Inspiration ember timing (EXPECTED-FAIL pin) ==');
+  console.log('== Part C: Inspiration ember timing (RETIRED pin — regression, ember fix landed) ==');
   if (typeof Game.tbMonsterTurn !== 'function') { fail('Game.tbMonsterTurn not available'); return; }
 
   // stub the turn's surroundings; keep the REAL tbMonsterTurn + REAL biIs

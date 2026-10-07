@@ -4853,6 +4853,10 @@
       if (!this.over) {
         const dayNow = s.day || 1;
         const daysAway = dayNow - (s.lastHavenDay || dayNow);
+        // FIRESIDE RETURN GUARANTEE (Steve 2026-10-07): returning home is the
+        // key teaching moment — the first fireside part after a real return
+        // (any day away) always teaches. Flag is consumed by firesideTeaching.
+        if (daysAway > 0) this.state.village.homecomingFireside = true;
         if (daysAway >= 2) {
           const variants = [
             `You walk back into Haven — ${daysAway} days gone. The fire's still going. Somebody looks up from the work and nods. Back is back.`,
@@ -10463,7 +10467,13 @@
     // the Codex later; it FORMALIZES what the group already knows.
     firesideTeaching(isPresent) {
       const v = this.state.village;
-      if (!v.roster || Math.random() > 0.35) return; // not every part
+      // FIRESIDE RETURN GUARANTEE (Steve 2026-10-07): the first fireside after a
+      // real return home always teaches — returning with a new haul is the key
+      // teaching moment. The flag is consumed regardless of outcome (even when
+      // there is nothing to teach), so later parts revert to the ambient gate.
+      const homecoming = !!v.homecomingFireside;
+      v.homecomingFireside = false;
+      if (!v.roster || (!homecoming && Math.random() > 0.35)) return; // not every part
       // the lesson is spoken at the fire — you only hear it if you're there.
       const present = isPresent === undefined ? this.playerAtHaven() : isPresent;
       const shared = v.sharedKnowledge || {};
