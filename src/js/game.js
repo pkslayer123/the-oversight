@@ -18,6 +18,7 @@
 //   - fireShow(event) -> show (delegates to contests.js)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
+//   - tbSeedAmbushZone(m, pattern, opts) -> zone | null, tbAmbushZoneTick() (seeded-ground ambush: visible arming beat when stepped in, fires a beat later; fight-scoped; code: combat.js 'ambush-zone'/zoneArmed)
 //   - tbTerrainAt(x, y) -> type | null
 //   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
 //   - modIs(m) (wave-2 apex id gate: the Moderator)
@@ -45,6 +46,8 @@
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
 //   - terraform_scope: fight-scoped, dies with the fight (code: tbTerraform)
+//   - ambush_zone_beat: seeded zone arms when stepped in with a visible beat (text + grid + audio), fires one beat later at whoever is inside (code: tbSeedAmbushZone/tbAmbushZoneTick)
+//   - lockon_relock: lockon telegraphs re-lock at fire time against the locked target's current square — windup-cells == action-cells per call (code: tbMonsterTurn resolve 'lockon')
 //   - moderator_field: radius 2, 3 in shadowban; re-projected each of its turns (code: modProjectField)
 //   - moderator_violation: muted verb inside the field spends the turn, +3 strike damage each (code: modVerbBlocked)
 //   - moderator_phases: observing -> muting -> shadowban (code: tbMonsterTurn)
@@ -5288,6 +5291,8 @@
         if (newLevel > (scholar2.lastIntegrationLevel || 0)) {
           scholar2.lastIntegrationLevel = newLevel;
           this.say(`⬢ SYSTEM INTEGRATION L${newLevel}: The System sees more now. Your HUD sharpens.`);
+          // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): system integration level-up.
+          this.audioEvent('knowledgeReveal', { kind: 'integration', level: newLevel });
         }
       }
       if (!learned.length) return `${v.name}'s codex holds nothing you don't already know.`;
@@ -10649,6 +10654,8 @@
           unlockedDay: this.state.scholar.day,
         };
         this.say(`⚡ TECHNIQUE UNLOCKED: ${syn.technique}! ${syn.effect} (Your knowledge of ${k.name} amplifies your ${syn.ability}.)`);
+        // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): codex technique unlock.
+        this.audioEvent('knowledgeReveal', { kind: 'technique', id: techId });
         if (this.state.systemArrived) {
           this.sysSay(`"OH! OH! ${syn.technique.toUpperCase()}! The audience did NOT see that coming! Knowledge AMPLIFIES power! The gamblers are recalculating EVERYTHING!"`);
         }
@@ -14896,6 +14903,8 @@
       const sch = this.state.scholar;
       if (!sch.synergies.includes(syn.id)) {
         sch.synergies.push(syn.id);
+        // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): synergy discovery moment.
+        this.audioEvent('knowledgeReveal', { kind: 'synergy', id: syn.id });
         this.say(`\u2728 SYNERGY DISCOVERED: ${syn.name}!`);
         if (syn.flavor) this.say(syn.flavor);
         if (syn.discovery) this.say(syn.discovery);
@@ -16772,6 +16781,91 @@
       return null;
     },
 
+    // === AMBUSH-ZONE: seeded ground (Steve 2026-10-07) ===
+    // combat.js 'ambush-zone' patterns: the zone is centered on
+    // pattern.center (fixed ground, not the attacker), arms when stepped
+    // in, and runs a visible arming beat before firing. The beat is the
+    // dodge window. Fight-scoped: zones die with the fight, like terraform.
+    // tbSeedAmbushZone: a monster lays the trap. Returns the zone.
+    tbSeedAmbushZone(m, pattern, opts) {
+      const f = this.tbfight;
+      if (!f || f.over || !m || !pattern || pattern.type !== 'ambush-zone') return null;
+      f.ambushZones = f.ambushZones || [];
+      const zone = {
+        pattern: Object.assign({ radius: 1 }, pattern),
+        seededBy: m.key,
+        seedId: (m.mdef || {}).id || '?',
+        attackName: (opts && opts.attackName) || ((m.mdef || {}).attack || {}).name || 'seeded ambush',
+        dmg: (opts && opts.dmg) || ((m.mdef || {}).attack || {}).damage || '2d6',
+        armed: false, beatsLeft: 0, spent: false,
+      };
+      f.ambushZones.push(zone);
+      // THE BULGE: seeding is visible ground. The grid marks the circle —
+      // the grid IS the telegraph. Knowledge gates the coaching, never the mark.
+      const cells = S.combat.patternCells(zone.pattern, m.mx, m.my, m.mx, m.my);
+      this.warnCells(cells, 99);
+      const known = this.tbPatternKnown(zone.seedId, zone.attackName);
+      this.say('⚠ ' + S.combat.telegraphText(zone.pattern, 'windup', known));
+      this.tbRefreshTelegraphUI();
+      return zone;
+    },
+    // tbAmbushZoneTick: run after every player action and on each round —
+    // the ground checks itself. Unarmed zones ARM the moment a fighter
+    // steps in (visible arming beat: text + grid + audio); armed zones
+    // FIRE one beat later at whatever is still inside.
+    tbAmbushZoneTick() {
+      const f = this.tbfight;
+      if (!f || f.over) return;
+      const zones = f.ambushZones || [];
+      if (!zones.length) return;
+      for (const z of zones) {
+        if (z.spent) continue;
+        if (!z.armed) {
+          // Keep the marked circle lit while it waits.
+          this.warnCells(S.combat.patternCells(z.pattern, 0, 0, 0, 0), 2);
+          // Arming: anyone (not the seeder) standing in seeded ground?
+          const stepped = (f.fighters || []).some(fr =>
+            fr.alive && !fr.fled && fr.key !== z.seededBy &&
+            S.combat.zoneArmed(z.pattern, fr.mx, fr.my));
+          if (stepped) {
+            z.armed = true; z.beatsLeft = 1;
+            this.warnCells(S.combat.patternCells(z.pattern, 0, 0, 0, 0), 2);
+            const known = this.tbPatternKnown(z.seedId, z.attackName);
+            // THE ARMING BEAT: the ground stirs. One beat — MOVE. Spoken
+            // (not silent like windup cues) because this is the last dodge
+            // window before the spines come up.
+            this.say('⚠ ' + S.combat.telegraphText(z.pattern, 'arming', known));
+            this.audioEvent('telegraph', { urgency: 1, pattern: 'ambush-zone' });
+            this.tbRefreshTelegraphUI();
+          }
+        } else {
+          z.beatsLeft -= 1;
+          if (z.beatsLeft > 0) continue;
+          // FIRE: spines through every fighter (not the seeder) still inside.
+          const cells = S.combat.patternCells(z.pattern, 0, 0, 0, 0);
+          const victims = (f.fighters || []).filter(fr =>
+            fr.alive && !fr.fled && fr.key !== z.seededBy &&
+            cells.some(c => c.cx === fr.mx && c.cy === fr.my));
+          const known = this.tbPatternKnown(z.seedId, z.attackName);
+          this.say('💥 ' + S.combat.telegraphText(z.pattern, 'action', known));
+          this.audioEvent('ambushSnap');
+          for (const v of victims) {
+            const dmg = S.combat.roll(z.dmg);
+            this.tbDamage(v.key, dmg, (z.seedId || 'something') + "'s " + z.attackName, z.seededBy);
+          }
+          z.spent = true;
+          // Surviving teaches the pattern: the codex earns it, never given.
+          for (const v of victims) {
+            if (v.kind === 'player' && v.alive) {
+              const seeder = this.tbFighter(z.seededBy);
+              if (seeder) this.tbLearnPattern(seeder);
+            }
+          }
+          this.tbRefreshTelegraphUI();
+        }
+      }
+    },
+
     // audioEvent: optional hook for the Web Audio terror system (app.js).
     // If no audio system is attached, this is a silent no-op.
     audioEvent(name, data) {
@@ -17377,6 +17471,9 @@
       // tbAdvance only checks after AI turns, so check here too. Otherwise
       // killing the final foe soft-locks the fight on your turn forever.
       if (this.tbEndCheck()) return;
+      // AMBUSH-ZONE (Steve 2026-10-07): seeded ground checks after every
+      // player action — stepping into a zone arms it with a visible beat.
+      this.tbAmbushZoneTick();
       // ACTION ECONOMY (Steve): the turn ends when you're out of actions —
       // no end-turn ceremony. Spend moves + the acted action and it advances
       // on its own. (Wait forfeits the rest via tbPlayerWait.)
@@ -17415,6 +17512,8 @@
           f.turnIdx = 0; f.round++;
           this.sysSay(`ROUND ${f.round}!`);
           this.audioEvent('round', { round: f.round });
+          // AMBUSH-ZONE (Steve 2026-10-07): the ground ticks with the round.
+          this.tbAmbushZoneTick();
           // BELLTOAD CHORUS (Steve 2026-10-05): the sound IS the mechanic.
           // Every 2 rounds, another answers the call (up to 4), even if the
           // original is dead. The croak carries for miles.
@@ -17545,6 +17644,8 @@
         f.turnIdx = 0; f.round++;
         try { this.sysSay(`ROUND ${f.round}!`); } catch (e) {}
         try { this.audioEvent('round', { round: f.round }); } catch (e) {}
+        // AMBUSH-ZONE (Steve 2026-10-07): the ground ticks with the round (async path).
+        try { this.tbAmbushZoneTick(); } catch (e) {}
       }
       const key = f.order[f.turnIdx];
       const c = this.tbFighter(key);
@@ -20043,6 +20144,24 @@
           // (The stag's commitCharge is the same idea via config.)
           if (this.beastIs(m)) {
             this.say('It charges the announced line — exactly where it said it would. Attendance was mandatory.');
+          } else if (ptype === 'lockon') {
+            // LOCK-ON RE-LOCK (Steve 2026-10-07): at fire time, re-call
+            // patternCells with the LOCKED target's current square (combat.js
+            // 'lockon' contract: windup-cells == action-cells per call). The
+            // mark is a lie about TIMING, not about aim — dodge by moving,
+            // not by standing behind someone nearer.
+            let locked = tg.aimKey ? this.tbFighter(tg.aimKey) : null;
+            if (!locked || !locked.alive || locked.fled) {
+              const ne = S.combat.nearestEnemy(f.fighters, m);
+              locked = ne ? ne.f : null;
+            }
+            if (locked && locked.alive && !locked.fled) {
+              tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, locked.mx, locked.my);
+              tg.aim = { x: locked.mx, y: locked.my };
+              tg.aimKey = locked.key;
+              // The re-locked square flashes: the gaze moved with you.
+              this.warnCells(tg.cells, 1);
+            }
           } else if (ptype !== 'beam' && ptype !== 'line' && !rcfg.commitCharge && !tg.commitCells) {
             const foe = S.combat.nearestEnemy(f.fighters, m);
             if (foe) tg.cells = S.combat.patternCells(tg.pattern, m.mx, m.my, foe.f.mx, foe.f.my);
@@ -22917,6 +23036,11 @@
         if (dcfg.bulldoze && pat.type === 'charge') cells = this.tbBulldozeCells(cells);
         // COMMIT: lock the lane now. It will not re-aim at resolve.
         if (dcfg.commitCharge) { aim = { x: foe.f.mx, y: foe.f.my }; aimKey = foe.f.key; }
+        // LOCK-ON: pin the gaze at declare — the windup marks THIS fighter's
+        // square NOW (combat.js patternCells 'lockon'). At fire time the
+        // resolve re-locks against this target's current square, so the gaze
+        // never slides to a nearer bystander mid-windup.
+        if (pat.type === 'lockon' && !aimKey) { aim = { x: foe.f.mx, y: foe.f.my }; aimKey = foe.f.key; }
         if (pat.sweep && (pat.type === 'beam' || pat.type === 'line')) {
           // SWEEPING BEAM: a ray FROM THE DEER that rotates toward you. It
           // locks its bearing at declare, then sweeps while it fires. Only
@@ -23729,6 +23853,10 @@
       this.state.codex.encounters[pid] = 99;
       this.refreshItemNames(pid);
       this.integrate(source === 'taught' ? 2 : 3, source === 'taught' ? 'taught' : 'discovery');
+      // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): codex plant unlock.
+      // 'knowledgeReveal' is the audio worker's mapped hook (app.js); the
+      // emitter no-ops safely until the synth lands.
+      this.audioEvent('knowledgeReveal', { kind: 'plant', id: pid });
       // celebration: identification is an EVENT, not a log line.
       // knowledgeLevels['1'] often starts with the name ("Chickweed. Low, tiny
       // white flowers.") — strip it so we don't print "Chickweed. Chickweed."
