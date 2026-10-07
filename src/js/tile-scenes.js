@@ -36,16 +36,23 @@
   // Bright, saturated, readable geography. Not dark terminal.
   const TILE_BASE = {
     forest_floor: { base: '#6b4a2a', tex: '#7d5a35', dot: '#5a3d20' },
+    forest:       { base: '#6b4a2a', tex: '#7d5a35', dot: '#5a3d20' },
     grove:        { base: '#3d7a3d', tex: '#4d8a4d', dot: '#2d5a2d' },
     meadow:       { base: '#7aaa4a', tex: '#8aba5a', dot: '#5a8a3a' },
+    field:        { base: '#7aaa4a', tex: '#8aba5a', dot: '#5a8a3a' },
     thicket:      { base: '#2d5a2d', tex: '#3d6a3d', dot: '#1d4a1d' },
     wetland:      { base: '#4a7a8a', tex: '#5a8a9a', dot: '#3a5a6a' },
+    swamp:        { base: '#4a7a8a', tex: '#5a8a9a', dot: '#3a5a6a' },
     creek:        { base: '#3a7aaa', tex: '#4a8aba', dot: '#2a5a8a' },
+    water:        { base: '#3a7aaa', tex: '#4a8aba', dot: '#2a5a8a' },
+    river:        { base: '#3a7aaa', tex: '#4a8aba', dot: '#2a5a8a' },
     trail_edge:   { base: '#8a7a4a', tex: '#9a8a5a', dot: '#6a5a3a' },
+    trail:        { base: '#8a7a4a', tex: '#9a8a5a', dot: '#6a5a3a' },
+    path:         { base: '#8a7a4a', tex: '#9a8a5a', dot: '#6a5a3a' },
     ruin:         { base: '#7a7a7a', tex: '#8a8a8a', dot: '#5a5a5a' },
     haven:        { base: '#5a8a4a', tex: '#6a9a5a', dot: '#4a6a3a' },
   };
-  const FALLBACK_BASE = { base: '#1c1c18', tex: '#26261f', dot: '#12120e' };
+  const FALLBACK_BASE = { base: '#7aaa4a', tex: '#8aba5a', dot: '#5a8a3a' }; // bright meadow, never dark
 
   // Structure cell -> mini-shape fill.
   const STRUCT_FILL = {
