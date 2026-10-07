@@ -209,9 +209,14 @@
       j.confrontDay = this.state.scholar.day;
       const name = this.displayName(vid);
       const crimes = j.crimes || [];
-      const murders = crimes.filter(c => c.type === 'murder').length;
-      const attacks = crimes.filter(c => c.type === 'attack').length;
-      const thefts = crimes.filter(c => c.type === 'theft').length;
+      // KNOWLEDGE-GATED (Steve 2026-10-06): crimes nobody saw (witnessed ===
+      // false) stay on the books for the detective/moot path but NEVER enter
+      // the confrontation voice — "everyone knows whose hands" is a lie when
+      // the woods kept your secret.
+      const known = crimes.filter(c => c.witnessed !== false);
+      const murders = known.filter(c => c.type === 'murder').length;
+      const attacks = known.filter(c => c.type === 'attack').length;
+      const thefts = known.filter(c => c.type === 'theft').length;
       // CONFRONTATION VOICE (Steve 2026-10-06, pool expansion 2->identity):
       // the confrontation is generated from WHO confronts you — temperament,
       // how close you were, and what the village actually knows (the
