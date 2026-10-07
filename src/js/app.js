@@ -8155,6 +8155,39 @@
       tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
       th.connect(tg); tg.connect(sfxBus); th.start(t); th.stop(t + 0.35);
     }
+    function haymakerMiss() {
+      // THE HAYMAKER WHIFF (Steve 2026-10-07): the readied haymaker sails
+      // past — displaced air, nothing landed. Two noise voices fall at
+      // DIFFERENT rates (the stretch is uneven — wrong on purpose), then a
+      // hollow detuned sag: the air settling into a shape that isn't a body.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 0.5;
+      // the whoosh-cut: bandpassed noise tearing downward, ragged
+      [[3600, 900, 0.22, 1.0], [2500, 420, 0.15, 0.68]].forEach(([f0, f1, vol, rate], i) => {
+        const nz = noise(dur + 0.1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'bandpass'; nf.Q.value = 1.8;
+        nf.frequency.setValueAtTime(f0, t + i * 0.035);
+        nf.frequency.exponentialRampToValueAtTime(f1, t + dur * rate);
+        ng.gain.setValueAtTime(0.0001, t + i * 0.035);
+        ng.gain.exponentialRampToValueAtTime(vol, t + 0.06 + i * 0.035);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + i * 0.035); nz.stop(t + dur + 0.05);
+      });
+      // the hollow tail: the swing's momentum going nowhere
+      [110, 116.5].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(fq, t + 0.12);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.45, t + dur + 0.22);
+        g.gain.setValueAtTime(0.0001, t + 0.12);
+        g.gain.exponentialRampToValueAtTime(0.09, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.22);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + 0.12); o.stop(t + dur + 0.28);
+      });
+    }
     // ============ WAVE-2 BESPOKE BEATS (Steve 2026-10-06) ============
     // Missing resolves for the wave-2 flesh-out siblings to wire up.
     function staticScream() {
@@ -9280,6 +9313,7 @@
         if (pat === 'ambush') { ambushSnap(); return; }
         impactWild(); // (Steve 2026-10-06): unpatterned impacts get the alien fallthrough, not the stock boom
       },
+      miss() { haymakerMiss(); }, // (Steve 2026-10-07): brawler haymaker whiff — the swing sails past, air displaced, nothing landed
       beamBlocked() { beamBlocked(); },
       deerNotice() { deerCall(0.22); },
       deerDown() { deerCall(0.95, true); },
