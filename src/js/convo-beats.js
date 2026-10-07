@@ -9,16 +9,20 @@
 // rules:
 //   - tag_at_source: every NPC line is tagged when generated, not classified after the fact (code: convo-beats.js wrapOpening/wrapThreadBeat, Steve 2026-10-06)
 //   - beat_drives_replies: reply options derive from (beat, topic), never from state flags alone (code: dialogueResponses, Steve 2026-10-06)
-//   - bridge_on_shift: topic changes speak a bridge line tied to the old topic (code: bridgeLine, Steve 2026-10-06)
+//   - bridge_on_shift: topic changes speak a bridge line tied to the old topic; bridges cover every thread incl. theorize/taughtref/recall/request (code: bridgeLine/BRIDGES, Steve 2026-10-06; expanded 2026-10-07)
 //   - no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: dialogueResponses, Steve 2026-10-06)
 //   - four_rules_kept: transcript_cap, one_beat_turns, tap_advance, history_view untouched (code: conversation.js ontology)
+//   - continuer_kept: the dialogue menu offers the 'goon' continuer first when held beats are queued — the dialogue layer replaced the base menu that carried it, and without this, want surfacing and mood beats queued mid-conversation would die silently (code: dialogueResponses, 2026-10-07)
 //   - probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: dialogueResponses, Steve 2026-10-06)
+//   - want_beat_tags_canonical: want ID -> beat tag mapping lives in convo-wants.js WANT_BEAT_TAGS; threadBeatTag/beatOf consume it, never duplicate it (code: convo-beats.js, 2026-10-07)
+//   - offer_menus_want_keyed: an offer beat's menu is keyed by want ID — ask_favor gets the favor menu, offer_teach the lesson menu, trade the trade menu (code: REPLY_POOLS.offer.wantPools/trade, dialogueResponses, 2026-10-07)
 // consumes:
 //   - village.villagers
 //   - state.convos
 //   - convoGet(vid)
 //   - convoPickCycle(vid, key, pool)
 //   - playerVoice()
+//   - Game.wantBeatTag (convo-wants.js WANT_BEAT_TAGS)
 // ============ BEAT-TAGGED CONVERSATION ============
 // Steve 2026-10-06 (Idea: "Make every reply answer what's actually said"):
 // Every NPC line IS an offer, a question, a news item, or a feeling — tagged
@@ -47,9 +51,10 @@
       case 'secret': return 'news';
       case 'want': {
         // Distinguish by want ID (Steve 2026-10-06).
-        // Only ask_favor is truly an 'offer' (they need something FROM you).
-        // The DIALOGUE_FEATURE_MAP specifies the correct beat per want type.
+        // The canonical mapping lives in convo-wants.js (WANT_BEAT_TAGS) —
+        // this file consumes it so the two can never drift apart.
         const wid = c && c.want && c.want.id;
+        if (typeof Game.wantBeatTag === 'function' && wid) return Game.wantBeatTag(wid);
         if (wid === 'ask_favor') return 'offer';
         if (wid === 'seek_comfort') return 'feeling';
         if (wid === 'share_news') return 'news';
@@ -68,6 +73,9 @@
       case 'plans': return 'news';
       case 'personal': return 'news';
       case 'theorize': return 'news';
+      case 'work': return 'news';
+      case 'hopes': return 'news';
+      case 'hardstory': return 'feeling'; // vulnerable — comfort beats answer it
       case 'gossip': return 'news';
       case 'small': return 'small';
       case 'trade': return 'offer';
@@ -124,13 +132,8 @@
       // Re-classify want threads by want ID — the cached tag may be wrong.
       if (c.lastBeat.tag === 'offer' && c.thread === 'want' && c.want && c.want.id) {
         const wid = c.want.id;
-        let newTag = 'offer';
-        if (wid === 'seek_comfort') newTag = 'feeling';
-        else if (wid === 'share_news') newTag = 'news';
-        else if (wid === 'warn_you') newTag = 'news';
-        else if (wid === 'curious') newTag = 'question';
-        else if (wid === 'just_company') newTag = 'small';
-        // ask_favor stays 'offer'
+        const newTag = (typeof this.wantBeatTag === 'function') ? this.wantBeatTag(wid) : 'offer';
+        // ask_favor stays 'offer'; anything else gets its true tag.
         if (newTag !== 'offer') {
           return { tag: newTag, topic: c.lastBeat.topic, line: c.lastBeat.line };
         }
@@ -162,17 +165,56 @@
   // When the topic shifts, the NPC speaks a bridge tied to the OLD topic.
   // Never a hard pivot. Voiced per person (voiceLine), never hardcoded flat.
   const BRIDGES = {
-    grief: ['"Sorry — I got lost in it for a second. What did you want to ask?"', '"...Anyway. Sorry. What\'s on your mind?"'],
-    cheer: ['"Ha — sorry, I\'m rambling. What\'s up?"', '"Good times. What did you want to talk about?"'],
-    goal: ['"Anyway — that\'s my cross to carry. What\'s on your mind?"', '"Right. Sorry, I go on about it. What did you want?"'],
-    past: ['"Ancient history. What\'s on your mind?"', '"...That was a lifetime ago. What did you want to ask?"'],
-    village: ['"That\'s the state of things. What\'s up?"', '"Anyway — people stuff. What did you want?"'],
-    plans: ['"That\'s the plan, anyway. What\'s on your mind?"', '"We\'ll see how it goes. What did you want?"'],
-    gossip: ['"That\'s what I heard, anyway. What\'s up?"', '"Take it with salt. What did you want to ask?"'],
-    personal: ['"That\'s me, I guess. What\'s on your mind?"', '"Anyway. What did you want?"'],
-    want: ['"Sorry — I shouldn\'t load that on you. What\'s up?"', '"Forget I said anything. What did you want?"'],
-    secret: ['"Don\'t tell anyone I told you. What\'s on your mind?"', '"...Anyway. What did you want to ask?"'],
-    small: ['"Sure — what\'s on your mind?"', '"Yeah? What\'s up?"'],
+    grief: ['"Sorry — I got lost in it for a second. What did you want to ask?"',
+      '"...Anyway. Sorry. What\'s on your mind?"',
+      '"I drift. Sorry. What were you saying?"',
+      '"Grief makes me ramble. You wanted something?"'],
+    cheer: ['"Ha — sorry, I\'m rambling. What\'s up?"',
+      '"Good times. What did you want to talk about?"',
+      '"Anyway — good news is still allowed, right? What\'s on your mind?"'],
+    goal: ['"Anyway — that\'s my cross to carry. What\'s on your mind?"',
+      '"Right. Sorry, I go on about it. What did you want?"',
+      '"That\'s the dream, anyway. What did you want?"',
+      '"Sorry — it leaks out of me. What\'s up?"'],
+    past: ['"Ancient history. What\'s on your mind?"',
+      '"...That was a lifetime ago. What did you want to ask?"',
+      '"Old stories. You had something?"',
+      '"Feels like someone else\'s life, saying it out loud. What\'s on your mind?"'],
+    village: ['"That\'s the state of things. What\'s up?"',
+      '"Anyway — people stuff. What did you want?"',
+      '"That\'s the village for you. What were you after?"'],
+    plans: ['"That\'s the plan, anyway. What\'s on your mind?"',
+      '"We\'ll see how it goes. What did you want?"',
+      '"Plans change. Yours?"'],
+    gossip: ['"That\'s what I heard, anyway. What\'s up?"',
+      '"Take it with salt. What did you want to ask?"',
+      '"People talk. Anyway — what did you want?"',
+      '"That\'s the rumor mill. What\'s on your mind?"'],
+    personal: ['"That\'s me, I guess. What\'s on your mind?"',
+      '"Anyway. What did you want?"',
+      '"More than you asked, probably. Sorry. What\'s up?"'],
+    hardstory: ['"Thank you for hearing that. What did you want to ask?"',
+      '"...Anyway. What\'s on your mind?"',
+      '"Once was enough. What did you want?"'],
+    want: ['"Sorry — I shouldn\'t load that on you. What\'s up?"',
+      '"Forget I said anything. What did you want?"',
+      '"I didn\'t mean to dump all that. What\'s on your mind?"'],
+    secret: ['"Don\'t tell anyone I told you. What\'s on your mind?"',
+      '"...Anyway. What did you want to ask?"',
+      '"That stays between us. What\'s up?"',
+      '"Forget I said it — no. You know what, don\'t forget. Just don\'t repeat it. What did you want?"'],
+    theorize: ['"That\'s my theory, anyway. Probably wrong. What\'s on your mind?"',
+      '"I think about it too much. What did you want?"',
+      '"Who knows. What\'s up?"'],
+    taughtref: ['"Anyway — your lesson stuck. What did you want?"',
+      '"Still turning it over. What\'s on your mind?"'],
+    recall: ['"Funny what you remember. What\'s up?"',
+      '"Anyway. What did you want to ask?"'],
+    request: ['"Sorry — I came to you with a reason and I\'m already wandering. What did you need?"',
+      '"Right. Focus. What\'s on your mind?"'],
+    small: ['"Sure — what\'s on your mind?"',
+      '"Yeah? What\'s up?"',
+      '"I\'m listening. What\'s up?"'],
   };
 
   Game.bridgeLine = function (vid, fromTopic) {
@@ -260,10 +302,26 @@
         { id: 'dlg:details', v: ['"Tell me more about it."', '"What\'s the situation?"', '"Start from the beginning."]'] },
         { id: 'dlg:cant', v: ['"Can\'t right now."', '"I wish I could, but not right now."', '"Not right now, sorry."'] },
       ],
+      trade: [
+        { id: 'dlg:deal', v: ['"Let\'s see it."', '"Show me what you\'ve got."', '"What are you offering?"'] },
+        { id: 'dlg:browse', v: ['"Just looking."', '"Maybe — what else do you have?"'] },
+        { id: 'dlg:cant', v: ['"Not today."', '"I\'ll pass."', '"Can\'t right now."'] },
+      ],
       _default: [
         { id: 'dlg:help', v: ['"How can I help?"', '"What do you need?"'] },
         { id: 'dlg:cant', v: ['"Can\'t right now."', '"Not right now, sorry."'] },
       ],
+      // Want-keyed offer menus: what "yes" means depends on what they want.
+      // A favor wants help; a lesson wants a student. dialogueResponses
+      // selects by c.want.id so the menu always answers the actual beat.
+      // (ask_favor falls back to the 'want' pools — same thing.)
+      wantPools: {
+        offer_teach: [
+          { id: 'dlg:learn', v: ['"Show me."', '"I\'d like that."', '"Yes — teach me."'] },
+          { id: 'dlg:later', v: ['"Some other time?"', '"Not today, but I\'m interested."', '"Rain check?"'] },
+          { id: 'dlg:cant', v: ['"Can\'t right now."', '"Not right now, sorry."'] },
+        ],
+      },
     },
     small: {
       _default: [
@@ -288,7 +346,15 @@
 
     const out = [];
     const pools = REPLY_POOLS[tag] || REPLY_POOLS.small;
-    const topicPool = pools[topic] || pools._default || REPLY_POOLS.small._default;
+    // Offer beats are want-keyed: what "yes" means depends on the want.
+    // offer_teach gets the lesson menu; ask_favor the favor menu. Everything
+    // else falls back through topic, then _default.
+    let topicPool;
+    if (tag === 'offer' && c.want && c.want.id && pools.wantPools && pools.wantPools[c.want.id]) {
+      topicPool = pools.wantPools[c.want.id];
+    } else {
+      topicPool = pools[topic] || pools._default || REPLY_POOLS.small._default;
+    }
 
     // THREAD DRY (Steve 2026-10-06): "tell me more" is honest only while the
     // thread has beats. Once dry, drop it and let the thread wind down.
@@ -346,6 +412,18 @@
     out.push({ id: 'dlg:subject', label: '"Can I ask you something else?"' });
     out.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
 
+    // CONTINUER (Steve 2026-10-05 one-beat turns): queued beats surface as
+    // a voiced continuer, FIRST. The dialogue menu must not swallow it:
+    // held beats (want surfacing, mood shifts, the want opener itself) die
+    // when the player moves on, so the continuer has to be offered here —
+    // the dialogue layer replaced the base menu that used to carry it, and
+    // without this, wants queued mid-conversation never surface at all.
+    if ((c.heldBeats || []).length && !out.some(x => x.id === 'goon')) {
+      let gl = null;
+      try { gl = (typeof this.convoGoonLabel === 'function') ? this.convoGoonLabel(vid) : null; } catch (e) {}
+      out.unshift({ id: 'goon', label: gl || '"Go on."' });
+    }
+
     return out;
   };
 
@@ -365,7 +443,14 @@
         c.choosingSubject = true;
         return { line: bridge, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       }
-      return prevTurn.call(this, vid, choiceId);
+      const result = prevTurn.call(this, vid, choiceId);
+      // Want engagement advances here, at the outermost layer: the dialogue
+      // layer intercepts every 'dlg:' choice and returns early, so a mapper
+      // inside the wants wrapper would never see them (convoWantEngage).
+      try {
+        if (typeof this.convoWantEngage === 'function') this.convoWantEngage(vid, choiceId);
+      } catch (e) {}
+      return result;
     };
   }
 

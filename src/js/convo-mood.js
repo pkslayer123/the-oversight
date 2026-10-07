@@ -13,6 +13,7 @@
 //   - convoMoodReceptivity(vid)
 // rules:
 //   - mood_derived: c.mood is -3..3, re-initialized every startConvo from current trust + current npcMood; nothing is stored per villager (code: convo-mood.js, convoMoodInit; Steve 2026-10-06 unique-person law)
+//   - mood_lifeseed_informed: the conversation's starting temperature is inflected by their lifeseed mood (lived events this run) — grieving/shaken/bitter/wary drag it down, buoyant/warmed lift it (code: convoMoodInit, Steve 2026-10-07)
 //   - mood_bands: warm >=2, friendly 1, neutral 0, cool -1, tense <=-2 (code: convo-mood.js, bandOf)
 //   - warmth_from_trust: answer warmth derives from the sign of its trust delta — no separate data (code: conversation.js react: branches)
 //   - band_beats: crossing a band boundary queues one stage-direction beat in c.heldBeats; the continuer reveals it after the turn's line (code: convo-mood.js, convoMoodShift/convoMoodFlush; Steve 2026-10-05 one-beat turns)
@@ -22,6 +23,7 @@
 //   - state.village.conv (c.mood, per-conversation only)
 //   - village.trust, village.memory
 //   - npcMood, npcTemper
+//   - lifeseedMood(char) via vpOf(vid) — lived-event mood inflection
 // ============ CONVERSATION MOOD ============
 // Every conversation has a temperature. It starts where the relationship
 // and their current state put it — a grieving stranger starts cold, a
@@ -51,6 +53,10 @@
   // convoMoodInit: where does this conversation START? Derived, never stored.
   // High trust starts warm; low trust starts cool. Their current npcMood
   // (grief, fear, cheer...) drags the start toward or away from you.
+  // LIVED EVENTS (Steve 2026-10-07): their lifeseed mood — what they've
+  // lived through this run — inflects the start too. A villager who was
+  // betrayed yesterday doesn't start a conversation the way they did last
+  // week. The same person sounds different after things happen to them.
   Game.convoMoodInit = function (vid) {
     let m = 0;
     const trust = (this.state.village.trust || {})[vid] || 10;
@@ -61,6 +67,14 @@
     try { nm = this.npcMood(vid); } catch (e) {}
     if (nm === 'grieving' || nm === 'scared') m -= 1;
     else if (nm === 'cheerful' || nm === 'grateful') m += 1;
+    try {
+      const vp = this.vpOf(vid);
+      const lsm = (typeof this.lifeseedMood === 'function' && vp) ? this.lifeseedMood(vp) : 'steady';
+      const cold = ['grieving', 'shaken', 'hollow', 'bitter', 'haunted', 'adrift', 'wary', 'ashamed', 'melancholy', 'heavy'];
+      const warm = ['buoyant', 'warmed'];
+      if (cold.indexOf(lsm) !== -1) m -= 1;
+      else if (warm.indexOf(lsm) !== -1) m += 1;
+    } catch (e) {}
     return Math.max(-2, Math.min(2, m));
   };
 
@@ -107,6 +121,8 @@
       c.moodBeat = this.convoPickCycle(vid, 'moodguard', [
         'Something in them almost softens — then doesn\'t. Not yet.',
         'They hear the warmth in it. They\'re not ready to let it in.',
+        'A flicker of it reaches them. They look away before it can land.',
+        'The warmth gets in for a second. They close the door on it — gently, but firmly.',
       ]) || 'They\'re not ready to let it in. Not yet.';
       return this.convoMoodBand(vid);
     }
@@ -115,6 +131,8 @@
       c.moodBeat = this.convoPickCycle(vid, 'moodgrace', [
         'That could have stung. They let it pass — you\'ve been kind before.',
         'They give you the benefit of the doubt. This time.',
+        'They flinch, then visibly choose not to. You\'ve earned that choice.',
+        'For a heartbeat it lands wrong — then they remember who you\'ve been, and let it go.',
       ]) || 'They give you the benefit of the doubt. This time.';
       return this.convoMoodBand(vid);
     }
@@ -149,27 +167,34 @@
       'up:warm': [
         'Something eases in their shoulders. They\'re really talking to you now.',
         'A warmth settles over the conversation — they lean in a little.',
+        'They laugh — a real one, surprised out of them.',
       ],
       'up:friendly': [
         'They relax, a fraction. This is going well.',
         'Their voice loosens. The guardedness thins.',
+        'Something unclenches in the way they look at you.',
       ],
       'up:neutral': [
         'The tension eases back to something ordinary.',
+        'Whatever that was, it passes. They settle.',
       ],
       'down:cool': [
         'A small chill settles between you. They\'re choosing words more carefully.',
         'They pull back half a step — not leaving, just... further.',
+        'The easy rhythm of it stutters. They\'re measuring you again.',
       ],
       'down:tense': [
         'The air goes tight. Their eyes narrow, just slightly.',
         'Something shutters in their face. Tread carefully.',
+        'Their jaw sets. The conversation just got smaller and harder.',
       ],
       'down:friendly': [
         'The ease drains out of it, a little.',
+        'Some of the warmth leaks out of their voice.',
       ],
       'down:neutral': [
         'Whatever warmth was building cools to politeness.',
+        'They retreat to manners. That\'s never a good sign.',
       ],
     };
     const pool = pools[dir + ':' + to] || ['The mood shifts, subtly.'];
@@ -185,18 +210,21 @@
       return { shift: 1, line: this.convoPickCycle(vid, 'msil:warm', [
         'A comfortable quiet settles. They smile a little, and let it be.',
         'You say nothing. Neither do they, for a while — and it\'s fine.',
+        'The silence between you is easy. They don\'t rush to fill it, and neither do you.',
       ]) || 'A comfortable quiet settles.' };
     }
     if (band === 'cool') {
       return { shift: -1, line: this.convoPickCycle(vid, 'msil:cool', [
         'The silence stretches a beat too long. They study their hands.',
         'You don\'t answer. The quiet turns pointed.',
+        'Neither of you speaks. The fire does all the talking, and it\'s saying nothing good.',
       ]) || 'The silence stretches a beat too long.' };
     }
     if (band === 'tense') {
       return { shift: 0, line: this.convoPickCycle(vid, 'msil:tense', [
         '"Did you need something?" Their voice is flat.',
         'Your silence lands wrong. They look away.',
+        'The quiet curdles. They shift their weight, ready to stand.',
       ]) || '"Did you need something?" Their voice is flat.' };
     }
     // friendly / neutral: they fill it.
@@ -204,6 +232,7 @@
       'They fill the quiet. "Anyway — where was I?"',
       '"You\'re a good listener, you know that?" A tired smile.',
       'They glance at the fire, then back. The quiet doesn\'t seem to bother them.',
+      'They hum something tuneless for a moment, then pick the thread back up.',
     ]) || 'They fill the quiet.' };
   };
 
@@ -214,12 +243,14 @@
       return this.convoPickCycle(vid, 'mbye:warm', [
         'They\'re smiling as you go. "Come back anytime."',
         '"This was good." They mean it.',
+        '"See you at the fire." It sounds like a promise.',
       ]) || null;
     }
     if (band === 'tense' || band === 'cool') {
       return this.convoPickCycle(vid, 'mbye:cold', [
         'They nod, already turning away.',
         '"Right. Well." That\'s the whole goodbye.',
+        'They don\'t watch you go. That\'s the whole goodbye.',
       ]) || null;
     }
     return null;

@@ -12,6 +12,7 @@
 //   - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: dialogueResponses, Steve 2026-10-06)
 //   - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: dialogueResponses + dlg:more/dlg:react, 2026-10-06)
 //   - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
+//   - teach_is_real: "Show me" teaches from their lifeseed skill origins (who taught THEM), records the lesson in village.taughtBy, warms the mood — and can't be farmed: one lesson per conversation, then an honest "that's all for now" (code: dlg:learn handler, Steve 2026-10-07)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -71,6 +72,10 @@
     want_warn_you: 'NPC warns → share beat ("tell me more" / "are you sure?")',
     want_curious: 'NPC asks about you → question beat (answer it)',
     want_just_company: 'NPC hangs out → small beat ("this is nice" / stay)',
+    want_offer_teach: 'NPC offers a lesson → offer beat ("show me" / "some other time")',
+    want_ask_opinion: 'NPC wants counsel → share beat (live village matter)',
+    want_make_amends: 'NPC confesses → feel beat (listen / hold space)',
+    want_show_pride: 'NPC shares a good deed → share beat (witness it)',
     // SYSTEM
     secrets: 'high trust → share beat (secret) with weight',
     grief: 'grief beat → feel responses',
@@ -325,10 +330,10 @@
         const line = favorLine;
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
-        // Mark help offered AND resolve the want so we don't loop.
-        // The favor is now stated; the beat should move on.
+        // Mark help offered so we don't loop. The favor is now stated; the
+        // want's thank-you (its engage beat) is queued by the engagement
+        // mapper in the outer wrapper — the arc advances there.
         c.offeredHelp = true;
-        if (c.want) c.want.stage = 1; // engaged, not looping
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       }
 
@@ -353,6 +358,66 @@
         const line = '"Oh. ...No, I get it. Thanks for being straight with me."';
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
+        return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
+      }
+
+      if (dlg === 'learn') {
+        // "Show me." — they teach you something they actually know (Steve
+        // 2026-10-07: the lesson comes from their lifeseed skill origins —
+        // who taught THEM — never invented). A real verb: trust, warmth,
+        // and a recorded lesson so it feeds future beats, not a stat bump.
+        c.transcript.push({ who: 'you', text: '"Show me."' });
+        // No infinite lessons: the second ask in one conversation gets an
+        // honest "that's all for now" instead of another trust bump.
+        if (c.learnedOnce) {
+          const done = '"I\'ve shown you what I can for now. Go practice — that\'s where it actually lives."';
+          c.transcript.push({ who: 'them', text: done });
+          this.sayLine(vid, done);
+          return { line: done, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
+        }
+        c.learnedOnce = true;
+        let tip = null;
+        try {
+          const skill = (typeof this.convoTeachSkill === 'function') ? this.convoTeachSkill(vid) : null;
+          if (skill && skill.origin) {
+            // Origin-first: the origin is a bare phrase, so it leads —
+            // "I learned it haying season" would garble.
+            const where = skill.origin.charAt(0).toUpperCase() + skill.origin.slice(1);
+            tip = '"' + where + ' — that\'s where I learned ' + skill.name + '." ' +
+              'They show you, hands patient. "Your turn. Slow is smooth."';
+          } else {
+            tip = '"Watch my hands. That\'s where the whole thing lives — not in the head, in the hands." ' +
+              'They walk you through it, twice. "You\'ve got the shape of it already."';
+          }
+        } catch (e) {
+          tip = '"Watch my hands. Slow is smooth, smooth is fast."';
+        }
+        const line = this.voiceLine ? this.voiceLine(vid, tip) : tip;
+        c.transcript.push({ who: 'them', text: line });
+        this.sayLine(vid, line);
+        try {
+          this.trustGain(vid, 3);
+          if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, 1);
+          const v = this.state.village;
+          v.taughtBy = v.taughtBy || {};
+          v.taughtBy[this.villagerId] = v.taughtBy[this.villagerId] || [];
+          v.taughtBy[this.villagerId].push({ by: vid, day: (this.state.scholar || {}).day || 0 });
+        } catch (e) {}
+        if (c.want && c.want.id === 'offer_teach') {
+          c.want.stage = 2; // engaged
+          c.want.engageSpoken = true; // the lesson IS the engage beat — don't queue the generic one
+        }
+        return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
+      }
+
+      if (dlg === 'later') {
+        // "Some other time?" — the want waits; it becomes a seed.
+        c.transcript.push({ who: 'you', text: '"Some other time?"' });
+        const line = '"It\'s there when you want it. I\'m not going anywhere."';
+        c.transcript.push({ who: 'them', text: line });
+        this.sayLine(vid, line);
+        try { this.trustGain(vid, 1); } catch (e) {}
+        // Leave the want unresolved — endConvo plants the seed.
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       }
 
