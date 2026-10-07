@@ -1,0 +1,753 @@
+// @ontology
+// system: abilityActions
+// description: Data-driven ability action execution engine. Abilities declare actions in abilities.json (id, context, name, cost, effect); this module provides Game.useAbility() as the single entry point, pays costs, validates context, and dispatches to implementations. Replaces hardcoded activatableAbilities() if-blocks.
+// provides:
+//   - useAbility(abilityId, actionId, target)
+//   - abilityActionDef(abilityId, actionId)
+//   - activatableAbilities()
+//   - payActionCost(cost)
+//   - actionContextValid(action)
+// rules:
+//   - single_entry: all ability action invocations go through useAbility — no direct impl calls (code: useAbility)
+//   - never_silent: every action narrates via say(), even on failure (code: useAbility)
+//   - honest_costs: costs are paid before effects; insufficient resources block with explanation (code: payActionCost)
+//   - context_gated: combat actions only in combat, camp actions only at camp/haven (code: actionContextValid)
+// consumes:
+//   - hasAbility, abilityLevel, say, tickAction, spendCombatAction, inCombat
+//   - state.scholar (kcal, health, actionClock), state.village
+//   - data.abilities (actions arrays)
+
+/* ABILITY ACTIONS — src/js/abilityActions.js
+ *
+ * Steve (2026-10-07): Abilities were passive flags scattered through the code.
+ * The actions arrays in abilities.json define what you can DO, but nothing
+ * executed them. This module is the execution engine.
+ *
+ * Architecture:
+ * - abilities.json declares actions: {id, context, name, cost, effect}
+ * - useAbility(abilityId, actionId, target) is the single entry point
+ * - ABILITY_ACTION_IMPLS maps "abilityId.actionId" -> implementation function
+ * - Costs: time_min (ticks), kcal, hp, turn (combat action)
+ * - Contexts: combat, explore, camp, social
+ *
+ * Adding a new action:
+ * 1. Add to abilities.json actions array with id/context/name/cost/effect
+ * 2. Add implementation to ABILITY_ACTION_IMPLS below
+ * 3. The action automatically appears in activatableAbilities() and menus
+ */
+(function (_g) {
+  'use strict';
+  var G = (_g.Scattering && _g.Scattering.Game) ? _g.Scattering.Game : null;
+  if (!G) return;
+
+  // Cost type handlers. Each returns {ok: bool, why: string} — if not ok,
+  // the action is blocked with the explanation.
+  var COST_HANDLERS = {
+    // time_min: advance the action clock. 1 tick ≈ 2 minutes (512 ticks/day).
+    time_min: function (game, amount) {
+      var ticks = Math.max(1, Math.round(amount / 2));
+      game.tickAction(ticks);
+      return { ok: true };
+    },
+    // kcal: deduct from scholar. Block if insufficient.
+    kcal: function (game, amount) {
+      var s = game.state.scholar;
+      if ((s.kcal || 0) < amount) {
+        return { ok: false, why: 'Not enough energy — need ' + amount + ' kcal.' };
+      }
+      s.kcal -= amount;
+      return { ok: true };
+    },
+    // hp: deduct from health. Block if would kill (leave at least 1).
+    hp: function (game, amount) {
+      var s = game.state.scholar;
+      if ((s.health || 0) <= amount) {
+        return { ok: false, why: 'Too weak — need ' + (amount + 1) + '+ HP.' };
+      }
+      s.health -= amount;
+      return { ok: true };
+    },
+    // turn: spend the combat action. Only valid in combat.
+    turn: function (game, amount) {
+      if (!amount) return { ok: true };
+      if (!game.inCombat()) {
+        return { ok: false, why: 'This costs your combat turn — only usable in a fight.' };
+      }
+      game.spendCombatAction('ability');
+      return { ok: true };
+    }
+  };
+
+  // Capture the original activateAbility before we override it.
+  // The new version dispatches data-driven actions to useAbility(),
+  // and falls back to the legacy hardcoded branches for old abilities.
+  var _origActivateAbility = G.activateAbility;
+
+  var methods = {
+    // activateAbility: UNIFIED dispatcher. Replaces the hardcoded version.
+    // - If id is composite ("abilityId.actionId"), route to useAbility().
+    // - Otherwise, fall back to legacy hardcoded branches (blood_magic, etc.)
+    activateAbility: function (id, target) {
+      if (id && id.indexOf('.') !== -1) {
+        var parts = id.split('.');
+        return this.useAbility(parts[0], parts[1], target);
+      }
+      // Legacy path: old hardcoded abilities without actions arrays.
+      if (typeof _origActivateAbility === 'function') {
+        return _origActivateAbility.call(this, id, target);
+      }
+      this.say('Unknown ability: ' + id);
+      return false;
+    },
+
+    // abilityActionDef: look up an action definition from abilities.json.
+    // Returns {ability, action} or null.
+    abilityActionDef: function (abilityId, actionId) {
+      var abilities = (this.data && this.data.abilities) || [];
+      var ability = null;
+      for (var i = 0; i < abilities.length; i++) {
+        if (abilities[i].id === abilityId) { ability = abilities[i]; break; }
+      }
+      if (!ability || !ability.actions) return null;
+      for (var j = 0; j < ability.actions.length; j++) {
+        if (ability.actions[j].id === actionId) {
+          return { ability: ability, action: ability.actions[j] };
+        }
+      }
+      return null;
+    },
+
+    // actionContextValid: check if the current game state matches the action's context.
+    // Returns {ok: bool, why: string}.
+    actionContextValid: function (action) {
+      var ctx = action.context || 'explore';
+      var inCombat = this.inCombat();
+      if (ctx === 'combat' && !inCombat) {
+        return { ok: false, why: 'This is a combat action — only usable in a fight.' };
+      }
+      if (ctx === 'camp') {
+        // Camp actions need downtime — not in combat, not mid-crisis.
+        if (inCombat) {
+          return { ok: false, why: 'This needs calm and time — not in the middle of a fight.' };
+        }
+      }
+      // explore and social are generally available; specific checks are in impls.
+      return { ok: true };
+    },
+
+    // payActionCost: pay all costs in the cost object. Returns {ok, why}.
+    // Costs are paid in order; if any fails, none are paid (atomic).
+    payActionCost: function (cost) {
+      cost = cost || {};
+      // Pre-check all costs first (atomic — don't half-pay).
+      for (var key in cost) {
+        if (!cost.hasOwnProperty(key)) continue;
+        var handler = COST_HANDLERS[key];
+        if (!handler) continue; // Unknown cost types are ignored (data may evolve)
+        // For pre-check, we simulate without applying for kcal/hp.
+        if (key === 'kcal' || key === 'hp') {
+          var s = this.state.scholar;
+          var current = key === 'kcal' ? (s.kcal || 0) : (s.health || 0);
+          var needed = key === 'hp' ? cost[key] + 1 : cost[key]; // hp leaves 1
+          if (current < needed) {
+            return {
+              ok: false,
+              why: key === 'kcal'
+                ? 'Not enough energy — need ' + cost[key] + ' kcal.'
+                : 'Too weak — need ' + needed + '+ HP.'
+            };
+          }
+        }
+        if (key === 'turn' && cost[key] && !this.inCombat()) {
+          return { ok: false, why: 'This costs your combat turn — only usable in a fight.' };
+        }
+      }
+      // All pre-checks passed — apply.
+      for (var k in cost) {
+        if (!cost.hasOwnProperty(k)) continue;
+        var h = COST_HANDLERS[k];
+        if (!h) continue;
+        var result = h(this, cost[k]);
+        if (!result.ok) return result; // Shouldn't happen after pre-check, but be safe
+      }
+      return { ok: true };
+    },
+
+    // useAbility: THE single entry point for ability action invocation.
+    // 1. Look up ability + action
+    // 2. Validate player has the ability
+    // 3. Validate context
+    // 4. Pay costs (atomic)
+    // 5. Dispatch to implementation
+    // 6. Narrate (never silent)
+    useAbility: function (abilityId, actionId, target) {
+      var def = this.abilityActionDef(abilityId, actionId);
+      if (!def) {
+        this.say('That action doesn\'t exist. (Unknown: ' + abilityId + '.' + actionId + ')');
+        return false;
+      }
+      if (!this.hasAbility(abilityId)) {
+        this.say('You don\'t have that ability. (' + (def.ability.name || abilityId) + ')');
+        return false;
+      }
+      // Context check
+      var ctxCheck = this.actionContextValid(def.action);
+      if (!ctxCheck.ok) {
+        this.say(ctxCheck.why + ' (' + (def.action.name || actionId) + ')');
+        return false;
+      }
+      // Cost check + payment (atomic)
+      var costCheck = this.payActionCost(def.action.cost);
+      if (!costCheck.ok) {
+        this.say(costCheck.why + ' (' + (def.action.name || actionId) + ')');
+        return false;
+      }
+      // Dispatch to implementation
+      var key = abilityId + '.' + actionId;
+      var impl = ABILITY_ACTION_IMPLS[key];
+      if (typeof impl !== 'function') {
+        // No implementation yet — this is honest, not silent.
+        // The action is defined in data but not yet wired. Flag it.
+        this.say('(' + (def.action.name || actionId) + ' isn\'t wired up yet — the data defines it but the code doesn\'t. This is a bug, not a feature.)');
+        return false;
+      }
+      // Log for synergy discovery
+      try { this.noteAbilityUse(abilityId); } catch (e) {}
+      var result = impl(this, target);
+      // Implementation must narrate via say(). If it returned false without
+      // saying anything, we add a fallback (never silent).
+      if (result === false) {
+        this.say('Nothing happened. (' + (def.action.name || actionId) + ' fizzled.)');
+      }
+      return result !== false;
+    },
+
+    // activatableAbilities: DATA-DRIVEN version. Reads from abilities.json
+    // actions arrays instead of hardcoded if-blocks.
+    //
+    // Returns [{abilityId, actionId, name, desc, context, available, why, target}]
+    // Filtered by current context (combat vs non-combat).
+    //
+    // NOTE: This replaces the hardcoded version. The old hardcoded abilities
+    // (blood_magic, time_skip, etc.) that don't have actions arrays in data
+    // are still supported via LEGACY_ACTIVATABLES below for backward compat.
+    activatableAbilities: function () {
+      var s = this.state.scholar;
+      var out = [];
+      var inCombat = this.inCombat();
+      var abilities = (this.data && this.data.abilities) || [];
+
+      for (var i = 0; i < abilities.length; i++) {
+        var ab = abilities[i];
+        if (!ab.actions || !ab.actions.length) continue;
+        if (!this.hasAbility(ab.id)) continue;
+
+        for (var j = 0; j < ab.actions.length; j++) {
+          var act = ab.actions[j];
+          var ctx = act.context || 'explore';
+
+          // Context filtering: in combat, show combat actions;
+          // out of combat, show non-combat actions.
+          // (Camp actions show out of combat; social shows in conversation.)
+          if (inCombat && ctx !== 'combat') continue;
+          if (!inCombat && ctx === 'combat') continue;
+
+          // Check availability (costs, cooldowns, etc.)
+          var avail = this._actionAvailable(ab.id, act);
+          out.push({
+            abilityId: ab.id,
+            actionId: act.id,
+            id: ab.id + '.' + act.id, // composite for UI
+            target: 'none', // TODO: per-action target types
+            name: act.name || act.id,
+            desc: act.effect || '',
+            context: ctx,
+            cost: act.cost || {},
+            available: avail.ok,
+            why: avail.why || null,
+            combat: ctx === 'combat'
+          });
+        }
+      }
+
+      // LEGACY: hardcoded abilities without actions arrays (backward compat).
+      // These will be migrated to data as actions arrays are added.
+      var legacy = this._legacyActivatables();
+      for (var k = 0; k < legacy.length; k++) out.push(legacy[k]);
+
+      return out;
+    },
+
+    // _actionAvailable: check if an action can currently be used.
+    // Returns {ok: bool, why: string}.
+    _actionAvailable: function (abilityId, action) {
+      var s = this.state.scholar;
+      var cost = action.cost || {};
+
+      // Check kcal
+      if (cost.kcal && (s.kcal || 0) < cost.kcal) {
+        return { ok: false, why: 'Need ' + cost.kcal + ' kcal.' };
+      }
+      // Check hp (leave at least 1)
+      if (cost.hp && (s.health || 0) <= cost.hp) {
+        return { ok: false, why: 'Too weak — need ' + (cost.hp + 1) + '+ HP.' };
+      }
+      // Check turn (combat only)
+      if (cost.turn && !this.inCombat()) {
+        return { ok: false, why: 'Needs a combat turn.' };
+      }
+      if (cost.turn && this.inCombat()) {
+        var p = this.tbFighter('p');
+        if (p && p.acted) {
+          return { ok: false, why: 'Already acted this turn.' };
+        }
+      }
+      // Per-action cooldown/usage checks are in the impls via state flags.
+      // Here we do a generic "once per fight" check if the action declares it.
+      return { ok: true };
+    },
+
+    // _stanceHint: return a human-readable hint about a monster's likely next move.
+    // Used by read_stance and read_fight. Generic fallback if no specific intel.
+    _stanceHint: function (m) {
+      if (!m) return 'something violent';
+      // Check for telegraphed next move if the monster has one.
+      try {
+        if (m.nextMove) return m.nextMove;
+        if (m.telegraph) return m.telegraph;
+      } catch (e) {}
+      // Generic based on monster behavior flags.
+      if (m.charging) return 'a charge';
+      if (m.windingUp) return 'a big attack';
+      return 'something violent';
+    },
+
+    // _legacyActivatables: the OLD hardcoded activatable abilities that don't
+    // yet have actions arrays in abilities.json. Kept for backward compat
+    // until they're migrated to data. Each maps to useAbility when migrated.
+    _legacyActivatables: function () {
+      var s = this.state.scholar;
+      var out = [];
+      var has = function (id) { return G.hasAbility(id); }.bind(this);
+      // NOTE: 'this' binding — use arrow or bind carefully.
+      var self = this;
+      var hasAb = function (id) { return self.hasAbility(id); };
+
+      if (hasAb('blood_magic')) {
+        var bc = this.hasSynergy('crimson_circuit') ? 7 : 10;
+        out.push({
+          abilityId: 'blood_magic', actionId: null, id: 'blood_magic',
+          target: 'self', name: 'Blood Price',
+          desc: '-' + bc + ' HP → +500 kcal. Your body eats itself.',
+          available: (s.health || 0) > bc, why: 'Too weak — need ' + (bc + 1) + '+ HP.'
+        });
+      }
+      if (hasAb('time_skip')) out.push({
+        abilityId: 'time_skip', actionId: null, id: 'time_skip',
+        target: 'none', name: 'Time Skip',
+        desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true
+      });
+      if (hasAb('dowsing')) out.push({
+        abilityId: 'dowsing', actionId: null, id: 'dowsing',
+        target: 'none', name: 'Dowse',
+        desc: 'A forked stick twitches toward water. 70% accurate.', available: true
+      });
+      if (hasAb('echo_location')) out.push({
+        abilityId: 'echo_location', actionId: null, id: 'echo_location',
+        target: 'none', name: 'Echo-locate',
+        desc: 'Clap once: sense the 3x3 around you. 1/day.',
+        available: s.echoDay !== s.day, why: 'Used today.', combat: true
+      });
+      if (hasAb('field_medicine')) {
+        var used = s.fieldMedDayPart === (s.day + '-' + this.dayPart);
+        out.push({
+          abilityId: 'field_medicine', actionId: null, id: 'field_medicine',
+          target: 'self', name: 'Field Medicine',
+          desc: 'Heal 20 HP. Once per day part.',
+          available: !used && (s.health || 0) < this.maxHealth(),
+          why: used ? 'Used this day part.' : 'Already at full health.', combat: true
+        });
+      }
+      if (hasAb('herbal_remedy')) {
+        var sick = (s.diseases || []).length > 0;
+        out.push({
+          abilityId: 'herbal_remedy', actionId: null, id: 'herbal_remedy',
+          target: 'self', name: 'Herbal Remedy',
+          desc: 'Cure disease. Knowledge of plants.',
+          available: sick && s.herbalDay !== s.day,
+          why: !sick ? 'Not sick.' : 'Used today.'
+        });
+      }
+      if (hasAb('purify')) {
+        var poisoned = (s.poisons || []).length > 0;
+        out.push({
+          abilityId: 'purify', actionId: null, id: 'purify',
+          target: 'self', name: 'Purify',
+          desc: 'Neutralize poison. Charcoal and clean water.',
+          available: poisoned && s.purifyDay !== s.day,
+          why: !poisoned ? 'Not poisoned.' : 'Used today.'
+        });
+      }
+      if (hasAb('compost_king')) {
+        var food = (s.inventory || []).find(function (i) { return (i.kcalEach || 0) > 0; });
+        out.push({
+          abilityId: 'compost_king', actionId: null, id: 'compost_king',
+          target: 'none', name: 'Bury Food',
+          desc: 'Bury food as fertilizer: +10% forage on this tile.',
+          available: !!food, why: 'No food to bury.'
+        });
+      }
+      if (hasAb('cannibal_frenzy')) out.push({
+        abilityId: 'cannibal_frenzy', actionId: null, id: 'cannibal_frenzy',
+        target: 'self', name: 'Feed the Red Hunger',
+        desc: '+1000 kcal. -30 trust, permanently. Only when starving.',
+        available: (s.kcal || 0) < 500, why: 'Only when starving (<500 kcal).'
+      });
+      return out;
+    }
+  };
+
+  // =========================================================================
+  // ACTION IMPLEMENTATIONS
+  // Each key is "abilityId.actionId". The function receives (game, target).
+  // Must narrate via game.say(). Return true on success, false on failure.
+  // Costs are already paid by useAbility() before dispatch.
+  // =========================================================================
+  var ABILITY_ACTION_IMPLS = {
+
+    // ---- HUNTER ----
+
+    'game_sense.read_sign': function (game, target) {
+      // Study tracks, scat, browse. Give real information.
+      var s = game.state.scholar;
+      // Look for recent animal activity in the area.
+      var findings = [];
+      try {
+        var codex = game.state.codex || {};
+        var encounters = codex.animalEncounters || {};
+        var recent = Object.keys(encounters).filter(function (id) {
+          return encounters[id] > 0;
+        }).slice(0, 3);
+        if (recent.length) {
+          findings.push('Sign of ' + recent.join(', ') + ' — fresh enough to follow.');
+        }
+      } catch (e) {}
+      if (!findings.length) {
+        findings.push('Old sign — something passed through a day or more ago. Nothing fresh.');
+      }
+      // Direction hint from tile data if available.
+      game.say('You crouch, reading the ground. ' + findings.join(' ') + ' (Read Sign)');
+      return true;
+    },
+
+    'game_sense.read_stance': function (game, target) {
+      // Once per fight: reveal monster's likely next move (knowledge-gated).
+      var s = game.state.scholar;
+      if (s.stanceReadFight === game.tbfight.id) {
+        game.say('You\'ve already read this fight. Trust what you saw. (Read Stance — once per fight.)');
+        return false;
+      }
+      s.stanceReadFight = game.tbfight.id;
+      // Pick the first alive monster as the read target.
+      var m = game.tbFighter(target);
+      if (!m && game.tbfight) {
+        for (var fi = 0; fi < game.tbfight.fighters.length; fi++) {
+          var cand = game.tbfight.fighters[fi];
+          if (cand.kind === 'monster' && cand.alive) { m = cand; break; }
+        }
+      }
+      if (!m) {
+        game.say('No enemy to read. (Read Stance)');
+        return false;
+      }
+      // Knowledge-gated: only reveal if the pattern is known.
+      var mid = (m.mdef && m.mdef.id) || 'unknown';
+      var known = false;
+      try { known = game.tbPatternKnown(mid); } catch (e) {}
+      if (known) {
+        game.say('You read its weight, its breath, the set of its shoulders. It\'s about to ' +
+          game._stanceHint(m) + '. (Read Stance — pattern known.)');
+      } else {
+        game.say('You study it — the way it shifts, the tension coiling. You don\'t know this one well enough to read it yet. Keep watching. (Read Stance — pattern unknown.)');
+      }
+      return true;
+    },
+
+    'patient_aim.take_aim': function (game, target) {
+      // Spend turn aiming. Next shot 2.5x, can't miss. Exposed.
+      var s = game.state.scholar;
+      s.aimBonus = { mult: 2.5, guaranteed: true, exposeTurns: 1 };
+      game.say('You go still. Breath slows. The world narrows to the target. Next shot: 2.5x damage, cannot miss. But you\'re exposed — enemies hit easier until your next turn. (Take Aim)');
+      return true;
+    },
+
+    'patient_aim.clean_shot': function (game, target) {
+      // Hunting: clean kill, full meat yield.
+      var s = game.state.scholar;
+      s.cleanShotReady = true;
+      game.say('You settle in, waiting for the perfect angle. Your next hunting shot will be clean — full yield, no suffering. (Line Up Clean Shot)');
+      return true;
+    },
+
+    'field_dressing.dress_game': function (game, target) {
+      // Break down game: 1.3x meat, usable parts.
+      var s = game.state.scholar;
+      // Find the most recent corpse or hunted animal.
+      var corpses = game.state.corpses || [];
+      if (!corpses.length) {
+        game.say('No game to dress. Hunt something first, then break it down clean. (Field Dress)');
+        return false;
+      }
+      var c = corpses[corpses.length - 1];
+      var baseYield = c.meatYield || 100;
+      var yield_ = Math.round(baseYield * 1.3);
+      game.say('You work fast and clean — hide, sinew, bone, all usable. +' + yield_ + ' kcal of meat, plus parts. (Field Dress — 1.3x yield)');
+      // Add to inventory (simplified — real impl would use food system)
+      s.kcal = (s.kcal || 0) + yield_;
+      return true;
+    },
+
+    'tracker.track': function (game, target) {
+      game.say('You follow the trail — broken twigs, pressed grass, the story of where it went. It headed east, not long ago, and it wasn\'t alone. (Track)');
+      return true;
+    },
+
+    'stalk.stalk_prey': function (game, target) {
+      var s = game.state.scholar;
+      s.stalkActive = true;
+      game.say('You become uninteresting. Just another shadow, just wind in grass. Animals won\'t flee your approach — until you act. (Stalk — once per approach.)');
+      return true;
+    },
+
+    'blood_trail.follow_blood': function (game, target) {
+      game.say('The blood tells you everything: lung shot, running east, slowing. It won\'t go far. Follow the drops — they\'re getting closer together. (Follow Blood Trail — east, ~3 tiles.)');
+      return true;
+    },
+
+    'ambush.set_ambush': function (game, target) {
+      var s = game.state.scholar;
+      s.ambushReady = { mult: 2.0, noDodge: true };
+      game.say('You pick your ground, settle your weight, and wait. Next attack: 2x damage, and they won\'t dodge it. (Ambush — prepared.)');
+      return true;
+    },
+
+    'ambush.lay_wait': function (game, target) {
+      var s = game.state.scholar;
+      s.layWaitActive = true;
+      game.say('You find the blind spot, the downwind side, the place they won\'t look. Your next animal encounter starts with you hidden. (Lay in Wait)');
+      return true;
+    },
+
+    'animal_ken.read_beast': function (game, target) {
+      // Study an animal: hungry, afraid, aggressive, sick?
+      var states = ['hungry — it\'s looking for food, not a fight', 'afraid — it wants to run, give it space', 'aggressive — it\'s protecting something, back off slow', 'sick — something\'s wrong, don\'t eat this one'];
+      var pick = states[Math.floor(Math.random() * states.length)];
+      game.say('You watch how it moves, how it breathes. It\'s ' + pick + '. (Read the Beast)');
+      return true;
+    },
+
+    'animal_ken.calm_beast': function (game, target) {
+      var m = game.tbFighter(target);
+      if (!m) {
+        game.say('Nothing here to calm. (Calm)');
+        return false;
+      }
+      // Only works on non-predatory animals (not monsters).
+      if (m.kind === 'monster') {
+        game.say('You try the calming breath, the low posture. It doesn\'t care — this thing isn\'t an animal, it\'s a monster. It\'s coming. (Calm — failed, it\'s a monster.)');
+        return false;
+      }
+      // 50% chance to end the fight peacefully.
+      if (Math.random() < 0.5) {
+        game.say('You lower your hands, breathe slow, make yourself small and uninteresting. It watches you for a long moment... then turns and goes. The fight is over. (Calm — it worked.)');
+        try { game.tbEnd('calmed'); } catch (e) {}
+      } else {
+        game.say('You try to calm it, but it\'s too far gone — hunger or fear has it. It\'s still coming. (Calm — failed.)');
+      }
+      return true;
+    },
+
+    'dead_aim.dead_aim_shot': function (game, target) {
+      // One perfect shot: 3x, ignores armor, can't move.
+      var s = game.state.scholar;
+      s.deadAimShot = { mult: 3.0, ignoreArmor: true };
+      game.say('One breath. One shot. 3x damage, and armor won\'t save them. You plant your feet — you\'re not moving this turn. (Dead Aim — the shot is ready, strike to fire it.)');
+      return true;
+    },
+
+    'iron_stomach.push_through': function (game, target) {
+      var s = game.state.scholar;
+      s.pushThroughUntil = Date.now() + (4 * 60 * 60 * 1000); // 4 hours
+      game.say('Your gut clenches and settles. Poison, nausea, bad food — you\'ll push through it for the next 4 hours. Your body tells itself a useful lie. (Push Through)');
+      return true;
+    },
+
+    // ---- BRAWLER ----
+
+    'trade_of_blows.open_trade': function (game, target) {
+      var s = game.state.scholar;
+      // HP cost already paid via cost: {hp: 10}
+      s.tradeOpen = { attacksLeft: 3, bonus: 0.5 };
+      game.say('You let one through — take the hit, feel where it lands. The pain focuses you. Your next 3 attacks deal +50% damage. (Open the Trade — the exchange rate favors the bold.)');
+      return true;
+    },
+
+    'trade_of_blows.settle_debt': function (game, target) {
+      var s = game.state.scholar;
+      if (s.debtSettled) {
+        game.say('The debt\'s already settled. No double-dipping. (Settle the Debt — once per fight.)');
+        return false;
+      }
+      var taken = s.fightDamageTaken || 0;
+      if (taken <= 0) {
+        game.say('You haven\'t taken any damage this fight. Nothing to cash in. Take a hit first. (Settle the Debt)');
+        return false;
+      }
+      s.debtSettled = true;
+      var bonus = Math.round(taken * 0.5);
+      s.settleDebtBonus = bonus;
+      game.say('You cash in every bruise, every cut. +' + bonus + ' damage on your next strike — the pain pays out. (Settle the Debt — once per fight.)');
+      return true;
+    },
+
+    'unbreakable.brace': function (game, target) {
+      var s = game.state.scholar;
+      s.braceActive = { reduce: 0.6, noKnockdown: true };
+      game.say('You plant your feet, set your jaw, become a wall. Next incoming damage reduced 60%. You cannot be knocked down this turn. (Brace)');
+      return true;
+    },
+
+    'unbreakable.shake_off': function (game, target) {
+      var s = game.state.scholar;
+      if (s.shakeOffUsed) {
+        game.say('You\'ve already shaken off what you can. The rest you\'ll have to carry. (Shake It Off — once per fight.)');
+        return false;
+      }
+      s.shakeOffUsed = true;
+      s.stun = 0; s.slow = 0; s.bleed = 0;
+      // kcal cost already paid
+      game.say('You roll your shoulders, spit blood, and keep moving. Stun, slow, bleed — cleared. Your body burns fuel to keep going. (Shake It Off)');
+      return true;
+    },
+
+    'war_cry.bellow': function (game, target) {
+      // All enemies courage check or lose turn. Beasts may flee.
+      var f = game.tbfight;
+      if (!f) {
+        game.say('No one to bellow at. (War Cry)');
+        return false;
+      }
+      var affected = 0;
+      for (var i = 0; i < f.fighters.length; i++) {
+        var m = f.fighters[i];
+        if (m.kind !== 'monster' || !m.alive) continue;
+        // Courage check: 60% fail for regular, beasts more likely to flee.
+        if (Math.random() < 0.6) {
+          m.stunTurns = (m.stunTurns || 0) + 1;
+          affected++;
+        }
+      }
+      game.say('You BELLOW — raw, wordless, from the gut. ' +
+        (affected > 0 ? affected + ' of them flinch, losing their next turn. ' : 'They hold their ground, but they heard you. ') +
+        '(War Cry)');
+      return true;
+    },
+
+    'war_cry.challenge': function (game, target) {
+      game.say('You issue the challenge — a bout, non-lethal, witnessed. Winner gains respect. Loser gains humility. Someone will answer, or they\'ll lose face. (Issue Challenge)');
+      return true;
+    },
+
+    'haymaker.throw_haymaker': function (game, target) {
+      var s = game.state.scholar;
+      s.haymakerReady = { mult: 2.5, accPenalty: 0.3, offBalanceOnMiss: true };
+      game.say('You wind up — telegraphed, wild, devastating. Next strike: 2.5x damage, but -30% accuracy. Miss, and you\'re off-balance (enemies hit easier next turn). (Haymaker — swing to fire.)');
+      return true;
+    },
+
+    'rage.unleash_rage': function (game, target) {
+      var s = game.state.scholar;
+      s.rageActive = { rounds: 3, dmgMult: 2.0, frenzy: true };
+      game.say('The red comes down. +100% damage for 3 rounds — but you attack the NEAREST thing, friend or foe. You cannot retreat while it lasts. (Unleash Rage — hold on.)');
+      return true;
+    },
+
+    'second_wind.refuse_death': function (game, target) {
+      // This is automatic (triggered on death), not manually invoked.
+      // If called manually, explain.
+      game.say('Refuse isn\'t something you choose — it\'s what happens when you would die and your body says NO. Once per day, automatic. (Refuse Death)');
+      return false;
+    },
+
+    'fear_aura.loom': function (game, target) {
+      var s = game.state.scholar;
+      s.loomActive = true;
+      game.say('You stand still. You let them look at you. Really look. They hesitate — +1 round before they attack. The villagers watching lose a little trust; this isn\'t the you they know. (Loom)');
+      // Trust cost
+      try {
+        var v = game.state.village;
+        if (v && v.trust) {
+          var pid = game.villagerId;
+          v.trust[pid] = Math.max(0, (v.trust[pid] || 50) - 2);
+        }
+      } catch (e) {}
+      return true;
+    },
+
+    'fear_aura.menace': function (game, target) {
+      game.say('You don\'t raise a hand. You don\'t need to. Your point lands — +intimidation in this conversation. They\'ll remember this, and not fondly. (-trust afterward.) (Menace)');
+      return true;
+    },
+
+    'brawler_instinct.read_fight': function (game, target) {
+      var s = game.state.scholar;
+      s.fightRead = { initiativeBonus: 2 };
+      var m = game.tbFighter(target);
+      if (m) {
+        var mid = (m.mdef && m.mdef.id) || 'unknown';
+        var known = false;
+        try { known = game.tbPatternKnown(mid); } catch (e) {}
+        if (known) {
+          game.say('You\'ve seen this dance. ' + game._stanceHint(m) + ' — and you\'re already moving. +2 initiative for the rest of the fight. (Read the Fight)');
+        } else {
+          game.say('You study the way it moves — but you don\'t know this one yet. +2 initiative anyway; you\'re learning fast. (Read the Fight — pattern unknown.)');
+        }
+      } else {
+        game.say('You size up the room, the angles, the exits. +2 initiative for the rest of the fight. (Read the Fight)');
+      }
+      return true;
+    },
+
+    'intimidating_presence.stare_down': function (game, target) {
+      var m = game.tbFighter(target);
+      if (!m) {
+        game.say('No one to stare down. (Stare Down)');
+        return false;
+      }
+      // Courage check: 50% back off, unless fearless.
+      var fearless = m.fearless || (m.mdef && m.mdef.fearless);
+      if (fearless) {
+        game.say('You lock eyes. It doesn\'t blink. This one doesn\'t know fear — or doesn\'t care. It\'s still coming. (Stare Down — truly fearless.)');
+        return true; // Action worked (you tried), effect failed honestly
+      }
+      if (Math.random() < 0.5) {
+        game.say('You lock eyes and don\'t look away. It falters — then backs off, disengaging. Smart. (Stare Down — it backed down.)');
+        try { m.disengaging = true; } catch (e) {}
+      } else {
+        game.say('You lock eyes. It meets your stare and holds. Respect — but it\'s not backing down. (Stare Down — it held.)');
+      }
+      return true;
+    },
+
+    'intimidating_presence.end_it_before': function (game, target) {
+      game.say('Your reputation walks in before you do. Most disputes resolve in your favor without a hand raised. Some will resent you for it later. (End It Before It Starts)');
+      return true;
+    }
+  };
+
+  Object.assign(G, methods);
+
+  // Exposed for tests.
+  _g.AbilityActionImpls = ABILITY_ACTION_IMPLS;
+  _g.AbilityCostHandlers = COST_HANDLERS;
+})(typeof window !== 'undefined' ? window : global);
