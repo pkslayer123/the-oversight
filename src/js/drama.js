@@ -258,17 +258,25 @@
     // floating text (damage, labels)
     floatText(x, y, text, opts) {
       opts = opts || {};
-      const c = this.tileCenter(x, y);
       const color = opts.color || '#fff';
       const size = opts.size || 18;
-      // PIXEL OFFSET (Steve 2026-10-07): dx/dy shift in pixels after tileCenter.
-      // Fixes double-tileCenter bug where callers pre-computed tileCenter then
-      // floatText applied it again (text at 50%/50% screen center).
       const dx = opts.dx || 0;
       const dy = opts.dy || 0;
+      let left, top;
+      // PERCENTAGE STRINGS (Steve 2026-10-07): if x/y are '50%' style strings,
+      // use them directly as CSS. Passing them through tileCenter coerces to
+      // invalid '50%0px' which browsers drop (text renders top-left).
+      if (typeof x === 'string' && x.includes('%')) {
+        left = `left:${x};`;
+        top = `top:${y};`;
+      } else {
+        const c = this.tileCenter(x, y);
+        left = `left:${c.x + dx}px;`;
+        top = `top:${c.y + dy}px;`;
+      }
       this.spawn(
         text,
-        `position:absolute;left:${c.x + dx}px;top:${c.y + dy}px;transform:translate(-50%,-50%);color:${color};font-size:${size}px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.8);white-space:nowrap;`,
+        `position:absolute;${left}${top}transform:translate(-50%,-50%);color:${color};font-size:${size}px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.8);white-space:nowrap;`,
         'drama-float',
         800
       );
