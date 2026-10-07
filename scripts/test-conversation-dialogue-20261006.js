@@ -5,9 +5,22 @@
 // 2. All existing features remain reachable (DIALOGUE_FEATURE_MAP)
 // 3. Subject change is explicit; leave always available
 // Usage: node scripts/test-conversation-dialogue-20261006.js
+// Seeded 2026-10-07 (coherence worker): this suite asserts exact
+// beat classifications over Math.random draws — unseeded it flaked ~50%
+// (33/11 vs 44/44 across runs; pre-existing on HEAD). Deterministic now:
+// mulberry32, fixed default, SEED env override.
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+Math.random = mulberry32(parseInt(process.env.SEED || '20261006', 10));
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',

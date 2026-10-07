@@ -10,6 +10,7 @@
 //   - convoCheckSeeds(vid) -> pending seed or null
 //   - convoAdvanceWant(vid, playerChoiceKind)
 //   - convoTeachSkill(vid) -> {key, name, origin} from their lifeseed skill origins
+//   - convoTeachSkillLock(vid) -> fix this conversation's teach skill (sticky)
 //   - convoOpinionMatter(vid) -> live-village matter weighing on them
 //   - convoPrideDeed(vid) -> the good thing they did, from their memory
 // rules:
@@ -19,6 +20,7 @@
 //   - beat_acknowledgment: NPC beats must acknowledge the player's last utterance before delivering new content — no non-sequiturs (code: convoComposeBeat, Steve 2026-10-06)
 //   - want_beat_tagged: want-surfaced beats land through the untagged goon continuer, so the convoTurn wrapper stamps c.lastBeat + the transcript entry with the want's true tag when the opener delivers (code: convoTurn wrapper, 2026-10-07)
 //   - seeds: unresolved wants plant seeds; next conversation opens with the seed (code: convoPlantSeed/convoCheckSeeds, Steve 2026-10-06)
+//   - teach_skill_sticky: the teach skill is fixed per conversation (offer, engage, and "show me" all name the same skill); a resurfaced teach seed reuses its skill; a skill whose origin story was already told today wins the draw (code: convoTeachSkill/convoTeachSkillLock, Steve 2026-10-07)
 //   - arc: want stages 0 (unspoken) -> 1 (surfaced) -> 2 (engaged) -> 3 (resolved); endings record the resolution (code: convoAdvanceWant, Steve 2026-10-06)
 //   - want_engagement: engaging dlg: replies advance a surfaced+delivered want to stage 2 and queue its engage beat on the continuer (one-beat turns hold); declines move it to stage 3 with the deflect beat queued — unless the dlg: handler already spoke the beat. The mapper (convoWantEngage) runs in the OUTERMOST convoTurn wrapper because the dialogue layer intercepts dlg: choices and returns early (code: convo-wants.js, convo-beats.js, Steve 2026-10-07)
 // consumes:
@@ -289,7 +291,7 @@
         return w;
       },
       opener(vid) {
-        const skill = Game.convoTeachSkill(vid);
+        const skill = Game.convoTeachSkillLock(vid);
         const what = skill ? skill.name : 'a thing or two';
         // Origin-first phrasing: the origin is a bare phrase ("haying
         // season at the clinic", "in Mara's kitchen"), so it leads —
@@ -304,7 +306,7 @@
         ]);
       },
       engage(vid) {
-        const skill = Game.convoTeachSkill(vid);
+        const skill = Game.convoTeachSkillLock(vid);
         const origin = skill && skill.origin ? ' I learned it ' + skill.origin + '.' : '';
         return Game.convoPickCycle(vid, 'want:teach:engage', [
           '"Good.' + origin + ' Watch my hands — that\'s where the whole thing lives."',
@@ -319,7 +321,18 @@
       },
       resolve(vid, how) {
         if (how === 'engaged') return null;
-        return { wantId: 'offer_teach', note: 'they still want to teach you what they know' };
+        // COHERENCE (Steve 2026-10-07): the seed carries the skill — next
+        // time they offer, it's the SAME lesson, not a re-rolled one.
+        let skey = null, sname = null;
+        try {
+          const s = Game.convoTeachSkill(vid);
+          if (s) { skey = s.key; sname = s.name; }
+        } catch (e) {}
+        return {
+          wantId: 'offer_teach',
+          note: sname ? ('the ' + sname + ' lesson') : 'they still want to teach you what they know',
+          skill: skey,
+        };
       },
     },
     ask_opinion: {
@@ -466,7 +479,10 @@
       // 1. Seeds first — unfinished business takes priority.
       const seed = this.convoCheckSeeds(vid);
       if (seed && WANTS[seed.wantId]) {
-        return { id: seed.wantId, def: WANTS[seed.wantId], fromSeed: true, seedNote: seed.note };
+        // COHERENCE (Steve 2026-10-07): a resurfaced seed carries its
+        // specifics — the teach offer names the SAME skill next time, not
+        // a re-rolled one.
+        return { id: seed.wantId, def: WANTS[seed.wantId], fromSeed: true, seedNote: seed.note, seedSkill: seed.skill || null };
       }
       // 2. Weight by needs and context.
       let best = null, bestW = -1;
@@ -569,7 +585,8 @@
     },
 
     // convoPlantSeed: record unfinished business for next conversation.
-    // seed: { wantId, note, day }
+    // seed: { wantId, note, day, skill? } — skill lets a teach offer name
+    // the SAME skill when it resurfaces (coherence, Steve 2026-10-07).
     convoPlantSeed(vid, seed) {
       if (!seed || !seed.wantId) return;
       const v = this.state.village;
@@ -578,6 +595,7 @@
         wantId: seed.wantId,
         note: seed.note || '',
         day: this.state.scholar.day || 0,
+        skill: seed.skill || null,
       };
     },
 
@@ -639,14 +657,17 @@
     // surfaces organically after hello.)
     if (want && want.def) {
       const c = this.convoGet(vid);
-      c.want = { id: want.id, def: want.def, stage: 0, fromSeed: !!want.fromSeed };
+      c.want = { id: want.id, def: want.def, stage: 0, fromSeed: !!want.fromSeed, seedSkill: want.seedSkill || null };
       // If this want came from a seed, surface it immediately —
       // they have unfinished business and it shows.
       if (want.fromSeed) {
         try {
           const opener = this.convoWantOpener(vid, want);
           if (opener && opener.line) {
-            const seedLine = `"About ${want.seedNote || 'last time'} — " ` +
+            // One clean quoted utterance — the old form closed the quote
+            // after the em-dash and left the opener text dangling
+            // ("About X — " unquoted opener") which read broken.
+            const seedLine = `"About ${want.seedNote || 'last time'} — ` +
               opener.line.replace(/^"/, '').replace(/"$/, '') + '"';
             c.transcript.push({ who: 'them', text: seedLine });
             this.sayLine(vid, seedLine);
@@ -811,23 +832,62 @@
   // convoTeachSkill: what can this villager actually teach? From their
   // lifeseed skill origins (who taught THEM, and where) — never invented
   // wholesale. Returns {key, name, origin} or null.
+  //
+  // COHERENCE (Steve 2026-10-07): the skill is STICKY within a conversation
+  // — the offer, the engage, and "show me" all name the SAME skill. A
+  // villager who offers "finding food" doesn't teach "patching people up"
+  // two beats later. A resurfaced seed reuses its skill; a skill they
+  // already told their origin story about (said-fact 'skillstory', today)
+  // wins over a fresh draw — they teach what they talked about.
   Game.convoTeachSkill = function (vid) {
     try {
+      const c = (typeof this.convoGet === 'function') ? this.convoGet(vid) : null;
+      if (c && c.teachSkill) return c.teachSkill;
       const vp = this.vpOf(vid);
       const ls = vp && vp.lifeseed;
       const so = (ls && ls.skillOrigins) || {};
       const keys = Object.keys(so);
-      if (keys.length) {
-        const k = keys[Math.floor(Math.random() * keys.length)];
-        const names = {
-          food: 'finding food', medicinal: 'patching people up', mending: 'fixing things',
-          navigation: 'never getting lost', tracking: 'reading ground',
-          trapping: 'traps', forecast: 'reading the sky',
-        };
-        return { key: k, name: names[k] || k, origin: so[k] };
+      if (!keys.length) return null;
+      const names = {
+        food: 'finding food', medicinal: 'patching people up', mending: 'fixing things',
+        navigation: 'never getting lost', tracking: 'reading ground',
+        trapping: 'traps', forecast: 'reading the sky',
+      };
+      const mk = (k) => ({ key: k, name: names[k] || k, origin: so[k] });
+      // A resurfaced seed names the same skill — rebuild the object from
+      // the stored key so opener/engage/lesson all agree.
+      if (c && c.want && c.want.fromSeed && c.want.seedSkill && so[c.want.seedSkill]) {
+        c.teachSkill = mk(c.want.seedSkill);
+        return c.teachSkill;
       }
+      // Prefer the skill whose origin story they already told today.
+      try {
+        const f = (typeof this.convoSaidFacts === 'function') ? this.convoSaidFacts(vid).skillstory : null;
+        const today = (this.state.scholar || {}).day || 1;
+        if (f && f.day === today && so[f.value]) return mk(f.value);
+      } catch (e) {}
+      const k = keys[Math.floor(Math.random() * keys.length)];
+      return mk(k);
     } catch (e) {}
     return null;
+  };
+
+  // convoTeachSkillLock: fix this conversation's skill at the FIRST speech
+  // about it (offer opener, engage, "show me") and put it on the record —
+  // every later mention this conversation agrees. Speech sites call this,
+  // never convoTeachSkill directly.
+  Game.convoTeachSkillLock = function (vid) {
+    try {
+      const c = (typeof this.convoGet === 'function') ? this.convoGet(vid) : null;
+      if (c && !c.teachSkill) {
+        const s = this.convoTeachSkill(vid);
+        if (s) {
+          c.teachSkill = s;
+          if (typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'skillstory', s.key);
+        }
+      }
+      return (c && c.teachSkill) || null;
+    } catch (e) { return null; }
   };
 
   // convoOpinionMatter: the thing weighing on them, generated from the LIVE

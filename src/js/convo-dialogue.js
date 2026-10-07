@@ -13,6 +13,7 @@
 //   - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: dialogueResponses + dlg:more/dlg:react, 2026-10-06)
 //   - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
 //   - teach_is_real: "Show me" teaches from their lifeseed skill origins (who taught THEM), records the lesson in village.taughtBy, warms the mood — and can't be farmed: one lesson per conversation, then an honest "that's all for now" (code: dlg:learn handler, Steve 2026-10-07)
+//   - teach_is_honest: lesson quality (trust + moment's warmth - shutdown drift) decides the speech — poor teaching is a hedged PARTIAL ("don't take this as gospel"), recorded with its quality in taughtBy, warming less; the lesson always teaches the sticky skill, and the follow-up names what was actually taught (code: dlg:learn handler, Steve 2026-10-07)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -370,16 +371,42 @@
         // No infinite lessons: the second ask in one conversation gets an
         // honest "that's all for now" instead of another trust bump.
         if (c.learnedOnce) {
-          const done = '"I\'ve shown you what I can for now. Go practice — that\'s where it actually lives."';
+          // Names what was actually taught — coherence with the lesson.
+          const what = c.learnedWhat ? ' of ' + c.learnedWhat : '';
+          const done = '"I\'ve shown you what I can' + what + ' for now. Go practice — that\'s where it actually lives."';
           c.transcript.push({ who: 'them', text: done });
           this.sayLine(vid, done);
           return { line: done, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
         }
         c.learnedOnce = true;
+        // COHERENCE + HONEST TEACHING (Steve 2026-10-07): the lesson teaches
+        // the STICKY skill (same one the offer named — never a re-roll), and
+        // poor teaching is a PARTIAL reveal only. Quality comes from trust,
+        // the moment's warmth, and whether grief/wariness has them shut
+        // down — a grieving teacher teaches badly, and the speech SAYS so
+        // ("don't take this as gospel") instead of faking a full lesson.
+        let skill = null;
+        try { skill = (typeof this.convoTeachSkillLock === 'function') ? this.convoTeachSkillLock(vid) : this.convoTeachSkill(vid); } catch (e) {}
+        let q = 1;
+        try { if (((this.state.village.trust || {})[vid] || 10) >= 40) q++; } catch (e) {}
+        try {
+          const band = (typeof this.convoMoodBand === 'function') ? this.convoMoodBand(vid) : null;
+          if (band === 'warm' || band === 'friendly') q++;
+        } catch (e) {}
+        try {
+          const dt = (typeof this.convoDriftedTemper === 'function') ? this.convoDriftedTemper(vid) : null;
+          if (dt === 'withdrawn' || dt === 'guarded') q--; // shut down: the lesson suffers
+        } catch (e) {}
+        q = Math.max(0, Math.min(3, q));
+        const sname = (skill && skill.name) || 'a thing or two';
         let tip = null;
         try {
-          const skill = (typeof this.convoTeachSkill === 'function') ? this.convoTeachSkill(vid) : null;
-          if (skill && skill.origin) {
+          if (q <= 1) {
+            // POOR TEACHING: hedged, partial, honest about what it isn't.
+            tip = '"I can show you the rough shape of ' + sname + ' — the rest lives in your hands, not my words. ' +
+              'Don\'t take this as gospel; I\'m no teacher right now." ' +
+              'They walk you through it once, distracted. You catch maybe half.';
+          } else if (skill && skill.origin) {
             // Origin-first: the origin is a bare phrase, so it leads —
             // "I learned it haying season" would garble.
             const where = skill.origin.charAt(0).toUpperCase() + skill.origin.slice(1);
@@ -396,13 +423,17 @@
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
         try {
-          this.trustGain(vid, 3);
-          if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, 1);
+          // A poor lesson warms less — the fiction and the numbers agree.
+          this.trustGain(vid, q >= 3 ? 3 : q >= 2 ? 2 : 1);
+          if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, q <= 1 ? 0 : 1);
           const v = this.state.village;
           v.taughtBy = v.taughtBy || {};
           v.taughtBy[this.villagerId] = v.taughtBy[this.villagerId] || [];
-          v.taughtBy[this.villagerId].push({ by: vid, day: (this.state.scholar || {}).day || 0 });
+          v.taughtBy[this.villagerId].push({ by: vid, day: (this.state.scholar || {}).day || 0, quality: q, skill: (skill && skill.key) || null });
+          // On the record: they showed you this. No take-backs later.
+          if (typeof this.convoSaidFact === 'function' && skill && skill.key) this.convoSaidFact(vid, 'taught:' + skill.key, 'shown');
         } catch (e) {}
+        if (skill && skill.name) c.learnedWhat = skill.name;
         if (c.want && c.want.id === 'offer_teach') {
           c.want.stage = 2; // engaged
           c.want.engageSpoken = true; // the lesson IS the engage beat — don't queue the generic one

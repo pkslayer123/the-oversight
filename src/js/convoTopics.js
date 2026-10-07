@@ -26,6 +26,7 @@
 //   - event_topic: 'lately' appears only while a run event is live (code: convoTopics.js, t2LatelyEvent)
 //   - no_repeat: openers and beats route through convoPick (code: convoTopics.js, topic2Ask/topic2Beat)
 //   - hardstory_once: the 'hardstory' topic is gated on deep trust + a hard lived event, is told exactly once (marked in topic2Ask, hidden by t2gate after), and speaks the lifeseed wound in their own words (code: t2gen_hardstory/t2fol_hardstory, Steve 2026-10-07)
+//   - said_facts_recorded: asserted claims go on the said-facts record — the hardstory's wound/anchor, the others-topic's grievance history and trust claims — so later talk extends the same thread instead of inventing a new past (code: t2gen_hardstory/t2gen_others via convoSaidFact, Steve 2026-10-07)
 //   - lived_gates: 'lived' topics need something hard actually lived — the gate is the run itself (code: t2gate/t2hasHardLived, Steve 2026-10-07)
 // consumes:
 //   - Game (characterGen.topicPack labels)
@@ -612,6 +613,13 @@
         }
       } catch (e) {}
       const anchor = this.t2hardAnchor(vid);
+      // COHERENCE (Steve 2026-10-07): the telling is once-only, so its facts
+      // go on the record verbatim — the wound as they named it, the lived
+      // anchor. Nothing later gets a second, contradictory version.
+      try {
+        if (euph && typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'hardstory:wound', euph);
+        if (anchor && typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'hardstory:anchor', anchor);
+      } catch (e) {}
       const about = euph ? 'about ' + euph : 'about the thing I don\'t talk about';
       const cands = [
         '"I\'ve never told anyone this." A long pause. "' + (anchor ? anchor + ' — and ' : '') + 'I don\'t talk ' + about + '. I\'m talking about it now, and I don\'t know why."',
@@ -667,7 +675,16 @@
       const vp = this.vpOf(vid);
       const temp = this.npcTemper(vid);
       if (pick.why === 'grievance') {
-        const hist = (pick.hist || ['old history'])[0];
+        // COHERENCE (Steve 2026-10-07): the grievance story doesn't
+        // reshuffle between conversations — once they've told you what the
+        // history IS, the record holds it and later talk extends the same
+        // thread instead of inventing a new past.
+        let hist = (pick.hist || ['old history'])[0];
+        try {
+          const rec = (typeof this.convoFactRecalled === 'function') ? this.convoFactRecalled(vid, 'otherhist:' + pick.id) : null;
+          if (rec) hist = rec;
+          else if (typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'otherhist:' + pick.id, hist);
+        } catch (e) {}
         return [
           '"' + nm + '?" A muscle moves in their jaw. "' + hist + '"',
           '"' + nm + '. We don\'t... it\'s old. Older than the scattering, even. Some things you carry so long they grow into you."',
@@ -675,6 +692,8 @@
         ];
       }
       if (pick.why === 'close') {
+        // On the record: the trust claim, so nothing later contradicts it.
+        try { if (typeof this.convoSaidFact === 'function') this.convoSaidFact(vid, 'othertrust:' + pick.id, 'pack'); } catch (e) {}
         return [
           '"' + nm + '? I\'d trust ' + nm + ' with my pack. That\'s the highest compliment I have."',
           '"' + nm + ' keeps me sane. Everyone needs one person who\'d notice if they stopped showing up."',
