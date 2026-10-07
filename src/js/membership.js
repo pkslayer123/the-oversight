@@ -30,9 +30,10 @@
 // rules:
 //   - Exile is an arc (moment → road → founding), not a flag flip (code: membership.js)
 //   - The exile moment is spoken: keep/lose manifest, no silent severing (code: membership.js)
-//   - The road-between is pack-only survival: hunger is real, monsters are curious (code: membership.js)
+//   - The road-between is pack-only survival: the pack covers the day's REAL burn (dailyNeed, what resolveDay takes) — hunger is real, monsters are curious (code: membership.js)
 //   - forkVillage delegates to the canonical hard-reset fork (betrayal.js); membership stages the arc and speaks the founding (code: membership.js)
 //   - Readmission is never automatic: conditions are itemized and the petition is announced (code: membership.js)
+//   - Death on the road ends the exile with the body: the pack stays where they fell (no phantom pantry), the road arc closes, the new bearer starts clean — spoken, never silent (code: membership.js)
 //   - Severing is social: the old village remembers, other villages hear (code: membership.js)
 //   - Settlers/applicants are unique composed people — never a fixed cast (code: membership.js)
 //   - foodSupports projections are spoken honestly when they deny (code: membership.js)
@@ -705,14 +706,31 @@
     // you or the body pays — hunger is REAL. And monsters are CURIOUS about
     // a lone walker: roadExposed flags it for the encounters system, and the
     // road itself gets beats.
+    //
+    // FOOD HONESTY (drifter loop 2026-10-07): the pack must cover the day's
+    // REAL burn. resolveDay (endDay, always runs after this) subtracts
+    // dailyNeed from the body — the old code ate a fictional 2000 kcal
+    // "road need" and settled it right back, so the exile starved at
+    // ~2200/day with a full pack. Now the pack tops up the body by the real
+    // daily need first; resolveDay's burn then breaks even against it.
     roadDaily() {
       var s = this.state.scholar || {};
       var a = this.exileArcState();
       if (!s.exiled || a.stage === 'founding') return null;
       a.stage = 'road';
       a.roadDays += 1;
-      var need = 2000; // a day's food, no village pot to draw from
+      // the day's real food cost — what resolveDay is about to burn.
+      var need = 2200;
+      try {
+        var cal = (typeof globalThis !== 'undefined' && globalThis.Scattering && globalThis.Scattering.calories) || null;
+        if (cal && cal.dailyNeed) need = cal.dailyNeed(s);
+      } catch (e) {}
       var eaten = this._roadEatFromPack(need);
+      var cap = 3000;
+      try { cap = this.kcalCap ? this.kcalCap() : 3000; } catch (e) {}
+      // top up the body from the pack; resolveDay burns `need` right after,
+      // so a full pack means the day breaks even. Empty pack: the body pays.
+      s.kcal = Math.min(cap, (s.kcal || 0) + eaten);
       // monsters notice the lone walker
       try { s.roadExposed = true; } catch (e) {}
       if (a.roadDays % 2 === 0 && R() < 0.5) {
@@ -725,14 +743,9 @@
         a.roadBeats.push({ day: s.day || 0, text: b });
         try { this.say(b); } catch (e) {}
       }
-      var body = (s.kcal || 0) + eaten;
-      var cap = 3000;
-      try { cap = this.kcalCap ? this.kcalCap() : 3000; } catch (e) {}
-      if (body >= need) {
-        s.kcal = Math.min(cap, body - need);
-      } else {
-        s.kcal = 0;
-        var dmg = Math.max(1, Math.min(25, Math.round((need - body) / 200)));
+      if (eaten < need) {
+        var short = need - eaten;
+        var dmg = Math.max(1, Math.min(25, Math.round(short / 200)));
         s.health = Math.max(1, (s.health || 100) - dmg);
         try { this.say('Hunger is not a metaphor anymore. Your body eats itself a little. (-' + dmg + ' health)'); } catch (e) {}
         try { if (this.journalNote) this.journalNote('exile', 'hunger', 'Starving on the road, day ' + (s.day || 0) + '.'); } catch (e) {}
@@ -1129,6 +1142,60 @@
       if (this.state.scholar && this.state.scholar.exiled) this.roadDaily();
     } catch (e) {}
     return _endDay2 ? _endDay2.call(this) : undefined;
+  };
+
+  // Dying on the road ends the exile WITH THE BODY (drifter loop 2026-10-07).
+  // The mantle passes to a villager who was never cast out — but the scholar
+  // object is reused, so without this the new bearer inherits exiled=true,
+  // the road arc (stage='road'), the dead exile's whole pack, and a
+  // returnToVillage homecoming that pours tens of thousands of phantom kcal
+  // into the pantry for someone who never left. The exile dies with the
+  // exile: the arc closes, the pack stays where the body fell, the new
+  // bearer starts clean. Spoken, never silent.
+  var _playerDeathExile = G.playerDeath;
+  G.playerDeath = function (cause) {
+    var s0 = this.state.scholar || {};
+    var wasExiled = !!s0.exiled;
+    var oldName = '';
+    var packKcal = 0;
+    if (wasExiled) {
+      try { oldName = String(this.displayName(this.villagerId)).split(' ')[0]; } catch (e) {}
+      try {
+        packKcal = (s0.inventory || []).reduce(function (t, i) {
+          return t + (((i.kcalEach || 0) > 0 && (i.units || 0) > 0) ? (i.units || 0) * (i.kcalEach || 0) : 0);
+        }, 0);
+      } catch (e) {}
+    }
+    var r = _playerDeathExile ? _playerDeathExile.call(this, cause) : undefined;
+    // only adjudicate a real mantle pass: no candidates means the village
+    // died out too (over=true) and there is no new bearer to clean up for.
+    if (wasExiled && _playerDeathExile && !this.over) {
+      var s = this.state.scholar || {};
+      // the exile ended where the body fell. The new bearer was never cast out.
+      s.exiled = false;
+      s.exileStartDay = null;
+      s.drifting = false;
+      s.driftDays = 0;
+      s.roadExposed = false;
+      s.codexCut = false;
+      s.founding = null;
+      try { s.exileArc = { stage: 'ended', roadDays: 0, roadBeats: [], exiledDay: null }; } catch (e) {}
+      // the pack stays with the body on the road — it does not teleport home.
+      // (playerDeath already moved bonded/sentimental keepsakes onto the corpse.)
+      try {
+        s.inventory = (s.inventory || []).filter(function (i) { return i && (i.bonded || i.sentimental); });
+      } catch (e) { s.inventory = []; }
+      // the new bearer never left: no "days away" homecoming is owed.
+      try { s.lastHavenDay = s.day || 1; } catch (e) {}
+      try {
+        this.say('The road keeps ' + (oldName || 'them') + '.' +
+          (packKcal > 0 ? ' What ' + (oldName || 'they') + ' carried — ' + Math.round(packKcal) +
+            ' kcal of road food — stays where ' + (oldName || 'they') + ' fell.' : '') +
+          ' The exile ended out there, not here. The fire is yours by inheritance, not by pardon.');
+      } catch (e) {}
+      try { if (this.journalNote) this.journalNote('exile', 'death', (oldName || 'The exile') + ' died on the road day ' + (s.day || 0) + '. The exile ended with them; the pack stayed where they fell.'); } catch (e) {}
+    }
+    return r;
   };
 
   // Applicants arrive as unique people: backstory, lived events, needs.
