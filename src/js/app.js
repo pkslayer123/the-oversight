@@ -12754,10 +12754,8 @@
               // Explored tiles must NEVER be dark.
               const isUnknown = !tl || ttype === 'unknown';
               const base = isUnknown ? '#7aaa4a' : (colors[ttype] || '#7aaa4a');
-              const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
-              g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
-                `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}" stroke="#2a4a2a" stroke-width="1"/>` +
-                `<text x="32" y="42" text-anchor="middle" font-size="28" fill="#8aaa8a">${glyph}</text></svg>`;
+              // Simple DIV (not SVG) - must render (Steve 2026-10-06)
+              g = `<div style="background:${base};width:100%;height:100%;min-height:40px;border-radius:4px"></div>`;
             }
           }
         }
