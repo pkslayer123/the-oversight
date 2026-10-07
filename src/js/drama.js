@@ -11,7 +11,6 @@
 //   - shake: screen shake (transform on grid container, GPU-cheap)
 //   - heroCard: centered high-res moment card (synergy, integration)
 //   - soulWisp: death wisp floats up from tile
-//   - setDisabled: debug kill-switch — suppresses all drama output (Steve 2026-10-07, Drama E2)
 //   - systemCommentary: L2+ floating System observations — L2 cyan-gold, L3 👁️ white-gold (Steve 2026-10-07, Drama C3)
 //   - exclaim: !/? above NPCs who want attention — L1 flat, L2 glow, L3 glow + 👁️ (Steve 2026-10-07, Drama C3)
 //   - npcAlert: semantic NPC attention marker — talk/curious/dialogue/warn/heart/break; L2 glow, L3 + 👁️ (Steve 2026-10-07, Drama A1/C3)
@@ -42,6 +41,13 @@
 //   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
 //   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
 //   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
+//   - socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1)
+//   - mootGather: village gathers — fire pulse + banner (Steve 2026-10-07, Drama C1)
+//   - mootVote: vote tally bar with visual weight (Steve 2026-10-07, Drama C1)
+//   - exileMoment: dark vignette + EXILED banner (Steve 2026-10-07, Drama C1)
+//   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
+//   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
+//   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
 //   - playerDeath: slow fade to black + soul wisp + "THE STORY CONTINUES" (Steve 2026-10-07, Drama C2)
 //   - newLife: bright emergence — "A NEW SCHOLAR AWAKENS" (Steve 2026-10-07, Drama C2)
 //   - abilityLevelUp: golden burst + LEVEL UP + ability name (Steve 2026-10-07, Drama C2)
@@ -54,6 +60,13 @@
 //   - skillGained: rising light beam + skill name (Steve 2026-10-07, Drama D2)
 //   - teaseFaint: 1st-tease whisper shimmer (Steve 2026-10-07, Drama D2)
 //   - ahaMoment: lightbulb + radiating lines on knowledge unlocks (Steve 2026-10-07, Drama D2)
+//   - socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1)
+//   - mootGather: village gathers — fire pulse + banner (Steve 2026-10-07, Drama C1)
+//   - mootVote: vote tally bar with visual weight (Steve 2026-10-07, Drama C1)
+//   - exileMoment: dark vignette + EXILED banner (Steve 2026-10-07, Drama C1)
+//   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
+//   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
+//   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
 //   - villageFlash: dispatcher for village-life rhythm ambience (Steve 2026-10-07, Drama D3)
 //   - dawnBreak: soft golden wash as the day begins (Steve 2026-10-07, Drama D3)
 //   - duskFall: purple-orange fade as night comes (Steve 2026-10-07, Drama D3)
@@ -62,11 +75,11 @@
 //   - mourning: gray veil when the village grieves (Steve 2026-10-07, Drama D3)
 //   - villageArgue: red crackle between two villagers' tiles (Steve 2026-10-07, Drama D3)
 //   - childPlay: small sparkles + laughter marks (Steve 2026-10-07, Drama D3)
+//   - audioFor: audio-mate lookup — maps a drama kind to its CombatAudio event name, null when the call site already fires audio or no fitting synth exists (Steve 2026-10-07, Drama E1)
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
-//   - All animations use transform/opacity/translate only — GPU-composited, no layout/paint (code: drama.js).
-//   - Elements self-remove after animation; spawn() sheds load past 80 live nodes — no DOM bloat (code: drama.js).
-//   - setDisabled(true) silences the overlay entirely for testing / low-end devices (code: drama.js).
+//   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).
+//   - Elements self-remove after animation — no DOM bloat (code: drama.js).
 //   - Coordinates are loosely bound: tile centers for anchored effects, screen-relative for full moments (code: drama.js).
 // consumes: (none)
 (function (global) {
@@ -75,7 +88,6 @@
 
   const Drama = {
     overlay: null,
-    disabled: false, // E2 perf: setDisabled(true) silences the overlay (testing / low-end devices)
 
     // ensure the overlay exists, positioned over the grid
     ensureOverlay() {
@@ -107,18 +119,9 @@
       return { x: r.left - gr.left + r.width / 2, y: r.top - gr.top + r.height / 2 };
     },
 
-    // E2 perf: debug kill-switch. Suppresses ALL drama (testing / low-end devices).
-    // Game.drama gates on systemArrived; this kills the overlay itself.
-    setDisabled(flag) { this.disabled = !!flag; return this.disabled; },
-
     // spawn an element, animate, remove
     spawn(html, css, animClass, duration) {
-      if (this.disabled) return null; // E2: debug kill-switch — zero DOM churn
       const ov = this.ensureOverlay();
-      // E2: shed load — elements self-remove via timeout, but a burst
-      // (combat + contest + ambient in one frame) must never accumulate
-      // unboundedly. Drop the oldest first; callers re-fire hero moments.
-      while (ov.childElementCount >= 80) ov.firstChild.remove();
       const el = document.createElement('div');
       el.innerHTML = html;
       el.style.cssText = css;
@@ -752,6 +755,166 @@
         'drama-trail',
         3000
       );
+    },
+
+    // socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1).
+    // Game.drama('social', spec) routes here. spec.type:
+    // 'moot' | 'vote' | 'exile' | 'liar' | 'reconcile' | 'betray'
+    socialFlash(spec) {
+      if (!spec || typeof spec !== 'object' || !spec.type) return;
+      const integ = spec.integration || 0;
+      switch (spec.type) {
+        case 'moot': return this.mootGather(spec.caller || 'Someone', integ);
+        case 'vote': return this.mootVote(spec.guilty || 0, spec.total || 0, integ);
+        case 'exile': return this.exileMoment(spec.name || 'The accused', integ);
+        case 'liar': return this.liarExposed(spec.name || 'The liar', integ);
+        case 'reconcile': return this.reconcileGlow(spec.name || '', integ);
+        case 'betray': return this.betraySlash(spec.name || 'The betrayer', integ);
+        default: return;
+      }
+    },
+
+    // mootGather: the village gathers — warm fire pulse, crowd converges
+    mootGather(caller, integration) {
+      integration = integration || 0;
+      // fire glow: warm radial pulse from center
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,150,50,0.25) 0%, transparent 60%);',
+        'drama-moot-glow',
+        2000 + (integration * 400)
+      );
+      this.spawn(
+        `<div style="font-size:22px;font-weight:bold;color:#ffb347;text-shadow:0 2px 8px rgba(0,0,0,0.9);letter-spacing:1px;">🔥 MOOT CALLED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${caller} summons the village</span></div>`,
+        'position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-moot-banner',
+        2500
+      );
+      if (integration >= 2) {
+        this.floatText('50%', '45%', '📺 The System tunes in — the galaxy watches', { color: '#ff6b9d', size: 13 });
+      }
+    },
+
+    // mootVote: vote tally with visual weight — guilty votes stack red, innocent green
+    mootVote(guilty, total, integration) {
+      integration = integration || 0;
+      const innocent = total - guilty;
+      const guiltyPct = total > 0 ? Math.round((guilty / total) * 100) : 0;
+      const barW = 200 + (integration * 20);
+      this.spawn(
+        `<div style="text-align:center;background:rgba(10,10,10,0.9);padding:16px;border-radius:8px;border:1px solid #666;">
+          <div style="font-size:16px;font-weight:bold;color:#fff;margin-bottom:8px;">THE COUNT</div>
+          <div style="display:flex;width:${barW}px;height:24px;border-radius:4px;overflow:hidden;margin:0 auto;">
+            <div style="width:${guiltyPct}%;background:#c0392b;"></div>
+            <div style="width:${100 - guiltyPct}%;background:#27ae60;"></div>
+          </div>
+          <div style="font-size:13px;color:#ccc;margin-top:6px;"><span style="color:#ff6b6b;">${guilty} guilty</span> · <span style="color:#7cfc9a;">${innocent} innocent</span></div>
+        </div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);',
+        'drama-vote',
+        3000
+      );
+      // verdict flash: red for guilty, green for not
+      if (guilty > innocent) {
+        this.flash('rgba(192,57,43,0.2)', 600);
+      } else {
+        this.flash('rgba(39,174,96,0.15)', 600);
+      }
+    },
+
+    // exileMoment: dark dramatic — red-black vignette, EXILED banner, crowd turns away
+    exileMoment(name, integration) {
+      integration = integration || 0;
+      // dark vignette closing in
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 20%, rgba(20,0,0,0.85) 100%);',
+        'drama-exile-vignette',
+        3000 + (integration * 500)
+      );
+      this.spawn(
+        `<div style="font-size:36px;font-weight:bold;color:#c0392b;text-shadow:0 3px 12px rgba(0,0,0,1);letter-spacing:4px;">EXILED<br><span style="font-size:16px;font-weight:normal;color:#999;letter-spacing:1px;">${name} walks until the trees close</span></div>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-exile-banner',
+        3500
+      );
+      this.shake(6 + (integration * 2));
+      if (integration >= 2) {
+        this.floatText('50%', '60%', '📺 The galaxy watches them go', { color: '#666', size: 13 });
+      }
+    },
+
+    // liarExposed: tension — spotlight narrows, ⚡ crackle when the lie breaks
+    liarExposed(name, integration) {
+      integration = integration || 0;
+      // narrowing spotlight: dark edges closing in
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, transparent 10%, rgba(0,0,0,0.9) 70%);',
+        'drama-liar-spot',
+        2000
+      );
+      // crackle burst
+      const c = { x: '50%', y: '40%' };
+      this.spawn(
+        `<div style="font-size:48px;text-shadow:0 0 20px #ffd54a;">⚡</div>`,
+        'position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);',
+        'drama-liar-crack',
+        1200
+      );
+      this.spawn(
+        `<div style="font-size:20px;font-weight:bold;color:#ffd54a;text-shadow:0 2px 8px rgba(0,0,0,0.9);">THE LIE BREAKS<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name} is exposed</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-liar-text',
+        2500
+      );
+      this.flash('rgba(255,213,74,0.15)', 400);
+    },
+
+    // reconcileGlow: warm healing — golden glow, hearts rise
+    reconcileGlow(name, integration) {
+      integration = integration || 0;
+      this.spawn(
+        '',
+        'position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,200,100,0.2) 0%, transparent 70%);',
+        'drama-reconcile-glow',
+        2500 + (integration * 300)
+      );
+      const hearts = 3 + integration; // 3 → 6 hearts
+      for (let i = 0; i < hearts; i++) {
+        const dx = (i - (hearts - 1) / 2) * 40;
+        setTimeout(() => {
+          this.spawn(
+            `<div style="font-size:24px;">❤️</div>`,
+            `position:absolute;left:calc(50% + ${dx}px);top:45%;transform:translate(-50%,-50%);`,
+            'drama-heart-rise',
+            1500
+          );
+        }, i * 200);
+      }
+      if (name) {
+        this.floatText('50%', '35%', `${name} — forgiven`, { color: '#ff6b9d', size: 16 });
+      }
+    },
+
+    // betraySlash: sharp red slash across the screen + gasp
+    betraySlash(name, integration) {
+      integration = integration || 0;
+      // diagonal red slash
+      this.spawn(
+        `<svg width="400" height="100" viewBox="0 0 400 100"><line x1="20" y1="90" x2="380" y2="10" stroke="#c0392b" stroke-width="${6 + integration * 2}" stroke-linecap="round"/></svg>`,
+        'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-5deg);',
+        'drama-betray-slash',
+        800
+      );
+      this.spawn(
+        `<div style="font-size:22px;font-weight:bold;color:#ff5252;text-shadow:0 2px 8px rgba(0,0,0,0.9);">BETRAYED<br><span style="font-size:14px;font-weight:normal;color:#ccc;">${name}</span></div>`,
+        'position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);text-align:center;',
+        'drama-betray-text',
+        2500
+      );
+      this.flash('rgba(192,57,43,0.25)', 500);
+      this.shake(8 + (integration * 2));
     },
 
     // socialFlash: dispatcher for social scenario spectacle (Steve 2026-10-07, Drama C1).
@@ -1720,6 +1883,38 @@
         }, i * 140);
       }
     },
+
+    // audioFor(kind, spec): the audio mate for a drama visual (Steve 2026-10-07, Drama E1).
+    // Returns the CombatAudio event name to fire in sync with the visual, or
+    // null when the call site already fires audio (hit->monsterHurt via
+    // tbDamage, wisp->monsterDown, enrage->wound*, npcAlert->talkAttention,
+    // contest announce->contestCall) or no fitting synth exists. Pure — no
+    // DOM, no audio played here; Game.drama() fires the returned event.
+    audioFor(kind, spec) {
+      const DIRECT = {
+        hero: 'victory',        // synergy discovery fanfare
+        critHit: 'impact',      // DEAD AIM crit — full impact resolve
+        playerDeath: 'defeat',  // somber sting — the story continues
+        newLife: 'victory',     // a new scholar awakens
+        levelUp: 'levelup',     // ability deepens — chime
+      };
+      if (DIRECT[kind]) return DIRECT[kind];
+      if (kind === 'social') {
+        const t = spec && spec.type;
+        if (t === 'exile') return 'exileWalk';       // footsteps receding
+        if (t === 'vote') return 'justiceVerdict';   // the moot has decided
+        if (t === 'liar') return 'confront';        // the lie breaks
+        if (t === 'betray') return 'horrorSting';    // dread-beat
+        return null; // moot/reconcile: no fitting synth — stay silent
+      }
+      if (kind === 'contest') {
+        const t = spec && spec.type;
+        if (t === 'winner') return 'victory';       // confetti moment
+        if (t === 'loser') return 'defeat';         // sympathetic sting
+        return null; // announce/cheer/boo/judging: announce already fires contestCall
+      }
+      return null;
+    },
   };
 
   S.Drama = Drama;
@@ -1732,45 +1927,45 @@
   style.id = 'drama-css';
   style.textContent = `
     .drama-overlay { pointer-events: none !important; }
-    .drama-hit { opacity: 0; transform: scale(0.3) rotate(0deg); transition: transform 0.4s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    .drama-hit { opacity: 0; transform: scale(0.3) rotate(0deg); transition: all 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .drama-hit.drama-hit { opacity: 1; transform: scale(1.2) rotate(45deg); }
-    .drama-float { opacity: 0; transition: transform 0.8s ease-out, opacity 0.8s ease-out; /* E2: was 'all' */ }
+    .drama-float { opacity: 0; transition: all 0.8s ease-out; }
     .drama-float.drama-float { opacity: 1; transform: translate(-50%, -120%); }
     .drama-flash { opacity: 0; transition: opacity 0.3s ease-out; }
     .drama-flash.drama-flash { opacity: 1; }
-    .drama-hero { opacity: 0; transition: transform 0.5s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.5s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-hero { opacity: 0; transition: all 0.5s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-hero.drama-hero { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .drama-wisp { opacity: 0; transition: transform 1.2s ease-out, opacity 1.2s ease-out; /* E2: was 'all' */ }
+    .drama-wisp { opacity: 0; transition: all 1.2s ease-out; }
     .drama-wisp.drama-wisp { opacity: 1; transform: translateY(-60px); }
-    .drama-exclaim { opacity: 0; transform: translate(-50%, -80%); transition: transform 0.3s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.3s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    .drama-exclaim { opacity: 0; transform: translate(-50%, -80%); transition: all 0.3s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .drama-exclaim.drama-exclaim { opacity: 1; transform: translate(-50%, -100%); animation: drama-bob 1s ease-in-out infinite; }
-    @keyframes drama-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } } /* E2: was margin-top (layout) */
-    .drama-burst { opacity: 0; transform: scale(0.5); transition: transform 0.5s ease-out, opacity 0.5s ease-out; /* E2: was 'all' */ }
+    @keyframes drama-bob { 0%, 100% { margin-top: 0; } 50% { margin-top: -6px; } }
+    .drama-burst { opacity: 0; transform: scale(0.5); transition: all 0.5s ease-out; }
     .drama-burst.drama-burst { opacity: 1; transform: scale(1.3); }
-    .drama-contest { opacity: 0; transform: translate(-50%, -30%); transition: transform 0.6s ease-out, opacity 0.6s ease-out; /* E2: was 'all' */ }
+    .drama-contest { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s ease-out; }
     .drama-contest.drama-contest { opacity: 1; transform: translate(-50%, -50%); }
     .drama-vignette { opacity: 0; transition: opacity 0.5s ease-out; }
     .drama-vignette.drama-vignette { opacity: 1; }
-    .drama-ambushmark { opacity: 0; transform: translate(-50%, -80%); transition: transform 0.3s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.3s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    .drama-ambushmark { opacity: 0; transform: translate(-50%, -80%); transition: all 0.3s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .drama-ambushmark.drama-ambushmark { opacity: 1; transform: translate(-50%, -100%); animation: drama-bob 0.6s ease-in-out infinite; }
-    .drama-ripple { opacity: 0; transform: scale(0.6); transition: transform 0.6s ease-out, opacity 0.6s ease-out; /* E2: was 'all' */ }
+    .drama-ripple { opacity: 0; transform: scale(0.6); transition: all 0.6s ease-out; }
     .drama-ripple.drama-ripple { opacity: 1; transform: scale(1.2); }
     .drama-rain { opacity: 0; transition: opacity 0.8s ease-out; }
     .drama-rain.drama-rain { opacity: 1; animation: drama-rainfall 1s linear infinite; }
     @keyframes drama-rainfall { 0% { transform: translateY(-10px); } 100% { transform: translateY(10px); } }
     .drama-trail { opacity: 0; transition: opacity 1s ease-out; }
     .drama-trail.drama-trail { opacity: 1; }
-    .drama-contest-announce { opacity: 0; transition: transform 0.5s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.5s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-contest-announce { opacity: 0; transition: all 0.5s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-contest-announce.drama-contest-announce { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .drama-cheer { opacity: 0; transition: transform 1.2s ease-out, opacity 1.2s ease-out; /* E2: was 'all' */ }
+    .drama-cheer { opacity: 0; transition: all 1.2s ease-out; }
     .drama-cheer.drama-cheer { opacity: 1; transform: translateY(120px) rotate(180deg); }
-    .drama-boo { opacity: 0; transform: scale(0.5); transition: transform 0.4s ease-out, opacity 0.4s ease-out; /* E2: was 'all' */ }
+    .drama-boo { opacity: 0; transform: scale(0.5); transition: all 0.4s ease-out; }
     .drama-boo.drama-boo { opacity: 1; transform: scale(1.2); }
     .drama-judge-dim { opacity: 0; transition: opacity 0.6s ease-out; }
     .drama-judge-dim.drama-judge-dim { opacity: 1; }
-    .drama-judge-text { opacity: 0; transform: translate(-50%, -70%); transition: transform 0.8s ease-out, opacity 0.8s ease-out; /* E2: was 'all' */ }
+    .drama-judge-text { opacity: 0; transform: translate(-50%, -70%); transition: all 0.8s ease-out; }
     .drama-judge-text.drama-judge-text { opacity: 1; transform: translate(-50%, -50%); }
-    .drama-confetti { opacity: 1; transition: transform 1.8s cubic-bezier(0.2, 0.6, 0.4, 1), opacity 1.8s cubic-bezier(0.2, 0.6, 0.4, 1); /* E2: was 'all' */ }
+    .drama-confetti { opacity: 1; transition: all 1.8s cubic-bezier(0.2, 0.6, 0.4, 1); }
     .drama-confetti.drama-confetti { opacity: 0.3; transform: translateY(400px) rotate(720deg); }
     .drama-loser-dim { opacity: 0; transition: opacity 0.8s ease-out; }
     .drama-loser-dim.drama-loser-dim { opacity: 1; }
@@ -1778,111 +1973,136 @@
     .drama-moot-glow { opacity: 0; transition: opacity 1s ease-out; }
     .drama-moot-glow.drama-moot-glow { opacity: 1; animation: drama-fireflicker 0.8s ease-in-out infinite; }
     @keyframes drama-fireflicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
-    .drama-moot-banner { opacity: 0; transform: translate(-50%, -30%); transition: transform 0.6s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-moot-banner { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-moot-banner.drama-moot-banner { opacity: 1; transform: translate(-50%, -50%); }
-    .drama-vote { opacity: 0; transform: translate(-50%, -40%) scale(0.9); transition: transform 0.5s ease-out, opacity 0.5s ease-out; /* E2: was 'all' */ }
+    .drama-vote { opacity: 0; transform: translate(-50%, -40%) scale(0.9); transition: all 0.5s ease-out; }
     .drama-vote.drama-vote { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     .drama-exile-vignette { opacity: 0; transition: opacity 1.2s ease-out; }
     .drama-exile-vignette.drama-exile-vignette { opacity: 1; }
-    .drama-exile-banner { opacity: 0; transform: translate(-50%, -50%) scale(0.8); transition: transform 0.8s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.8s cubic-bezier(0.2, 1, 0.3, 1); /* E2: was 'all' */ }
+    .drama-exile-banner { opacity: 0; transform: translate(-50%, -50%) scale(0.8); transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1); }
     .drama-exile-banner.drama-exile-banner { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     .drama-liar-spot { opacity: 0; transition: opacity 0.8s ease-out; }
     .drama-liar-spot.drama-liar-spot { opacity: 1; }
-    .drama-liar-crack { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: transform 0.3s cubic-bezier(0.2, 1.6, 0.4, 1), opacity 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); /* E2: was 'all' */ }
+    .drama-liar-crack { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: all 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
     .drama-liar-crack.drama-liar-crack { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
-    .drama-liar-text { opacity: 0; transform: translate(-50%, -30%); transition: transform 0.6s ease-out, opacity 0.6s ease-out; /* E2: was 'all' */ }
+    .drama-liar-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s ease-out; }
     .drama-liar-text.drama-liar-text { opacity: 1; transform: translate(-50%, -50%); }
     .drama-reconcile-glow { opacity: 0; transition: opacity 1.2s ease-out; }
     .drama-reconcile-glow.drama-reconcile-glow { opacity: 1; }
-    .drama-heart-rise { opacity: 0; transform: translate(-50%, -30%); transition: transform 1.5s ease-out, opacity 1.5s ease-out; /* E2: was 'all' */ }
+    .drama-heart-rise { opacity: 0; transform: translate(-50%, -30%); transition: all 1.5s ease-out; }
     .drama-heart-rise.drama-heart-rise { opacity: 1; transform: translate(-50%, -150%); }
-    .drama-betray-slash { opacity: 0; transform: translate(-50%, -50%) rotate(-5deg) scaleX(0); transition: transform 0.4s cubic-bezier(0.3, 1.4, 0.4, 1), opacity 0.4s cubic-bezier(0.3, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    .drama-betray-slash { opacity: 0; transform: translate(-50%, -50%) rotate(-5deg) scaleX(0); transition: all 0.4s cubic-bezier(0.3, 1.4, 0.4, 1); }
     .drama-betray-slash.drama-betray-slash { opacity: 1; transform: translate(-50%, -50%) rotate(-5deg) scaleX(1); }
-    .drama-betray-text { opacity: 0; transform: translate(-50%, -30%); transition: transform 0.5s ease-out, opacity 0.5s ease-out; /* E2: was 'all' */ }
+    .drama-betray-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.5s ease-out; }
     .drama-betray-text.drama-betray-text { opacity: 1; transform: translate(-50%, -50%); }
-
-    .drama-loser-heart { opacity: 0; transform: translate(-50%, -30%) scale(0.6); transition: transform 1s ease-out, opacity 1s ease-out; /* E2: was 'all' */ }
+    /* Social scenario spectacle (Steve 2026-10-07, Drama C1) — all GPU transform/opacity */
+    .drama-moot-glow { opacity: 0; transition: opacity 1s ease-out; }
+    .drama-moot-glow.drama-moot-glow { opacity: 1; animation: drama-fireflicker 0.8s ease-in-out infinite; }
+    @keyframes drama-fireflicker { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+    .drama-moot-banner { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
+    .drama-moot-banner.drama-moot-banner { opacity: 1; transform: translate(-50%, -50%); }
+    .drama-vote { opacity: 0; transform: translate(-50%, -40%) scale(0.9); transition: all 0.5s ease-out; }
+    .drama-vote.drama-vote { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-exile-vignette { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-exile-vignette.drama-exile-vignette { opacity: 1; }
+    .drama-exile-banner { opacity: 0; transform: translate(-50%, -50%) scale(0.8); transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1); }
+    .drama-exile-banner.drama-exile-banner { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .drama-liar-spot { opacity: 0; transition: opacity 0.8s ease-out; }
+    .drama-liar-spot.drama-liar-spot { opacity: 1; }
+    .drama-liar-crack { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: all 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    .drama-liar-crack.drama-liar-crack { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+    .drama-liar-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.6s ease-out; }
+    .drama-liar-text.drama-liar-text { opacity: 1; transform: translate(-50%, -50%); }
+    .drama-reconcile-glow { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-reconcile-glow.drama-reconcile-glow { opacity: 1; }
+    .drama-heart-rise { opacity: 0; transform: translate(-50%, -30%); transition: all 1.5s ease-out; }
+    .drama-heart-rise.drama-heart-rise { opacity: 1; transform: translate(-50%, -150%); }
+    .drama-betray-slash { opacity: 0; transform: translate(-50%, -50%) rotate(-5deg) scaleX(0); transition: all 0.4s cubic-bezier(0.3, 1.4, 0.4, 1); }
+    .drama-betray-slash.drama-betray-slash { opacity: 1; transform: translate(-50%, -50%) rotate(-5deg) scaleX(1); }
+    .drama-betray-text { opacity: 0; transform: translate(-50%, -30%); transition: all 0.5s ease-out; }
+    .drama-betray-text.drama-betray-text { opacity: 1; transform: translate(-50%, -50%); }
+    .drama-loser-heart { opacity: 0; transform: translate(-50%, -30%) scale(0.6); transition: all 1s ease-out; }
     .drama-loser-heart.drama-loser-heart { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .drama-phase { opacity: 0; transform: scale(0.8) rotate(-4deg); transition: transform 0.5s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.5s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-phase { opacity: 0; transform: scale(0.8) rotate(-4deg); transition: all 0.5s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-phase.drama-phase { opacity: 1; transform: scale(1.15) rotate(0deg); }
-    .drama-enrage { opacity: 0; transform: scale(0.6); transition: transform 0.6s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
-    .drama-enrage.drama-enrage { opacity: 1; transform: scale(1.2); animation: drama-enrage-pulse 0.8s ease-in-out 0.6s infinite; } /* E2: delayed past entrance */
-    @keyframes drama-enrage-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.78; } } /* E2: was filter (repaint) */
-    .drama-sparkle { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(0deg); transition: transform 0.9s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.9s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-enrage { opacity: 0; transform: scale(0.6); transition: all 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .drama-enrage.drama-enrage { opacity: 1; transform: scale(1.2); animation: drama-enrage-pulse 0.8s ease-in-out infinite; }
+    @keyframes drama-enrage-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
+    .drama-sparkle { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(0deg); transition: all 0.9s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-sparkle.drama-sparkle { opacity: 1; transform: translate(-50%, -80%) scale(1.2) rotate(180deg); }
     .drama-vignette-red { opacity: 0; transition: opacity 0.4s ease-out; }
     .drama-vignette-red.drama-vignette-red { opacity: 1; }
-    .drama-afterimage { opacity: 0; transition: transform 0.6s ease-out, opacity 0.6s ease-out; /* E2: was 'all' */ }
+    .drama-afterimage { opacity: 0; transition: all 0.6s ease-out; }
     .drama-afterimage.drama-afterimage { opacity: 0.6; transform: translate(-30%, -50%); }
-    .drama-shockwave { opacity: 0; transform: scale(0.3); transition: transform 0.7s cubic-bezier(0.1, 0.6, 0.3, 1), opacity 0.7s cubic-bezier(0.1, 0.6, 0.3, 1); /* E2: was 'all' */ }
+    .drama-shockwave { opacity: 0; transform: scale(0.3); transition: all 0.7s cubic-bezier(0.1, 0.6, 0.3, 1); }
     .drama-shockwave.drama-shockwave { opacity: 0.9; transform: scale(1.35); }
-    .drama-commentary { opacity: 0; transition: transform 1.4s ease-out, opacity 1.4s ease-out; /* E2: was 'all' */ }
+    .drama-commentary { opacity: 0; transition: all 1.4s ease-out; }
     .drama-commentary.drama-commentary { opacity: 1; transform: translate(-50%, -130%); }
     .drama-deathfade { opacity: 0; animation: drama-deathfade-anim 4.2s ease-in-out forwards; }
     @keyframes drama-deathfade-anim { 0% { opacity: 0; } 35% { opacity: 0.92; } 70% { opacity: 0.92; } 100% { opacity: 0; } }
     .drama-deathtext { opacity: 0; transition: opacity 1.2s ease-out; }
     .drama-deathtext.drama-deathtext { opacity: 1; }
-    .drama-rebirth { opacity: 0; transform: translate(-50%, -50%) scale(0.85); transition: transform 0.7s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.7s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-rebirth { opacity: 0; transform: translate(-50%, -50%) scale(0.85); transition: all 0.7s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-rebirth.drama-rebirth { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .drama-levelup-ring { opacity: 0; transform: scale(0.4); transition: transform 0.7s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    .drama-levelup-ring { opacity: 0; transform: scale(0.4); transition: all 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .drama-levelup-ring.drama-levelup-ring { opacity: 1; transform: scale(1.25); }
-    .drama-levelup-text { opacity: 0; transition: transform 1.2s ease-out, opacity 1.2s ease-out; /* E2: was 'all' */ }
+    .drama-levelup-text { opacity: 0; transition: all 1.2s ease-out; }
     .drama-levelup-text.drama-levelup-text { opacity: 1; transform: translate(-50%, -130%); }
     .drama-synshimmer { opacity: 0; transition: opacity 0.4s ease-out; }
-    .drama-synshimmer.drama-synshimmer { opacity: 1; animation: drama-shimmer-sweep 1.2s ease-in-out 0.4s infinite; } /* E2: delayed past entrance */
-    @keyframes drama-shimmer-sweep { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } } /* E2: was filter (repaint) */
+    .drama-synshimmer.drama-synshimmer { opacity: 1; animation: drama-shimmer-sweep 1.2s ease-in-out infinite; }
+    @keyframes drama-shimmer-sweep { 0%, 100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg); } }
     .drama-birthglow { opacity: 0; transition: opacity 1s ease-out; }
-    .drama-birthglow.drama-birthglow { opacity: 1; animation: drama-birth-pulse 2s ease-in-out 1s infinite; } /* E2: delayed past entrance */
-    @keyframes drama-birth-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.82; } } /* E2: was filter (repaint) */
-    .drama-birthcard { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: transform 0.6s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-birthglow.drama-birthglow { opacity: 1; animation: drama-birth-pulse 2s ease-in-out infinite; }
+    @keyframes drama-birth-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+    .drama-birthcard { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-birthcard.drama-birthcard { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .drama-villagerwisp { opacity: 0; transition: transform 1.8s ease-out, opacity 1.8s ease-out; /* E2: was 'all' */ }
+    .drama-villagerwisp { opacity: 0; transition: all 1.8s ease-out; }
     .drama-villagerwisp.drama-villagerwisp { opacity: 1; transform: translate(-50%, -120%); }
-    .drama-belltoll { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: transform 0.8s ease-out, opacity 0.8s ease-out; /* E2: was 'all' */ }
+    .drama-belltoll { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition: all 0.8s ease-out; }
     .drama-belltoll.drama-belltoll { opacity: 1; transform: translate(-50%, -50%) scale(1); animation: drama-bell-sway 1.6s ease-in-out infinite; }
-    @keyframes drama-bell-sway { 0%, 100% { translate: 0 0; } 25% { translate: -4px 0; } 75% { translate: 4px 0; } } /* E2: was margin-left (layout) */
-    .drama-sig-pop { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: transform 0.45s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    @keyframes drama-bell-sway { 0%, 100% { margin-left: 0; } 25% { margin-left: -4px; } 75% { margin-left: 4px; } }
+    .drama-sig-pop { opacity: 0; transform: translate(-50%, -50%) scale(0.3); transition: all 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .drama-sig-pop.drama-sig-pop { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-    .drama-sig-expand { opacity: 0; transform: translate(-50%, -50%) scale(0.5); transition: transform 0.9s ease-out, opacity 0.9s ease-out; /* E2: was 'all' */ }
+    .drama-sig-expand { opacity: 0; transform: translate(-50%, -50%) scale(0.5); transition: all 0.9s ease-out; }
     .drama-sig-expand.drama-sig-expand { opacity: 0.8; transform: translate(-50%, -50%) scale(1.7); }
     .drama-sig-spin { opacity: 0; transition: opacity 0.4s ease-out; }
     .drama-sig-spin.drama-sig-spin { opacity: 1; animation: drama-sig-rotate 2.2s linear infinite; }
     @keyframes drama-sig-rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-    .drama-sig-tick { opacity: 0; transform: translate(var(--tx0, 0px), var(--ty0, 0px)); transition: transform 0.55s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.55s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-sig-tick { opacity: 0; transform: translate(var(--tx0, 0px), var(--ty0, 0px)); transition: all 0.55s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-sig-tick.drama-sig-tick { opacity: 1; transform: translate(var(--tx1, 0px), var(--ty1, 0px)); }
-    .drama-sig-bar { opacity: 0; transform: translate(-50%, -50%) scale(0.2); transition: transform 0.4s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    .drama-sig-bar { opacity: 0; transform: translate(-50%, -50%) scale(0.2); transition: all 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .drama-sig-bar.drama-sig-bar { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     /* Knowledge drama (Steve 2026-10-07, Drama D2) — all GPU transform/opacity */
-    .drama-leafunfurl { opacity: 0; transform: scale(0.3) rotate(-30deg); transition: transform 0.7s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); /* E2: was 'all' */ }
+    .drama-leafunfurl { opacity: 0; transform: scale(0.3) rotate(-30deg); transition: all 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .drama-leafunfurl.drama-leafunfurl { opacity: 1; transform: scale(1.15) rotate(8deg); }
-    .drama-scroll { opacity: 0; transform: translate(-50%,-50%) scaleX(0.2); transition: transform 0.6s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-scroll { opacity: 0; transform: translate(-50%,-50%) scaleX(0.2); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-scroll.drama-scroll { opacity: 1; transform: translate(-50%,-50%) scaleX(1); }
-    .drama-codexcard { opacity: 0; transform: translate(-50%,-50%) scale(0.85); transition: transform 0.6s cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); /* E2: was 'all' */ }
+    .drama-codexcard { opacity: 0; transform: translate(-50%,-50%) scale(0.85); transition: all 0.6s cubic-bezier(0.2, 1.2, 0.4, 1); }
     .drama-codexcard.drama-codexcard { opacity: 1; transform: translate(-50%,-50%) scale(1); }
     .drama-pageflip { opacity: 0; transition: opacity 0.5s ease-out; }
-    .drama-pageflip.drama-pageflip { opacity: 1; animation: drama-pageflip-sweep 1.2s ease-in-out 0.5s infinite; } /* E2: delayed past entrance */
-    @keyframes drama-pageflip-sweep { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } } /* E2: was filter (repaint) */
-    .drama-skillbeam { opacity: 0; transform: translateY(20px); transition: transform 0.8s ease-out, opacity 0.8s ease-out; /* E2: was 'all' */ }
+    .drama-pageflip.drama-pageflip { opacity: 1; animation: drama-pageflip-sweep 1.2s ease-in-out infinite; }
+    @keyframes drama-pageflip-sweep { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
+    .drama-skillbeam { opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
     .drama-skillbeam.drama-skillbeam { opacity: 1; transform: translateY(-30px); }
     .drama-faintshimmer { opacity: 0; transition: opacity 0.6s ease-out; }
     .drama-faintshimmer.drama-faintshimmer { opacity: 1; }
-    .drama-aha { opacity: 0; transform: scale(0.4); transition: transform 0.5s cubic-bezier(0.2, 1.6, 0.4, 1), opacity 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); /* E2: was 'all' */ }
-    .drama-aha.drama-aha { opacity: 1; transform: scale(1.1); animation: drama-aha-glow 0.8s ease-in-out 0.5s infinite; } /* E2: delayed past entrance */
-    @keyframes drama-aha-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } } /* E2: was filter (repaint) */
+    .drama-aha { opacity: 0; transform: scale(0.4); transition: all 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    .drama-aha.drama-aha { opacity: 1; transform: scale(1.1); animation: drama-aha-glow 0.8s ease-in-out infinite; }
+    @keyframes drama-aha-glow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
     .drama-dawnwash { opacity: 0; transition: opacity 1.2s ease-out; }
     .drama-dawnwash.drama-dawnwash { opacity: 1; }
     .drama-duskwash { opacity: 0; transition: opacity 1.2s ease-out; }
     .drama-duskwash.drama-duskwash { opacity: 1; }
-    .drama-goldmote { opacity: 0; transition: transform 1.4s ease-out, opacity 1.4s ease-out; /* E2: was 'all' */ }
+    .drama-goldmote { opacity: 0; transition: all 1.4s ease-out; }
     .drama-goldmote.drama-goldmote { opacity: 1; transform: translateY(-30px); }
-    .drama-celebrate { opacity: 0; transition: transform 1.8s ease-out, opacity 1.8s ease-out; /* E2: was 'all' */ }
+    .drama-celebrate { opacity: 0; transition: all 1.8s ease-out; }
     .drama-celebrate.drama-celebrate { opacity: 1; transform: translateY(-50px) rotate(15deg); }
     .drama-mourn { opacity: 0; transition: opacity 1.5s ease-out; }
     .drama-mourn.drama-mourn { opacity: 1; }
     .drama-crackle { opacity: 0; transition: opacity 0.2s ease-out; }
     .drama-crackle.drama-crackle { opacity: 1; animation: drama-flicker 0.4s linear infinite; }
     @keyframes drama-flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-    .drama-playmote { opacity: 0; transition: transform 1.2s ease-out, opacity 1.2s ease-out; /* E2: was 'all' */ }
+    .drama-playmote { opacity: 0; transition: all 1.2s ease-out; }
     .drama-playmote.drama-playmote { opacity: 1; transform: translate(-50%, -80%); animation: drama-bob 0.8s ease-in-out infinite; }
     .drama-shake { animation: drama-shake-anim 0.4s ease-out; }
     @keyframes drama-shake-anim {

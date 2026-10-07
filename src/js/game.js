@@ -13907,6 +13907,17 @@
         }
         if (kind === 'signature') D.abilitySignature(...args);
         else if (kind === 'commentary') D.systemCommentary(...args);
+        // AUDIO-VISUAL SYNC (Steve 2026-10-07, Drama E1): the visual's audio
+        // mate fires here — one central place, so call sites never double-fire.
+        // Kinds whose sites already fire audio (hit->monsterHurt via tbDamage,
+        // wisp->monsterDown, enrage->wound*, npcAlert->talkAttention, contest
+        // announce->contestCall) map to null in D.audioFor and stay silent.
+        // The day-7 systemArrived gate above covers audio too: pre-System the
+        // game is quiet as well as still.
+        try {
+          const syncName = D.audioFor(kind, args[0]);
+          if (syncName) this.audioEvent(syncName, { drama: kind });
+        } catch (e3) {}
       } catch (e) {}
     },
     // buildBonus: the mechanical reward for your build archetype.
