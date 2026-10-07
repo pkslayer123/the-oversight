@@ -2610,6 +2610,12 @@
           if (a.id === threadAsk || n >= topicCapMood) continue;
           sub.push(a); n++;
         }
+        // PARTY INVITE survives the subject menu — the ask you came to make
+        // is not small talk. (Fix 2026-10-07: the subject-menu early return
+        // discarded `choices`, where invite_party already sat, so the
+        // invite was unreachable after browsing topics.)
+        const inv = choices.find(ch => ch.id === 'invite_party');
+        if (inv) sub.push(inv);
         sub.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
         return sub;
       }
@@ -2795,6 +2801,11 @@
       c.teachSkill = null; c.learnedOnce = false; c.learnedWhat = null;
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
       c.qCount = 0; c.theorized = [];
+      // RUMOR (fix 2026-10-07): the drama verb is per-conversation, not
+      // per-lifetime — rumorDone must reset here like teachSkill/offeredHelp,
+      // or the second rumor with the same person dangles at the prompt with
+      // no targets.
+      c.rumorDone = false; c.rumorTarget = null; c.rumorTargets = null;
       c.traderMentioned = false; c.pendingTrade = null;
       c.reactiveQ = null; c.windingDown = false; c.pastDeflected = false;
       // MOOD (convo-mood.js): every conversation starts at a temperature

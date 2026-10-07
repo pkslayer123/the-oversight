@@ -4877,16 +4877,28 @@
           const vv = this.state.village;
           vv.plantRumors = vv.plantRumors || {};
           const fresh = [];
+          const oldNews = [];
           for (const pid of brokered) {
-            const otherKnows = (vv.roster || []).some(rid =>
-              rid !== this.villagerId && ((vv.taught || {})[rid] || []).includes(pid));
-            if (otherKnows) continue; // old news at home — no fanfare
-            if (!vv.plantRumors[pid]) vv.plantRumors[pid] = { day: dayNow };
             const p = (this.data.plants || []).find(x => x.id === pid);
-            fresh.push(p ? p.name : pid);
+            const nm = p ? p.name : pid;
+            const knower = (vv.roster || []).find(rid =>
+              rid !== this.villagerId && ((vv.taught || {})[rid] || []).includes(pid));
+            // Old news at home — no fanfare, but NEVER silence: the player
+            // carried knowledge home, and the no-silent-actions rule means
+            // the return must say so. (Fix 2026-10-07: old-news awayLearned
+            // was consumed with zero acknowledgment.)
+            if (knower) { oldNews.push({ name: nm, knower }); continue; }
+            if (!vv.plantRumors[pid]) vv.plantRumors[pid] = { day: dayNow };
+            fresh.push(nm);
           }
           if (fresh.length) {
             this.say(`That night at the fire, they ask where you've been. You tell them — and what you learned out there: ${fresh.join(', ')}. Someone leans closer to the light. "Show us. Slowly." The knowledge is home now. It'll get around.`);
+          }
+          if (oldNews.length) {
+            const names = oldNews.map(o => o.name).join(', ');
+            let who = 'someone here';
+            try { who = this.displayName(oldNews[0].knower) || who; } catch (e) {}
+            this.say(`You start in on ${names} too — and they grin. "Old news, friend. ${who} showed us that one." Still: you carried it home. That's the job.`);
           }
         }
       }
