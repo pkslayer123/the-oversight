@@ -15438,6 +15438,11 @@
         if (sch.synergies.includes(syn.id)) continue;   // already discovered
         const dm = syn.discovery_method;
         if (!dm) continue;
+        // MULTI-PATH (Steve 2026-10-07): requires_any allows multiple ways to
+        // unlock a synergy. Each inner array is one valid path — if ANY path
+        // is fully satisfied, the synergy unlocks. This prevents linear
+        // chains where missing one ability blocks the whole tree.
+        const reqsAny = syn.requires_any || null;
         const reqs = syn.requires || [];
         // PREFIX-AWARE (fix 2026-10-07): requires may have tech:/skill: prefixes,
         // but usedId is bare. Check both bare and prefixed forms.
@@ -15463,7 +15468,14 @@
           // ability (default)
           return this.abilityLevel(rid) >= minLvl;
         };
-        if (!reqs.every(hasReq)) continue;
+        // Check requires (all must match) OR requires_any (any path must match)
+        let reqsMet = false;
+        if (reqsAny) {
+          reqsMet = reqsAny.some(path => path.every(hasReq));
+        } else {
+          reqsMet = reqs.every(hasReq);
+        }
+        if (!reqsMet) continue;
         // PREFIX-AWARE (fix 2026-10-07): the "other" leg must exclude the
         // used leg in bare AND prefixed form — otherwise a tech leg matches
         // itself and simultaneous/same-target checks compare wrong ids.

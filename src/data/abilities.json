@@ -54,7 +54,32 @@
     ],
     "unlock": {
       "type": "granted"
-    }
+    },
+    "actions": [
+      {
+        "id": "read_sign",
+        "context": "explore",
+        "name": "Read Sign",
+        "cost": {
+          "time_min": 15
+        },
+        "effect": "Study tracks, scat, browse lines. Learn what's been here, how long ago, which direction."
+      },
+      {
+        "id": "read_stance",
+        "context": "combat",
+        "name": "Read Stance",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Once per fight: study the monster's stance. Reveals its likely next move (knowledge-gated)."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "explorer",
+      "survivalist"
+    ]
   },
   {
     "description": "One shot. You don't take the shot unless it's the shot.",
@@ -71,7 +96,32 @@
     "pool": "combat",
     "unlock": {
       "type": "granted"
-    }
+    },
+    "actions": [
+      {
+        "id": "take_aim",
+        "context": "combat",
+        "name": "Take Aim",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Spend turn aiming. Next shot is 2.5x damage and cannot miss. You are exposed (enemies get +hit)."
+      },
+      {
+        "id": "clean_shot",
+        "context": "explore",
+        "name": "Line Up Clean Shot",
+        "cost": {
+          "time_min": 20,
+          "kcal": 15
+        },
+        "effect": "Take extra time on a hunting shot. Clean kill: full meat yield, animal doesn't suffer."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "brawler"
+    ]
   },
   {
     "description": "Break down game fast and clean. Less waste, more meat, usable parts.",
@@ -91,7 +141,23 @@
     ],
     "unlock": {
       "type": "granted"
-    }
+    },
+    "actions": [
+      {
+        "id": "dress_game",
+        "context": "camp",
+        "name": "Field Dress",
+        "cost": {
+          "time_min": 30,
+          "kcal": 40
+        },
+        "effect": "Break down game fast and clean. 1.3x meat yield, usable parts (hide, sinew, bone)."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "survivalist"
+    ]
   },
   {
     "description": "You think in shelf life. Smoking, drying, salting \u2014 food that lasts is food that saves.",
@@ -248,7 +314,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 50
-    }
+    },
+    "actions": [
+      {
+        "id": "track",
+        "context": "explore",
+        "name": "Track",
+        "cost": {
+          "time_min": 15
+        },
+        "effect": "Follow tracks. Find where an animal went, how many, how long ago."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "explorer"
+    ]
   },
   {
     "id": "diplomat",
@@ -896,7 +977,22 @@
     "modifiers": [],
     "metabolic": {
       "daily": 75
-    }
+    },
+    "actions": [
+      {
+        "id": "dead_aim_shot",
+        "context": "combat",
+        "name": "Dead Aim",
+        "cost": {
+          "turn": true,
+          "kcal": 50
+        },
+        "effect": "One perfect shot. 3x damage, ignores armor. You cannot move this turn."
+      }
+    ],
+    "paths": [
+      "hunter"
+    ]
   },
   {
     "id": "second_skin",
@@ -1428,5 +1524,160 @@
     "metabolic": {
       "daily": 40
     }
+  },
+  {
+    "id": "stalk",
+    "name": "Stalk",
+    "description": "Move unseen. Close distance without being noticed.",
+    "flavor": "You're not invisible. You're just not interesting enough to look at twice.",
+    "pool": "fieldcraft",
+    "tier": "common",
+    "unlock": {
+      "type": "practice"
+    },
+    "modifiers": [
+      {
+        "target": "stealth.move_silent",
+        "op": "add",
+        "value": 0.3
+      }
+    ],
+    "actions": [
+      {
+        "id": "stalk_prey",
+        "context": "explore",
+        "name": "Stalk",
+        "cost": {
+          "time_min": 15,
+          "kcal": 30
+        },
+        "effect": "Move to adjacent tile unseen. Animals don't flee. Once per approach."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "drifter",
+      "explorer"
+    ]
+  },
+  {
+    "id": "blood_trail",
+    "name": "Blood Trail",
+    "description": "You can follow a wounded animal through anything. It doesn't get away.",
+    "flavor": "The blood tells you everything: how deep, how fast, how long it has.",
+    "pool": "fieldcraft",
+    "tier": "uncommon",
+    "unlock": {
+      "type": "practice"
+    },
+    "modifiers": [
+      {
+        "target": "hunt.track_wounded",
+        "op": "add",
+        "value": 0.5
+      }
+    ],
+    "actions": [
+      {
+        "id": "follow_blood",
+        "context": "explore",
+        "name": "Follow Blood Trail",
+        "cost": {
+          "time_min": 20,
+          "kcal": 25
+        },
+        "effect": "Track a wounded animal to its location. Reveals direction and distance."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "survivalist"
+    ]
+  },
+  {
+    "id": "ambush",
+    "name": "Ambush",
+    "description": "Pick your ground. Wait. Strike when it's too late for them.",
+    "flavor": "Patience is a weapon. The best trap is the one they walk into.",
+    "pool": "combat",
+    "tier": "uncommon",
+    "unlock": {
+      "type": "practice"
+    },
+    "modifiers": [
+      {
+        "target": "combat.first_strike_damage",
+        "op": "multiply",
+        "value": 1.5
+      }
+    ],
+    "actions": [
+      {
+        "id": "set_ambush",
+        "context": "combat",
+        "name": "Ambush",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Spend turn preparing. Next attack is 2x damage and target can't dodge."
+      },
+      {
+        "id": "lay_wait",
+        "context": "explore",
+        "name": "Lay in Wait",
+        "cost": {
+          "time_min": 30,
+          "kcal": 20
+        },
+        "effect": "Set an ambush at your location. Next animal encounter starts with you hidden."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "brawler"
+    ]
+  },
+  {
+    "id": "animal_ken",
+    "name": "Animal Ken",
+    "description": "You understand animals. Not talk to them \u2014 understand them.",
+    "flavor": "It's not magic. It's just paying attention for ten thousand hours.",
+    "pool": "fieldcraft",
+    "tier": "rare",
+    "unlock": {
+      "type": "system_offer"
+    },
+    "modifiers": [
+      {
+        "target": "animal.behavior_read",
+        "op": "add",
+        "value": 0.4
+      }
+    ],
+    "actions": [
+      {
+        "id": "read_beast",
+        "context": "explore",
+        "name": "Read the Beast",
+        "cost": {
+          "time_min": 10
+        },
+        "effect": "Study an animal. Learn if it's hungry, afraid, aggressive, or sick."
+      },
+      {
+        "id": "calm_beast",
+        "context": "combat",
+        "name": "Calm",
+        "cost": {
+          "turn": true
+        },
+        "effect": "Attempt to calm a non-predatory animal. May end the fight peacefully."
+      }
+    ],
+    "paths": [
+      "hunter",
+      "caregiver",
+      "drifter"
+    ]
   }
 ]
