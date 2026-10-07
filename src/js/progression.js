@@ -10,8 +10,16 @@
 //   - progState()
 //   - progDaily()
 //   - slotMoment()
+//   - synLedger()
+//   - trackResonance(abilityId, ctx)
+//   - emergentSynergies()
+//   - emergentInfo(id)
+//   - attunePhase(abilityId)
 // rules:
 //   - ability_cap: 6 (code: progression.js)
+//   - emergent_unlock: 5 successful pattern activations (4 if woven); one-off tries never unlock (code: progression.js)
+//   - slot_cap_bounds_synergy: candidates tracked only while both abilities held; unlocked resonances go dormant off-slot; C(6,2)=15 pairs max in play (code: progression.js)
+//   - resonance_codex_gate: candidates never exposed to UI; hints never name the recipe; codex entry written only on unlock (code: progression.js)
 // consumes:
 //   - scholar.xp
 //   - scholar.abilities
@@ -47,6 +55,46 @@
   const pick = (a) => a[Math.floor(R() * a.length)];
 
   const SLOT_MOMENT = { 20: 'spark', 40: 'mentor', 60: 'trial', 70: 'creep', 80: 'grant' };
+
+  // Emergent-resonance recipe table. Seeded from orphaned design intent:
+  // abilities.json synergyHints named these pairings ("Adrenaline Control:
+  // stabilize then fight on", "Patient Aim: find it, then drop it clean",
+  // "Preservation Instinct: harvest, then keep it") but no system ever read
+  // them. The ledger crystallizes them when the PLAYER performs the pattern
+  // — the hint in the data becomes a discovery in play. kind must match the
+  // candidate kind ('sequential' or 'same_target'); order matters for
+  // sequential recipes.
+  const EMERGENT_RECIPES = [
+    {
+      id: 'res_stabilize_fight', pair: ['triage', 'adrenaline_control'], kind: 'sequential',
+      order: ['triage', 'adrenaline_control'], name: 'Stabilize Then Fight On',
+      flavor: 'Patch the wound. Then let the rush carry you. The body remembers this order even when the mind does not.',
+      discovery: 'SYSTEM: "STABILIZE, THEN FIGHT. Oh! OH! The ORDER matters! We have updated our medical textbooks. We did not HAVE medical textbooks. We do now."',
+      modifiers: [
+        { target: 'healing.amount', op: 'multiply', value: 1.25 },
+        { target: 'combat.strike_damage', op: 'multiply', value: 1.1 },
+      ],
+    },
+    {
+      id: 'res_find_drop_clean', pair: ['game_sense', 'patient_aim'], kind: 'sequential',
+      order: ['game_sense', 'patient_aim'], name: 'Find It, Then Drop It Clean',
+      flavor: 'Read the sign. Wait for the shot. The clean kill is a courtesy — to the animal, and to the village that eats.',
+      discovery: 'SYSTEM: "FIND, THEN AIM. The gamblers are taking notes! The audience is holding its breath! Nothing personal, prey animal!"',
+      modifiers: [
+        { target: 'hunt.success', op: 'add', value: 0.15 },
+        { target: 'hunt.find_chance', op: 'add', value: 0.1 },
+      ],
+    },
+    {
+      id: 'res_preservation', pair: ['field_dressing', 'camp_cook'], kind: 'sequential',
+      order: ['field_dressing', 'camp_cook'], name: 'Preservation Instinct',
+      flavor: 'Harvest clean, keep it clean. Nothing the land gave you goes to waste on your watch.',
+      discovery: 'SYSTEM: "HARVEST, THEN KEEP. Nothing wasted! EVERYTHING returns! We are taking sustainability notes. From a human. We contain multitudes."',
+      modifiers: [
+        { target: 'cook.kcal', op: 'multiply', value: 1.15 },
+      ],
+    },
+  ];
 
   const methods = {
 
@@ -382,6 +430,8 @@
     // ---------- DAILY ----------
     progDaily() {
       const s = this.state.scholar, pg = this.progState();
+      // emergent-resonance ledger: the feeling fades overnight
+      try { this.resonanceDawnDecay(); } catch (e) {}
       // pre-arrival slot moments, fired now that the System exists to speak
       if (this.state.systemArrived && (pg.pendingMoments || []).length) {
         const pend = pg.pendingMoments.slice().sort((a, b) => a - b);
@@ -440,6 +490,379 @@
         }
       }
       return { errors: errors.slice(0, 40), total: errors.length, checked: items.length };
+    },
+
+    // ============ EMERGENT SYNERGY LEDGER ============
+    // Steve's design (2026-10-04): "Synergy discovery is earned through
+    // practice: logical, guessable activation conditions (e.g. abilities in
+    // succession on the same target), a few successful attempts required —
+    // no reward for one-off tries; attempts 1–2 reliably hint at what's
+    // possible without saying how."
+    //
+    // game.js owns the DESIGNED synergies (data/synergies.json — 3 combined
+    // uses to unlock). This ledger owns the EMERGENT ones: pairings the data
+    // never named, discovered purely because the player kept doing the thing
+    // and the System kept watching. The recipe table below is seeded from
+    // orphaned design intent (abilities.json synergyHints — named pairs that
+    // were never wired into any system); anything else crystallizes as a
+    // generic resonance the System names on the spot.
+    //
+    // HONESTY RULES (the ledger is a contract with the player):
+    // - One clean pattern completion = one counted activation. Each use of A
+    //   enables exactly ONE counted use of B (tracked by use-log index), so
+    //   spamming B after a single A does not farm the ledger.
+    // - Wrong sequences decay the run: B without a fresh A costs 1; a
+    //   component ability used on a different target mid-pattern costs 1;
+    //   every dawn costs 1. One-off tries evaporate entirely.
+    // - Unlock needs EMERGENT_NEED (5) successful activations — stricter than
+    //   designed synergies (3), because this recipe was never written down.
+    //   A woven-attuned ability lowers it to 4 for its pairs.
+    // - 6-SLOT CAP: candidates are tracked only while BOTH abilities are held
+    //   (abilityLevel >= 1). An unlocked resonance goes DORMANT the moment a
+    //   component leaves the slots. The cap bounds the choosable combo space:
+    //   C(6,2)=15 pairs of slotted gifts in play at once (background gifts —
+    //   who you already were — are always held and sit outside the cap).
+    //   Bounded but rich. Synergies never grant slots; they reward choosing
+    //   well WITHIN the cap.
+    // - CODEX GATING ("if you don't know, it doesn't show"): candidates are
+    //   never exposed to any UI surface. Hint text never names the abilities
+    //   or the recipe — it describes the FEELING. emergentInfo(id) returns
+    //   null until unlocked; the codex entry is written at unlock.
+    synLedger() {
+      const pg = this.progState();
+      pg.synLedger = pg.synLedger || { cands: {}, emergent: {}, attune: {} };
+      return pg.synLedger;
+    },
+
+    // Pairs the designed system already owns — the emergent ledger keeps out.
+    designedSynergyPairs() {
+      const s = new Set();
+      for (const syn of (this.data.synergies || [])) {
+        const r = (syn.requires || []).slice().sort();
+        if (r.length === 2) s.add(r.join('|'));
+      }
+      return s;
+    },
+
+    abilityDisplayName(id) {
+      const d = (this.data.abilities || []).find(a => a.id === id);
+      return d ? d.name : id;
+    },
+
+    // trackResonance: called from the noteAbilityUse wrap (which runs AFTER
+    // the original, so abilityUseLog already contains this use as its last
+    // entry). Builds candidate sequences from the log and scores them.
+    trackResonance(abilityId, ctx) {
+      const sch = this.state.scholar;
+      if (!sch || !abilityId) return;
+      const L = this.synLedger();
+      // day source mirrors game.js noteAbilityUse (village.day first) so the
+      // ledger and the use log always agree on what "today" means.
+      const day = (this.state.village && this.state.village.day) || (sch.day || 1);
+      this.attuneUse(abilityId);
+      const log = sch.abilityUseLog || [];
+      const curIdx = log.length - 1;
+      let held = 0;
+      try { held = this.abilityLevel(abilityId) >= 1; } catch (e) { held = 0; }
+      if (!held) return;
+      const heldFn = (id) => { try { return this.abilityLevel(id) >= 1; } catch (e) { return false; } };
+      // purge: components no longer held, or already crystallized
+      for (const k of Object.keys(L.cands)) {
+        const c = L.cands[k];
+        if (!heldFn(c.a) || !heldFn(c.b)) delete L.cands[k];
+      }
+      const designed = this.designedSynergyPairs();
+      const pairKey = (a, b) => [a, b].sort().join('|');
+      // --- succession: most recent DISTINCT earlier use, same day, close by
+      let prevA = null, prevIdx = -1;
+      for (let i = curIdx - 1; i >= 0 && i >= curIdx - 5; i--) {
+        const u = log[i];
+        if (!u || u.id === abilityId) continue;
+        if ((u.day || 1) !== day) break; // yesterday's rhythm doesn't count
+        prevA = u.id; prevIdx = i; break;
+      }
+      // --- same target: partner use on the same target today
+      const tgt = (ctx && ctx.target) || null;
+      let partnerIdx = -1, partnerId = null;
+      if (tgt) {
+        for (let i = curIdx - 1; i >= 0 && i >= curIdx - 8; i--) {
+          const u = log[i];
+          if (!u || (u.day || 1) !== day || u.target !== tgt || u.id === abilityId) continue;
+          partnerId = u.id; partnerIdx = i; break;
+        }
+      }
+      const completions = [];
+      if (prevA && heldFn(prevA)) completions.push({ key: 'seq:' + prevA + '>' + abilityId, a: prevA, b: abilityId, kind: 'sequential', enabler: prevIdx });
+      if (partnerId && heldFn(partnerId)) {
+        const pr = [partnerId, abilityId].sort();
+        completions.push({ key: 'tgt:' + pr[0] + '|' + pr[1] + '@' + tgt, a: pr[0], b: pr[1], kind: 'same_target', target: tgt, enabler: partnerIdx });
+      }
+      const doneKeys = new Set();
+      for (const c of completions) {
+        if (c.a === c.b) continue;
+        if (designed.has(pairKey(c.a, c.b))) continue; // game.js owns it
+        // resonanceSuccess reports whether the pattern actually counted —
+        // a repeated B off the same A counts for nothing AND breaks rhythm.
+        if (this.resonanceSuccess(c, day)) doneKeys.add(c.key);
+      }
+      // --- honest decay: B used without a fresh A (mashing), or a component
+      // dragged onto a different target mid-pattern.
+      for (const k of Object.keys(L.cands)) {
+        const c = L.cands[k];
+        if (doneKeys.has(k) || c.run <= 0) continue;
+        let decay = false;
+        if (c.kind === 'sequential' && abilityId === c.b) {
+          // this B completed nothing fresh — the rhythm broke
+          decay = true;
+        } else if (c.kind === 'same_target' && tgt && tgt !== c.target &&
+                   (abilityId === c.a || abilityId === c.b)) {
+          decay = true; // the thread moved to another mark
+        }
+        if (decay) {
+          c.run = Math.max(0, c.run - 1);
+          c.lastDay = day;
+        }
+      }
+    },
+
+    // Returns true when the activation counted toward the run.
+    resonanceSuccess(c, day) {
+      const L = this.synLedger();
+      let cand = L.cands[c.key];
+      if (!cand) {
+        cand = L.cands[c.key] = {
+          key: c.key, a: c.a, b: c.b, kind: c.kind, target: c.target || null,
+          run: 0, total: 0, hintStage: 0, lastAIdx: -1, lastDay: day,
+        };
+      }
+      if (cand.lastAIdx === c.enabler) return false; // one A enables one counted B
+      cand.lastAIdx = c.enabler;
+      let gain = 1;
+      if (this.attunePhase(c.a) >= 2 || this.attunePhase(c.b) >= 2) gain = 2; // hum
+      cand.run += gain;
+      cand.total += 1;
+      cand.lastDay = day;
+      if (cand.run >= this.emergentNeed(cand)) this.crystallizeResonance(cand);
+      else this.resonanceHint(cand);
+      return true;
+    },
+
+    emergentNeed(cand) {
+      // woven attunement (phase 3) shortens the road for its pairs
+      if (this.attunePhase(cand.a) >= 3 || this.attunePhase(cand.b) >= 3) return 4;
+      return 5; // EMERGENT_NEED: unknown recipes demand more proof
+    },
+
+    // resonanceHint: attempts 1–2 (and beyond) tease the FEELING, never the
+    // recipe. The player should think "whoa, what did I just do?" — not read
+    // an instruction manual.
+    resonanceHint(cand) {
+      if (cand.hintStage >= cand.run) return; // one hint per depth
+      cand.hintStage = cand.run;
+      const lines = this.resonanceHintLines(cand.kind, cand.run);
+      if (lines && lines.length) {
+        try { this.say(pick(lines)); } catch (e) {}
+      }
+    },
+
+    resonanceHintLines(kind, run) {
+      const SEQ = {
+        1: [
+          'For a breath, the two gifts felt like one thing with two ends. Then the moment passed. (Probably nothing. Probably.)',
+          'A shiver ran the length of your spine — not cold, not fear. Like a chord resolving. Then nothing.',
+        ],
+        2: [
+          'Again. The same order, the same rhythm. The overlay flickered at the edge of your sight. The System noticed before you did. It doesn\'t know what it saw.',
+          'Twice now, and the second time the air tasted like copper and ozone. Something is keeping count. It might be you.',
+        ],
+        3: [
+          'There is a shape to this now. Do it the same way — deliberately, not by accident. The echo is getting louder.',
+          'The System has stopped pretending it isn\'t watching. Do the thing again. Exactly the thing.',
+        ],
+        4: [
+          'One more. Exactly like that. You can feel it leaning in — whatever "leaning in" means for something with no body.',
+          'This is the edge of something. One more, and it tips over.',
+        ],
+      };
+      const TGT = {
+        1: [
+          'Something answered — there, on that one. A chord struck twice in the same place. Gone before you could name it.',
+        ],
+        2: [
+          'Twice now, on the same mark. Coincidence is getting lazy with its excuses.',
+          'The same place, the same two gifts. The overlay drew a circle around it, then erased the circle, embarrassed.',
+        ],
+        3: [
+          'The pattern has a location. Keep bringing both gifts to the same mark. Deliberately.',
+        ],
+        4: [
+          'One more, on the same mark. The System has started taking notes in the margins. You can see its handwriting.',
+        ],
+      };
+      const bank = kind === 'same_target' ? TGT : SEQ;
+      return bank[run] || null;
+    },
+
+    crystallizeResonance(cand) {
+      const L = this.synLedger();
+      const pk = [cand.a, cand.b].sort().join('|');
+      const recipe = EMERGENT_RECIPES.find(r => {
+        if (r.pair.slice().sort().join('|') !== pk) return false;
+        if (r.kind && r.kind !== cand.kind) return false;
+        // sequential recipes care about ORDER: stabilize THEN fight.
+        if (r.kind === 'sequential' && r.order) {
+          return cand.a === r.order[0] && cand.b === r.order[1];
+        }
+        return true;
+      });
+      let entry;
+      if (recipe) {
+        entry = {
+          id: recipe.id, name: recipe.name, pair: [cand.a, cand.b], kind: cand.kind,
+          flavor: recipe.flavor, discovery: recipe.discovery, modifiers: recipe.modifiers,
+        };
+      } else {
+        entry = this.genericResonance(cand);
+      }
+      entry.day = cand.lastDay || 1;
+      entry.total = cand.total;
+      L.emergent[entry.id] = entry;
+      delete L.cands[cand.key];
+      // codex: now you know, now it shows
+      try {
+        this.state.codex = this.state.codex || {};
+        this.state.codex.synergies = this.state.codex.synergies || {};
+        this.state.codex.synergies[entry.id] = { known: true, day: entry.day, note: entry.name + ' — ' + entry.flavor };
+      } catch (e) {}
+      this.say(`✨ RESONANCE DISCOVERED: ${entry.name}!`);
+      this.say(entry.flavor);
+      this.say(entry.discovery);
+      this.say(`(Resonance effect: ${this.describeEmergentFx(entry.modifiers)}. Dormant unless both gifts are held in your slots.)`);
+      try { this.recomputeActiveSynergies(); } catch (e) {}
+      try { this.save(); } catch (e) {}
+    },
+
+    genericResonance(cand) {
+      const an = this.abilityDisplayName(cand.a), bn = this.abilityDisplayName(cand.b);
+      return {
+        id: 'res_' + cand.a + '_' + cand.b + '_' + cand.kind.slice(0, 3),
+        name: an + ' × ' + bn,
+        pair: [cand.a, cand.b], kind: cand.kind,
+        flavor: 'Nobody taught you this. The two gifts just... fit, like hands finding each other in the dark.',
+        discovery: `SYSTEM: "UNFILED RESONANCE DETECTED. We did not plan this. We are taking credit anyway. The audience demanded a name, so: ${an} × ${bn}. Filed under FAVORITES."`,
+        modifiers: this.genericResonanceFx(cand.a, cand.b),
+      };
+    },
+
+    genericResonanceFx(a, b) {
+      const pool = (id) => {
+        const d = (this.data.abilities || []).find(x => x.id === id);
+        return (d && d.pool) || 'system';
+      };
+      const pa = pool(a), pb = pool(b);
+      const has = (p) => pa === p || pb === p;
+      if (pa === 'combat' && pb === 'combat') return [{ target: 'combat.strike_damage', op: 'multiply', value: 1.1 }];
+      if (has('fieldcraft')) return [{ target: 'hunt.find_chance', op: 'add', value: 0.1 }];
+      if (has('care')) return [{ target: 'healing.amount', op: 'multiply', value: 1.15 }];
+      if (has('craft')) return [{ target: 'craft.success', op: 'multiply', value: 1.15 }];
+      return [
+        { target: 'hunt.find_chance', op: 'add', value: 0.05 },
+        { target: 'forage.yield', op: 'multiply', value: 1.05 },
+      ];
+    },
+
+    describeEmergentFx(mods) {
+      const names = {
+        'combat.strike_damage': 'strike damage', 'healing.amount': 'healing',
+        'hunt.success': 'hunt success', 'hunt.find_chance': 'finding prey',
+        'cook.kcal': 'cooking yield', 'forage.yield': 'forage yield',
+        'craft.success': 'crafting', 'trust.gain_mult': 'trust gains',
+      };
+      return (mods || []).map(m => {
+        const n = names[m.target] || m.target;
+        const v = m.op === 'multiply' ? '×' + m.value : (m.value > 0 ? '+' : '') + Math.round(m.value * 100) + '%';
+        return n + ' ' + v;
+      }).join(', ');
+    },
+
+    // emergentSynergies: all crystallized resonances (the UI/codex read).
+    emergentSynergies() {
+      return Object.values(this.synLedger().emergent || {});
+    },
+    // emergentInfo: codex-gated. Null until discovered — if you don't know,
+    // it doesn't show. Any UI surface must read through this gate.
+    emergentInfo(id) {
+      const e = (this.synLedger().emergent || {})[id];
+      if (!e) return null;
+      let active = false;
+      try { active = (((this.state.scholar || {}).activeEmergent) || []).indexOf(e.id) >= 0; } catch (err) {}
+      return {
+        id: e.id, name: e.name, pair: (e.pair || []).slice(), kind: e.kind,
+        flavor: e.flavor, effect: this.describeEmergentFx(e.modifiers), active,
+      };
+    },
+    activeEmergentIds() {
+      return ((this.state.scholar || {}).activeEmergent || []).slice();
+    },
+
+    // Dawn decay: the feeling fades overnight. One-off tries evaporate.
+    resonanceDawnDecay() {
+      const sch = this.state.scholar;
+      if (!sch) return;
+      const L = this.synLedger();
+      const day = (this.state.village && this.state.village.day) || (sch.day || 1);
+      for (const k of Object.keys(L.cands)) {
+        const c = L.cands[k];
+        if ((c.lastDay || 0) >= day) continue;
+        // attunement flicker: the feeling doesn't fade overnight
+        if (this.attunePhase(c.a) >= 1 || this.attunePhase(c.b) >= 1) { c.lastDay = day; continue; }
+        c.run = Math.max(0, c.run - 1);
+        c.lastDay = day;
+        if (c.run === 0 && c.total <= 1) delete L.cands[k];
+      }
+    },
+
+    // ============ ATTUNEMENT (neural-creep evolution) ============
+    // At integration stage 2+ ("neural creep — abilities deepen, synergies
+    // unlock"), abilities already at max level (3) keep a second track:
+    // ATTUNEMENT. Use deepens the groove. Phases: flicker (8) → hum (20) →
+    // woven (40). Each phase is a beat, and each one bends the resonance
+    // ledger toward the attuned gift:
+    //   flicker: overnight decay never touches its pairs (the feeling stays)
+    //   hum:    its pairs count double per successful activation
+    //   woven:  its pairs crystallize at 4 activations instead of 5
+    // The System explains all of this with a completely wrong theory, which
+    // is the joke and also the fiction.
+    attuneUse(abilityId) {
+      if (this.integrationStage() < 2) return;
+      const sch = this.state.scholar;
+      const ab = (sch.backgroundAbilities || []).find(a => a.id === abilityId) ||
+                 (sch.abilities || []).find(a => a.id === abilityId);
+      if (!ab || (ab.level || 1) < 3) return; // only deepened gifts attune
+      const L = this.synLedger();
+      const at = L.attune[abilityId] || (L.attune[abilityId] = { xp: 0, phase: 0 });
+      if (at.xp >= 40) return;
+      at.xp += 1;
+      const want = at.xp >= 40 ? 3 : at.xp >= 20 ? 2 : at.xp >= 8 ? 1 : 0;
+      if (want > at.phase) {
+        at.phase = want;
+        this.attuneBeat(abilityId, want);
+      }
+    },
+    attunePhase(abilityId) {
+      const at = (this.synLedger().attune || {})[abilityId];
+      return at ? at.phase : 0;
+    },
+    attuneBeat(abilityId, phase) {
+      const nm = this.abilityDisplayName(abilityId);
+      if (phase === 1) {
+        this.say(`◈ ATTUNEMENT — ${nm} flickers at the edges now, like a word on the tip of a tongue. SYSTEM: "ANOMALY: the ${nm} waveform is echoing ITSELF. We are calling this RESONANCE. We are probably wrong. It is probably resonance." (Resonances involving ${nm} no longer fade overnight.)`);
+      } else if (phase === 2) {
+        this.say(`◈ ATTUNEMENT — ${nm} hums, low and constant. Your other gifts lean toward it the way plants lean toward light. (Resonances involving ${nm} deepen twice as fast.)`);
+      } else if (phase === 3) {
+        this.say(`◈ ATTUNEMENT — ${nm} is woven in. It doesn't feel like a gift anymore. It feels like a habit the universe has. (Resonances involving ${nm} crystallize sooner.)`);
+      }
+      try { this.save(); } catch (e) {}
     },
   };
 
@@ -608,6 +1031,62 @@
     Game.endDay = function () {
       try { this.progDaily(); } catch (e) {}
       return _endDay ? _endDay.call(this) : undefined;
+    };
+
+    // noteAbilityUse: every ability use feeds the emergent-resonance ledger.
+    // Runs AFTER the original (game.js) so abilityUseLog already holds this
+    // use as its last entry. Chain-safe: other modules' wraps keep working.
+    const _nau = Game.noteAbilityUse;
+    Game.noteAbilityUse = function (abilityId, context) {
+      const r = _nau ? _nau.call(this, abilityId, context) : undefined;
+      try { if (this.trackResonance) this.trackResonance(abilityId, context); } catch (e) {}
+      return r;
+    };
+
+    // recomputeActiveSynergies: emergent resonances go DORMANT unless both
+    // component gifts are currently held — the 6-slot cap is the boss here.
+    const _rec = Game.recomputeActiveSynergies;
+    Game.recomputeActiveSynergies = function () {
+      const r = _rec ? _rec.call(this) : undefined;
+      try {
+        const sch = this.state.scholar;
+        if (!sch || !this.synLedger) return r;
+        const L = this.synLedger();
+        const act = [];
+        for (const e of Object.values(L.emergent || {})) {
+          const held = (e.pair || []).every(id => {
+            try { return this.abilityLevel(id) >= 1; } catch (x) { return false; }
+          });
+          if (held) act.push(e.id);
+        }
+        sch.activeEmergent = act;
+      } catch (e) {}
+      return r;
+    };
+
+    // synergyMods: emergent modifiers ride the same pipeline as designed ones.
+    const _sm = Game.synergyMods;
+    Game.synergyMods = function () {
+      const base = _sm ? _sm.call(this) : [];
+      try {
+        if (!this.synLedger) return base;
+        const L = this.synLedger();
+        for (const id of ((this.state.scholar || {}).activeEmergent || [])) {
+          const e = L.emergent[id];
+          if (e && e.modifiers) {
+            for (const m of e.modifiers) base.push(Object.assign({ source: 'emergent:' + id }, m));
+          }
+        }
+      } catch (e) {}
+      return base;
+    };
+
+    // hasSynergy: emergent resonances count as resonating.
+    const _hs = Game.hasSynergy;
+    Game.hasSynergy = function (sid) {
+      if (_hs && _hs.call(this, sid)) return true;
+      try { return (((this.state.scholar || {}).activeEmergent) || []).indexOf(sid) >= 0; }
+      catch (e) { return false; }
     };
   })();
 })();
