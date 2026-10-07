@@ -379,6 +379,84 @@
     if (d && d.huntText && this.encAnimalKnown(a.id)) return d.huntText;
     return generic || 'It bolts!';
   };
+  // MID-CHASE NARRATION (Steve 2026-10-07): no-silent-turns is a hard rule.
+  // Every bolt turn gets a line — what the animal does, how it moves, what
+  // it sounds like. Species-specific, not generic. Knowledge-gated like the
+  // flee text: the vivid version is earned; the ignorant get the plain one.
+  G.encChaseText = function (a) {
+    var beh = '';
+    try {
+      var d = this.encAnimalDef(a.id);
+      beh = (d && d.behavior) || '';
+    } catch (e) {}
+    var label = this.encAnimalLabel(a);
+    var known = false;
+    try { known = this.encAnimalKnown(a.id); } catch (e) {}
+    // Per-behavior chase lines: verb phrases following the label.
+    // [vividKnown, plainFallback]
+    var LINES = {
+      wary: [ // DEER: straight-line burst, white tail flashing
+        'bounds — white tail flashing — crashing through the brush, legs a blur.',
+        'crashes away through the brush, white tail up.'
+      ],
+      skittish: [ // RABBIT: zigzag, never the same hop twice
+        'jinks left, then right — a brown blur between the stems, impossible to track.',
+        'zigzags away through the grass, changing direction every hop.'
+      ],
+      cunning: [ // FOX: trotting just out of reach
+        'trots just out of reach, looking back over its shoulder. Still toying with you.',
+        'keeps its distance, trotting away, watching you.'
+      ],
+      flock: [ // TURKEY: flutter-hop rhythm
+        'flutters hard — wings hammering — gaining ground in bursts.',
+        'flaps heavily away, wings pounding the air.'
+      ],
+      alarmed: [ // GROUNDHOG: sprint for the burrow
+        'sprints low and fast — belly nearly scraping dirt — making for the burrow.',
+        'sprints low and fast toward its burrow.'
+      ],
+      aquatic: [ // FISH: dart for water
+        'darts — a silver flash — making for deeper water.',
+        'darts away toward the water.'
+      ],
+      aquatic_ambush: [ // FROG: slide off the bank
+        'slides off the bank — barely a ripple — gone under.',
+        'slips into the water and vanishes.'
+      ],
+      aquatic_defensive: [ // CRAYFISH: scuttle back
+        'scuttles backward, claws up, retreating under its rock.',
+        'backs away under cover, claws raised.'
+      ],
+      arboreal: [ // SQUIRREL: ground dash for the trunk
+        'sprints for the nearest trunk — a grey streak across the leaf litter.',
+        'dashes across the ground toward the trees.'
+      ],
+      architect: [ // MUSKRAT: water-bound slide
+        'slides toward the water — sleek and fast, leaving a V-wake.',
+        'hurries toward the water.'
+      ],
+      camouflaged: [ // WOODCOCK: twisting flush
+        'twists away through the branches — a whir of wings, gone between the trunks.',
+        'flushes again, twisting away through the trees.'
+      ],
+      sentinel: [ // BEAVER: already dived; fallback
+        'is gone — just spreading rings where it went under.',
+        'has vanished under the water.'
+      ],
+      sentinel_mob: [ // CROW: wingbeats
+        'beats away — cawing — wings loud against the sky.',
+        'flies off, cawing.'
+      ]
+    };
+    var pair = LINES[beh];
+    var cap = this.encCap(label);
+    if (!pair) {
+      // Generic fallback for behaviors without specific chase text
+      return cap + (known ? ' runs — putting distance between you, fast.' : ' runs, putting distance between you.');
+    }
+    return cap + ' ' + (known ? pair[0] : pair[1]);
+  };
+
   // Kill line: the vivid killText is earned the same way — a kill teaches you
   // what you were holding (encIdentifyAnimal runs before the name is said).
   // {kcal} is replaced with the real yield. Real-world anchored: fat vs
@@ -1467,6 +1545,15 @@
         }
       } else {
         a.edgeTurns = 0;
+      }
+      // MID-CHASE NARRATION (Steve 2026-10-07): no-silent-turns. The animal
+      // moved but didn't wind, corner, or escape — the chase continues, and
+      // the player sees HOW it runs. Species-specific, knowledge-gated.
+      // Only narrate if it actually moved; a walled-in animal is cornered,
+      // not "fleeing in place" (the cornered branch above owns that turn).
+      if (movedAny && dist <= 6 && Math.random() < 0.75) {
+        this.say(this.encChaseText(a));
+        try { this.audioEvent('animalBolt'); } catch (e) {}
       }
     }
   };

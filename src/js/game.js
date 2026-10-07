@@ -1862,6 +1862,21 @@
         this.state.codex.encounters = this.state.codex.encounters || {};
         this.state.codex.encounters[pid] = 99;
       }
+      // OHIO ROOTS (Steve 2026-10-07): a kid from Columbus knows the state
+      // fruit. Pawpaw isn't just a name — it's level 2 (edible parts known).
+      // "Yeah, pawpaws. You eat the custardy part, not the seeds." Other
+      // Ohio plants come via the taught[] familiarity system above.
+      {
+        const myTags = (parsed.tags || []).map(t => String(t).toLowerCase());
+        if (myTags.includes('ohio') || myTags.includes('columbus')) {
+          const pp = (this.data.plants || []).find(p => p.id === 'pawpaw');
+          if (pp) {
+            this.state.codex.plants['pawpaw'] = { identifiedDay: 0, level: 2, harvests: 0, tastings: 0 };
+            this.state.codex.encounters = this.state.codex.encounters || {};
+            this.state.codex.encounters['pawpaw'] = 99;
+          }
+        }
+      }
       const famTier = this.familiarityTier(parsed.tags);
       if (famTier === 'stranger') this.say('Nothing here looks like home. You know none of these plants. Learn fast.');
       else if (famTier === 'visitor') this.say('Some of this country feels familiar. Not enough.');

@@ -2591,17 +2591,20 @@
       "alabama",
       "southeast",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "alaska": [
       "alaska",
       "arctic",
-      "wilderness"
+      "wilderness",
+      "north_america"
     ],
     "albuquerque": [
       "new mexico",
       "desert",
-      "city"
+      "city",
+      "north_america"
     ],
     "arctic": [
       "arctic"
@@ -2609,12 +2612,14 @@
     "arizona": [
       "arizona",
       "southwest",
-      "desert"
+      "desert",
+      "north_america"
     ],
     "atlanta": [
       "georgia",
       "southeast",
-      "city"
+      "city",
+      "north_america"
     ],
     "australia": [
       "australia",
@@ -2627,30 +2632,35 @@
     ],
     "brooklyn": [
       "new york",
-      "city"
+      "city",
+      "north_america"
     ],
     "california": [
       "california",
       "west",
       "coast",
-      "mediterranean"
+      "mediterranean",
+      "north_america"
     ],
     "canada": [
       "canada",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "carolina": [
       "carolina",
       "southeast",
       "temperate",
       "woodlands",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "chicago": [
       "illinois",
       "midwest",
-      "city"
+      "city",
+      "north_america"
     ],
     "china": [
       "china",
@@ -2665,23 +2675,27 @@
     "colorado": [
       "colorado",
       "mountains",
-      "west"
+      "west",
+      "north_america"
     ],
     "columbus": [
       "ohio",
       "midwest",
       "city",
-      "columbus"
+      "columbus",
+      "north_america"
     ],
     "dakota": [
       "dakota",
       "plains",
-      "temperate"
+      "temperate",
+      "north_america"
     ],
     "denver": [
       "colorado",
       "mountains",
-      "city"
+      "city",
+      "north_america"
     ],
     "desert": [
       "desert"
@@ -2702,7 +2716,8 @@
       "florida",
       "southeast",
       "subtropics",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "france": [
       "france",
@@ -2712,7 +2727,8 @@
       "georgia",
       "southeast",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "germany": [
       "germany",
@@ -2722,22 +2738,26 @@
     "hawaii": [
       "hawaii",
       "tropics",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "houston": [
       "texas",
       "city",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "idaho": [
       "idaho",
       "mountains",
-      "pacific_nw"
+      "pacific_nw",
+      "north_america"
     ],
     "illinois": [
       "illinois",
       "midwest",
-      "plains"
+      "plains",
+      "north_america"
     ],
     "india": [
       "india",
@@ -2756,13 +2776,15 @@
     "kansas": [
       "kansas",
       "plains",
-      "midwest"
+      "midwest",
+      "north_america"
     ],
     "kentucky": [
       "kentucky",
       "southeast",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "kenya": [
       "kenya",
@@ -2777,41 +2799,48 @@
       "louisiana",
       "southeast",
       "subtropics",
-      "wetland"
+      "wetland",
+      "north_america"
     ],
     "maine": [
       "maine",
       "northeast",
       "temperate",
       "woodlands",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "mexico": [
       "mexico",
       "desert",
-      "mountains"
+      "mountains",
+      "north_america"
     ],
     "miami": [
       "florida",
       "southeast",
       "city",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "minnesota": [
       "minnesota",
       "midwest",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "mississippi": [
       "mississippi",
       "southeast",
-      "temperate"
+      "temperate",
+      "north_america"
     ],
     "montana": [
       "montana",
       "mountains",
-      "west"
+      "west",
+      "north_america"
     ],
     "mountains": [
       "mountains"
@@ -2819,22 +2848,26 @@
     "nashville": [
       "tennessee",
       "southeast",
-      "city"
+      "city",
+      "north_america"
     ],
     "nebraska": [
       "nebraska",
       "plains",
-      "midwest"
+      "midwest",
+      "north_america"
     ],
     "nevada": [
       "nevada",
       "desert",
-      "west"
+      "west",
+      "north_america"
     ],
     "new england": [
       "northeast",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "new mexico": [
       "new mexico",
@@ -2845,12 +2878,14 @@
     "new orleans": [
       "louisiana",
       "southeast",
-      "city"
+      "city",
+      "north_america"
     ],
     "new york": [
       "new york",
       "northeast",
-      "city"
+      "city",
+      "north_america"
     ],
     "nigeria": [
       "nigeria",
@@ -2860,25 +2895,29 @@
       "ohio",
       "midwest",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "oklahoma": [
       "oklahoma",
       "plains",
-      "south"
+      "south",
+      "north_america"
     ],
     "oregon": [
       "oregon",
       "pacific_nw",
       "temperate",
       "woodlands",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "pennsylvania": [
       "pennsylvania",
       "northeast",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "philippines": [
       "philippines",
@@ -2888,7 +2927,8 @@
     "phoenix": [
       "arizona",
       "desert",
-      "city"
+      "city",
+      "north_america"
     ],
     "plains": [
       "plains"
@@ -2896,7 +2936,8 @@
     "portland": [
       "oregon",
       "pacific_nw",
-      "city"
+      "city",
+      "north_america"
     ],
     "rural": [
       "rural"
@@ -2905,7 +2946,8 @@
       "washington",
       "pacific_nw",
       "city",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "spain": [
       "spain",
@@ -2919,13 +2961,15 @@
       "southeast",
       "temperate",
       "woodlands",
-      "mountains"
+      "mountains",
+      "north_america"
     ],
     "texas": [
       "texas",
       "south",
       "plains",
-      "desert"
+      "desert",
+      "north_america"
     ],
     "tropics": [
       "tropics"
@@ -2933,20 +2977,23 @@
     "tucson": [
       "arizona",
       "desert",
-      "city"
+      "city",
+      "north_america"
     ],
     "utah": [
       "utah",
       "desert",
       "mountains",
-      "west"
+      "west",
+      "north_america"
     ],
     "vermont": [
       "vermont",
       "northeast",
       "temperate",
       "woodlands",
-      "mountains"
+      "mountains",
+      "north_america"
     ],
     "vietnam": [
       "vietnam",
@@ -2956,14 +3003,16 @@
       "virginia",
       "southeast",
       "temperate",
-      "woodlands"
+      "woodlands",
+      "north_america"
     ],
     "washington": [
       "washington",
       "pacific_nw",
       "temperate",
       "woodlands",
-      "coast"
+      "coast",
+      "north_america"
     ],
     "london": [
       "england",
@@ -3166,7 +3215,8 @@
       "mexico",
       "highlands",
       "urban",
-      "north america"
+      "north america",
+      "north_america"
     ],
     "sao paulo": [
       "brazil",
