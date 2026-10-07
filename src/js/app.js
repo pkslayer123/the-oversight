@@ -12684,19 +12684,16 @@
             // Blank SVG is 130 chars with fog color #0d120d - must detect it
             const isBlank = !g || g.length < 100 || g.indexOf('#0d120d') !== -1;
             if (isBlank) {
+              // DEBUG BRIGHT (Steve 2026-10-06): use BRIGHT RED to see if fallback renders
+              // If map shows red squares, fallback works but tile data is null
+              // If map still black, SVG isn't rendering at all
               const ttype = tl ? tl.type : 'unknown';
-              const colors = {
-                forest_floor: '#241c12', grove: '#1b2f1c', meadow: '#28331b',
-                thicket: '#18291f', wetland: '#1a2830', creek: '#14303c',
-                trail_edge: '#322e1b', ruin: '#27272b', haven: '#20271f'
-              };
               const isUnknown = !tl || ttype === 'unknown';
-              const base = isUnknown ? '#2a2a26' : (colors[ttype] || '#1c1c18');
-              const glyph = isUnknown ? '?' : ((S.TILE_GLYPH && S.TILE_GLYPH[ttype]) || '·');
-              const textColor = isUnknown ? '#8a8a7a' : '#e8e0cc';
+              const base = isUnknown ? '#ff0000' : '#00ff00'; // RED=unknown, GREEN=known
+              const glyph = isUnknown ? '?' : '✓';
               g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
                 `<rect x="2" y="2" width="60" height="60" rx="8" fill="${base}"/>` +
-                `<text x="32" y="42" text-anchor="middle" font-size="28" fill="${textColor}">${glyph}</text></svg>`;
+                `<text x="32" y="42" text-anchor="middle" font-size="28" fill="white">${glyph}</text></svg>`;
             }
           }
         }
