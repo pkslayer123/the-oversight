@@ -27,15 +27,30 @@
 //   - applicantBackstory(app)
 //   - readmissionConditions()
 //   - seekReadmission()
+//   - readmissionDemand()
+//   - answerPetitionDemand(choice)
+//   - petitionDaily()
+//   - mootVoices(topic)
+//   - socialNameKnown(id)
+//   - standingSummarySpeech(vid)
+//   - foundingBeats(nv, oldName)
+//   - _grantReadmission()
+//   - _composePerson()
+//   - _personParts(name)
+//   - _claimName(name)
 // rules:
 //   - Exile is an arc (moment → road → founding), not a flag flip (code: membership.js)
 //   - The exile moment is spoken: keep/lose manifest, no silent severing (code: membership.js)
 //   - The road-between is pack-only survival: the pack covers the day's REAL burn (dailyNeed, what resolveDay takes) — hunger is real, monsters are curious (code: membership.js)
-//   - forkVillage delegates to the canonical hard-reset fork (betrayal.js); membership stages the arc and speaks the founding (code: membership.js)
-//   - Readmission is never automatic: conditions are itemized and the petition is announced (code: membership.js)
+//   - forkVillage delegates to the canonical hard-reset fork (betrayal.js); membership stages the arc and speaks the founding in beats: fire, name, the old village's memory, the clean slate (code: membership.js)
+//   - Readmission is a petition arc, never automatic: conditions are itemized, refusal names a price (weregild/face/withdraw/renew), the moot weighs your name in voices before the verdict — announced at every beat, never silent (code: membership.js)
+//   - Weregild is real: paying the amends demand spends justice amendsCredit (the heat buffer thins as the village warms) and satisfies the village (code: membership.js)
+//   - Facing the boundary is risky: vouched-for softens the price; turned away frays trust, notes the pressing on the severed record, and word travels (code: membership.js)
 //   - Death on the road ends the exile with the body: the pack stays where they fell (no phantom pantry), the road arc closes, the new bearer starts clean — spoken, never silent (code: membership.js)
-//   - Severing is social: the old village remembers, other villages hear (code: membership.js)
-//   - Settlers/applicants are unique composed people — never a fixed cast (code: membership.js)
+//   - Severing is social and witnessed: the moot reacts in voices (temperament), witnesses are recorded on the severed record, other villages hear a concrete -10 standing abroad (code: membership.js)
+//   - Social info is knowledge-gated: names surface only for people you've lived with (socialNameKnown); strangers stay "a voice you barely know" (code: membership.js)
+//   - Settlers/applicants are unique composed people — never a fixed cast; names are claimed from a per-village registry, drifters arrive as full people with backstories tied to lived data (code: membership.js)
+//   - Moot voices are trust-weighted with speaking-order consequences: the first speaker frames the room (warm/cold/measured) (code: membership.js)
 //   - foodSupports projections are spoken honestly when they deny (code: membership.js)
 // consumes:
 //   - village.members
@@ -94,6 +109,23 @@
   var NEEDY_OCC = ['cook', 'chef', 'baker', 'carpenter', 'builder', 'construction',
     'healer', 'nurse', 'doctor', 'medic', 'paramedic', 'veterinarian',
     'farmer', 'gardener', 'fisherman', 'hunter', 'blacksmith', 'mechanic', 'engineer'];
+
+  // Person part-pools (unique-person law, Steve 2026-10-06). Shared by
+  // genSettler, genApplicant's drifter branch, and applicantBackstory so
+  // every composed person draws from the same well — and the usedNames
+  // registry (per-village, on mship state) guarantees no repeats.
+  var PERSON_FIRST = ['Mara', 'Joss', 'Tilda', 'Renn', 'Sable', 'Ilya', 'Noor', 'Petra', 'Aldo', 'Wren', 'Kessa', 'Dorian', 'Liv', 'Tam', 'Oka', 'Bex'];
+  var PERSON_LAST = ['Ash', 'Fen', 'Hollis', 'Marsh', 'Vale', 'Thorn', 'Reed', 'Calloway', 'Drift', 'Sparrow', 'Hale', 'Quill', 'Vane', 'Lark'];
+  var PERSON_ORIGINS = ['a drowned coastal town', 'a burned orchard commune', 'a highway rest-stop camp', 'a flooded subway station', 'a mountain chapel', 'a casino that ran out of luck', 'a library basement', 'a grain silo collective', 'a ferry that never docked', 'a radio station gone quiet'];
+  var PERSON_PASTS = ['kept the night watch alone for a winter', 'buried their whole street', 'traded a wedding ring for seed potatoes', 'learned to read from salvaged manuals', 'carried water uphill for forty families', 'talked a raider down with soup', 'crossed a river without knowing how to swim', 'kept bees through the first bad year', 'mapped the valley on foot, twice', 'sang the generator back to life'];
+  var PERSON_NEEDS = ['a roof that doesn\'t leak', 'work for their hands', 'someone to trust with their kid\'s name', 'a reason to stay awake at dawn', 'a place their past can\'t follow', 'proof the fire won\'t go out'];
+  var PERSON_QUIRKS = ['hums while mending', 'counts fence posts', 'names every dog', 'saves the burnt bits', 'sleeps with their boots on', 'laughs at funerals and cries at weddings'];
+  var PERSON_OCCS = [
+    { name: 'cook', providesPerDay: 2600 }, { name: 'carpenter', providesPerDay: 1800 },
+    { name: 'nurse', providesPerDay: 1500 }, { name: 'farmer', providesPerDay: 3000 },
+    { name: 'mechanic', providesPerDay: 1700 }, { name: 'teacher', providesPerDay: 1400 },
+    { name: 'hunter', providesPerDay: 3200 }, { name: 'fisher', providesPerDay: 2800 },
+  ];
 
   var methods = {
 
@@ -192,7 +224,10 @@
     // YOUR exile (you're somewhere new, the mantle picks up there), but the
     // OLD village's severed record stays — they still remember. If you ever
     // go back, you'll need to earn trust.
-    rejoinMembership() {
+    // homecoming=true: readmitted to the OLD village (the severed record is
+    // struck, the fire is yours again — warier). Otherwise: the new-village
+    // path (joining elsewhere / founding) — the old village is behind you.
+    rejoinMembership(homecoming) {
       var s = this.state.scholar || {};
       var wasExiled = !!s.exiled;
       try {
@@ -203,7 +238,11 @@
       // you cut off. That's their record, not yours. If you return, the trust
       // rebuild mechanic (amends via justice system) is the path back.
       if (wasExiled) {
-        try { this.say('The old village is behind you. The mantle picks up here now — new fire, new names, same codex.'); } catch (e) {}
+        try {
+          this.say(homecoming
+            ? 'The severed record is struck. The fire is yours again — the same fire, a warier welcome.'
+            : 'The old village is behind you. The mantle picks up here now — new fire, new names, same codex.');
+        } catch (e) {}
       }
       return true;
     },
@@ -330,16 +369,23 @@
       } catch (e) {}
       var bg = [];
       try { bg = (this.data.background_survivors || []).filter(function (c) { return !used[c.id]; }); } catch (e) {}
-      var c = null, id = null, name = null, occ = null;
+      var c = null, id = null, name = null, occ = null, appParts = null;
       if (bg.length && R() < 0.7) {
         c = pick(bg);
         id = c.id; name = c.name; occ = c.formerOccupation;
       } else {
-        // a drifter with a past, generated light
+        // a drifter with a past — a full composed person, never a label.
+        // (The old 'a tired cook' line told the player nothing; a name, a
+        // past and a need are what the village actually judges.)
         id = 'app_' + Date.now().toString(36) + Math.floor(R() * 999);
-        var occs = ['cook', 'carpenter', 'nurse', 'farmer', 'mechanic', 'teacher', 'hunter'];
-        occ = pick(occs);
-        name = 'a ' + pick(['tired', 'lean', 'weathered', 'young', 'quiet']) + ' ' + occ;
+        try { appParts = this._composePerson(); } catch (e) { appParts = null; }
+        if (appParts) {
+          name = appParts.name; occ = appParts.formerOccupation;
+        } else {
+          var occs = ['cook', 'carpenter', 'nurse', 'farmer', 'mechanic', 'teacher', 'hunter'];
+          occ = pick(occs);
+          name = 'a ' + pick(['tired', 'lean', 'weathered', 'young', 'quiet']) + ' ' + occ;
+        }
       }
       // reputation: what have we heard? better villages attract better heard-of people
       var view = 0;
@@ -367,6 +413,12 @@
         reputation: rep, fromVillage: fromVillage, fromVillageName: fromVillageName,
         day: (this.state.scholar || {}).day || 0,
         reason: pick(reasons),
+        // drifters arrive composed; background-survivor applicants get the
+        // same enrichment via the applicantBackstory wrap (idempotent).
+        backstory: appParts ? appParts.backstory : null,
+        livedEvents: appParts ? appParts.livedEvents : null,
+        need: appParts ? appParts.need : null,
+        origin: appParts ? appParts.origin : null,
       };
     },
 
@@ -453,34 +505,79 @@
       return true;
     },
 
-    // debateIntake: the village weighs a big intake. Weighted by trust —
-    // the people you trust most count most. Sets app.debateAgainst (0-100).
-    debateIntake(app) {
+    // mootVoices: the room weighs a question, in VOICES. The village's
+    // standing is the currency — voices weigh by trust, highest first.
+    // Speaking order matters: the FIRST speaker frames the room. A
+    // welcoming temper opens it ('warm'); a wary one folds its arms
+    // ('cold'); otherwise the room stays 'measured'. Temperament decides
+    // the clear cases; the undecided follow trust-weighted instinct.
+    // Names are knowledge-gated (socialNameKnown): you hear the names of people
+    // you've lived with — the rest are "a voice you barely know".
+    // topic: 'intake' (let them in?) | 'severing' (cut them?) |
+    //        'readmission' (take them back?)
+    mootVoices(topic) {
       var v = this.state.village || {};
       var roster = v.roster || [];
       var trust = v.trust || {};
       var forW = 0, againstW = 0;
-      var voices = [];
+      var forV = [], againstV = [];
       for (var i = 0; i < roster.length; i++) {
         var id = roster[i];
         if (id === this.villagerId) continue;
-        var t = trust[id] || 20;
-        // temperament: the generous welcome, the territorial resist
         var rc = null;
         try { rc = (v.rosterChars || {})[id]; } catch (e) {}
         var temper = rc && rc.temperament ? String(rc.temperament) : '';
         var welcoming = /generous|warm|kind|welcoming/.test(temper);
         var wary = /suspicious|territorial|cold|wary/.test(temper);
+        var t = trust[id] || 0;
         var w = 10 + t;
-        if (welcoming || (!wary && R() < 0.5)) { forW += w; }
-        else { againstW += w; if (voices.length < 3) voices.push(id); }
+        var stance;
+        if (welcoming) stance = (topic === 'severing') ? 'against' : 'for';
+        else if (wary) stance = (topic === 'severing') ? 'for' : 'against';
+        else stance = (R() < (0.3 + t / 200)) ? 'for' : 'against';
+        var nm = null;
+        try { nm = this.socialNameKnown(id); } catch (e) { nm = null; }
+        if (stance === 'for') { forW += w; forV.push({ id: id, name: nm || 'a voice you barely know' }); }
+        else { againstW += w; againstV.push({ id: id, name: nm || 'a voice you barely know' }); }
       }
+      var byTrust = function (a, b) { return ((trust[b.id] || 0) - (trust[a.id] || 0)); };
+      forV.sort(byTrust);
+      againstV.sort(byTrust);
+      var first = forV[0] || againstV[0] || null;
+      var firstTemper = '';
+      if (first) {
+        try {
+          var frc = (v.rosterChars || {})[first.id];
+          firstTemper = frc && frc.temperament ? String(frc.temperament) : '';
+        } catch (e) {}
+      }
+      var frame = /generous|warm|kind|welcoming/.test(firstTemper) ? 'warm'
+        : (/suspicious|territorial|cold|wary/.test(firstTemper) ? 'cold' : 'measured');
       var total = forW + againstW;
-      app.debateAgainst = total > 0 ? Math.round(againstW / total * 100) : 50;
-      var names = voices.map(function (vid) {
-        try { return String(this.displayName(vid)).split(' ')[0]; } catch (e) { return 'someone'; }
-      }, this).join(', ');
-      this.say(`The village debates ${app.name}. ${app.debateAgainst >= 60 ? 'The room is cold — ' + (names || 'too many') + ' against. "More mouths, same fire."' : app.debateAgainst >= 40 ? 'Split room. Some for, some against. It\'s your call.' : 'Warm, mostly. "One more pair of hands."'} (${100 - app.debateAgainst}% for.)`);
+      return {
+        topic: topic, forW: forW, againstW: againstW,
+        forPct: total > 0 ? Math.round(forW / total * 100) : 50,
+        againstPct: total > 0 ? Math.round(againstW / total * 100) : 50,
+        forVoices: forV, againstVoices: againstV,
+        frame: frame, firstName: first ? first.name : null,
+      };
+    },
+
+    // debateIntake: the village weighs a big intake. Weighted by trust —
+    // the people you trust most count most. Sets app.debateAgainst (0-100).
+    debateIntake(app) {
+      var mv = null;
+      try { mv = this.mootVoices('intake'); } catch (e) { mv = null; }
+      var againstPct = mv ? mv.againstPct : 50;
+      app.debateAgainst = againstPct;
+      var names = mv ? mv.againstVoices.slice(0, 3).map(function (x) { return x.name; }).join(', ') : '';
+      var frameLine = '';
+      if (mv && mv.firstName) {
+        frameLine = mv.frame === 'warm' ? ' ' + mv.firstName + ' speaks first, and kindly — the room leans in.'
+          : mv.frame === 'cold' ? ' ' + mv.firstName + ' speaks first, and coldly — the room folds its arms.'
+          : ' Measured. Nobody leads; nobody follows.';
+      }
+      this.say(`The village debates ${app.name}.${frameLine} ${app.debateAgainst >= 60 ? 'The room is cold — ' + (names || 'too many') + ' against. "More mouths, same fire."' : app.debateAgainst >= 40 ? 'Split room. Some for, some against. It\'s your call.' : 'Warm, mostly. "One more pair of hands."'} (${100 - app.debateAgainst}% for.)`);
       return app.debateAgainst;
     },
 
@@ -636,6 +733,7 @@
       try { this.considerApplications(); } catch (e) {}
       try { this.arrivalTick(); } catch (e) {}
       try { this.crowdingTick(); } catch (e) {}
+      try { this.petitionDaily(); } catch (e) {}
     },
 
     // ---------- 8. EXILE ARC: moment → road → founding ----------
@@ -812,6 +910,7 @@
         return null;
       }
       a.stage = 'founding';
+      var oldName = ((this.state.village || {}).name) || 'Haven';
       var r = null;
       try { r = this.foundHaven ? this.foundHaven() : null; } catch (e) { r = null; }
       if (!r) { a.stage = 'road'; return null; } // foundHaven already said what's missing
@@ -827,38 +926,57 @@
         this.say('New fire, new names, same codex. ' + (nv.name || 'The new haven') + ' holds ' + souls + ' soul' + (souls === 1 ? '' : 's') + ' — you, first. Village ties start over: trust here is earned the slow way, one shared meal at a time.');
       } catch (e) {}
       try { if (this.journalNote) this.journalNote('village', 'founding', 'Founded ' + (nv.name || '?') + ' on day ' + (s.day || 0) + ' after exile. Hard reset: fresh village object, ties start over; kept self/knowledge/pack.'); } catch (e) {}
+      try { this.foundingBeats(nv, oldName); } catch (e) {}
       return nv;
+    },
+
+    // foundingBeats: the founding is a SEQUENCE, not a flag. The fire, the
+    // name, the old village's memory of you, the clean slate — each spoken,
+    // none silent. The hard reset is legible: what crossed (self/knowledge/
+    // pack) and what didn't (the old village keeps its fire AND its record
+    // of you — to them you are the one they cast out).
+    foundingBeats(nv, oldName) {
+      var s = this.state.scholar || {};
+      var a = this.exileArcState();
+      var name = (nv && nv.name) || 'the new haven';
+      var old = oldName || 'Haven';
+      try {
+        this.say('You strike the first fire of ' + name + '. It catches on the third try — you know how now.');
+        this.say(name + '. Say it out loud. It is yours to fill.');
+        this.say('Behind you, ' + old + ' keeps its fire — and its record of you. To them you are the one they cast out. That doesn\'t wash off; it just stops being the whole story.');
+        this.say('Here the slate is clean. Trust starts at nothing and is earned the slow way — one shared meal at a time.');
+      } catch (e) {}
+      try {
+        a.founding = { day: s.day || 0, name: name, oldVillage: old };
+        a.petition = null; // the road's petition dies with the road
+        if (this.journalNote) this.journalNote('village', 'founding', 'Founding beats: fire, name, memory, slate — ' + name + ', day ' + (s.day || 0) + '.');
+      } catch (e) {}
+      return true;
     },
 
     // ---------- 10. BELONGING TEXTURE ----------
 
-    // genSettler: a UNIQUE person (unique-person law, Steve 2026-10-06).
-    // Never a fixed cast: every settler is COMPOSED from part-pools —
-    // origin, past, need, quirk — so no two share a backstory. Temperament
-    // is deliberately null: the village learns them by LIVING with them,
-    // not from a label. (Wiring: the strangers system should draw arrivals
-    // from here — see the wiring block at the bottom of this file.)
-    genSettler() {
-      var FIRST = ['Mara', 'Joss', 'Tilda', 'Renn', 'Sable', 'Ilya', 'Noor', 'Petra', 'Aldo', 'Wren', 'Kessa', 'Dorian', 'Liv', 'Tam', 'Oka', 'Bex'];
-      var LAST = ['Ash', 'Fen', 'Hollis', 'Marsh', 'Vale', 'Thorn', 'Reed', 'Calloway', 'Drift', 'Sparrow', 'Hale', 'Quill', 'Vane', 'Lark'];
-      var ORIGINS = ['a drowned coastal town', 'a burned orchard commune', 'a highway rest-stop camp', 'a flooded subway station', 'a mountain chapel', 'a casino that ran out of luck', 'a library basement', 'a grain silo collective', 'a ferry that never docked', 'a radio station gone quiet'];
-      var PASTS = ['kept the night watch alone for a winter', 'buried their whole street', 'traded a wedding ring for seed potatoes', 'learned to read from salvaged manuals', 'carried water uphill for forty families', 'talked a raider down with soup', 'crossed a river without knowing how to swim', 'kept bees through the first bad year', 'mapped the valley on foot, twice', 'sang the generator back to life'];
-      var NEEDS = ['a roof that doesn\'t leak', 'work for their hands', 'someone to trust with their kid\'s name', 'a reason to stay awake at dawn', 'a place their past can\'t follow', 'proof the fire won\'t go out'];
-      var QUIRKS = ['hums while mending', 'counts fence posts', 'names every dog', 'saves the burnt bits', 'sleeps with their boots on', 'laughs at funerals and cries at weddings'];
-      var OCCUPATIONS = [
-        { name: 'cook', providesPerDay: 2600 }, { name: 'carpenter', providesPerDay: 1800 },
-        { name: 'nurse', providesPerDay: 1500 }, { name: 'farmer', providesPerDay: 3000 },
-        { name: 'mechanic', providesPerDay: 1700 }, { name: 'teacher', providesPerDay: 1400 },
-        { name: 'hunter', providesPerDay: 3200 }, { name: 'fisher', providesPerDay: 2800 },
-      ];
-      var id = 'st_' + Date.now().toString(36) + '_' + Math.floor(R() * 99999);
-      var name = pick(FIRST) + ' ' + pick(LAST);
-      var occ = pick(OCCUPATIONS);
-      var origin = pick(ORIGINS);
-      var past = pick(PASTS);
-      var need = pick(NEEDS);
-      var quirk = pick(QUIRKS);
-      var evPool = PASTS.filter(function (p) { return p !== past; });
+    // _claimName: the usedNames registry — no two people in this village
+    // share a name. Returns the name if free, null if taken.
+    _claimName(name) {
+      var m = null;
+      try { m = this.mshipState(); } catch (e) { return name; }
+      m.usedNames = m.usedNames || {};
+      if (m.usedNames[name]) return null;
+      m.usedNames[name] = 1;
+      return name;
+    },
+
+    // _personParts: compose one unique person's parts from the shared pools.
+    // The NAME is supplied (already claimed) — parts never invent people,
+    // they dress them.
+    _personParts(name) {
+      var occ = pick(PERSON_OCCS);
+      var origin = pick(PERSON_ORIGINS);
+      var past = pick(PERSON_PASTS);
+      var need = pick(PERSON_NEEDS);
+      var quirk = pick(PERSON_QUIRKS);
+      var evPool = PERSON_PASTS.filter(function (p) { return p !== past; });
       var evs = [];
       var nEv = 1 + Math.floor(R() * 2);
       for (var i = 0; i < nEv && evPool.length; i++) {
@@ -867,14 +985,40 @@
         evs.push({ when: 'before the road', text: e });
       }
       return {
-        id: id, name: name, formerOccupation: occ.name,
+        name: name, formerOccupation: occ.name,
         providesPerDay: occ.providesPerDay, kcalPerDay: 2000,
         temperament: null, // learned by living with them, not assigned
-        origin: origin,
+        origin: origin, past: past, need: need, quirk: quirk,
         backstory: 'From ' + origin + '. Once ' + past + '. ' + (R() < 0.5 ? 'Still ' + quirk + '.' : 'Wants ' + need + '.'),
-        livedEvents: evs, need: need, quirk: quirk,
-        arrivedDay: (this.state.scholar || {}).day || 0,
+        livedEvents: evs,
       };
+    },
+
+    // _composePerson: a whole unique person, name claimed from the registry.
+    _composePerson() {
+      for (var t = 0; t < 8; t++) {
+        var name = pick(PERSON_FIRST) + ' ' + pick(PERSON_LAST);
+        if (this._claimName(name)) return this._personParts(name);
+      }
+      var nm = pick(PERSON_FIRST) + ' ' + pick(PERSON_LAST) + ' ' + pick(['II', 'III', 'Jr.', 'Sr.']);
+      this._claimName(nm);
+      return this._personParts(nm);
+    },
+
+    // genSettler: a UNIQUE person (unique-person law, Steve 2026-10-06).
+    // Never a fixed cast: every settler is COMPOSED from part-pools —
+    // origin, past, need, quirk — and the name is claimed from the village
+    // registry, so no two share a name. Temperament is deliberately null:
+    // the village learns them by LIVING with them, not from a label.
+    // (Wiring: the strangers system should draw arrivals from here — see
+    // the wiring block at the bottom of this file.)
+    genSettler() {
+      var p = null;
+      try { p = this._composePerson(); } catch (e) { return null; }
+      if (!p) return null;
+      p.id = 'st_' + Date.now().toString(36) + '_' + Math.floor(R() * 99999);
+      p.arrivedDay = (this.state.scholar || {}).day || 0;
+      return p;
     },
 
     // standingSummary: belonging made VISIBLE. Who they are to the village —
@@ -909,6 +1053,37 @@
       };
     },
 
+    // standingSummarySpeech: belonging, SPOKEN. Who counts you as theirs,
+    // by name — names knowledge-gated (socialNameKnown): the steady ones you've
+    // lived with. The severed hear their record back. Never silent.
+    standingSummarySpeech(vid) {
+      var s = this.standingSummary(vid);
+      var id = vid || this.villagerId;
+      var line;
+      if (!s.member) {
+        line = s.note;
+      } else {
+        var v = this.state.village || {};
+        var t = v.trust || {};
+        var roster = v.roster || [];
+        var names = [];
+        for (var i = 0; i < roster.length; i++) {
+          var rid = roster[i];
+          if (rid === id) continue;
+          if ((t[rid] || 0) >= 40) {
+            var nm = null;
+            try { nm = this.socialNameKnown(rid); } catch (e) { nm = null; }
+            if (nm) names.push(nm);
+          }
+        }
+        line = 'One of ours. Trusted by ' + s.trustedBy + ' of ' + s.of +
+          (names.length ? ' — ' + names.join(', ') + (names.length === 1 ? ' counts' : ' count') + ' you as theirs.' : '.') +
+          ' ' + s.note;
+      }
+      try { this.say(line); } catch (e) {}
+      return s;
+    },
+
     // foodSupportsSpeech: the honest spoken version of foodSupports. If the
     // village can't feed n more, it SAYS so — no silent actions (Steve).
     foodSupportsSpeech(n) {
@@ -926,16 +1101,70 @@
       return fs;
     },
 
+    // socialNameKnown: the knowledge gate for SOCIAL info (the village's
+    // own trust ledger — distinct from Game.nameKnown, the System-wide
+    // knowledge gate this module must never overwrite). You hear the NAMES
+    // of people you've lived with (trust recorded on the village); anyone
+    // else stays "a voice you barely know". "If you don't know, it doesn't
+    // show." (code: membership.js socialNameKnown)
+    socialNameKnown(id) {
+      if (!id) return null;
+      if (id === this.villagerId) {
+        // the player, in their own story: a name if the world knows it, else "you"
+        try {
+          if (typeof this.firstRef === 'function') {
+            var pr = this.firstRef(id);
+            if (pr && pr !== 'someone') return pr;
+          }
+        } catch (e) {}
+        return 'you';
+      }
+      var v = this.state.village || {};
+      var t = ((v.trust || {})[id] || 0);
+      if (t < 20) return null; // a stranger's name is not yours to know
+      // firstRef: first-name-like reference that NEVER collapses to bare "A"
+      // (known → first name; unknown → distinguishing descriptor)
+      try {
+        if (typeof this.firstRef === 'function') return this.firstRef(id);
+      } catch (e) {}
+      try { return String(this.displayName(id)).split(' ')[0]; } catch (e) { return null; }
+    },
+
     // severMembershipSocial: the cut has SOCIAL consequences, not just
     // mechanical ones. THEY REMEMBER (betrayal-memory entry the justice
-    // system reads; the severed record itself is never deleted on fork) and
-    // OTHER VILLAGES HEAR (strangers carry the word — memberReputationAbroad
-    // prices the cut into every future judgment).
+    // system reads; the severed record itself is never deleted on fork —
+    // and now it records WITNESSES: who was in the room) and OTHER
+    // VILLAGES HEAR (strangers carry the word — memberReputationAbroad
+    // prices the cut at -10 standing abroad, spoken here, not hidden).
+    // The moot REACTS in voices: the generous mourn, the cold approve —
+    // temperament, not a dice roll on nothing.
     severMembershipSocial(vid) {
       var id = vid || this.villagerId;
-      var nm = id;
-      try { nm = String(this.displayName(id)).split(' ')[0]; } catch (e) {}
+      var v = this.state.village || {};
+      var nm = null;
+      try { nm = this.socialNameKnown(id); } catch (e) { nm = null; }
+      nm = nm || 'them';
       try { if (this.remember) this.remember(id, 'severed', 'cut from the village'); } catch (e) {}
+      try {
+        var mv = this.mootVoices('severing');
+        if (mv && (mv.forVoices.length || mv.againstVoices.length)) {
+          // 'for' the severing = approves the cut; 'against' = mourns it
+          var approver = mv.forVoices[0] ? mv.forVoices[0].name : null;
+          var mourner = mv.againstVoices[0] ? mv.againstVoices[0].name : null;
+          var bits = [];
+          if (mourner) bits.push(mourner + ' looked away');
+          if (approver) bits.push(approver + ' nodded — the cold ones always do');
+          if (bits.length) this.say('At the severing: ' + bits.join('; ') + '.');
+          // witnesses: the old village remembers WHO was there
+          var sev = (v.severed || {})[id];
+          if (sev) {
+            var wit = [];
+            for (var i = 0; i < mv.forVoices.length && wit.length < 3; i++) wit.push(mv.forVoices[i].id);
+            for (var j = 0; j < mv.againstVoices.length && wit.length < 6; j++) wit.push(mv.againstVoices[j].id);
+            sev.witnesses = wit;
+          }
+        }
+      } catch (e) {}
       try {
         var strangers = [];
         try { strangers = this.npcIds ? this.npcIds().slice(0, 3) : []; } catch (e2) {}
@@ -943,23 +1172,41 @@
         var bs = this.betrayalState ? this.betrayalState() : null;
         if (bs) bs.strangersHeard = (bs.strangersHeard || 0) + 1;
       } catch (e) {}
-      try { this.say('Word will travel about ' + nm + '. Villages talk — the severed carry the cut with them.'); } catch (e) {}
+      try { this.say('Word will travel about ' + nm + '. Villages talk — the severed carry the cut with them. Strangers will hear "cast out" before your name (-10 standing abroad).'); } catch (e) {}
       return true;
     },
 
     // applicantBackstory: belonging texture for APPLICANTS — the
     // unique-person law applies before they ever arrive. Backstory, lived
-    // events, need: composed from identity, never a fixed cast. (Wired to
-    // genApplicant via wraps — additive enrichment, no signature change.)
+    // events, need: composed from identity, never a fixed cast. Where the
+    // data exists, the story ties to LIVED events: the village they came
+    // from (real name), the broadcast they saw (real viewership). What the
+    // village judges is a person with a past, not a stat block.
+    // (Wired to genApplicant via wraps — additive enrichment, no signature
+    // change. Idempotent: drifters arrive already composed.)
     applicantBackstory(app) {
       if (!app || app.backstory) return app;
-      var settler = null;
-      try { settler = this.genSettler(); } catch (e) {}
-      if (!settler) return app;
-      app.backstory = settler.backstory;
-      app.livedEvents = settler.livedEvents;
-      app.need = settler.need;
-      app.origin = settler.origin;
+      var parts = null;
+      try { parts = this._personParts('__applicant__'); } catch (e) {}
+      if (!parts) return app;
+      // tie to lived data where it exists
+      var origin = parts.origin;
+      var evs = parts.livedEvents.slice();
+      try {
+        if (app.fromVillageName) {
+          origin = 'late of ' + app.fromVillageName;
+          evs.unshift({ when: 'before the road', text: 'left ' + app.fromVillageName + ' with what they could carry' });
+        }
+        var view = this.havenViewership ? this.havenViewership() : 0;
+        if (view > 10 && R() < 0.5) {
+          evs.push({ when: 'on the road', text: 'saw Haven on the broadcast and walked toward it' });
+        }
+      } catch (e) {}
+      app.origin = origin;
+      app.backstory = 'From ' + origin + '. Once ' + parts.past + '. ' +
+        (R() < 0.5 ? 'Still ' + parts.quirk + '.' : 'Wants ' + parts.need + '.');
+      app.livedEvents = evs;
+      app.need = parts.need;
       return app;
     },
 
@@ -972,7 +1219,9 @@
     // record stays until THIS arc earns its clearing.
 
     // readmissionConditions: the arc, itemized. Every condition is
-    // announced — nothing silent, nothing automatic.
+    // announced — nothing silent, nothing automatic. Amends counts two
+    // ways: credit held, or weregild PAID (answerPetitionDemand 'pay') —
+    // the village counts amends, not words.
     readmissionConditions() {
       var s = this.state.scholar || {};
       var a = this.exileArcState();
@@ -980,19 +1229,66 @@
       var daysOut = day - (a.exiledDay != null ? a.exiledDay : day);
       var amends = 0;
       try { var j = this.justiceState ? this.justiceState() : null; amends = (j && j.amendsCredit) || 0; } catch (e) {}
+      var paid = 0, weregild = false;
+      try {
+        var pet = a.petition || {};
+        paid = pet.paidAmends || 0;
+        weregild = !!pet.paidWeregild;
+      } catch (e) {}
       var homeHere = false;
       try { homeHere = !!((this.state.village || {}).severed || {})[this.villagerId]; } catch (e) {}
       return [
         { key: 'time', met: daysOut >= 14, label: 'Time on the road (' + daysOut + '/14 days) — the village needs to miss the person, not the problem.' },
-        { key: 'amends', met: amends >= 20, label: 'Amends made (' + amends + '/20 credit) — the village remembers, but it can forgive.' },
+        { key: 'amends', met: (amends + paid) >= 20 || weregild, label: 'Amends made (' + (amends + paid) + '/20 credit' + (weregild ? ', weregild paid' : '') + ') — the village remembers, but it can forgive.' },
         { key: 'record', met: homeHere, label: homeHere ? 'The severed record stands — there is something to forgive.' : 'No severed record stands here — there is nowhere to return TO.' },
       ];
     },
 
+    // readmissionDemand: when the village refuses, it names its PRICE — one
+    // concrete, answerable thing, generated from what's actually missing.
+    // Amends first (you can work for it), then time (you can only wait it
+    // out). The 'record' case has no price: there's nothing to forgive.
+    readmissionDemand() {
+      var conds = this.readmissionConditions();
+      var unmet = conds.filter(function (c) { return !c.met; });
+      if (!unmet.length) return null;
+      var am = null, tm = null;
+      for (var i = 0; i < unmet.length; i++) {
+        if (unmet[i].key === 'amends') am = unmet[i];
+        if (unmet[i].key === 'time') tm = unmet[i];
+      }
+      if (am) {
+        var have = 0, paid = 0;
+        try { var j = this.justiceState ? this.justiceState() : null; have = (j && j.amendsCredit) || 0; } catch (e) {}
+        try { paid = (this.exileArcState().petition || {}).paidAmends || 0; } catch (e) {}
+        var need = Math.max(1, 20 - have - paid);
+        return {
+          key: 'amends', need: need,
+          label: 'Make it right first — pay ' + need + ' amends credit as weregild. (You hold ' + have + '. The village counts amends, not words.)',
+        };
+      }
+      if (tm) {
+        var s = this.state.scholar || {};
+        var a = this.exileArcState();
+        var day = s.day || 0;
+        var daysOut = day - (a.exiledDay != null ? a.exiledDay : day);
+        var left = Math.max(1, 14 - daysOut);
+        return {
+          key: 'wait', daysLeft: left,
+          label: 'Stay out ' + left + ' more day' + (left === 1 ? '' : 's') + '. The village needs to miss the person, not the problem.',
+        };
+      }
+      return { key: 'record', need: 0, label: 'There is nothing to forgive here — no severed record stands.' };
+    },
+
     // seekReadmission: petition the old village. Announced, conditioned,
     // never automatic. Only on the road — if you founded a fork, the fork
-    // is your village now. On success the old village strikes YOUR severed
-    // record (earned, announced); the village is TOLD.
+    // is your village now. A refusal is not a dead end: the village names
+    // its price (readmissionDemand) and the petition stays open, with
+    // choices — pay, face, withdraw, renew (answerPetitionDemand). Sending
+    // word twice while the word is still traveling gets you a status, not
+    // silence. On success the old village strikes YOUR severed record
+    // (earned, announced); the village is TOLD.
     seekReadmission() {
       var s = this.state.scholar || {};
       if (!s.exiled) {
@@ -1004,23 +1300,213 @@
         this.say('The fork is your village now. You don\'t petition a fire you left — you tend the one you built.');
         return null;
       }
+      var pet = a.petition || null;
+      if (pet && (pet.stage === 'sent' || pet.stage === 'deliberating' || pet.stage === 'demanded')) {
+        // the word is already out — report it, never go silent
+        if (pet.stage === 'demanded' && pet.demand) {
+          this.say('The village already named its price: ' + pet.demand.label + ' Answer it — "pay", "face", "withdraw" — or do the work and send word again.');
+        } else {
+          this.say('Word is still traveling. The moot hasn\'t answered yet — the road teaches patience, or it teaches nothing.');
+        }
+        try { if (this.journalNote) this.journalNote('exile', 'petition', 'Petition still pending (' + pet.stage + ').'); } catch (e) {}
+        return 'pending';
+      }
+      if (pet && pet.stage === 'ready') {
+        // the demand was met — carry the weregild through the recheck
+        a.petition = { stage: 'ready', paidWeregild: !!pet.paidWeregild, paidAmends: pet.paidAmends || 0, faced: !!pet.faced };
+      }
       var conds = this.readmissionConditions();
       var unmet = conds.filter(function (c) { return !c.met; });
       if (unmet.length) {
+        var demand = null;
+        try { demand = this.readmissionDemand(); } catch (e) { demand = null; }
+        a.petition = {
+          stage: 'demanded', day: s.day || 0, demand: demand,
+          paidAmends: (pet && pet.paidAmends) || 0,
+          paidWeregild: (pet && pet.paidWeregild) || false,
+          faced: (pet && pet.faced) || false,
+        };
         this.say('You send word to the old village. The answer comes back honest:');
         for (var i = 0; i < unmet.length; i++) this.say('— not yet: ' + unmet[i].label);
-        try { if (this.journalNote) this.journalNote('exile', 'petition', 'Petition refused: ' + unmet.map(function (c) { return c.key; }).join(', ') + '.'); } catch (e) {}
+        if (demand && demand.key !== 'record') {
+          this.say('But they name a price: ' + demand.label);
+          this.say('Your choices: pay it in amends ("pay"), walk to the boundary stone and face them ("face"), or let the word die ("withdraw"). Do the work, then send word again ("renew").');
+        }
+        try { if (this.journalNote) this.journalNote('exile', 'petition', 'Petition refused: ' + unmet.map(function (c) { return c.key; }).join(', ') + '. Demand: ' + (demand ? demand.key : 'none') + '.'); } catch (e) {}
         return false;
       }
+      // granted — the moot weighs your name first, in voices, announced
+      return this._grantReadmission();
+    },
+
+    // _grantReadmission: the verdict. The moot argues your name for three
+    // nights — named voices, knowledge-gated — then the word comes back.
+    // Earned and announced; never automatic, never silent. A divided room
+    // forgives cool: you start at low trust and earn it back the slow way.
+    _grantReadmission() {
+      var s = this.state.scholar || {};
+      var a = this.exileArcState();
+      var v = this.state.village || {};
+      var mv = null;
+      try { mv = this.mootVoices('readmission'); } catch (e) { mv = null; }
+      if (mv && (mv.forVoices.length || mv.againstVoices.length)) {
+        var forN = mv.forVoices.slice(0, 2).map(function (x) { return x.name; }).join(', ');
+        var agN = mv.againstVoices.slice(0, 2).map(function (x) { return x.name; }).join(', ');
+        var lean = mv.againstPct >= 60 ? 'It was close — the room is divided, and it will remember the argument.'
+          : mv.forPct >= 60 ? 'The room leaned your way.'
+          : 'The room was split, and split rooms follow the loudest kindness.';
+        this.say('For three nights they argued your name.' + (forN ? ' ' + forN + ' spoke for you.' : '') + (agN ? ' ' + agN + ' said the fire is not yours.' : '') + ' ' + lean);
+      }
       // granted: the old village strikes YOUR severed record — earned, announced
-      try { delete (this.state.village.severed || {})[this.villagerId]; } catch (e) {}
-      try { this.rejoinMembership(); } catch (e) {}
+      try { delete (v.severed || {})[this.villagerId]; } catch (e) {}
+      try { this.rejoinMembership(true); } catch (e) {}
       a.stage = 'home';
       a.roadDays = 0;
+      a.petition = null;
       try { s.roadExposed = false; } catch (e) {}
+      // forgiven, not forgotten: a divided room starts you cool
+      try {
+        if (mv && mv.againstPct >= 60) {
+          var t = v.trust || (v.trust = {});
+          t[this.villagerId] = Math.min(t[this.villagerId] || 0, 25);
+          this.say('Forgiven, not forgotten — you start cool with the room. Earn it back the slow way.');
+        }
+      } catch (e) {}
       this.say('Word comes back at dusk: COME HOME. The old fire makes room. The severed record is struck — not forgotten, forgiven. The village is told, and the village remembers the telling.');
+      try { this.standingSummarySpeech(this.villagerId); } catch (e) {}
       try { if (this.journalNote) this.journalNote('exile', 'readmission', 'Readmitted on day ' + (s.day || 0) + '. The arc is closed — the hard way, the honest way.'); } catch (e) {}
       return true;
+    },
+
+    // answerPetitionDemand: the petition's choices, each with consequences.
+    // 'pay' — pay the amends demand in credit. Real cost: the credit is
+    //   SPENT (justice keeps its own books — your heat buffer thins as the
+    //   village warms). Sets weregild: the village counts it as enough.
+    // 'face' — walk to the boundary stone in person. Once per petition.
+    //   If the village's steady ones would speak for you, the price
+    //   softens; if not, you're turned away at dusk, trust frays, the
+    //   severed record notes the pressing, and word travels.
+    // 'withdraw' — let the word die. The village notes that you asked and
+    //   walked back; trust frays a little.
+    // 'renew' — send word again (re-runs the check).
+    answerPetitionDemand(choice) {
+      var s = this.state.scholar || {};
+      var a = this.exileArcState();
+      if (!s.exiled || a.stage !== 'road') {
+        this.say('There is no petition on the road to answer.');
+        return null;
+      }
+      var pet = a.petition;
+      var c = String(choice || '').toLowerCase();
+      var v = this.state.village || {};
+      // 'renew' is always answerable — it re-runs the check, which reports
+      // honestly whether the word is still traveling or the price changed.
+      if (c === 'renew') return this.seekReadmission();
+      if (!pet || pet.stage !== 'demanded' || !pet.demand) {
+        this.say('The village hasn\'t named a price yet. Send word first.');
+        return null;
+      }
+      if (c === 'withdraw') {
+        a.petition = null;
+        try {
+          var t = v.trust || {};
+          var roster = v.roster || [];
+          for (var i = 0; i < roster.length; i++) {
+            var rid = roster[i];
+            if (rid === this.villagerId) continue;
+            t[rid] = Math.max(0, (t[rid] || 20) - 1);
+          }
+        } catch (e) {}
+        this.say('You let the word die. The village notes that you asked, then walked back from asking. Trust frays a little.');
+        try { if (this.journalNote) this.journalNote('exile', 'petition', 'Petition withdrawn on day ' + (s.day || 0) + '.'); } catch (e) {}
+        return 'withdrawn';
+      }
+      if (c === 'face') {
+        if (pet.faced) {
+          this.say('You already stood at the stone. They won\'t come out twice for the same asking.');
+          return 'faced';
+        }
+        pet.faced = true;
+        // who would speak for you? the village's steady ones.
+        var trustedBy = 0;
+        try {
+          var t2 = v.trust || {}, roster2 = v.roster || [];
+          for (var k = 0; k < roster2.length; k++) {
+            if (roster2[k] === this.villagerId) continue;
+            if ((t2[roster2[k]] || 0) >= 40) trustedBy++;
+          }
+        } catch (e) {}
+        this.say('You walk to the boundary stone. You don\'t cross — the terms of exile are the terms. You wait, and the fire sends someone out.');
+        if (trustedBy >= 2) {
+          if (pet.demand.key === 'amends') pet.demand.need = Math.ceil(pet.demand.need / 2);
+          if (pet.demand.key === 'wait') pet.demand.daysLeft = Math.max(0, pet.demand.daysLeft - 4);
+          pet.demand.label = pet.demand.key === 'amends'
+            ? 'Make it right first — pay ' + pet.demand.need + ' amends credit as weregild. (Someone spoke for you at the stone.)'
+            : 'Stay out ' + pet.demand.daysLeft + ' more days. (Someone spoke for you at the stone.)';
+          this.say('Someone walks out to meet you — a voice for you at the fire. The price softens: ' + pet.demand.label);
+          try { if (this.journalNote) this.journalNote('exile', 'petition', 'Faced the boundary on day ' + (s.day || 0) + '; vouched for. Demand softened.'); } catch (e) {}
+        } else {
+          try {
+            var t3 = v.trust || {}, roster3 = v.roster || [];
+            for (var m = 0; m < roster3.length; m++) {
+              var rid3 = roster3[m];
+              if (rid3 === this.villagerId) continue;
+              t3[rid3] = Math.max(0, (t3[rid3] || 20) - 2);
+            }
+            var sev = (v.severed || {})[this.villagerId];
+            if (sev) sev.pressed = s.day || 0;
+            var bs = this.betrayalState ? this.betrayalState() : null;
+            if (bs) bs.strangersHeard = (bs.strangersHeard || 0) + 1;
+          } catch (e) {}
+          this.say('Nobody comes out. You stand at the stone until dusk, then walk back. The village notes the pressing — and word travels that the cast-out pushed.');
+        }
+        return 'faced';
+      }
+      if (c === 'pay') {
+        if (pet.demand.key !== 'amends') {
+          this.say('There\'s nothing to pay — the village asked for time, not coin. Wait it out, or face them.');
+          return 'unanswerable';
+        }
+        var have = 0, j = null;
+        try { j = this.justiceState ? this.justiceState() : null; have = (j && j.amendsCredit) || 0; } catch (e) {}
+        if (have < pet.demand.need) {
+          this.say('You don\'t have it to give — ' + have + ' amends credit against ' + pet.demand.need + ' owed. The village counts amends, not words.');
+          return 'short';
+        }
+        try { j.amendsCredit = have - pet.demand.need; } catch (e) {}
+        pet.paidAmends = (pet.paidAmends || 0) + pet.demand.need;
+        pet.paidWeregild = true;
+        pet.stage = 'ready';
+        this.say('The amends are counted, coin by coin. ' + pet.demand.need + ' credit paid as weregild — justice keeps its own books, and yours just got thinner. Send word again; the village will hear it differently now.');
+        try { if (this.journalNote) this.journalNote('exile', 'petition', 'Paid ' + pet.demand.need + ' amends credit as weregild on day ' + (s.day || 0) + '.'); } catch (e) {}
+        return 'paid';
+      }
+      this.say('The choices are: pay it, face them, let it die, or send word again. ("pay" / "face" / "withdraw" / "renew")');
+      return null;
+    },
+
+    // petitionDaily: the petition breathes at the day boundary. Waiting
+    // demands count down — and when the days you owed are paid, the road
+    // TELLS you (never silent). Wired into membershipDaily.
+    petitionDaily() {
+      try {
+        var s = this.state.scholar || {};
+        if (!s.exiled) return;
+        var a = this.exileArcState();
+        if (a.stage !== 'road') return;
+        var pet = a.petition;
+        if (!pet || pet.stage !== 'demanded' || !pet.demand) return;
+        if (pet.demand.key === 'wait' && pet.demand.daysLeft > 0) {
+          pet.demand.daysLeft -= 1;
+          if (pet.demand.daysLeft <= 0) {
+            pet.stage = 'ready';
+            this.say('The days you owed are paid — every one of them, out on the road. Send word again; the village will hear it differently now.');
+            try { if (this.journalNote) this.journalNote('exile', 'petition', 'Waiting demand fulfilled on day ' + (s.day || 0) + '.'); } catch (e) {}
+          } else if ((s.day || 0) % 3 === 0) {
+            this.say('The old fire hasn\'t forgotten you asked. ' + pet.demand.daysLeft + ' days left to owe.');
+          }
+        }
+      } catch (e) {}
     },
   };
 
@@ -1234,13 +1720,21 @@
  * 4. READMISSION (app.js): while exiled-on-the-road, offer "Send word to
  *    the old village" → Game.seekReadmission(). Show
  *    Game.readmissionConditions() FIRST (the unmet labels) so the petition
- *    is never a blind button — no silent actions.
+ *    is never a blind button — no silent actions. The petition is now an
+ *    ARC: refusal stages it 'demanded' with a concrete price
+ *    (Game.readmissionDemand()); the player's answers go through
+ *    Game.answerPetitionDemand('pay'|'face'|'withdraw'|'renew'). While a
+ *    petition is pending, seekReadmission() returns 'pending' with a spoken
+ *    status — surface that text, don't invent your own. petitionDaily()
+ *    already runs on the day boundary (waiting demands count down, loudly).
  *
  * 5. INTAKE HONESTY (app.js Haven panel): call Game.foodSupportsSpeech(n),
  *    not bare foodSupports(n), wherever an accept/refuse decision is shown.
  *
  * 6. STANDING (app.js Haven panel): Game.standingSummary(vid) for member
- *    rows — belonging made visible (trusted-by counts, benefits).
+ *    rows — belonging made visible (trusted-by counts, benefits) — and
+ *    Game.standingSummarySpeech(vid) wherever the player should HEAR it
+ *    (the names are knowledge-gated: strangers stay "a voice").
  *
  * 7. SETTLER SOURCE (betrayal.js considerStrangers): new faces for a forked
  *    haven should come from Game.genSettler() — unique composed people
