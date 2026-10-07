@@ -32,6 +32,7 @@
 //   - maybeScamWare(person, ware)
 //   - recordScam(whoName, whoId, kind, wareName)
 //   - scamDaily()
+//   - playerPackKcal() / playerPackSpend(kcal)
 //   - confrontScammer(vis, s) / resolveConfront(vis, s, how)
 //   - hawkerOffer(vid) / hawkerBuy(vid)
 //   - visitorHtml()
@@ -1020,7 +1021,7 @@
   canAffordBribe(cs, voterId) {
     const price = this.caseBribePrice(cs, voterId);
     let pack = 0;
-    try { pack = this.packKcal(this.villagerId) || 0; } catch (e) {}
+    try { pack = this.playerPackKcal() || 0; } catch (e) {}
     const pantry = (this.state.village && this.state.village.pantryKcal) || 0;
     return pack + pantry >= price;
   },
@@ -1028,10 +1029,11 @@
   payBribe(cs, voterId, price) {
     try {
       const p = Math.max(0, price || 0);
-      let pack = this.packKcal(this.villagerId) || 0;
+      let pack = this.playerPackKcal() || 0;
       const fromPack = Math.min(pack, p);
-      if (fromPack > 0) this.packSpend(this.villagerId, fromPack);
-      const rest = p - fromPack;
+      let spentPack = 0;
+      if (fromPack > 0) spentPack = this.playerPackSpend(fromPack);
+      const rest = p - spentPack; // actuals, not intentions — whole-unit spends can overshoot
       if (rest > 0) this.state.village.pantryKcal = Math.max(0, (this.state.village.pantryKcal || 0) - rest);
     } catch (e) {}
   },
@@ -1413,11 +1415,11 @@
     // You can only give what you carry.
     let giftGiven = 0;
     try {
-      const have = this.packKcal(this.villagerId);
+      const have = this.playerPackKcal();
       const offered = Math.max(0, Math.round(opts.giftKcal || 0));
-      giftGiven = Math.min(offered, have);
+      // real food only, whole-unit spends: the gift is what actually left the pack
+      giftGiven = offered > 0 && have > 0 ? this.playerPackSpend(Math.min(offered, have)) : 0;
       if (giftGiven > 0) {
-        this.packSpend(this.villagerId, giftGiven);
         if (giftGiven >= 1500) judgment += 12;
         else if (giftGiven >= 700) judgment += 8;
         else judgment += 4;
@@ -1587,7 +1589,7 @@
     };
     if (s.exiled) {
       let pack = 0;
-      try { pack = this.packKcal(this.villagerId); } catch (e) {}
+      try { pack = this.playerPackKcal(); } catch (e) {}
       card.actions.push({ id: 'petition', label: '🙏 Approach & petition', hint: `They've heard the gossip. (You carry ~${pack} kcal of food — offering some helps.)`, giftKcal: 0 });
       if (pack >= 700) card.actions.push({ id: 'petition', label: '🙏 Petition + offer food (700 kcal)', hint: 'A real offering. Costs you.', giftKcal: 700 });
       if (pack >= 1500) card.actions.push({ id: 'petition', label: '🙏 Petition + offer a feast (1500 kcal)', hint: 'More than a day\'s food. Hard to refuse.', giftKcal: 1500 });
@@ -1607,7 +1609,7 @@
         // silent drain. Gifts come from what you carry (the pack), same pool
         // as the petition offering.
         let pack = 0;
-        try { pack = this.packKcal(this.villagerId); } catch (e) {}
+        try { pack = this.playerPackKcal(); } catch (e) {}
         if (pack >= 700) card.actions.push({ id: 'sharefood', label: '🍲 Share a day\'s food (700 kcal)', hint: 'Feed their fire from your pack. They\'ll remember — especially if the pot is empty.', giftKcal: 700 });
         if (pack >= 1500) card.actions.push({ id: 'sharefood', label: '🍲🍲 Lay down a feast (1500 kcal)', hint: 'More than a day\'s food from your pack. A gift nobody shrugs at.', giftKcal: 1500 });
       } else {
@@ -1731,14 +1733,16 @@
     // they've lived since you last looked
     try { this.catchUpSim(ov); } catch (e) {}
     let pack = 0;
-    try { pack = this.packKcal(this.villagerId); } catch (e) {}
+    try { pack = this.playerPackKcal(); } catch (e) {}
     const wanted = Math.max(0, Math.round(opts.giftKcal || 0));
-    const gift = Math.min(wanted, pack);
-    if (gift < 700) {
-      this.say(`You don't carry enough to make a gift of it — ${Math.round(pack)} kcal in your pack, and 700 is the smallest gift that feeds a fire. (Eat up, pack more, come back.)`);
+    if (Math.min(wanted, pack) < 700) {
+      this.say(`You don't carry enough to make a gift of it — ${Math.round(pack)} kcal of finished food in your pack, and 700 is the smallest gift that feeds a fire. (Eat up, pack more, come back.)`);
       return null;
     }
-    try { this.packSpend(this.villagerId, gift); } catch (e) {}
+    // real food leaves the real pack; the gift is what actually moved
+    let gift = 0;
+    try { gift = this.playerPackSpend(Math.min(wanted, pack)); } catch (e) {}
+    if (gift < 700) { this.say(`You don't carry enough to make a gift of it — the pack wouldn't divide. (Eat up, pack more, come back.)`); return null; }
     const wasLean = (ov.pantryKcal || 0) <= 0;
     ov.pantryKcal = (ov.pantryKcal || 0) + gift;
     // trust: a 700 gift is a day of your food (+10); a 1500 feast is a statement
@@ -1759,6 +1763,44 @@
     // a shared meal takes a while: named cost, no silent drain.
     try { this.tickAction(32); } catch (e) {}
     return true;
+  },
+  // playerPackKcal / playerPackSpend: the PLAYER's real food economy.
+  // DRIFTER LOOP 2026-10-07: the exile/drifter/gift/cache/bribe economy used
+  // to read packKcal(this.villagerId) — the NPC abstract-pack number (800-1300
+  // kcal re-rolled daily), NOT the player's real inventory. Gifts and caches
+  // ran on phantom food: a full real pack read as "empty", and havens got
+  // founded on ghost food while the real pack never shrank. These read and
+  // spend the real inventory (finished food only, like the homecoming haul).
+  // Spends are whole-unit, like the rest of the codebase; returns ACTUAL kcal
+  // removed, and callers say the actual — the fiction names what moved.
+  playerPackKcal() {
+    const inv = (this.state.scholar && this.state.scholar.inventory) || [];
+    let t = 0;
+    for (const i of inv) {
+      if (!i || (i.kcalEach || 0) <= 0 || (i.units || 0) <= 0) continue;
+      if (i.bonded) continue; // relics aren't food
+      try { if (this.isFinishedFood && !this.isFinishedFood(i)) continue; } catch (e) {}
+      t += (i.kcalEach || 0) * (i.units || 0);
+    }
+    return Math.round(t);
+  },
+  playerPackSpend(kcal) {
+    const s = this.state.scholar;
+    const inv = s.inventory || [];
+    let need = Math.max(0, Math.round(kcal || 0)), got = 0;
+    for (let idx = inv.length - 1; idx >= 0 && need > 0; idx--) {
+      const i = inv[idx];
+      if (!i || (i.kcalEach || 0) <= 0 || (i.units || 0) <= 0 || i.bonded) continue;
+      let skip = false;
+      try { if (this.isFinishedFood && !this.isFinishedFood(i)) skip = true; } catch (e) {}
+      if (skip) continue;
+      const take = Math.min(i.units, Math.ceil(need / i.kcalEach));
+      i.units -= take;
+      got += take * i.kcalEach;
+      need -= take * i.kcalEach;
+      if (i.units <= 0) inv.splice(idx, 1);
+    }
+    return Math.round(got);
   },
   // exileSelfActions: the camp/self UI reads this while exiled. Pure data.
   // Founding a haven is a PROJECT, not a button (Steve 2026-10-06): survive
@@ -1834,6 +1876,10 @@
     const f = this.foundingState();
     if (f.siteClaimed) return null;
     f.siteClaimed = true;
+    // the claim is a PLACE, not a flag — the haven rises here, not wherever
+    // you happen to be standing when you found (drifter loop 2026-10-07:
+    // the say line already claims "the spot you claimed weeks ago").
+    try { f.claimX = this.map.px; f.claimY = this.map.py; } catch (e) {}
     try { this.tickAction(32); } catch (e) {}
     try { this.audioEvent && this.audioEvent('claimSite'); } catch (e) {}
     this.say(`You walk the ground until it feels right — water near, wood near, wind wrong. You mark it with a cairn and a cut branch. This is yours now. Nothing here but a claim and a plan. The work starts tomorrow.`);
@@ -1877,13 +1923,21 @@
     const f = this.foundingState(), RQ = this.foundingReqs();
     if (!f.siteClaimed) { this.say('Claim a campsite first — a cache needs a home.'); return null; }
     let pack = 0;
-    try { pack = this.packKcal(this.villagerId); } catch (e) {}
-    const move = Math.min(RQ.cachePerAction, Math.round(pack));
-    if (move <= 0) { this.say(`Your pack is empty. The cache waits. Forage, hunt, pack food — then come back.`); return null; }
-    try { this.packSpend(this.villagerId, move); } catch (e) {}
-    f.stockpileKcal += move;
+    try { pack = this.playerPackKcal(); } catch (e) {}
+    const want = Math.min(RQ.cachePerAction, Math.round(pack));
+    if (want <= 0) { this.say(`Your pack is empty. The cache waits. Forage, hunt, pack food — then come back.`); return null; }
+    // real food into the real cache: the haven starts on YOUR foraging, not a phantom
+    let moved = 0;
+    try { moved = this.playerPackSpend(want); } catch (e) {}
+    if (moved <= 0) { this.say(`Your pack is empty. The cache waits. Forage, hunt, pack food — then come back.`); return null; }
+    f.stockpileKcal += moved;
     try { this.tickAction(16); } catch (e) {}
-    this.say(`You bury and hang ${move} kcal where animals won't find it — or not easily. The haven cache holds ${Math.round(f.stockpileKcal)} / ${RQ.stockpileKcal} kcal.`);
+    this.say(`You bury and hang ${moved} kcal where animals won't find it — or not easily. The haven cache holds ${Math.round(f.stockpileKcal)} / ${RQ.stockpileKcal} kcal.`);
+    // NO SILENT STARVATION (drifter loop 2026-10-07): caching your last
+    // calorie is allowed — it's your call — but the game says so out loud.
+    let left = 0;
+    try { left = this.playerPackKcal(); } catch (e) {}
+    if (left < 700) this.say(`Your pack is light now — ${Math.round(left)} kcal of finished food left. The cache doesn't feed you tonight; keep enough to eat.`);
     return true;
   },
   // found your own haven: the fork, gated behind the founding project.
@@ -1925,8 +1979,18 @@
     const namePool = havenNames.filter(n => !usedNames.has(n));
     const pool = namePool.length ? namePool : havenNames;
     const name = pool[Math.floor(R() * pool.length)];
-    const px = (this.map && this.map.px != null) ? this.map.px : (old.px != null ? old.px : 3);
-    const py = (this.map && this.map.py != null) ? this.map.py : (old.py != null ? old.py : 3);
+    // the haven rises on the CLAIMED site (see claimSite) — you walk back to
+    // your cairn to found, not wherever you wandered. (drifter loop 2026-10-07:
+    // founding used to plant the haven at your current feet, and never marked
+    // the tile — so pantryInReach() never fired at home and the map never
+    // showed the new haven. The founder couldn't eat from their own pantry.)
+    const px = (f0.claimX != null) ? f0.claimX : ((this.map && this.map.px != null) ? this.map.px : (old.px != null ? old.px : 3));
+    const py = (f0.claimY != null) ? f0.claimY : ((this.map && this.map.py != null) ? this.map.py : (old.py != null ? old.py : 3));
+    try { if (this.map) { this.map.px = px; this.map.py = py; } } catch (e) {}
+    try {
+      const t = this.tileAt(px, py);
+      if (t) { t.type = 'haven'; t.isHaven = true; t.stock = 0; }
+    } catch (e) {}
     const v = {
       name, day: 1, season: old.season || 'spring',
       px, py,

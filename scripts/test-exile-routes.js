@@ -62,7 +62,15 @@ function petitionRate(crimeType, opts, runs) {
 
   // ---------- 2. gifts + skills move the needle ----------
   Game.learnSkill('read_people', 1, 'test');
-  const setPack = (kcal) => { Game.state.village.pack = Game.state.village.pack || {}; Game.state.village.pack[P] = { day: Game.state.scholar.day, kcal }; };
+  // REAL food in the real inventory (drifter loop 2026-10-07: the exile
+  // economy no longer reads the NPC abstract pack — stock actual items).
+  const setPack = (kcal) => {
+    const per = 500, units = Math.ceil(kcal / per);
+    Game.state.scholar.inventory.push({
+      name: 'Test rations', kcalEach: per, units, spoilDay: 9999, safe: true,
+      kg: 0.2, unit: 'pack', edible: true, foodState: 'ready', foodKind: 'plant',
+    });
+  };
   const r2 = (() => {
     const ov = targetVillage();
     let accepted = 0;
@@ -101,11 +109,12 @@ function petitionRate(crimeType, opts, runs) {
   // ---------- 5. gift is deducted from the pack ----------
   freshExile('theft');
   setPack(2000);
-  const before = Game.packKcal(P);
+  const before = Game.playerPackKcal();
   targetVillage();
   Game.petitionVillage(Game.state.otherVillages[0].id, { giftKcal: 700 });
-  const after = Game.packKcal(P);
-  ok('gift deducted from pack', after === before - 700);
+  const after = Game.playerPackKcal();
+  // whole-unit spends: 700 kcal asked from 500-kcal units moves 1000
+  ok('gift deducted from real pack (whole units)', before - after >= 700 && (before - after) % 500 === 0);
 
   // ---------- 6. foundHaven: clears exile, remembers, clears drift ----------
   // founding is a project now (Steve 2026-10-06) — complete it first

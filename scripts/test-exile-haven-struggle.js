@@ -42,9 +42,13 @@ function ok(name, cond) {
   else { fail++; console.log(`  FAIL ${name}`); }
 }
 function setPack(pid, kcal) {
-  const v = Game.state.village;
-  v.pack = v.pack || {};
-  v.pack[pid] = { day: Game.state.scholar.day, kcal };
+  // REAL food in the real inventory (drifter loop 2026-10-07: the exile
+  // economy no longer reads the NPC abstract pack — stock actual items).
+  const per = 500, units = Math.ceil(kcal / per);
+  Game.state.scholar.inventory.push({
+    name: 'Test rations', kcalEach: per, units, spoilDay: 9999, safe: true,
+    kg: 0.2, unit: 'pack', edible: true, foodState: 'ready', foodKind: 'plant',
+  });
 }
 
 (async () => {
@@ -87,10 +91,10 @@ function setPack(pid, kcal) {
   s.day = s.exileStartDay + 7;
   // caching: real pack -> stockpile flow
   setPack(pid, 3000);
-  const packBefore = Game.packKcal(pid);
+  const packBefore = Game.playerPackKcal();
   Game.exileSelfDo('cachefood');
   ok('caching moves pack kcal to the stockpile',
-    Math.round(Game.foundingState().stockpileKcal) === 3000 && Game.packKcal(pid) < packBefore);
+    Math.round(Game.foundingState().stockpileKcal) === 3000 && Game.playerPackKcal() < packBefore);
   Game.foundingState().stockpileKcal = 10000; // rest of the loop is days of packing
   ok('checklist clear after ~2 weeks of work', Game.foundingMissing().length === 0);
 
