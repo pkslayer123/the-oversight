@@ -1,6 +1,6 @@
 // @ontology
 // system: membership
-// description: Village membership. Joining, leaving, exile status.
+// description: Village membership. Joining, leaving, exile status — plus the exile arc (moment → road → founding) and belonging texture.
 // provides:
 //   - isMember(vid)
 //   - mshipState()
@@ -13,10 +13,37 @@
 //   - severMembership(vid)
 //   - housingCap()
 //   - foodSupports(n)
+//   - exileArcState()
+//   - exileManifest()
+//   - describeExile(how)
+//   - beginExileRoad()
+//   - roadDaily()
+//   - _roadEatFromPack(need)
+//   - forkVillage(opts)
+//   - genSettler()
+//   - standingSummary(vid)
+//   - foodSupportsSpeech(n)
+//   - severMembershipSocial(vid)
+//   - applicantBackstory(app)
+//   - readmissionConditions()
+//   - seekReadmission()
 // rules:
-//   - (none documented)
+//   - Exile is an arc (moment → road → founding), not a flag flip (code: membership.js)
+//   - The exile moment is spoken: keep/lose manifest, no silent severing (code: membership.js)
+//   - The road-between is pack-only survival: hunger is real, monsters are curious (code: membership.js)
+//   - forkVillage delegates to the canonical hard-reset fork (betrayal.js); membership stages the arc and speaks the founding (code: membership.js)
+//   - Readmission is never automatic: conditions are itemized and the petition is announced (code: membership.js)
+//   - Severing is social: the old village remembers, other villages hear (code: membership.js)
+//   - Settlers/applicants are unique composed people — never a fixed cast (code: membership.js)
+//   - foodSupports projections are spoken honestly when they deny (code: membership.js)
 // consumes:
 //   - village.members
+//   - scholar.exiled
+//   - scholar.kcal
+//   - scholar.inventory
+//   - scholar.health
+//   - state.pastVillages
+//   - state.village
 /* VILLAGE MEMBERSHIP — src/js/membership.js
  *
  * Steve: "Villages shouldn't strictly require presence or check ins. Unless
@@ -609,6 +636,379 @@
       try { this.arrivalTick(); } catch (e) {}
       try { this.crowdingTick(); } catch (e) {}
     },
+
+    // ---------- 8. EXILE ARC: moment → road → founding ----------
+    //
+    // Exile is not a flag flip. It has beats: the MOMENT (what you're told,
+    // what you keep, what you lose), the ROAD-BETWEEN (pack-only survival —
+    // hunger is real, monsters are curious), and the FOUNDING (a hard-reset
+    // fork: new village object, fresh ties; you keep self/knowledge/pack).
+    // The arc lives on the SCHOLAR — it survives the village fork, because
+    // the road is walked by the person, not the place.
+
+    // exileArcState: stages 'home' → 'moment' → 'road' → 'founding' → 'home'.
+    exileArcState() {
+      var s = this.state.scholar || {};
+      s.exileArc = s.exileArc || {};
+      var a = s.exileArc;
+      if (!a.stage) a.stage = s.exiled ? 'road' : 'home';
+      if (a.exiledDay == null) a.exiledDay = (s.exileStartDay != null) ? s.exileStartDay : (s.day || 0);
+      a.roadDays = a.roadDays || 0;
+      a.roadBeats = a.roadBeats || [];
+      return a;
+    },
+
+    // exileManifest: the moment, legible. Exactly what the player KEEPS and
+    // exactly what they LOSE. No silent actions — the severing is spoken.
+    exileManifest() {
+      return {
+        keep: [
+          'Yourself — name, body, scars, everything you are',
+          'Your knowledge — the codex in your head walks with you',
+          'Your pack — every item, every strip of dried meat',
+        ],
+        lose: [
+          'The pantry — not one more draw from the common pot',
+          'The village book — your codex no longer syncs with theirs',
+          '"One of ours" — neighbors will not know your name abroad',
+          'The fire — a seat by it, a roof over you, a voice in the moot',
+        ],
+      };
+    },
+
+    // describeExile: the beat of the moment. Wired to exilePlayer (see wraps).
+    describeExile(how) {
+      var m = this.exileManifest();
+      var a = this.exileArcState();
+      a.stage = 'moment';
+      var reason = how ? ' (' + how + ')' : '';
+      this.say('EXILE' + reason + '. The moot has spoken, and the fire is not yours anymore.');
+      this.say('You KEEP: ' + m.keep.join('; ') + '.');
+      this.say('You LOSE: ' + m.lose.join('; ') + '.');
+      this.say('The road is yours now. Walk it hungry, walk it watched — but walk it as yourself.');
+      try { if (this.journalNote) this.journalNote('exile', 'the moment', 'Exiled day ' + ((this.state.scholar || {}).day || 0) + '. Kept self/knowledge/pack; lost pantry/codex-sync/standing.'); } catch (e) {}
+      return m;
+    },
+
+    // beginExileRoad: the leaving. The old village is behind you; the
+    // mantle picks up on the road.
+    beginExileRoad() {
+      var a = this.exileArcState();
+      a.stage = 'road';
+      a.roadDays = 0;
+      try { this.say('You walk. Behind you: a village that remembers. Ahead: nothing but what you carry and what you know.'); } catch (e) {}
+      return a;
+    },
+
+    // roadDaily: the road-between, one day at a time. Runs at the day
+    // boundary while exiled (see wraps). Pack-only survival: the pack feeds
+    // you or the body pays — hunger is REAL. And monsters are CURIOUS about
+    // a lone walker: roadExposed flags it for the encounters system, and the
+    // road itself gets beats.
+    roadDaily() {
+      var s = this.state.scholar || {};
+      var a = this.exileArcState();
+      if (!s.exiled || a.stage === 'founding') return null;
+      a.stage = 'road';
+      a.roadDays += 1;
+      var need = 2000; // a day's food, no village pot to draw from
+      var eaten = this._roadEatFromPack(need);
+      // monsters notice the lone walker
+      try { s.roadExposed = true; } catch (e) {}
+      if (a.roadDays % 2 === 0 && R() < 0.5) {
+        var beats = [
+          'Something large moves parallel to you in the treeline. Curious, not hunting. Yet.',
+          'Eyes at the edge of the firelight. The woods are taking your measure.',
+          'A call you don\'t recognize answers a call you do. The road is not empty.',
+        ];
+        var b = pick(beats);
+        a.roadBeats.push({ day: s.day || 0, text: b });
+        try { this.say(b); } catch (e) {}
+      }
+      var body = (s.kcal || 0) + eaten;
+      var cap = 3000;
+      try { cap = this.kcalCap ? this.kcalCap() : 3000; } catch (e) {}
+      if (body >= need) {
+        s.kcal = Math.min(cap, body - need);
+      } else {
+        s.kcal = 0;
+        var dmg = Math.max(1, Math.min(25, Math.round((need - body) / 200)));
+        s.health = Math.max(1, (s.health || 100) - dmg);
+        try { this.say('Hunger is not a metaphor anymore. Your body eats itself a little. (-' + dmg + ' health)'); } catch (e) {}
+        try { if (this.journalNote) this.journalNote('exile', 'hunger', 'Starving on the road, day ' + (s.day || 0) + '.'); } catch (e) {}
+      }
+      return { roadDays: a.roadDays, eaten: eaten };
+    },
+
+    // _roadEatFromPack: eat what's edible in the pack, honestly reported.
+    // Same edible rule as the world: kcalEach > 0, units left, not bonded,
+    // not spoiled, not marked inedible. Raw/unsafe food still feeds — the
+    // road doesn't grade your cooking. Returns kcal eaten; never touches
+    // the kcal bank (roadDaily settles the day's books).
+    _roadEatFromPack(need) {
+      var s = this.state.scholar || {};
+      var inv = s.inventory || [];
+      var eaten = 0, names = [];
+      for (var i = inv.length - 1; i >= 0 && eaten < need; i--) {
+        var it = inv[i];
+        if (!it || (it.kcalEach || 0) <= 0 || (it.units || 0) <= 0) continue;
+        if (it.bonded) continue;
+        if (it.edible === false) continue;
+        var spoiled = false;
+        try { spoiled = this.isSpoiled ? this.isSpoiled(it, 0) : false; } catch (e) {}
+        if (spoiled) continue;
+        while ((it.units || 0) > 0 && eaten < need) {
+          eaten += (it.kcalEach || 0);
+          it.units -= 1;
+          if (names.indexOf(it.name) < 0) names.push(it.name);
+        }
+      }
+      s.inventory = inv.filter(function (x) { return (x.units || 0) > 0; });
+      if (eaten > 0) {
+        try { this.say('On the road you eat from your pack: ' + names.join(', ') + ' (+' + eaten + ' kcal). The pack is thinner now.'); } catch (e) {}
+      } else {
+        try { this.say('Your pack has nothing to eat. The road asks, and you have no answer.'); } catch (e) {}
+      }
+      return eaten;
+    },
+
+    // ---------- 9. FORKING: the founding beat ----------
+    //
+    // forkVillage: the membership-owned entry point to the founding beat.
+    // The CANONICAL hard reset lives in betrayal.js (_forkNewHaven, Steve
+    // 2026-10-06): old village archived to state.pastVillages (it continues
+    // without you), fresh village object, founder-only roster — new faces
+    // arrive via the strangers system, EARNED not given. This function does
+    // NOT reimplement that; it stages the membership arc around it and
+    // speaks the founding in membership terms. Delegation, not duplication.
+
+    // forkVillage: found the new haven. Requires exile-on-the-road; the
+    // canonical founding project (claimed site, shelter, cache, solo days)
+    // is checked by foundHaven, which says what's missing — honestly, never
+    // silently. On success: arc closes, ties start over, road ends.
+    forkVillage(opts) {
+      opts = opts || {};
+      var s = this.state.scholar || {};
+      if (!s.exiled) {
+        this.say('You already have a fire. Founding is for the cast-out — the road gives you this, not ambition.');
+        return null;
+      }
+      var a = this.exileArcState();
+      if (a.stage === 'founding') {
+        this.say('The founding is already underway. One fire at a time.');
+        return null;
+      }
+      a.stage = 'founding';
+      var r = null;
+      try { r = this.foundHaven ? this.foundHaven() : null; } catch (e) { r = null; }
+      if (!r) { a.stage = 'road'; return null; } // foundHaven already said what's missing
+      // success: the canonical fork ran (fresh village, archived old) and the
+      // existing foundHaven wrap ran rejoinMembership (exile cleared, mantle
+      // speech spoken). Membership's founding beats:
+      a.stage = 'home';
+      a.roadDays = 0;
+      try { s.roadExposed = false; } catch (e) {}
+      var nv = this.state.village || {};
+      var souls = (nv.roster || []).length;
+      try {
+        this.say('New fire, new names, same codex. ' + (nv.name || 'The new haven') + ' holds ' + souls + ' soul' + (souls === 1 ? '' : 's') + ' — you, first. Village ties start over: trust here is earned the slow way, one shared meal at a time.');
+      } catch (e) {}
+      try { if (this.journalNote) this.journalNote('village', 'founding', 'Founded ' + (nv.name || '?') + ' on day ' + (s.day || 0) + ' after exile. Hard reset: fresh village object, ties start over; kept self/knowledge/pack.'); } catch (e) {}
+      return nv;
+    },
+
+    // ---------- 10. BELONGING TEXTURE ----------
+
+    // genSettler: a UNIQUE person (unique-person law, Steve 2026-10-06).
+    // Never a fixed cast: every settler is COMPOSED from part-pools —
+    // origin, past, need, quirk — so no two share a backstory. Temperament
+    // is deliberately null: the village learns them by LIVING with them,
+    // not from a label. (Wiring: the strangers system should draw arrivals
+    // from here — see the wiring block at the bottom of this file.)
+    genSettler() {
+      var FIRST = ['Mara', 'Joss', 'Tilda', 'Renn', 'Sable', 'Ilya', 'Noor', 'Petra', 'Aldo', 'Wren', 'Kessa', 'Dorian', 'Liv', 'Tam', 'Oka', 'Bex'];
+      var LAST = ['Ash', 'Fen', 'Hollis', 'Marsh', 'Vale', 'Thorn', 'Reed', 'Calloway', 'Drift', 'Sparrow', 'Hale', 'Quill', 'Vane', 'Lark'];
+      var ORIGINS = ['a drowned coastal town', 'a burned orchard commune', 'a highway rest-stop camp', 'a flooded subway station', 'a mountain chapel', 'a casino that ran out of luck', 'a library basement', 'a grain silo collective', 'a ferry that never docked', 'a radio station gone quiet'];
+      var PASTS = ['kept the night watch alone for a winter', 'buried their whole street', 'traded a wedding ring for seed potatoes', 'learned to read from salvaged manuals', 'carried water uphill for forty families', 'talked a raider down with soup', 'crossed a river without knowing how to swim', 'kept bees through the first bad year', 'mapped the valley on foot, twice', 'sang the generator back to life'];
+      var NEEDS = ['a roof that doesn\'t leak', 'work for their hands', 'someone to trust with their kid\'s name', 'a reason to stay awake at dawn', 'a place their past can\'t follow', 'proof the fire won\'t go out'];
+      var QUIRKS = ['hums while mending', 'counts fence posts', 'names every dog', 'saves the burnt bits', 'sleeps with their boots on', 'laughs at funerals and cries at weddings'];
+      var OCCUPATIONS = [
+        { name: 'cook', providesPerDay: 2600 }, { name: 'carpenter', providesPerDay: 1800 },
+        { name: 'nurse', providesPerDay: 1500 }, { name: 'farmer', providesPerDay: 3000 },
+        { name: 'mechanic', providesPerDay: 1700 }, { name: 'teacher', providesPerDay: 1400 },
+        { name: 'hunter', providesPerDay: 3200 }, { name: 'fisher', providesPerDay: 2800 },
+      ];
+      var id = 'st_' + Date.now().toString(36) + '_' + Math.floor(R() * 99999);
+      var name = pick(FIRST) + ' ' + pick(LAST);
+      var occ = pick(OCCUPATIONS);
+      var origin = pick(ORIGINS);
+      var past = pick(PASTS);
+      var need = pick(NEEDS);
+      var quirk = pick(QUIRKS);
+      var evPool = PASTS.filter(function (p) { return p !== past; });
+      var evs = [];
+      var nEv = 1 + Math.floor(R() * 2);
+      for (var i = 0; i < nEv && evPool.length; i++) {
+        var e = pick(evPool);
+        evPool.splice(evPool.indexOf(e), 1);
+        evs.push({ when: 'before the road', text: e });
+      }
+      return {
+        id: id, name: name, formerOccupation: occ.name,
+        providesPerDay: occ.providesPerDay, kcalPerDay: 2000,
+        temperament: null, // learned by living with them, not assigned
+        origin: origin,
+        backstory: 'From ' + origin + '. Once ' + past + '. ' + (R() < 0.5 ? 'Still ' + quirk + '.' : 'Wants ' + need + '.'),
+        livedEvents: evs, need: need, quirk: quirk,
+        arrivedDay: (this.state.scholar || {}).day || 0,
+      };
+    },
+
+    // standingSummary: belonging made VISIBLE. Who they are to the village —
+    // trusted by how many, what membership means for them. Belonging is
+    // earned (trust counts) and visible (this summary).
+    standingSummary(vid) {
+      var id = vid || this.villagerId;
+      var v = this.state.village || {};
+      if (!this.isMember(id)) {
+        var sev = null;
+        try { sev = (v.severed || {})[id]; } catch (e) {}
+        if (sev) return { member: false, note: 'Severed — exiled day ' + (sev.day || '?') + '. The village remembers.' };
+        return { member: false, note: 'Not one of ours.' };
+      }
+      var t = v.trust || {};
+      var roster = v.roster || [];
+      var trustedBy = 0;
+      for (var i = 0; i < roster.length; i++) {
+        if (roster[i] === id) continue;
+        if ((t[roster[i]] || 0) >= 40) trustedBy++;
+      }
+      var benefits = [];
+      try {
+        benefits = this.memberBenefits(id).map(function (b) { return b.label; });
+      } catch (e) {}
+      return {
+        member: true,
+        trustedBy: trustedBy,
+        of: Math.max(0, roster.length - 1),
+        benefits: benefits,
+        note: trustedBy >= 3 ? 'Belonging, earned the slow way.' : 'One of ours — still earning the room\'s trust.',
+      };
+    },
+
+    // foodSupportsSpeech: the honest spoken version of foodSupports. If the
+    // village can't feed n more, it SAYS so — no silent actions (Steve).
+    foodSupportsSpeech(n) {
+      var fs = this.foodSupports(n || 1);
+      var k = n || 1;
+      var line;
+      if (fs.ok) {
+        line = 'The pantry can carry ' + k + ' more mouth' + (k > 1 ? 's' : '') + '.';
+      } else {
+        line = 'Honest math: the village already runs a ' + fs.shortfall + ' kcal/day shortfall' +
+          ', and ' + k + ' more mouth' + (k > 1 ? 's' : '') + ' would need ' + fs.extraNeed + ' more. ' +
+          'The pantry covers ' + (fs.pantryDays >= 999 ? 'plenty of days' : fs.pantryDays + ' days') + ' at this size.';
+      }
+      try { this.say(line); } catch (e) {}
+      return fs;
+    },
+
+    // severMembershipSocial: the cut has SOCIAL consequences, not just
+    // mechanical ones. THEY REMEMBER (betrayal-memory entry the justice
+    // system reads; the severed record itself is never deleted on fork) and
+    // OTHER VILLAGES HEAR (strangers carry the word — memberReputationAbroad
+    // prices the cut into every future judgment).
+    severMembershipSocial(vid) {
+      var id = vid || this.villagerId;
+      var nm = id;
+      try { nm = String(this.displayName(id)).split(' ')[0]; } catch (e) {}
+      try { if (this.remember) this.remember(id, 'severed', 'cut from the village'); } catch (e) {}
+      try {
+        var strangers = [];
+        try { strangers = this.npcIds ? this.npcIds().slice(0, 3) : []; } catch (e2) {}
+        this.seedGossip('severed_' + id, { generous: -6, trustworthy: -8 }, strangers);
+        var bs = this.betrayalState ? this.betrayalState() : null;
+        if (bs) bs.strangersHeard = (bs.strangersHeard || 0) + 1;
+      } catch (e) {}
+      try { this.say('Word will travel about ' + nm + '. Villages talk — the severed carry the cut with them.'); } catch (e) {}
+      return true;
+    },
+
+    // applicantBackstory: belonging texture for APPLICANTS — the
+    // unique-person law applies before they ever arrive. Backstory, lived
+    // events, need: composed from identity, never a fixed cast. (Wired to
+    // genApplicant via wraps — additive enrichment, no signature change.)
+    applicantBackstory(app) {
+      if (!app || app.backstory) return app;
+      var settler = null;
+      try { settler = this.genSettler(); } catch (e) {}
+      if (!settler) return app;
+      app.backstory = settler.backstory;
+      app.livedEvents = settler.livedEvents;
+      app.need = settler.need;
+      app.origin = settler.origin;
+      return app;
+    },
+
+    // ---------- 11. READMISSION: the way back (never automatic) ----------
+    //
+    // Returning to the village that exiled you is an ARC with conditions,
+    // announced to the village. Joining a NEW village is different — that
+    // path (joinVillage → rejoinMembership) legitimately ends your personal
+    // exile, because you're somewhere new. But the OLD village's severed
+    // record stays until THIS arc earns its clearing.
+
+    // readmissionConditions: the arc, itemized. Every condition is
+    // announced — nothing silent, nothing automatic.
+    readmissionConditions() {
+      var s = this.state.scholar || {};
+      var a = this.exileArcState();
+      var day = s.day || 0;
+      var daysOut = day - (a.exiledDay != null ? a.exiledDay : day);
+      var amends = 0;
+      try { var j = this.justiceState ? this.justiceState() : null; amends = (j && j.amendsCredit) || 0; } catch (e) {}
+      var homeHere = false;
+      try { homeHere = !!((this.state.village || {}).severed || {})[this.villagerId]; } catch (e) {}
+      return [
+        { key: 'time', met: daysOut >= 14, label: 'Time on the road (' + daysOut + '/14 days) — the village needs to miss the person, not the problem.' },
+        { key: 'amends', met: amends >= 20, label: 'Amends made (' + amends + '/20 credit) — the village remembers, but it can forgive.' },
+        { key: 'record', met: homeHere, label: homeHere ? 'The severed record stands — there is something to forgive.' : 'No severed record stands here — there is nowhere to return TO.' },
+      ];
+    },
+
+    // seekReadmission: petition the old village. Announced, conditioned,
+    // never automatic. Only on the road — if you founded a fork, the fork
+    // is your village now. On success the old village strikes YOUR severed
+    // record (earned, announced); the village is TOLD.
+    seekReadmission() {
+      var s = this.state.scholar || {};
+      if (!s.exiled) {
+        this.say('You are not exiled. There is nothing to be readmitted to.');
+        return null;
+      }
+      var a = this.exileArcState();
+      if (a.stage !== 'road') {
+        this.say('The fork is your village now. You don\'t petition a fire you left — you tend the one you built.');
+        return null;
+      }
+      var conds = this.readmissionConditions();
+      var unmet = conds.filter(function (c) { return !c.met; });
+      if (unmet.length) {
+        this.say('You send word to the old village. The answer comes back honest:');
+        for (var i = 0; i < unmet.length; i++) this.say('— not yet: ' + unmet[i].label);
+        try { if (this.journalNote) this.journalNote('exile', 'petition', 'Petition refused: ' + unmet.map(function (c) { return c.key; }).join(', ') + '.'); } catch (e) {}
+        return false;
+      }
+      // granted: the old village strikes YOUR severed record — earned, announced
+      try { delete (this.state.village.severed || {})[this.villagerId]; } catch (e) {}
+      try { this.rejoinMembership(); } catch (e) {}
+      a.stage = 'home';
+      a.roadDays = 0;
+      try { s.roadExposed = false; } catch (e) {}
+      this.say('Word comes back at dusk: COME HOME. The old fire makes room. The severed record is struck — not forgotten, forgiven. The village is told, and the village remembers the telling.');
+      try { if (this.journalNote) this.journalNote('exile', 'readmission', 'Readmitted on day ' + (s.day || 0) + '. The arc is closed — the hard way, the honest way.'); } catch (e) {}
+      return true;
+    },
   };
 
   for (var k in methods) G[k] = methods[k];
@@ -699,4 +1099,87 @@
     return _endDay ? _endDay.call(this) : undefined;
   };
 
+  // ---------- WRAPS (appended 2026-10-07: exile arc beats) ----------
+  // Chain-safe: each wraps the CURRENT G.fn (which may already be wrapped
+  // above). No existing wrap bodies were modified.
+
+  // The exile moment is TOLD, not just flagged: keep/lose manifest, then
+  // the road is staged. (The earlier exilePlayer wrap above already ran the
+  // severing itself.)
+  var _exilePlayer2 = G.exilePlayer;
+  G.exilePlayer = function (how) {
+    var r = _exilePlayer2 ? _exilePlayer2.call(this, how) : undefined;
+    try { this.describeExile(how); } catch (e) {}
+    try { this.beginExileRoad(); } catch (e) {}
+    return r;
+  };
+
+  // Severing has social consequences: they remember, other villages hear.
+  var _severMembership2 = G.severMembership;
+  G.severMembership = function (vid, how) {
+    var r = _severMembership2 ? _severMembership2.call(this, vid, how) : undefined;
+    try { this.severMembershipSocial(vid); } catch (e) {}
+    return r;
+  };
+
+  // The road-between runs at the day boundary while exiled.
+  var _endDay2 = G.endDay;
+  G.endDay = function () {
+    try {
+      if (this.state.scholar && this.state.scholar.exiled) this.roadDaily();
+    } catch (e) {}
+    return _endDay2 ? _endDay2.call(this) : undefined;
+  };
+
+  // Applicants arrive as unique people: backstory, lived events, needs.
+  // Additive enrichment only — genApplicant's signature is unchanged.
+  var _genApplicant2 = G.genApplicant;
+  G.genApplicant = function () {
+    var app = _genApplicant2 ? _genApplicant2.call(this) : null;
+    try { if (app) this.applicantBackstory(app); } catch (e) {}
+    return app;
+  };
+
 })();
+
+/* WIRING POINTS for game.js / app.js (2026-10-07, membership exile arc).
+ * Intentionally NOT wired here — membership.js stays additive-only on the
+ * hot tree. A sibling integrating UI should:
+ *
+ * 1. EXILE BANNER (app.js): while Game.state.scholar.exiled, surface the arc:
+ *      Game.exileArcState() → { stage: 'road'|'founding', roadDays, roadBeats }
+ *    Show "Day N on the road", pack kcal remaining, and the road beats log.
+ *    Mobile: one line in the status row + the beats in a scrollable exile
+ *    card (planning surface — scrolling allowed there).
+ *
+ * 2. forkVillage CALL SITE (app.js): the exile action menu needs
+ *    "🏕️ Found your haven" → Game.forkVillage(). It delegates to the
+ *    canonical gated founding project (betrayal.js foundHaven); when
+ *    requirements are unmet, foundHaven already says what's missing —
+ *    surface that text, don't invent your own. After a fork, refresh the
+ *    village panel + map label (state.village is a NEW object).
+ *
+ * 3. roadExposed (encounters.js): Game.state.scholar.roadExposed is true
+ *    while the exiled walk alone. Curiosity encounters should bias toward
+ *    the lone walker — monsters were sent to fight, and a lone exile is
+ *    the most interesting thing on the road.
+ *
+ * 4. READMISSION (app.js): while exiled-on-the-road, offer "Send word to
+ *    the old village" → Game.seekReadmission(). Show
+ *    Game.readmissionConditions() FIRST (the unmet labels) so the petition
+ *    is never a blind button — no silent actions.
+ *
+ * 5. INTAKE HONESTY (app.js Haven panel): call Game.foodSupportsSpeech(n),
+ *    not bare foodSupports(n), wherever an accept/refuse decision is shown.
+ *
+ * 6. STANDING (app.js Haven panel): Game.standingSummary(vid) for member
+ *    rows — belonging made visible (trusted-by counts, benefits).
+ *
+ * 7. SETTLER SOURCE (betrayal.js considerStrangers): new faces for a forked
+ *    haven should come from Game.genSettler() — unique composed people
+ *    (backstory/livedEvents/need), never a fixed cast. Roster records need
+ *    providesPerDay/kcalPerDay for foodSupports (genSettler supplies both).
+ *
+ * 8. EXILE MOMENT (no UI work): describeExile + beginExileRoad already run
+ *    via the exilePlayer wrap — the moment speaks itself.
+ */
