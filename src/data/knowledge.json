@@ -6,7 +6,7 @@
     "rarity": "common",
     "levels": {
       "1": "Rolling boil for 1 minute kills most pathogens. The simplest safe water.",
-      "2": "At altitude, boil 3 minutes. Pre-filter through cloth to remove sediment \u2014 saves fuel.",
+      "2": "At altitude, boil 3 minutes. Pre-filter through cloth to remove sediment — saves fuel.",
       "3": "A rolling boil is overkill for clear water; a bare simmer for 5 minutes does it with less wood."
     },
     "mechanical": {
@@ -37,7 +37,7 @@
     "rarity": "uncommon",
     "levels": {
       "1": "Clear water in a clear bottle, 6 hours of sun. UV does the work. No fire needed.",
-      "2": "Paint half the bottle black \u2014 heats faster, kills more. Shake first to oxygenate.",
+      "2": "Paint half the bottle black — heats faster, kills more. Shake first to oxygenate.",
       "3": "Works even on cloudy days if you double the time. The System finds this clever."
     },
     "mechanical": {
@@ -59,9 +59,9 @@
     "domain": "survival",
     "rarity": "common",
     "levels": {
-      "1": "Split wood \u2014 the inside is dry even when the outside is soaked. Feather sticks catch fast.",
+      "1": "Split wood — the inside is dry even when the outside is soaked. Feather sticks catch fast.",
       "2": "Birch bark burns wet. Pine resin is nature's firestarter. Look for fatwood in old stumps.",
-      "3": "Build a platform first, then a teepee, then a lean-to over it. Fire reflects off a rock wall \u2014 doubles the heat."
+      "3": "Build a platform first, then a teepee, then a lean-to over it. Fire reflects off a rock wall — doubles the heat."
     },
     "mechanical": {
       "1": {
@@ -99,7 +99,7 @@
     "rarity": "common",
     "levels": {
       "1": "Red sky at night, shepherd's delight. Red sky at morning, shepherd's warning. It works.",
-      "2": "Falling pressure = weather coming. Your joints ache? That's a barometer. So are the birds \u2014 silent birds mean storm.",
+      "2": "Falling pressure = weather coming. Your joints ache? That's a barometer. So are the birds — silent birds mean storm.",
       "3": "Mare's tails (high cirrus) 24h before a front. A halo around the moon means rain in 24-48h. You can plan around this."
     },
     "mechanical": {
@@ -134,7 +134,7 @@
     "rarity": "common",
     "levels": {
       "1": "A lean-to of branches and leaves beats nothing. Dead air is insulation.",
-      "2": "The debris hut: ridgepole, ribs, 2 feet of leaves. Survived -40\u00b0 in testing. Really.",
+      "2": "The debris hut: ridgepole, ribs, 2 feet of leaves. Survived -40° in testing. Really.",
       "3": "Face the opening away from wind, toward morning sun. A fire reflector doubles warmth."
     },
     "mechanical": {
@@ -207,7 +207,7 @@
     "levels": {
       "1": "Most animals flee. Give them an escape route and they take it. Cornered animals fight.",
       "2": "Predators test: they approach, watch, decide. Prey freezes or bolts. Learn which you're looking at.",
-      "3": "You can read intent \u2014 ears, posture, gaze direction. You know before it moves whether it will charge or run."
+      "3": "You can read intent — ears, posture, gaze direction. You know before it moves whether it will charge or run."
     },
     "mechanical": {
       "2": {
@@ -290,7 +290,7 @@
     ],
     "abilitySynergies": [
       {
-        "ability": "triage",
+        "ability": "healing",
         "minLevel": 1,
         "technique": "Precise Mend",
         "effect": "Your healing knows where to go. +50% effectiveness."
@@ -334,7 +334,7 @@
     ],
     "abilitySynergies": [
       {
-        "ability": "triage",
+        "ability": "healing",
         "minLevel": 2,
         "technique": "Surgical Grace",
         "effect": "You heal like a surgeon with infinite tools. Critical heals."
@@ -406,7 +406,7 @@
     "rarity": "common",
     "levels": {
       "1": "Salt, smoke, dry. The big three. Salt draws water out; bacteria can't live without it.",
-      "2": "Cold smoking (under 90\u00b0F) preserves without cooking. Jerky done right lasts months.",
+      "2": "Cold smoking (under 90°F) preserves without cooking. Jerky done right lasts months.",
       "3": "You can preserve anything: ferment vegetables, salt meat, dry fruit, smoke fish. Nothing rots on your watch."
     },
     "mechanical": {
@@ -439,9 +439,9 @@
     "domain": "crafting",
     "rarity": "uncommon",
     "levels": {
-      "1": "Flint, chert, obsidian \u2014 they break with sharp edges. You can make a cutting tool in minutes.",
+      "1": "Flint, chert, obsidian — they break with sharp edges. You can make a cutting tool in minutes.",
       "2": "Pressure flaking shapes edges precisely. You can make knives, scrapers, and points.",
-      "3": "Your stone tools rival steel for sharpness. You knap like your ancestors did \u2014 because you are."
+      "3": "Your stone tools rival steel for sharpness. You knap like your ancestors did — because you are."
     },
     "mechanical": {
       "1": {
@@ -464,7 +464,7 @@
     "domain": "crafting",
     "rarity": "common",
     "levels": {
-      "1": "Twist plant fibers into string. Dogbane, nettle, yucca \u2014 strong fibers are everywhere.",
+      "1": "Twist plant fibers into string. Dogbane, nettle, yucca — strong fibers are everywhere.",
       "2": "Reverse-wrap technique makes rope strong enough to hold weight. Braid for more strength.",
       "3": "You can make rope, nets, and bindings from almost any fibrous plant. The village never runs out of string."
     },
@@ -490,7 +490,7 @@
     "levels": {
       "1": "Microexpressions leak truth. Watch the eyes, not the mouth. People tell you who they are.",
       "2": "You can tell when someone's lying, scared, or hiding something. It's in the shoulders.",
-      "3": "You read rooms like books. You know who's allied, who's lying, who's about to break \u2014 before they do."
+      "3": "You read rooms like books. You know who's allied, who's lying, who's about to break — before they do."
     },
     "mechanical": {
       "1": {
@@ -520,7 +520,7 @@
         "ability": "open_book",
         "minLevel": 1,
         "technique": "Deep Read",
-        "effect": "You don't just read trust \u2014 you read intent. Know what they'll do next."
+        "effect": "You don't just read trust — you read intent. Know what they'll do next."
       }
     ]
   },
@@ -560,7 +560,7 @@
     "rarity": "uncommon",
     "levels": {
       "1": "Let each side talk without interruption. Repeat back what you heard. People de-escalate when heard.",
-      "2": "Find the interest behind the position. They're not fighting about the thing \u2014 they're fighting about respect.",
+      "2": "Find the interest behind the position. They're not fighting about the thing — they're fighting about respect.",
       "3": "You can resolve conflicts that seemed impossible. The village trusts you with its worst moments."
     },
     "mechanical": {
@@ -788,7 +788,7 @@
     "domain": "spiritual",
     "rarity": "legendary",
     "levels": {
-      "1": "You've seen the seams. The System isn't seamless \u2014 it's stitched. There's something underneath.",
+      "1": "You've seen the seams. The System isn't seamless — it's stitched. There's something underneath.",
       "2": "You understand the integration: how it reads you, what it can't see, where the blind spots are.",
       "3": "You know how to be uninteresting on purpose. Invisibility through boredom. The ultimate defense."
     },
@@ -829,7 +829,7 @@
     "levels": {
       "1": "Smoke calms bees. Work slow, work covered, never swat.",
       "2": "Read the colony: orientation flights mean a healthy queen; silence at noon means trouble.",
-      "3": "Harvest honey without destroying the hive \u2014 take frames, leave winter stores."
+      "3": "Harvest honey without destroying the hive — take frames, leave winter stores."
     },
     "mechanical": {
       "1": {}
@@ -864,7 +864,7 @@
     "rarity": "uncommon",
     "levels": {
       "1": "Water follows gravity and the path of least resistance. Find the line, find the water.",
-      "2": "Siphons, seals, and fall rates \u2014 move water without power using grade alone.",
+      "2": "Siphons, seals, and fall rates — move water without power using grade alone.",
       "3": "Build a working gravity-fed system from scrap pipe, hose, and salvaged fittings."
     },
     "mechanical": {
@@ -901,9 +901,9 @@
     "domain": "crafting",
     "rarity": "uncommon",
     "levels": {
-      "1": "Air, fuel, spark. Every dead engine is missing one of the three \u2014 diagnose in that order.",
+      "1": "Air, fuel, spark. Every dead engine is missing one of the three — diagnose in that order.",
       "2": "Diesel: compression ignition, glow plugs, and why bad fuel kills injectors.",
-      "3": "Improvised fuel and field repairs \u2014 keep a machine alive with what the ruins provide."
+      "3": "Improvised fuel and field repairs — keep a machine alive with what the ruins provide."
     },
     "mechanical": {
       "1": {}
@@ -922,7 +922,7 @@
     "levels": {
       "1": "Continuity, batteries, and solder. Most dead electronics are just broken connections.",
       "2": "Radios: frequencies, antennas, and why height beats power every time.",
-      "3": "Improvise antennas and repeaters from scrap \u2014 throw a signal over the next ridge."
+      "3": "Improvise antennas and repeaters from scrap — throw a signal over the next ridge."
     },
     "mechanical": {
       "1": {}
@@ -942,7 +942,7 @@
     "rarity": "common",
     "levels": {
       "1": "Mend tears so they hold: backstitch, small stitches, match the grain.",
-      "2": "Patch and reinforce \u2014 layered cloth, waxed thread, stress points doubled.",
+      "2": "Patch and reinforce — layered cloth, waxed thread, stress points doubled.",
       "3": "Make clothing from scrap: measure twice, cut once, and blankets become coats."
     },
     "mechanical": {
@@ -960,7 +960,7 @@
     "rarity": "common",
     "levels": {
       "1": "Joints that hold without nails: mortise, tenon, and the humble dovetail.",
-      "2": "Furniture and tool handles \u2014 shape wood to the hand, not the eye.",
+      "2": "Furniture and tool handles — shape wood to the hand, not the eye.",
       "3": "Structural work: beams, frames, and joinery that survives weather and weight."
     },
     "mechanical": {
@@ -978,7 +978,7 @@
     "rarity": "rare",
     "levels": {
       "1": "Join metal with heat: clean the joint, mind the arc, let it cool slow.",
-      "2": "Forge basics \u2014 heat, hammer, quench. Shape steel the old way.",
+      "2": "Forge basics — heat, hammer, quench. Shape steel the old way.",
       "3": "Toolmaking: edges, springs, and hardware from scrap stock. The village stops breaking things."
     },
     "mechanical": {
@@ -1015,7 +1015,7 @@
     "rarity": "uncommon",
     "levels": {
       "1": "Find information fast: indexes, archives, and asking the right question.",
-      "2": "Cross-reference sources \u2014 one account is a rumor, three are a pattern.",
+      "2": "Cross-reference sources — one account is a rumor, three are a pattern.",
       "3": "Build the archive yourself: the village's memory, organized, retrievable."
     },
     "mechanical": {
@@ -1034,7 +1034,7 @@
     "rarity": "uncommon",
     "levels": {
       "1": "The night has its own animals. Different tracks, different sounds, different eyes watching.",
-      "2": "Hushpuppies hunt in packs after dark. Highbeam Deer freeze in the black between trees \u2014 that shine is them aiming. Moths come to any light you make.",
+      "2": "Hushpuppies hunt in packs after dark. Highbeam Deer freeze in the black between trees — that shine is them aiming. Moths come to any light you make.",
       "3": "Read the night like a schedule: opossum and raccoon work the same hours you sleep. Bullfrogs call where the water is. The Choir only sings at the edges of day."
     },
     "mechanical": {
@@ -1063,7 +1063,7 @@
     "rarity": "rare",
     "levels": {
       "1": "Hunting at night is not hunting blind. It is hunting by ear, by smell, by patience.",
-      "2": "Move when the wind moves \u2014 your sound hides inside bigger sounds. Stillness is camouflage the dark respects.",
+      "2": "Move when the wind moves — your sound hides inside bigger sounds. Stillness is camouflage the dark respects.",
       "3": "The prepared night hunter is the apex thing out there. You know who walks at night, and you are already waiting where they walk."
     },
     "mechanical": {
@@ -1083,5 +1083,62 @@
     "abilitySynergies": [
       "night_eyes"
     ]
+  },
+  {
+    "id": "forage_sense",
+    "name": "Reading the Land",
+    "domain": "nature",
+    "rarity": "common",
+    "levels": {
+      "1": "Eat the landscape with your eyes first: green + water + sun means food grows here. Start where those three meet.",
+      "2": "Edges are the grocery store — where meadow meets woods, where water meets bank. Disturbed ground regrows first and fattest.",
+      "3": "You read a hillside like a menu: aspect, drainage, and last year's growth tell you what's fruiting before it fruits."
+    },
+    "mechanical": {
+      "1": {
+        "unlock": "forage_read"
+      },
+      "2": {
+        "forage_find": 0.15
+      },
+      "3": {
+        "forage_find": 0.3
+      }
+    },
+    "backgrounds": [
+      "forager",
+      "farmer",
+      "gardener",
+      "hunter",
+      "homesteader"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "mending",
+    "name": "Repair & Mending",
+    "domain": "crafting",
+    "rarity": "common",
+    "levels": {
+      "1": "Look at what's broken before you touch it: find the failure point, not the symptom. Most breaks are one small thing.",
+      "2": "Splint, splice, and bind — a repair doesn't have to be pretty, it has to hold. The right lashing beats the wrong nail.",
+      "3": "You keep the village's tools alive: rehaft, rewire, re-seat. Nothing gets thrown away on your watch."
+    },
+    "mechanical": {
+      "1": {
+        "unlock": "repair"
+      },
+      "3": {
+        "tool_decay_slow": 0.5
+      }
+    },
+    "backgrounds": [
+      "mechanic",
+      "tailor",
+      "carpenter",
+      "handyman",
+      "engineer"
+    ],
+    "abilitySynergies": []
   }
 ]

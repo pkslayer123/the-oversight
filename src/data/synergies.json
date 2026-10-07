@@ -182,7 +182,7 @@
     "discovery": "\"You don't FIND water! Water FINDS YOU! The weather team wants to know your SECRET! There IS no secret! That's the best part!\"",
     "flags": [],
     "flavor": "You don't find water. Water finds you.",
-    "id": "stormcaller",
+    "id": "rain_catcher",
     "minLevel": 1,
     "modifiers": [
       {
@@ -191,7 +191,7 @@
         "value": 2.0
       }
     ],
-    "name": "Stormcaller",
+    "name": "Rain Catcher",
     "requires": [
       "rain_dancer",
       "dowsing"

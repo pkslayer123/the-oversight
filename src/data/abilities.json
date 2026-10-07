@@ -267,7 +267,7 @@
   },
   {
     "description": "Burn bright, pay later. Once per expedition, act twice.",
-    "id": "adrenaline_control",
+    "id": "adrenaline_surge",
     "modifiers": [
       {
         "target": "combat.dodge_chance",
@@ -276,7 +276,7 @@
         "scale": "level"
       }
     ],
-    "name": "Adrenaline Control",
+    "name": "Adrenaline Surge",
     "pool": "combat",
     "synergyHints": [
       "Triage: stabilize then fight on"
