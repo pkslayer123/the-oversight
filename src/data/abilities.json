@@ -1376,5 +1376,267 @@
       "type": "trial",
       "trial": "catch_3_lies"
     }
+  },
+  {
+    "description": "You plant your feet and become a problem. Hits that would drop anyone else just dent you.",
+    "id": "stonewall",
+    "modifiers": [
+      {
+        "op": "add",
+        "scale": "level",
+        "target": "armor.flat",
+        "value": 2
+      }
+    ],
+    "name": "Stonewall",
+    "pool": "combat",
+    "synergyHints": [
+      "Triage: stabilize then fight on",
+      "Cornered Rat: the wall that bites back"
+    ],
+    "unlock": {
+      "detail": "Trial of Stone: survive 3 fights without fleeing",
+      "trial": "survive_3_fights_no_flee",
+      "type": "trial"
+    }
+  },
+  {
+    "description": "You finish fights. When something's hurt, you know exactly where to put the last one.",
+    "id": "coup_de_grace",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "combat.strike_damage",
+        "value": 1.35
+      }
+    ],
+    "name": "Coup de Grâce",
+    "pool": "combat",
+    "synergyHints": [
+      "Patient Aim: open hard, close harder",
+      "Dead Aim: patience, then thunder"
+    ],
+    "unlock": {
+      "detail": "Trial of the Finisher: land 10 killing blows",
+      "trial": "land_10_killing_blows",
+      "type": "trial"
+    }
+  },
+  {
+    "description": "You know what things are worth — to whom. Every trade tilts your way, and everyone walks away smiling.",
+    "id": "broker",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "trust.gain_mult",
+        "value": 1.4
+      }
+    ],
+    "name": "Broker",
+    "pool": "social",
+    "synergyHints": [
+      "Gossip Network: know what it's worth to whom",
+      "Generous Heart: trade favors, bank trust"
+    ],
+    "unlock": {
+      "detail": "Complete the trader's ledger quest",
+      "quest": "traders_ledger",
+      "type": "quest"
+    }
+  },
+  {
+    "description": "People tell you things they tell no one else. You carry them carefully, and they know it.",
+    "id": "confessor",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "social.gossip_chance",
+        "value": 1.5
+      }
+    ],
+    "name": "Confessor",
+    "pool": "social",
+    "synergyHints": [
+      "Gossip Network: rumors become confessions",
+      "Evidence Board: every secret is a lead"
+    ],
+    "unlock": {
+      "detail": "An elder trusts you with the village's buried story",
+      "type": "mentorship"
+    }
+  },
+  {
+    "description": "You pack for weeks, not days. Distance stops being a barrier and starts being a decision.",
+    "id": "long_hauler",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "travel.cost_mult",
+        "value": 0.7
+      }
+    ],
+    "name": "Long Hauler",
+    "pool": "exploration",
+    "synergyHints": [
+      "Pathfinder: distance is a decision",
+      "Preservation Instinct: food that travels"
+    ],
+    "unlock": {
+      "detail": "Complete a 10-day expedition",
+      "type": "discovery"
+    }
+  },
+  {
+    "description": "Collapsed roofs, old foundations, dead roads — you read dead places like journals.",
+    "id": "ruin_reader",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "ruin.find_mult",
+        "value": 1.6
+      }
+    ],
+    "name": "Ruin Reader",
+    "pool": "exploration",
+    "synergyHints": [
+      "Eagle Eye: see it, then read it",
+      "Dowsing: the old places remember water"
+    ],
+    "unlock": {
+      "detail": "Map 3 ruins for the codex",
+      "quest": "map_3_ruins",
+      "type": "quest"
+    }
+  },
+  {
+    "description": "You can follow a person the way a hound follows a scent. People leave trails too.",
+    "id": "bloodhound",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "hunt.find_chance",
+        "value": 1.5
+      }
+    ],
+    "name": "Bloodhound",
+    "pool": "investigation",
+    "synergyHints": [
+      "Game Sense: sign is sign, animal or human",
+      "Soft Step: follow without being followed"
+    ],
+    "unlock": {
+      "detail": "Bring a missing person home",
+      "quest": "bring_home_the_lost",
+      "type": "quest"
+    }
+  },
+  {
+    "description": "Ten seconds of watching and you know what they want, what they fear, what they'll trade for it.",
+    "id": "cold_reader",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "truth.detect_chance",
+        "value": 0.25
+      }
+    ],
+    "name": "Cold Reader",
+    "pool": "investigation",
+    "synergyHints": [
+      "Lie Detector: the hands never lie",
+      "Confessor: read them, then hear everything"
+    ],
+    "unlock": {
+      "detail": "Read 10 strangers correctly",
+      "type": "discovery"
+    }
+  },
+  {
+    "description": "A dozen quiet loops of wire, checked at dawn. The forest delivers — you just collect.",
+    "id": "trapper",
+    "modifiers": [
+      {
+        "op": "add",
+        "target": "hunt.trap_catch",
+        "value": 0.2
+      }
+    ],
+    "name": "Trapper",
+    "pool": "craft",
+    "synergyHints": [
+      "Game Sense: set where they run",
+      "Field Dressing: the line provides"
+    ],
+    "unlock": {
+      "detail": "Trial of the Snare Line: take 10 animals from your traps",
+      "trial": "snare_10_catches",
+      "type": "trial"
+    }
+  },
+  {
+    "description": "You keep the village's tools alive — edges sharp, hafts tight, snares true. A sharp edge is a kind of honesty.",
+    "id": "toolwright",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "craft.success",
+        "value": 1.4
+      }
+    ],
+    "name": "Toolwright",
+    "pool": "craft",
+    "synergyHints": [
+      "Taught Hands: the master's master",
+      "Steady Hands: no shake, ever"
+    ],
+    "unlock": {
+      "detail": "Apprentice a full season to the toolkeeper",
+      "type": "mentorship"
+    }
+  },
+  {
+    "description": "You've been hurt enough times to learn from it. Your body knits faster now — and tougher.",
+    "id": "scar_tissue",
+    "modifiers": [
+      {
+        "op": "add",
+        "scale": "level",
+        "target": "health.max_add",
+        "value": 15
+      }
+    ],
+    "name": "Scar Tissue",
+    "pool": "care",
+    "synergyHints": [
+      "Iron Stomach: the body learns",
+      "Triage: hurt, knit, repeat"
+    ],
+    "unlock": {
+      "detail": "Trial of Scars: survive 3 near-death injuries",
+      "trial": "survive_3_near_death",
+      "type": "trial"
+    }
+  },
+  {
+    "description": "When fever moves through the haven, it meets you first. You hold the line, one cool cloth at a time.",
+    "id": "fever_ward",
+    "modifiers": [
+      {
+        "op": "multiply",
+        "target": "healing.amount",
+        "value": 1.4
+      }
+    ],
+    "name": "Fever Ward",
+    "pool": "care",
+    "synergyHints": [
+      "Herbal Remedy: the right leaf, the right hour",
+      "Triage: the ward holds"
+    ],
+    "unlock": {
+      "detail": "Nurse the haven through a fever season",
+      "quest": "nurse_fever_season",
+      "type": "quest"
+    }
   }
 ]
