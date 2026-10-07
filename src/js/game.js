@@ -14405,7 +14405,8 @@
         // last parameter of every B1 combat method — append unconditionally.
         // (Extra args are ignored if a caller passed it explicitly.)
         if ((kind === 'phaseShift' || kind === 'enrage' || kind === 'lootSparkle' ||
-             kind === 'critHit' || kind === 'playerHurt' || kind === 'dodgeMiss')) {
+             kind === 'critHit' || kind === 'playerHurt' || kind === 'dodgeMiss' ||
+             kind === 'beamHorror')) {
           args.push(integ);
         }
         // TRANSITIONS (Steve 2026-10-07, Drama C2): life/death moments — integration
@@ -14468,6 +14469,10 @@
         }
         if (kind === 'signature') D.abilitySignature(...args);
         else if (kind === 'commentary') D.systemCommentary(...args);
+        // ALIEN BEAM HORROR (Steve 2026-10-07): fired by alienPlayers.js when
+        // the beam goes through your armor — previously no dispatch branch,
+        // so the beat fired silently. Now a real horror moment.
+        else if (kind === 'beamHorror') D.beamHorror(...args);
         // AUDIO-VISUAL SYNC (Steve 2026-10-07, Drama E1; wired 2026-10-07):
         // the visual's audio mate fires here — one central place, so call
         // sites never double-fire. D.audioFor (drama.js) maps the drama kind
@@ -14481,7 +14486,7 @@
         // playerDeath->defeat on combat loss; plus pure-visual primitives
         // (text/flash/shake/hero/exclaim/abilityBurst/signature/social/
         // commentary/weather/trail/teaseFaint/villageBirth/villageDeath/
-        // newLife/systemCommentary). Voiced: secret->knowledgeReveal,
+        // newLife/systemCommentary/beamHorror). Voiced: secret->knowledgeReveal,
         // ambush->ambushSnap (arming beat; the FIRE beat snaps on its own),
         // wild->animalRustle, levelUp(ability)->levelup,
         // synergyShimmer->synergyDiscovered, phaseShift->patternWindup,
