@@ -10956,6 +10956,18 @@ ${renderBuildIndicator()}
       tbm: Game.inCombat() && Game.tbFighter('p') ? Game.tbFighter('p').moveLeft : -1,
     };
   }
+  // DPAD PERF (Steve 2026-10-07): syncAfterMove runs after EVERY step during
+  // fast movement. Rebuilding + re-wiring the action bars each step is the
+  // heaviest main-thread cost in the walk loop. The bars usually render
+  // identical HTML between adjacent tiles — skip the DOM write (and the
+  // re-wire) when nothing actually changed. Visual output is identical.
+  function setHTMLCached(el, html) {
+    if (!el) return false;
+    if (el._cachedHTML === html) return false;
+    el._cachedHTML = html;
+    el.innerHTML = html;
+    return true;
+  }
   function syncAfterMove(step, res) {
     // The player moved: any open tile panel is now about somewhere else.
     const info = document.getElementById('inlineslot');
@@ -10970,30 +10982,32 @@ ${renderBuildIndicator()}
     if (big) { expeditionScreen(); return; }
     // Light sync: the clock visibly advances EVERY step — the day-tick bar
     // drains and the dial turns. That's the time cost, made visible.
+    // Cached writes: identical HTML between steps skips the DOM churn.
     const st = Game.status();
-    const hw = document.getElementById('exphead');
-    if (hw) hw.innerHTML = expHeadHTML(st);
-    const dw = document.getElementById('daytickwrap');
-    if (dw) dw.innerHTML = dayTickBar(st);
-    const sb = document.querySelector('.ord-status');
-    if (sb) sb.innerHTML = statusBars(st);
+    setHTMLCached(document.getElementById('exphead'), expHeadHTML(st));
+    setHTMLCached(document.getElementById('daytickwrap'), dayTickBar(st));
+    setHTMLCached(document.querySelector('.ord-status'), statusBars(st));
     // ACTIONS (Steve 2026-10-05): buttons must refresh EVERY step. The old
     // code only updated them on "big" changes, so they'd disappear or appear
     // late as the player moved. Contextual actions depend on position.
     const actWrap = document.querySelector('.ord-actions');
     if (actWrap) {
       const inCombat = Game.inCombat();
-      actWrap.innerHTML = `
+      const html = `
         <div class="ord-self">${inCombat ? combatActionsHTML(st) : selfBarHTML(st)}</div>
         <div class="ord-ctx">${inCombat ? '' : contextBarHTML()}</div>
         <div class="ord-target">${targetBarHTML()}</div>
         <div class="ord-danger">${dangerBarHTML()}</div>
         <div class="ord-ability">${abilityBarHTML()}</div>
         ${feedbackHTML()}`;
-      // Re-wire the new buttons (each bar has its own wirer)
-      try { wireSelfBar(); } catch (e) {}
-      try { wireContextBar(); } catch (e) {}
-      try { wireAbilityBar(); } catch (e) {}
+      // Re-wire the new buttons (each bar has its own wirer) — but only
+      // when the HTML actually changed; re-wiring identical buttons is
+      // pure main-thread cost during fast movement.
+      if (setHTMLCached(actWrap, html)) {
+        try { wireSelfBar(); } catch (e) {}
+        try { wireContextBar(); } catch (e) {}
+        try { wireAbilityBar(); } catch (e) {}
+      }
     }
   }
   MoveAnim.hooks.step = moveStepHook;
@@ -11043,7 +11057,7 @@ ${renderBuildIndicator()}
           b.classList.add('held');
           dpadPress(+b.dataset.dx, +b.dataset.dy);
         });
-        const release = () => { b.classList.remove('held'); MoveAnim.clearHold(); };
+        const release = () => { b.classList.remove('held'); MoveAnim.clearHold(); MoveAnim.purgeHold(); };
         b.addEventListener('pointerup', release);
         b.addEventListener('pointercancel', release);
         b.addEventListener('lostpointercapture', release);
@@ -11075,8 +11089,8 @@ ${renderBuildIndicator()}
   }
   // Global: releasing the pointer ANYWHERE stops hold-to-walk. (The pad can
   // be re-rendered mid-hold — the stop must not depend on the button living.)
-  window.addEventListener('pointerup', () => MoveAnim.clearHold());
-  window.addEventListener('pointercancel', () => MoveAnim.clearHold());
+  window.addEventListener('pointerup', () => { MoveAnim.clearHold(); MoveAnim.purgeHold(); });
+  window.addEventListener('pointercancel', () => { MoveAnim.clearHold(); MoveAnim.purgeHold(); });
   // COMBAT CADENCE (Steve 2026-10-06): highlight the acting monster during
   // async stepped turns. Each monster gets a visible beat — no more
   // instantaneous grid jumps.
