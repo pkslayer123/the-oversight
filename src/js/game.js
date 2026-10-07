@@ -4970,7 +4970,13 @@
         s.inventory = s.inventory.filter(i => !giveSet.has(i));
         vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
         const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
-        this.say(`You keep a day's food (${Math.round(kept)} kcal) and unload ${givenKcal} kcal into Haven's pantry.`);
+        // (Fix 2026-10-07: "unload 0 kcal" reads awkward when the whole day's
+        // food is kept — say so honestly instead.)
+        if (givenKcal > 0) {
+          this.say(`You keep a day's food (${Math.round(kept)} kcal) and unload ${givenKcal} kcal into Haven's pantry.`);
+        } else {
+          this.say(`You keep a day's food (${Math.round(kept)} kcal) — nothing extra for the pantry this time.`);
+        }
       }
       if (brought > 0 || hasUnprocessed) {
         // PREP STASH: only FINISHED food goes to the pantry. Unprocessed hauls
@@ -4988,6 +4994,17 @@
           }
         }
         if (staged) this.say(`${staged} unprocessed haul${staged > 1 ? 's' : ''} onto the counter — the clock is ticking.`);
+        // first return with unprocessed-only haul: the pantry block above never
+        // ran, so the pooling explanation never fired. The first-return intent
+        // ("someone explains the pooling") shouldn't miss the most common
+        // early-game case. (Fix 2026-10-07.)
+        {
+          const vv2 = this.state.village;
+          if (!vv2.pooledFoodExplained && staged) {
+            vv2.pooledFoodExplained = true;
+            this.say('Someone by the fire nods at the counter. "We pool food here. Keep what you need for the road — the rest feeds everyone, once it\'s food."');
+          }
+        }
         // TEACHING MOMENT: you show your haul. they gather. someone might know something.
         // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
         // find a villager who knows something you don't, and trusts you enough to share
@@ -14441,8 +14458,10 @@
         // announce->contestCall) map to null in D.audioFor and stay silent.
         // The day-7 systemArrived gate above covers audio too: pre-System the
         // game is quiet as well as still.
-        // D.audioFor was dead code (never defined in drama.js) — removed 2026-10-07.
-        // Drama kinds that need audio fire it at their call sites directly.
+        try {
+          const syncName = D.audioFor(kind, args[0]);
+          if (syncName) this.audioEvent(syncName, { drama: kind });
+        } catch (e3) {}
       } catch (e) {}
     },
     // buildBonus: the mechanical reward for your build archetype.
@@ -17311,7 +17330,13 @@
       if (mdef.id === 'hushwolf') {
         const wolves = fighters.filter(x => x.kind === 'monster');
         if (wolves[0]) wolves[0].wolfLead = true;
-        this.say('The woods go silent — not quiet. Silent. Like the world holding its breath. The pack is already moving.');
+        // CODEX-GATED (Steve 2026-10-07): hushwolf never declares, so its
+        // data knownCue had no surface. The combat-start silence carries it
+        // once learned.
+        const hwKnown = this.encTelegraphKnown(wolves[0] || m);
+        const hwKc = ((mdef.encounter || {}).knownCue);
+        this.say('The woods go silent — not quiet. Silent. Like the world holding its breath. The pack is already moving.' +
+          ((hwKnown && hwKc) ? ' ' + hwKc : ''));
       }
       this.sysSay(`COMBAT! ${dispName.toUpperCase()}! The gamblers lean in. ROUND 1 — FIGHT!`);
       // OPENING TURNS (Steve 2026-10-04): if a monster is faster than you it
@@ -19821,27 +19846,6 @@
     toadIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'belltoad')); },
     lockpickIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'lockpick_raccoon')); },
     humiceIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hummice')); },
-
-    // BURST RE-CENTER (Steve 2026-10-07): if a monster with an active burst
-    // telegraph moves between declare and resolve, the shown cells lie.
-    // Recompute them centered on the monster's current position.
-    tbRecenterBurst(m) {
-      const tg = m.telegraph;
-      if (!tg || !tg.cells || !tg.cells.length) return;
-      const pat = tg.pattern || {};
-      if (pat.type !== 'burst' && tg.kind !== 'burst') return;
-      const radius = pat.radius || 2;
-      const cells = [];
-      for (let dx = -radius; dx <= radius; dx++) {
-        for (let dy = -radius; dy <= radius; dy++) {
-          if (Math.max(Math.abs(dx), Math.abs(dy)) <= radius) {
-            cells.push({ cx: m.mx + dx, cy: m.my + dy });
-          }
-        }
-      }
-      tg.cells = cells;
-      this.tbRefreshTelegraphUI();
-    },
     catfishIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'nightlight_catfish')); },
     glasswingIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'glasswing')); },
     sunbaskerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'sunbasker')); },
@@ -21292,9 +21296,14 @@
       // data-driven pre-turn hooks. Migrated species run their verbatim-extracted logic from the registry.
       // mbRunPreTurn returns true if a hook consumed the turn.
       if (this.mbRunPreTurn && this.mbRunPreTurn(m)) return;
-      // HIGHBEAM antler thrash moved to monsterBehaviors.js antlerThrash hook
-      // (Steve 2026-10-07): the hook runs tbAntlerThrash; inline branch removed
-      // to prevent double-run.
+      // HIGHBEAM (Steve 2026-10-05): closing in is risky EVERY turn, not just
+      // while the beam fires. The antlers thrash anyone adjacent IN ADDITION
+      // to whatever the deer is doing — you take damage standing next to it
+      // AND the beam keeps coming. You get in, you hit, you get OUT.
+      if (isDeer && m.beamPhase !== 'firing') {
+        this.tbAntlerThrash(m);
+        if (this.tbEndCheck()) return;
+      }
       // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
       // you out. Nearly invulnerable; the answer is patience, not force.
       if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {
@@ -22914,7 +22923,7 @@
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
         const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
-        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.altitude = 'high'; }
+        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.gwDive = null; m.altitude = 'high'; }
         // GROUNDED: crashed. It doesn't act — wings tangled. The window is real.
         if (m.beamPhase === 'grounded') {
           m.altitude = 'low';
@@ -24337,9 +24346,14 @@
           if (this.turtleIs(m)) {
             if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'resolve'));
             const named = m.name !== ((m.mdef || {}).unknown || 'something moving');
-            this.say(named
+            // CODEX-GATED (Steve 2026-10-07): turtle never declares, so its
+            // data knownCue had no surface. The snap line carries it once learned.
+            const tuKnown = this.encTelegraphKnown(m);
+            const tuKc = ((m.mdef || {}).encounter || {}).knownCue;
+            const tuCoaching = (tuKnown && tuKc) ? ' ' + tuKc : '';
+            this.say((named
               ? `💥 The ${m.name} SNAPS! Its head is suddenly somewhere else.`
-              : `💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.`);
+              : `💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.`) + tuCoaching);
             const rsAudio = (this.encConfig(m) || {}).resolveAudio;
             if (rsAudio) this.audioEvent(rsAudio);
           } else {

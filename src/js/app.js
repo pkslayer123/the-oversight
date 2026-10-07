@@ -8544,6 +8544,131 @@
       g.gain.exponentialRampToValueAtTime(0.0001, late + 0.55);
       o.connect(g); g.connect(sfxBus); o.start(late); o.stop(late + 0.6);
     }
+    // ============ MISSING MONSTER VOICES (Steve 2026-10-07) ============
+    function kiteUnfold() {
+      // STATIC KITE UNFOLDS: crackling static discharge as the kite snaps open —
+      // nylon taut, electricity arcing across the frame. (statickite aggro)
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // static crackle burst
+      for (let i = 0; i < 5; i++) {
+        const dt = t + i * 0.06 + Math.random() * 0.02;
+        const nz = noise(0.08), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nz) {
+          nf.type = 'highpass'; nf.frequency.value = 3000;
+          ng.gain.setValueAtTime(0.0001, dt);
+          ng.gain.exponentialRampToValueAtTime(0.25, dt + 0.01);
+          ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.07);
+          nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nz.start(dt); nz.stop(dt + 0.08);
+        }
+      }
+      // nylon snap: sharp twang
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(800, t + 0.1);
+      o.frequency.exponentialRampToValueAtTime(200, t + 0.25);
+      g.gain.setValueAtTime(0.3, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(g); g.connect(sfxBus); o.start(t + 0.1); o.stop(t + 0.32);
+    }
+    function nevermoreUnfold() {
+      // NEVERMORE UNFOLDS: vast dark wings opening — deep wingbeats and a
+      // hollow croak from somewhere too close. (nevermore aggro)
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // wingbeats: three deep whooshes
+      for (let i = 0; i < 3; i++) {
+        const dt = t + i * 0.22;
+        const nz = noise(0.25), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (nz) {
+          nf.type = 'lowpass'; nf.frequency.setValueAtTime(400, dt);
+          nf.frequency.exponentialRampToValueAtTime(120, dt + 0.2);
+          ng.gain.setValueAtTime(0.0001, dt);
+          ng.gain.exponentialRampToValueAtTime(0.4, dt + 0.05);
+          ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.22);
+          nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+          nz.start(dt); nz.stop(dt + 0.24);
+        }
+      }
+      // croak: low and wrong
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(140, t + 0.3);
+      o.frequency.exponentialRampToValueAtTime(70, t + 0.6);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500;
+      g.gain.setValueAtTime(0.25, t + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t + 0.3); o.stop(t + 0.72);
+    }
+    function nightcourtTurn() {
+      // NIGHT COURT TURNS: the court shifts its attention — a gavel crack
+      // and the rustle of a thousand pages turning at once. (nightcourt aggro)
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // gavel: sharp wooden crack
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(220, t);
+      o.frequency.exponentialRampToValueAtTime(110, t + 0.08);
+      g.gain.setValueAtTime(0.35, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.14);
+      // pages: papery rustle
+      const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 2500; nf.Q.value = 0.8;
+        ng.gain.setValueAtTime(0.0001, t + 0.05);
+        ng.gain.exponentialRampToValueAtTime(0.15, t + 0.2);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.05); nz.stop(t + 0.5);
+      }
+    }
+    function nightcourtDive() {
+      // NIGHT COURT DIVES: judgment descends — a swooping tone that falls
+      // like a gavel from a great height. (nightcourt declare)
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(600, t);
+      o.frequency.exponentialRampToValueAtTime(80, t + 0.7);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+      f.frequency.setValueAtTime(2000, t);
+      f.frequency.exponentialRampToValueAtTime(300, t + 0.7);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.8);
+    }
+    // ============ STATUS SYNTHS (Steve 2026-10-07) ============
+    function statusApplied() {
+      // STATUS APPLIED: something wrong takes hold — a sickly descending
+      // tone, like health draining away.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(330, t);
+      o.frequency.exponentialRampToValueAtTime(165, t + 0.4);
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.5);
+    }
+    function statusCured() {
+      // STATUS CURED: relief — a clean ascending tone, the body righting itself.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(262, t);
+      o.frequency.exponentialRampToValueAtTime(523, t + 0.3);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.42);
+    }
     // ============ AMBIENT STING (Steve 2026-10-06) ============
     function horrorSting() {
       // THE STING THAT NOTICES YOU NOTICING (Steve 2026-10-07): tritone pair
@@ -9412,6 +9537,12 @@
       heronStrike() { heronStrike(); },
       turtleSnap() { turtleSnap(); }, // speedbump_turtle resolveAudio
       stagCharge() { stagCharge(); }, // mirror_stag Confrontation resolve (monsters.json)
+      kiteUnfold() { kiteUnfold(); }, // statickite aggroAudio (monsters.json)
+      nevermoreUnfold() { nevermoreUnfold(); }, // nevermore aggroAudio (monsters.json)
+      nightcourtTurn() { nightcourtTurn(); }, // nightcourt aggroAudio (monsters.json)
+      nightcourtDive() { nightcourtDive(); }, // nightcourt declareAudio (monsters.json)
+      statusApplied(data) { statusApplied(data); }, // statusEffects.js applyStatus
+      statusCured(data) { statusCured(data); }, // statusEffects.js cureStatus
       // AMBIENT STING (Steve 2026-10-06): the UI dread-beat's horrorSting was
       // referenced at the top of app.js but never defined. Now it is.
       horrorSting() { horrorSting(); },
