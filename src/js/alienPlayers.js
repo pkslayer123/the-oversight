@@ -1666,18 +1666,24 @@
     // Beam resistance is its own axis. It doesn't care about waves or tiers.
 
     // apBeamResistPieces: count beam-resistant pieces the player is wearing.
+    // GEAR SLOTS (Steve 2026-10-07): sentimental gear must be EQUIPPED in an
+    // armor slot to count. Sitting in inventory does nothing — out of sight,
+    // out of mind. Weapons and accessories never count (a knife doesn't block
+    // beams — but a bonded sentimental VEST does).
     // Two sources:
     // 1. Alien armor (armor.beamResist:true in items.json) — grown, not made.
-    // 2. Sentimental gear with bond >= 25 — your love for it creates resonance
-    //    that deflects beam weapons. Your grandmother's knife protects you
-    //    because you LOVE it. (Bond 10 reveals the keepsake; 25 is deep.)
+    // 2. Sentimental armor with bond >= 25, EQUIPPED in head/torso/legs/hands/shoes.
+    //    Your love for it creates resonance that deflects beam weapons.
+    //    (Bond 10 reveals the keepsake; 25 is deep.)
+    // Full-body sets count per covered slot (head+torso+legs+shoes = 4).
     // Returns array of {slot, itemId, source:'alien'|'bonded'}.
     apBeamResistPieces: function () {
       var pieces = [];
       try {
         var s = this.state.scholar || {};
         var equipped = s.equipped || {};
-        var slots = ['head', 'torso', 'legs', 'hands', 'feet'];
+        // Armor slots only. 'feet' kept as legacy alias for old saves.
+        var slots = ['head', 'torso', 'legs', 'hands', 'shoes', 'feet'];
         for (var i = 0; i < slots.length; i++) {
           var slot = slots[i];
           var item = equipped[slot];
@@ -1692,41 +1698,31 @@
             }
           } catch (e) {}
           if (!def) continue;
+          // Full-body set on torso: counts per covered slot.
+          var isFS = false;
+          try {
+            if (typeof S !== 'undefined' && S.equipment && S.equipment.isFullSet(itemId, def)) isFS = true;
+          } catch (e) {}
           // Source 1: alien armor
           if (def.armor && def.armor.beamResist) {
-            pieces.push({ slot: slot, itemId: itemId, source: 'alien' });
+            if (isFS && slot === 'torso') {
+              // Riot-gear-style full set: one piece per covered body slot.
+              var covered = ['head', 'torso', 'legs', 'shoes'];
+              for (var c = 0; c < covered.length; c++) {
+                pieces.push({ slot: covered[c], itemId: itemId, source: 'alien' });
+              }
+            } else {
+              pieces.push({ slot: slot, itemId: itemId, source: 'alien' });
+            }
             continue;
           }
-          // Source 2: sufficiently bonded sentimental gear
-          // (bonded relics AND equipped sentimental items both count)
-          if (def.class === 'sentimental' && (item.bond || 0) >= 25) {
+          // Source 2: sufficiently bonded sentimental ARMOR, equipped.
+          // Weapons don't block beams. Accessories don't block beams.
+          // A bonded vest does. (Steve 2026-10-07: knife is a bad example.)
+          if (def.class === 'sentimental' && def.armor && (item.bond || 0) >= 25) {
             pieces.push({ slot: slot, itemId: itemId, source: 'bonded' });
           }
         }
-        // Also check bonded relics in inventory that are "worn close"
-        // (sentimental items accrue bond just by being kept — they count
-        // even if not in an armor slot, if bond is deep enough)
-        try {
-          var inv = s.inventory || [];
-          for (var k = 0; k < inv.length; k++) {
-            var r = inv[k];
-            if (!r || !r.bonded) continue;
-            var rid = r.itemId || r.id;
-            var rdef = null;
-            var allItems = this.data.items || [];
-            for (var m = 0; m < allItems.length; m++) {
-              if (allItems[m].id === rid) { rdef = allItems[m]; break; }
-            }
-            if (!rdef || rdef.class !== 'sentimental') continue;
-            if ((r.bond || 0) < 25) continue;
-            // Don't double-count if already equipped
-            var already = false;
-            for (var n = 0; n < pieces.length; n++) {
-              if (pieces[n].itemId === rid) { already = true; break; }
-            }
-            if (!already) pieces.push({ slot: 'kept', itemId: rid, source: 'bonded' });
-          }
-        } catch (e) {}
       } catch (e) {}
       return pieces;
     },
@@ -1839,6 +1835,18 @@
           if (t.hp <= 0) {
             t.alive = false;
             try { this.tbKill(t, sourceLabel); } catch (e) {}
+          }
+        }
+      } catch (e) {}
+      // SENTIMENTAL BOND (Steve 2026-10-07): surviving a beam hit while wearing
+      // bonded sentimental armor is a meaningful moment — the bond deepens.
+      try {
+        if (targetKey === 'player' && n > 0) {
+          var eq2 = (this.state.scholar || {}).equipped || {};
+          for (var bi = 0; bi < pieces.length; bi++) {
+            if (pieces[bi].source === 'bonded' && typeof this.bumpBond === 'function') {
+              this.bumpBond(pieces[bi].itemId, 3, 'it caught the beam for you');
+            }
           }
         }
       } catch (e) {}

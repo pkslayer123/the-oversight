@@ -10669,7 +10669,29 @@
     const recipes = Game.data.recipes || [];
     const knownRecipes = recipes.filter(r => (Game.state.codex.recipes || {})[r.id] && Game.state.codex.recipes[r.id].level >= 3);
     const bodyHtml = `
-        ${(() => { const eq = Game.state.scholar.equipped || {}; const parts = []; if (eq.weapon) parts.push(`${itemSpriteHtml(eq.weapon)}${eq.weapon.name}`); if (eq.armor) parts.push(`${itemSpriteHtml(eq.armor)}${eq.armor.name}`); return parts.length ? `<p class="small"><b>Equipped:</b> ${parts.join(' \u00B7 ')}</p>` : ''; })()}
+        ${(() => {
+          // GEAR SLOTS (Steve 2026-10-07): full slot display with blocked-slot grey-out.
+          try {
+            const eq = Game.state.scholar.equipped || {};
+            const S = window.S || {};
+            const E = S.equipment || {};
+            const slots = ['melee', 'ranged', 'head', 'torso', 'legs', 'hands', 'shoes', 'acc1', 'acc2', 'acc3', 'acc4'];
+            const blocked = E.blockedSlots ? E.blockedSlots(eq) : [];
+            const label = E.slotLabel ? E.slotLabel.bind(E) : (s => s);
+            const rows = slots.map(slot => {
+              const isBlocked = blocked.indexOf(slot) !== -1;
+              const item = eq[slot];
+              const lbl = label(slot);
+              if (isBlocked) {
+                return `<p class="small" style="opacity:.35"><b>${lbl}:</b> <span style="text-decoration:line-through">blocked</span> <span style="opacity:.7">(covered by ${esc((eq.torso||{}).name||'full-body gear')})</span></p>`;
+              }
+              if (!item) return `<p class="small" style="opacity:.5"><b>${lbl}:</b> —</p>`;
+              const bond = item.bonded ? ` <span class="small" style="opacity:.75">bond ${item.bond||0}${item.heirloom ? ' \u00B7 heirloom' : ''}</span>` : '';
+              return `<p class="small"><b>${lbl}:</b> ${itemSpriteHtml(item)}${esc(item.name)}${bond} <button class="btn ghost sm" data-unequip-slot="${slot}">Take off</button></p>`;
+            }).join('');
+            return `<div style="margin:8px 0"><b>Equipped</b>${rows}</div>`;
+          } catch (e) { return ''; }
+        })()}
         ${(() => { const bg = Game.state.scholar.backgroundAbilities || []; if (!bg.length) return ''; return `<p class="small"><b>Background:</b> ${bg.map(a => `${a.name} L${a.level}`).join(', ')}</p>`; })()}
         ${(() => { const ab = Game.state.scholar.abilities || []; if (!ab.length) return ''; let cc = ''; try { const t = Game.challengeCountdownText ? Game.challengeCountdownText() : ''; if (t) cc = ` · <b style="color:#ff5d5d">${t}</b>`; } catch (e) {} return `<p class="small"><b>System:</b> ${ab.map(a => `${a.name} L${a.level}`).join(', ')} (${ab.length}/${Game.abilitySlots()} slots)${Game.integrationStageName ? ` · ${Game.integrationStageName()}` : ''}${Game.arcName ? ` · ${Game.arcName()}` : ''}${cc}</p>`; })()}
         ${(() => { const sy = Game.state.scholar.activeSynergies || []; if (!sy.length) return ''; const names = sy.map(id => { const d = (Game.data.synergies || []).find(x => x.id === id); return d ? d.name : id; }); return `<p class="small"><b>\u2726 Resonances:</b> ${names.join(' \u00B7 ')}</p>`; })()}
@@ -10777,8 +10799,30 @@ ${renderBuildIndicator()}
     slot.querySelectorAll('[data-stash-askcook]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAskcook, stashOf(), 'cook'), 'A specialist handles it.'));
     slot.querySelectorAll('[data-stash-smoke]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.stashSmoke, stashOf()), 'Smoked.'));
     slot.querySelectorAll('[data-stash-asksmoke]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAsksmoke, stashOf(), 'preserver'), 'A specialist handles it.'));
-    slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipW, 'weapon'), 'Equipped.'));
-    slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => Game.equip(+b.dataset.equipA, 'armor'), 'Worn.'));
+    slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => {
+      // GEAR SLOTS (Steve 2026-10-07): route to melee or ranged by item type.
+      const it = Game.state.scholar.inventory[+b.dataset.equipW];
+      let tgt = 'melee';
+      try {
+        const def = (Game.data.items||[]).find(i => i.id === (it.itemId || it.id));
+        if (def && window.S && window.S.equipment && window.S.equipment.isRangedWeapon(def)) tgt = 'ranged';
+      } catch (e) {}
+      Game.equip(+b.dataset.equipW, tgt);
+    }, 'Equipped.'));
+    slot.querySelectorAll('[data-equip-a]').forEach(b => b.onclick = rewire(() => {
+      // GEAR SLOTS (Steve 2026-10-07): route armor to its assigned slot.
+      const it = Game.state.scholar.inventory[+b.dataset.equipA];
+      let tgt = 'armor';
+      try {
+        const def = (Game.data.items||[]).find(i => i.id === (it.itemId || it.id));
+        if (def && window.S && window.S.equipment) {
+          const want = window.S.equipment.slotForItem(def);
+          if (want) tgt = want;
+        }
+      } catch (e) {}
+      Game.equip(+b.dataset.equipA, tgt);
+    }, 'Worn.'));
+    slot.querySelectorAll('[data-unequip-slot]').forEach(b => b.onclick = rewire(() => Game.unequip(b.dataset.unequipSlot), 'Taken off.'));
     slot.querySelectorAll('[data-donate]').forEach(b => b.onclick = rewire(() => Game.donateToPantry(+b.dataset.donate), 'Donated to the pantry.'));
     // FORAGER LOOP: "leave it for the woods" — the pack-full message promises
     // this, so it exists. Anything not bonded or keepsake can be left behind.

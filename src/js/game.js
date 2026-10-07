@@ -7526,24 +7526,34 @@
       if (!item) return null;
       const def = this.data.items.find(i => i.id === (item.itemId || item.id));
       if (!def) return null;
-      // validate slot (EQUIPMENT 2026-10-06: body-part slots + misc)
-      if (slot === 'weapon' && def.class !== 'weapon') { this.say('That\'s not a weapon.'); return null; }
+      // validate slot (GEAR SLOTS 2026-10-07: melee/ranged/body/accessories)
+      if ((slot === 'melee' || slot === 'ranged' || slot === 'weapon') && def.class !== 'weapon') { this.say('That\'s not a weapon.'); return null; }
       if (slot === 'armor' && !def.armor) { this.say('That\'s not armor.'); return null; }
       try {
         if (S.equipment) {
           const wantSlot = S.equipment.slotForItem(def);
-          const miscOk = /^misc[1-3]$/.test(slot || '');
-          if (!miscOk && wantSlot && wantSlot !== slot && !(slot === 'armor' && wantSlot === 'torso')) {
-            this.say(`That goes on your ${wantSlot}, not your ${slot}.`);
+          const accOk = /^acc[1-4]$/.test(slot || '');
+          // Legacy slot names map forward
+          const canonSlot = (S.equipment.SLOT_ALIASES && S.equipment.SLOT_ALIASES[slot]) || slot;
+          if (!accOk && wantSlot && wantSlot !== canonSlot && !(slot === 'armor' && wantSlot === 'torso') && !(slot === 'weapon' && (wantSlot === 'melee' || wantSlot === 'ranged'))) {
+            this.say(`That goes on your ${S.equipment.slotLabel(wantSlot).toLowerCase()}, not your ${slot}.`);
             return null;
           }
-          if (!miscOk && !wantSlot && !['head'].includes(slot)) {
+          if (!accOk && !wantSlot && !['head'].includes(canonSlot)) {
             this.say("You can't wear that there.");
             return null;
           }
           // full set anchors on torso
-          if (S.equipment.isFullSet(def.id) && slot !== 'torso' && slot !== 'armor') {
+          if (S.equipment.isFullSet(def.id, def) && canonSlot !== 'torso' && slot !== 'armor') {
             this.say('That covers everything — wear it as your armor.');
+            return null;
+          }
+          // FULL-BODY BLOCKING (Steve 2026-10-07): can't equip head/legs/shoes
+          // while a full-body set is on the torso. The UI greys these out.
+          const equipped = this.state.scholar.equipped || {};
+          if (S.equipment.isSlotBlocked(canonSlot, equipped)) {
+            const blocker = equipped.torso && equipped.torso.name;
+            this.say(`Your ${blocker} already covers your ${canonSlot} — take it off first.`);
             return null;
           }
         }
@@ -7635,7 +7645,8 @@
 
     isWeapon(item) {
       const def = this.data.items.find(i => i.id === (item.itemId || item.id));
-      return def && def.class === 'weapon' && def.weapon;
+      // SENTIMENTAL GEAR (Steve 2026-10-07): sentimental weapons are weapons too.
+      return def && def.weapon && (def.class === 'weapon' || def.class === 'sentimental');
     },
     isArmor(item) {
       const def = this.data.items.find(i => i.id === (item.itemId || item.id));
@@ -13791,18 +13802,42 @@
     },
 
     // accrueRelicBond: daily. Called during day resolution.
+    // SENTIMENTAL BOND (Steve 2026-10-07): bond grows ONLY while EQUIPPED.
+    // Sitting in inventory does nothing — out of sight, out of mind.
+    // +1/day survived while equipped (hardship). Meaningful moments (kills,
+    // beam survival) add more via bumpBond(). Unequipped bonded items decay
+    // slowly (-1 per 3 days, never below 0).
     accrueRelicBond() {
       const s = this.state.scholar;
       const used = s.relicUse || {};
+      const equipped = s.equipped || {};
+      const equippedIds = new Set();
+      for (const slot of Object.values(equipped)) {
+        if (slot && slot.itemId) equippedIds.add(slot.itemId);
+        else if (slot && slot.id) equippedIds.add(slot.id);
+      }
       for (const r of this.relicItems()) {
         const id = r.itemId || r.id;
         const def = this.data.items.find(i => i.id === id);
         const cls = def && def.class;
-        let gain = 0;
-        if (cls === 'sentimental') gain = 1; // kept close, every day
-        else if (used[id]) gain = 1; // meaningful use (1/day cap is inherent)
-        if (!gain) continue;
-        r.bond = (r.bond || 0) + gain;
+        const isEquipped = equippedIds.has(id);
+        if (cls === 'sentimental') {
+          if (isEquipped) {
+            // Hardship: another day survived together.
+            r.bond = (r.bond || 0) + 1;
+            r.lastBondDay = s.day;
+          } else if ((r.bond || 0) > 0) {
+            // Decay: out of sight, out of mind. -1 per 3 days unequipped.
+            const lastDecay = r.lastDecayDay || s.day;
+            if ((s.day - lastDecay) >= 3) {
+              r.bond = Math.max(0, (r.bond || 0) - 1);
+              r.lastDecayDay = s.day;
+            }
+            continue; // no thresholds while decaying
+          } else continue;
+        } else if (used[id]) {
+          r.bond = (r.bond || 0) + 1; // meaningful use (1/day cap is inherent)
+        } else continue;
         // KEEPSAKE REVEAL (Steve 2026-10-06): checked daily for every relic —
         // the gates are bond ≥ 10 and System arrival (integration stage 1+).
         if (cls === 'sentimental') this.checkKeepsakeReveal(r);
@@ -13814,8 +13849,38 @@
             break;
           }
         }
+        // HEIRLOOM (Steve 2026-10-07): bond 50 — the item is part of you now.
+        // +2 to its primary stat, and it can never be lost, stolen, or destroyed.
+        if (cls === 'sentimental' && r.bond >= 50 && !r.heirloom) {
+          r.heirloom = true;
+          try { this.say(`Your ${r.name || id} isn't just gear anymore. It's part of you. Nothing will take it from you.`); } catch (e) {}
+        }
       }
       s.relicUse = {};
+    },
+
+    // bumpBond: meaningful-moment bond growth for EQUIPPED sentimental gear.
+    // Called from kill sites, beam survival, crisis moments. Only fires if equipped.
+    bumpBond(itemId, amount, reason) {
+      if (!itemId || !amount) return;
+      try {
+        const s = this.state.scholar;
+        const equipped = s.equipped || {};
+        let target = null;
+        for (const slot of Object.values(equipped)) {
+          if (slot && (slot.itemId === itemId || slot.id === itemId)) { target = slot; break; }
+        }
+        if (!target) return; // must be equipped — no bond from the pack
+        target.bond = (target.bond || 0) + amount;
+        if (reason) {
+          try { this.say(`${target.name || itemId}: ${reason} (bond ${target.bond})`); } catch (e) {}
+        }
+        // Threshold check for heirloom
+        if (target.bond >= 50 && !target.heirloom) {
+          target.heirloom = true;
+          try { this.say(`Your ${target.name || itemId} isn't just gear anymore. It's part of you.`); } catch (e) {}
+        }
+      } catch (e) {}
     },
 
     // offerRelicEnhancement: the System noticed. Pick 1 of 3 from the class pool.
@@ -18941,6 +19006,17 @@
             this.say(`Your ${got} is still clutched in its clever hands. You take it back.`);
           }
           try { this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
+          // SENTIMENTAL BOND (Steve 2026-10-07): killing with an equipped
+          // sentimental weapon deepens the bond — a meaningful moment.
+          try {
+            const mw = (this.state.scholar.equipped || {}).melee || (this.state.scholar.equipped || {}).weapon;
+            if (mw && mw.itemId) {
+              const mdef = (this.data.items || []).find(i => i.id === mw.itemId);
+              if (mdef && mdef.class === 'sentimental') {
+                this.bumpBond(mw.itemId, 2, 'it drew blood for you');
+              }
+            }
+          } catch (e) {}
           const tdCfg = ((t.mdef || {}).encounter) || {};
           if (tdCfg.deathAudio) this.audioEvent(tdCfg.deathAudio);
           else if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
