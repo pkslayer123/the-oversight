@@ -14,8 +14,7 @@
 //   - context_gated: combat actions only in combat, camp actions only at camp/haven (code: actionContextValid)
 // consumes:
 //   - hasAbility, abilityLevel, say, tickAction, spendCombatAction, inCombat
-//   - state.scholar (kcal, health, actionClock), state.village
-//   - data.abilities (actions arrays)
+//   - state.scholar (kcal, health, actionClock), state.village, state.codex
 
 /* ABILITY ACTIONS — src/js/abilityActions.js
  *
