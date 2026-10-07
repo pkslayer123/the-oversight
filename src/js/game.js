@@ -5289,6 +5289,8 @@
           scholar.codex.techniques[tid] = { level: entry.level, learnedFrom: v.name, strategy: entry.strategy };
           learned.push(`🔧 ${tid.replace(/_/g, ' ')} (${entry.strategy})`);
           learnedCounts.techniques++;
+          // DRAMA (Steve 2026-10-07, Round D2): the scroll unrolls.
+          try { this.drama('techniqueLearned', this.map.px, this.map.py, tid); } catch (e) {}
         }
       }
       // recipes: learn their food ways
@@ -5345,6 +5347,8 @@
             3: `⬢ SYSTEM INTEGRATION L3: "Three codices. Full rosters, strategy intel, codex summaries. You are my favorite cartographer."`,
           };
           this.say(tierLines[newLevel] || `⬢ SYSTEM INTEGRATION L${newLevel}: The System sees more now. Your HUD sharpens.`);
+          // DRAMA (Steve 2026-10-07, Round D2): the book opens. A village's knowledge is yours.
+          try { this.drama('codexLinked', v.name); } catch (e) {}
           // 3. THE SLOT REMINDER — honestly tied to the NEURAL scale.
           const integ = Math.round(scholar2.integration || 5);
           const slots = this.abilitySlots();
@@ -10654,6 +10658,8 @@
       };
       const journalWord = this.state.systemArrived ? 'Codex' : 'Journal';
       this.say(`📖 LEARNED: ${k.name} (Level ${newLevel}). ${k.levels[String(newLevel)] || ''}`);
+      // DRAMA (Steve 2026-10-07, Round D2): learning should FEEL like learning.
+      try { this.drama('skillGained', this.map.px, this.map.py, k.name); } catch (e) {}
       // KNOWLEDGE REVEAL AUDIO (Round 2 wiring, Steve 2026-10-07): skill level-up.
       // learnSkill is the one path for every source (practice, books, background,
       // codex study, jackpots), so the hook fires exactly once per genuine gain.
@@ -10786,6 +10792,8 @@
           unlockedDay: this.state.scholar.day,
         };
         this.say(`⚡ TECHNIQUE UNLOCKED: ${syn.technique}! ${syn.effect} (Your knowledge of ${k.name} amplifies your ${syn.ability}.)`);
+        // DRAMA (Steve 2026-10-07, Round D2): the click of understanding.
+        try { this.drama('ahaMoment', this.map.px, this.map.py); } catch (e) {}
         // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): codex technique unlock.
         this.audioEvent('knowledgeReveal', { kind: 'technique', id: techId });
         if (this.state.systemArrived) {
@@ -13844,6 +13852,12 @@
              kind === 'synergyShimmer' || kind === 'villageBirth' || kind === 'villageDeath')) {
           args.push(integ);
         }
+        // KNOWLEDGE (Steve 2026-10-07, Drama D2): learning moments — integration
+        // is the last parameter of every D2 method. Append unconditionally.
+        if ((kind === 'plantIdentified' || kind === 'techniqueLearned' || kind === 'codexLinked' ||
+             kind === 'skillGained' || kind === 'teaseFaint' || kind === 'ahaMoment')) {
+          args.push(integ);
+        }
         if (kind === 'hit') D.hit(...args);
         else if (kind === 'text') D.floatText(...args);
         else if (kind === 'flash') D.flash(...args);
@@ -13872,6 +13886,12 @@
         else if (kind === 'synergyShimmer') D.synergyShimmer(...args);
         else if (kind === 'villageBirth') D.villageBirth(...args);
         else if (kind === 'villageDeath') D.villageDeath(...args);
+        else if (kind === 'plantIdentified') D.plantIdentified(...args);
+        else if (kind === 'techniqueLearned') D.techniqueLearned(...args);
+        else if (kind === 'codexLinked') D.codexLinked(...args);
+        else if (kind === 'skillGained') D.skillGained(...args);
+        else if (kind === 'teaseFaint') D.teaseFaint(...args);
+        else if (kind === 'ahaMoment') D.ahaMoment(...args);
         // SOCIAL SPECTACLE (Steve 2026-10-07, Drama C1): spec object carries
         // type + integration — inject integration like other object forms.
         else if (kind === 'social') {
@@ -15200,6 +15220,11 @@
       const seenKey = syn.id + '_teased_' + n;
       if (sch.synergyAttempts[seenKey]) return;
       sch.synergyAttempts[seenKey] = 1;
+      if (n === 1) {
+        // DRAMA (Steve 2026-10-07, Round D2): the 1st tease is a whisper, not a shimmer.
+        // Escalation reads: whisper (1st) -> shimmer (2nd) -> hero card (unlock).
+        try { this.drama('teaseFaint'); } catch (e) {}
+      }
       this.say(tease);
       if (n === 2 && dm.hint) {
         // DRAMA (Steve 2026-10-07, Round C2): the pre-reveal — something is happening.
@@ -24259,6 +24284,8 @@
       // match the name ("Lamb's Quarters" vs "Lamb's quarters.").
       kl1 = kl1.replace(new RegExp('^' + p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.\\s:\u2014-]*', 'i'), '');
       this.say(`\u2605 IDENTIFIED: ${p.name}. ${kl1} Uses unknown — harvest, taste, and learn.`);
+      // DRAMA (Steve 2026-10-07, Round D2): identification is a SEEING moment.
+      try { this.drama('plantIdentified', this.map.px, this.map.py, p.name); } catch (e) {}
       // RECOGNITION (Steve 2026-10-06): if you examined this species before it
       // was named, the vague description CLICKS. The observation memory
       // resolves into the name — a revelation, not a database unlock.
