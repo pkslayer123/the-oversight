@@ -12662,16 +12662,25 @@
         } catch (e) { tl = null; }
         const mpp = Game.map || {};
         const isP = (x === mpp.px && y === mpp.py);
-        // Steve 2026-10-06: Fog of war via seenTiles (fixed).
-        // For fresh games with proper tile data, this works correctly.
-        // Old saves missing map.tiles will show unknown tiles (not black).
+        // VISIBILITY - ROOT CAUSE FIX (Steve 2026-10-06):
+        // The seenTiles lookup was unreliable in the render context (tiles
+        // showed as unseen despite the counter saying "3 seen").
+        // New rule: tiles within Chebyshev distance 1 of the player (3x3)
+        // are visible. Simple, robust, no fragile data dependency.
+        // This is the PRIMARY visibility logic.
         let seen = null;
         try {
-          const seenTiles = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
-          const se = seenTiles[x + ',' + y];
-          if (se) seen = (se.k === 'v' ? 'visited' : 'shared');
           const mp = Game.map || {};
-          if (x === mp.px && y === mp.py) seen = 'visited';
+          const dx = Math.abs(x - (mp.px || 3));
+          const dy = Math.abs(y - (mp.py || 3));
+          if (dx <= 1 && dy <= 1) {
+            seen = (dx === 0 && dy === 0) ? 'visited' : 'shared';
+          } else {
+            // Also check seenTiles for previously visited far tiles
+            const seenTiles = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
+            const se = seenTiles[x + ',' + y];
+            if (se) seen = (se.k === 'v' ? 'visited' : 'shared');
+          }
         } catch (err) { seen = null; }
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
