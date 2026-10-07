@@ -12697,7 +12697,9 @@
             }
           }
         }
-        html += `<div class="${cls}" data-x="${x}" data-y="${y}">${g}</div>`;
+        // DEBUG: bright red background on the DIV itself (not just SVG)
+        // If map shows red, HTML renders but SVG doesn't. If black, HTML broken.
+        html += `<div class="${cls}" data-x="${x}" data-y="${y}" style="background:#ff0000 !important; min-width:40px; min-height:40px;">${g}</div>`;
       }
       html += '</div>';
     }
