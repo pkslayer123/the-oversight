@@ -12650,6 +12650,10 @@
     for (let y = 0; y < 7; y++) {
       html += '<div class="mrow">';
       for (let x = 0; x < 7; x++) {
+        // EVERY TILE RED - DIAGNOSTIC (Steve 2026-10-06)
+        // If this doesn't show red, the HTML/CSS is broken, not the JS.
+        html += `<div class="tile" data-x="${x}" data-y="${y}"><div style="background:#ff0000;width:100%;height:100%;min-height:40px;border-radius:4px"></div></div>`;
+        continue;
         let tl = null;
         try {
           // Try direct tiles access first (old saves may have map without tiles via tileAt)
