@@ -67,6 +67,14 @@
 //   - liarExposed: narrowing spotlight + ⚡ crackle (Steve 2026-10-07, Drama C1)
 //   - reconcileGlow: warm glow + rising hearts (Steve 2026-10-07, Drama C1)
 //   - betraySlash: red slash + BETRAYED banner (Steve 2026-10-07, Drama C1)
+//   - villageFlash: dispatcher for village-life rhythm ambience (Steve 2026-10-07, Drama D3)
+//   - dawnBreak: soft golden wash as the day begins (Steve 2026-10-07, Drama D3)
+//   - duskFall: purple-orange fade as night comes (Steve 2026-10-07, Drama D3)
+//   - harvestGlow: wheat-gold motes when the village brings food home (Steve 2026-10-07, Drama D3)
+//   - celebration: confetti + music notes when spirits are high (Steve 2026-10-07, Drama D3)
+//   - mourning: gray veil when the village grieves (Steve 2026-10-07, Drama D3)
+//   - villageArgue: red crackle between two villagers' tiles (Steve 2026-10-07, Drama D3)
+//   - childPlay: small sparkles + laughter marks (Steve 2026-10-07, Drama D3)
 // rules:
 //   - Overlay is pointer-events:none — never blocks input (code: drama.js).
 //   - All animations use transform/opacity only — GPU-composited, no layout/paint (code: drama.js).
@@ -1729,6 +1737,151 @@
       );
       if (integration >= 2) this.systemCommentary('"Oh. OH. That\'s how it works."', { integration });
     },
+
+    // villageFlash: dispatcher for village-life rhythm ambience (Steve 2026-10-07, Drama D3).
+    // Game.drama('village', spec) routes here. spec.type:
+    // 'dawn' | 'dusk' | 'harvest' | 'celebrate' | 'mourn' | 'argue' | 'play'
+    // All ambient — washes and sparkles, never hero cards. Barely visible at L1, warm at L3.
+    villageFlash(spec) {
+      if (!spec || typeof spec !== 'object' || !spec.type) return;
+      const integ = spec.integration || 0;
+      switch (spec.type) {
+        case 'dawn': return this.dawnBreak(integ);
+        case 'dusk': return this.duskFall(integ);
+        case 'harvest': return this.harvestGlow(integ);
+        case 'celebrate': return this.celebration(integ);
+        case 'mourn': return this.mourning(integ);
+        case 'argue': return this.villageArgue(spec.x1, spec.y1, spec.x2, spec.y2, integ);
+        case 'play': return this.childPlay(spec.x, spec.y, integ);
+        default: return;
+      }
+    },
+
+    // dawnBreak: soft golden wash as the day begins.
+    // Steve 2026-10-07: village rhythms (Round D3). Ambient — L1 barely there, L3 warm.
+    dawnBreak(integration) {
+      integration = integration || 0;
+      const alpha = 0.06 + (integration * 0.04); // 0.06 -> 0.18
+      this.spawn(
+        '',
+        `position:absolute;inset:0;background:linear-gradient(to bottom, rgba(255,205,130,${alpha}), rgba(255,240,200,${alpha * 0.5}) 60%, transparent);`,
+        'drama-dawnwash',
+        1600 + (integration * 300)
+      );
+    },
+
+    // duskFall: purple-orange fade as night comes.
+    // Steve 2026-10-07: village rhythms (Round D3).
+    duskFall(integration) {
+      integration = integration || 0;
+      const alpha = 0.08 + (integration * 0.04); // 0.08 -> 0.20
+      this.spawn(
+        '',
+        `position:absolute;inset:0;background:linear-gradient(to bottom, rgba(110,60,140,${alpha}), rgba(255,140,60,${alpha * 0.7}) 70%, transparent);`,
+        'drama-duskwash',
+        1600 + (integration * 300)
+      );
+    },
+
+    // harvestGlow: wheat-gold motes drift up when the village brings food home.
+    // Steve 2026-10-07: village rhythms (Round D3).
+    harvestGlow(integration) {
+      integration = integration || 0;
+      const count = 3 + (integration * 2); // 3 -> 9
+      const golds = ['#ffd54a', '#e8b83a', '#fff2b0'];
+      for (let i = 0; i < count; i++) {
+        const left = 10 + ((i * 37) % 80);
+        const top = 30 + ((i * 53) % 40);
+        const g = golds[i % golds.length];
+        const size = 12 + (i % 3) * 4;
+        setTimeout(() => {
+          this.spawn(
+            `<div style="font-size:${size}px;color:${g};text-shadow:0 1px 4px rgba(0,0,0,0.7);">\u2726</div>`,
+            `position:absolute;left:${left}%;top:${top}%;`,
+            'drama-goldmote',
+            1400 + (integration * 200)
+          );
+        }, i * 120);
+      }
+    },
+
+    // celebration: music notes drift up when the village is in high spirits.
+    // Steve 2026-10-07: village rhythms (Round D3). Ambient — smaller than contest winner.
+    celebration(integration) {
+      integration = integration || 0;
+      const notes = ['\u266A', '\u266B', '\u266A'];
+      const count = 3 + integration; // 3 -> 6
+      for (let i = 0; i < count; i++) {
+        const left = 15 + ((i * 41) % 70);
+        const color = i % 2 ? '#ffd54a' : '#9be8ff';
+        const size = 18 + (i % 2) * 6;
+        setTimeout(() => {
+          this.spawn(
+            `<div style="font-size:${size}px;color:${color};text-shadow:0 1px 4px rgba(0,0,0,0.7);">${notes[i % notes.length]}</div>`,
+            `position:absolute;left:${left}%;top:35%;`,
+            'drama-celebrate',
+            1800 + (integration * 200)
+          );
+        }, i * 150);
+      }
+    },
+
+    // mourning: gray veil when the village grieves.
+    // Steve 2026-10-07: village rhythms (Round D3).
+    mourning(integration) {
+      integration = integration || 0;
+      const alpha = 0.08 + (integration * 0.05); // 0.08 -> 0.23
+      this.spawn(
+        '',
+        `position:absolute;inset:0;background:linear-gradient(to bottom, rgba(110,118,130,${alpha}), rgba(80,88,100,${alpha * 0.6}) 70%, transparent);`,
+        'drama-mourn',
+        2000 + (integration * 300)
+      );
+    },
+
+    // villageArgue: red crackle drawn between two villagers' tiles.
+    // Steve 2026-10-07: village rhythms (Round D3). Coords optional — falls
+    // back to a soft red pulse when positions are unknown.
+    villageArgue(x1, y1, x2, y2, integration) {
+      integration = integration || 0;
+      const num = v => typeof v === 'number' && !isNaN(v);
+      const alpha = 0.35 + (integration * 0.12);
+      if (num(x1) && num(y1) && num(x2) && num(y2)) {
+        const a = this.tileCenter(x1, y1), b = this.tileCenter(x2, y2);
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        this.spawn(
+          `<svg width="120" height="60" viewBox="0 0 120 60"><polyline points="5,30 30,12 48,34 66,10 84,32 115,28" fill="none" stroke="rgba(255,60,60,${alpha})" stroke-width="3"/></svg>`,
+          `position:absolute;left:${mx - 60}px;top:${my - 30}px;`,
+          'drama-crackle',
+          1200 + (integration * 200)
+        );
+      } else {
+        this.flash(`rgba(255,60,60,${alpha * 0.4})`, 600);
+      }
+    },
+
+    // childPlay: small sparkles + laughter marks where joy is.
+    // Steve 2026-10-07: village rhythms (Round D3).
+    childPlay(x, y, integration) {
+      integration = integration || 0;
+      const num = v => typeof v === 'number' && !isNaN(v);
+      const c = (num(x) && num(y)) ? this.tileCenter(x, y) : null;
+      const count = 2 + integration; // 2 -> 5
+      const marks = ['\u266A', '\u2726', '\u266A', '\u2727', '\u266A'];
+      for (let i = 0; i < count; i++) {
+        const dx = (i - (count - 1) / 2) * 20;
+        const leftCss = c ? `${c.x + dx}px` : `calc(50% + ${dx}px)`;
+        const topCss = c ? `${c.y}px` : '40%';
+        setTimeout(() => {
+          this.spawn(
+            `<div style="font-size:16px;color:#fff2b0;text-shadow:0 1px 4px rgba(0,0,0,0.7);">${marks[i % marks.length]}</div>`,
+            `position:absolute;left:${leftCss};top:${topCss};transform:translate(-50%,-50%);`,
+            'drama-playmote',
+            1200 + (integration * 150)
+          );
+        }, i * 140);
+      }
+    },
   };
 
   S.Drama = Drama;
@@ -1903,6 +2056,21 @@
     .drama-aha { opacity: 0; transform: scale(0.4); transition: all 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
     .drama-aha.drama-aha { opacity: 1; transform: scale(1.1); animation: drama-aha-glow 0.8s ease-in-out infinite; }
     @keyframes drama-aha-glow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+    .drama-dawnwash { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-dawnwash.drama-dawnwash { opacity: 1; }
+    .drama-duskwash { opacity: 0; transition: opacity 1.2s ease-out; }
+    .drama-duskwash.drama-duskwash { opacity: 1; }
+    .drama-goldmote { opacity: 0; transition: all 1.4s ease-out; }
+    .drama-goldmote.drama-goldmote { opacity: 1; transform: translateY(-30px); }
+    .drama-celebrate { opacity: 0; transition: all 1.8s ease-out; }
+    .drama-celebrate.drama-celebrate { opacity: 1; transform: translateY(-50px) rotate(15deg); }
+    .drama-mourn { opacity: 0; transition: opacity 1.5s ease-out; }
+    .drama-mourn.drama-mourn { opacity: 1; }
+    .drama-crackle { opacity: 0; transition: opacity 0.2s ease-out; }
+    .drama-crackle.drama-crackle { opacity: 1; animation: drama-flicker 0.4s linear infinite; }
+    @keyframes drama-flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .drama-playmote { opacity: 0; transition: all 1.2s ease-out; }
+    .drama-playmote.drama-playmote { opacity: 1; transform: translate(-50%, -80%); animation: drama-bob 0.8s ease-in-out infinite; }
     .drama-shake { animation: drama-shake-anim 0.4s ease-out; }
     @keyframes drama-shake-anim {
       0%, 100% { transform: translate(0, 0); }
