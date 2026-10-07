@@ -20994,6 +20994,10 @@
       const isDeer = this.deerIs(m);
       const useFifo = this.encUsesFifo(m);
       if (useFifo) this.encScanThreats(m);
+      // BEHAVIOR TABLE (monsterBehaviors.json + src/js/monsterBehaviors.js, Steve 2026-10-07):
+      // data-driven pre-turn hooks. Migrated species run their verbatim-extracted logic from the registry.
+      // mbRunPreTurn returns true if a hook consumed the turn.
+      if (this.mbRunPreTurn && this.mbRunPreTurn(m)) return;
       // HIGHBEAM (Steve 2026-10-05): closing in is risky EVERY turn, not just
       // while the beam fires. The antlers thrash anyone adjacent IN ADDITION
       // to whatever the deer is doing — you take damage standing next to it
