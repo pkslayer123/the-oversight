@@ -17,6 +17,7 @@
 //   - verbal_slips_require_shared_language: true (code: endDay slip loop)
 //   - observation_doubt_one_per_field: true (code: addDoubt)
 //   - gossip_intel_forms_lead_without_claim: true (code: checkGossipClaim)
+//   - prods_raise_confess_odds: each 'prodded' soft-probe evidence entry adds +5% confess chance (cap +15%) — softening before the hard confrontation (code: confrontDoubt, Steve 2026-10-06)
 //   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 // consumes:
 //   - village.gossip
@@ -117,6 +118,20 @@
         `You watch {first}'s hands while they work. Steady. People's hands tell on them eventually — these aren't telling.`,
         `A whole afternoon with {first} in your eyeline. They complain about the same things everyone complains about. Nothing hidden, or hidden well.`,
         `{first} catches you looking and just nods, easy. No flinch, no performance. Whatever they're holding, it isn't guilt.`,
+      ],
+      // the villager's spoken reaction to being watched. The observation
+      // itself is the PLAYER's narration (said by the convo branch, never as
+      // the villager's dialogue) — this pool is what they actually say when
+      // they notice your eyes on them. (Steve 2026-10-06 audit: the
+      // observation was rendering as `Name: "You study Name..."` dialogue,
+      // and the calm case said it twice.)
+      observedReact: [
+        `"You keep looking at me like that, people'll talk."`,
+        `They shift under your gaze, then settle. "Something on your mind?"`,
+        `"Alright. Look all you want." A shrug that isn't quite casual.`,
+        `"See something interesting?" {first} asks, half-amused, half-wary.`,
+        `{first} meets your eyes for a second, then looks away. "I'm an open book. Mostly."`,
+        `"You do that a lot," {first} says. "Watch people. I don't mind. Just — don't stare while I eat."`,
       ],
       observeTellOcc: [
         // KNOWLEDGE GATING (Steve 2026-10-06): these lines used to name the
@@ -597,9 +612,12 @@
       }
       // honest observation — nothing wrong, which is itself information.
       // No-repeat pool: watching the same person on loop shouldn't recycle
-      // the same three sentences.
+      // the same three sentences. NOTE: the caller narrates the returned
+      // text (the convo branch says it as the player's narration). Don't
+      // say it here — saying it here AND letting the caller render it
+      // produced a duplicate, and the caller was rendering it as the
+      // villager's own dialogue.
       const line = this.drawTruthLine('observeCalm', vid);
-      this.say(line);
       return { ok: true, found: false, text: line };
     },
 
@@ -838,6 +856,11 @@
       if (evCount > 1) confessP += Math.min(0.30, (evCount - 1) * 0.10);
       const priorDeflects = (doubt.evidence || []).filter(e => String(e).includes('deflected')).length;
       if (priorDeflects > 0) confessP += Math.min(0.30, priorDeflects * 0.15);
+      // SOFT PROBES (Steve 2026-10-06): "That doesn't add up" (dlg:doubt in
+      // convo-dialogue.js) mounts 'prodded' evidence. Each prod is gentler
+      // than a full confrontation — +5% each, capped at +15%.
+      const priorProds = (doubt.evidence || []).filter(e => String(e).indexOf('prodded') === 0).length;
+      if (priorProds > 0) confessP += Math.min(0.15, priorProds * 0.05);
       // Multiple open doubts about the same person: the walls are closing in
       const otherDoubts = this.getDoubts(vid).filter(d => !d.resolved && d.id !== doubtId).length;
       if (otherDoubts > 0) confessP += Math.min(0.20, otherDoubts * 0.10);

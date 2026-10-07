@@ -12,6 +12,7 @@
 //   - bridge_on_shift: topic changes speak a bridge line tied to the old topic (code: bridgeLine, Steve 2026-10-06)
 //   - no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: dialogueResponses, Steve 2026-10-06)
 //   - four_rules_kept: transcript_cap, one_beat_turns, tap_advance, history_view untouched (code: conversation.js ontology)
+//   - probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: dialogueResponses, Steve 2026-10-06)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -275,8 +276,14 @@
       out.push({ id: entry.id, label });
     }
 
-    // Doubt surfaces on news beats when you have doubts.
-    if (tag === 'news' && hasDoubts && !seen.has('dlg:doubt')) {
+    // Doubt surfaces on news AND small beats when you have doubts.
+    // DETECTIVE (Steve 2026-10-06): the hard confrontation (confront:,
+    // truth.js) is offered on every beat, so the soft probe must be
+    // reachable wherever the player can confront — otherwise the
+    // soften-then-confront tactic is unplayable. Withheld on feeling/offer
+    // beats: pressing a suspicion while they're grieving or asking for help
+    // reads cruel.
+    if ((tag === 'news' || tag === 'small') && hasDoubts && !seen.has('dlg:doubt')) {
       out.push({ id: 'dlg:doubt', label: '"That doesn\'t quite add up."' });
     }
     // Theorize surfaces contextually on mystery beats.
