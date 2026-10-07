@@ -2653,5 +2653,463 @@
   "healAmount": 50,
   "kg": 0.9,
   "findable": true
+ },
+ {
+  "id": "universal_translator",
+  "name": "Universal Translator",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "It doesn't translate words. It translates intent. The Vex stopped mid-threat to listen.",
+  "baseEffect": "Communicate with any intelligent being; +50% negotiation outcomes",
+  "lootTier": 4,
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "peace_accords",
+  "name": "Peace Accords",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Every treaty you've brokered, in your handwriting. Paper shouldn't bind monsters. This does.",
+  "baseEffect": "Signed truces hold; brokered enemies will not re-engage for 7 days",
+  "lootTier": 3,
+  "kg": 0.4,
+  "findable": true
+ },
+ {
+  "id": "consensus_crown",
+  "name": "Consensus Crown",
+  "class": "clothing",
+  "slot": "head",
+  "flavor": "Not worn. Grown. Your party's thoughts braid through it like light through water.",
+  "baseEffect": "+3 party coordination; party acts as one mind in combat",
+  "lootTier": 4,
+  "kg": 0.5,
+  "findable": true
+ },
+ {
+  "id": "neural_weave",
+  "name": "Neural Weave",
+  "class": "clothing",
+  "slot": "acc",
+  "flavor": "Threads of your own hair, your people's hair, woven while you talked through the night.",
+  "baseEffect": "Share senses with bonded party within 1km",
+  "lootTier": 3,
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "void_cloak",
+  "name": "Void Cloak",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "The aliens have sensors that see through walls. They do not see through this.",
+  "baseEffect": "Undetectable by tech and most senses while still",
+  "lootTier": 4,
+  "kg": 1.1,
+  "findable": true
+ },
+ {
+  "id": "whisper_rounds",
+  "name": "Whisper Rounds",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Ammunition that makes no sound. The target never hears the shot that kills them.",
+  "baseEffect": "Ranged attacks are silent; +30% damage from stealth",
+  "lootTier": 3,
+  "kg": 0.6,
+  "findable": true
+ },
+ {
+  "id": "beastcall_horn",
+  "name": "Beastcall Horn",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Carved from a Highbeam's antler. When you blow it, the wild answers.",
+  "baseEffect": "Call 1d3 wild allies to fight for you (1/day)",
+  "lootTier": 4,
+  "kg": 0.8,
+  "findable": true
+ },
+ {
+  "id": "wildmark_wraps",
+  "name": "Wildmark Wraps",
+  "class": "clothing",
+  "slot": "hands",
+  "flavor": "Scent-marks of every pack you've run with. Animals read your hands like a resume.",
+  "baseEffect": "Animals and tameable monsters start Friendly",
+  "lootTier": 3,
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "worldseed_satchel",
+  "name": "Worldseed Satchel",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Every seed that matters, in packets labeled in your hand. This is Earth's backup.",
+  "baseEffect": "Plant any crop in any biome; terraformed tiles stay fertile",
+  "lootTier": 4,
+  "kg": 1.4,
+  "findable": true
+ },
+ {
+  "id": "rain_engine",
+  "name": "Rain Engine",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Copper, glass, and a prayer. It doesn't make rain. It convinces the sky.",
+  "baseEffect": "Call rain 1/day; doubles crop growth in your territory",
+  "lootTier": 3,
+  "kg": 2.2,
+  "findable": true
+ },
+ {
+  "id": "memory_seed_vault",
+  "name": "Memory Seed Vault",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "If Earth burns, this is what's left. Ten thousand species in a box you can carry.",
+  "baseEffect": "Nothing in your territory goes extinct; +100% seed yields",
+  "lootTier": 4,
+  "kg": 1.0,
+  "findable": true
+ },
+ {
+  "id": "seedkeepers_grimoire",
+  "name": "Seedkeeper's Grimoire",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Every plant you ever learned, pressed between pages. Your grandmother's handwriting on page one.",
+  "baseEffect": "+3 foraging knowledge; identify any plant on sight",
+  "lootTier": 3,
+  "kg": 0.9,
+  "findable": true
+ },
+ {
+  "id": "adaptive_dermis",
+  "name": "Adaptive Dermis",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Grown from your own scar tissue and alien cultures. It remembers every wound.",
+  "baseEffect": "Gain resistance to last damage type taken (stacks to immunity)",
+  "lootTier": 4,
+  "armor": {
+   "protection": 35
+  },
+  "kg": 2.0,
+  "findable": true
+ },
+ {
+  "id": "toxin_library",
+  "name": "Toxin Library",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Vials of everything that tried to poison you. Labeled. Dated. Survived.",
+  "baseEffect": "Immune to known poisons; +50% disease resistance",
+  "lootTier": 3,
+  "kg": 0.7,
+  "findable": true
+ },
+ {
+  "id": "hearthstone_amulet",
+  "name": "Hearthstone Amulet",
+  "class": "clothing",
+  "slot": "acc",
+  "flavor": "Warm. Always warm. People sleep better within ten steps of you.",
+  "baseEffect": "Party within 10 tiles: immune to cold, fear halved",
+  "lootTier": 4,
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "shelter_cloak",
+  "name": "Shelter Cloak",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Big enough for two. You've carried children in it through blizzards.",
+  "baseEffect": "+20 protection; can shelter one ally from all damage 1/day",
+  "lootTier": 3,
+  "armor": {
+   "protection": 20
+  },
+  "kg": 1.6,
+  "findable": true
+ },
+ {
+  "id": "ironfist_wraps",
+  "name": "Ironfist Wraps",
+  "class": "clothing",
+  "slot": "hands",
+  "flavor": "Your knuckles did this. Not the wraps. The wraps just keep up.",
+  "baseEffect": "Unarmed attacks deal tier-4 melee damage",
+  "lootTier": 4,
+  "kg": 0.4,
+  "findable": true
+ },
+ {
+  "id": "titan_belt",
+  "name": "Titan Belt",
+  "class": "clothing",
+  "slot": "acc",
+  "flavor": "The buckle is a gear from a machine you broke. It fits.",
+  "baseEffect": "+50% carry capacity; +20% melee damage",
+  "lootTier": 3,
+  "kg": 1.1,
+  "findable": true
+ },
+ {
+  "id": "warlords_standard",
+  "name": "Warlord's Standard",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Your banner. People have died for less. People have lived for this.",
+  "baseEffect": "Allies within 5 tiles: +25% damage, immune to rout",
+  "lootTier": 4,
+  "kg": 1.8,
+  "findable": true
+ },
+ {
+  "id": "conquerors_plate",
+  "name": "Conqueror's Plate",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Dented in forty places. Each dent is someone who tried.",
+  "baseEffect": "+35 protection; enemies must pass morale or flee",
+  "lootTier": 4,
+  "armor": {
+   "protection": 35
+  },
+  "kg": 4.5,
+  "findable": true
+ },
+ {
+  "id": "causality_lens",
+  "name": "Causality Lens",
+  "class": "tool",
+  "slot": "head",
+  "flavor": "Look through it and see not what is, but what leads to what. The future has threads. Pull them.",
+  "baseEffect": "See 3 likely outcomes of any planned action",
+  "lootTier": 4,
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "fate_threads",
+  "name": "Fate Threads",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Red string, tied between everything that matters. You can feel which ones are taut.",
+  "baseEffect": "+50% chance to predict ambushes and betrayals",
+  "lootTier": 3,
+  "kg": 0.1,
+  "findable": true
+ },
+ {
+  "id": "confessional_seal",
+  "name": "Confessional Seal",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "A stamp. When you press it, people tell the truth. They can't help it.",
+  "baseEffect": "No one can lie to you while you hold this",
+  "lootTier": 4,
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "truthbrand",
+  "name": "Truthbrand",
+  "class": "tool",
+  "slot": "melee",
+  "flavor": "It doesn't cut flesh. It cuts pretense. People flinch from it before it touches them.",
+  "baseEffect": "Melee weapon; struck enemies cannot deceive for 1 day",
+  "lootTier": 3,
+  "kg": 1.0,
+  "findable": true
+ },
+ {
+  "id": "everywhere_key",
+  "name": "Everywhere Key",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "One key. It opens every cache you've ever buried. You buried a lot.",
+  "baseEffect": "Access any of your caches from anywhere (1/day each)",
+  "lootTier": 4,
+  "kg": 0.1,
+  "findable": true
+ },
+ {
+  "id": "cache_fortress_kit",
+  "name": "Cache Fortress Kit",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Spikes, wire, and unpleasant surprises. Your caches defend themselves now.",
+  "baseEffect": "Caches are trapped; thieves take 50 damage",
+  "lootTier": 3,
+  "kg": 2.5,
+  "findable": true
+ },
+ {
+  "id": "futures_ledger",
+  "name": "Futures Ledger",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "You don't trade goods. You trade outcomes. Page 40: the Vex owes you a favor. She doesn't know it yet.",
+  "baseEffect": "Trade in favors and futures; call in debts for major boons",
+  "lootTier": 4,
+  "kg": 0.5,
+  "findable": true
+ },
+ {
+  "id": "brokers_seal",
+  "name": "Broker's Seal",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Your mark. It means the deal is real. Everyone knows what happens to people who break your deals.",
+  "baseEffect": "+40% trade values; broken deals against you have consequences",
+  "lootTier": 3,
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "uncharted_atlas",
+  "name": "Uncharted Atlas",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Maps of places that don't exist yet. You're going to fix that.",
+  "baseEffect": "Reveal 3 unknown map tiles per day; never lost",
+  "lootTier": 4,
+  "kg": 0.8,
+  "findable": true
+ },
+ {
+  "id": "horizon_compass",
+  "name": "Horizon Compass",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "It doesn't point north. It points to interesting.",
+  "baseEffect": "Always know direction to nearest undiscovered feature",
+  "lootTier": 3,
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "first_steps_boots",
+  "name": "First Steps Boots",
+  "class": "clothing",
+  "slot": "shoes",
+  "flavor": "Worn through in seventeen places. Every hole is a place no one had been.",
+  "baseEffect": "+50% travel speed; ignore difficult terrain",
+  "lootTier": 4,
+  "kg": 0.9,
+  "findable": true
+ },
+ {
+  "id": "trailblazer_machete",
+  "name": "Trailblazer Machete",
+  "class": "tool",
+  "slot": "melee",
+  "flavor": "It's cut a path through jungle, ice, and one alien barricade.",
+  "baseEffect": "Clear paths 3x faster; +20 melee damage",
+  "lootTier": 3,
+  "kg": 1.2,
+  "findable": true
+ },
+ {
+  "id": "empty_pack",
+  "name": "Empty Pack",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "It's empty. That's the point. Everything you need, you find. Everything you find, you leave.",
+  "baseEffect": "Need 50% less food/water; +30% move speed unencumbered",
+  "lootTier": 4,
+  "kg": 0.4,
+  "findable": true
+ },
+ {
+  "id": "nowhere_idol",
+  "name": "Nowhere Idol",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "A carving of no place. Hold it and remember: you are never trapped.",
+  "baseEffect": "Escape any grapple, trap, or binding 1/day",
+  "lootTier": 3,
+  "kg": 0.3,
+  "findable": true
+ },
+ {
+  "id": "memory_lantern",
+  "name": "Memory Lantern",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "It burns with every story you've carried. Villages gather when you light it.",
+  "baseEffect": "Record events perfectly; share memories with others",
+  "lootTier": 4,
+  "kg": 0.6,
+  "findable": true
+ },
+ {
+  "id": "witness_coat",
+  "name": "Witness Coat",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Patches from forty villages. Each one is someone who asked you to remember them.",
+  "baseEffect": "+30% trust gains; your testimony is believed",
+  "lootTier": 3,
+  "armor": {
+   "protection": 15
+  },
+  "kg": 1.4,
+  "findable": true
+ },
+ {
+  "id": "lifespring_vial",
+  "name": "Lifespring Vial",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "One drop. That's all it takes. You don't know what's in it. The forest gave it to you.",
+  "baseEffect": "Regrow lost limbs; cure any non-magical affliction 1/week",
+  "lootTier": 4,
+  "kg": 0.2,
+  "findable": true
+ },
+ {
+  "id": "menders_apron",
+  "name": "Mender's Apron",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "Stained with forty kinds of blood. All of it someone else's. All of them alive.",
+  "baseEffect": "+50% healing effectiveness; heal 2 targets at once",
+  "lootTier": 3,
+  "armor": {
+   "protection": 10
+  },
+  "kg": 1.0,
+  "findable": true
+ },
+ {
+  "id": "sanctuary_bell",
+  "name": "Sanctuary Bell",
+  "class": "tool",
+  "slot": "acc",
+  "flavor": "Ring it and the fighting stops. Not by magic. By agreement. Everyone's tired.",
+  "baseEffect": "Create 1-hour sanctuary zone; no violence within 10 tiles",
+  "lootTier": 4,
+  "kg": 1.5,
+  "findable": true
+ },
+ {
+  "id": "wardens_cloak",
+  "name": "Warden's Cloak",
+  "class": "clothing",
+  "slot": "torso",
+  "flavor": "You've stood in doorways wearing this while monsters tested you. They always left.",
+  "baseEffect": "+25 protection; allies behind you take -50% damage",
+  "lootTier": 3,
+  "armor": {
+   "protection": 25
+  },
+  "kg": 1.8,
+  "findable": true
  }
 ]
