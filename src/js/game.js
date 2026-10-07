@@ -24035,31 +24035,50 @@
       return false;
     },
 
-    // rollAlienLoot: shared loot table for monster kills AND future show/
-    // contest rewards (Steve 2026-10-05). mdef.loot = {chance, tier}.
-    // Returns an item id or null. Chances are LOW by design — alien loot
-    // should feel like a gift from a confused god, not a paycheck.
-    // LOOT TIERS (Steve 2026-10-06): difficulty gates reward.
-    // - Base wave-1 monsters: tier 1-2 max (data).
-    // - Wave-1 apex (gallowdeer, mdef.apex): tier 4 — one apex per wave.
-    // - Wave-1 VETERAN variants (fighter.veteranVariant: scarred/elder/
-    //   pack-leader): tier up to 3, ONLY after wave 2 unlocks
-    //   (unlockedWave() >= 2). Before that they drop wave-1 loot.
-    // - Wave-2 base: tier 2-3 (data).
-    // - Wave-2 apex (moderator, mdef.apex): tier 4.
+    // LOOT TIERS vs MONSTER TIERS (Steve 2026-10-07): SEPARATE CONCEPTS.
+    // Never derive one from the other.
+    //
+    // LOOT TIERS — ITEM POWER. What the item does. From items.json
+    // `lootTier`, independent of any monster:
+    //   1 Curios — minor utility. 2 Tools — solid upgrades.
+    //   3 Relics — build-defining. 4 Apex — game-changing.
+    // A tier 4 item is tier 4 because of what it DOES, never because of
+    // which monster dropped it. Tier 4 is earned through the hardest
+    // challenges at very low rates — on loot's own terms (rarity,
+    // difficulty, progression gates), not by counting monster waves.
+    //
+    // MONSTER TIERS — MONSTER DIFFICULTY. How hard the fight is. From
+    // monsters.json `wave`, independent of loot:
+    //   Wave 1 — early monsters (Highbeam Deer, 160 HP, is the benchmark).
+    //   Wave 2 — genuine step up, not reskins.
+    //   Veterans — scarred/elder/pack-leader: tougher individuals.
+    //
+    // DROP TABLE — the explicit mapping between them. References both
+    // concepts, merges neither. Per-monster loot is DATA:
+    //   mdef.loot = {chance, tier}
+    //   - chance: LOW by design — "gift from a confused god, not a paycheck."
+    //   - tier: max LOOT tier this monster can drop (item power, not wave).
+    // Current table (data, not derived): wave-1 monsters drop tier 1-2,
+    // wave-2 monsters drop tier 2-3, the toughest monsters (gallowdeer,
+    // moderator) can drop tier 4. Veterans: see progression gate below.
+    //
+    // rollAlienLoot: shared roll for monster kills AND show/contest rewards
+    // (Steve 2026-10-05). Returns an item id or null.
     rollAlienLoot(mdef, fighter) {
       const loot = (mdef || {}).loot;
       if (!loot || !(loot.chance > 0)) return null;
       if (Math.random() >= loot.chance) return null;
-      const wave = mdef.wave || 1;
+      // The monster's drop-table entry states its max loot tier directly.
+      // We do NOT derive loot tier from monster wave — the data says what
+      // this monster drops, full stop.
       let maxTier = loot.tier || 1;
       const isVeteran = fighter && (fighter.veteranVariant || fighter.veteran);
-      if (wave <= 1 && !mdef.apex) {
-        maxTier = Math.min(maxTier, 2);
-        if (isVeteran && this.unlockedWave() >= 2) {
-          // Veterans are a tier harder: bump one, cap at 3.
-          maxTier = Math.min((loot.tier || 1) + 1, 3);
-        }
+      if (isVeteran && this.unlockedWave() >= 2) {
+        // PROGRESSION GATE (loot logic, not wave=tier): veterans are tougher
+        // monsters; once the player has progressed past wave-1 (wave 2
+        // unlocked), their hoards run one loot tier deeper. Cap at Relics —
+        // Apex loot is earned from the toughest challenges, never bumped into.
+        maxTier = Math.min(maxTier + 1, 3);
       }
       // Find the highest available tier <= maxTier (fallback if tier missing)
       let tier = Math.max(1, maxTier);
