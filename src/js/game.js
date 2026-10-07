@@ -1901,7 +1901,7 @@
       // old life taught you. Not a lecture — a recollection, after you care.
       // (Said BEFORE the wake-up so the wake-up is the visible last beat.)
       this.say('📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.');
-      this.say('📖 Your hands remember: weave cloth (3 plant fiber), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn\'t have to stay dirty.');
+      this.say('📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn\'t have to stay dirty.');
       // THE WAKE-UP (Steve 2026-10-06): hook them or lose them.
       // DRAMA: this is the first thing they read. Make it count.
       // OPENING AS ONE BEAT: narration shows only the last say().
@@ -17858,7 +17858,7 @@
     // unit — mutes the player's most-used verb inside its suppression field.
     modIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'moderator')); },
     // MODERATOR HELPERS (Steve 2026-10-06): the mute machinery. All state is
-    // fight-scoped (f.modRecent: rolling window of the player's last 6 verbs;
+    // fight-scoped (f.modRecent: rolling window of the player's last 5 verbs;
     // m.modMuted: currently muted verb list; m.modField: projected field keys).
     modLive() {
       const f = this.tbfight; if (!f) return null;
@@ -17873,7 +17873,10 @@
     // Most-used verbs in the rolling window. WAIT counts too — silence is a
     // verb the algorithm cannot moderate: if the window holds no strike/move,
     // there is nothing to mute and the mute LIFTS ("it loses the thread").
-    // Ties break by recency. Window of 5: three quiet rounds flip a habit.
+    // Ties break by recency. Window of 5: five quiet rounds flip a habit.
+    // (TUNING QUESTION for Steve: was 3 the intended number? The window holds
+    // 5 entries — the lift takes 5 quiet rounds. Flagged 2026-10-06, numbers
+    // unchanged.)
     modTopVerbs(n) {
       const f = this.tbfight;
       const recent = (f && f.modRecent) || [];
@@ -23058,6 +23061,13 @@
         // village names it or the System arrives). The old fallthrough showed
         // every carcass as "unfamiliar plant matter".
         if (String(it.plantId).startsWith('meat_')) return (it && it.name) || 'unknown flesh';
+        // BRAWLER (Steve 2026-10-06): not every plantId is a plant. Corpse
+        // loot and the betrayal transfer stamp plantId with item ids
+        // ('stone_knife', 'effect_0', 'keepsake') — routing those through
+        // plantDisplayName made every taken tool read as "unfamiliar plant
+        // matter". Only real plants get the knowledge-gated plant name;
+        // everything else shows its stored name.
+        if (!(this.data.plants || []).some(x => x.id === it.plantId)) return (it && it.name) || 'something';
         return this.plantDisplayName(it.plantId);
       }
       return (it && it.name) || 'something';
