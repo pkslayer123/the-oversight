@@ -8374,7 +8374,23 @@
     },
     breakCamp(reason) {
       if (!this.state.camp) return;
+      const c = this.state.camp;
       const r = reason || 'the world took it';
+      // WRECKED TENT (survivalist loop 2026-10-08): the pitched tent does not
+      // survive the camp's end — a wrecked tent cell left on the grid would
+      // let hasTentNearby/canSetUpCamp resurrect a dead camp. The packTent
+      // path clears its own cell and re-packs the tent BEFORE calling here,
+      // so this sweep is idempotent for that path (no cell, nothing to do).
+      try {
+        const detail = this.genDetail(c.px, c.py);
+        const t = this.tileAt(c.px, c.py);
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+          if (detail[y] && detail[y][x] === 'tent') {
+            const sec = t.secrets && t.secrets[x + ',' + y];
+            if (sec && sec.yours) { detail[y][x] = 'dirt'; delete t.secrets[x + ',' + y]; }
+          }
+        }
+      } catch (e) {}
       this.say(`Your camp is gone — ${r}. The tent's wrecked, the fire's cold. That's the deal with camps: they're not havens.`);
       delete this.state.camp;
     },
@@ -15341,6 +15357,11 @@
         try { this.addWater(3, 'clean', 'storm'); } catch (e) {}
         this.say('You set out every pot and skin — the storm fills them. (+3 clean water. The storm provides, the old-timers say, whether you ask or not.)');
         this.say('The dusk forage goes un-walked: 400–800 kcal you\'ll never see, out there getting rained on instead of gathered. ' + elder + ' nods at the bruised sky, satisfied: "Worth it."');
+        // CAMP (survivalist loop 2026-10-08): the storm takes player camps —
+        // "a shitty breakable version of a haven", wind included. You chose
+        // Haven; the camp rode it out alone. Telegraphed at dawn, avoidable
+        // all day (pack the tent: 16 ticks). The pitched tent is wrecked.
+        if (this.state.camp) this.breakCamp('the storm tore through it');
       } else {
         this.say('🌪️ The sky OPENS. Not rain — a wall of it, sideways, with the wind behind it like something personally offended. You\'re caught out in it.');
         s.kcal = Math.max(0, (s.kcal || 0) - 300);
@@ -15360,6 +15381,9 @@
         this.say('You fight your way home soaked, shaking, 300 kcal lighter and bruised (−15 health).' + (lost ? ` The wind took your ${lost} — it\'s in the next county by now.` : ''));
         this.say(elder + ' looks at you over the fire, dry as a sermon: "Told you." You remember this the next time the sky bruises.');
         this.say('(Getting caught out costs more. It always costs more.)');
+        // CAMP (survivalist loop 2026-10-08): caught out AT the camp is still
+        // caught out — a tent is not a haven. The storm takes the camp too.
+        if (this.state.camp) this.breakCamp('the storm tore through it');
       }
       return true;
     },
