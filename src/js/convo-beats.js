@@ -303,8 +303,11 @@
     const seen = new Set();
     for (const entry of topicPool) {
       if (seen.has(entry.id)) continue;
-      // Skip "tell me more" if the thread is dry.
-      if (threadDry && entry.id === 'dlg:more') continue;
+      // Skip "tell me more" if the thread is dry. Skip the bare react too
+      // once it's gone dry twice — the "Anyway." loop winds down instead of
+      // offering the same dead acknowledgment forever (rethink 2026-10-07).
+      if (threadDry && (entry.id === 'dlg:more' ||
+          (entry.id === 'dlg:react' && (c.reactDryCount || 0) >= 2))) continue;
       seen.add(entry.id);
       const label = (typeof this.convoPickCycle === 'function')
         ? this.convoPickCycle(vid, 'reply:' + tag + ':' + topic + ':' + entry.id, entry.v)
@@ -331,6 +334,26 @@
         out.push({ id: 'dlg:theorize', label: '"What do you think it means?"' });
       }
     }
+
+    // CONTINUER + RECAP (dialogue rethink, Steve 2026-10-07): the base menu
+    // offers the voiced continuer when beats are held and the recap verb on
+    // long threads — the dialogue path dropped both, so mood-shift beats and
+    // want surfaces died unspoken in c.heldBeats and the recap was
+    // unreachable. Restored here, mirroring the base menu's rules.
+    if ((c.heldBeats || []).length && !seen.has('goon')) {
+      seen.add('goon');
+      out.unshift({
+        id: 'goon',
+        label: (typeof this.convoGoonLabel === 'function') ? this.convoGoonLabel(vid) : '"Go on."',
+      });
+    }
+    try {
+      if ((c.threadLog || []).length >= 2 && !seen.has('recap') &&
+          typeof this.convoRecapChoice === 'function') {
+        seen.add('recap');
+        out.push(this.convoRecapChoice(vid));
+      }
+    } catch (e) {}
 
     // Party invite — contextual on warm beats with trust.
     try {

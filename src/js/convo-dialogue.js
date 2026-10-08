@@ -257,6 +257,10 @@
         // They continue or wind down naturally. On a dry thread, don't fish
         // for beats — go straight to the wind-down.
         const dry = c.thread && c.threadDryFor && c.thread === c.threadDryFor;
+        // WIND-DOWN (dialogue rethink, Steve 2026-10-07): dry "Anyway."
+        // loops forever — after two of them the menu stops offering the
+        // react (convo-beats.js reads c.reactDryCount).
+        if (dry) c.reactDryCount = (c.reactDryCount || 0) + 1;
         const beat = (!dry && Math.random() < 0.6) ? this.convoThreadBeat(vid) : null;
         if (beat) {
           c.threadDryFor = null;
@@ -439,4 +443,22 @@
 
   // Expose the feature map for tests and documentation.
   Game.DIALOGUE_FEATURE_MAP = DIALOGUE_FEATURE_MAP;
+
+  // WANT POST-TURN (dialogue rethink, Steve 2026-10-07): the dlg: branch of
+  // the convoTurn wrapper above returns early, which bypassed convo-wants'
+  // turn wrapper entirely — wants never surfaced, beats never composed, and
+  // the want arc never advanced on the live dialogue path. Run the shared
+  // post-turn for dlg: choices here. Non-dlg: choices are covered by the
+  // wants wrapper inside; this only fires for 'dlg:' ids, so it never
+  // double-processes. convo-beats.js wraps outside this and only intercepts
+  // 'dlg:subject', which skips this hook once — acceptable.
+  const _dlgTurnInner = Game.convoTurn;
+  Game.convoTurn = function (vid, choiceId) {
+    const r = _dlgTurnInner.call(this, vid, choiceId);
+    if (r && !r.ended && typeof choiceId === 'string' && choiceId.indexOf('dlg:') === 0 &&
+        typeof this.convoWantPostTurn === 'function') {
+      try { return this.convoWantPostTurn(vid, choiceId, r) || r; } catch (e) { return r; }
+    }
+    return r;
+  };
 })();

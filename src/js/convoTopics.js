@@ -229,6 +229,18 @@
       const v = this.state.village;
       const day = (this.state.scholar || {}).day || 0;
       try {
+        // NAMING DEBATE (dialogue rethink, Steve 2026-10-07): a live village
+        // naming debate is the talk of the fire — it surfaces here with the
+        // proposals the NPC actually heard. Names stay knowledge-gated: the
+        // descriptor until the village agrees, never the true name.
+        if (typeof this.monsterNamingActive === 'function' && this.monsterNamingActive()) {
+          const entries = this.state.codex.monsters || {};
+          const mid = Object.keys(entries).find(k => {
+            const e = entries[k];
+            return e && e.namingKicked && !e.villageName;
+          });
+          if (mid) return { kind: 'naming', mid };
+        }
         if ((v.grief || 0) > 0) {
           const corpses = v.corpses || [];
           const recent = corpses[corpses.length - 1];
@@ -452,8 +464,11 @@
       if (!pick) return ['"It\'s just us, really. The others are... elsewhere."'];
       const c = this.convoGet(vid);
       c.t2other = pick.id;
+      // firstRef (dialogue rethink, Steve 2026-10-07): displayName is
+      // knowledge-gated — split(' ')[0] on "A person, maybe 30s" produced the
+      // broken bare "A". firstRef never collapses to "A" (game.js).
       let nm = pick.id;
-      try { nm = this.displayName(pick.id).split(' ')[0]; } catch (e) {}
+      try { nm = this.firstRef(pick.id); } catch (e) {}
       const vp = this.vpOf(vid);
       const temp = this.npcTemper(vid);
       if (pick.why === 'grievance') {
@@ -479,7 +494,7 @@
       const c = this.convoGet(vid);
       const oid = c.t2other;
       let nm = oid || 'them';
-      try { if (oid) nm = this.displayName(oid).split(' ')[0]; } catch (e) {}
+      try { if (oid) nm = this.firstRef(oid); } catch (e) {}
       const ovp = oid ? this.vpOf(oid) : {};
       const oocc = (ovp && ovp.formerOccupation) || 'survivor';
       const f1 = oid ? [
@@ -581,7 +596,19 @@
         '"I tell myself ' + (p.hope || 'we\'ll find each other') + '. Some days I even believe it."',
       ];
       if (grief) cands.push('"After this week — losing people — I don\'t know. I hope they\'re somewhere warm. That\'s all I\'ve got."');
-      if (this.t2trust(vid) >= 60) cands.push('"Their name was ' + ['Mara', 'Ellis', 'June', 'Theo', 'Wren', 'Silas'][Math.floor(Math.random() * 6)] + '. I haven\'t said that out loud in months."');
+      // NAME STABILITY (dialogue rethink, Steve 2026-10-07): the lost love's
+      // name is a hard fact — once spoken it goes on the record (saidFacts)
+      // and is reused, never re-rolled. "June" becoming "Silas" between
+      // conversations was a real coherence break.
+      if (this.t2trust(vid) >= 60) {
+        let lovename = null;
+        try { lovename = this.convoFactRecalled(vid, 'loved:name'); } catch (e) {}
+        if (!lovename) {
+          lovename = ['Mara', 'Ellis', 'June', 'Theo', 'Wren', 'Silas'][Math.floor(Math.random() * 6)];
+          try { this.convoSaidFact(vid, 'loved:name', lovename); } catch (e) {}
+        }
+        cands.push('"Their name was ' + lovename + '. I haven\'t said that out loud in months."');
+      }
       return cands;
     },
     t2fol_loved(vid) {
@@ -607,6 +634,24 @@
       if (!ev) return [];
       const vp = this.vpOf(vid);
       switch (ev.kind) {
+        case 'naming': {
+          // The debate, in their words — gated descriptor, real proposals,
+          // never the true name. Single quotes inside the quoted line keep
+          // the quote layers clean.
+          let desc = 'the beast';
+          try { desc = this.monsterNoun(ev.mid) || this.monsterDisplayName(ev.mid); } catch (e) {}
+          let props = [];
+          try { props = Object.entries((this.ensureMonsterEntry(ev.mid) || {}).proposals || {}); } catch (e) {}
+          const who = (p) => { try { return this.firstRef(p[0]); } catch (e) { return 'someone'; } };
+          const p0 = props[0], p1 = props[1];
+          return [
+            '"Have you heard what they\'re calling ' + desc + '? ' +
+              (p0 ? who(p0) + ' is pushing \'' + p0[1] + '\'. ' : '') +
+              'Everyone\'s got a name for it and nobody agrees."',
+            '"The whole fire was arguing about ' + desc + ' last night — what to even CALL it. ' +
+              (p1 ? '\'' + p1[1] + '\' got shouted down. ' : '') + 'What\'s your vote?"',
+          ];
+        }
         case 'mourning':
           return ev.name
             ? ['"Since ' + ev.name + ' died... I keep expecting to see ' + ev.name + ' at the fire. Stupid."',
@@ -641,6 +686,7 @@
       const ev = this.t2LatelyEvent(vid);
       const kind = ev ? ev.kind : 'none';
       const cope = {
+        naming: ['"I\'m staying out of the naming fight. For now. Someone always gets precious about their pick."'],
         mourning: ['"I {habitI}. It doesn\'t bring anyone back. It just keeps my hands from shaking."'],
         threat: ['"I sleep with my boots on now. That\'s where we are."'],
         betrayal: ['"I\'m watching. That\'s what I do now — I watch."'],
@@ -651,6 +697,7 @@
         none: ['"Ask me tomorrow. Everything changes by tomorrow."'],
       };
       const next = {
+        naming: ['"We\'ll land on something. We always do — usually the loudest person\'s idea."'],
         mourning: ['"We bury, we grieve, we keep going. There\'s no step four."'],
         threat: ['"We set a better watch. We always say that. This time we mean it."'],
         betrayal: ['"Either it gets talked out or it festers. I know which one I\'d bet on."'],
@@ -661,6 +708,7 @@
         none: ['"Same as always: we endure."'],
       };
       const part = {
+        naming: ['"My vote? I\'m keeping it to myself until the shouting stops."'],
         mourning: ['"My part? I remember them. Someone has to do it properly."'],
         threat: ['"I take the watch nobody wants. It\'s the least useless thing I can do."'],
         betrayal: ['"I keep my word. Someone around here has to."'],

@@ -705,6 +705,63 @@
       return cx.mantle;
     },
 
+    // lifeseedVoice / lifeseedMood: the hand behind a character, DERIVED
+    // from the lifeseed — register, pace, humor, address term. The ontology
+    // always promised these ("Game.lifeseedVoice / Game.lifeseedMood
+    // (lifeseed-owned voice profiles)"), but they were never defined, so
+    // convoSpeechDNA() fell back to plainspoken|measured|none|you for EVERY
+    // villager and the whole Speech DNA layer spoke with one voice
+    // (dialogue rethink, Steve 2026-10-07). Derivation is deterministic per
+    // villager and legible: temperament shapes the register, the mind
+    // (intelligence) sharpens or softens it, age sets the pace, temperament
+    // sets the humor, warmth picks the address term. Two villagers with the
+    // same temperament still differ when their minds, age, or warmth do.
+    lifeseedVoice(ch) {
+      try {
+        ch = ch || {};
+        const temp = String(((ch.personality || {}).temperament) || 'steady').toLowerCase();
+        const vid = ch.id || ch.vid || null;
+        // Register: temperament first, then the mind refines it.
+        const REG_BY_TEMP = {
+          bold: 'effusive', cautious: 'halting', warm: 'plainspoken',
+          prickly: 'laconic', steady: 'plainspoken', restless: 'wry',
+          dry: 'wry', gentle: 'formal', intense: 'laconic', withdrawn: 'halting',
+        };
+        let register = REG_BY_TEMP[temp] || 'plainspoken';
+        try {
+          const intel = ((vid && this.npcIntel && this.npcIntel(vid)) || {}).primary || 'steady';
+          if (intel === 'analytical') register = 'formal';
+          else if (intel === 'social' && (register === 'laconic' || register === 'halting')) register = 'plainspoken';
+          else if (intel === 'observant' && register === 'effusive') register = 'plainspoken';
+        } catch (e) {}
+        // Pace: age sets it; restlessness hurries it.
+        let pace = 'measured';
+        try {
+          const band = (vid && this.npcAgeBand && this.npcAgeBand(vid)) || 'adult';
+          if (band === 'young') pace = 'quick';
+          else if (band === 'elder') pace = 'slow';
+        } catch (e) {}
+        if (temp === 'restless') pace = 'quick';
+        // Humor: the dry joke dryly; the prickly joke at funerals.
+        const humor = temp === 'dry' ? 'dry' : (temp === 'prickly' ? 'gallows' : 'none');
+        // Address: the warm name you; everyone else just says you.
+        const address = (temp === 'warm' || temp === 'gentle') ? 'friend' : 'you';
+        return { register, pace, humor, address };
+      } catch (e) {
+        return { register: 'plainspoken', pace: 'measured', humor: 'none', address: 'you' };
+      }
+    },
+
+    // lifeseedMood: the mood behind the hand. Derived live (never stored) —
+    // the journal sounds like the person as they are now, not as generated.
+    lifeseedMood(ch) {
+      try {
+        const vid = ch && (ch.id || ch.vid);
+        if (vid && typeof this.npcMood === 'function') return this.npcMood(vid) || 'steady';
+      } catch (e) {}
+      return 'steady';
+    },
+
     // journalVoiceFor(char): the hand behind a character — lifeseed register
     // + current mood. journalVoice(): the current bearer's hand.
     journalVoiceFor(ch) {

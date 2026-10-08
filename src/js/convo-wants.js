@@ -74,7 +74,7 @@
       resolve(vid, how) {
         if (how === 'engaged') return null; // fully shared, no seed
         // They didn't get to tell you — they'll try again.
-        return { wantId: 'share_news', note: 'still bursting with news they never got to share' };
+        return { wantId: 'share_news', note: 'that news they were bursting to share' };
       },
     },
     ask_favor: {
@@ -108,9 +108,9 @@
       resolve(vid, how) {
         if (how === 'engaged') {
           // They owe you now — that's a seed.
-          return { wantId: 'repay', note: 'they owe you for the favor — it weighs on them' };
+          return { wantId: 'repay', note: 'the favor they still owe you for' };
         }
-        return { wantId: 'ask_favor', note: 'they still need help but stopped asking' };
+        return { wantId: 'ask_favor', note: 'the help they asked you for' };
       },
     },
     seek_comfort: {
@@ -141,7 +141,7 @@
       },
       resolve(vid, how) {
         if (how === 'engaged') return null;
-        return { wantId: 'seek_comfort', note: 'they\'re still not okay, still haven\'t said it' };
+        return { wantId: 'seek_comfort', note: 'whatever\'s been weighing on them' };
       },
     },
     warn_you: {
@@ -192,7 +192,7 @@
       resolve(vid, how) {
         if (how === 'engaged') {
           // Now they know something real — that deepens things.
-          return { wantId: 'closeness', note: 'they learned something real about you — it changed things' };
+          return { wantId: 'closeness', note: 'what they learned about you last time' };
         }
         return null;
       },
@@ -294,10 +294,13 @@
       }
       if (!ack) return rawBeat;
       // Voice the acknowledgment through their voice, then the beat.
+      // QUOTE HYGIENE (dialogue rethink, Steve 2026-10-07): the old code
+      // stripped the beat's quotes and never re-added them, leaving the
+      // beat's closing quote dropped. The beat keeps its own quote layer.
       try {
-        return this.voiceLine(vid, ack) + ' ' + rawBeat.replace(/^"/, '').replace(/"$/, '');
+        return String(this.voiceLine ? this.voiceLine(vid, ack) : ack).replace(/\s+$/, '') + ' ' + rawBeat;
       } catch (e) {
-        return ack + rawBeat;
+        return String(ack).replace(/\s+$/, '') + ' ' + rawBeat;
       }
     },
 
@@ -364,6 +367,20 @@
       const c = this.convoGet(vid);
       if (!c.want || !c.want.def) return;
       const want = c.want;
+      // PHANTOM SEEDS (dialogue rethink, Steve 2026-10-07): a want that never
+      // surfaced (stage 0) was never established — planting a seed for it
+      // makes the next conversation reference unfinished business the player
+      // never heard ("About they still need help but stopped asking — ...").
+      // Unfinished business must be established to be unfinished.
+      if ((want.stage || 0) < 1) {
+        want.stage = 3;
+        want.resolution = 'unestablished';
+        // Clear the consumed seed if this want came from one.
+        if (want.fromSeed) {
+          try { delete this.state.village.convoSeeds[vid]; } catch (e) {}
+        }
+        return;
+      }
       // If they never engaged (stage < 2), the want is unresolved.
       const resolution = want.stage >= 2 ? 'engaged' : (how === 'left' ? 'abandoned' : 'unresolved');
       want.stage = 3;
@@ -377,6 +394,72 @@
       if (want.fromSeed) {
         try { delete this.state.village.convoSeeds[vid]; } catch (e) {}
       }
+    },
+
+    // convoWant: the dialogue layer's read of the current want (id string).
+    // dialogueBeatKind references this; it was never defined, so the
+    // want-aware classification silently never fired (rethink 2026-10-07).
+    convoWant(vid) {
+      try { const c = this.convoGet(vid); return (c.want && c.want.id) || null; }
+      catch (e) { return null; }
+    },
+
+    // convoWantPostTurn: the shared post-turn work for the want system —
+    // surfacing unspoken wants, composing beats, advancing the want arc.
+    // Extracted from the convoTurn wrapper below so the dialogue layer
+    // (convo-dialogue.js), which returns early for dlg: choices and used to
+    // bypass this whole system, can run the same post-turn (rethink
+    // 2026-10-07). Idempotent: safe to call once per turn from either path.
+    convoWantPostTurn(vid, choiceId, result) {
+      const c = this.convoGet(vid);
+      // Turn counter for surfacing: c.exchanges never advances on the
+      // dialogue path (dlg: handlers return before the base turn), so the
+      // want system tracks its own post-turns (rethink 2026-10-07).
+      const turns = (c.wantTurns = (c.wantTurns || 0) + 1);
+      if (c.want && c.want.stage === 0 && turns >= 1) {
+        // Time to surface the want. Queue it as a held beat so it lands
+        // on the continuer — natural, not interruptive.
+        const opener = this.convoWantOpener(vid, c.want);
+        if (opener && opener.line) {
+          c.heldBeats = c.heldBeats || [];
+          // Don't duplicate if already queued.
+          const already = c.heldBeats.some(h => h.wantSurface);
+          if (!already) {
+            c.heldBeats.push({ text: opener.line, wantSurface: true });
+            c.want.stage = 1; // surfaced
+            // The want's thread becomes the conversation thread if the
+            // player engages — but we don't force it yet.
+          }
+        }
+      }
+      // BEAT COMPOSITION: wrap the returned line through the composer
+      // so it acknowledges what the player just said.
+      // We track the player's choice from the choiceId.
+      if (result && result.line && choiceId && choiceId !== 'goon' && choiceId !== 'leave') {
+        const playerSaid = this.convoPlayerSaid(vid, choiceId);
+        if (playerSaid) {
+          const composed = this.convoComposeBeat(vid, result.line, playerSaid);
+          if (composed && composed !== result.line) {
+            result.line = composed;
+            // Update the transcript's last them-entry too.
+            const t = c.transcript;
+            for (let i = t.length - 1; i >= 0; i--) {
+              if (t[i].who === 'them') { t[i].text = composed; break; }
+            }
+          }
+        }
+      }
+      // WANT ARC: dialogue choices engage or deflect the want. Engaging
+      // moves it toward resolution; deflecting closes it honestly.
+      // (convoAdvanceWant previously had zero callers — rethink 2026-10-07.)
+      if (c.want && typeof this.convoAdvanceWant === 'function') {
+        if (/^dlg:(help|comfort|empathize)$/.test(choiceId || '')) {
+          try { this.convoAdvanceWant(vid, 'engage'); } catch (e) {}
+        } else if ((choiceId || '') === 'dlg:cant') {
+          try { this.convoAdvanceWant(vid, 'deflect'); } catch (e) {}
+        }
+      }
+      return result;
     },
   };
 
@@ -409,7 +492,9 @@
         try {
           const opener = this.convoWantOpener(vid, want);
           if (opener && opener.line) {
-            const seedLine = `"About ${want.seedNote || 'last time'} — " ` +
+            // QUOTE HYGIENE (dialogue rethink, Steve 2026-10-07): the old
+            // composition left a stray quote (`— " There...`), mangling the line.
+            const seedLine = `"About ${want.seedNote || 'last time'} — ` +
               opener.line.replace(/^"/, '').replace(/"$/, '') + '"';
             c.transcript.push({ who: 'them', text: seedLine });
             this.sayLine(vid, seedLine);
@@ -440,39 +525,10 @@
     const result = _convoTurn.call(this, vid, choiceId);
     if (!result || result.ended) return result;
     try {
-      const c = this.convoGet(vid);
-      if (c.want && c.want.stage === 0 && (c.exchanges || 0) >= 1) {
-        // Time to surface the want. Queue it as a held beat so it lands
-        // on the continuer — natural, not interruptive.
-        const opener = this.convoWantOpener(vid, c.want);
-        if (opener && opener.line) {
-          c.heldBeats = c.heldBeats || [];
-          // Don't duplicate if already queued.
-          const already = c.heldBeats.some(h => h.wantSurface);
-          if (!already) {
-            c.heldBeats.push({ text: opener.line, wantSurface: true });
-            c.want.stage = 1; // surfaced
-            // The want's thread becomes the conversation thread if the
-            // player engages — but we don't force it yet.
-          }
-        }
-      }
-      // BEAT COMPOSITION: wrap the returned line through the composer
-      // so it acknowledges what the player just said.
-      // We track the player's choice from the choiceId.
-      if (result.line && choiceId && choiceId !== 'goon' && choiceId !== 'leave') {
-        const playerSaid = this.convoPlayerSaid(vid, choiceId);
-        if (playerSaid) {
-          const composed = this.convoComposeBeat(vid, result.line, playerSaid);
-          if (composed && composed !== result.line) {
-            result.line = composed;
-            // Update the transcript's last them-entry too.
-            const t = c.transcript;
-            for (let i = t.length - 1; i >= 0; i--) {
-              if (t[i].who === 'them') { t[i].text = composed; break; }
-            }
-          }
-        }
+      // Shared post-turn (see convoWantPostTurn): the dialogue layer calls
+      // the same method for dlg: choices, which used to bypass this wrapper.
+      if (typeof this.convoWantPostTurn === 'function') {
+        return this.convoWantPostTurn(vid, choiceId, result) || result;
       }
     } catch (e) {}
     return result;
