@@ -67,6 +67,7 @@
 //   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); benevolent help is deniable and subtle (code: alienPlayers.js)
 //   - (favor) fan favor -100..100; high favor improves care packages and contest lean; low favor makes the crowd bloodthirsty (code: alienPlayers.js)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
+//   - (lifeline_player_only) the benevolent lifeline fires only when the player is taken — the verdict honors deathSave solely for the player, so firing it in watch mode promised a miss it could never deliver (code: apContestInterference, Steve 2026-10-08)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
 //   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
@@ -980,8 +981,15 @@
         }
       }
 
-      // BENEVOLENT LIFELINE: a bonded ally may save you from death
-      if (!result.note) {
+      // BENEVOLENT LIFELINE: a bonded ally may save you from death.
+      // HONEST (Steve 2026-10-08): the note promises "the killing blow
+      // misses", and the verdict honors deathSave ONLY for the player
+      // (pid === 'player' in _contestVerdict). In watch mode the player is
+      // not in the arena, so the promise could never land — the feed lied,
+      // then a villager died on camera. The lifeline fires only when the
+      // player is taken.
+      var playerIn = ac && (((ac.participants || []).indexOf('player') >= 0) || ac.participant === 'player');
+      if (!result.note && playerIn) {
         for (var pid2 in ap.met) {
           var per2 = this.apPersona(pid2);
           if (!per2 || per2.disposition !== 'benevolent') continue;

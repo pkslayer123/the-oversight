@@ -75,6 +75,7 @@
 //   - gossip_aftermath: contest outcomes seed village gossip (contest_won/contest_survived/contest_died) via _cxGossip — news travels by mouth, distorted by retelling, not broadcast; villagers only (code: _cxGossip, _contestEnd, _contestDie, _contestResolveOthers, Steve 2026-10-08)
 //   - fan_favor_contests: televised wins move the fan club (+4 player, +2 villager); a player win can shake loose a fan care package (code: _contestEnd, Steve 2026-10-08)
 //   - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
+//   - win_tax_announced: the -5 hp winner's mark is said out loud, never silent — a hidden HP tax is a lie (code: _contestEnd, Steve 2026-10-08)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
 //   - scholar.day
@@ -2584,8 +2585,10 @@
             }
           } catch (e) { this.sysSay('📺 Prize: the System\'s favor (and a story).'); }
         }
-        // FEARED means winning costs: winners are marked
+        // FEARED means winning costs: winners are marked. Said out loud —
+        // a silent HP tax is a lie (break-it 2026-10-08).
         s.health = Math.max(1, (s.health || 0) - 5);
+        this.sysSay('📺 The lights take their cut. Winning marks you. (-5 health.)');
       }
     } else {
       if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'lost'); } catch (e) {} }
