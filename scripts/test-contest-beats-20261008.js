@@ -169,7 +169,11 @@ function actChoice(contestId) {
   const ac = Game.state.activeContest;
   ok(contestId + ' choice: choice branch taken', !!(ac && ac.phase === 'choice'));
   const declare = Game._cxB(contestId, 'Declare');
-  ok(contestId + ` choice: choice-phase fires Declare beat (${declare})`, audioSeen.includes(declare));
+  // Choice preface fires the small shared contestChoice beat, never the
+  // contest's Declare beat (double-sting on Participate / sting-on-Refuse
+  // was the fixed bug, 2026-10-08).
+  ok(contestId + ` choice: choice-phase fires shared contestChoice beat`, audioSeen.includes('contestChoice'));
+  ok(contestId + ` choice: choice-phase does NOT fire Declare beat (${declare})`, !audioSeen.includes(declare));
   // dedupe: the choice phase must not re-say the contest desc
   const cpText = String((ac.phases[0] || {}).text || '');
   ok(contestId + ' choice: no desc repeat in choice phase', !cpText.includes(String(base.desc).slice(0, 60)), trunc(cpText, 120));
@@ -191,7 +195,10 @@ function actRefuse(contestId) {
   ok(contestId + ' refuse: choice branch taken', !!(ac && ac.phase === 'choice'));
   const res = Game.contestChoose(1); // Refuse
   ok(contestId + ' refuse: refusal is a sequence (done)', !!(res && res.done));
-  ok(contestId + ' refuse: Declare beat fired', audioSeen.includes(Game._cxB(contestId, 'Declare')));
+  // Refuse must NOT play the contest's bespoke Declare sting — the contest
+  // never happened (fixed 2026-10-08; the choice screen fired contestChoice).
+  ok(contestId + ' refuse: Declare beat NOT fired', !audioSeen.includes(Game._cxB(contestId, 'Declare')));
+  ok(contestId + ' refuse: choice beat fired (not the sting)', audioSeen.includes('contestChoice'));
   ok(contestId + ' refuse: Resolve beat fired', audioSeen.includes(Game._cxB(contestId, 'Resolve')));
 }
 
