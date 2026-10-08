@@ -30,7 +30,7 @@
  * with OBJECTIVES and gives away-movement a target plus meander:
  *
  * 1. OBJECTIVES — each villager holds one: FORAGE, WATER, TRAPS, VISIT,
- *    HAVEN_CHORE, EXPLORE, REST, LEAVE (escape). Re-picked at dawn and when
+ *    HAVEN_CHORE, EXPLORE, REST, EAT, LEAVE (escape). Re-picked at dawn and when
  *    idle. Outdoor kinds carry a target node and a tightness (max nodes out,
  *    max parts). Indoor kinds keep people home with real lives.
  * 2. DEPARTURE DANGER CHECK — before leaving: recent monster activity (from
@@ -126,6 +126,16 @@
       }
       var pantry = 0;
       try { pantry = this.pantryKcalLive(v); } catch (e) {}
+      // EAT — hungry and the pantry has food: go eat. Indoor, at the fire.
+      // (meals-like-people 2026-10-08: hunger is a real need now, driven by
+      // real individual meals in villageEats — the EAT objective is the
+      // visible behavior: they go to the hall and eat, like people.)
+      if ((n.hunger || 0) > 55 && pantry > 500) {
+        o.kind = 'EAT'; o.purpose = 'eat'; o.state = 'indoor';
+        o.indoor = true; o.targetVid = null; o.companion = null;
+        o.partsLeft = 1 + Math.floor(R() * 2);
+        return o;
+      }
       var water = 99;
       try { water = ((v.water || {}).clean == null) ? 99 : v.water.clean; } catch (e) {}
       var cands = [];
@@ -611,6 +621,9 @@
         try { nm = this.displayName(rid); } catch (e) {}
         if (o.kind === 'REST') {
           if (playerAtHaven) this.say(`😴 ${nm} is sleeping by the fire.`);
+        } else if (o.kind === 'EAT') {
+          // visible hunger, answered: they went to the hall and ate
+          if (playerAtHaven && R() < 0.5) this.say(`🍲 ${nm} is eating by the fire — not talking, just eating.`);
         } else if (o.kind === 'HAVEN_CHORE') {
           var lines = {
             fire: `${nm} is tending the fire, coaxing it steady.`,

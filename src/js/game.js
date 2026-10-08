@@ -2772,7 +2772,14 @@
         const temp = this.npcTemper(vid);
         // The hungry carry less; the bold stash more. Roughly a day of food.
         const base = 800 + Math.random() * 500 - (need.hunger || 0) * 3 + (temp === 'bold' ? 150 : 0);
-        p = v.pack[vid] = { day: today, kcal: Math.max(200, Math.round(base)) };
+        const want = Math.max(200, Math.round(base));
+        // HONEST RATIONS (2026-10-08): the ration is real items drawn from
+        // the pantry at dawn — not phantom kcal. Risks ride along in
+        // p.risks for the eat-time roll (claimed once, see packMeal).
+        const risks = this.freshExposure();
+        let drawn = 0;
+        try { drawn = this.pantryDraw(v, want, { cook: false, exposure: risks }).taken; } catch (e) {}
+        p = v.pack[vid] = { day: today, kcal: Math.round(drawn), risks };
       }
       return p.kcal;
     },
@@ -17579,19 +17586,9 @@
       // village beats a wasted slab). Spoiled stacks are SKIPPED, never
       // eaten at full value — endDay's sweepSpoiled throws them out (its
       // voice, its job).
-      const cands = pantry.filter(item => item && (item.kcalEach || 0) > 0 &&
-        (item.units || 0) > 0 && !(this.isSpoiled && this.isSpoiled(item)));
-      cands.sort((a, b) => ((a.kcalEach || 0) - (b.kcalEach || 0)) ||
-        ((a.spoilDay ?? 99999) - (b.spoilDay ?? 99999)));
-      let taken = 0;
-      for (const item of cands) {
-        if (taken >= want) break;
-        const need = want - taken;
-        const units = Math.min(item.units, Math.ceil(need / item.kcalEach));
-        taken += (units || 0) * (item.kcalEach || 0);
-        item.units -= units;
-        if (item.units <= 0) { const ix = pantry.indexOf(item); if (ix >= 0) pantry.splice(ix, 1); }
-      }
+      // BEST-FIT draw, shared with the village's own meals (see pantryDraw):
+      // smallest pieces first, spoiled skipped, never a slab for a small need.
+      const taken = this.pantryDraw(v, want, {}).taken;
       scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
       // HONEST BURN (2026-10-08): the player's meal burns the pantry but the
       // player is not in villageEats' collective loop (parity) — record the
@@ -17616,203 +17613,409 @@
       }
     },
 
+    // pantryDraw(v, want, opts): best-fit draw of REAL items from the pantry.
+    // Smallest pieces first (spoilDay tiebreak) — a 2000-kcal need takes four
+    // 500s, never a 30000-kcal slab (Steve 2026-10-08). Spoiled stacks are
+    // SKIPPED, never eaten at full value. Returns {taken, items} where items
+    // is [{item, units, effectiveKcal, cooked}]. opts.cook: apply the village
+    // cooking abstraction (rawKcal perfect-outcome transform; cleaned meat
+    // valued at cleaned kcal — the cook's contribution is safety, not
+    // calories). opts.exposure: meal-exposure object to accumulate into.
+    pantryDraw(v, want, opts) {
+      opts = opts || {};
+      const out = { taken: 0, items: [] };
+      if (want <= 0) return out;
+      v.pantry = v.pantry || [];
+      const cands = v.pantry.filter(item => item && (item.kcalEach || 0) > 0 &&
+        (item.units || 0) > 0 && !(this.isSpoiled && this.isSpoiled(item)));
+      cands.sort((a, b) => ((a.kcalEach || 0) - (b.kcalEach || 0)) ||
+        ((a.spoilDay ?? 99999) - (b.spoilDay ?? 99999)));
+      let need = want;
+      let drewAny = false, stoppedForCrumbs = false;
+      for (const item of cands) {
+        if (need <= 0) break;
+        let effectiveKcal = item.kcalEach || 0;
+        let cooked = false;
+        if (opts.cook) {
+          if (item.rawKcal) {
+            // Village cooking, abstracted: the shared digestibility math at a
+            // perfect outcome — the village cook's contribution is safety +
+            // skill, not phantom calories.
+            const vR = this.cookTransform(item, { knows: true, outcome: { key: 'perfect', mult: 1.0 } });
+            if (vR) { effectiveKcal = vR.kcalEach; cooked = true; }
+          }
+          if (item.foodKind === 'meat' && item.foodState === 'cleaned' && item.hiddenKcal) {
+            // COOK PRESERVES: village cooking makes cleaned meat safe, not
+            // more caloric. hiddenKcal is the RAW gross — valuing it conjured
+            // 2.5x phantom calories. The honest cooked value is the cleaned
+            // per-portion value; the cook's contribution is safety.
+            effectiveKcal = item.kcalEach; cooked = true;
+          }
+        }
+        if (effectiveKcal <= 0) continue;
+        // ROUNDING (meals-like-people 2026-10-08): the player's draw ceils
+        // (proved behavior, keep). Villagers eat to their need and stop:
+        // floor, and no forced extra piece for crumbs — unless nothing has
+        // been drawn yet, in which case the indivisible piece gets eaten
+        // whole (no fractionating, Steve 2026-10-08).
+        let units;
+        if (opts.round === 'floor1') {
+          units = Math.floor(need / effectiveKcal);
+          if (units <= 0) {
+            if (!drewAny) units = 1;
+            else { stoppedForCrumbs = true; break; }
+          }
+          units = Math.min(item.units, units);
+        } else {
+          units = Math.min(item.units, Math.ceil(need / effectiveKcal));
+        }
+        if (units <= 0) continue;
+        out.taken += units * effectiveKcal;
+        out.items.push({ item, units, effectiveKcal, cooked });
+        if (opts.exposure) this.trackMealExposure(opts.exposure, item, cooked);
+        item.units -= units;
+        need -= units * effectiveKcal;
+        drewAny = true;
+        if (item.units <= 0) { const ix = v.pantry.indexOf(item); if (ix >= 0) v.pantry.splice(ix, 1); }
+      }
+      // shortOfFresh: genuine exhaustion only — need remains AND the
+      // fresh candidates can't cover it. A single-stack loop ends after one
+      // pass without reaching the crumb-break, so test remaining food
+      // directly: crumbs left on the table are not exhaustion.
+      const freshLeft = cands.reduce((t, it) => t + (it.kcalEach || 0) * Math.max(0, it.units || 0), 0);
+      out.shortOfFresh = need > 0 && !stoppedForCrumbs && freshLeft < need;
+      return out;
+    },
+
+    // trackMealExposure(exposure, item, cookedByVillage): what this meal
+    // exposed the eater to — raw diseaseRisk not village-cooked, unsafe
+    // safe===false, poisonRisk, monster-meat id, spoiled count. The eat-time
+    // rolls happen in villagerFoodPoisoning.
+    trackMealExposure(exposure, item, cookedByVillage) {
+      if (!exposure || !item) return;
+      if (item.diseaseRisk && !cookedByVillage && item.foodState !== 'cooked')
+        exposure.raw.push(item.diseaseRisk);
+      if (item.safe === false) exposure.unsafe += 1;
+      if (item.poisonRisk) exposure.poison.push(item.poisonRisk);
+      const mid = (item.plantId && item.plantId.startsWith('meat_')) ? item.plantId.slice(5) : null;
+      if (mid) {
+        const dz = ((this.data.cooking || {}).monsterDiseases || [])
+          .find(d => (d.monsters || []).includes(mid));
+        // HONESTY (2026-10-08): village-cooked counts as cooked — the old
+        // communal roll used raw chance even when the village cooked it.
+        if (dz) exposure.monster.push({ mid, cooked: item.foodState === 'cooked' || !!cookedByVillage, name: item.name });
+      }
+    },
+
+    // freshExposure(): a clean meal-exposure ledger.
+    freshExposure() { return { raw: [], unsafe: 0, poison: [], monster: [], spoiled: 0 }; },
+
+    // mealRhythm(vid): how this person eats — stable, from temperament.
+    // dawn-dusk: two squares a day. grazer: small and often. gorge: one big
+    // meal, sometimes fasts. Traceable to who they are, not dice.
+    mealRhythm(vid) {
+      const t = this.npcTemper(vid);
+      if (['bold', 'intense', 'prickly', 'mischievous', 'earnest'].includes(t)) return 'gorge';
+      if (['restless', 'fidgety', 'anxious'].includes(t)) return 'grazer';
+      return 'dawn-dusk';
+    },
+
+    // foodPrefs(vid): two cheap axes of taste — a liked kind, a disliked
+    // kind (foodKind 'meat' | 'plant'). Lazy, stable per person, from
+    // temperament. Neutrals get nulls: they'll eat anything, quietly.
+    foodPrefs(vid) {
+      const person = this.getPerson(vid);
+      if (!person) return { likes: null, dislikes: null };
+      if (!person._foodPrefs) {
+        const t = (person.personality || {}).temperament || 'steady';
+        let likes = null, dislikes = null;
+        if (['bold', 'intense', 'prickly', 'restless', 'mischievous'].includes(t)) { likes = 'meat'; dislikes = 'plant'; }
+        else if (['gentle', 'warm', 'anxious', 'earnest'].includes(t)) { likes = 'plant'; dislikes = 'meat'; }
+        person._foodPrefs = { likes, dislikes };
+      }
+      return person._foodPrefs;
+    },
+
+    // villageCookId(v): who cooks. The villager home today who knows most
+    // about food (longest taught list) — knowledge is the credential. The
+    // cook's name rides the meal: credit when it's good, blame when it's not.
+    villageCookId(v) {
+      let best = null, bestKnown = -1;
+      for (const id of (v.roster || [])) {
+        if (id === this.villagerId) continue;
+        if (v.sick && v.sick[id]) continue;
+        if (v.away && v.away[id]) continue;
+        const known = (v.taught && v.taught[id]) ? v.taught[id].length : 0;
+        if (known > bestKnown) { bestKnown = known; best = id; }
+      }
+      return best;
+    },
+
+    // stockSurplus(v, give): a villager's shared surplus into the pantry as
+    // real items. FRESH STACKS KEEP THEIR OWN CLOCK (BUG 2026-10-06): a haul
+    // only merges into a stack whose spoilDay matches today's fresh clock;
+    // otherwise it lands as a new stack with a fresh clock.
+    stockSurplus(v, give) {
+      if (give <= 0) return;
+      v.pantry = v.pantry || [];
+      const freshDay = v.day + 3;
+      const newUnits = Math.ceil(give / 200); // ~200 kcal per unit
+      const existing = v.pantry.find(p => p.name === 'Foraged food' && p.spoilDay === freshDay);
+      if (existing) existing.units += newUnits;
+      else v.pantry.push({ name: 'Foraged food', kcalEach: 200, units: newUnits, spoilDay: freshDay, safe: true, kg: 0.2 });
+    },
+
+    // drawSpoiled(v, want, exposure): desperation — spoiled stacks, eaten
+    // rather than starve. The rot always collects (exposure.spoiled), and
+    // it's announced here, never silent.
+    drawSpoiled(v, want, exposure) {
+      let got = 0, need = want;
+      v.pantry = v.pantry || [];
+      for (let i = 0; i < v.pantry.length && need > 0;) {
+        const item = v.pantry[i];
+        const ke = item.kcalEach || 0;
+        if (ke <= 0 || !(this.isSpoiled && this.isSpoiled(item))) { i++; continue; }
+        const u = Math.min(item.units || 1, Math.ceil(need / ke));
+        got += u * ke; need -= u * ke;
+        exposure.spoiled += u;
+        item.units -= u;
+        if (item.units <= 0) v.pantry.splice(i, 1); else i++;
+      }
+      if (got > 0) this.say('Nothing fresh left. The village eats what should have been thrown out — and will pay for it.');
+      return got;
+    },
+
+    // packMeal(vid, want, exposure): away villagers eat from their packs —
+    // real rations drawn from the pantry at dawn (see packKcal), risks and
+    // all. On the move, people eat what they carry.
+    packMeal(vid, want, exposure) {
+      const v = this.state.village;
+      const pool = this.packKcal(vid); // ensures today's ration is packed
+      const p = (v.pack || {})[vid];
+      const take = Math.min(pool, want);
+      if (take <= 0) return 0;
+      this.packSpend(vid, take);
+      // the ration's risks ride with it — claimed once, on the first meal
+      if (p && p.risks && !p.risksClaimed) {
+        p.risksClaimed = true;
+        for (const r of (p.risks.raw || [])) exposure.raw.push(r);
+        exposure.unsafe += p.risks.unsafe || 0;
+        for (const r of (p.risks.poison || [])) exposure.poison.push(r);
+        for (const r of (p.risks.monster || [])) exposure.monster.push(r);
+        exposure.spoiled += p.risks.spoiled || 0;
+      }
+      return take;
+    },
+
+    // villagerMealDay(vid, person, v, ctx): one villager's whole day of
+    // eating — the individual behind the old collective drain. Returns
+    // {ate, gave}. They eat what they catch first, then stores: pantry at
+    // home (best-fit real items, village-cooked), pack rations away.
+    // THE DAY'S FOOD IS DRAWN ONCE — one best-fit pass, one rounding — the
+    // same honest accounting the old communal pass had. The meals below are
+    // sittings from that food (company, rhythm), not separate draws: a
+    // separate ceil per sitting multiplied overdraw until the last eater
+    // found the fresh gone. Spoiled stores only in desperation. What they
+    // can't get, the body pays.
+    villagerMealDay(vid, person, v, ctx) {
+      const n = this.npcNeeds(vid);
+      // the day burns: hunger accumulates, eased below by what they eat
+      n.hunger = Math.min(100, (n.hunger || 0) + 25 + Math.floor(Math.random() * 15));
+      const health = (v.health && v.health[vid] !== undefined) ? v.health[vid] : 100;
+      const healthFactor = health / 100;
+      // KNOWLEDGE FEEDS: villagers who LEARN forage better — the learning
+      // curve IS the difficulty curve. 1.0 at zero knowledge, 1.8 cap.
+      const knownPlants = (v.taught && v.taught[vid]) ? v.taught[vid].length : 0;
+      const knowledgeFactor = Math.min(1.8, 1 + (knownPlants * 0.10));
+      // TRUST: they share food when they trust you. strangers hoard.
+      // trust 0-30: 20% shared. 30-60: 50%. 60-80: 80%. 80+: all.
+      const trust = (v.trust && v.trust[vid] !== undefined) ? v.trust[vid] : 10;
+      const trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
+      const produced = (person.providesPerDay || 0) * healthFactor * knowledgeFactor;
+      const need = (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
+      const away = !!(v.away && v.away[vid]);
+      // THEY FEED THEMSELVES FIRST: what they catch never sees the pantry
+      const ownEat = Math.min(produced, need);
+      const dayWant = need - ownEat;
+      // rhythm first: a fasting gorge draws nothing today
+      const rhythm = this.mealRhythm(vid);
+      let meals = rhythm === 'grazer' ? (Math.random() < 0.5 ? 4 : 3) : rhythm === 'gorge' ? 1 : 2;
+      const fasting = (rhythm === 'gorge' && n.hunger < 45 && Math.random() < 0.35); // fasts; hunger carries to tomorrow
+      if (fasting) meals = 0;
+      const parts = rhythm === 'grazer' ? ['dawn', 'midday', 'dusk', 'dusk']
+        : rhythm === 'gorge' ? ['dusk'] : ['dawn', 'dusk'];
+      const prefs = this.foodPrefs(vid);
+      // the day's food, drawn once
+      const exposure = this.freshExposure();
+      let pile = { taken: 0, items: [] };
+      let cookId = null;
+      if (!fasting && dayWant > 50) {
+        if (!away) {
+          cookId = ctx.cookId;
+          pile = this.pantryDraw(v, dayWant, { cook: true, exposure, round: 'floor1' });
+          if (pile.shortOfFresh) {
+            // DESPERATION: the fresh candidates ran out — the spoiled
+            // stores rather than starve. The rot collects, honestly.
+            pile.taken += this.drawSpoiled(v, dayWant - pile.taken, exposure);
+          }
+        } else {
+          pile.taken = this.packMeal(vid, dayWant, exposure);
+        }
+      }
+      const ate = ownEat + pile.taken;
+      // sittings: company happens here, organically, per part of day
+      for (let m = 0; m < meals; m++) {
+        this.logSitting(v, vid, parts[Math.min(m, parts.length - 1)]);
+      }
+      // the meal itself: consequences, tastes, and who cooked it
+      if (pile.taken > 0) this.seasonMeal(v, vid, person, { exposure, prefs, cookId, items: pile.items });
+      // a fed villager is content; hunger eases with what they actually ate
+      n.hunger = Math.max(0, n.hunger - Math.round((ate / need) * 70));
+      // surplus: shared by trust, into the pantry as real items
+      let gave = 0;
+      if (produced > need) {
+        gave = (produced - need) * trustFactor;
+        if (gave > 0) this.stockSurplus(v, gave);
+      }
+      // starvation is slow, and it has a face: the unfed fade
+      if (ate < need * 0.6) {
+        v.health[vid] = Math.max(0, health - 8);
+        if (Math.random() < 0.3 && this.playerAtHaven()) {
+          const first = String(person.name || 'Someone').split(' ')[0];
+          this.say(`${first} went to sleep hungry. Nobody says anything.`);
+        }
+      }
+      return { ate, gave };
+    },
+
+    // logSitting(v, vid, part): one sitting at the fire. Company isn't
+    // scheduled (Steve 2026-10-08: no big daily communal feast) — but when
+    // villagers land at the same fire at the same part of day, some linger.
+    // Away villagers eat alone, from the pack: no log entry.
+    logSitting(v, vid, part) {
+      v.mealLog = v.mealLog || [];
+      if (v.away && v.away[vid]) return;
+      const others = v.mealLog.filter(e => e.vid !== vid && e.part === part && e.place === 'haven');
+      if (others.length && Math.random() < 0.5) {
+        const o = others[Math.floor(Math.random() * others.length)];
+        const op = this.getPerson(o.vid);
+        const oname = op ? String(op.name || 'Someone').split(' ')[0] : 'someone';
+        let nm = 'Someone';
+        try { const p = this.getPerson(vid); if (p) nm = String(p.name).split(' ')[0]; } catch (e) {}
+        const n = this.npcNeeds(vid);
+        n.social = Math.min(100, (n.social || 0) + 3);
+        this.remember(vid, 'meal', 'ate with ' + oname);
+        try { this.remember(o.vid, 'meal', 'ate with ' + nm); } catch (e) {}
+        if (Math.random() < 0.3 && this.playerAtHaven())
+          this.say(`${nm} and ${oname} lingered over the fire together.`);
+      }
+      v.mealLog.push({ vid, part, place: 'haven' });
+    },
+
+    // seasonMeal(v, vid, person, m): everything that makes a meal a meal —
+    // consequences, tastes, and who cooked it. Once per day, over the
+    // day's drawn food. m: {exposure, prefs, cookId, items}.
+    seasonMeal(v, vid, person, m) {
+      const first = String(person.name || 'Someone').split(' ')[0];
+      const n = this.npcNeeds(vid);
+      // CONSEQUENCES: villagers suffer what they eat, like you do
+      let sickened = 0;
+      try { sickened = this.villagerFoodPoisoning(v, vid, m.exposure) || 0; } catch (e) {}
+      // TASTES: a couple of cheap axes, over the day's dominant food.
+      // Favorites lift; disliked food gets talked about. People are
+      // particular, even here.
+      const main = (m.items || []).slice().sort((a, b) =>
+        (b.units * b.effectiveKcal) - (a.units * a.effectiveKcal))[0];
+      const kind = main && main.item ? main.item.foodKind : null;
+      if (kind && m.prefs) {
+        if (kind === m.prefs.likes) {
+          n.social = Math.min(100, (n.social || 0) + 5);
+          this.remember(vid, 'meal', 'loved the ' + (main.item.name || 'meal'));
+          if (Math.random() < 0.25 && this.playerAtHaven())
+            this.say(`${first} closes their eyes over the plate. "Now THAT is food," ${first} says.`);
+        } else if (kind === m.prefs.dislikes) {
+          n.social = Math.max(0, (n.social || 0) - 5);
+          this.remember(vid, 'meal', 'complained about the ' + (main.item.name || 'meal'));
+          if (Math.random() < 0.25 && this.playerAtHaven())
+            this.say(`${first} pushes the food around the plate. "Not my favorite," ${first} mutters.`);
+        }
+      }
+      // THE COOK MATTERS: credit when it's good, blame when it isn't —
+      // through memory and said lines, never silent.
+      if (m.cookId && m.cookId !== vid) {
+        const cook = this.getPerson(m.cookId);
+        const cname = cook ? String(cook.name || 'Someone').split(' ')[0] : 'the cook';
+        if (sickened > 0) {
+          this.remember(m.cookId, 'blame', 'their cooking sickened ' + first);
+          if (this.playerAtHaven()) this.say(`${first} is sick — and everyone knows ${cname} cooked that meal.`);
+        } else if (kind && m.prefs && kind === m.prefs.likes && Math.random() < 0.3) {
+          this.remember(m.cookId, 'cooked', first + ' loved their cooking');
+          if (this.playerAtHaven()) this.say(`${first} tells ${cname} that was the best meal in weeks. ${cname} tries not to glow.`);
+        }
+      }
+    },
+
+    // villageEats: MEALS LIKE PEOPLE (Steve 2026-10-08 — reworked; the old
+    // collective drain is gone). No synchronized feast tick, no abstract
+    // kcal loop. Each villager eats as an individual through
+    // villagerMealDay: real items, personal rhythm, tastes, location, and
+    // real consequences. People don't all sit down together every day —
+    // company happens organically when rhythms overlap (see seasonMeal).
+    // The honest burn clock (lastEat/lastGive/burnHistory) is kept: the
+    // haven screen's "about N days" still runs on measured eating.
     villageEats() {
       const v = this.state.village;
-      let eat = 0, give = 0;
+      if (!v || !v.roster) return;
+      v.mealLog = []; // today's co-eating record — company is organic, not scheduled
+      const cookId = this.villageCookId(v);
+      let totalEat = 0, totalGive = 0;
       const providers = [];
+      let anyStarving = false;
       for (const id of (v.roster || [])) {
         // PARITY (2026-10-08): the player is never in the collective pot.
-        // Your pantry draw is your trust-scaled villageMeal; your contributions
-        // are your real donations. Counting you here too drew your share twice
-        // (personal meal + collective net) and credited ~1500 phantom kcal/day
-        // of production your real foraging never put in the pot (it goes to
-        // your pack). Villagers eat once; so do you. (The old code only
-        // skipped you when away; the at-haven double-dip was the bug.)
+        // Your pantry draw is your trust-scaled villageMeal; your
+        // contributions are your real donations. Villagers eat once; so do
+        // you. (The old code only skipped you when away; the at-haven
+        // double-dip was the bug.)
         if (id === this.villagerId) continue;
         const person = this.getPerson(id);
         if (!person) continue;
-        const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
-        const healthFactor = health / 100;
-        // KNOWLEDGE FEEDS: villagers who LEARN forage better. taught[] grows via
-        // villagerLearnsPlant (identifications, teaching, fireside sharing) — the
-        // learning curve IS the difficulty curve. 1.0 at zero knowledge, 1.8 cap.
-        const knownPlants = (v.taught && v.taught[id]) ? v.taught[id].length : 0;
-        const knowledgeFactor = Math.min(1.8, 1 + (knownPlants * 0.10));
-        // TRUST: they share food when they trust you. strangers hoard.
-        // trust 0-30: 20% shared. 30-60: 50%. 60-80: 80%. 80+: all.
-        const trust = (v.trust && v.trust[id] !== undefined) ? v.trust[id] : 10;
-        const trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
-        // THEY FEED THEMSELVES FIRST. Each villager forages, eats, shares surplus.
-        // The pantry is the buffer, not their main food source.
-        const produced = (person.providesPerDay || 0) * healthFactor * knowledgeFactor;
-        const needed = (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
-        if (produced >= needed) {
-          // self-sufficient. surplus shared by trust.
-          const surplus = (produced - needed) * trustFactor;
-          if (surplus > 0) { give += surplus; providers.push(person); }
-        } else {
-          // deficit. takes from pantry.
-          eat += (needed - produced);
-        }
+        const r = this.villagerMealDay(id, person, v, { cookId });
+        totalEat += r.ate; totalGive += r.gave;
+        if (r.gave > 0) providers.push(person);
+        if (r.ate < (person.kcalPerDay || 2000) * 0.6) anyStarving = true;
       }
-      const net = Math.max(0, eat - give);
       // HONEST BURN (2026-10-08): the player's trust-scaled meal (villageMeal)
       // burns the pantry but the player is not in this loop (parity) — count
-      // it so the pantry clock stays honest.
-      const honestNet = net + (v.lastPlayerMeal || 0);
-      v.lastEat = eat; v.lastGive = give; v.lastProviders = providers.map(p => p.name.split(' ')[0]);
-      // BURN HISTORY: the honest pantry clock. The haven screen's "about N days"
-      // runs on this measured net burn — not the 12x2000 worst case, which told
-      // the forager their pantry was always ~2 days from empty. Rolling 7 days.
+      // it so the pantry clock stays honest. Rolling 7 days.
+      const honestNet = Math.max(0, totalEat - totalGive) + (v.lastPlayerMeal || 0);
+      v.lastEat = totalEat; v.lastGive = totalGive;
+      v.lastProviders = providers.map(p => String(p.name || '').split(' ')[0]);
       v.burnHistory = (v.burnHistory || []).concat([honestNet]).slice(-7);
-      // Consume REAL pantry items (not phantom pantryKcal). Perishable first:
-      // the sort puts the soonest spoilDay at index 0, so iterate FORWARD.
-      // (BUG 2026-10-06: the old loop iterated from the end — durable-first —
-      // while the comment said oldest/spoiling first. Measured: 10x100 kcal
-      // fresh berries sat untouched 3 days while the village burned 178
-      // durable bean-units, then the berries were swept as spoiled.)
-      // Spoiled stacks are SKIPPED — never eaten at full value (that's the
-      // phantom calories the rot mechanic was built to kill). They stay in
-      // the pantry and endDay's sweepSpoiled throws them out right after.
-      v.pantry = v.pantry || [];
-      let need = net;
-      // FOOD POISONING (parity 2026-10-08): the village eats what the pantry
-      // holds — raw meat, unsafe food, poison, monster flesh — and rolls like
-      // you do. Exposure is tracked per item consumed; the rolls happen in
-      // villageFoodPoisoning after the meal.
-      const exposure = { raw: [], unsafe: 0, poison: [], monster: [], spoiled: 0 };
-      const trackExposure = (item, cookedByVillage) => {
-        if (!item) return;
-        if (item.diseaseRisk && !cookedByVillage && item.foodState !== 'cooked')
-          exposure.raw.push(item.diseaseRisk);
-        if (item.safe === false) exposure.unsafe += 1;
-        if (item.poisonRisk) exposure.poison.push(item.poisonRisk);
-        const mid = (item.plantId && item.plantId.startsWith('meat_')) ? item.plantId.slice(5) : null;
-        if (mid) {
-          const dz = ((this.data.cooking || {}).monsterDiseases || [])
-            .find(d => (d.monsters || []).includes(mid));
-          if (dz) exposure.monster.push({ mid, cooked: item.foodState === 'cooked', name: item.name });
-        }
-      };
-      v.pantry.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
-      for (let i = 0; i < v.pantry.length && need > 0;) {
-        const item = v.pantry[i];
-        const kcalEach = item.kcalEach || 0;
-        if (kcalEach <= 0 || (this.isSpoiled && this.isSpoiled(item))) { i++; continue; }
-        // villagers cook raw food if they know how (abstracted: they get cooked value if any villager knows)
-        let effectiveKcal = kcalEach;
-        let cookedByVillage = false;
-        if (item.rawKcal) {
-          // Village cooking, abstracted: the shared digestibility math at a
-          // perfect outcome — the village cook's contribution is safety + skill.
-          const vR = this.cookTransform(item, { knows: true, outcome: { key: 'perfect', mult: 1.0 } });
-          if (vR) { effectiveKcal = vR.kcalEach; cookedByVillage = true; }
-        }
-        // FOOD REALITY: raw cleaned meat in the pantry gets cooked value only if
-        // someone (a cook-specialist villager, or you) actually knows cooking.
-        // Otherwise the village eats it raw — at raw value. Specialists matter.
-        if (item.foodKind === 'meat' && item.foodState === 'cleaned' && item.hiddenKcal) {
-          // COOK PRESERVES (hunter loop 2026-10-08): village cooking makes
-          // cleaned meat safe, not more caloric. hiddenKcal is the RAW gross
-          // — valuing it here conjured 2.5× phantom calories into every meal
-          // containing village-cooked meat. The honest cooked value is the
-          // cleaned per-portion value; the cook's contribution is safety.
-          effectiveKcal = kcalEach;
-        }
-        const itemTotal = effectiveKcal * (item.units || 1);
-        if (itemTotal <= need) {
-          need -= itemTotal;
-          trackExposure(item, cookedByVillage);
-          v.pantry.splice(i, 1);
-        } else {
-          const unitsNeeded = Math.ceil(need / effectiveKcal);
-          trackExposure(item, cookedByVillage);
-          item.units -= unitsNeeded;
-          need = 0;
-          if (item.units <= 0) v.pantry.splice(i, 1); else i++;
-        }
-      }
-      // DESPERATION: nothing fresh left and mouths still hungry — the village
-      // eats the spoiled stores rather than starve. The rot collects, honestly.
-      if (need > 0) {
-        for (let i = 0; i < v.pantry.length && need > 0;) {
-          const item = v.pantry[i];
-          const ke = item.kcalEach || 0;
-          if (ke <= 0 || !(this.isSpoiled && this.isSpoiled(item))) { i++; continue; }
-          const itemTotal = ke * (item.units || 1);
-          if (itemTotal <= need) {
-            need -= itemTotal;
-            exposure.spoiled += (item.units || 1);
-            v.pantry.splice(i, 1);
-          } else {
-            const u = Math.ceil(need / ke);
-            exposure.spoiled += u;
-            item.units -= u;
-            need = 0;
-            if (item.units <= 0) v.pantry.splice(i, 1); else i++;
-          }
-        }
-        if (exposure.spoiled > 0)
-          this.say('Nothing fresh left. The village eats what should have been thrown out — and will pay for it.');
-      }
-      // the meal's consequences: food poisoning, monster-meat weirdness
-      try { this.villageFoodPoisoning(v, exposure); } catch (e) {}
-      // surplus goes INTO pantry (as foraged goods).
-      if (give > 0) {
-        v.pantry = v.pantry || [];
-        // add as a generic "foraged food" item (villagers bring variety).
-        // FRESH STACKS KEEP THEIR OWN CLOCK (BUG 2026-10-06): merging fresh
-        // surplus into an old 'Foraged food' stack left the fresh units on the
-        // OLD clock — villagers hauled food in and the village threw it out as
-        // spoiled the same night. So a haul only merges into a stack whose
-        // spoilDay matches today's fresh clock; otherwise it lands as a new
-        // stack with a fresh clock.
-        const freshDay = v.day + 3;
-        const newUnits = Math.ceil(give / 200); // ~200 kcal per unit
-        const existing = v.pantry.find(p => p.name === 'Foraged food' && p.spoilDay === freshDay);
-        if (existing) {
-          existing.units += newUnits;
-        } else {
-          v.pantry.push({ name: 'Foraged food', kcalEach: 200, units: newUnits, spoilDay: freshDay, safe: true, kg: 0.2 });
-        }
-      }
       // keep pantryKcal in sync (derived, not source of truth)
-      v.pantryKcal = v.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
-      const starving = need > 0; // village didn't get enough
-      // starvation is slow: -5 health/day when empty. people fade.
-      // health recovers +2/day when there's food.
+      v.pantryKcal = (v.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+      // FAMINE: the slow kind. -5 health/day when the pantry is bare; people
+      // fade. Health recovers +2/day when nobody's starving. (Per-person
+      // shortfall is handled in villagerMealDay: -8 and a hungry night.)
       v.health = v.health || {};
-      if (starving || v.pantry.length === 0) {
+      const famine = (v.pantry || []).length === 0;
+      if (famine) {
         for (const rid of (v.roster || [])) {
+          if (rid === this.villagerId) continue;
           const cur = v.health[rid] !== undefined ? v.health[rid] : 100;
           v.health[rid] = Math.max(0, cur - 5);
           if (v.health[rid] <= 0) {
-            const vp = this.getPerson(rid);
             v.roster = v.roster.filter(r => r !== rid);
             this.say(`💀 ${this.displayName(rid)} starved. Slowly. The village is ${v.roster.length} now.`);
             delete v.health[rid];
           }
         }
-      } else {
+      } else if (!anyStarving) {
         for (const rid of (v.roster || [])) {
           if (v.health[rid] !== undefined && v.health[rid] < 100 && v.health[rid] > 0) {
             v.health[rid] = Math.min(100, v.health[rid] + 2);
           }
         }
-      }
-      // BEHAVIORAL HUNGER mirrors the communal pot (miser loop 2026-10-05).
-      // The wants-layer hunger (npcNeeds.hunger) only ever rose (+11/part in
-      // tickNeeds) and was never touched by the communal meal — so every
-      // villager pinned at 100 hunger within two days no matter how full the
-      // pantry was, and begging never reflected real scarcity. A fed village
-      // is content; a starving one gets hungry eyes on your pack. This is
-      // the only daily reset — donations feed people through the real pantry
-      // now (see villageEats), and giveFood stays the personal-generosity verb.
-      for (const rid of (v.roster || [])) {
-        if (rid === this.villagerId) continue;
-        const n = this.npcNeeds(rid);
-        if (starving || v.pantry.length === 0) n.hunger = Math.min(100, (n.hunger || 0) + 15);
-        else n.hunger = Math.min(n.hunger || 0, 15);
       }
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
@@ -17837,71 +18040,51 @@
     // villagers go through the normal v.sick pipeline (stay home,
     // recover-or-die). One bad meal can't wipe the village: new cases are
     // capped per meal. Narrated, never silent.
-    villageFoodPoisoning(v, exposure) {
-      if (!v || !v.roster || !exposure) return;
-      const risky = exposure.raw.length > 0 || exposure.unsafe > 0 ||
-        exposure.poison.length > 0 || exposure.spoiled > 0 || exposure.monster.length > 0;
-      if (!risky) return;
-      v.sick = v.sick || {};
-      const nm = (id) => {
-        try { const p = this.getPerson(id); return p ? String(p.name).split(' ')[0] : 'Someone'; }
-        catch (e) { return 'Someone'; }
+    // VILLAGER FOOD POISONING — parity (2026-10-08). A villager's OWN meal
+    // holds what the pantry held: raw meat, unsafe food, poison, monster
+    // flesh. They roll the same dice you do when you eat it yourself — and
+    // definitely suffer the consequences. Sick villagers go through the
+    // normal v.sick pipeline (stay home, recover-or-die). One bad meal can't
+    // take the same person twice: already-sick villagers don't roll.
+    // Returns new cases (0/1). Narrated, never silent.
+    villagerFoodPoisoning(v, vid, exposure) {
+      if (!v || !exposure || v.sick[vid]) return 0;
+      let nm = 'Someone';
+      try { const p = this.getPerson(vid); if (p) nm = String(p.name).split(' ')[0]; } catch (e) {}
+      const sicken = (name, days, severity, line, memNote) => {
+        v.sick = v.sick || {};
+        v.sick[vid] = { name, daysLeft: days, severity };
+        this.say(line);
+        try { if (this.remember) this.remember(vid, 'sick', memNote); } catch (e) {}
+        return 1;
       };
-      let newCases = 0;
-      const CAP = 3;
-      // MONSTER WEIRDNESS first — the story. Up to 2 villagers roll the same
-      // chances you face (raw 35% / cooked 20%). Steve: villagers are people
-      // too — a villager who howls at night is a story.
-      if (exposure.monster.length) {
-        const cands = (v.roster || []).filter(id => id !== this.villagerId && !v.sick[id]);
-        for (let k = 0; k < Math.min(2, cands.length); k++) {
-          const vid = cands[Math.floor(Math.random() * cands.length)];
-          for (const m of exposure.monster) {
-            if (this.villagerMonsterWeirdness(vid,
-              { plantId: 'meat_' + m.mid, foodState: m.cooked ? 'cooked' : 'raw', name: m.name })) break;
-          }
-        }
+      // MONSTER WEIRDNESS first — the story. The same chances you face.
+      // Villagers are people too — a villager who howls at night is a story.
+      for (const m of (exposure.monster || [])) {
+        if (this.villagerMonsterWeirdness(vid,
+          { plantId: 'meat_' + m.mid, foodState: m.cooked ? 'cooked' : 'raw', name: m.name })) return 1;
       }
-      for (const vid of (v.roster || [])) {
-        if (vid === this.villagerId || v.sick[vid] || newCases >= CAP) continue;
-        // RAW: the same gamble you take eating it yourself.
-        for (const r of exposure.raw) {
-          if (Math.random() < (r.p || 0.2)) {
-            v.sick[vid] = { name: 'food poisoning (' + (r.note || 'raw') + ')', daysLeft: 3 + Math.floor(Math.random() * 4), severity: 1 };
-            this.say(`🤢 ${nm(vid)} ate ${r.note || 'raw food'} from the pot — fever by nightfall.`);
-            try { if (this.remember) this.remember(vid, 'sick', 'food poisoning from the communal pot'); } catch (e) {}
-            newCases++;
-            break;
-          }
-        }
-        if (v.sick[vid] || newCases >= CAP) continue;
-        // UNSAFE: the 20% you face on suspect food.
-        if (exposure.unsafe && Math.random() < 0.2) {
-          v.sick[vid] = { name: 'bad belly', daysLeft: 2 + Math.floor(Math.random() * 3), severity: 1 };
-          this.say(`🤢 ${nm(vid)}'s stomach knots — something in the pot was off.`);
-          try { if (this.remember) this.remember(vid, 'sick', 'bad belly from the communal pot'); } catch (e) {}
-          newCases++;
-          continue;
-        }
-        // POISON
-        for (const r of exposure.poison) {
-          if (Math.random() < (r.p || 0.2)) {
-            v.sick[vid] = { name: 'poisoned (' + (r.note || 'toxin') + ')', daysLeft: 3 + Math.floor(Math.random() * 3), severity: 2 };
-            this.say(`☠️ ${nm(vid)} was poisoned — ${r.note || 'something toxic in the meal'}.`);
-            try { if (this.remember) this.remember(vid, 'sick', 'poisoned by the communal pot'); } catch (e) {}
-            newCases++;
-            break;
-          }
-        }
-        if (v.sick[vid] || newCases >= CAP) continue;
-        // SPOILED (desperation): the rot always collects.
-        if (exposure.spoiled && Math.random() < 0.5) {
-          v.sick[vid] = { name: 'spoiled gut', daysLeft: 3 + Math.floor(Math.random() * 3), severity: 2 };
-          this.say(`🤢 ${nm(vid)} ate the spoiled stores. It was that or starve — now it's both.`);
-          try { if (this.remember) this.remember(vid, 'sick', 'ate spoiled food, starving'); } catch (e) {}
-          newCases++;
-        }
+      // RAW: the same gamble you take eating it yourself.
+      for (const r of (exposure.raw || [])) {
+        if (Math.random() < (r.p || 0.2))
+          return sicken('food poisoning (' + (r.note || 'raw') + ')', 3 + Math.floor(Math.random() * 4), 1,
+            `🤢 ${nm} ate ${r.note || 'raw food'} — fever by nightfall.`, 'food poisoning from their meal');
       }
+      // UNSAFE: the 20% you face on suspect food.
+      if (exposure.unsafe && Math.random() < 0.2)
+        return sicken('bad belly', 2 + Math.floor(Math.random() * 3), 1,
+          `🤢 ${nm}'s stomach knots — something in their meal was off.`, 'bad belly from their meal');
+      // POISON
+      for (const r of (exposure.poison || [])) {
+        if (Math.random() < (r.p || 0.2))
+          return sicken('poisoned (' + (r.note || 'toxin') + ')', 3 + Math.floor(Math.random() * 3), 2,
+            `☠️ ${nm} was poisoned — ${r.note || 'something toxic in the meal'}.`, 'poisoned by their meal');
+      }
+      // SPOILED (desperation): the rot always collects.
+      if (exposure.spoiled && Math.random() < 0.5)
+        return sicken('spoiled gut', 3 + Math.floor(Math.random() * 3), 2,
+          `🤢 ${nm} ate the spoiled stores. It was that or starve — now it's both.`, 'ate spoiled food, starving');
+      return 0;
     },
 
     // villagerMonsterWeirdness(vid, item, chanceOverride): the eat-time roll
@@ -17945,7 +18128,6 @@
       } catch (e) {}
       return true;
     },
-
     // VILLAGER SICKNESS — parity (2026-10-08).
     // The player faces food-borne disease, dirty water, wound infection,
     // ticks. Villagers were immune BY OMISSION: zero code paths could make
