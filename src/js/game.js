@@ -9949,7 +9949,13 @@
       const t = this.state.village.trust || (this.state.village.trust = {});
       if (!noTrust && dTrust !== 0) {
         // WORDS ONLY GO SO FAR applies to talk; real acts can move trust far.
-        t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + Math.round(dTrust)));
+        // Unset defaults to 10, but a real 0 must stay 0 — `|| 10` used to
+        // resurrect hated villagers (brawler loop 2026-10-08: terrorizing
+        // someone to 0 trust, then having them snap and fight you, bounced
+        // their trust back to 9 via the snap's observe() call). Same fix as
+        // bumpTrust.
+        const cur = t[vid] === undefined ? 10 : t[vid];
+        t[vid] = Math.max(0, Math.min(100, cur + Math.round(dTrust)));
       }
       // RIPPLES: their circle feels it too, at 40%.
       for (const g of (this.state.village.groups || [])) {
@@ -9962,7 +9968,8 @@
             if (rd) mr[k] = Math.max(-100, Math.min(100, (mr[k] || 0) + rd));
           }
           if (!noTrust && dTrust !== 0) {
-            t[mid] = Math.max(0, Math.min(100, (t[mid] || 10) + Math.round(dTrust * 0.4)));
+            const mcur = t[mid] === undefined ? 10 : t[mid];
+            t[mid] = Math.max(0, Math.min(100, mcur + Math.round(dTrust * 0.4)));
           }
         }
       }
@@ -19199,6 +19206,12 @@
       // HONEST TARGETING (hunter playtest 2026-10-07): striking a downed target
       // was a silent no-op (return false, nothing said). No silent actions.
       if (t && !t.alive && (t.kind === 'monster' || t.kind === 'hostile')) { this.say("It's already down."); return false; }
+      // FLED TARGETS (brawler loop 2026-10-08): a fled fighter is out of the
+      // fight — tbEndCheck ends it 'routed' ("no meat, no trophy"). Letting
+      // the strike land anyway dealt a free risk-free parting hit on a foe
+      // that no longer fights back, and a killing blow that contradicted
+      // the rout. No striking at backs.
+      if (t && t.fled && (t.kind === 'monster' || t.kind === 'hostile')) { this.say("They're gone — fled the fight. No striking at backs."); return false; }
       if (!t || (t.kind !== 'monster' && t.kind !== 'hostile')) return false;
       // THE MODERATOR (Steve 2026-10-06): muted verbs inside its suppression
       // field are violations — the attempt spends the turn (modVerbBlocked).

@@ -210,16 +210,21 @@
         this.say('(' + (def.action.name || actionId) + ' isn\'t wired up yet — the data defines it but the code doesn\'t. This is a bug, not a feature.)');
         return false;
       }
-      // XP + synergy: gainAbilityXP logs the use for synergy discovery
-      // internally (game.js:14421), so a separate noteAbilityUse here would
-      // double-count every activation as two synergy attempts.
-      // Steve 2026-10-08: one activation = one attempt + one XP.
-      try { this.gainAbilityXP(abilityId, 1); } catch (e) {}
       var result = impl(this, target);
       // Implementation must narrate via say(). If it returned false without
       // saying anything, we add a fallback (never silent).
       if (result === false) {
         this.say('Nothing happened. (' + (def.action.name || actionId) + ' fizzled.)');
+      } else {
+        // XP + synergy: only a REAL attempt counts. gainAbilityXP logs the
+        // use for synergy discovery internally (game.js:14421), so a separate
+        // noteAbilityUse here would double-count every activation as two
+        // synergy attempts (Steve 2026-10-08). And it must come AFTER
+        // dispatch: granting it before let zero-cost refused actions farm
+        // free levels — 35 taps of second_wind.refuse_death ("automatic",
+        // impl refuses) took L1->L3 in one turn with no cost, no turn spent.
+        // A fizzled action is not practice. (brawler loop 2026-10-08)
+        try { this.gainAbilityXP(abilityId, 1); } catch (e) {}
       }
       return result !== false;
     },
@@ -286,6 +291,15 @@
       var s = this.state.scholar;
       var cost = action.cost || {};
 
+      // AUTOMATIC (brawler loop 2026-10-08): actions that only trigger on
+      // their own (second_wind.refuse_death) are not tappable buttons.
+      // Offering them as available zero-cost buttons is a trap: every tap
+      // narrated a refusal while the old XP-before-dispatch order farmed
+      // free levels. The automatic trigger path (maybeCheatDeath) never
+      // goes through here, so this only affects the button.
+      if (action.automatic) {
+        return { ok: false, why: 'Automatic — triggers on its own.' };
+      }
       // Check kcal
       if (cost.kcal && (s.kcal || 0) < cost.kcal) {
         return { ok: false, why: 'Need ' + cost.kcal + ' kcal.' };

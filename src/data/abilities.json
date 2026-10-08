@@ -486,6 +486,7 @@
         "context": "combat",
         "name": "Refuse",
         "cost": {},
+        "automatic": true,
         "effect": "Once per day, when you would die: you don't. Drop to 1 HP, gain 500 kcal from sheer spite. Automatic trigger."
       }
     ],
