@@ -4631,20 +4631,40 @@
     syncRun() {
       // COMBAT PERSISTENCE (Steve 2026-10-06): save active fight so it survives
       // PWA updates. Fighters are serialized minimally; reconstructed on load.
+      // FIGHT FIDELITY (break-it persistence 2026-10-08): the old whitelist
+      // (hp/pos/acted...) silently dropped volatile combat state — stuns,
+      // beam cooldowns/phases, telegraphs, threat queues, terraformed ground —
+      // AND the fight id. A reload mid-fight cleared monster debuffs and minted
+      // a new fight id, which defeated read_stance's once-per-fight gate.
+      // Now: snapshot every own field except mdef (reattached by monsterId) and
+      // functions, through a JSON round-trip that falls back to the minimal
+      // whitelist if anything isn't serializable (a throw here must never nuke
+      // the whole save).
       let tbSave = null;
       try {
         const f = this.tbfight;
         if (f && !f.over) {
           tbSave = {
-            fighters: (f.fighters || []).map(ft => ({
-              key: ft.key, kind: ft.kind, name: ft.name,
-              hp: ft.hp, maxHp: ft.maxHp,
-              mx: ft.mx, my: ft.my,
-              monsterId: ft.monsterId || (ft.mdef && ft.mdef.id) || null,
-              alive: ft.alive !== false, fled: !!ft.fled,
-              moveLeft: ft.moveLeft || 0, acted: !!ft.acted,
-            })),
+            id: f.id || null,
+            fighters: (f.fighters || []).map(ft => {
+              try {
+                const snap = JSON.parse(JSON.stringify(ft, (k, v) =>
+                  (k === 'mdef' || typeof v === 'function') ? undefined : v));
+                snap.monsterId = ft.monsterId || (ft.mdef && ft.mdef.id) || null;
+                return snap;
+              } catch (e2) {
+                return {
+                  key: ft.key, kind: ft.kind, name: ft.name,
+                  hp: ft.hp, maxHp: ft.maxHp,
+                  mx: ft.mx, my: ft.my,
+                  monsterId: ft.monsterId || (ft.mdef && ft.mdef.id) || null,
+                  alive: ft.alive !== false, fled: !!ft.fled,
+                  moveLeft: ft.moveLeft || 0, acted: !!ft.acted,
+                };
+              }
+            }),
             turnIdx: f.turnIdx || 0, round: f.round || 1,
+            terraform: f.terraform || {},
           };
         }
       } catch (e) {}
@@ -4652,7 +4672,7 @@
         map: this.map, dayPart: this.dayPart, location: this.location,
         departed: this.departed, log: this.log.slice(-40),
         homeRegion: this.homeRegion, villagerId: this.villagerId,
-        encounterDone: this.encounterDone, wanderer: this.wanderer || null, telemetry: this.state.telemetry || [],
+        encounterDone: this.encounterDone, wanderer: this.wanderer || null,
         talkIdx: this.state.talkIdx || {}, fireIdx: this.state.fireIdx || 0,
         questGiven: !!this.state.questGiven,
         tbfight: tbSave,
@@ -4661,7 +4681,32 @@
     save() {
       if (this.over) return;
       this.syncRun();
+      // SAVE-INDEX HONESTY (break-it persistence 2026-10-08): the index entry
+      // must describe the CURRENT expedition — the live bearer (the mantle can
+      // pass mid-run) and where they actually are (startLocationName never
+      // moved after day 1). The save KEY stays pinned via state.runKey, so this
+      // sync changes no keys — it only fixes the listing.
+      try {
+        if (this.state) {
+          // pin the stable key from the LEGACY key first: a save written before
+          // this change (mid-run, mantle already passed) must keep its existing
+          // key, not fork into a second save under the new bearer.
+          if (!this.state.runKey) { try { this.state.runKey = S.state.saveKey(this.state); } catch (e2) {} }
+          if (this.villagerId) this.state.villagerId = this.villagerId;
+          this.state.saveLocationName = this.saveLocationLabel();
+        }
+      } catch (e) {}
       S.state.save(this.state);
+    },
+    // Where the save-list entry says you are. Haven by name; anywhere else is
+    // honestly "the wild" — we don't name tiles the codex hasn't earned.
+    saveLocationLabel() {
+      try {
+        const t = this.playerTile ? this.playerTile() : null;
+        if (t && t.type === 'haven') return (this.state.village && this.state.village.name) || 'Haven';
+        if (this.departed) return 'the wild';
+        return (this.state.village && this.state.village.name) || 'Haven';
+      } catch (e) { return null; }
     },
     hasSave() {
       try { return S.state.listSaves().length > 0; } catch (e) { return false; }
@@ -4689,17 +4734,15 @@
       // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
       this.recomputeActiveSynergies();
       // COMBAT RESTORE (Steve 2026-10-06): rebuild active fight from save.
+      // FIGHT FIDELITY (break-it persistence 2026-10-08): restore the full
+      // fighter snapshot (volatile combat state survives the reload) and the
+      // original fight id (once-per-fight gates like read_stance stay honest).
       try {
         const tbS = r.tbfight;
         if (tbS && tbS.fighters && tbS.fighters.length) {
           const fighters = tbS.fighters.map(fs => {
-            const ft = {
-              key: fs.key, kind: fs.kind, name: fs.name,
-              hp: fs.hp, maxHp: fs.maxHp,
-              mx: fs.mx, my: fs.my,
-              alive: fs.alive, fled: fs.fled,
-              moveLeft: fs.moveLeft, acted: fs.acted,
-            };
+            const ft = Object.assign({}, fs);
+            delete ft.mdef; // reattached below by monsterId
             // Reattach monster definition
             if (fs.monsterId) {
               ft.monsterId = fs.monsterId;
@@ -4720,7 +4763,7 @@
             turnIdx: tbS.turnIdx || 0,
             round: tbS.round || 1,
             over: false, result: null,
-            terraform: {},
+            terraform: tbS.terraform || {},
           };
         }
       } catch (e) {}
@@ -4736,6 +4779,9 @@
       } catch (e) {}
     },
     deleteSave(key) { S.state.wipe(key); },
+    // Debug-panel "wipe all saves" (break-it persistence 2026-10-08): S.state.wipeAll
+    // existed but had zero callers — dead code. Now reachable from the debug panel.
+    wipeAllSaves() { S.state.wipeAll(); },
 
     // OTHER VILLAGES: 2-3 on the map. They live their own game.
     // When you meet one mid-game, it has history — catch-up sim runs days since start.

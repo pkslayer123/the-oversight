@@ -333,6 +333,13 @@
     }).join('');
     el.querySelectorAll('[data-load]').forEach(b => b.onclick = () => {
       if (Game.load(b.dataset.load)) expeditionScreen();
+      else {
+        // LOAD HONESTY (break-it persistence 2026-10-08): a save that can't load
+        // (corrupt, version-mismatched, or deleted in another tab) must say so —
+        // the old code silently did nothing on tap.
+        toast('That expedition could not be loaded. It has been removed from the list.');
+        renderSaves(el);
+      }
     });
     el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
       if (b.dataset.armed) {
@@ -15227,7 +15234,9 @@
       <button id="dbg-grant">Grant ability</button></p>
       <p><button id="dbg-haven">Teleport: haven</button>
       <button id="dbg-kill">Kill foes</button>
-      <button id="dbg-endc">End combat</button></p>`;
+      <button id="dbg-endc">End combat</button></p>
+      <p style="border-top:1px solid #f90;padding-top:8px"><b>SAVES</b>
+      <button id="dbg-wipeall">Wipe ALL saves</button></p>`;
     document.body.appendChild(el);
     const q = (id) => el.querySelector(id);
     q('#dbg-x').onclick = () => el.remove();
@@ -15339,6 +15348,20 @@
     q('#dbg-endc').onclick = () => {
       if (Game.tbfight) { Game.tbEnd('fled'); Game.say('🐞 DEBUG: combat ended.'); }
       refresh();
+    };
+    // SAVES (break-it persistence 2026-10-08): S.state.wipeAll had zero callers
+    // (dead code). Two-tap confirm; wipes every save + the index + legacy key.
+    q('#dbg-wipeall').onclick = () => {
+      const b = q('#dbg-wipeall');
+      if (b.dataset.armed) {
+        try { Game.wipeAllSaves(); } catch (e) {}
+        b.dataset.armed = ''; b.textContent = 'Wipe ALL saves';
+        Game.say('🐞 DEBUG: all saves wiped.');
+        refresh();
+      } else {
+        b.dataset.armed = '1'; b.textContent = 'Tap again to wipe ALL';
+        setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Wipe ALL saves'; } }, 3000);
+      }
     };
   }
   function maybeDebugButton() {

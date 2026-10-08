@@ -68,7 +68,11 @@
 
   // Multiple saves: one per run. Key = villager + started timestamp.
   // Dead runs are wiped. Living runs persist until you start a new one (or delete).
+  // runKey: the key is STABLE for the whole run. The mantle can pass to a new
+  // villager mid-run (playerDeath) — without a stable key the save would fork
+  // into a second keyed save and orphan the first (break-it persistence 2026-10-08).
   function saveKey(state) {
+    if (state.runKey) return state.runKey;
     const vid = state.villagerId || state.scholar && state.scholar.villagerId || 'unknown';
     const started = state.startedAt || Date.now();
     return `scattering-save-v1-${vid}-${started}`;
@@ -76,19 +80,25 @@
   function save(state) {
     try {
       if (!state.startedAt) state.startedAt = Date.now();
+      // pin the key on first save so it can't drift mid-run (mantle transfer)
+      if (!state.runKey) state.runKey = saveKey(state);
       const key = saveKey(state);
       localStorage.setItem(key, JSON.stringify(state));
       // upsert the index every save: name, day, last-played stay fresh
       const idx = listSaves().filter(i => i.key !== key);
       const rc = (state.village && state.village.rosterChars) || {};
-      const char = rc[state.villagerId] || {};
+      // HONEST INDEX (break-it persistence 2026-10-08): the entry must name the
+      // CURRENT bearer, not whoever started the run — state.villagerId is synced
+      // to the live villager by Game.save(); the scholar record lags by design.
+      const liveVid = state.villagerId || (state.scholar && state.scholar.villagerId);
+      const char = rc[liveVid] || {};
       idx.push({
         key,
         runName: state.runName || null,
-        villagerId: state.villagerId,
+        villagerId: liveVid,
         villagerName: char.name || null,
         day: state.scholar && state.scholar.day,
-        location: state.startLocationName || null,
+        location: state.saveLocationName || state.startLocationName || null,
         startedAt: state.startedAt,
         lastPlayed: Date.now(),
       });
@@ -100,8 +110,29 @@
     try {
       const raw = localStorage.getItem('scattering-saves-index');
       const idx = raw ? JSON.parse(raw) : [];
-      // prune orphans: dead/finished runs are wiped, their index entries shouldn't linger
-      const live = idx.filter(i => { try { return !!localStorage.getItem(i.key); } catch (e) { return true; } });
+      // prune orphans: dead/finished runs are wiped, their index entries shouldn't linger.
+      // CORRUPT-SAVE HONESTY (break-it persistence 2026-10-08): an entry whose data
+      // is unparseable or version-mismatched can never load — offering Continue for
+      // it is a lie that silently does nothing. Prune it from the list. Corrupt
+      // (unparseable) data is deleted outright; version-mismatched data is KEPT
+      // (a future migrator could recover it) but hidden from the list.
+      const live = idx.filter(i => {
+        try {
+          const d = localStorage.getItem(i.key);
+          if (!d) return false;
+          const s = JSON.parse(d);
+          return !!(s && s.version === SAVE_VERSION);
+        } catch (e) { return false; }
+      });
+      const liveSet = new Set(live);
+      for (const i of idx) {
+        if (liveSet.has(i)) continue;
+        try {
+          const d = localStorage.getItem(i.key);
+          if (d) { try { JSON.parse(d); } catch (e) { localStorage.removeItem(i.key); } }
+          else localStorage.removeItem(i.key);
+        } catch (e) {}
+      }
       if (live.length !== idx.length) {
         try { localStorage.setItem('scattering-saves-index', JSON.stringify(live)); } catch (e) {}
       }

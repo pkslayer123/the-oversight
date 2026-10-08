@@ -655,6 +655,10 @@
         this.over = true; this.villageLost = true; this.won = false;
         this.say('No one is left to pick up the Codex. The village dies out — quietly, the way villages do. The season ends here.');
         this.recordLegend({ outcome: 'village-lost' });
+        // DEAD RUNS ARE WIPED (break-it persistence 2026-10-08): without this,
+        // the last autosave survived a village-lost death — Continue resurrected
+        // a dead run (load() resets over=false). Every other death path wipes.
+        try { this.wipe(); } catch (e) {}
         return;
       }
       const trust = (v.trust || {});
@@ -686,6 +690,12 @@
         this.say(`${newFirst} picks up the Codex. Their hands shake. Then they open it, and keep writing.`);
       }
       this.villagerId = newId;
+      // MANTLE IDENTITY SYNC (break-it persistence 2026-10-08): the scholar
+      // record kept the DEAD bearer's id — the save index then listed the dead
+      // villager as the expedition's scholar, saveKey drifted, and Light
+      // Fingers' caught-stealing trust hit landed on a corpse. The save KEY
+      // stays stable via state.runKey; this only fixes identity.
+      s.villagerId = newId;
       // the mantle passes: the PROGRESSION is the village's (slots, arc,
       // integration, ledger, Codex). The body is new.
       s.kcal = 1500;
