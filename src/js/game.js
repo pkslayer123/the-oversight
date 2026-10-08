@@ -7164,6 +7164,10 @@
     },
 
     // animals flee when you move. they're scared of you.
+    // DEAD (sibling-sweep 2026-10-08): superseded by encounters.js's
+    // G.animalTurn (loads later, full replacement — the encounter framework
+    // migration). This copy is unreachable. Kept, not deleted, until a
+    // --force-delete cleanup is approved.
     animalTurn() {
       const s = this.state.scholar;
       const a = s.animal;
@@ -8914,6 +8918,10 @@
       return left <= 0;
     },
 
+    // DEAD (sibling-sweep 2026-10-08): superseded by encounters.js's
+    // G.huntAnimal (loads later, full replacement — the encounter framework
+    // migration). This copy is unreachable. Kept, not deleted, until a
+    // --force-delete cleanup is approved.
     huntAnimal() {
       // DRAMA (Steve 2026-10-07): the hunt is a moment — red burst
       try { this.drama('abilityBurst', this.map.px, this.map.py, '#ff5252'); } catch (e) {}
@@ -14499,6 +14507,10 @@
 
     // activatableAbilities: abilities you CHOOSE to use (not passive).
     // Shown in the inventory popup. Explicit activation, real costs.
+    // DEAD (sibling-sweep 2026-10-08): replaced by abilityActions.js's
+    // data-driven activatableAbilities (loads later). This hardcoded copy
+    // is unreachable. Kept, not deleted, until a --force-delete cleanup
+    // is approved.
     activatableAbilities() {
       const s = this.state.scholar;
       const out = [];
@@ -16467,6 +16479,9 @@
     },
 
     drinkWild() {
+      // Legacy (sibling-sweep 2026-10-08): superseded by the bottle system —
+      // drinkWater() with risky/clean quality. Zero callers. Like
+      // drinkTreated above, kept for reference, not for use.
       const scholar = this.state.scholar;
       const t = this.playerTile();
       if (t.type !== 'creek' && t.type !== 'wetland') { this.say('No water here.'); return; }

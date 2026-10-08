@@ -11,9 +11,9 @@
 //   - unityState()            (felt unified/fractured state machine)
 //   - foodStance()            (sharer/even/hoarder from foodShared vs foodHoarded)
 //   - legendSurface()         (the story so far, as the world tells it)
-//   - shareFood(kcal, toName) (WIRING: game.js calls when food goes outward)
-//   - hoardFood(kcal)         (WIRING: game.js calls when food is stashed privately)
-//   - hearGossipAboutSelf(source) (WIRING: conversation.js calls on NPC gossip re: player)
+//   - shareFood(kcal, toName) (UNWIRED 2026-10-08: no callers — foodStance never updates)
+//   - hoardFood(kcal)         (UNWIRED 2026-10-08: no callers — private stashing never tracked)
+//   - hearGossipAboutSelf(source) (UNWIRED 2026-10-08: no callers)
 //   - exposeFallout(caseId, voterId) (named consequences when a truth goes public)
 //   - flushLedgerBeats()      (fires queued beats whose knowledge gates now pass)
 //   - hearsAboutSelf()        (knowledge gate: has the player heard their own legend?)
@@ -411,10 +411,9 @@
       return false;
     },
     hearGossipAboutSelf(source) {
-      // WIRING (conversation.js owner, 2026-10-07): call when an NPC gossips
-      // about the player — a name, a quote, a rumor overheard at the fire.
-      // The first call is the moment the player learns they have a legend;
-      // later calls are just the world continuing to talk.
+      // UNWIRED (sibling-sweep 2026-10-08): nothing calls this — the moment
+      // the player learns they have a legend never fires. hearsAboutSelf()
+      // gate below stays closed.
       try {
         const pg = this.progState();
         if (!pg.selfTalkedAbout) {
@@ -426,9 +425,9 @@
     },
     legendSurface() {
       // The story so far, AS THE WORLD TELLS IT — only beats whose
-      // knowledge gates already passed. WIRING (journal.js / codex owner,
-      // 2026-10-07): render this on the Codex legend page. Never show raw
-      // ledger numbers; the numbers are not the story.
+      // knowledge gates already passed. UNWIRED (sibling-sweep 2026-10-08):
+      // nothing renders this yet — no Codex legend page calls it.
+      // Never show raw ledger numbers; the numbers are not the story.
       try { return (this.progState().legendBeats || []).slice(); }
       catch (e) { return []; }
     },
@@ -496,10 +495,9 @@
       } catch (e) {}
     },
     shareFood(kcal, toName) {
-      // WIRING (game.js owner, 2026-10-07): call when the player gives food
-      // OUTWARD — to other villages, travelers, the hungry outside Haven.
-      // Roughly +1 per 1000 kcal, min 1. Teaching (inward sharing) already
-      // writes foodShared via the convoTurn wrap; this is the outward half.
+      // UNWIRED (sibling-sweep 2026-10-08): nothing calls this — the outward
+      // half of food sharing was never connected. The inward half works:
+      // teaching writes foodShared via ledgerAdd (progression.js).
       try {
         const n = Math.max(1, Math.round((kcal || 500) / 1000));
         this.ledgerAdd('foodShared', n);
@@ -508,9 +506,9 @@
       return null;
     },
     hoardFood(kcal) {
-      // WIRING (game.js owner, 2026-10-07): call when the player stashes
-      // food privately while the village is hungry. Deliberately quiet —
-      // no broadcast, no moment. The stance transition is the consequence.
+      // UNWIRED (sibling-sweep 2026-10-08): nothing calls this — private
+      // stashing is never tracked, so foodStance never sees the hoarder half.
+      // Deliberately quiet by design — no broadcast, no moment — IF wired.
       try {
         const n = Math.max(1, Math.round((kcal || 500) / 1000));
         this.ledgerAdd('foodHoarded', n);
@@ -839,6 +837,10 @@
         return `⏳ ${w.name}: ${n === 0 ? 'TODAY' : n + 'd'}`;
       } catch (e) { return ''; }
     },
+    // DEAD (sibling-sweep 2026-10-08): superseded by contests.js
+    // (fireContest/contestInterruption/resolveContest). Zero callers —
+    // the live contest system never routes through here. Kept, not
+    // deleted, until a --force-delete cleanup is approved.
     declineChallenge() {
       const s = this.state.scholar, w = s.challengeWarning;
       if (!w) return null;
@@ -855,6 +857,9 @@
       try { this.save(); } catch (e) {}
       return null;
     },
+    // DEAD (sibling-sweep 2026-10-08): superseded by contests.js
+    // contestInterruption. Zero callers — the mandatory teleport lives
+    // there now. Kept, not deleted, until a --force-delete cleanup is approved.
     abduct(contestantIds, challengeId) {
       // MANDATORY teleport. Interrupts ANYTHING — conversations end
       // mid-sentence, fights stop mattering. The show doesn't care.
@@ -881,6 +886,9 @@
       return s.abducted;
     },
     // ---------- THE INVITATION LIST ----------
+    // DEAD (sibling-sweep 2026-10-08): the invitation-list flow was never
+    // wired — zero callers. Kept, not deleted, until a --force-delete
+    // cleanup is approved.
     bringCompanion(vid) {
       // the chosen can bring friends. Who you bring into a deadly televised
       // game — and who you leave — is its own drama. Trust, guilt, politics.
