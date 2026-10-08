@@ -259,7 +259,11 @@
       comp[plant.id] = e;
       lump.units += units;
       lump.spoilDay = Math.min(lump.spoilDay, day + (plant.spoilageDays || 2));
-      lump.kg = Math.max(0.1, Math.round(lump.units * 0.1 * 10) / 10);
+      // LUMP WEIGHT FIX (forager loop 2026-10-06, re-fixed 2026-10-07): kg is
+      // PER-UNIT everywhere (packWeight sums units*kg). Storing the total
+      // (units*0.1) here makes the lump weigh 0.1*N^2 kg — regressed via a
+      // stale-tree revert; restored to per-unit 0.1.
+      lump.kg = 0.1;
       return lump;
     },
 
@@ -302,7 +306,8 @@
         if (cp && comp[cpid]) minSpoil = Math.min(minSpoil, comp[cpid].day + (cp.spoilageDays || 2));
       }
       lump.spoilDay = isFinite(minSpoil) ? minSpoil : this.state.scholar.day;
-      lump.kg = Math.max(0.1, Math.round(lump.units * 0.1 * 10) / 10);
+      // (forager loop 2026-10-06, re-fixed 2026-10-07): kg is per-unit — see addUnknownToLump.
+      lump.kg = 0.1;
       cont.push(item);
       if (lump.units <= 0) {
         const ix = cont.indexOf(lump);
@@ -1207,11 +1212,6 @@
       let trackLvl = 0;
       try { trackLvl = this.abilityLevel ? this.abilityLevel('tracker') : 0; } catch (e) {}
       fleeP -= trackLvl * 0.12; // stalking skill matters
-      // STALK (hunter wiring 2026-10-07): stealth.move_silent — the stalk
-      // passive. Quiet movement keeps prey calmer at the strike moment;
-      // wired through the same flee roll the tracker level already feeds.
-      // Declared in data, previously never consumed.
-      try { fleeP -= this.modTarget('stealth.move_silent', 0, {}); } catch (e) {}
       const villager = (this.data.villagers || []).find(v => v.id === this.villagerId);
       if (villager && String(villager.formerOccupation || '').toLowerCase().includes('hunter')) fleeP -= 0.10;
       if (this.isNight && this.isNight()) fleeP -= 0.08; // dark hides you
@@ -1469,7 +1469,8 @@
             }
             target.units += it.units;
             target.spoilDay = Math.min(target.spoilDay, it.spoilDay);
-            target.kg = Math.max(0.1, Math.round(target.units * 0.1 * 10) / 10);
+            // (forager loop 2026-10-06, re-fixed 2026-10-07): kg is per-unit — see addUnknownToLump.
+            target.kg = 0.1;
           } else {
             stash.push(it);
           }

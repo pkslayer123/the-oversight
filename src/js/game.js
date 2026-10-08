@@ -4087,6 +4087,18 @@
       if (reason) this.tele('integrate', { amount, reason, total: Math.round(s.integration) });
     },
 
+    // questPlantRef: knowledge-gated plant reference for quest text. Known:
+    // "3 Dandelion". Unknown: "3× a plant with jagged leaves and a yellow
+    // flower" — the villager describes, never names. Same convention as
+    // villager trade dialogue (conversation.js: plantKnown ? name : description).
+    // Completion still takes the identified plant; the blind wording is a
+    // nudge to learn, not a free name.
+    questPlantRef(pid, qty) {
+      const p = (this.data.plants || []).find(x => x.id === pid) || {};
+      if (this.plantKnown(pid)) return `${qty} ${p.name || pid}`;
+      return `${qty}× ${p.description || 'a plant'}`;
+    },
+
     // village quests: the people ask. light, passive, human.
     // (System quests come at integration 40+ — the overlay takes over.)
     maybeOfferQuest() {
@@ -4095,11 +4107,18 @@
       if (Math.random() > 0.25) return;
       const mains = this.data.villagers.filter(v => v.id !== this.villagerId);
       const giver = mains[Math.floor(Math.random() * mains.length)];
+      // KNOWLEDGE-GATED QUESTS (forager loop 2026-10-07): bring-quests are
+      // only offered for plants the player has learned — completion takes
+      // IDENTIFIED items (checkQuest matches plantId), so an unknown-plant
+      // quest would be unactionable AND leak the true name in the field.
+      // The visit quest is always available; the pool grows as you learn.
       const quests = [
-        { type: 'bring', plant: 'dandelion', qty: 3, reward: 'pantry', text: `${this.displayName(giver.id)} needs ${3} dandelion. "For tea. For morale. For reasons."` },
         { type: 'visit', tileType: 'creek', reward: 'knowledge', text: `${this.displayName(giver.id)} wants to know what's by the creek. "Just look. Come back and tell me."` },
-        { type: 'bring', plant: 'blackberry', qty: 2, reward: 'item', text: `${this.displayName(giver.id)} is craving blackberries. "I'll trade you something good."` },
       ];
+      if (this.plantKnown('dandelion')) quests.push(
+        { type: 'bring', plant: 'dandelion', qty: 3, reward: 'pantry', text: `${this.displayName(giver.id)} needs ${this.questPlantRef('dandelion', 3)}. "For tea. For morale. For reasons."` });
+      if (this.plantKnown('blackberry')) quests.push(
+        { type: 'bring', plant: 'blackberry', qty: 2, reward: 'item', text: `${this.displayName(giver.id)} is craving ${this.questPlantRef('blackberry', 2)}. "I'll trade you something good."` });
       const q = quests[Math.floor(Math.random() * quests.length)];
       q.giver = giver.id; q.giverName = giver.name.split(' ')[0];
       s.activeQuest = q;
@@ -4184,7 +4203,7 @@
         this.state.scholar.activeQuest = {
           type: 'bring', plant: 'dandelion', qty: 3, reward: 'pantry',
           giver: giverId, giverName: first,
-          text: `${first} needs 3 dandelion. "For tea. For morale. For reasons. You owe me."`,
+          text: `${first} needs ${this.questPlantRef('dandelion', 3)}. "For tea. For morale. For reasons. You owe me."`,
         };
       }
       this.state.questGiven = true;
@@ -15697,7 +15716,8 @@
           this.state.scholar.activeQuest = null;
           if (q.reward === 'pantry') {
             this.stockPantry(500, 'Foraged food');
-            this.say(`✅ ${this.displayName(q.giver)} takes the ${q.plant}. "+500 kcal to the pantry. You're good people."`);
+            const qp = (this.data.plants || []).find(x => x.id === q.plant) || {};
+            this.say(`✅ ${this.displayName(q.giver)} takes the ${qp.name || q.plant}. "+500 kcal to the pantry. You're good people."`);
           } else if (q.reward === 'knowledge') {
             this.integrate(5, 'quest');
             this.say(`✅ ${this.displayName(q.giver)} listens carefully. You understand the land a little better. (+integration)`);
