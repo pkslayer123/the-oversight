@@ -14,6 +14,17 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
+// Seeded RNG BEFORE module eval — several modules capture Math.random at load.
+// Fixed default seed; override with SEED env for extra runs.
+(function () {
+  var s = (parseInt(process.env.SEED || '20261008', 10) >>> 0) || 1;
+  Math.random = function () {
+    s |= 0; s = (s + 0x6D2B79F5) | 0;
+    var t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+})();
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
  'src/js/game.js', 'src/js/encounters.js', 'src/js/conversation.js', 'src/js/journal.js',
@@ -122,31 +133,63 @@ function rank(p) { return { homebody: 0, forager: 1, wanderer: 2, explorer: 3 }[
     ok('expedition death is possible (sim has real stakes)', true);
   }
 
-  // 4. monster encounter outcomes: evade / fight / hurt / death all reachable
+  // 4. monster encounters are REAL FIGHTS (Steve 2026-10-08): evade /
+  //    stand-down / hurt / death all reachable through expeditionMonster,
+  //    driven by real inputs — never a table. Weak villagers get hurt or
+  //    die out there; kills take strength (proven directed, below).
   freshGame();
   ids = npcIds();
   var cats = {};
-  var deaths = 0, vi = 0;
+  var vi = 0;
   outer: for (var t = 0; t < 600; t++) {
     vid = ids[vi % ids.length];
     if (Game.vpOf(vid).dead) { vi++; continue; }
+    Game.state.village.health = Game.state.village.health || {};
+    Game.state.village.health[vid] = 100;
     var sst = Game.agencyState();
     sst.exped[vid] = { encounters: [], legs: 0, duration: 999, dist: 5, finds: [] };
     var before = (Game.state.village.roster || []).length;
     Game.expeditionMonster(vid, 5, false);
-    var enc = (Game.agencyState().exped[vid] && Game.agencyState().exped[vid].encounters[0]) || '';
+    var ex = Game.agencyState().exped[vid];
+    var enc = (ex && ex.encounters[0]) || '';
     if (enc.indexOf('evaded') === 0) cats.evaded = true;
-    if (enc.indexOf('killed') === 0) cats.killed = true;
     if (enc.indexOf('hurt') === 0) cats.hurt = true;
     if (enc.indexOf('stood down') === 0) cats.stood = true;
-    if ((Game.state.village.roster || []).length < before) { deaths++; cats.died = true; vi++; }
-    if (cats.evaded && cats.killed && cats.hurt && cats.died) break outer;
-    delete Game.agencyState().exped[vid];
+    if ((Game.state.village.roster || []).length < before) { cats.died = true; vi++; }
+    else { try { delete Game.agencyState().exped[vid]; } catch (e) {} }
+    if (cats.evaded && cats.stood && cats.hurt && cats.died) break outer;
   }
   ok('monster: evaded reachable', !!cats.evaded);
-  ok('monster: kill or stand-down reachable', !!(cats.killed || cats.stood));
+  ok('monster: stand-down reachable', !!cats.stood);
   ok('monster: hurt reachable', !!cats.hurt);
   ok('monster: death reachable (far, unlucky)', !!cats.died);
+
+  // directed: a strong villager CAN kill through the full expedition path.
+  // Stack the pool with one weak solo monster; the point is the routing
+  // (expeditionMonster -> fieldFight -> 'killed' encounter), not the odds.
+  // NOTE: health lives at state.village.health[vid] (what fieldFight and
+  // hurtVillager read/write) — vpOf returns the data record, not state.
+  freshGame();
+  ids = npcIds();
+  Game.state.village.health = Game.state.village.health || {};
+  var strong = ids[0];
+  try { Game.agencyOf(strong).xp[strong].bravery = 80; } catch (e) {}
+  var weakPool = (Game.data.monsters || []).filter(function (m) { return m.id === 'lockpick_raccoon'; });
+  var origPool = Game.monsterWavePool;
+  Game.monsterWavePool = function () { return weakPool; };
+  var kills = 0;
+  for (var k = 0; k < 200; k++) {
+    if (Game.vpOf(strong).dead) break;
+    Game.state.village.health[strong] = 100;
+    var s2 = Game.agencyState();
+    s2.exped[strong] = { encounters: [], legs: 0, duration: 999, dist: 1, finds: [] };
+    Game.expeditionMonster(strong, 1, false);
+    var ex2 = Game.agencyState().exped[strong];
+    if (ex2 && ex2.encounters[0] && ex2.encounters[0].indexOf('killed') === 0) kills++;
+    try { delete Game.agencyState().exped[strong]; } catch (e) {}
+  }
+  Game.monsterWavePool = origPool;
+  ok('monster: kill reachable (strong vs weak, full path)', kills > 0);
 
   // 5. progression: tiers rise, integration feeds the visible ladder
   freshGame();
@@ -246,6 +289,43 @@ function rank(p) { return { homebody: 0, forager: 1, wanderer: 2, explorer: 3 }[
   Game.state.village.heat = {};
   for (var h = 0; h < 60 && !(Game.state.village.heat[lead] > 0); h++) Game.agencyLeadershipTick();
   ok('rising star gains contender heat', (Game.state.village.heat[lead] || 0) > 0);
+
+  // 13. DEAD IS DEAD (2026-10-08): a villager killed out there is dead on
+  // the record — vpOf(vid).dead — not a roster ghost. Game code (party
+  // skips, System fragments, record filters) reads this and must not lie.
+  freshGame();
+  ids = npcIds();
+  Game.state.village.health = Game.state.village.health || {};
+  var doomed = ids[0];
+  Game.state.village.health[doomed] = 1; // one stiff breeze
+  var packPool = (Game.data.monsters || []).filter(function (m) { return m.id === 'belltoad'; }); // pack 4, dmg 10-16
+  var op13 = Game.monsterWavePool;
+  Game.monsterWavePool = function () { return packPool; };
+  var died = false;
+  for (var dk = 0; dk < 10 && !died; dk++) {
+    if ((Game.vpOf(doomed) || {}).dead) { died = true; break; }
+    Game.state.village.health[doomed] = 1;
+    var s13 = Game.agencyState();
+    s13.exped[doomed] = { encounters: [], legs: 0, duration: 999, dist: 5, finds: [] };
+    Game.expeditionMonster(doomed, 5, false);
+    try { delete Game.agencyState().exped[doomed]; } catch (e) {}
+    died = !!((Game.vpOf(doomed) || {}).dead);
+  }
+  Game.monsterWavePool = op13;
+  ok('lethal fight removes from roster', !(Game.state.village.roster || []).includes(doomed));
+  ok('lethal fight marks the record dead', died);
+
+  // 14. lethal hurt is a real death, not a silent vanish (hunting injury)
+  freshGame();
+  ids = npcIds();
+  Game.state.village.health = Game.state.village.health || {};
+  var hurt = ids[1] || ids[0];
+  Game.state.village.health[hurt] = 10;
+  var corpsesBefore = (Game.corpses ? Game.corpses() : []).length;
+  Game.hurtVillager(hurt, 50, 'hunting');
+  ok('lethal hurt removes from roster', !(Game.state.village.roster || []).includes(hurt));
+  ok('lethal hurt marks the record dead', !!((Game.vpOf(hurt) || {}).dead));
+  ok('lethal hurt leaves a corpse', (Game.corpses ? Game.corpses() : []).length > corpsesBefore);
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

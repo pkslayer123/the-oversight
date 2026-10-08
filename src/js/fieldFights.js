@@ -124,8 +124,24 @@
       try { vName = this.displayName ? this.displayName(vid).split(' ')[0] : 'Someone'; } catch (e) {}
 
       // ---- awareness: contact check, not outcome ----
+      // REAL inputs, not a flat roll: the villager's tracking XP (paying
+      // attention) vs the monster's stealth profile (behavior, speed,
+      // notice range, size). A hushwolf (pack, fast, long notice range)
+      // is nearly impossible to spot first — the silence is the weapon.
+      // A bulldozer (territorial, big, loud) is often heard coming.
       if (opts.awareness) {
-        var evade = 0.55 + Math.min(0.25, bravery * 0.03) + (potential ? 0.08 : 0);
+        var tracking = 0;
+        try { tracking = (((this.agencyOf(vid) || {}).xp || {})[vid] || {}).tracking || 0; } catch (e) {}
+        var mBehavior = mdef.behavior || 'territorial';
+        var behaviorMod = { ambush: -0.15, pack: -0.10, swarm: -0.05, snake: -0.05,
+          territorial: 0.05, curious: 0.05, drifter: 0.10 }[mBehavior];
+        if (behaviorMod === undefined) behaviorMod = 0;
+        var mNotice = (mdef.encounter && mdef.encounter.noticeRange) || 5;
+        var mSize = mdef.size || 1;
+        var evade = 0.35 + Math.min(0.30, tracking * 0.01) + behaviorMod
+          - 0.02 * mSpeed - 0.03 * mNotice + 0.05 * mSize
+          + (potential ? 0.05 : 0);
+        evade = clamp(evade, 0.05, 0.90);
         if (R() < evade) {
           rec.outcome = 'evade';
           rec.vHpLeft = vHp; rec.mHpLeft = members[0].hp;

@@ -719,6 +719,16 @@
     for (const gr of (v.groups || [])) gr.members = (gr.members || []).filter(m => m !== vid);
     v.exiles = v.exiles || [];
     if (how !== 'killed') v.exiles.push({ vid, day: this.state.scholar.day, how: how || 'left' });
+    // DEAD IS DEAD (2026-10-08): 'killed' removals must mark the villager
+    // record — vpOf(vid).dead is read by game code (party skips, System
+    // fragments, record filters) and must not lie about a corpse.
+    if (how === 'killed') {
+      try {
+        const rec = (this.data.villagers || []).find(x => x.id === vid)
+          || (this.data.background_survivors || []).find(x => x.id === vid);
+        if (rec) rec.dead = true;
+      } catch (e) {}
+    }
   },
 
   // ---------- 6. AFTERMATH ----------

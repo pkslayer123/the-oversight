@@ -53,3 +53,37 @@ Steve's law (his words): "Why are you treating monster encounters like rng? It s
 
 ## Calibration narrative (seed 20261008, 300 fights)
 Unarmed villagers basically never kill: avg vs hushwolf → 293 driven off / 7 dead; strong vs bulldozer → 283 driven off / 17 dead. Steel changes everything: armed vs bulldozer → 74 kills, armed vs hushwolf pack → 87 drive-offs (lead wounded → coordination breaks). Highbeam Deer vs anyone alone: 0 kills, ever. That is the intended "hard fight."
+
+## Coordinator follow-up fixes (2026-10-08, same session)
+
+Landing review caught three more RNG-vs-real violations in the same paths:
+
+1. **Awareness check was still a flat roll.** `fieldFight`'s pre-fight evade was
+   `0.55 + min(0.25, bravery*0.03)` — 55-88% "saw it, gave it room" for every
+   monster. A hushwolf (whose whole design is "Silent Rush gives no warning")
+   was evaded ~80% of the time. Now driven by real inputs: villager tracking XP
+   vs monster behavior (ambush/pack harder to spot, territorial/drifter easier),
+   speed (faster = less warning), noticeRange (it sees you first), size (bigger
+   = easier to spot). Hushwolf ~12% evade for a decent tracker; bulldozer ~42%.
+   Contact check, not outcome — once steel is crossed, the fight decides.
+
+2. **DEAD IS DEAD.** `removeVillager(vid, 'killed')` removed the roster entry
+   but never marked the villager record — `vpOf(vid).dead` stayed false for
+   corpses. Game code reads this (party skips line 9253, record filters 12118,
+   System fragments 22726) and was lied to; expedition deaths left roster
+   ghosts with no explorerNews. Now `removeVillager` marks the record dead
+   when how==='killed' (all four kill paths: expeditions, contests,
+   party-formal, ledger). Exile paths untouched.
+
+3. **Lethal hurtVillager silently vanished villagers.** A hunting injury (or any
+   hurt) taking health to 0 removed the roster entry with no corpse, no gossip,
+   no dead mark. Now routes through the real death path: registerDeath,
+   removeVillager('killed'), death gossip, fallen record. Player-character
+   lethal hurt delegates to playerDeath (mantle succession) instead.
+
+Proofs: test-villager-agency.js now seeded (mulberry32, SEED override) —
+43/43 on default seed, 0 failures on SEED=3 (previously failed on the ghost
+path), SEED=1's single failure is pre-existing roster-profile distribution,
+untouched by this work. New tests 13-14 prove death-marking through the full
+expedition path and lethal-hurt death. real-fights 15/15, parity-combat 5/5,
+ontology 49/49.

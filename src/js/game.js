@@ -4245,8 +4245,21 @@
       const cur = (v.health[vid] !== undefined) ? v.health[vid] : 100;
       v.health[vid] = Math.max(0, cur - dmg);
       if (v.health[vid] <= 0) {
-        // remove from roster — they're gone
-        v.roster = (v.roster || []).filter(id => id !== vid);
+        // LETHAL HURT IS DEATH (2026-10-08): no silent roster vanishes.
+        // The individual gets a real death: corpse, gossip, dead mark.
+        if (vid === this.villagerId && typeof this.playerDeath === 'function') {
+          try { this.playerDeath(cause || 'injuries'); } catch (e) {}
+          return;
+        }
+        try {
+          const rec = (this.data.villagers || []).find(x => x.id === vid)
+            || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+          let nm = rec.name || 'Someone';
+          try { nm = this.displayName ? this.displayName(vid) : nm; } catch (e) {}
+          if (this.registerDeath) this.registerDeath({ kind: 'villager', villagerId: vid, name: nm, cause: cause || 'injuries', killerId: null });
+        } catch (e) {}
+        try { if (this.removeVillager) this.removeVillager(vid, 'killed'); } catch (e) {}
+        try { if (this.seedGossip) this.seedGossip('death', { who: vid }, []); } catch (e) {}
         v.fallen = v.fallen || [];
         v.fallen.push({ villagerId: vid, day: this.state.scholar.day, cause });
         delete (v.positions || {})[vid];
