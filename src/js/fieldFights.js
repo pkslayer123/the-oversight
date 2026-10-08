@@ -96,6 +96,9 @@
       if (vHp > vHpMax) vHpMax = vHp;
       var bravery = 0, temper = 'steady', potential = false, wb = 0;
       try { bravery = (((this.agencyOf(vid) || {}).xp || {})[vid] || {}).bravery || 0; } catch (e) {}
+      // CONTESTS (Steve 2026-10-08): the crowd's roar steadies the arm —
+      // watcher's cheer arrives as real bravery, not win-odds.
+      try { if (opts.braveryBonus) bravery += opts.braveryBonus; } catch (e) {}
       try { temper = this.npcTemper(vid) || 'steady'; } catch (e) {}
       try { potential = !!((this.agencyState() || {}).potential || {})[vid]; } catch (e) {}
       try {

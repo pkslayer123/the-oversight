@@ -133,6 +133,22 @@ function playToEnd(persona) {
     const t = drain();
     if (t) logTail = t;
     if (res && res.done) return { outcome: res.outcome, logTail, stuck: false };
+    // ARENA (Steve 2026-10-08): Blood contests suspend for real fights.
+    // Simulate the fight(s) ending — this test verifies the sequence, not combat.
+    if (res && res.arena) {
+      let after = null, wguard = 0;
+      while (Game.state.arenaContest && wguard++ < 5) {
+        const arc = Game.state.arenaContest;
+        Game.state.arenaContest = null;
+        Game.tbfight = null;
+        after = Game._contestArenaAfter(arc, 'won');
+        if (after && after.done) break;
+      }
+      const t2 = drain();
+      if (t2) logTail = t2;
+      if (after && after.done) return { outcome: after.outcome, logTail, stuck: false };
+      continue;
+    }
     if (res === null) { stuck = true; break; }
   }
   return { outcome: null, logTail, stuck: stuck || guard >= 30 };
@@ -223,8 +239,16 @@ function allTexts(id) {
     const distinct = new Set(texts.map(t => t.replace(/\s+/g, ' ').trim())).size === texts.length;
     ok(`${id}: every phase text is distinct (beats escalate, never repeat)`, distinct);
     const climax = phases[phases.length - 1];
+    // Terminals: WIN/LOSE/DIE, plus the judged terminals (MOOT_JUDGE,
+    // MAW_JUDGE resolve deterministically) and arena phases (Blood
+    // pit/gauntlet/siege resolve via real fights — the climax is the
+    // System's epitaph if the feed glitches).
+    const hasTerminal = (climax.choices || []).some(c =>
+      ['WIN', 'LOSE', 'DIE', 'MOOT_JUDGE', 'MAW_JUDGE'].includes(c.next));
+    const isArena = (climax.choices || []).some(c => c.do && c.do.arena) ||
+      ['pit', 'gauntlet', 'siege'].includes(id);
     ok(`${id}: the climax offers a terminal choice (resolve beats resolve)`,
-      (climax.choices || []).some(c => ['WIN', 'LOSE', 'DIE'].includes(c.next)));
+      hasTerminal || isArena);
   }
   // voice distinctness: within a family, no two contests open the same way
   const fams = {};

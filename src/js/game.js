@@ -26300,6 +26300,16 @@
           }
         } catch (e) {}
       }
+      // ARENA CONTESTS (Steve 2026-10-08): a Blood contest that sent the
+      // player into a real tactical fight resumes here. The fight was real;
+      // so is the outcome. _contestArenaAfter routes won/lost/fled.
+      try {
+        const arc = this.state && this.state.arenaContest;
+        if (arc) {
+          this.state.arenaContest = null;
+          if (typeof this._contestArenaAfter === 'function') this._contestArenaAfter(arc, result);
+        }
+      } catch (e) {}
     },
 
     combatRound(cmd) {

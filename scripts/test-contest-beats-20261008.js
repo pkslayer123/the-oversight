@@ -131,6 +131,22 @@ function playToEnd(expectResolve) {
     const ci = Math.floor((phase.choices.length - 1) / 2); // middle — never the refuse label on choicePhase
     const res = Game.contestChoose(ci);
     if (res && res.done) { done = true; outcome = res.outcome; break; }
+    // ARENA (Steve 2026-10-08): Blood pit/gauntlet/siege suspend the modal
+    // for a real tactical fight. Simulate the fight(s) ending (won) — the
+    // beats test verifies audio, not combat. Multi-wave arenas chain.
+    if (res && res.arena) {
+      let after = null;
+      let wguard = 0;
+      while (Game.state.arenaContest && wguard++ < 5) {
+        const arc = Game.state.arenaContest;
+        Game.state.arenaContest = null;
+        Game.tbfight = null;
+        after = Game._contestArenaAfter(arc, 'won');
+        if (after && after.done) break;
+      }
+      if (after && after.done) { done = true; outcome = after.outcome; break; }
+      continue;
+    }
     if (res === null) return { done: false, outcome: 'NULL', visitedBeats };
   }
   return { done, outcome, visitedBeats };

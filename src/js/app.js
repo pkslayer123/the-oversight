@@ -11394,7 +11394,9 @@
     // the narration surface until resolved. Unavoidable means unavoidable.
     try {
       const ac = Game.state && Game.state.activeContest;
-      if (ac && ac.phases && ac.phase !== 'done') {
+      // ARENA (Steve 2026-10-08): a suspended contest yielded the narration
+      // surface to the tactical fight — the grid is the arena now.
+      if (ac && ac.phases && ac.phase !== 'done' && !ac.arenaSuspended) {
         const html = contestBoxHTML(ac);
         if (html) return html;
       }
