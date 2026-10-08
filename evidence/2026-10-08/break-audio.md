@@ -153,3 +153,11 @@ alias — unrelated).
 
 **Sibling sweep:** DRAMA_AUDIO_MATES 7/7 resolve; ENC_AUDIO_FALLBACK resolves;
 CX_BEAT_DEFS 73/73 resolve; encounters beat `audio:` property unused (comment-only).
+
+**LANDING (coordinator, 2026-10-08 ~23:47 CDT):** Reviewed the deletion diff — 0
+plus-lines, 162 minus-lines, every deleted line inside the 4 dead synth bodies
+or their registry entries; zero remaining refs repo-wide; node --check clean.
+Approved and committed with --force-delete (92584fe), ff-merged to master,
+released worktree, proof 15/15 green in main tree. Version bump
+92584fe-20261008-234640 (110fb7d), pushed master+main; LIVE verified on both
+raw.githubusercontent.com and the-oversight.vercel.app serving the same tag.
