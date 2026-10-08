@@ -120,3 +120,36 @@ no-op on unknown names) is now guarded, not just patched.
   data can be sparse.
 
 Commit: c6a4545 (src/js/app.js +46, scripts/test-audio-break.js new).
+
+---
+
+## Run 2 — dead-synth census (2026-10-08 ~18:35 CDT, break-it target #8)
+
+**Attacks:** exploit (audio as info-leak / callback vector), softlock (await chains,
+AudioContext failure modes, iOS autoplay), honesty (every fired name resolves;
+victory/defeat/combatEnd contexts; `{quiet:true}` honored), dead-code (full
+registry reachability; index.html load order).
+
+**Held:** exploit (pure output-side; no callbacks into logic; no offscreen leaks —
+fieldFights fires zero audio; drama mates gated on systemArrived), softlock (no
+awaits, sync try/catch dispatch, ensure() fails closed, Game.audioEvent no-ops
+headless), honesty (212 referenced names — 174 fired + 54 configured + 7 drama
+mates + 73 beat parts — ALL resolve; wound trio registered; quiet honored).
+
+**CATCH 3 (DEAD CODE): 4 registered-but-never-fired synths** — `swarmFilm`,
+`swarmScatter`, `swarmShutters`, `hypeEncourage`. Real implementations, zero call
+sites anywhere (direct, config, drama mate, beat-def, internal composition).
+Siblings all live (swarmBuild/Escalate/Flash in honey-contest beats;
+hypeInflate/Detonate/Deflate in beats). Fix: deleted bodies + registry entries
+(162 lines, app.js), zero refs remaining, node --check + ontology 50/50 green.
+**LANDING BLOCKED:** safe-commit.sh refused the 162-line src/ deletion
+(stale-revert guard); --force-delete needs coordinator approval. Deletion sits
+uncommitted in this worktree; scripts landed in 7c6fb2b.
+
+**Proof:** `scripts/test-audio-breakit.js [worktree|HEAD]` — HEAD: 14/15, flags
+exactly the 4 dead synths (red); worktree+deletion: 15/15 (green). deepening-4:
+94/94; deepening-3: 47 pass / 5 fail (5 pre-existing on HEAD, delegateDebrief
+alias — unrelated).
+
+**Sibling sweep:** DRAMA_AUDIO_MATES 7/7 resolve; ENC_AUDIO_FALLBACK resolves;
+CX_BEAT_DEFS 73/73 resolve; encounters beat `audio:` property unused (comment-only).
