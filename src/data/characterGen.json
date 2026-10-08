@@ -3351,49 +3351,65 @@
       "I'm {first}. I was a {occ}, back in {origin}. Whatever's going on, none of us understand it either.",
       "There's food by the fire and water in the clay pots. Eat first, questions later. You're safe here — well. Safer than out there.",
       "Rest as long as you need. Nobody here is keeping score — we just got you back, and that's enough for today."
-    ],
+    ,
+      "You look like hell, friend. That's a compliment — means you're alive enough to look like anything.",
+      "I'm {first}. Before all this I was a {occ} in {origin}. Now? Now I'm the one who tells new folks the stew's not poisoned. It's not. Eat."],
     "debt": [
       "Up. Good. I dragged your useless ass out of a creek bed half a mile that way, so listen.",
       "Name's {first}. Was a {occ} in {origin}. Now I'm in the rescue business, which is a terrible career change.",
       "You owe me. When you can walk: bring me three handfuls of dandelion greens from outside. For the pot. Then we're square.",
       "And don't die on me before you pay up. I hate chasing debts into the afterlife."
-    ],
+    ,
+      "And one more thing — snoring. You snore. If we're sharing a roof, you owe me for that too. We'll figure out the rate.",
+      "Water's in the clay pots, food's by the fire. Eat, then we talk about what your walking-around is worth to me."],
     "suspicious": [
       "Don't move. ...Okay. You're awake, you're breathing, you're not bleeding on my floor. Good enough.",
       "I'm {first}. I don't know you, I don't know where 'here' is, and I don't know why we all woke up in the same building.",
       "Nobody touches my pack. Nobody goes through my things. We clear? ...There's stew by the fire. But we clear?",
       "I'll be watching. Nothing personal — I watch everyone. ...Stew's by the fire. Eat."
-    ],
+    ,
+      "You can sit by the fire. That's it. Sitting. Anything else — ask first, move slow, and remember I'm counting the spoons.",
+      "I'm {first}. I was a {occ} in {origin}, and I survived this long by assuming the worst. You've got one day to prove me wrong."],
     "scared": [
       "Oh— oh god, you're awake. Okay. Okay, that's good, that's— hi.",
       "I'm {first}, I was a {occ} in {origin}, I don't— I don't know what's happening. None of us do. We all just woke up here.",
       "Please don't be weird. Please just be normal. There's water by the door if you need it. Just— be normal, okay?",
       "Sorry, I'm — I'm not usually like this. It's just a lot. You're okay, though. You're okay."
-    ],
+    ,
+      "Is— is anyone else awake? No? Okay. Okay, just you. That's fine. That's— hi.",
+      "If you know what's going on, please just tell me straight. I keep imagining worse things and I need someone to stop me."],
     "practical": [
       "You're awake. Sit up slow. You've been out about a day.",
       "{first}. {occ}, {origin}. Here's what matters: water's in the clay pots by the door, food's by the fire, don't drink from the creek without boiling it.",
       "Eat, drink, rest. We'll figure out the rest when you can stand. One thing at a time.",
       "Questions later. Your body needs fuel and water before your brain gets a vote."
-    ],
+    ,
+      "Boil creek water or don't drink it. That's the rule that keeps people alive. Everything else we can teach you.",
+      "You can stand when you can stand. Nobody's timing you. The work will still be here."],
     "curious": [
       "You're awake! Finally. I've been waiting to ask — where are you from? I'm {first}, I was a {occ} in {origin}.",
       "Did you see anything before you blacked out? Lights? Sounds? Nobody here remembers anything useful and it's driving me insane.",
       "Sorry. Rude. Food's by the fire, water's by the door. But later — I want to hear everything you remember.",
       "Oh! And if you remember any numbers — times, counts, anything — tell me first. Data is precious."
-    ],
+    ,
+      "Wait — before you get up — did the sky look wrong to you too? Not wrong-wrong, just... off? Tell me I'm not imagining it.",
+      "I'm keeping a list of everyone and where they're from. You're entry number— hold on. You're important. What's your name?"],
     "gruff": [
       "Up. Good. Less dead weight.",
       "{first}. Don't care what you were before. Here you're hands. We eat because people work.",
       "Fire's there. Food's there when you've earned it. Sleep when it's dark. That's the whole orientation.",
       "And if you can't work yet, stay out of the way. That's also a job."
-    ],
+    ,
+      "Don't thank me. You'd have done the same. Probably. Anyway, you're up — that's the end of the soft part.",
+      "We eat at dark. You want a full bowl, you carry something before then. Even a stick. Carry something."],
     "overwhelmed": [
       "You're— okay, you're awake, that's one more, that's— hi. I'm {first}.",
       "I was a {occ}. In {origin}. I think. That was... yesterday? Last week? I don't know anything anymore.",
       "Someone put food by the fire. Someone put water by the door. I don't know who. Just take what you need. We're all just... taking what we need.",
       "I'm sorry, I don't — just take what you need. We'll figure out names and everything later."
-    ]
+    ,
+      "There's too many new faces. I keep forgetting which ones I've met. Have we met? ...It's fine. We're all new.",
+      "I don't remember if I ate today. You should eat. Somebody should eat. Take the food."]
   },
   "sampleOrigins": [
     "Portland, Oregon",
