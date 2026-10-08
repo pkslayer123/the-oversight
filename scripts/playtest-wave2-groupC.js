@@ -1,4 +1,5 @@
-// Narrated playtest: Wave 2 Group C (Middle Manager, Inspiration, Nostalgia).
+// Narrated playtest: Wave 2 Group C (Inspiration, Nostalgia).
+// (the Middle Manager retired 2026-10-08.)
 // Plays one fight per monster like a player, prints the story.
 // Usage: node scripts/playtest-wave2-groupC.js
 const fs = require('fs');
@@ -118,7 +119,6 @@ function playFight(monsterId, label) {
 
 (async () => {
   await Game.init();
-  playFight('delegate_beast', 'MIDDLE MANAGER — "Per my last roar..."');
   playFight('bright_idea', 'INSPIRATION — "It seemed like a good idea at the time."');
   playFight('memory_projector', 'NOSTALGIA — "the light PULLS"');
   console.log('\nDone.');

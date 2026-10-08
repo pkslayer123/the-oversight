@@ -1,4 +1,5 @@
-// Monster batch 4 tests: review_drone, camera_swarm, hype_horn, delegate_beast.
+// Monster batch 4 tests: review_drone, camera_swarm, hype_horn.
+// (the Middle Manager's section was deleted with its retired monster, 2026-10-08.)
 // Usage: node scripts/test-monbatch4.js
 // Per monster: phases fire in order, telegraphs render (gated + ungated),
 // counterplay works. Plus the shared contract: FIFO queue, descriptor gating.
@@ -81,7 +82,7 @@ function moveOff(cells, maxD) {
 }
 const TRUE_NAMES = {
   review_drone: 'Performance Review', camera_swarm: 'Influencer',
-  hype_horn: 'Motivational Speaker', delegate_beast: 'Middle Manager',
+  hype_horn: 'Motivational Speaker',
 };
 
 async function main() {
@@ -236,47 +237,6 @@ async function main() {
     ok('horn: crowd deflates it', M().beamPhase === 'deflate' && !M().telegraph && (M().hypeCooldown || 0) >= 1,
       `${M().beamPhase} cd=${M().hypeCooldown}`);
     ok('horn: deflate line renders', logHas(/YOU'RE ALL WINNERS/));
-  }
-
-  // ================= delegate_beast =================
-  // (fast monster, speed 5: startCombat's opening turn already circled)
-  {
-    setup('delegate_beast');
-    let m = M();
-    ok('beast: circles first (phase circle)', m && m.beamPhase === 'circle' && m.circled === true, m && m.beamPhase);
-    ok('beast: circle actually moves it', m && !(m.mx === 7 && m.my === 4), m && `(${m.mx},${m.my})`);
-    // (The circle line was spoken on contact; say() still logs, telegraph cues are silent.)
-    ok('beast: circle line renders', logHas(/paces a wide circle/));
-    // (Advance until the beast has declared.)
-    for (let i = 0; i < 4 && !(M() && M().telegraph); i++) passTurn();
-    m = M();
-    ok('beast: announces (phase announce)', !!m && !!m.telegraph && m.beamPhase === 'announce', m && m.beamPhase);
-    ok('beast: announced line is genuine (target on it)', !!m && !!m.telegraph && m.telegraph.threatenedPlayer === true);
-    const announced = m && m.telegraph ? m.telegraph.cells.map(c => c.cx + ',' + c.cy).sort().join(';') : '';
-    moveOff(m.telegraph.cells, 4); // sidestep the wide line
-    const hp0 = Math.round(P().hp);
-    const lastCell = m.telegraph.cells[m.telegraph.cells.length - 1];
-    passTurn(); // CHARGE
-    m = M();
-    ok('beast: charged the announced line, not a re-aim', m.telegraph === null || true, '');
-    ok('beast: clean dodge off the line', Math.round(P().hp) === hp0, `hp ${hp0} -> ${Math.round(P().hp)}`);
-    ok('beast: ends on the announced line', m.mx === lastCell.cx && m.my === lastCell.cy, `(${m.mx},${m.my}) vs (${lastCell.cx},${lastCell.cy})`);
-    ok('beast: announce-honoring narrated', logHas(/exactly where it said/));
-    ok('beast: debrief phase', m.beamPhase === 'debrief', m.beamPhase);
-    ok('beast: debrief line renders', logHas(/violence action item: closed/));
-    // codex gate
-    m.telegraph = { turnsLeft: 1 };
-    Game.state.codex.monsters['delegate_beast'] = { patterns: { 'Circle Back': 'x' } };
-    const cue = Game.tbTelegraphCue(m);
-    ok('beast: ungated cue is tactical', /sidestep FARTHER/.test(cue), cue.slice(0, 80));
-    ok('beast: gated cue is diegetic', (() => {
-      delete Game.state.codex.monsters['delegate_beast'].patterns;
-      return /a line only it can see/.test(Game.tbTelegraphCue(m));
-    })());
-    // it always circles first: next attack also circles
-    M().telegraph = null; // clear the fake telegraph from the cue test
-    passTurn();
-    ok('beast: circles again before the next charge', M().beamPhase === 'circle' && M().circled === true, M().beamPhase);
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);

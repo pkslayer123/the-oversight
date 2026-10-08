@@ -13219,7 +13219,6 @@
       } else if (!feared && fear === 'numbers' && this.villagersNear(px, py, 3) >= 2 && m.stance !== 'ambush' && m.stance !== 'cautious') {
         m.stance = 'cautious';
         const fl = this.monsterCue(m.id, 'fearful'); if (fl) this.say(fl);
-        if (m.id === 'delegate_beast') this.audioEvent('managerFear');
       }
       // --- stance behavior ---
       switch (m.stance) {
@@ -18869,9 +18868,9 @@
       const tg = m.telegraph;
       const atk = (m.mdef || {}).attack || {};
       const mid = (m.mdef || {}).id;
-      // DEAD-ROSTER GUARD (Steve 2026-10-06): camera_swarm, hype_horn and
-      // delegate_beast were removed from monsters.json — their cue branches
-      // below were deleted. Only review_drone is batch-4-routed now.
+      // DEAD-ROSTER GUARD (Steve 2026-10-06/08): camera_swarm, hype_horn were
+      // removed from monsters.json — their cue branches below were deleted.
+      // Only review_drone is batch-4-routed now.
       if (mid !== 'review_drone') return null;
       const known = this.encUsesFifo(m) ? this.encTelegraphKnown(m) : true;
       const learned = this.tbPatternKnown(mid, atk.name)
@@ -18889,8 +18888,8 @@
       // service_mimic + contract_golem: NOT batch-4-routed (guard above).
       // Their cues are bespoke and already knowledge-gated — the mimic's in
       // its rush-resolve line + watching beat (Steve 2026-10-06), the golem's
-      // in encDeclareDirect's cueText + knownTail. The camera_swarm,
-      // hype_horn and delegate_beast branches here were deleted with the
+      // in encDeclareDirect's cueText + knownTail. The camera_swarm and
+      // hype_horn branches here were deleted with the
       // monsters themselves (Steve 2026-10-06).
       return null;
     },
@@ -20821,10 +20820,10 @@
     smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
     cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
     wcIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'warranty_caller')); },
-    // WAVE-2 ROSTER REDESIGN (Steve 2026-10-06): five new monsters replace the
-    // cheap behavior-reskins. service_mimic, contract_golem, camera_swarm,
-    // hype_horn, delegate_beast are REMOVED from data — their AI blocks below
-    // are dead (predicates never match). Marked for Phase 1 deletion.
+    // WAVE-2 ROSTER REDESIGN (Steve 2026-10-06/08): retired monsters have no
+    // data defs, so their id predicates never match. beastIs + its bespoke AI
+    // blocks were deleted in the Phase-1 cleanup (Steve 2026-10-08); the
+    // remaining retired-id predicates are another run's scope.
     usIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'understudy')); },
     llIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'landlord')); },
     hkIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'heckler')); },
@@ -20937,7 +20936,6 @@
     droneIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'review_drone')); },
     swarmIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'camera_swarm')); },
     hornIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hype_horn')); },
-    beastIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'delegate_beast')); },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     // SHADE (sunbasker): canopy shade = orthogonally adjacent to a tree.
     // The grid is honest about it — trees are visible, so shade is readable.
@@ -21169,7 +21167,6 @@
       if (this.mothIs(m)) return 'fold';
       if (this.toadIs(m)) return 'swell';
       if (this.humiceIs(m)) return (((this.tbfight || {}).humStacks || 0) >= 3) ? 'tide' : 'hum';
-      if (this.beastIs(m)) return 'announce';
       return 'aim';
     },
 
@@ -21959,8 +21956,6 @@
           (m) => m.hypeDeflateCrowd
             ? 'It sags, shrinking from all those eyes. One-on-one or nothing — the crowd broke its nerve.'
             : 'It sags, spent — the encouragement took everything out of it.', 'hypeDeflate'],
-        ['beastIs', 'beastDebrief', 'debrief',
-          'It dictates into nothing: "violence action item: closed. Scheduling retrospective."', 'delegateDebrief'],
       ];
       for (const [pred, field, phase, text, audio] of specs) {
         if (this[pred](m) && (m[field] || 0) > 0) {
@@ -22039,60 +22034,6 @@
         if (!s) break;
         m.mx = s.x; m.my = s.y;
       }
-    },
-
-    // DELEGATE's announced line: true-angle rasterization (not the 8-direction
-    // snap), truncated to the charge length, width 2. The aim point is always
-    // ON the line — the announcement is a genuine threat, and the counterplay
-    // (sidestep the wide line) is always real.
-    beastLineCells(mx, my, tx, ty, len, w) {
-      const cells = [], seen = new Set();
-      const dx = tx - mx, dy = ty - my;
-      const dist = Math.hypot(dx, dy) || 1;
-      const ux = dx / dist, uy = dy / dist;
-      const px = -uy, py = ux; // perpendicular
-      const push = (cx, cy) => {
-        if (cx < 0 || cx > 8 || cy < 0 || cy > 8) return;
-        const k = cx + ',' + cy;
-        if (!seen.has(k)) { seen.add(k); cells.push({ cx, cy }); }
-      };
-      for (let i = 1; i <= len * 2; i++) {
-        const t = i / 2;
-        const cx = Math.round(mx + ux * t), cy = Math.round(my + uy * t);
-        push(cx, cy);
-        if (w > 1) {
-          push(Math.round(mx + ux * t + px * 0.7), Math.round(my + uy * t + py * 0.7));
-          push(Math.round(mx + ux * t - px * 0.7), Math.round(my + uy * t - py * 0.7));
-        }
-      }
-      return cells;
-    },
-
-    // DELEGATE BEAST (Steve 2026-10-06): the closing circle. While the beast
-    // paces phase 'circle', the dotted ring at chebyshev distance 2 around the
-    // PLAYER is the encirclement closing — the telegraph IS the circling.
-    // Knowledge-gated: unknown players don't get the read. Grid-clamped.
-    // Returns a Set of "x,y".
-    beastCircleKeys() {
-      const set = new Set();
-      try {
-        const f = this.tbfight;
-        if (!f) return set;
-        const p = this.tbFighter('p');
-        if (!p || !p.alive) return set;
-        for (const m of f.fighters) {
-          if (!this.beastIs(m) || !m.alive) continue;
-          if (m.beamPhase !== 'circle') continue;
-          if (!this.encTelegraphKnown(m)) continue;
-          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-            if (Math.max(Math.abs(dx), Math.abs(dy)) !== 2) continue;
-            const cx = p.mx + dx, cy = p.my + dy;
-            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
-            set.add(cx + ',' + cy);
-          }
-        }
-      } catch (e) {}
-      return set;
     },
 
     // tbStepToward: gravity-aware movement. A gravity-held monster strains
@@ -22457,12 +22398,7 @@
         }
         if (tg.kind === 'squares') {
           const ptype = (tg.pattern || {}).type;
-          // DELEGATE: the line was ANNOUNCED — it charges exactly where it
-          // said it would. No re-aiming at fire time. That's the deal.
-          // (The stag's commitCharge is the same idea via config.)
-          if (this.beastIs(m)) {
-            this.say('It charges the announced line — exactly where it said it would. Attendance was mandatory.');
-          } else if (ptype === 'lockon') {
+          if (ptype === 'lockon') {
             // LOCK-ON RE-LOCK (Steve 2026-10-07): at fire time, re-call
             // patternCells with the LOCKED target's current square (combat.js
             // 'lockon' contract: windup-cells == action-cells per call). The
@@ -22758,28 +22694,6 @@
             m.stagWheel = true;
             if (useFifo) this.encSetPhase(m, 'confront');
           }
-          // MIDDLE MANAGER: every charge ends in debrief — hit or miss. It stops,
-          // takes notes, horns down. One full turn of vulnerability. The meeting
-          // must be minuted.
-          // THE FOLLOW-UP (Steve 2026-10-06): wave-2 escalation. A charge that
-          // CONNECTED gets an immediate follow-up — "let's circle back" —
-          // short, no circle, no windup. Dodge the first and you earn the
-          // debrief; take the hit and the meeting continues without minutes.
-          if (this.beastIs(m) && (m.mdef.attack.pattern || {}).type === 'charge') {
-            this.audioEvent('managerCharge');
-            if (anyoneHit && !m.beastFollowedUp) {
-              m.beastFollowup = true; m.beastFollowedUp = true;
-              if (useFifo) this.encSetPhase(m, 'announce');
-              this.say('"Let\'s circle back —" It doesn\'t stop. It doesn\'t take notes. It\'s coming again, RIGHT NOW, shorter and meaner.');
-            } else {
-              if (useFifo) this.encSetPhase(m, 'debrief');
-              m.beastDebrief = 1; m.beastCircled = false; m.beastFollowedUp = false;
-              this.say(anyoneHit
-                ? '"Noted. Pain points logged." It stops at the end of its line, already writing. Horns down — it\'s debriefing.'
-                : '"Hm. Let\'s circle back on why that missed." It stops, confused, taking notes. Horns down — it\'s debriefing.');
-            }
-            this.audioEvent('managerDebrief');
-          }
           // WHITE NOISE (Steve 2026-10-06): the drift happens on the NEXT turn,
           // not at resolve — the strike beat ('strike' phase, set above)
           // reads for its full turn first. See the heronStatue branch.
@@ -22822,13 +22736,6 @@
             if (useFifo) this.encSetPhase(m, 'detonate');
             this.audioEvent('hypeDetonate');
             m.hypeCooldown = 1; // spent. The encouragement took everything.
-          }
-          if (this.beastIs(m)) {
-            if (useFifo) this.encSetPhase(m, 'charge');
-            // (Steve 2026-10-06): managerCharge already fired above — the
-            // delegateCharge alias played the same synth twice per resolve.
-            m.circled = false; // the next charge gets circled first, too. Always.
-            m.beastDebrief = 1;
           }
           // GLASSWING: the dive lands where it lands. A hit means it snatched
           // its target and climbed — a miss means it crashed, wings tangled,
@@ -23731,90 +23638,6 @@
           this.audioEvent('projectorHum', {});
         }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-      }
-
-      // ---- MIDDLE MANAGER ("delegate_beast"): THE MEETING ----
-      // circle → announce → charge → debrief. It never charges cold: it always
-      // paces one full circle first (the circle IS the telegraph — read the line).
-      // The charge is width 2, committed via beastLineCells. Post-charge it
-      // DEBRIEFS (one turn, vulnerable, taking notes). It fears numbers: 3+
-      // live threats and it backs off ("too many stakeholders").
-      if (this.beastIs(m)) {
-        const ff = fifoFoe(); if (ff) foe = ff;
-        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'circle'); m.beastCircled = false; }
-        // THE FOLLOW-UP (Steve 2026-10-06): a connected charge circles back
-        // immediately — short lane (length 2, width 2), one-turn windup, no
-        // circling first. commitCells: the short lane is the deal, the
-        // generic resolve must not re-extend it.
-        if (m.beastFollowup && !m.telegraph) {
-          m.beastFollowup = false;
-          const fuT = foe.f;
-          const fuPat = (m.mdef.attack && m.mdef.attack.pattern) || {};
-          const fuCells = this.beastLineCells(m.mx, m.my, fuT.mx, fuT.my, 2, fuPat.width || 2);
-          const fuP0 = this.tbFighter('p');
-          const fuKnown = this.encTelegraphKnown(m);
-          m.telegraph = { kind: 'squares', cells: fuCells, dmg: (m.mdef.attack || {}).damage,
-            attackName: this.encAttackName(m, 'Circle Back'), pattern: fuPat, turnsLeft: 1,
-            commitCells: true,
-            threatenedPlayer: !!(fuP0 && fuP0.alive && fuCells.some(c => c.cx === fuP0.mx && c.cy === fuP0.my)),
-            aimKey: fuT.key,
-            cueText: fuKnown ? '"CIRCLING BACK." Short charge, no windup. MOVE.' : '"CIRCLING BACK—" It\'s already moving.' };
-          this.encSetPhase(m, 'announce');
-          this.say(fuKnown
-            ? '"CIRCLING BACK." It comes again — shorter, no windup, no mercy. MOVE.'
-            : '"CIRCLING BACK—" It wheels mid-note, already charging. No circle this time.');
-          this.audioEvent('managerCharge');
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-        }
-        // DEBRIEF: post-charge recovery. It doesn't act — it's taking notes.
-        // The window is real: it can't charge, can't circle, just writes.
-        if (m.beamPhase === 'debrief') {
-          m.beastDebrief = (m.beastDebrief || 1) - 1;
-          if (m.beastDebrief <= 0) {
-            this.encSetPhase(m, 'circle'); m.beastCircled = false;
-            this.say('"OK — learnings captured. Action items assigned." It squares up, starting a fresh circle.');
-          } else {
-            this.say('"Let\'s circle back on what just happened." It\'s taking notes, horns down. NOW — while it\'s writing.');
-          }
-          this.audioEvent('managerDebrief');
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-        }
-        // FEARS NUMBERS: expressed in the overworld (villagersNear >= 2 →
-        // cautious stance). In combat it's committed — the meeting is happening.
-        // CIRCLE FIRST: it always paces one full circle before announcing.
-        // Orbit step: perpendicular to the player, closing slightly.
-        if (!m.beastCircled && !m.telegraph) {
-          const t = foe.f;
-          const dx = t.mx - m.mx, dy = t.my - m.my;
-          // perpendicular (orbit) + slight inward
-          const px = -Math.sign(dy), py = Math.sign(dx);
-          const ix = Math.sign(dx), iy = Math.sign(dy);
-          const cands = [
-            { x: m.mx + px, y: m.my + py },
-            { x: m.mx - px, y: m.my - py },
-            { x: m.mx + px + ix, y: m.my + py + iy },
-            { x: m.mx - px + ix, y: m.my - py + iy },
-          ];
-          for (const c of cands) {
-            if (c.x < 0 || c.x > 8 || c.y < 0 || c.y > 8) continue;
-            if (blocked(c.x, c.y)) continue;
-            m.mx = c.x; m.my = c.y; break;
-          }
-          m.beastCircled = true;
-          this.encSetPhase(m, 'circle');
-          const known = this.encTelegraphKnown(m);
-          this.say(known
-            ? '"Per my last roar..." It paces its circle — dictating into nothing. The charge comes next, width 2. Watch the line.'
-            : '"Per my last roar..." It paces a wide circle around you, dictating into nothing. The circle tightens.');
-          this.audioEvent('managerCircle');
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-        }
-        // Circled and no telegraph yet: fall through to the generic declare
-        // below — it announces the width-2 line (phase 'announce' via the
-        // encDeclarePhase hook, cue via tbBatch4Cue, audio via declareAudio).
-        // If a telegraph already exists, the countdown section handled it;
-        // just refresh here.
-        if (m.telegraph) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
       }
 
       // ---- GLASSWING DARTER: THE DIVE ----
@@ -25428,12 +25251,6 @@
           attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
           threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
           aim, dir: bdir, aimKey, angle: bang, firing: 0 };
-        // DELEGATE: the announced line is drawn true to the aim — the target
-        // is always on it. Wide, and exactly where it said.
-        if (this.beastIs(m) && pat.type === 'charge') {
-          m.telegraph.cells = this.beastLineCells(m.mx, m.my, foe.f.mx, foe.f.my, pat.length || 4, pat.width || 2);
-          m.telegraph.threatenedPlayer = !!(p0 && p0.alive && m.telegraph.cells.some(c => c.cx === p0.mx && c.cy === p0.my));
-        }
         // WITNESS: seeing it wind up teaches you its attack. The codex notes
         // the behavior — never the true name, never numbers.
         try {
@@ -25448,7 +25265,7 @@
         // Declare phase: per-monster (batch 2's encDeclarePhase) where defined,
         // else the config phaseMap (batch 1's encPhaseFor). The deer gets 'aim' either way.
         if (useFifo) {
-          const hasDeclare = this.mothIs(m) || this.toadIs(m) || this.humiceIs(m) || this.beastIs(m);
+          const hasDeclare = this.mothIs(m) || this.toadIs(m) || this.humiceIs(m);
           this.encSetPhase(m, hasDeclare ? this.encDeclarePhase(m) : this.encPhaseFor(m, 'declare'));
         }
         // BELLOW on declare (Steve 2026-10-06): the beast itself must be audible — Steve heard only beam.
@@ -25482,13 +25299,6 @@
         if (this.hornIs(m)) {
           if (useFifo) this.encSetPhase(m, 'inflate');
           this.audioEvent('hypeInflate');
-        }
-        if (this.beastIs(m)) {
-          if (useFifo) this.encSetPhase(m, 'announce');
-          // (Steve 2026-10-06): the data's aggroAudio + declareAudio
-          // (managerAnnounce) already fire above via tbAggroAudio — the
-          // delegateAnnounce alias played the same synth a third time per
-          // declare, so it stays retired.
         }
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');

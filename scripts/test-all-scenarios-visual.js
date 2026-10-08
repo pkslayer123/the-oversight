@@ -45,7 +45,6 @@ const SCENARIOS = [
   ['motivationalspeaker', 'hype_horn', 'Motivational Speaker'],
   ['customerservice', 'service_mimic', 'Customer Service'],
   ['termsconditions', 'contract_golem', 'Terms & Conditions'],
-  ['middlemanager', 'delegate_beast', 'Middle Manager'],
   ['inspiration', 'bright_idea', 'Inspiration'],
   ['nostalgia', 'memory_projector', 'Nostalgia'],
 ];

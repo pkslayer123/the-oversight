@@ -26,7 +26,7 @@ const S = Game.S || globalThis.Scattering;
 const MDEFS = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/monsters.json'), 'utf8'));
 
 const W2 = ['voice_mimic_radio', 'mirror_stag', 'review_drone', 'camera_swarm',
-  'hype_horn', 'service_mimic', 'contract_golem', 'delegate_beast',
+  'hype_horn', 'service_mimic', 'contract_golem',
   'bright_idea', 'memory_projector', 'warranty_caller'];
 const W1 = ['gallowdeer', 'bulldozer', 'hushwolf', 'sunbasker', 'glasswing'];
 
@@ -197,7 +197,6 @@ const ESCALATION = {
   hype_horn: ['advancing encouragement (creeps during windup)', (m) => m.mx !== 6],
   service_mimic: ['please hold (rush stuns a full turn)', (m, said) => said.some(l => /You're on hold/.test(l))],
   contract_golem: ['spreading jurisdiction (range grows to 4+)', (m) => (m.cgRangeShown || 0) > 3],
-  delegate_beast: ['follow-up charge (connected charge chains)', (m, said) => said.some(l => /CIRCLING BACK/.test(l))],
   bright_idea: ['faster rekindle + dazzle', (m) => (m.biCycles || 0) >= 2],
   memory_projector: ['homesick (stillness shortens the watch)', (m) => (m.mpStill || 0) >= 1],
   warranty_caller: ['faster redials + wrong number', (m) => (m.wcCycle || 0) >= 2],
@@ -214,7 +213,7 @@ const ESCALATION = {
   }
   console.log('\n=== WAVE-2 ===');
   // Per-monster bot mode: punish-mechanics need the bot to make the mistake.
-  const STILL_MODE = new Set(['delegate_beast', 'bright_idea', 'memory_projector']);
+  const STILL_MODE = new Set(['bright_idea', 'memory_projector']);
   for (const id of W2) {
     BOT_MODE = STILL_MODE.has(id) ? 'still' : 'habit';
     const r = fight(id, 14);

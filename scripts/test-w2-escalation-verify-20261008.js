@@ -154,7 +154,7 @@ for (const m of wave2) {
 
 // --- drift guards (audit 2026-10-07 drift notes, cleaned 2026-10-08) -----------
 // 1. W2A_IDS in app.js must not route any retired wave-2 id
-const RETIRED = ['camera_swarm', 'hype_horn', 'service_mimic', 'contract_golem', 'delegate_beast'];
+const RETIRED = ['camera_swarm', 'hype_horn', 'service_mimic', 'contract_golem'];
 const w2aMatch = appSrc.match(/const W2A_IDS = \{([^}]*)\}/);
 ok(!!w2aMatch, 'W2A_IDS declaration found in app.js');
 if (w2aMatch) {

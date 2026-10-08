@@ -28,7 +28,7 @@ function ok(name, cond, detail) {
 
 // ---- static: no dead ids remain in the scenario file ----
 const scenSrc = fs.readFileSync(path.join(ROOT, 'src/js/debug-scenarios.js'), 'utf8');
-for (const id of ['camera_swarm', 'hype_horn', 'service_mimic', 'contract_golem', 'delegate_beast']) {
+for (const id of ['camera_swarm', 'hype_horn', 'service_mimic', 'contract_golem']) {
   ok(`no '${id}' in debug-scenarios.js`, !scenSrc.includes(`'${id}'`));
 }
 // ---- static: startCombat fails loudly ----

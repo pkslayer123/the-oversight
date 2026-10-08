@@ -155,9 +155,6 @@ async function check(id, rounds, asserts) {
     'jurisdiction spread (range>3 shown)': (m) => (m.cgRangeShown || 0) > 3,
     'addendum spoken': () => has(/ADDENDUM/),
   }});
-  await run('delegate_beast', 25, { mode: 'still', checks: {
-    'follow-up declared': () => has(/CIRCLING BACK/),
-  }});
   await run('bright_idea', 30, { mode: 'still', checks: {
     'rekindle accelerated (2+ cycles)': (m) => (m.biCycles || 0) >= 2,
     'dazzle applied': () => has(/dazzled/),

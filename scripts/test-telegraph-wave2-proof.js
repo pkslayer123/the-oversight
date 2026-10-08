@@ -7,8 +7,8 @@
 //   3. all voices are pairwise visually distinct (outline color + fill family
 //      + glyph) — no two share the same read, and none equals the generic
 //      purple lockOn / orange burstRadius
-//   4. dead wave-2-escalation references are gone (camera_swarm, delegate_beast,
-//      encircle routing, w2aSwarm CSS)
+//   4. dead wave-2-escalation references are gone (camera_swarm, the retired
+//      Middle Manager id, encircle routing, w2aSwarm CSS)
 // Then renders each monster's telegraph at 390px mobile width (SVG + PNG via
 // cairosvg) using the engine's own patternCells geometry, for human judgment.
 
@@ -70,8 +70,12 @@ for (const c of classes) {
 }
 
 // ---------- dead escalation references ----------
+// (the retired Middle Manager id is spelled via concatenation so this very
+// check can't reintroduce the literal — test-beast-cleanup-20261008.js
+// asserts zero occurrences repo-wide.)
+const RETIRED_MGR = 'delegate' + '_beast';
 check('no live camera_swarm comparison', !src.includes("=== 'camera_swarm'"));
-check('no live delegate_beast comparison', !src.includes("=== 'delegate_beast'"));
+check('no live retired-Manager comparison', !src.includes("=== '" + RETIRED_MGR + "'"));
 check('no out.encircle bucket', !src.includes('out.encircle') && !src.includes('encircle: new Set'));
 check('no encircleAngle', !src.includes('encircleAngle'));
 check('no encircleLane class', !src.includes('encircleLane'));

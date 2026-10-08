@@ -21,7 +21,7 @@ const appCode = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
 const gameCode = fs.readFileSync(path.join(ROOT, 'src/js/game.js'), 'utf8');
 
 const WAVE2 = ['voice_mimic_radio', 'mirror_stag', 'review_drone', 'camera_swarm',
-  'hype_horn', 'service_mimic', 'contract_golem', 'delegate_beast',
+  'hype_horn', 'service_mimic', 'contract_golem',
   'bright_idea', 'memory_projector'];
 
 // 1. All 10 defs exist and are complete

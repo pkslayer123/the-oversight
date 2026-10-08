@@ -38,7 +38,7 @@ const b4m = gameSrc.match(/tbBatch4Cue\(m\) \{[\s\S]*?\n    \},/);
 check('tbBatch4Cue found for scan', !!b4m);
 if (b4m) {
   const body = b4m[0].replace(/\/\/[^\n]*/g, ''); // strip comments — our own doc notes name the dead
-  for (const dead of ['camera_swarm', 'hype_horn', 'delegate_beast']) {
+  for (const dead of ['camera_swarm', 'hype_horn']) {
     check(`no dead branch for ${dead}`, !new RegExp(`mid === '${dead}'`).test(body));
   }
   check('guard only allows review_drone', /if \(mid !== 'review_drone'\) return null;/.test(body));

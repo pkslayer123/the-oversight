@@ -1,4 +1,5 @@
-// Wave 2 Group C mechanics verification: Middle Manager, Inspiration, Nostalgia.
+// Wave 2 Group C mechanics verification: Inspiration, Nostalgia.
+// (the Middle Manager sections were deleted with its retired monster, 2026-10-08.)
 // Run: node scripts/test-wave2-groupC.js (no jest — pure node, uses game harness)
 const path = require('path');
 const fs = require('fs');
@@ -14,22 +15,6 @@ function ok(cond, name, detail) {
   else { fail++; console.log('  ✗ FAIL: ' + name + (detail ? ' — ' + detail : '')); }
 }
 function def(id) { return mlist.find(m => m.id === id); }
-
-console.log('\n== DATA: delegate_beast (Middle Manager) ==');
-{
-  const d = def('delegate_beast');
-  ok(!!d, 'monster def exists');
-  const pat = d.attack.pattern;
-  ok(pat.type === 'charge' && pat.width === 2, 'charge pattern width 2', JSON.stringify(pat));
-  ok(pat.length === 4, 'charge length 4');
-  ok(JSON.stringify(d.encounter.phases) === JSON.stringify(['circle','announce','charge','debrief']), 'phases circle→announce→charge→debrief', JSON.stringify(d.encounter.phases));
-  ok(d.fear === 'numbers', 'fears numbers');
-  ok(d.encounter.declareAudio === 'managerAnnounce', 'declareAudio managerAnnounce');
-  ok(d.encounter.fifo === true, 'uses fifo');
-  ok(d.attack.telegraph && d.attack.telegraph.includes('Per my last roar'), 'distinct telegraph text');
-  const badges = d.encounter.phaseBadges || {};
-  ok(badges.circle && badges.announce && badges.charge && badges.debrief, 'all phase badges present');
-}
 
 console.log('\n== DATA: bright_idea (Inspiration) ==');
 {
@@ -57,30 +42,6 @@ console.log('\n== DATA: memory_projector (Nostalgia) ==');
   ok(d.attack.telegraph && d.attack.telegraph.length > 40, 'distinct telegraph text');
 }
 
-console.log('\n== GAME.JS: Middle Manager block ==');
-{
-  const src = fs.readFileSync(path.join(repo, 'src/js/game.js'), 'utf8');
-  ok(src.includes('MIDDLE MANAGER ("delegate_beast"): THE MEETING'), 'bespoke block present');
-  ok(src.includes("Per my last roar"), 'circle text');
-  // fears-numbers text lives in monsters.json cues.fearful (overworld) + managerFear audio
-  const beastData = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'src/data/monsters.json'), 'utf8'));
-  const blist = Array.isArray(beastData) ? beastData : (beastData.monsters || []);
-  const bb = blist.find(m => m.id === 'delegate_beast');
-  ok(bb.cues && bb.cues.fearful && bb.cues.fearful[0].includes('Too many stakeholders'), 'fears-numbers text in data');
-  ok(src.includes("audioEvent('managerFear')"), 'managerFear fired (overworld cautious)');
-  ok(src.includes("circle back on what just happened") || src.includes("circle back on why that missed"), 'debrief text');
-  ok(src.includes("managerCircle") && src.includes("audioEvent('managerCircle')"), 'managerCircle audio fired');
-  ok(src.includes("audioEvent('managerAnnounce')") || src.includes('declareAudio'), 'managerAnnounce wired');
-  ok(src.includes("audioEvent('managerCharge')"), 'managerCharge on resolve');
-  ok(src.includes("audioEvent('managerDebrief')"), 'managerDebrief fired');
-  ok(src.includes("audioEvent('managerFear')"), 'managerFear fired');
-  ok(src.includes("if (this.beastIs(m)) return 'announce'"), 'announce phase hook');
-  ok(src.includes("this.beastIs(m) ||") === false || src.includes("this.beastIs(m);"), 'hasDeclare includes beast');
-  // beastCircled reset paths
-  ok((src.match(/beastCircled = false/g) || []).length >= 2, 'beastCircled reset on debrief + resolve');
-  ok(src.includes("m.beastDebrief = 1"), 'debrief counter set on resolve');
-}
-
 console.log('\n== GAME.JS: Inspiration / Nostalgia blocks ==');
 {
   const src = fs.readFileSync(path.join(repo, 'src/js/game.js'), 'utf8');
@@ -105,7 +66,7 @@ console.log('\n== APP.JS: audio synths registered ==');
   const src = fs.readFileSync(path.join(repo, 'src/js/app.js'), 'utf8');
   const fns = ['eurekaTick','eurekaCharge','eurekaSpent','eurekaDisperse','eurekaDrift','eurekaDetonate',
     'projectorHum','projectorStatic','projectorBreak','projectorPull',
-    'managerCircle','managerAnnounce','managerCharge','managerDebrief','managerFear'];
+    'managerCircle','managerCharge','managerDebrief','managerFear'];
   for (const fn of fns) {
     ok(src.includes('function ' + fn + '('), fn + ' synth defined');
     ok(src.includes(fn + '() { ' + fn + '(') || src.includes(fn + '(d) { ' + fn + '(d)'), fn + ' registered in audio map');

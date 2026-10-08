@@ -1,16 +1,15 @@
 // Wave 2 Group C VISUAL proof (Steve 2026-10-06, worker W1).
 // Proves the telegraph/render work against REAL combat and REAL code:
-//   1. delegate_beast charge routes to the encircle bucket (not generic chargeLane),
-//      with a charge-direction angle for the arrows
-//   2. bright_idea burst goes white-hot (biHot) on the last windup tick only
-//   3. unknown -> 0 cells everywhere (knowledge gating holds)
-//   4. bloom badge paints: detonation ends the monster turn on 'bloom'
-//   5. bi declare carries cueText (BACK OFF coaching visible in telegraph UI)
-//   6. memory projector resolve payoff text + projectorFire event hook
-//   7. mpBeamKeys / beastCircleKeys helpers: gated producers
-//   8. tbPatternDesc codexDesc override (delegate_beast learns the encirclement text)
-//   9. gwTrap shadow producer contract (sibling's render consumes it)
-//  10. app.js renderDetail source presence for the new visuals
+//   1. bright_idea burst goes white-hot (biHot) on the last windup tick only
+//      (the Middle Manager's encircle-bucket item retired with it, 2026-10-08)
+//   2. unknown -> 0 cells everywhere (knowledge gating holds)
+//   3. bloom badge paints: detonation ends the monster turn on 'bloom'
+//   4. bi declare carries cueText (BACK OFF coaching visible in telegraph UI)
+//   5. memory projector resolve payoff text + projectorFire event hook
+//   6. mpBeamKeys helper: gated producer
+//   7. tbPatternDesc codexDesc override (synthetic — no live monster sets one now)
+//   8. gwTrap shadow producer contract (sibling's render consumes it)
+//   9. app.js renderDetail source presence for the new visuals
 // Run: node scripts/test-wave2c-visuals.js
 const fs = require('fs');
 const path = require('path');
@@ -18,7 +17,7 @@ const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+ 'src/js/game.js', 'src/js/statusEffects.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
 
 let pass = 0, fail = 0;
@@ -73,27 +72,7 @@ function runBuckets(stub) {
   const origSay = Game.say.bind(Game);
   Game.say = (t) => { saidLines.push(String(t)); return origSay(t); };
 
-  console.log('\n== 1+2+3: app.js bucket routing (real tbAllTelegraphCells, stub Game) ==');
-  {
-    // delegate_beast announced charge -> encircle, not charge; angle captured
-    const laneCells = Game.beastLineCells(6, 4, 2, 4, 4, 2);
-    const stubBeast = {
-      tbfight: { fighters: [
-        { kind: 'monster', alive: true, mdef: { id: 'delegate_beast' },
-          telegraph: { kind: 'squares', pattern: { type: 'charge' },
-            cells: laneCells, turnsLeft: 1 } },
-      ] },
-      encTelegraphKnown: () => true,
-    };
-    let out = runBuckets(stubBeast);
-    ok(out.encircle.size === laneCells.length, 'beast charge cells route to encircle bucket', String(out.encircle.size));
-    ok(out.charge.size === 0, 'beast charge cells do NOT land in generic charge bucket');
-    ok(typeof out.encircleAngle === 'number', 'encircle charge angle captured for arrows', String(out.encircleAngle));
-    ok(Math.abs(out.encircleAngle - 180) <= 20, 'angle points along the charge lane (beast->player, ~180deg)', String(out.encircleAngle));
-    // unknown -> nothing renders
-    out = runBuckets({ tbfight: stubBeast.tbfight, encTelegraphKnown: () => false });
-    ok(out.encircle.size === 0 && out.charge.size === 0, 'unknown beast: 0 telegraph cells (gating holds)');
-  }
+  console.log('\n== 1+2+3: app.js bucket routing (bright_idea; real tbAllTelegraphCells, stub Game) ==');
   {
     // bright_idea burst: turnsLeft 2 -> burst; turnsLeft 1 -> biHot
     const cells = [{ cx: 3, cy: 3 }, { cx: 4, cy: 4 }];
@@ -112,7 +91,7 @@ function runBuckets(stub) {
     ok(out.biHot.size === 0 && out.burst.size === 0, 'bi unknown: 0 cells (gating holds)');
   }
 
-  console.log('\n== 4+5: bloom badge paints + bi declare cueText (BACK OFF in telegraph UI) ==');
+  console.log('\n== 3+4: bloom badge paints + bi declare cueText (BACK OFF in telegraph UI) ==');
   {
     const m = setup('bright_idea', { night: true });
     setKnown('bright_idea', true);
@@ -175,7 +154,7 @@ function runBuckets(stub) {
     ok(!!unkCue && !/BACK OFF/.test(unkCue), 'unknown bi: cueText is dread only, no coaching (gating holds)', String(unkCue));
   }
 
-  console.log('\n== 6: memory projector resolve payoff ==');
+  console.log('\n== 5: memory projector resolve payoff ==');
   {
     const m = setup('memory_projector', { night: true });
     setKnown('memory_projector', true);
@@ -209,42 +188,29 @@ function runBuckets(stub) {
     ok(Game.mpBeamKeys().size === 0, 'mpBeamKeys: unknown -> 0 cells (gating holds)');
   }
 
-  console.log('\n== 7: beastCircleKeys (closing circle ring, knowledge-gated) ==');
+  console.log('\n== 7: tbPatternDesc codexDesc wiring ==');
   {
-    const m = setup('delegate_beast');
-    m.beamPhase = 'circle';
-    Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
-    const p = Game.tbFighter('p'); p.mx = 4; p.my = 4;
-    setKnown('delegate_beast', true);
-    const ring = Game.beastCircleKeys();
-    ok(ring.size === 16, 'circle ring: 16 cells at chebyshev distance 2 around player', String(ring.size));
-    ok(ring.has('2,2') && ring.has('6,6') && ring.has('4,2') && ring.has('2,4'), 'ring geometry correct (corners + edges)');
-    ok(!ring.has('4,4'), 'ring excludes the player tile');
-    setKnown('delegate_beast', false);
-    ok(Game.beastCircleKeys().size === 0, 'unknown: no circle ring (gating holds)');
-    setKnown('delegate_beast', true);
-    m.beamPhase = 'announce';
-    ok(Game.beastCircleKeys().size === 0, 'ring only while pacing circle phase');
-  }
-
-  console.log('\n== 8: tbPatternDesc codexDesc wiring ==');
-  {
-    const d = def('delegate_beast');
-    const got = Game.tbPatternDesc(d.attack.pattern, d);
-    ok(got.includes('circles wide'), 'beast learns the encirclement text, not the straight-line generic', got.slice(0, 60));
+    // No live monster currently sets attack.pattern.codexDesc (the retired
+    // Middle Manager was the only one) — prove the ENGINE honors the
+    // override with a synthetic def, so the mechanism stays covered.
+    const synth = { attack: { name: 'Synthetic Pounce',
+      pattern: { type: 'charge', codexDesc: 'circles wide, then pounces' } } };
+    const got = Game.tbPatternDesc(synth.attack.pattern, synth);
+    ok(got === 'circles wide, then pounces', 'codexDesc override wins over the generic text', got.slice(0, 60));
     const other = Game.tbPatternDesc({ type: 'charge' }, def('mirror_stag'));
     ok(other.includes('charges in a straight line'), 'monsters without codexDesc keep the generic text');
     ok(Game.tbPatternDesc({ type: 'charge' }).includes('charges in a straight line'), 'tbPatternDesc stays backward-compatible without mdef');
-    // tbLearnPattern writes the override into the codex
-    const m = setup('delegate_beast');
-    setKnown('delegate_beast', false);
+    // tbLearnPattern writes the (generic) desc into the codex
+    const d = def('mirror_stag');
+    const m = setup('mirror_stag');
+    setKnown('mirror_stag', false);
     Game.tbLearnPattern(m);
-    const c = Game.state.codex.monsters['delegate_beast'];
-    ok(c && c.patterns[d.attack.name] && c.patterns[d.attack.name].includes('circles wide'),
-      'tbLearnPattern stores the encirclement codexDesc');
+    const c = Game.state.codex.monsters['mirror_stag'];
+    ok(c && c.patterns[d.attack.name] && c.patterns[d.attack.name].includes('charges in a straight line'),
+      'tbLearnPattern stores the desc in the codex');
   }
 
-  console.log('\n== 9: gwTrap shadow producer contract ==');
+  console.log('\n== 8: gwTrap shadow producer contract ==');
   {
     ok(Game.glasswingTrapCells() === null, 'no trap -> null (nothing renders)');
     Game.state.scholar.gwTrap = { turns: 2, tileX: 5, tileY: 4, monsterId: 'glasswing' };
@@ -254,12 +220,13 @@ function runBuckets(stub) {
     Game.state.scholar.gwTrap = null;
   }
 
-  console.log('\n== 10: app.js renderDetail source presence for new visuals ==');
+  console.log('\n== 9: app.js renderDetail source presence for new visuals ==');
   {
     const src = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
-    ok(src.includes('encircleLane'), 'encircleLane class rendered');
+    // (the Middle Manager's encircleLane class + encircleAngle wiring were
+    // removed from app.js with the retired monster — see
+    // test-telegraph-wave2-proof.js 'dead escalation references'.)
     ok(src.includes('➤'), 'direction-arrow overlay rendered');
-    ok(src.includes('encircleAngle'), 'charge angle wired from app routing');
     ok(src.includes("' biHot'") || src.includes('" biHot"') || src.includes(' biHot'), 'biHot bucket rendered');
     ok(src.includes('#ffb020'), 'amber encirclement inline style');
     ok(src.includes('255,255,255,.42') || src.includes('255,255,255,.45'), 'white-hot burst inline style');

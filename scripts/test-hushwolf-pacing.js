@@ -5,7 +5,7 @@
 //   1. tickAction (the action clock behind wait/rest) never called monsterTurn
 //      — the overworld stance machine only ran on steps/interacts.
 //   2. The 'cautious' stance was a one-way trap: circle forever, no exit,
-//      no startCombat (hit hushwolf/hype_horn/delegate_beast/review_drone
+//      no startCombat (hit hushwolf/hype_horn/review_drone
 //      whenever 2+ villagers were near — fear:'numbers').
 //   3. stepToward tried one axis and gave up — a single tree between monster
 //      and player froze the stalk (no diagonal fallback).

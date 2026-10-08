@@ -1,4 +1,5 @@
-// Wave 2 Group C behavioral proof: delegate_beast, bright_idea, memory_projector.
+// Wave 2 Group C behavioral proof: bright_idea, memory_projector.
+// (the Middle Manager section was deleted with its retired monster, 2026-10-08.)
 // Drives REAL combat (not source grep) and proves, per monster:
 //   1. distinct telegraph text (not generic)
 //   2. phase system windup -> action -> recovery, visible via encPhaseBadge
@@ -11,7 +12,7 @@ const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+ 'src/js/game.js', 'src/js/statusEffects.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
 
 let pass = 0, fail = 0;
@@ -84,45 +85,6 @@ const has = (log, re) => log.some(l => re.test(l));
   await Game.init();
   const origSay = Game.say.bind(Game);
   Game.say = (t) => { saidLines.push(String(t)); return origSay(t); };
-
-  console.log('\n== delegate_beast: telegraph / phases / audio ==');
-  {
-    const d = def('delegate_beast');
-    ok(d.attack.telegraph.includes('Per my last roar'), 'distinct telegraph text (not generic)');
-    ok(d.attack.pattern.codexDesc && d.attack.pattern.codexDesc.includes('circles wide'),
-      'codexDesc override present (encirclement fiction, not straight-line generic)');
-    ok(JSON.stringify(d.encounter.phases) === JSON.stringify(['circle', 'announce', 'charge', 'debrief']),
-      'phases circle->announce->charge->debrief');
-    const m = setup('delegate_beast');
-    const r = drive(m, 60);
-    ok(has(r.log, /paces its circle/), 'circle telegraph spoken (known variant)');
-    ok(r.cues.some(c => /OFFLINE/.test(c)), 'announce cue shown in combat UI (distinct, not generic)');
-    ok(r.cues.some(c => /width 2/.test(c)), 'announce cue coaches the wide line (known)');
-    ok(r.phases.some(p => p.phase === 'announce'), 'announce phase reached');
-    ok(r.phases.some(p => p.phase === 'debrief'), 'debrief recovery phase reached after charge');
-    // the announced lane is width 2 and a genuine threat: capture it at declare
-    // (phase 'announce' is set with the fresh lane; later captures may catch
-    // a spent/stacked telegraph)
-    let sawLane = null;
-    const m2b = setup('delegate_beast');
-    drive(m2b, 60, (p, mm) => {
-      if (!sawLane && mm.beamPhase === 'announce' && mm.telegraph && mm.telegraph.cells) {
-        sawLane = mm.telegraph.cells.slice();
-      }
-    });
-    ok(!!sawLane && sawLane.length >= 8, 'announced lane is width 2 (8+ cells)', sawLane ? String(sawLane.length) : 'none');
-    m2b.beamPhase = 'announce';
-    ok(Game.encPhaseBadge(m2b).includes('LINE SET'), 'phase badge visible for announce', Game.encPhaseBadge(m2b));
-    ok(firedAudio.includes('managerCircle'), 'audio: managerCircle fired');
-    ok(firedAudio.includes('managerAnnounce') || firedAudio.includes('delegateAnnounce'), 'audio: announce fired');
-    ok(firedAudio.includes('managerDebrief'), 'audio: managerDebrief fired');
-    ok(firedAudio.includes('managerCharge'), 'audio: managerCharge fired on resolve');
-    // geometry: beastLineCells is a true width-2 lane
-    const cells = Game.beastLineCells(4, 4, 7, 4, 4, 2);
-    ok(cells.length >= 8, 'beastLineCells width-2 lane has 8+ cells', String(cells.length));
-    ok(cells.some(c => c.cx === 7 && c.cy === 4), 'beastLineCells: aim point is ON the line');
-    ok(Game.encPhaseBadge(m).length > 0 || true, 'phase badge hook present');
-  }
 
   console.log('\n== bright_idea: telegraph / phases / audio ==');
   {
@@ -203,8 +165,8 @@ const has = (log, re) => log.some(l => re.test(l));
     ok(has(r1.log, /gray static/), 'static recovery phase narrated');
   }
 
-  console.log('\n== codex gating (all three): unknown -> earned ==');
-  for (const id of ['delegate_beast', 'bright_idea', 'memory_projector']) {
+  console.log('\n== codex gating (both): unknown -> earned ==');
+  for (const id of ['bright_idea', 'memory_projector']) {
     const d = def(id);
     // wipe knowledge: fresh encounter
     Game.state.codex.monsters[id] = { stage: 'encountered', attacksSeen: [], patterns: {} };
@@ -222,7 +184,7 @@ const has = (log, re) => log.some(l => re.test(l));
     const src = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
     const fns = ['eurekaTick', 'eurekaCharge', 'eurekaSpent', 'eurekaDisperse', 'eurekaDrift', 'eurekaDetonate',
       'projectorHum', 'projectorStatic', 'projectorBreak', 'projectorPull',
-      'managerCircle', 'managerAnnounce', 'managerCharge', 'managerDebrief', 'managerFear'];
+      'managerCircle', 'managerCharge', 'managerDebrief', 'managerFear'];
     for (const fn of fns) {
       ok(src.includes('function ' + fn + '('), fn + ' synth defined');
     }

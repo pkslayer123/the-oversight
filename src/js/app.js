@@ -8037,8 +8037,7 @@
     }
     function chargeWindup(durSec) {
       // EARTH TREMBLES: low rumble with an accelerating rhythm inside it —
-      // hooves, or an engine, you can't tell which. (bulldozer, mirror_stag —
-      // delegate_beast retired, Steve 2026-10-08)
+      // hooves, or an engine, you can't tell which. (bulldozer, mirror_stag)
       if (!ensure()) return;
       const t = ctx.currentTime, dur = Math.max(0.9, durSec || 1.8);
       const o = ctx.createOscillator(), g = ctx.createGain();
@@ -13703,8 +13702,7 @@
     // out.single` below falls back to the targetTile highlight (no crash).
     // WAVE 2 GROUP C (Steve 2026-10-06): biHot (bright_idea — the burst goes
     // white-hot on its last windup tick, "about to break loose").
-    // Knowledge-gated like every bucket. (delegate_beast's encircle routing
-    // was removed with the retired id, Steve 2026-10-08.)
+    // Knowledge-gated like every bucket.
     // WING/BASK (Steve 2026-10-06): sbLock (sunbasker — the Sun-Charged
     // Bite's tracking lock-on reads MOLTEN GOLD, not the generic purple
     // lockOn). The glasswing's in-combat dive shadow is NOT a bucket: it

@@ -25,7 +25,8 @@ console.log('\n=== WAVE-2 ROSTER REDESIGN TEST ===\n');
 
 // 1. Removed reskins are gone
 console.log('1. Cheap reskins removed:');
-const removed = ['camera_swarm', 'hype_horn', 'service_mimic', 'contract_golem', 'delegate_beast'];
+const removed = ['camera_swarm', 'hype_horn', 'service_mimic', 'contract_golem'];
+// (the Middle Manager retired too — covered by test-beast-cleanup-20261008.js zero-refs proof.)
 for (const id of removed) {
   check(`${id} not in data`, !byId[id], byId[id] ? 'still exists!' : '');
 }

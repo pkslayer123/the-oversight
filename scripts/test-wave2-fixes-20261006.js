@@ -1,6 +1,6 @@
 // WAVE-2 FIXES + WARRANTY CALLER (Steve 2026-10-06).
-// 1. delegate_beast: no duplicate audio (delegateAnnounce/delegateCharge/
-//    delegateCircle aliased the manager* synths and played them 2-3x per beat)
+// (item 1, the Middle Manager audio dedup, was deleted with its retired
+// monster 2026-10-08 — the dead code paths it tested are gone.)
 // 2. service_mimic: fire-suppression line deduped via saySituationOnce
 // 3. service_mimic: data knownCue now surfaces (codex-gated) in the watching beat
 // 4. tbBatch4Cue: dead service_mimic/contract_golem branches removed
@@ -68,27 +68,6 @@ function learn(id) {
   Game.say = (t) => { said.push(String(t)); return origSay(t); };
   const origAE = Game.audioEvent.bind(Game);
   Game.audioEvent = (n, o) => { firedAudio.push(String(n)); return origAE(n, o); };
-
-  console.log('\n== 1: delegate_beast audio dedup ==');
-  {
-    const m = startFight('delegate_beast');
-    ok(!!m, 'beast fight starts');
-    // drive two full cycles: circle -> announce -> charge -> debrief
-    for (let i = 0; i < 24 && Game.tbfight && !Game.tbfight.over; i++) endTurn();
-    const ann = firedAudio.filter(a => a === 'managerAnnounce').length;
-    const dAnn = firedAudio.filter(a => a === 'delegateAnnounce').length;
-    const dChg = firedAudio.filter(a => a === 'delegateCharge').length;
-    const dCir = firedAudio.filter(a => a === 'delegateCircle').length;
-    ok(dAnn === 0, 'delegateAnnounce never fires (alias of managerAnnounce)', 'fired ' + dAnn);
-    ok(dChg === 0, 'delegateCharge never fires (alias of managerCharge)', 'fired ' + dChg);
-    ok(dCir === 0, 'delegateCircle never fires (bespoke branch owns the circle)', 'fired ' + dCir);
-    ok(ann >= 1, 'managerAnnounce still fires on declare', 'fired ' + ann);
-    ok(firedAudio.includes('managerCharge'), 'managerCharge fires on resolve');
-    // one circle sound per cycle: managerCircle count <= charge cycles + 1
-    const cir = firedAudio.filter(a => a === 'managerCircle').length;
-    const chg = firedAudio.filter(a => a === 'managerCharge').length;
-    ok(cir <= chg + 1, `one circle beat per cycle (circles=${cir}, charges=${chg})`);
-  }
 
   console.log('\n== 2: service_mimic fire-suppression dedup ==');
   {

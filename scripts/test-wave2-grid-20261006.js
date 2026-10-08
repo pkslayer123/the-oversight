@@ -18,7 +18,7 @@ const W2 = [
   ['voice_mimic_radio', 'static'], ['mirror_stag', 'griefcounselor'],
   ['review_drone', 'reviewdrone'], ['camera_swarm', 'influencer'],
   ['hype_horn', 'motivationalspeaker'], ['service_mimic', 'customerservice'],
-  ['contract_golem', 'termsconditions'], ['delegate_beast', 'middlemanager'],
+  ['contract_golem', 'termsconditions'],
   ['bright_idea', 'inspiration'], ['memory_projector', 'nostalgia'],
 ];
 function flatGrid() { return Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => 'grass')); }

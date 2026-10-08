@@ -34,8 +34,6 @@ const tbAllTelegraphCells = eval('(' + _tbSrc + ')');
 const TARGETS = [
   { name: 'deer-unknown', scenario: 'headlight', monster: 'gallowdeer', label: 'Highbeam Deer — benchmark, unknown pattern' },
   { name: 'deer-known', scenario: 'headlight', monster: 'gallowdeer', learn: true, label: 'Highbeam Deer — benchmark, pattern learned' },
-  { name: 'middlemanager-unknown', scenario: 'middlemanager', monster: 'delegate_beast', label: 'Middle Manager (wave-2C) — unknown' },
-  { name: 'middlemanager-known', scenario: 'middlemanager', monster: 'delegate_beast', learn: true, label: 'Middle Manager (wave-2C) — known' },
   { name: 'inspiration-unknown', scenario: 'inspiration', monster: 'bright_idea', label: 'Inspiration (wave-2C) — unknown' },
   { name: 'inspiration-known', scenario: 'inspiration', monster: 'bright_idea', learn: true, label: 'Inspiration (wave-2C) — known' },
   { name: 'inspiration-bihot', scenario: 'inspiration', monster: 'bright_idea', learn: true, untilHot: true,
@@ -246,7 +244,7 @@ function render(snap) {
     }
   }
   y += 22;
-  // Encircle direction arrow (delegate_beast): single arrow at centroid.
+  // Encircle direction arrow: single arrow at centroid (no live producers — kept for future use).
   if (B.encircle.size && snap.encircleAngle != null) {
     let sx = 0, sy = 0;
     for (const k of B.encircle) { const [ax, ay] = k.split(',').map(Number); sx += ax; sy += ay; }

@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 // Telegraph judgment-call fixes (Steve 2026-10-06): asserts for the 4 items
 // from evidence/2026-10-06/proof-notes.md "Observations for Steve / later runs".
-//  (a) Middle Manager unknown cue promises no visible line (dread kept).
+//  (a) Unknown cue promises no visible line (dread kept). Originally written
+//      against the Middle Manager; that monster retired 2026-10-08, so the
+//      same judgment call is now guarded on the paparazzo — the live wave-2
+//      monster with the closest comparable telegraph voice (bespoke unknown
+//      cue, knowledge-gated coaching via knownCue/knownTactics).
 //  (b) tgPlayerAlertClasses emits player-coincident shadow/lock markers
 //      (helper-level, not pixels) + renderDetail wires them into the pmark.
 // Usage: node scripts/test-telegraph-judgment.js
@@ -44,11 +48,11 @@ function extractHelper() {
   Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
 
-  // ---------- (a) Middle Manager unknown cue: no visible-line promise ----------
-  const beast = { mdef: mdef('delegate_beast'), telegraph: { turnsLeft: 1 } };
+  // ---------- (a) Paparazzo unknown cue: no visible-line promise ----------
+  const pz = { mdef: mdef('paparazzo'), telegraph: { turnsLeft: 1 } };
   Game.state.codex.monsters = Game.state.codex.monsters || {};
-  delete Game.state.codex.monsters['delegate_beast'];
-  const unknownCue = Game.tbTelegraphCue(beast);
+  delete Game.state.codex.monsters['paparazzo'];
+  const unknownCue = Game.tbTelegraphCue(pz);
   const promisesVisibleLine = [
     /on that line/, /line on the ground/, /see the line/, /the line is visible/,
     /projected line/, /line on the dirt/, /look at the line/, /the glowing line/,
@@ -57,16 +61,16 @@ function extractHelper() {
   for (const rx of promisesVisibleLine) {
     ok(`a2: unknown cue has no visible-line promise (${rx})`, !rx.test(unknownCue), unknownCue);
   }
-  ok('a3: unknown cue keeps dread (staring + warning)', /staring/.test(unknownCue) && /do not be there/i.test(unknownCue), unknownCue);
-  ok('a4: unknown cue keeps the OFFLINE voice', /take this OFFLINE/.test(unknownCue), unknownCue.slice(0, 60));
-  ok('a5: unknown cue has no earned coaching', !/You know this one/.test(unknownCue) && !/sidestep FARTHER/.test(unknownCue));
+  ok('a3: unknown cue keeps dread (shutter + break loose)', /shutter/.test(unknownCue) && /break loose/.test(unknownCue), unknownCue);
+  ok('a4: unknown cue keeps the paparazzo voice', /lens steadies/.test(unknownCue), unknownCue.slice(0, 60));
+  ok('a5: unknown cue has no earned coaching', !/You know this one/.test(unknownCue) && !/break line of sight/.test(unknownCue));
 
   // Known cue / coaching untouched.
-  Game.state.codex.monsters['delegate_beast'] = { patterns: { 'Circle Back': 'x' } };
-  const knownCue = Game.tbTelegraphCue(beast);
-  ok('a6: known cue still tactical (sidestep FARTHER)', /sidestep FARTHER/.test(knownCue), knownCue.slice(0, 120));
-  ok('a7: known cue still appends earned coaching', /You know this one: Circle Back/.test(knownCue), knownCue.slice(0, 120));
-  delete Game.state.codex.monsters['delegate_beast'].patterns;
+  Game.state.codex.monsters['paparazzo'] = { patterns: { 'Flash Photography': 'x' } };
+  const knownCue = Game.tbTelegraphCue(pz);
+  ok('a6: known cue still tactical (Four shots)', /Four shots/.test(knownCue), knownCue.slice(0, 120));
+  ok('a7: known cue still appends earned coaching', /You know this one: Flash Photography/.test(knownCue) && /break line of sight/.test(knownCue), knownCue.slice(0, 120));
+  delete Game.state.codex.monsters['paparazzo'].patterns;
 
   // ---------- (b) tgPlayerAlertClasses: player-coincident markers ----------
   const { fn: alert, src: alertSrc } = extractHelper();

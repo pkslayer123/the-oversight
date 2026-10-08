@@ -1,5 +1,6 @@
 // Play harness for monster batch 4 (corporate horrors). NOT the formal test.
-// Usage: node scripts/play-monbatch4.js [review_drone|camera_swarm|hype_horn|delegate_beast|all]
+// Usage: node scripts/play-monbatch4.js [review_drone|camera_swarm|hype_horn|all]
+// (the Middle Manager harness was deleted with its retired monster, 2026-10-08.)
 // Scripted playthroughs; prints the encounter log at key beats so a human
 // can READ the fight like a player and feel the phases/telegraphs/counterplay.
 const fs = require('fs');
@@ -173,30 +174,11 @@ function playHorn() {
   beat('CROWD — it can\'t encourage a crowd');
 }
 
-function playBeast() {
-  console.log('\n########## PLAY: delegate_beast (Middle Manager) ##########');
-  setup('delegate_beast', { px: 4, py: 4, mx: 7, my: 4 });
-  beat('FIRST SIGHTING — "Let\'s sync up!"');
-  pass(); // circle turn
-  beat('CIRCLE — it always circles first');
-  pass(); // declare
-  beat('ANNOUNCE — the line is set');
-  const cells = M().telegraph.cells;
-  const [sx, sy] = safeCell(cells, 4);
-  console.log(`  (player reads the announced line, sidesteps to (${sx},${sy}))`);
-  move(sx, sy);
-  pass();
-  beat('CHARGE — the announced line, exactly');
-  pass();
-  beat('DEBRIEF');
-}
-
 const which = process.argv[2] || 'all';
 (async () => {
   await Game.init();
   if (which === 'all' || which === 'review_drone') playDrone();
   if (which === 'all' || which === 'camera_swarm') playSwarm();
   if (which === 'all' || which === 'hype_horn') playHorn();
-  if (which === 'all' || which === 'delegate_beast') playBeast();
   console.log('\n(done)');
 })();

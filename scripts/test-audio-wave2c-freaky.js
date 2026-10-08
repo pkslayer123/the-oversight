@@ -1,8 +1,10 @@
 // Wave-2 Group C audio freakiness test (Steve 2026-10-06).
-// The five Group C telegraph/resolve synths were deepened from stock toward
+// The Group C telegraph/resolve synths were deepened from stock toward
 // alien: eurekaTick, eurekaCharge, eurekaDetonate (bright_idea), projectorHum
-// (memory_projector), managerAnnounce (delegate_beast).
+// (memory_projector). (managerAnnounce belonged to the Middle Manager,
+// retired 2026-10-08 — its synth remains in app.js, unfired.)
 //
+
 // Node can't play audio, so this is a listening-analysis harness: an
 // instrumented mock Web Audio records the full node graph each synth builds
 // (oscillator types, frequency schedules, gain envelopes, noise layers,
@@ -156,7 +158,9 @@ function analyze(name, opts) {
   return { name, threw, layers, oscs: oscs.length, noises: noises.length, dissonant, dissonanceKind, sweep, modulation, texture, median, freqs, midis };
 }
 
-const DEEPENED = ['eurekaTick', 'eurekaCharge', 'eurekaDetonate', 'projectorHum', 'managerAnnounce'];
+const DEEPENED = ['eurekaTick', 'eurekaCharge', 'eurekaDetonate', 'projectorHum'];
+// (managerAnnounce dropped: the synth was removed from app.js with the retired
+// Middle Manager's escalation cleanup — nothing left to analyze.)
 const results = {};
 for (const n of DEEPENED) results[n] = analyze(n, n === 'eurekaTick' ? { urgency: 1 } : n === 'projectorHum' ? { spell: true } : {});
 
@@ -180,7 +184,6 @@ for (const n of DEEPENED) {
 const fam = {
   bright_idea: ['eurekaTick', 'eurekaCharge', 'eurekaDetonate'],
   memory_projector: ['projectorHum'],
-  delegate_beast: ['managerAnnounce'],
 };
 function unionMidies(names) {
   const s = new Set();
