@@ -90,3 +90,33 @@ proxied to capture hook names. `--cacheDirectory` N/A (plain node, no jest).
 
 ## Diff stat
 `git show --stat HEAD` after safe-commit (see below).
+
+---
+
+## Follow-up 2026-10-08 ~01:45 CDT (coordinator)
+
+### Balance worker's characterization test — pulled in and flipped
+- `scripts/test-xp-doublecount-20261008.js` pulled from master (`git show
+  master:...`, commit eb995a2) into the worktree.
+- Assertions flipped 2/2/2 → 1/1/1 per the script's own comments; header and
+  closing copy rewritten to fixed-state characterization. GREEN against the
+  fixed code (all 5 PASS, seed 7).
+
+### EXTRA FINDING (balance worker): useAbility never grants XP — OUT OF SCOPE, reported
+- `Game.useAbility` (src/js/abilityActions.js:182) calls `noteAbilityUse(abilityId)`
+  (line 214) but NEVER `gainAbilityXP`. Behavioral probe (node, full harness):
+  `Game.useAbility('tracker','track')` returned true, logged 1 use, granted **0 XP**.
+- Reachability impact: abilityActions.js OVERRIDES `Game.activateAbility`
+  (lines 81-95) — composite ids (`tracker.track`) route to `useAbility` (no XP),
+  only plain ids fall back to the legacy game.js path where the 9ef4d1e/00d2531
+  XP fix lives. So data-driven ability actions never level — same reachability
+  class as the original one_person_army bug, which 9ef4d1e only fixed on the
+  legacy path.
+- Recommended patch (NOT applied — abilityActions.js is outside my game.js
+  mandate; needs the owning worker or coordinator approval): in
+  src/js/abilityActions.js useAbility, next to line 214:
+  `try { this.gainAbilityXP(abilityId, 1); } catch (e) {}`
+  (mirrors the noteAbilityUse call's try/catch; gainAbilityXP already
+  re-notes, so this keeps one-note-per-use honest.)
+- Coordinator: please route this one-liner to the abilityActions owner with a
+  proof assertion (probe above is the behavioral evidence).

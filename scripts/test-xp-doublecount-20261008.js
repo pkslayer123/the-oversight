@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ONE_PERSON_ARMY XP / DOUBLE-COUNT PROOF (before-state characterization).
+// ONE_PERSON_ARMY XP / DOUBLE-COUNT PROOF (fixed-state characterization).
 //
 // BUG (2026-10-07 23:55 note): commit 9ef4d1e made activateAbility() grant XP
 // toward leveling brawler abilities (fixing "combat never leveled, making
@@ -8,18 +8,17 @@
 // call AND added
 //   this.gainAbilityXP(id, 1);   // which itself calls noteAbilityUse(id)
 // (game.js activateAbility, lines ~14323/14327; gainAbilityXP line ~14420).
-// So ONE activation logs TWO ability-use events. noteAbilityUse feeds
-// checkSynergyDiscovery, so every synergy attempt counter inflates 2x:
-// a synergy that needs 3 combined attempts (e.g. one_person_army via its
-// legs) unlocks after 2 real activations instead of 3.
+// So ONE activation logged TWO ability-use events. noteAbilityUse feeds
+// checkSynergyDiscovery, so every synergy attempt counter inflated 2x.
 //
-// THIS TEST ENCODES THE CURRENT BUGGY BEHAVIOR — it is GREEN at this commit,
-// documenting the bug behaviorally. When the fix worker lands, the counts
-// drop to 1 and this test goes RED; the assertions should then be flipped to
-// the single-count expectations (marked below).
+// FIX (audio-game worker 2026-10-08, commit 00d2531): the direct
+// noteAbilityUse call was removed; gainAbilityXP's internal logging is the
+// single source. One activation = 1 use-log entry = 1 synergy attempt = 1 XP.
+// This test now ENCODES THE FIXED BEHAVIOR — green means the counts are
+// honest. (The pre-fix version of this file asserted 2/2/2 and is preserved
+// in master history at eb995a2.)
 //
-// It also verifies the XP side is HONEST: exactly 1 xp per activation (the
-// double-call only inflates use-logging, not XP).
+// It also verifies the XP side stays HONEST: exactly 1 xp per activation.
 //
 // Usage: node scripts/test-xp-doublecount-20261008.js (SEED override)
 const fs = require('fs');
@@ -83,18 +82,18 @@ function check(name, actual, expected) {
   const warCryLogAdded = s.abilityUseLog.filter(u => u.id === 'war_cry').length;
 
   console.log(`\n--- one activateAbility('war_cry') ---`);
-  // CURRENT (buggy) expectations: flip to 1/1/1 after the fix lands.
-  check('noteAbilityUse(war_cry) calls per activation', counts['war_cry'] || 0, 2);
-  check('abilityUseLog entries per activation', warCryLogAdded, 2);
-  check("synergyAttempts['test_doublecount_probe'] after 1 activation", s.synergyAttempts['test_doublecount_probe'] || 0, 2);
+  // FIXED expectations (single count per activation — the fix, commit 00d2531).
+  check('noteAbilityUse(war_cry) calls per activation', counts['war_cry'] || 0, 1);
+  check('abilityUseLog entries per activation', warCryLogAdded, 1);
+  check("synergyAttempts['test_doublecount_probe'] after 1 activation", s.synergyAttempts['test_doublecount_probe'] || 0, 1);
   // XP honesty: only ONE xp granted (gainAbilityXP ran once).
   const ab = s.abilities.find(a => a.id === 'war_cry');
   check('xp granted per activation (honest, not doubled)', ab.xp, 1);
 
   Game.noteAbilityUse = orig; // restore
 
-  console.log(`\nread: one real activation = 2 use-log entries = 2 synergy attempts.`);
-  console.log(`consequence: one_person_army (3-attempt unlock) fires after 2 real combined activations, not 3.`);
+  console.log(`\nread: one real activation = 1 use-log entry = 1 synergy attempt.`);
+  console.log(`consequence: one_person_army (3-attempt unlock) now needs 3 real combined activations, as designed.`);
   if (fails.length) { console.log(`\nFAIL (${fails.length}): ${fails.join('; ')}`); process.exit(1); }
-  console.log(`\nOK — seed ${SEED}. Bug demonstrated: double noteAbilityUse per activateAbility (XP itself is honest).`);
+  console.log(`\nOK — seed ${SEED}. Fixed: one noteAbilityUse per activateAbility; XP honest at +1.`);
 })().catch(e => { console.error('HARNESS ERROR:', e); process.exit(2); });
