@@ -63,7 +63,7 @@
 //   - wounds_feed_closer: gauntlet closer death odds scale with damage taken in waves 1-2, displayed by the System (code: _contestCloserOdds, _contestRenderPhase, contestChoose dieWounds, Steve 2026-10-05)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
-//   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it) (code: contestPlayable, contestChoose, Steve 2026-10-06)
+//   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08) (code: contestPlayable, contestChoose, Steve 2026-10-06)
 //   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 16 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil, then sorting/witness/cache/longodds (code: _contestWatchBeat, Steve 2026-10-06)
 //   - risk_rebalance_20261006: HIGH RISK rebalance — brave choices now usually kill (~50% death across full aggressive runs), smart choices live but cost heavily. Pit aggressive: 0.08/0.12 -> 0.20/0.30. Hide: 0.20/0.18/0.25 -> 0.32/0.25/0.38. Siege/hold: 0.20 -> 0.30. Rewards NOT nerfed — high risk justifies high reward (code: contestChoose die odds, Steve 2026-10-06)
 //   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
@@ -1453,13 +1453,13 @@
           choices: [
             { label: 'Stop. Three is the measure.', sub: 'you know the count', do: { prize: true, note: 'You bind the wound. The System bows to you — actually bows. "ENOUGH," it says, and means it.', notability: 'contestWin' }, next: 'WIN' },
             { label: 'Give a fourth measure', sub: 'greed, televised', do: { prize: true, dmg: [20, 35], die: 0.35, note: 'You know what the fourth measure costs. You give it anyway. The altar drinks deep — it respects the excess. Probably.' }, next: 'WIN' },
-            { label: 'Offer your name instead', sub: 'a different currency', do: { trauma: 12, note: 'Blood isn\'t the only currency. You offer the System your name — the real one, the childhood one. It accepts. You feel lighter. Emptier.', notability: 'showmanship' }, next: 'WIN' },
+            { label: 'Offer your name instead', sub: 'a different currency', do: { prize: true, trauma: 12, note: 'Blood isn\'t the only currency. You offer the System your name — the real one, the childhood one. It accepts. You feel lighter. Emptier.', notability: 'showmanship' }, next: 'WIN' },
           ] }
       : { beat: 'contestTitheClimax', text: `The altar gives no sign. Your blood is in it and your head is full of static.\n\nHow much is enough? Nobody will say.`,
           choices: [
             { label: 'Stop now', sub: 'a guess', do: { dmg: [4, 10], die: 0.1, trauma: 6, note: 'You bind the wound and hope. The altar considers. Hoping is not a currency the altar accepts — but it lets you walk.', notability: 'showmanship' }, next: 'LOSE' },
             { label: 'One more measure', sub: 'maybe more is safer', do: { prize: true, dmg: [16, 28], die: 0.18, note: 'You bleed blind and pray the count is right. The basin ripples. The System tilts its head, considering your arithmetic.' }, next: 'WIN' },
-            { label: 'Offer your name instead', sub: 'a different currency', do: { trauma: 12, note: 'Blood isn\'t the only currency. You offer the System your name — the real one, the childhood one. It accepts. You feel lighter. Emptier.', notability: 'showmanship' }, next: 'WIN' },
+            { label: 'Offer your name instead', sub: 'a different currency', do: { prize: true, trauma: 12, note: 'Blood isn\'t the only currency. You offer the System your name — the real one, the childhood one. It accepts. You feel lighter. Emptier.', notability: 'showmanship' }, next: 'WIN' },
           ] };
     return [
       { beat: 'contestTitheDeclare', text: intro + `\n\nA black basin on a black altar. The System, gentle as a nurse: "BLEED FOR US, CONTESTANT. WE ONLY NEED... ENOUGH."\n\nYour blood steams in the cold air.` + measure,
@@ -1638,7 +1638,7 @@
         choices: [
           { label: 'Name the real culprit', sub: 'the truth, whoever it hurts', do: { prize: true, fracture: 1, note: 'You name the real one — someone the village loves. The crowd goes silent. You were right. The village doesn\'t thank you.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Confirm the confession', sub: 'take the easy verdict', do: { trauma: 10, fracture: 2, note: `You confirm it. The System takes ${cname}. Later the water tests come back clean — there was never any poison. The village will remember what you did.` }, next: 'LOSE' },
-          { label: 'Accuse the System', sub: 'on its own cameras', do: { die: 0.25, note: `You point at the cameras. "You wrote this confession." The System goes very still. ${cname} is released in the silence. Nobody has ever said it out loud before.` }, next: 'WIN' },
+          { label: 'Accuse the System', sub: 'on its own cameras', do: { prize: true, die: 0.25, note: `You point at the cameras. "You wrote this confession." The System goes very still. ${cname} is released in the silence. Nobody has ever said it out loud before.` }, next: 'WIN' },
         ] },
     ];
   };
@@ -2372,7 +2372,7 @@
         ] },
       { beat: 'contestGenericClimax', text: `Midway. The standings are unclear and the System likes it that way.`,
         choices: [
-          { label: 'Push hard', sub: 'risk', do: { dmg: [8, 18], die: 0.06, note: 'You push. It costs. It might pay.' }, next: 'WIN' },
+          { label: 'Push hard', sub: 'risk', do: { dmg: [8, 18], die: 0.06, prize: true, note: 'You push. It costs. It might pay.' }, next: 'WIN' },
           { label: 'Hold steady', sub: 'safe', do: { note: 'You hold. Steady doesn\'t win headlines.' }, next: 'LOSE' },
         ] },
     ];
@@ -2428,6 +2428,20 @@
       log.push(`closer odds ${Math.round(dieChance * 100)}% on ${woundsBeforeChoice} wounds`);
     }
     if (dieChance > 0 && Math.random() < dieChance) {
+      // BENEVOLENT LIFELINE (break-it 2026-10-08): apContestInterference was
+      // only ever called from _contestVerdict (watch mode), where the player
+      // is never a participant — the lifeline's playerIn guard could never
+      // pass in real play. Check it here, at the player's own killing blow:
+      // a save converts the death into a loss. The sequence still runs —
+      // interruption law holds, nobody skips.
+      let saved = false;
+      try {
+        if (typeof this.apContestInterference === 'function') {
+          const itf = this.apContestInterference(ac, { forPlayer: true }) || {};
+          saved = !!itf.deathSave;
+        }
+      } catch (e) { saved = false; }
+      if (saved) return this._contestEnd(ac, 'lost', false);
       return this._contestDie(ac, choice.label + ' — it went wrong.');
     }
     if (d.heal) {

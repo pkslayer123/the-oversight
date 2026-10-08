@@ -52,7 +52,7 @@
 //   - apExperience()
 //   - apFavor()
 //   - apAdjustFavor(n, why)
-//   - apContestInterference(ac)
+//   - apContestInterference(ac, opts)
 //   - apPersonaPackage()
 //   - apEventFeed()
 //   - apCodexEntry(pid)
@@ -69,7 +69,7 @@
 //   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); benevolent help is deniable and subtle (code: alienPlayers.js)
 //   - (favor) fan favor -100..100; high favor improves care packages and contest lean; low favor makes the crowd bloodthirsty (code: alienPlayers.js)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
-//   - (lifeline_player_only) the benevolent lifeline fires only when the player is taken — the verdict honors deathSave solely for the player, so firing it in watch mode promised a miss it could never deliver (code: apContestInterference, Steve 2026-10-08)
+//   - (lifeline_player_only) the benevolent lifeline fires only when the player is taken — the verdict honors deathSave solely for the player, so firing it in watch mode promised a miss it could never deliver (code: apContestInterference, Steve 2026-10-08); break-it 2026-10-08: the verdict-only call site could never satisfy playerIn, so the lifeline was dead in real play — contestChoose now calls apContestInterference(ac, {forPlayer:true}) at the player's own death roll, converting the death into a loss (sequence still runs) (code: contestChoose)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
 //   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
@@ -992,13 +992,22 @@
     // ---------- contest integration ----------
     // Alien players interfere in contests: sadistic rigs, benevolent saves,
     // fan favor moves the needle. Called from wrapped _contestVerdict.
-    apContestInterference: function (ac) {
+    apContestInterference: function (ac, opts) {
       if (!this.apEligible()) return { winMod: 0, deathSave: false, note: null };
       var ap = this.apState();
       var result = { winMod: 0, deathSave: false, note: null };
       var day = (this.state.scholar || {}).day || 1;
+      // FOR-PLAYER (break-it 2026-10-08): the verdict-only call site can never
+      // have the player as a participant, so the benevolent lifeline below
+      // was unreachable in real play. contestChoose calls with
+      // {forPlayer:true} at the player's death roll — sadistic rigging and
+      // fan favor are verdict-only fiction (they bend verdict win odds, which
+      // don't exist on the playable path), so they're skipped here; only the
+      // lifeline is evaluated.
+      var forPlayer = !!(opts && opts.forPlayer);
 
       // SADISTIC RIGGING: a rival who's met you may rig the contest
+      if (!forPlayer) {
       for (var pid in ap.met) {
         var per = this.apPersona(pid);
         if (!per || per.disposition !== 'sadistic') continue;
@@ -1016,6 +1025,7 @@
           break;
         }
       }
+      } // end SADISTIC RIGGING (verdict-only)
 
       // BENEVOLENT LIFELINE: a bonded ally may save you from death.
       // HONEST (Steve 2026-10-08): the note promises "the killing blow
@@ -1023,7 +1033,9 @@
       // (pid === 'player' in _contestVerdict). In watch mode the player is
       // not in the arena, so the promise could never land — the feed lied,
       // then a villager died on camera. The lifeline fires only when the
-      // player is taken.
+      // player is taken: contestChoose calls with {forPlayer:true} at the
+      // player's own death roll (break-it 2026-10-08 — the verdict-only
+      // call site could never satisfy playerIn).
       var playerIn = ac && (((ac.participants || []).indexOf('player') >= 0) || ac.participant === 'player');
       if (!result.note && playerIn) {
         for (var pid2 in ap.met) {
@@ -1041,7 +1053,10 @@
         }
       }
 
-      // FAN FAVOR: the crowd's love is real (stacks with existing cheer)
+      // FAN FAVOR: the crowd's love is real (stacks with existing cheer).
+      // Verdict-only: it bends verdict win odds, which don't exist on the
+      // playable path (break-it 2026-10-08).
+      if (!forPlayer) {
       var favor = ap.favor || 0;
       if (favor >= 40) {
         result.winMod += 0.08;
@@ -1049,6 +1064,7 @@
       } else if (favor <= -40) {
         result.winMod -= 0.08;
         this.sysSay('📺 The crowd is BOOING. Someone threw something. The judges look nervous. (-8% — the crowd wants blood)');
+      }
       }
 
       return result;
