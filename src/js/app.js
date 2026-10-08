@@ -285,6 +285,7 @@
       : (st.isNight ? '<span class="dot soft"></span>' : '');
     return `<div class="lowermenu">` +
       `<button class="lm-btn" data-lm="pack">🎒 Pack</button>` +
+      `<button class="lm-btn" data-lm="character">🧬 You</button>` +
       `<button class="lm-btn" data-lm="sleep">😴 Sleep${sleepDot}</button>` +
       `<button class="lm-btn" data-lm="wait">⏳ Wait</button>` +
       `<button class="lm-btn" data-lm="map">🗺️ Map</button>` +
@@ -297,6 +298,7 @@
         const a = b.dataset.lm;
         try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
         if (a === 'pack') { invSheet(); }
+        else if (a === 'character') { characterSheet(); }
         else if (a === 'sleep') { Game.sleep(); rerender(); }
         else if (a === 'wait') { Game.doAction('wait'); rerender(); }
         else if (a === 'map') {
@@ -10037,6 +10039,7 @@
     else if (inlineView.kind === 'givefood') renderGiveFoodInline(target, inlineView);
     else if (inlineView.kind === 'comfort') renderComfortInline(target, inlineView);
     else if (inlineView.kind === 'inv') renderInvInline(target, inlineView);
+    else if (inlineView.kind === 'character') renderCharacterInline(target, inlineView);
     else if (inlineView.kind === 'loot') renderLootInline(target, inlineView);
     else target.innerHTML = '';
   }
@@ -11496,42 +11499,7 @@
     const recipes = Game.data.recipes || [];
     const knownRecipes = recipes.filter(r => (Game.state.codex.recipes || {})[r.id] && Game.state.codex.recipes[r.id].level >= 3);
     const bodyHtml = `
-        ${(() => {
-          // GEAR SLOTS (Steve 2026-10-07): full slot display with blocked-slot grey-out.
-          try {
-            const eq = Game.state.scholar.equipped || {};
-            const S = window.S || {};
-            const E = S.equipment || {};
-            const slots = ['melee', 'ranged', 'head', 'torso', 'legs', 'hands', 'shoes', 'acc1', 'acc2', 'acc3', 'acc4'];
-            const blocked = E.blockedSlots ? E.blockedSlots(eq) : [];
-            const label = E.slotLabel ? E.slotLabel.bind(E) : (s => s);
-            const rows = slots.map(slot => {
-              const isBlocked = blocked.indexOf(slot) !== -1;
-              const item = eq[slot];
-              const lbl = label(slot);
-              if (isBlocked) {
-                return `<p class="small" style="opacity:.35"><b>${lbl}:</b> <span style="text-decoration:line-through">blocked</span> <span style="opacity:.7">(covered by ${esc((eq.torso||{}).name||'full-body gear')})</span></p>`;
-              }
-              if (!item) return `<p class="small" style="opacity:.5"><b>${lbl}:</b> —</p>`;
-              const bond = item.bonded ? ` <span class="small" style="opacity:.75">bond ${item.bond||0}${item.heirloom ? ' \u00B7 heirloom' : ''}</span>` : '';
-              return `<p class="small"><b>${lbl}:</b> ${itemSpriteHtml(item)}${esc(item.name)}${bond} <button class="btn ghost sm" data-unequip-slot="${slot}">Take off</button></p>`;
-            }).join('');
-            const eqCount = Object.keys(eq).filter(k => eq[k]).length;
-            return `<details style="margin:8px 0"><summary style="cursor:pointer;font-weight:bold">🛡️ Equipped <span style="opacity:.6;font-weight:normal">(${eqCount} worn)</span></summary><div style="margin-top:6px">${rows}</div></details>`;
-          } catch (e) { return ''; }
-        })()}
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small" style="margin:8px 0;padding:8px;background:#1a2a3a;border-radius:6px"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''} <button class="btn ghost sm" data-pourwater="1" title="Pour out 1L, risky first. Water is heavy.">Pour out 1L</button></p>`; })()}
-        <details style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
-          <summary style="cursor:pointer;font-size:15px;font-weight:bold">🧬 Character <span style="opacity:.6;font-weight:normal">abilities · skills · synergies</span></summary>
-          <div style="margin-top:6px">
-            ${renderAbilitiesSection()}
-            ${renderSkillsSection()}
-            ${renderSynergiesSection()}
-            ${renderBuildIndicator()}
-            ${renderSynergyStirrings()}
-            ${renderIntegrationLevel()}
-          </div>
-        </details>
         <h3 style="margin:12px 0 6px">🎒 Carried <span style="opacity:.6;font-weight:normal;font-size:13px">(${inv.length} items)</span></h3>
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
@@ -11685,6 +11653,57 @@
   function invSheet() {
     inlineView = { kind: 'inv', result: null, mapKey: inlineMapKey() };
     refresh();
+  }
+
+  // CHARACTER SHEET (Steve 2026-10-07): who you are — abilities, skills,
+  // synergies, equipped gear, build. Separate from Pack (what you carry).
+  function characterSheet() {
+    inlineView = { kind: 'character', result: null, mapKey: inlineMapKey() };
+    refresh();
+  }
+
+  function renderCharacterInline(slot, view) {
+    const st = Game.status();
+    const bodyHtml = `
+        ${(() => {
+          // GEAR SLOTS: full slot display with blocked-slot grey-out.
+          try {
+            const eq = Game.state.scholar.equipped || {};
+            const S = window.S || {};
+            const E = S.equipment || {};
+            const slots = ['melee', 'ranged', 'head', 'torso', 'legs', 'hands', 'shoes', 'acc1', 'acc2', 'acc3', 'acc4'];
+            const blocked = E.blockedSlots ? E.blockedSlots(eq) : [];
+            const label = E.slotLabel ? E.slotLabel.bind(E) : (s => s);
+            const eqCount = Object.keys(eq).filter(k => eq[k]).length;
+            const rows = slots.map(slot => {
+              const isBlocked = blocked.indexOf(slot) !== -1;
+              const item = eq[slot];
+              const lbl = label(slot);
+              if (isBlocked) {
+                return `<p class="small" style="opacity:.35"><b>${lbl}:</b> <span style="text-decoration:line-through">blocked</span> <span style="opacity:.7">(covered by ${esc((eq.torso||{}).name||'full-body gear')})</span></p>`;
+              }
+              if (!item) return `<p class="small" style="opacity:.5"><b>${lbl}:</b> —</p>`;
+              const bond = item.bonded ? ` <span class="small" style="opacity:.75">bond ${item.bond||0}${item.heirloom ? ' \u00B7 heirloom' : ''}</span>` : '';
+              return `<p class="small"><b>${lbl}:</b> ${itemSpriteHtml(item)}${esc(item.name)}${bond} <button class="btn ghost sm" data-unequip-slot="${slot}">Take off</button></p>`;
+            }).join('');
+            return `<details open style="margin:8px 0"><summary style="cursor:pointer;font-size:15px;font-weight:bold">🛡️ Equipped <span style="opacity:.6;font-weight:normal">(${eqCount} worn)</span></summary><div style="margin-top:6px">${rows}</div></details>`;
+          } catch (e) { return ''; }
+        })()}
+        ${renderAbilitiesSection()}
+        ${renderSkillsSection()}
+        ${renderSynergiesSection()}
+        ${renderBuildIndicator()}
+        ${renderSynergyStirrings()}
+        ${renderIntegrationLevel()}
+    `;
+    slot.innerHTML = `<div class="inlinecard">
+      ${inlineHead('🧬 You — ' + esc(Game.state.scholar.name || 'Wanderer'))}
+      ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}
+      <div class="inline-body">${bodyHtml}</div>
+    </div>`;
+    wireInlineX(slot);
+    const rewire = (fn, ok) => (e) => { fn(e); inlineView.result = ok; refresh(); };
+    slot.querySelectorAll('[data-unequip-slot]').forEach(b => b.onclick = rewire(() => Game.unequip(b.dataset.unequipSlot), 'Taken off.'));
   }
 
   // LOOT-AS-ACTION (Steve 2026-10-06): the enemy's pack. Per item: take it,
