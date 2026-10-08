@@ -11708,7 +11708,11 @@
         // pantry: eat from the common store if there's food
         const pantryKcal = (v.pantry || []).reduce((s, i) => s + (i.kcalEach || 0) * (i.units || 1), 0);
         if (pantryKcal > 200) {
-          const item = v.pantry.find(i => (i.kcalEach || 0) > 0 && (i.units || 1) > 0);
+          // SPOILAGE (adversarial forager 2026-10-08): rot is never a meal —
+          // the dawn sweep normally clears it, but no path may serve it at
+          // full value even if one stocks it mid-day.
+          const item = v.pantry.find(i => (i.kcalEach || 0) > 0 && (i.units || 1) > 0
+            && !(i.spoilDay !== undefined && i.spoilDay <= ((this.state.scholar || {}).day || 0)));
           if (item) {
             item.units = (item.units || 1) - 1;
             if (item.units <= 0) v.pantry.splice(v.pantry.indexOf(item), 1);

@@ -614,16 +614,20 @@
       if (!spec) { this.say('No specialist for that here.'); return null; }
       const person = this.villagePeople().find(p => p.id === spec.id);
       const src = person && person._src;
-      const tech = task === 'butcher' ? 'clean' : task; // butcher->clean, cook->cook, preserver->preserve
+      const tech = task === 'butcher' ? 'clean' : task === 'preserver' ? 'preserve' : task; // butcher->clean, preserver->preserve
       const day = this.state.scholar.day;
+      // SPOILAGE (adversarial forager 2026-10-08): the specialist won't touch
+      // rot either — ANY task. Rot can't be cooked or smoked back into food
+      // (the cook/preserver branches rewrote spoilDay to day+5 / day+30+ with
+      // no check). Honest, visible loss — same as the butcher branch had.
+      if (it.spoilDay !== undefined && it.spoilDay <= day) {
+        const verb = task === 'butcher' ? 'cleaning' : task === 'cook' ? 'cooking' : 'smoking';
+        this.say(`The ${it.name} went bad — ${spec.name} (${spec.occupation}) won't touch it. Beyond ${verb}. You leave it for the flies.`);
+        inv.splice(idx, 1);
+        return null;
+      }
       if (task === 'butcher') {
         if (it.foodState !== 'carcass') { this.say('That\'s already cleaned.'); return null; }
-        // SPOILAGE: the specialist won't touch rot either. Honest, visible loss.
-        if (it.spoilDay !== undefined && it.spoilDay <= day) {
-          this.say(`The ${it.name} went bad — ${spec.name} (${spec.occupation}) won't touch it. Beyond cleaning. You leave it for the flies.`);
-          inv.splice(idx, 1);
-          return null;
-        }
         const gross = it.hiddenKcal || 0;
         const yfrac = 0.40 + 0.04 * spec.skill; // 44/48/52% — better hands, more meat
         const per = Math.round(gross * yfrac / 4);
@@ -1636,6 +1640,14 @@
       let n = 0, kcal = 0;
       for (let i = stash.length - 1; i >= 0; i--) {
         const it = stash[i];
+        // SPOILAGE (adversarial forager 2026-10-08): rot isn't pantry stock.
+        // The dawn sweep normally clears it, but a mid-day counter can hold
+        // today's casualties — they leave for the flies, never the shelves.
+        if (this.isSpoiled && this.isSpoiled(it)) {
+          this.say(`The ${it.name} went bad on the counter — beyond saving. You leave it for the flies.`);
+          stash.splice(i, 1);
+          continue;
+        }
         if (!this.isFinishedFood(it)) continue;
         this.pantryAdd(it);
         kcal += (it.kcalEach || 0) * (it.units || 1);
@@ -1867,6 +1879,16 @@
   G.cookFood = function (idx, container) {
     const inv = container || this.state.scholar.inventory;
     const item = inv[idx];
+    // SPOILAGE (adversarial forager 2026-10-08): rot can't be cooked back
+    // into food. cleanCarcass/preserveFood/askSpecialist-butcher all refuse
+    // rot honestly; the cook paths were missed and resurrected it (spoilDay
+    // rewrite to day+5). Same voice, same loss.
+    const day0 = this.state.scholar.day;
+    if (item && item.spoilDay !== undefined && item.spoilDay <= day0) {
+      this.say(`The ${item.name} went bad — cooking won't save it. You leave it for the flies.`);
+      inv.splice(idx, 1);
+      return null;
+    }
     if (item && item.foodKind === 'meat' && item.foodState === 'cleaned') {
       if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
       // hiddenKcal is TOTAL; kcalEach is per unit.
@@ -1952,6 +1974,13 @@
   const origDonate = G.donateToPantry;
   G.donateToPantry = function (idx) {
     const item = this.state.scholar.inventory[idx];
+    // SPOILAGE (adversarial forager 2026-10-08): you can't donate rot to the
+    // village — no trust for garbage, and the pantry never stocks it.
+    if (item && item.spoilDay !== undefined && item.spoilDay <= this.state.scholar.day) {
+      this.say(`The ${item.name} went bad — you can't feed the village rot. You leave it for the flies.`);
+      this.state.scholar.inventory.splice(idx, 1);
+      return null;
+    }
     if (item && (item.kcalEach || 0) > 0) {
       const cap = this.pantryCapKcal();
       if (this.pantryKcal() + (item.kcalEach * (item.units || 1)) > cap) {
