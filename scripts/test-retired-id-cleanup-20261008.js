@@ -25,8 +25,13 @@ function ok(name, cond, extra) {
   if (cond) { pass++; }
   else { fail++; console.log('FAIL: ' + name + (extra ? ' | ' + extra : '')); }
 }
+// Pre-cleanup base, pinned: 1f9a21d is the parent of the cleanup commit.
+// The "before" half of this proof reads the frozen pre-cleanup tree so the
+// test stays green after landing (HEAD moved on). The "after" half reads
+// the live worktree — the real regression guard.
+const BEFORE_REF = '1f9a21d';
 function headFile(rel) {
-  return execSync('git show HEAD:' + rel, { cwd: ROOT, maxBuffer: 32 * 1024 * 1024 }).toString();
+  return execSync('git show ' + BEFORE_REF + ':' + rel, { cwd: ROOT, maxBuffer: 32 * 1024 * 1024 }).toString();
 }
 const appAfter = fs.readFileSync(path.join(ROOT, 'src', 'js', 'app.js'), 'utf8');
 const gameAfter = fs.readFileSync(path.join(ROOT, 'src', 'js', 'game.js'), 'utf8');
@@ -41,13 +46,13 @@ const RETIRED_IDS = ['delegate_beast', 'camera_swarm', 'hype_horn'];
   const caIdx = appBefore.indexOf('const CombatAudio');
   const retStart = appBefore.indexOf('return {\n', caIdx);
   const retBlockBefore = appBefore.slice(retStart, appBefore.indexOf('};', retStart) + 2);
-  ok('before: 5 vestigial synths + delegateCircle alias registered in HEAD app.js',
+  ok('before: 5 vestigial synths + delegateCircle alias registered in pre-cleanup app.js',
     RETIRED_HOOKS.every(n => retBlockBefore.includes(n + '() {') || appBefore.includes('function ' + n + '()')));
 }
 for (const n of ['managerCircle', 'managerCharge', 'managerDebrief', 'delegateDebrief', 'managerFear']) {
-  ok('before: synth function ' + n + '() existed at HEAD', appBefore.includes('function ' + n + '()'));
+  ok('before: synth function ' + n + '() existed at pre-cleanup base', appBefore.includes('function ' + n + '()'));
 }
-ok('before: game.js beastCircle existed at HEAD', gameBefore.includes('beastCircle(m, tgt) {'));
+ok('before: game.js beastCircle existed at pre-cleanup base', gameBefore.includes('beastCircle(m, tgt) {'));
 ok('before: game.js beastCircle fired delegateCircle at HEAD', gameBefore.includes("this.audioEvent('delegateCircle')"));
 
 // ---------- (a2) AFTER: registry is clean ----------
