@@ -6070,39 +6070,6 @@
         nz.start(t); nz.stop(t + 0.95);
       }
     }
-    function catfishLure() {
-      // NIGHTLIGHT LURE: hypnotic slow pulse — pretty, wrong, pulling.
-      if (!ensure()) return;
-      const t = ctx.currentTime, dur = 1.6;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(520, t);
-      // Slow siren wobble
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.type = 'sine'; lfo.frequency.value = 0.8;
-      lg.gain.value = 120; lfo.connect(lg); lg.connect(o.frequency);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.16, t + 0.4);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      // Shimmer harmonic
-      const o2 = ctx.createOscillator();
-      o2.type = 'sine'; o2.frequency.setValueAtTime(1040, t);
-      lfo.connect(lg);
-      o.connect(g); o2.connect(g); g.connect(sfxBus);
-      o.start(t); o2.start(t); lfo.start(t);
-      o.stop(t + dur); o2.stop(t + dur); lfo.stop(t + dur);
-          // (deepened Steve 2026-10-06): the lure has a voice in it — a decoy
-      // whisper: two inharmonic partials (3.7x) beating against each other.
-      // Pretty is the bait; the beating is the hook.
-      for (const mult of [3.7, 3.78]) {
-        const w = ctx.createOscillator(), wg = ctx.createGain();
-        w.type = 'sine'; w.frequency.setValueAtTime(520 * mult, t);
-        wg.gain.setValueAtTime(0.0001, t);
-        wg.gain.exponentialRampToValueAtTime(0.04, t + 0.6);
-        wg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        w.connect(wg); wg.connect(sfxBus);
-        w.start(t); w.stop(t + dur);
-      }
-    }
     function catfishSnap() {
       // THE SNAP: sudden, violent — no warning (by design).
       if (!ensure()) return;
@@ -7745,7 +7712,8 @@
     function burstWindup(durSec) {
       // INHALATION: the air pressure rises. Faint voices multiply inside
       // the swell — one more each half second, none of them yours.
-      // (mirrormoth, belltoad, hummice, camera_swarm, hype_horn, bright_idea)
+      // (mirrormoth, belltoad, hummice, bright_idea — camera_swarm/hype_horn
+      // retired, Steve 2026-10-08)
       // (deepened Steve 2026-10-06): the voices ARGUE now — three rise, but
       // a fourth FALLS through them, crossing, tuned flat. The inhale can't
       // agree with itself. And the swell has a pressure wobble: the air
@@ -7821,8 +7789,8 @@
     }
     function chargeWindup(durSec) {
       // EARTH TREMBLES: low rumble with an accelerating rhythm inside it —
-      // hooves, or an engine, you can't tell which. (bulldozer, mirror_stag,
-      // delegate_beast)
+      // hooves, or an engine, you can't tell which. (bulldozer, mirror_stag —
+      // delegate_beast retired, Steve 2026-10-08)
       if (!ensure()) return;
       const t = ctx.currentTime, dur = Math.max(0.9, durSec || 1.8);
       const o = ctx.createOscillator(), g = ctx.createGain();
@@ -10329,7 +10297,6 @@
       animalFlush() { animalFlush(); },
       // Batch monsters (were silent)
       boarTrample() { boarTrample(); },
-      catfishLure() { catfishLure(); },
       catfishSnap() { catfishSnap(); },
       catfishStill() { catfishStill(); },
       heronStatic() { heronStatic(); },
@@ -13477,10 +13444,10 @@
     // changed.") + the ROCK phase badge + the codex knownCue — never a grid
     // zone. Should a future ambush monster declare with cells, `out[ptype] ||
     // out.single` below falls back to the targetTile highlight (no crash).
-    // WAVE 2 GROUP C (Steve 2026-10-06): encircle (delegate_beast — its
-    // announced charge reads as ENCIRCLEMENT, not the generic charge lane)
-    // and biHot (bright_idea — the burst goes white-hot on its last windup
-    // tick, "about to break loose"). Knowledge-gated like every bucket.
+    // WAVE 2 GROUP C (Steve 2026-10-06): biHot (bright_idea — the burst goes
+    // white-hot on its last windup tick, "about to break loose").
+    // Knowledge-gated like every bucket. (delegate_beast's encircle routing
+    // was removed with the retired id, Steve 2026-10-08.)
     // WING/BASK (Steve 2026-10-06): sbLock (sunbasker — the Sun-Charged
     // Bite's tracking lock-on reads MOLTEN GOLD, not the generic purple
     // lockOn). The glasswing's in-combat dive shadow is NOT a bucket: it
@@ -13495,13 +13462,15 @@
     // below. Knowledge-gated like every bucket.
     // No 'rush' bucket (Steve 2026-10-06): rush patterns never declare, so
     // nothing could ever paint it — removed as unreachable dead code.
-    const out = { burst: new Set(), charge: new Set(), encircle: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), beam: new Set(), heronStrike: new Set() };
-    // WAVE 2 GROUP A (Steve 2026-10-06): per-monster telegraph identity — which
-    // monster each telegraph cell belongs to, so the grid can render each
-    // monster's attack in its own visual voice (mirror-shimmer, projected
-    // grid, flashbulbs, voice-ripple). Knowledge-gated like the rest.
+    const out = { burst: new Set(), charge: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), beam: new Set(), heronStrike: new Set() };
+    // WAVE 2 TELEGRAPH IDENTITY (Steve 2026-10-06/08): per-monster telegraph
+    // identity — which monster each telegraph cell belongs to, so the grid
+    // can render each monster's attack in its own visual voice. Covers every
+    // wave-2 monster with a grid telegraph (warranty_caller is rush — it
+    // declares nothing by design, so it has no class). Knowledge-gated
+    // like the rest.
     out.mon = {};
-    const W2A_IDS = { mirror_stag: 1, review_drone: 1, voice_mimic_radio: 1 };
+    const W2A_IDS = { mirror_stag: 1, review_drone: 1, voice_mimic_radio: 1, bright_idea: 1, paparazzo: 1, statickite: 1, understudy: 1, landlord: 1, heckler: 1, union_rep: 1, moderator: 1 };
     // WAVE 1 STYLE VOICES (Steve 2026-10-06): burstStyle/chargeStyle existed
     // in monsters.json but NOTHING consumed them — the bulldozer's charge
     // and the hype_horn/hummice/belltoad/mirrormoth bursts all rendered as
@@ -13528,17 +13497,6 @@
         const mid = (m.mdef || {}).id;
         const w2a = W2A_IDS[mid];
         let targetSet = out[ptype] || out.single;
-        // DELEGATE BEAST (Steve 2026-10-06): route its announced charge to
-        // the encircle bucket — the ENCIRCLEMENT visual, not chargeLane.
-        // Capture the charge direction (first→last telegraph cell) for the
-        // ➤ arrow overlays in renderDetail.
-        if (mid === 'delegate_beast' && ptype === 'charge') {
-          targetSet = out.encircle;
-          if (tg.cells && tg.cells.length >= 2) {
-            const _a = tg.cells[0], _b = tg.cells[tg.cells.length - 1];
-            out.encircleAngle = Math.round(Math.atan2(_b.cy - _a.cy, _b.cx - _a.cx) * 180 / Math.PI);
-          }
-        }
         // BRIGHT IDEA (Steve 2026-10-06): last windup tick → white-hot.
         if (mid === 'bright_idea' && ptype === 'burst' && tg.turnsLeft <= 1) targetSet = out.biHot;
         // WHITE NOISE HERON (Steve 2026-10-06): the Spearfish Strike is a
@@ -13557,7 +13515,7 @@
         if (_sb && out[_sb]) {
           targetSet = out[_sb];
           // DOZE ANGLE (Steve 2026-10-06): the bulldozer's ➤ arrows ride the
-          // charge direction — same first→last-cell mechanism as encircleAngle.
+          // charge direction — first→last telegraph cell.
           if (_sb === 'dozeLane' && tg.cells && tg.cells.length >= 2) {
             const _sa = tg.cells[0], _sbb = tg.cells[tg.cells.length - 1];
             out.dozeAngle = Math.round(Math.atan2(_sbb.cy - _sa.cy, _sbb.cx - _sa.cx) * 180 / Math.PI);
@@ -13603,6 +13561,10 @@
   // scripts/test-telegraph-judgment.js tests it.
   //  diveTarget: the glasswing's dive shadow is ON you (dark tile + red ring).
   //  sbLockTarget: the sunbasker's molten-gold lock is ON you (gold ring).
+  // WAVE 2 DIRECT VOICES (Steve 2026-10-08): the six direct telegraphs all
+  // land on the player's tile, where the token swallows the tile fill — ring
+  // the token in the voice's own color so the read survives. Knowledge-gated
+  // upstream: the mon map only populates for learned patterns.
   // Positional only — reveals nothing about unknown patterns, so the
   // knowledge gate is untouched (the buckets are already gated upstream).
   function tgPlayerAlertClasses(tgBuckets, gwDive, px, py) {
@@ -13611,6 +13573,13 @@
         gwDive.tile.x === px && gwDive.tile.y === py) out.push('diveTarget');
     if (tgBuckets && tgBuckets.sbLock && typeof tgBuckets.sbLock.has === 'function' &&
         tgBuckets.sbLock.has(px + ',' + py)) out.push('sbLockTarget');
+    const W2B_RING = { voice_mimic_radio: 'staticTarget', understudy: 'underTarget',
+      landlord: 'lordTarget', heckler: 'heckTarget', union_rep: 'unionTarget',
+      moderator: 'modTarget' };
+    if (tgBuckets && tgBuckets.mon) {
+      const pmid = tgBuckets.mon[px + ',' + py];
+      if (pmid && W2B_RING[pmid]) out.push(W2B_RING[pmid]);
+    }
     return out;
   }
   function renderDetail(st) {
@@ -13908,7 +13877,6 @@
         const _tgCls =
           (_tg.burst.has(_k) ? ' burstRadius' : '') +
           (_tg.charge.has(_k) ? ' chargeLane' : '') +
-          (_tg.encircle.has(_k) ? ' encircleLane' : '') +
           (_tg.biHot.has(_k) ? ' biHot' : '') +
           (_tg.sbLock.has(_k) ? ' sbLock' : '') +
           (_tg.dozeLane.has(_k) ? ' dozeLane' : '') +
@@ -13924,9 +13892,6 @@
         // see tbAllTelegraphCells note. Steve 2026-10-06)
         // WAVE 2 GROUP C telegraph identity (Steve 2026-10-06): inline styles
         // keep this in app.js (no CSS file touch — precedent: glasswing trap).
-        //  encircleLane: the delegate's announced charge reads as
-        //    ENCIRCLEMENT — amber lane with ➤ arrows riding the charge
-        //    direction (angle from first→last telegraph cell).
         //  biHot: the bright idea's burst, white-hot on the last windup
         //    tick — "about to break loose", distinct from burstPulse.
         //  circleRing: the delegate's closing circle — dotted amber ring at
@@ -13938,11 +13903,7 @@
         // All of these are knowledge-gated in game.js: if you don't know,
         // it doesn't show.
         let _w2cStyle = '';
-        if (_tg.encircle.has(_k)) {
-          _w2cStyle = 'position:relative;outline:2px solid #ffb020;outline-offset:-2px;background-color:rgba(255,176,32,.18);box-shadow:inset 0 0 12px rgba(255,176,32,.35)';
-          const _ang = _tg.encircleAngle || 0;
-          g += `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(${_ang}deg);font-size:15px;line-height:1;color:#ffb020;text-shadow:0 0 5px rgba(0,0,0,.9);pointer-events:none">➤</span>`;
-        } else if (_tg.biHot.has(_k)) {
+        if (_tg.biHot.has(_k)) {
           _w2cStyle = 'outline:3px solid #ffffff;outline-offset:-3px;background-color:rgba(255,255,255,.42);box-shadow:inset 0 0 20px rgba(255,255,255,.95)';
         }
         const _circle = (typeof Game.beastCircleKeys === 'function') ? Game.beastCircleKeys() : null;
@@ -13955,8 +13916,8 @@
         }
         // DUCKS IN A ROW (Steve 2026-10-06): the line_up aim lane — dotted
         // pale-yellow march orders, locked at the line_up beat. Distinct
-        // from the deer's harsh red beamLane and the delegate's amber
-        // encircle. Knowledge-gated in Game.duckLaneKeys().
+        // from the deer's harsh red beamLane. Knowledge-gated in
+        // Game.duckLaneKeys().
         const _duckKeys = (typeof Game.duckLaneKeys === 'function') ? Game.duckLaneKeys() : null;
         if (_duckKeys && _duckKeys.has(_k) && !_w2cStyle) {
           _w2cStyle = 'outline:2px dotted #e8d44d;outline-offset:-2px;background-color:rgba(232,212,77,.13);box-shadow:inset 0 0 10px rgba(232,212,77,.25)';
@@ -14017,15 +13978,27 @@
         // Each of the four tricksters renders its attack in its own visual
         // voice, layered over the pattern class above. Knowledge-gated: the
         // mon map is only populated once the pattern is learned.
+        // WAVE 2 TELEGRAPH IDENTITY (Steve 2026-10-06/08): per-monster visual
+        // voice, layered over the pattern class above. Group A (tricksters)
+        // keeps the w2a* classes; every other wave-2 monster with a grid
+        // telegraph gets a w2b* voice (Steve 2026-10-08). Knowledge-gated:
+        // the mon map is only populated once the pattern is learned.
         const _w2aMon = (_tg.mon || {})[_k];
         const _w2aCls =
           (_w2aMon === 'mirror_stag' ? ' w2aStag' : '') +
           (_w2aMon === 'review_drone' ? ' w2aDrone' : '') +
-          (_w2aMon === 'camera_swarm' ? ' w2aSwarm' : '') +
-          (_w2aMon === 'voice_mimic_radio' ? ' w2aStatic' : '');
+          (_w2aMon === 'voice_mimic_radio' ? ' w2aStatic' : '') +
+          (_w2aMon === 'bright_idea' && !_tg.biHot.has(_k) ? ' w2bIdea' : '') +
+          (_w2aMon === 'paparazzo' ? ' w2bPz' : '') +
+          (_w2aMon === 'statickite' ? ' w2bKite' : '') +
+          (_w2aMon === 'understudy' ? ' w2bUnder' : '') +
+          (_w2aMon === 'landlord' ? ' w2bLord' : '') +
+          (_w2aMon === 'heckler' ? ' w2bHeck' : '') +
+          (_w2aMon === 'union_rep' ? ' w2bUnion' : '') +
+          (_w2aMon === 'moderator' ? ' w2bMod' : '');
         // WAVE 1 STYLE VOICES (Steve 2026-10-06): per-style glyph overlays.
-        //  dozeLane: ➤ arrows riding the charge direction (dozeAngle — same
-        //    mechanism as the encircle ➤ above). The cell class carries
+        //  dozeLane: ➤ arrows riding the charge direction (dozeAngle —
+        //    first→last telegraph cell). The cell class carries
         //    position:relative (main.css).
         //  swarmHum: ◎ expanding hum rings on each declaring mouse
         //    (swarmSrc) — the hum's many throats. (.swarmRing, main.css.)
@@ -14078,13 +14051,38 @@
       }
       html += '</div>';
     }
-    // WAVE 2 GROUP A telegraph voices (Steve 2026-10-06): per-monster visual
+    // WAVE 2 TELEGRAPH VOICES (Steve 2026-10-06/08): per-monster visual
     // identity, layered over the generic pattern classes. Injected here (not
-    // main.css) to keep the tricksters' render additions in app.js.
+    // main.css) to keep wave-2 render additions in app.js.
+    // Group A (tricksters):
     //  w2aStag: mirror-shimmer lane — pale glass, not the bulldozer's hazard stripes.
     //  w2aDrone: projected grid — cyan dotted, the beam is a presentation.
-    //  w2aSwarm: flashbulbs — white strobe on the burst.
-    //  w2aStatic: voice-ripple — violet pulse on the lock-on.
+    //  w2aStatic: VOICE-RIPPLE — a voice calling your name reads as SOUND:
+    //    bright electric-violet outline, glowing violet fill (real color
+    //    distance from lockOn purple), an expanding ripple ring and a ≋ glyph.
+    //    (Boosted Steve 2026-10-08: the old violet-on-purple was invisible
+    //    at mobile size. The retired camera_swarm's w2aSwarm flashbulb class
+    //    was removed with the id; its strobe voice lives on in w2bPz.)
+    // Group B/C/D (Steve 2026-10-08) — every wave-2 monster with a grid
+    // telegraph now renders in its own voice, no more generic sharing:
+    //  w2bIdea: EUREKA WARM-UP — the idea heats as it thinks: radial ember
+    //    glow on every windup tick except the last, which goes white-hot
+    //    (biHot inline style; the class is withheld that tick so the
+    //    white-hot read wins).
+    //  w2bPz: EXPOSURE — the paparazzo doesn't explode, it FLASHES: near-black
+    //    cell, hard white strobe, viewfinder corner brackets (::before/::after).
+    //  w2bKite: THE BROADCAST — electric static discharge, not an explosion:
+    //    jagged cyan-white static bands + ↯. (Area static — distinct from
+    //    w2aStatic's violet VOICE on a single tile.)
+    //  w2bUnder: THE MIMIC — "doing the thing you do before you do it": the
+    //    negative of your own lock-on — dark plum fill, WHITE dashed outline,
+    //    ◐ half-face. Your reflection is attacking.
+    //  w2bLord: EVICTION NOTICE — red tape: diagonal caution stripes + §.
+    //    The sign has your name on it.
+    //  w2bHeck: THE TAUNT — jeering hot-pink radial glow + ‼. The grid heckles.
+    //  w2bUnion: GRIEVANCE FILED — ledger blue, ruled like a form. "Let's put
+    //    this one in writing."
+    //  w2bMod: REMOVAL NOTICE — the banhammer falls: heavy dark-red stamp + ✕.
     html += `<style>
 .cell.w2aStag { outline: 2px solid #bfe9ff !important; outline-offset: -2px;
   background: linear-gradient(135deg, rgba(191,233,255,.30), rgba(191,233,255,.08) 50%, rgba(191,233,255,.30)) !important;
@@ -14093,14 +14091,77 @@
 .cell.beamLane.w2aDrone { outline: 2px dotted #4df3ff !important; outline-offset: -2px;
   background-color: rgba(77,243,255,.16) !important; animation: w2aProject 0.7s infinite alternate; }
 @keyframes w2aProject { from { filter: brightness(1.0); } to { filter: brightness(1.35); } }
-.cell.w2aSwarm { outline: 2px solid #ffffff !important; outline-offset: -2px;
-  background-color: rgba(255,255,255,.30) !important; animation: w2aStrobe 0.32s infinite alternate; }
-@keyframes w2aStrobe { from { filter: brightness(1.6); } to { filter: brightness(2.4); } }
-.cell.w2aStatic { outline: 2px solid #b388ff !important; outline-offset: -2px;
-  box-shadow: inset 0 0 14px rgba(179,136,255,.55) !important; animation: w2aRipple 0.9s infinite alternate; }
-@keyframes w2aRipple { from { filter: brightness(1.0); } to { filter: brightness(1.4); } }
+.cell.w2aStatic { outline: 3px solid #d9a7ff !important; outline-offset: -3px;
+  background-color: rgba(88,40,140,.55) !important;
+  box-shadow: inset 0 0 18px rgba(217,167,255,.75) !important;
+  animation: w2aRipple 0.9s infinite alternate; }
+.cell.w2aStatic::before { content: ''; position: absolute; inset: 6px;
+  border: 2px solid rgba(217,167,255,.60); border-radius: 50%;
+  animation: w2aRingPulse 0.9s ease-out infinite; pointer-events: none; }
+.cell.w2aStatic::after { content: '≋'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 16px; line-height: 1;
+  color: #e9cfff; text-shadow: 0 0 6px rgba(0,0,0,.9); pointer-events: none; }
+@keyframes w2aRipple { from { filter: brightness(1.0); } to { filter: brightness(1.5); } }
+@keyframes w2aRingPulse { from { transform: scale(.55); opacity: .9; } to { transform: scale(1.15); opacity: .15; } }
+.cell.w2bIdea { outline: 2px solid #ffb020 !important; outline-offset: -2px;
+  background: radial-gradient(circle at center, rgba(255,220,120,.55) 0, rgba(255,107,53,.30) 55%, rgba(255,107,53,.12) 100%) !important;
+  animation: w2bIdeaHeat 1.0s infinite alternate; }
+@keyframes w2bIdeaHeat { from { filter: brightness(1.0); } to { filter: brightness(1.6); } }
+.cell.w2bPz { background-color: rgba(8,8,10,.80) !important;
+  outline: 2px solid #ffffff !important; outline-offset: -2px;
+  animation: w2bPzFlash 0.5s steps(2) infinite; }
+@keyframes w2bPzFlash { 0%, 49% { filter: brightness(1.0); } 50%, 100% { filter: brightness(2.2); } }
+.cell.w2bPz::before, .cell.w2bPz::after { content: ''; position: absolute;
+  width: 10px; height: 10px; pointer-events: none; }
+.cell.w2bPz::before { top: 3px; left: 3px; border-top: 3px solid #fff; border-left: 3px solid #fff; }
+.cell.w2bPz::after { bottom: 3px; right: 3px; border-bottom: 3px solid #fff; border-right: 3px solid #fff; }
+.cell.w2bKite { outline: 2px solid #a5f3fc !important; outline-offset: -2px;
+  background: repeating-linear-gradient(115deg, rgba(165,243,252,.34) 0 4px, rgba(30,27,75,.55) 4px 9px) !important;
+  animation: w2bKiteCrackle 0.4s steps(3) infinite; }
+@keyframes w2bKiteCrackle { 0% { filter: brightness(1.0); } 100% { filter: brightness(1.7); } }
+.cell.w2bKite::after { content: '↯'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 16px; line-height: 1;
+  color: #d9fbff; text-shadow: 0 0 6px rgba(0,0,0,.9); pointer-events: none; }
+.cell.w2bUnder { outline: 2px dashed #f5f0ff !important; outline-offset: -2px;
+  background-color: rgba(30,10,45,.80) !important;
+  box-shadow: inset 0 0 16px rgba(245,240,255,.35) !important;
+  animation: w2bUnderPulse 1.1s infinite alternate; }
+@keyframes w2bUnderPulse { from { filter: brightness(1.0); } to { filter: brightness(1.45); } }
+.cell.w2bUnder::after { content: '◐'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 16px; line-height: 1;
+  color: #f5f0ff; text-shadow: 0 0 6px rgba(0,0,0,.9); pointer-events: none; }
+.cell.w2bLord { outline: 2px solid #ff5a5a !important; outline-offset: -2px;
+  background: repeating-linear-gradient(45deg, rgba(255,90,90,.42) 0 6px, rgba(20,10,10,.55) 6px 12px) !important;
+  animation: w2bLordPulse 1.2s infinite alternate; }
+@keyframes w2bLordPulse { from { filter: brightness(1.0); } to { filter: brightness(1.35); } }
+.cell.w2bLord::after { content: '§'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 16px; line-height: 1;
+  color: #ffd7d7; text-shadow: 0 0 6px rgba(0,0,0,.9); pointer-events: none; }
+.cell.w2bHeck { outline: 2px solid #ff4d9d !important; outline-offset: -2px;
+  background: radial-gradient(circle at center, rgba(255,77,157,.42) 0, rgba(255,77,157,.14) 100%) !important;
+  animation: w2bHeckJeer 0.7s infinite alternate; }
+@keyframes w2bHeckJeer { from { filter: brightness(1.0); } to { filter: brightness(1.6); } }
+.cell.w2bHeck::after { content: '‼'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 15px; line-height: 1;
+  color: #ffc2dd; text-shadow: 0 0 6px rgba(0,0,0,.9); pointer-events: none; }
+.cell.w2bUnion { outline: 2px solid #7aa2ff !important; outline-offset: -2px;
+  background-color: rgba(16,28,68,.72) !important;
+  background-image: repeating-linear-gradient(0deg, rgba(122,162,255,.30) 0 1px, transparent 1px 7px) !important;
+  animation: w2bUnionPulse 1.3s infinite alternate; }
+@keyframes w2bUnionPulse { from { filter: brightness(1.0); } to { filter: brightness(1.35); } }
+.cell.w2bMod { outline: 3px solid #e03131 !important; outline-offset: -3px;
+  background-color: rgba(80,10,10,.72) !important;
+  box-shadow: inset 0 0 18px rgba(224,49,49,.60) !important;
+  animation: w2bModStamp 0.9s infinite alternate; }
+@keyframes w2bModStamp { from { filter: brightness(1.0); } to { filter: brightness(1.4); } }
+.cell.w2bMod::after { content: '✕'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 18px; line-height: 1;
+  font-weight: bold; color: #ffb3b3; text-shadow: 0 0 6px rgba(0,0,0,.9);
+  pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
-  .cell.w2aStag, .cell.beamLane.w2aDrone, .cell.w2aSwarm, .cell.w2aStatic { animation: none; }
+  .cell.w2aStag, .cell.beamLane.w2aDrone, .cell.w2aStatic, .cell.w2bIdea,
+  .cell.w2bPz, .cell.w2bKite, .cell.w2bUnder, .cell.w2bLord, .cell.w2bHeck,
+  .cell.w2bUnion, .cell.w2bMod { animation: none; }
 }
 /* PLAYER-COINCIDENT TELEGRAPH ALERTS (Steve 2026-10-06): a telegraph landing
    on the player's own tile rings the marker itself — the tile fill alone
@@ -14125,8 +14186,41 @@
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: .6; transform: scale(.92); }
 }
+/* WAVE 2 DIRECT-VOICE TOKEN RINGS (Steve 2026-10-08): the six direct attacks
+   all land on the player's tile — the token swallows the tile fill, so the
+   token itself rings in the voice's color. Same ppulse language as
+   diveTarget/sbLockTarget; the dashed white ring is the mimic's negative. */
+.cell.me .vent.staticTarget::before, .cell.me .vent.underTarget::before,
+.cell.me .vent.lordTarget::before, .cell.me .vent.heckTarget::before,
+.cell.me .vent.unionTarget::before, .cell.me .vent.modTarget::before {
+  content: ''; position: absolute; inset: -2px; border-radius: 50%;
+  pointer-events: none; animation: ppulse .7s ease-in-out infinite; }
+.cell.me .vent.staticTarget, .cell.me .vent.underTarget,
+.cell.me .vent.lordTarget, .cell.me .vent.heckTarget,
+.cell.me .vent.unionTarget, .cell.me .vent.modTarget { position: relative; }
+.cell.me .vent.staticTarget::before {
+  border: 3px solid #d9a7ff;
+  box-shadow: 0 0 14px rgba(217,167,255,.95), inset 0 0 8px rgba(217,167,255,.55); }
+.cell.me .vent.underTarget::before {
+  border: 3px dashed #f5f0ff;
+  box-shadow: 0 0 14px rgba(245,240,255,.9), inset 0 0 8px rgba(245,240,255,.5); }
+.cell.me .vent.lordTarget::before {
+  border: 3px solid #ff5a5a;
+  box-shadow: 0 0 14px rgba(255,90,90,.95), inset 0 0 8px rgba(255,90,90,.55); }
+.cell.me .vent.heckTarget::before {
+  border: 3px solid #ff4d9d;
+  box-shadow: 0 0 14px rgba(255,77,157,.95), inset 0 0 8px rgba(255,77,157,.55); }
+.cell.me .vent.unionTarget::before {
+  border: 3px solid #7aa2ff;
+  box-shadow: 0 0 14px rgba(122,162,255,.95), inset 0 0 8px rgba(122,162,255,.55); }
+.cell.me .vent.modTarget::before {
+  border: 3px solid #e03131;
+  box-shadow: 0 0 16px rgba(224,49,49,.95), inset 0 0 8px rgba(224,49,49,.6); }
 @media (prefers-reduced-motion: reduce) {
-  .cell.me .vent.diveTarget::before, .cell.me .vent.sbLockTarget::before { animation: none; }
+  .cell.me .vent.diveTarget::before, .cell.me .vent.sbLockTarget::before,
+  .cell.me .vent.staticTarget::before, .cell.me .vent.underTarget::before,
+  .cell.me .vent.lordTarget::before, .cell.me .vent.heckTarget::before,
+  .cell.me .vent.unionTarget::before, .cell.me .vent.modTarget::before { animation: none; }
 }
 </style>`;
     return html;
