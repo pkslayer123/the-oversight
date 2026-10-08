@@ -673,7 +673,22 @@
         // living witness, not a corpse. The journal must never confess to a
         // killing that didn't happen — it contradicts the fight two lines up.
         const dead = !!f.betrayerDead;
-        if (witnesses.length) {
+        const playerFled = !!f.playerFled;
+        if (playerFled) {
+          // FLEE TRUTH (brawler loop 2026-10-08): YOU ran. The victim is
+          // alive, in the village, and will tell it first. The old code
+          // narrated the victim fleeing and the journal lied about beating
+          // them until they ran — when it was you who ran.
+          this.say(`You ran. ${bname} is still there — alive, in the village. They'll tell it first, and they'll tell it loud.`);
+          if (witnesses.length) {
+            this.seedGossip('attack', { honest: -25, generous: -20, brave: -8, competent: -2 }, witnesses);
+            this.say(`They saw you start it — and run from it. ${witnesses.map(id => this.displayName(id)).join(', ')} saw. The village will hear.`);
+          } else {
+            try {
+              if (this.journalNote) this.journalNote('people', betrayer, `I started a fight with ${bname} and ran. They'll tell it first.`);
+            } catch (e) {}
+          }
+        } else if (witnesses.length) {
           if (dead) {
             this.seedGossip('murder', this.murderDims(betrayer), witnesses);
             this.say(`They saw. ${witnesses.map(id => this.displayName(id)).join(', ')} saw what you did. The village will hear.`);
@@ -1097,6 +1112,10 @@
           }
           this.tbEnd('lost');
         } else {
+          // FLEE TRUTH (brawler loop 2026-10-08): the aftermath must know the
+          // PLAYER ran — otherwise it narrates the victim fleeing and the
+          // journal lies ("I beat them until they ran").
+          f.playerFled = true;
           this.tbEnd('fled');
         }
         return true;
@@ -1111,6 +1130,11 @@
   Game.tbEnd = function (result) {
     const f = this.tbfight;
     const wasBetrayalFight = !!(f && f.betrayal);
+    // FLEE TRUTH (brawler loop 2026-10-08): carry who-fled into the aftermath
+    // before the fight object is cleared.
+    if (wasBetrayalFight && result === 'fled' && this._lastBetrayal) {
+      this._lastBetrayal.playerFled = !!(f && f.playerFled);
+    }
     if (wasBetrayalFight && (result === 'betrayal_won' || result === 'betrayal_routed' || result === 'betrayal_yielded')) {
       f.over = true; f.result = result;
       if (this.clearTelegraph) this.clearTelegraph();
@@ -1218,7 +1242,23 @@
       try { this.betrayalAftermath(); } catch (e) {}
       return;
     }
-    const r = origTbEnd.call(this, result);
+    // FLEE TRUTH (brawler loop 2026-10-08): a betrayal fight is a person fight —
+    // the shared 'fled' path's "You escape. The thicket keeps its secrets." is
+    // monster fiction. Swap it for the person-fight line; the aftermath below
+    // tells the real story.
+    let r;
+    if (wasBetrayalFight && result === 'fled') {
+      const _say = this.say;
+      this.say = function (s) {
+        if (String(s) === 'You escape. The thicket keeps its secrets.') {
+          return _say.call(this, 'You run. The fight — and the person you started it with — is behind you.');
+        }
+        return _say.call(this, s);
+      };
+      try { r = origTbEnd.call(this, result); } finally { this.say = _say; }
+    } else {
+      r = origTbEnd.call(this, result);
+    }
     // BETRAYAL FLEE (Steve 2026-10-06): game.js's flee-by-door path stashes
     // 'hostile' fighters as "waiting monsters" with id = monsterId. Betrayal
     // fighters are villagers — they have NO monsterId — so the stash holds

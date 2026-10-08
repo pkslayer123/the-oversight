@@ -18992,6 +18992,9 @@
         // Escaping through a door ends combat FOR THE PLAYER
         const p2 = this.tbFighter('p');
         if (p2) p2.fled = true;
+        // FLEE TRUTH (brawler loop 2026-10-08): betrayal fights bypass the
+        // party.js tbEndCheck wrapper — flag the player's flight here too.
+        if (f.betrayal) f.playerFled = true;
         // Preserve monsters: they don't melt away, they wait outside.
         // (Standard tbEnd despawns; we stash positions first.)
         this.state.doorFledMonsters = monsterPositions;
@@ -19041,6 +19044,9 @@
       if (Math.random() < 0.5) {
         this.say('🚪 BARRIER CROSSED — you crash through the treeline to a new area. The barrier shimmers. They lose your trail. (You fled the fight by leaving the area.)');
         p.fled = true;
+        // FLEE TRUTH (brawler loop 2026-10-08): betrayal fights bypass the
+        // party.js tbEndCheck wrapper — flag the player's flight here too.
+        if (f.betrayal) f.playerFled = true;
         this.tbEnd('fled');
         try { this.travelTo(nx, ny); } catch (e) {}
         return true;
