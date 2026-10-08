@@ -536,6 +536,12 @@
         const inv = this.state.scholar.inventory || [];
         const it = inv[key];
         if (!it || (it.kcalEach || 0) <= 0) { this.say("That's not food."); return null; }
+        // UNIT COERCION (break-it camps-4 2026-10-08): same class as the miser
+        // takeFromCache catch. A unit-less/corrupt item went `it.units -= qty`
+        // -> NaN, survived every bury (`NaN <= 0` is false), and minted 1 unit
+        // per bury FOREVER from one phantom item. Coerce once: corrupt entries
+        // collapse to exactly one honest unit, never an infinite.
+        it.units = Math.max(1, Math.floor(it.units || 1));
         qty = Math.min(qty, it.units || 1);
         const kcal = (it.kcalEach || 0) * qty;
         items.push({ name: it.name, kcalEach: it.kcalEach, units: qty, spoilDay: it.spoilDay, safe: it.safe, kg: it.kg, unit: it.unit });

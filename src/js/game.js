@@ -7056,6 +7056,12 @@
             this.state.scholar.inventory.push(tentItem);
             this.say('This tent is intact — and light. You pack it up. (Shelter for later — pitch it on clear ground.)');
             detail[cy][cx] = 'dirt'; // it's gone, you took it
+            // SECRET HYGIENE (break-it camps-4 2026-10-08): the taken tent's
+            // secret must not outlive its cell — same class as the destroyCell
+            // catch. A stale {condition:'packable'} secret on a dirt cell is
+            // invisible today, but a later regen pairing it with a fresh
+            // 'tent' cell would mislabel the new tent.
+            if (t.secrets) delete t.secrets[key];
             return true;
           }
           this.say('A good tent. Dry inside. (Resting here takes most of the day part — use Rest when you mean it.)');
@@ -14843,6 +14849,10 @@
         const idx = (s.inventory || []).findIndex(i => (i.kcalEach || 0) > 0);
         if (idx === -1) { this.say('No food to bury.'); return false; }
         const it = s.inventory[idx];
+        // UNIT COERCION (break-it camps-4 2026-10-08): same miser class as
+        // buryCache/takeFromCache — a unit-less item went `it.units -= 1` ->
+        // NaN and was never consumed (`NaN <= 0` is false).
+        it.units = Math.max(1, Math.floor(it.units || 1));
         it.units -= 1; if (it.units <= 0) s.inventory.splice(idx, 1);
         this.playerTile().compost = true;
         this.say(`You bury ${it.name}. The tile will remember. (+10% forage here. compost_king)`);
@@ -19710,6 +19720,18 @@
       const cellName = cellType || cell;
       // Clear the cell
       detail[cy][cx] = null;
+      // SECRET HYGIENE (break-it camps-4 2026-10-08): a smashed tent's secret
+      // (yours/condition) must not outlive its cell on the tile object — a
+      // later detail regen pairing the stale secret with a fresh 'tent' cell
+      // would resurrect ownership of a tent never pitched. wreckTent,
+      // packTent, and breakCamp's sweep all delete the secret with the cell;
+      // destroyCell didn't.
+      if (cellType === 'tent') {
+        try {
+          const t = this.tileAt(this.map.px, this.map.py);
+          if (t && t.secrets) delete t.secrets[cx + ',' + cy];
+        } catch (e) {}
+      }
       // a smashed player fire stops being a tracked live fire
       if (cellType === 'fire') {
         try {
