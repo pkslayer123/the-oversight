@@ -387,6 +387,8 @@
       } catch (e) {}
       if ((v.away || {})[rid]) return;
       try { if (this.isEngaged(rid)) return; } catch (e) {}
+      // SICK: the feverish stay home (parity 2026-10-08 — villagers get sick now)
+      try { if ((v.sick || {})[rid]) return; } catch (e) {}
       var o = this.objOf(rid);
       // idle or done → pick fresh (dawn re-pick happens in objTick, but a
       // villager can finish mid-day and should decide again, not sit)

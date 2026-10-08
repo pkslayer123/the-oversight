@@ -42,6 +42,7 @@
 //   - nearestWorldMonster(tx, ty) -> monster | null
 //   - worldMonsterCap() -> int (3 base, 5 arrived, 8 deep, +1 night)
 //   - maintainWorldMonsters(), wanderWorldMonsters(), villagerMonsterTick(), worldTick() (living-world step on tile entry)
+//   - villageSicknessTick() (villager disease: same vectors as the player — wounds, dirty water, ticks)
 //   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
 //   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge)
 // rules:
@@ -11566,13 +11567,42 @@
         s.awayNews = s.awayNews || [];
         if (s.awayNews.length < 8) s.awayNews.push(msg);
       };
+      // PARITY (2026-10-08): the old table was stat-blind — a 100-HP veteran
+      // had the same 35% kill / 15% death as a 1-HP bystander against any
+      // monster, while the player fights the same beasts through the tactical
+      // engine where stats matter. Weight the abstraction by villager
+      // capability vs monster threat so the odds are honest in both
+      // directions. (Full tactical sim per off-screen encounter is
+      // POV-necessary abstraction; stat-blindness was not.)
+      const vv = this.state.village || {};
+      const vhp = (vv.health && vv.health[vid] !== undefined) ? vv.health[vid] : 100;
+      let brave = 0;
+      try { brave = (((this.agencyOf(vid) || {}).xp || {})[vid] || {}).bravery || 0; } catch (e) {}
+      let profF = 1;
+      try {
+        const prof = this.npcRangeProfile ? this.npcRangeProfile(vid) : 'forager';
+        profF = prof === 'explorer' ? 1.3 : prof === 'wanderer' ? 1.15 : prof === 'forager' ? 1.0 : 0.85;
+      } catch (e) {}
+      const capability = Math.max(0.1, vhp / 100) * Math.min(2, 1 + brave / 20) * profF;
+      let mdef = {};
+      try { mdef = (this.data.monsters || []).find(x => x.id === m.id) || {}; } catch (e) {}
+      const mwave = mdef.wave || 1;
+      const mhp = (m.maxHp || m.hp || 20);
+      const mdmg = (mdef.attack && mdef.attack.damage && mdef.attack.damage[0]) || 10;
+      const threat = mwave * (mhp / 40) * (mdmg / 20);
+      const edge = Math.max(0.25, Math.min(4, capability / Math.max(0.25, threat)));
+      // base table: kill .35 / drive .25 / mauled .25 / die .15 — shifted by edge
+      const killP = Math.min(0.75, Math.max(0.05, 0.35 * edge));
+      const dieP = Math.min(0.45, Math.max(0.02, 0.15 / edge));
+      const rest = Math.max(0, 1 - killP - dieP);
+      const driveP = rest * 0.5, mauledP = rest * 0.5;
       const r = Math.random();
-      if (r < 0.35) {
+      if (r < killP) {
         this.removeWorldMonster(m);
         tell(`⚔️ ${name} killed the ${mName}! Word travels fast — the village cheers.`);
         try { this.bumpTrust(vid, 4); } catch (e) {}
         try { if (this.remember) this.remember(vid, 'hero', 'killed ' + mName); } catch (e) {}
-      } else if (r < 0.6) {
+      } else if (r < killP + driveP) {
         const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => Math.random() - 0.5);
         for (const d of dirs) {
           const nx = m.tx + d[0], ny = m.ty + d[1];
@@ -11584,8 +11614,10 @@
         }
         tell(`⚔️ ${name} drove the ${mName} off! It's still out there, somewhere.`);
         try { this.bumpTrust(vid, 2); } catch (e) {}
-      } else if (r < 0.85) {
-        const dmg = 10 + Math.floor(Math.random() * 21);
+      } else if (r < killP + driveP + mauledP) {
+        // mauled damage scales with the monster's actual attack — a bulldozer
+        // hits harder than a hushwolf (parity: the threat is real, not flat)
+        const dmg = Math.max(5, Math.round(mdmg * (0.5 + Math.random() * 0.75)));
         try { this.hurtVillager(vid, dmg, 'monster'); } catch (e) {}
         tell(`🩸 The ${mName} mauled ${name} (-${dmg} health). They're lucky to be breathing.`);
       } else {
@@ -17518,6 +17550,7 @@
       // Away from every fire — joined or not — you camp wild.
       if (!this.pantryInReach()) {
         this.say('You camp wild tonight — no pantry meal. Eat from your pack.');
+        v.lastPlayerMeal = 0;
         return null;
       }
       // your share: 2000 kcal (a day's food), scaled by trust
@@ -17529,7 +17562,7 @@
       // don't take more than you can hold — food doesn't vanish into the cap
       const room = Math.max(0, 3000 - (scholar.kcal || 0));
       const want = Math.min(share, room);
-      if (want <= 0) { this.say('You\'re full. The pantry keeps its food.'); return; }
+      if (want <= 0) { this.say('You\'re full. The pantry keeps its food.'); v.lastPlayerMeal = 0; return; }
       // take from pantry (most perishable first). The sort puts the soonest
       // spoilDay at index 0, so iterate FORWARD. (BUG 2026-10-06: the old loop
       // iterated from the end — durable-first — while the comment claimed
@@ -17549,6 +17582,10 @@
         if (item.units <= 0) pantry.splice(i, 1); else i++;
       }
       scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
+      // HONEST BURN (2026-10-08): the player's meal burns the pantry but the
+      // player is not in villageEats' collective loop (parity) — record the
+      // draw so the pantry clock counts it.
+      v.lastPlayerMeal = taken;
       // WATER with the meal (from village storage).
       // HONEST (survivalist loop 2026-10-07): the old message said "+1L water"
       // whenever vw.clean >= 0 — which is true even when the cistern is dry
@@ -17573,14 +17610,14 @@
       let eat = 0, give = 0;
       const providers = [];
       for (const id of (v.roster || [])) {
-        // AWAY PLAYER: not at haven → neither foraging for the pot nor eating
-        // from it today. The pantry is physical; your dawn meal is gated the
-        // same way (see villageMeal). NPC roster members live at haven.
-        // JOINED ELSEWHERE counts as away: living at another village's fire
-        // means your hands work THEIR pot, not Haven's. (BUG 2026-10-05: a
-        // joined player ate the joined village's meals while their labor
-        // still fed home — food from two fires.)
-        if (id === this.villagerId && !this.pantryInReach()) continue;
+        // PARITY (2026-10-08): the player is never in the collective pot.
+        // Your pantry draw is your trust-scaled villageMeal; your contributions
+        // are your real donations. Counting you here too drew your share twice
+        // (personal meal + collective net) and credited ~1500 phantom kcal/day
+        // of production your real foraging never put in the pot (it goes to
+        // your pack). Villagers eat once; so do you. (The old code only
+        // skipped you when away; the at-haven double-dip was the bug.)
+        if (id === this.villagerId) continue;
         const person = this.getPerson(id);
         if (!person) continue;
         const health = (v.health && v.health[id] !== undefined) ? v.health[id] : 100;
@@ -17608,11 +17645,15 @@
         }
       }
       const net = Math.max(0, eat - give);
+      // HONEST BURN (2026-10-08): the player's trust-scaled meal (villageMeal)
+      // burns the pantry but the player is not in this loop (parity) — count
+      // it so the pantry clock stays honest.
+      const honestNet = net + (v.lastPlayerMeal || 0);
       v.lastEat = eat; v.lastGive = give; v.lastProviders = providers.map(p => p.name.split(' ')[0]);
       // BURN HISTORY: the honest pantry clock. The haven screen's "about N days"
       // runs on this measured net burn — not the 12x2000 worst case, which told
       // the forager their pantry was always ~2 days from empty. Rolling 7 days.
-      v.burnHistory = (v.burnHistory || []).concat([net]).slice(-7);
+      v.burnHistory = (v.burnHistory || []).concat([honestNet]).slice(-7);
       // Consume REAL pantry items (not phantom pantryKcal). Perishable first:
       // the sort puts the soonest spoilDay at index 0, so iterate FORWARD.
       // (BUG 2026-10-06: the old loop iterated from the end — durable-first —
@@ -17730,6 +17771,57 @@
       } else {
         if (v.hungryDays) this.say('Haven eats again. The hollow look fades.');
         v.hungryDays = 0;
+      }
+    },
+
+    // VILLAGER SICKNESS — parity (2026-10-08).
+    // The player faces food-borne disease, dirty water, wound infection,
+    // ticks. Villagers were immune BY OMISSION: zero code paths could make
+    // them sick — the same world, the same vectors, no consequences. Light
+    // sim, not the full status engine (POV-necessary abstraction): sick
+    // villagers drain health daily, skip expeditions, recover with rest or
+    // die through the normal hurtVillager pipeline. Narrated, never silent.
+    villageSicknessTick() {
+      const v = this.state.village;
+      if (!v || !v.roster) return;
+      v.sick = v.sick || {};
+      const nm = (id) => {
+        try { const p = this.getPerson(id); return p ? String(p.name).split(' ')[0] : 'Someone'; }
+        catch (e) { return 'Someone'; }
+      };
+      // the sick get worse before they get better
+      for (const vid of Object.keys(v.sick)) {
+        const s = v.sick[vid];
+        s.daysLeft -= 1;
+        try { this.hurtVillager(vid, 2 + (s.severity || 1) * 2, 'sickness'); } catch (e) {}
+        if (s.daysLeft <= 0) {
+          delete v.sick[vid];
+          this.say(`🤒 ${nm(vid)} is on the mend — the ${s.name} broke.`);
+          try { if (this.remember) this.remember(vid, 'recovered', 'survived ' + s.name); } catch (e) {}
+        }
+      }
+      // vectors: who gets sick today? (mirrors the player's vectors)
+      const candidates = (v.roster || []).filter(id => id !== this.villagerId && !v.sick[id]);
+      if (!candidates.length) return;
+      const vw = v.water || { clean: 0, dirty: 0 };
+      const drinksDirty = (vw.clean || 0) <= 0 && (vw.dirty || 0) > 0;
+      for (const vid of candidates) {
+        let vector = null, severity = 1;
+        const hp = (v.health && v.health[vid] !== undefined) ? v.health[vid] : 100;
+        // WOUNDS: open wounds infect (the player's wound vector)
+        if (hp < 40 && Math.random() < 0.15) { vector = 'wound fever'; severity = 2; }
+        // DIRTY WATER: the cistern's all they have (the player's raw-water vector)
+        else if (drinksDirty && Math.random() < 0.10) { vector = 'gut rot'; severity = 2; }
+        // TICKS: foragers in the brush (the player's tick vector)
+        else {
+          let out = false;
+          try { const pr = this.npcRangeProfile(vid); out = (pr === 'forager' || pr === 'explorer'); } catch (e) {}
+          if (out && Math.random() < 0.03) { vector = 'tick fever'; severity = 1; }
+        }
+        if (vector) {
+          v.sick[vid] = { name: vector, daysLeft: 3 + Math.floor(Math.random() * 4), severity };
+          this.say(`🤒 ${nm(vid)} has come down with ${vector}. Rest and clean water — or it gets worse.`);
+        }
       }
     },
 
@@ -17897,6 +17989,8 @@
       try { if (this.playerAtHaven()) scholar.lastHavenDay = scholar.day || 1; } catch (e) {}
       this.villageLives();
       this.villageEats();
+      // PARITY (2026-10-08): villagers get sick like you do — same vectors.
+      try { this.villageSicknessTick(); } catch (e) {}
       // ECOLOGY (Steve 2026-10-07): wildlife lives whether you're watching or not
       try { this.simEcology(); } catch (e) {}
       this.checkTraps();
