@@ -107,10 +107,33 @@
       },
       resolve(vid, how) {
         if (how === 'engaged') {
-          // They owe you now — that's a seed.
+          // They owe you now — that's a seed (Phase 1: real wantId).
           return { wantId: 'repay', note: 'the favor they still owe you for' };
         }
         return { wantId: 'ask_favor', note: 'the help they asked you for' };
+      },
+    },
+    // repay: they owe you one. Seed-driven only — pick() returns 0 so it
+    // never surfaces spontaneously. Debts unpaid just sit there (Phase 1,
+    // Steve 2026-10-08: the dead 'repay' seed gets a real wantId).
+    repay: {
+      thread: 'personal',
+      pick(vid) { return 0; },
+      opener(vid) {
+        return Game.convoPickCycle(vid, 'want:repay:open', [
+          '"I\'ve been thinking about what you did for me. I don\'t like owing."',
+          '"About last time — I haven\'t forgotten. I want to make it right."',
+        ]);
+      },
+      engage(vid) {
+        return '"Good. Then we\'re square." They look lighter for it.';
+      },
+      deflect(vid) {
+        return '"Right. Forget it." They won\'t forget. Debts unpaid just sit there.';
+      },
+      resolve(vid, how) {
+        if (how === 'engaged') return null; // repaid, debt clear
+        return { wantId: 'repay', note: 'the favor they still owe you for' };
       },
     },
     seek_comfort: {
@@ -190,10 +213,9 @@
         return '"Fair enough. Some things aren\'t for sharing."';
       },
       resolve(vid, how) {
-        if (how === 'engaged') {
-          // Now they know something real — that deepens things.
-          return { wantId: 'closeness', note: 'what they learned about you last time' };
-        }
+        // Engaged: they know something real now. The closeness lives in
+        // the trust the engagement built — no seed needed (Phase 1: the
+        // dead 'closeness' seed is cut, not faked).
         return null;
       },
     },
@@ -382,7 +404,10 @@
         return;
       }
       // If they never engaged (stage < 2), the want is unresolved.
-      const resolution = want.stage >= 2 ? 'engaged' : (how === 'left' ? 'abandoned' : 'unresolved');
+      // A deflect already recorded its resolution ('deflected') — never
+      // overwrite it with 'engaged' (Phase 1 fix, Steve 2026-10-08).
+      const resolution = want.resolution ||
+        (want.stage >= 2 ? 'engaged' : (how === 'left' ? 'abandoned' : 'unresolved'));
       want.stage = 3;
       want.resolution = resolution;
       let seed = null;
@@ -500,6 +525,10 @@
             this.sayLine(vid, seedLine);
             result.line = seedLine;
             c.want.stage = 1; // surfaced
+            // UNFINISHED BUSINESS (dialog rethink Phase 1, Steve 2026-10-08):
+            // seed-driven conversations open one mood band cooler. Whatever
+            // was left hanging, it wasn't nothing — the air is heavier.
+            if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, -1);
           }
         } catch (e) {}
       }
