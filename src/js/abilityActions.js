@@ -696,8 +696,10 @@
       // approach settles it. Its awareness drops, which flows straight into
       // the preyReaction flee roll. (The old stalkActive flag was set and
       // read by nothing — removed 2026-10-07; the awareness drop IS the
-      // mechanism. The stalk passive stealth.move_silent now feeds the same
-      // flee roll for quiet movement in general.)
+      // mechanism. The stalk passive stealth.move_silent is wired into the
+      // preyReaction flee roll (food.js, via modTarget) for quiet movement
+      // in general — holding stalk shaves the bolt chance beyond the aware
+      // drop.)
       try {
         var a = s.animal;
         if (a) a.aware = Math.min(a.aware == null ? 0.6 : a.aware, 0.2);
