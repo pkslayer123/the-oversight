@@ -487,6 +487,22 @@
       }
       arr.push({ claim, day: day(), via: 'talk' });
       if (arr.length > 6) arr.shift();
+      try { this.stampHeardStory(vid, claim); } catch (e) {}
+    },
+
+    // GOSSIP-FIRST LEAD FOLLOW-UP (detective feel 2026-10-08): a lead doubt
+    // formed before you heard their story carries "you haven't heard X's
+    // own story yet" in its evidence. Once a claim is on file, stamp the
+    // evidence so the doubt reads as a timeline instead of going stale.
+    stampHeardStory(vid, claim) {
+      const first = this.firstRef(vid);
+      for (const d of (this.state.codex.doubts || [])) {
+        if (d.resolved || d.vid !== vid || d.kind !== 'gossip') continue;
+        if (d.evidence.some(e => String(e).includes("haven't heard")) &&
+            !d.evidence.some(e => String(e).includes('heard their own story'))) {
+          d.evidence.push(`heard ${first}'s own story (day ${day()}) — "${claim}"`);
+        }
+      }
     },
 
     getClaims(vid, field) {
@@ -936,14 +952,25 @@
       }
 
       if (!lie) {
-        // no lie behind this doubt — it was a misunderstanding. The player
-        // still raises it (tentative windup), then the honest clearing.
+        // no lie behind this doubt — it was a misunderstanding, and the
+        // accusation itself was the offense. Baseless accusations sting a
+        // little: people remember being called a liar. (Detective feel
+        // 2026-10-08: this branch used to grant +3 trust, which made
+        // accuse-everyone the dominant strategy — confrontation was
+        // risk-free.) Behavior doubts are real observations, not
+        // accusations — those stay neutral.
+        // The player still raises it (tentative windup), then the honest clearing.
         this.confrontWindup(vid, doubt, null);
         line = this.drawTruthLine('clears', vid);
         outcome = 'cleared';
         this.resolveDoubt(doubtId, 'misunderstanding — they explained it');
         this.noteSocialLesson('cleared');
-        try { this.bumpTrust(vid, 3); } catch (e) {}
+        try {
+          if (doubt.kind !== 'behavior') {
+            this.bumpTrust(vid, -2);
+            this.remember(vid, 'wrongly_accused', 'you called them a liar and were wrong');
+          }
+        } catch (e) {}
         return { ok: true, line, outcome };
       }
 
@@ -1309,6 +1336,7 @@
     const last = arr[arr.length - 1];
     if (!last || last.claim !== claim) arr.push({ claim, day: day(), via: 'talk' });
     if (arr.length > 6) arr.shift();
+    try { this.stampHeardStory(vid, claim); } catch (e) {}
   };
 
   // 2. convoChoices: add confrontation when unresolved doubts exist.
