@@ -6,6 +6,11 @@
 //   - cleanCarcass()
 //   - cookFood()
 //   - preserveFood()
+//   - cookTransform()
+//   - cookClassFor()
+//   - cookOutcome()
+//   - consumeCookFire()
+//   - downgradeOutcome()
 //   - stacksMatch()       (fungibility gate for stack merging)
 //   - spoilBonusDays()    (preservation_instinct shelf-life bonus)
 //   - isSpoiled()         (bonus-aware spoilage boundary)
@@ -675,7 +680,15 @@
       } else if (task === 'cook') {
         const mult = 1 + 0.05 * spec.skill;
         if (it.rawKcal) {
-          it.kcalEach = Math.round((it.cookedKcal || it.rawKcal * 1.5) * mult);
+          // DIGESTIBILITY: the specialist's fire uses the same honest math —
+          // skill buys better outcomes, never phantom energy.
+          const sR = this.cookTransform(it, { knows: true, skillMult: 1 + 0.05 * spec.skill });
+          if (sR) {
+            it.kcalEach = sR.kcalEach;
+            if (sR.outcome.key === 'burnt') it.burnt = true;
+          } else {
+            it.kcalEach = Math.round(it.rawKcal * (1 + 0.05 * spec.skill));
+          }
           it.rawKcal = null; it.safe = true;
         } else if (it.foodKind === 'meat' && it.foodState === 'cleaned') {
           // hiddenKcal is TOTAL; kcalEach is per unit.
@@ -1242,6 +1255,12 @@
       try { trackLvl = this.abilityLevel ? this.abilityLevel('tracker') : 0; } catch (e) {}
       fleeP -= trackLvl * 0.12; // stalking skill matters
       fleeP -= this.modTarget('stealth.move_silent', 0, {}); // stalk passive (abilities.json): quiet movement in general
+      // MONSTER-DIET NOISE (Steve 2026-10-08): a ribbiting gut or clanking
+      // digestion is not stealth. Prey hears you coming.
+      try {
+        if (this.hasStatus && this.hasStatus('scholar', 'croakbelly')) fleeP += 0.15;
+        if (this.hasStatus && this.hasStatus('scholar', 'shellgut')) fleeP += 0.08;
+      } catch (e) {}
       const villager = (this.data.villagers || []).find(v => v.id === this.villagerId);
       if (villager && String(villager.formerOccupation || '').toLowerCase().includes('hunter')) fleeP -= 0.10;
       if (this.isNight && this.isNight()) fleeP -= 0.08; // dark hides you
@@ -1368,6 +1387,7 @@
     mealQuality(it) {
       if (!it) return 0.7;
       if (it.wellMade) return 1.3;               // a specialist made this
+      if (it.burnt) return 0.45;                  // burnt is fuel, technically
       if (it.foodState === 'preserved') return 1.1;
       if (it.diseaseRisk) return 0.5;            // raw and risky
       if (it.foodKind === 'meat') return 1.0;    // cooked meat
@@ -1924,23 +1944,32 @@
         const mId = (item.plantId || '').replace(/^meat_/, '');
         const isMon = (this.data.monsters || []).some(m => m.id === mId);
         if (isMon && !this.monsterFoodSafe(mId)) { nUnknown++; continue; }
-        const units = item.units || 1;
-        const total = Math.round((item.kcalEach || 0) * units);
-        const cookedTotal = knowsCook ? total : Math.round(total * 0.85);
-        item.kcalEach = Math.round(cookedTotal / units);
+        // DIGESTIBILITY: batch uses the shared math \u2014 one honest outcome
+        // for the batch (the fire doesn't roll per portion).
+        const rB = this.cookTransform(item, { knows: knowsCook });
+        if (rB) {
+          item.kcalEach = rB.kcalEach;
+          if (rB.outcome.key === 'burnt') item.burnt = true;
+          if (!rB.outcome.riskStays) item.diseaseRisk = null;
+        }
         item.hiddenKcal = null;
-        item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = true;
+        item.foodState = 'cooked'; item.safe = true;
         item.spoilDay = this.state.scholar.day + 5;
         item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
-        item.prep = 'Cooked through. Safe. Better smoked for the long haul.';
+        item.prep = 'Cooked ' + (rB ? this.cookOutcomePhrase(rB.outcome, rB.cls) : 'through') + '. Better smoked for the long haul.';
         n++;
       } else if (item.needsCooking && item.diseaseRisk && item.foodKind === 'plant') {
-        item.diseaseRisk = null; item.safe = true; item.needsCooking = false;
-        item.prep = (item.prep || '').replace(/\u26A0\uFE0F Risky raw \u2014 cook it\./, '').trim() || 'Cooked. Safe.';
+        const rP2 = this.cookTransform(item, { knows: knowsCook });
+        if (rP2) {
+          item.kcalEach = rP2.kcalEach;
+          if (rP2.outcome.key === 'burnt') item.burnt = true;
+        }
+        if (!rP2 || !rP2.outcome.riskStays) { item.diseaseRisk = null; item.safe = true; item.needsCooking = false; }
+        item.prep = 'Cooked. Safe.';
         n++;
       }
     }
-    // legacy rawKcal items: scale the just-cooked ones when technique is missing.
+
     // (orig already cooked them; find what changed this call.)
     if (nUnknown > 0) {
       captured.push(`Left ${nUnknown} unknown flesh out of the batch — you don't know it's food yet. Test it cautiously (per-item Cook) before trusting it.`);
@@ -1963,6 +1992,98 @@
   };
 
   // cookFood (per-item): also handles cleaned meat.
+  // COOKING MODEL (Steve 2026-10-08): cooking is digestibility, not a
+  // multiplier. Every food has GROSS kcal (chemical energy); net = gross x
+  // digestibility(state). Raw digests worse and carries disease risk; cooked
+  // digests better. Cooked can never exceed gross \u2014 energy is never created.
+  // Outcomes are skill-gated: perfect / decent / undercooked (risk stays) /
+  // burnt. Cooking costs fire fuel; a fire that dies mid-cook downgrades the
+  // outcome. Curated cookedKcal (beans, rice) is respected as the designed
+  // value, capped by gross all the same.
+  G.cookClassFor = function (item) {
+    const C = (this.data && this.data.cooking) || {};
+    const classes = C.classes || {};
+    if (!item) return null;
+    if (item.foodKind === 'meat') {
+      const mid = (item.plantId || '').replace(/^meat_/, '');
+      const isMon = (this.data.monsters || []).some(m => m.id === mid);
+      return { key: isMon ? 'monster' : 'meat', ...(classes[isMon ? 'monster' : 'meat'] || {}) };
+    }
+    if (item.plantId && C.plantClasses && C.plantClasses[item.plantId]) {
+      const key = C.plantClasses[item.plantId];
+      return { key, ...(classes[key] || {}) };
+    }
+    if (item.rawKcal) return { key: 'grain_legume', ...(classes.grain_legume || {}) };
+    if (item.foodKind === 'plant') {
+      const p = (this.data.plants || []).find(x => x.id === item.plantId) || {};
+      const formMap = { shoots: 'greens', berries: 'fruit', roots: 'tuber', nuts: 'nut' };
+      const key = formMap[p.form] || 'greens';
+      return { key, ...(classes[key] || {}) };
+    }
+    return null;
+  };
+  G.cookOutcome = function (knows) {
+    const r = Math.random();
+    if (knows) {
+      if (r < 0.70) return { key: 'perfect', mult: 1.0 };
+      if (r < 0.95) return { key: 'decent', mult: 0.8 };
+      return { key: 'burnt', mult: 0.4 };
+    }
+    if (r < 0.30) return { key: 'decent', mult: 0.8 };
+    if (r < 0.70) return { key: 'undercooked', mult: 0.7, riskStays: true };
+    return { key: 'burnt', mult: 0.4 };
+  };
+  G.cookOutcomePhrase = function (outcome, cls) {
+    const b = (cls && cls.blurb) || '';
+    switch (outcome.key) {
+      case 'perfect': return 'perfect \u2014 ' + b;
+      case 'decent': return 'a bit uneven, but good';
+      case 'undercooked': return 'underdone in the middle \u2014 still risky';
+      case 'burnt': return 'burnt at the edges \u2014 edible, technically';
+      default: return 'cooked';
+    }
+  };
+  G.consumeCookFire = function (ticks) {
+    try {
+      const s = this.state.scholar || {};
+      const now = this._absTick();
+      const px = s.insideTent ? s.insideTent.tx : (this.map || {}).px;
+      const py = s.insideTent ? s.insideTent.ty : (this.map || {}).py;
+      const f = (this.state.fires || []).find(f => f.tx === px && f.ty === py && f.till > now && f.burn0);
+      if (!f) return 'ok';
+      f.till -= ticks;
+      return f.till <= now ? 'died' : 'ok';
+    } catch (e) { return 'ok'; }
+  };
+  G.cookTransform = function (item, opts) {
+    opts = opts || {};
+    const cls = this.cookClassFor(item);
+    if (!cls || !cls.raw || !cls.cooked) return null;
+    const outcome = opts.outcome || this.cookOutcome(!!opts.knows);
+    const units = item.units || 1;
+    const rawPer = item.rawKcal || item.kcalEach || 0;
+    const rawTotal = Math.round(rawPer * units);
+    if (rawTotal <= 0) return null;
+    const gross = rawTotal / cls.raw;
+    const effMult = outcome.mult * (opts.skillMult || 1) * (opts.relicMult || 1);
+    let cookedTotal;
+    if (item.cookedKcal) {
+      cookedTotal = Math.min(gross, item.cookedKcal * units * effMult);
+    } else {
+      cookedTotal = Math.min(gross, gross * cls.cooked * effMult);
+    }
+    return {
+      kcalEach: Math.max(1, Math.round(cookedTotal / units)),
+      outcome, cls, rawTotal, cookedTotal: Math.round(cookedTotal),
+    };
+  };
+  G.downgradeOutcome = function (outcome) {
+    const order = ['perfect', 'decent', 'undercooked', 'burnt'];
+    const i = order.indexOf(outcome.key);
+    if (i < 0 || i >= order.length - 1) return outcome;
+    const next = order[i + 1];
+    return { key: next, mult: next === 'decent' ? 0.8 : next === 'undercooked' ? 0.7 : 0.4, riskStays: next === 'undercooked' };
+  };
   const origCookFood = G.cookFood;
   G.cookFood = function (idx, container) {
     const inv = container || this.state.scholar.inventory;
@@ -1986,40 +2107,80 @@
       const cMeatId = (item.plantId || '').replace(/^meat_/, '');
       const cIsMonster = (this.data.monsters || []).some(m => m.id === cMeatId);
       const cFoodSafe = !cIsMonster || this.monsterFoodSafe(cMeatId);
-      // COOK PRESERVES (hunter loop 2026-10-08): the cleaned total is
-      // kcalEach×units (the honest 40%-ish butcher yield). hiddenKcal is the
-      // RAW gross — using it here resurrected the butchered-away 60% (2.5×
-      // free calories) and erased the clean-technique gate. Unknown flesh
-      // (kcalEach 0) keeps its gross in hiddenKcal for the later
-      // cautious-test reveal math.
-      const total = (cFoodSafe && item.kcalEach > 0)
-        ? Math.round(item.kcalEach * units)
-        : (item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units));
-      // hiddenKcal is TOTAL; kcalEach is per unit.
-      item.kcalEach = cFoodSafe ? Math.round((knows ? total : Math.round(total * 0.85)) / units) : 0;
-      item.hiddenKcal = cFoodSafe ? null : total;
-      item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = cFoodSafe;
-      item.spoilDay = this.state.scholar.day + 5;
-      item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
-      item.prep = cFoodSafe ? 'Cooked through. Safe.'
-        : '\u26A0\uFE0F Cooked, but still unknown flesh. Test it cautiously before trusting it.';
-      if (!knows) {
-        this.say(`A bit burnt in spots — but edible. You'll do better next time.`);
-        this.learnTechnique('cook', 'trial');
+      // DIGESTIBILITY (Steve 2026-10-08): the cleaned total is the honest
+      // raw net; cooking unlocks more of the gross via the food's class \u2014
+      // never more than gross. Unknown flesh (kcalEach 0) keeps its gross in
+      // hiddenKcal for the later cautious-test reveal math.
+      const cls = this.cookClassFor(item) || {};
+      const cookTime = cls.time || 32;
+      const fireState = this.consumeCookFire(cookTime);
+      let outcome = this.cookOutcome(knows);
+      if (fireState === 'died') outcome = this.downgradeOutcome(outcome);
+      const r = cFoodSafe ? this.cookTransform(item, { knows, outcome }) : null;
+      if (cFoodSafe && r) {
+        item.kcalEach = r.kcalEach;
+        item.hiddenKcal = null;
+        if (r.outcome.key === 'burnt') item.burnt = true;
+        // Undercooked: the normal parasites survive. Cooked through: dead.
+        // (Monster weirdness is NOT cured by fire \u2014 that's an eat-time roll.)
+        if (!r.outcome.riskStays) item.diseaseRisk = null;
+        item.foodState = 'cooked'; item.safe = cFoodSafe;
+        item.spoilDay = this.state.scholar.day + 5;
+        item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
+        item.prep = 'Cooked ' + this.cookOutcomePhrase(r.outcome, r.cls) + '.';
+      } else {
+        item.hiddenKcal = item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units);
+        item.kcalEach = 0;
+        item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = false;
+        item.spoilDay = this.state.scholar.day + 5;
+        item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
+        item.prep = '\u26A0\uFE0F Cooked, but still unknown flesh. Test it cautiously before trusting it.';
       }
-      this.say(cFoodSafe ? `Cooked ${item.name}. ${item.kcalEach} kcal now.`
-        : `Cooked ${item.name}. Smells like meat. Whether it IS food — you still don't know. Test it cautiously.`);
-      this.tickAction(32);
+      if (!knows) this.learnTechnique('cook', 'trial');
+      // CODEX MEMORY: if this flesh taught you a weird lesson before, the
+      // fire reminds you before you commit.
+      let memWarn = '';
+      try {
+        const me = (this.state.codex.monsters || {})[cMeatId];
+        if (cIsMonster && me && me.meatDisease) {
+          const dz = ((this.data.cooking || {}).monsterDiseases || []).find(d => d.id === me.meatDisease);
+          if (dz) memWarn = ` Last time, the ${dz.name.toLowerCase()} lasted ${dz.days} days. You do it anyway.`;
+        }
+      } catch (e) {}
+      if (cFoodSafe && r) {
+        this.say(`Cooked ${item.name}: ${r.rawTotal} \u2192 ${r.cookedTotal} kcal, ${this.cookOutcomePhrase(r.outcome, r.cls)}.${fireState === 'died' ? ' The fire died halfway \u2014 it cost you.' : ''}${memWarn} (${cookTime} ticks)`);
+      } else {
+        this.say(`Cooked ${item.name}. Smells like meat. Whether it IS food \u2014 you still don't know. Test it cautiously.${memWarn}`);
+      }
+      this.tickAction(cookTime);
       return null;
     }
     if (item && item.needsCooking && item.diseaseRisk) {
       if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
-      item.diseaseRisk = null; item.safe = true; item.needsCooking = false;
+      const knowsP = this.knowsTechnique('cook');
+      const clsP = this.cookClassFor(item) || {};
+      const timeP = clsP.time || 16;
+      const fireP = this.consumeCookFire(timeP);
+      let outP = this.cookOutcome(knowsP);
+      if (fireP === 'died') outP = this.downgradeOutcome(outP);
+      // DIGESTIBILITY: must-cook plants gain real net kcal via their class \u2014
+      // tubers transform, greens barely. Undercooked keeps the risk.
+      const rP = this.cookTransform(item, { knows: knowsP, outcome: outP });
+      if (rP) {
+        item.kcalEach = rP.kcalEach;
+        if (rP.outcome.key === 'burnt') item.burnt = true;
+      }
+      if (!outP.riskStays) { item.diseaseRisk = null; item.safe = true; item.needsCooking = false; }
       item.foodState = 'cooked';
-      item.prep = ((item.prep || '').replace(/\u26A0\uFE0F Risky raw \u2014 cook it\./, '').trim() + ' Cooked. Safe.').trim();
+      item.prep = 'Cooked ' + this.cookOutcomePhrase(outP, clsP) + '.';
       item.spoilDay = this.state.scholar.day + 5;
-      this.say(`Cooked ${item.name}. Safe now. (16 ticks)`);
-      this.tickAction(16);
+      if (!knowsP) this.learnTechnique('cook', 'trial');
+      if (rP) {
+        this.say(`Cooked ${item.name}: ${rP.rawTotal} \u2192 ${rP.cookedTotal} kcal, ${this.cookOutcomePhrase(outP, clsP)}.${fireP === 'died' ? ' The fire died halfway \u2014 it cost you.' : ''}${outP.riskStays ? ' Still risky inside.' : ' Safe now.'} (${timeP} ticks)`);
+      } else {
+        this.say(`Cooked ${item.name}. Safe now. (${timeP} ticks)`);
+      }
+      this.tickAction(timeP);
       return null;
     }
     return origCookFood.call(this, idx);

@@ -145,9 +145,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json', 'cooking.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking };
       // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
@@ -7618,16 +7618,23 @@
         this.say(`Need ${cost1}L clean water to cook ${item.name} — haul water first.`);
         return null;
       }
-      // cook it: rawKcal -> kcalEach (cooked)
-      item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult1);
+      // cook it: rawKcal -> kcalEach (cooked), via digestibility — the pot,
+      // knife and camp_cook bonuses buy outcome, never phantom energy.
+      let stOut = this.cookOutcome(this.knowsTechnique('cook'));
+      const stFire = this.consumeCookFire(32);
+      if (stFire === 'died') stOut = this.downgradeOutcome(stOut);
+      const stR = this.cookTransform(item, { outcome: stOut, skillMult: kcalMult1 });
+      const stBefore = Math.round((item.rawKcal || 0) * (item.units || 1));
+      item.kcalEach = stR ? stR.kcalEach : Math.round(item.rawKcal);
+      if (stR && stR.outcome.key === 'burnt') item.burnt = true;
       item.rawKcal = null; // it's cooked now
       item.safe = true; // cooking kills the risk (mostly)
       if (item.needsCooking && cost1 > 0) {
         const spent = this.spendCleanWater(cost1);
         const src = spent.fromWell > 0 ? `${spent.fromBottles}L bottles + ${spent.fromWell}L haven well` : `${spent.fromBottles}L from your bottles`;
-        this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now (-${cost1}L water: ${src}).`);
+        this.say(`Cooked ${item.name}: ${stBefore} \u2192 ${Math.round(item.kcalEach * (item.units || 1))} kcal, ${this.cookOutcomePhrase(stOut, stR ? stR.cls : null)} (-${cost1}L water: ${src}).`);
       } else {
-        this.say(`Cooked ${item.name}. ${item.kcalEach} kcal now.`);
+        this.say(`Cooked ${item.name}: ${stBefore} \u2192 ${Math.round(item.kcalEach * (item.units || 1))} kcal, ${this.cookOutcomePhrase(stOut, stR ? stR.cls : null)}.`);
       }
       item.needsCooking = false; // cooked — the pack UI drops the "needs cooking" badge
       // (after the water spend above, which keys off needsCooking)
@@ -8501,7 +8508,14 @@
           if (needsWater) { const spent = this.spendCleanWater(cost); waterUsed += cost; wellUsed += spent.fromWell; }
           // RELIC — impossible_edge: physics-defying prep. +10% cooked kcal.
           const relicCook = S.modifiers.resolve(1, 'cook.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
-          item.kcalEach = Math.round((item.cookedKcal || item.rawKcal * 1.5) * kcalMult * relicCook);
+          // DIGESTIBILITY: batch camp cooking — the shared honest math, capped by gross.
+          const caR = this.cookTransform(item, { knows: true, skillMult: kcalMult, relicMult: relicCook });
+          if (caR) {
+            item.kcalEach = caR.kcalEach;
+            if (caR.outcome.key === 'burnt') item.burnt = true;
+          } else {
+            item.kcalEach = Math.round(item.rawKcal * kcalMult * relicCook);
+          }
           item.rawKcal = null;
           item.needsCooking = false; // cooked — the pack UI must drop the "needs cooking" badge
           item.safe = true;
@@ -11214,6 +11228,9 @@
       else if (p < 0.5) l = 1;                          // midday: full
       else if (p < 0.75) l = 1 - 0.82 * ((p - 0.5) / 0.25); // dusk: dying
       else l = 0.15;                                    // night: moonlight
+      // WITNESS MAW (Steve 2026-10-08): black tears see in the dark — night
+      // is half as dark to you.
+      try { if (l < 0.5 && this.hasStatus && this.hasStatus('scholar', 'witness_maw')) l = 1 - (1 - l) / 2; } catch (e) {}
       // Weather: rain steals the sky.
       if (this.state.weather === 'rain') l = Math.max(0.12, l * 0.7);
       // Firelight pools around a burning fire after dark.
@@ -13755,6 +13772,11 @@
         const mdef = (this.data.monsters || []).find(m => m.id === monsterId) || {};
         if (mdef.scentHunter) p *= 1.5;
       } catch (e) {}
+      // MONSTER-DIET CONSEQUENCES (Steve 2026-10-08): what you ate, you are.
+      try {
+        if (this.hasStatus && this.hasStatus('scholar', 'howlbelly') && this.isNight()) p += 0.25;
+        if (this.hasStatus && this.hasStatus('scholar', 'flockmind')) p += 0.15;
+      } catch (e) {}
       p = Math.max(0.02, Math.min(0.95, p));
       const found = Math.random() < p;
       if (this._detectLog) this._detectLog.push({ monsterId, p: Math.round(p * 100) / 100, found, fireLit, ventOpen });
@@ -13766,6 +13788,28 @@
     // Returns true if an encounter is now pending.
     triggerEncounter(monsterId) {
       const s = this.state.scholar;
+      // KIN RECOGNITION (Steve 2026-10-08): eat like them, smell like kin.
+      // They won't start anything — but attack one and all bets are off.
+      try {
+        if (this.hasStatus && this.hasStatus('scholar', 'croakbelly') && monsterId === 'belltoad') {
+          this.say('The Choir Toad\u2019s throat swells — then stills. It hears kin in your gut. It lets you pass.');
+          return false;
+        }
+        if (this.hasStatus && this.hasStatus('scholar', 'flockmind') && monsterId === 'ducks_in_a_row') {
+          this.say('The duck-line halts. Fourteen heads tilt. One quacks — you quack back without meaning to. Flock recognized. They waddle on.');
+          return false;
+        }
+        // HOWLBELLY: small monsters hear what's in your gut and think twice.
+        if (this.hasStatus && this.hasStatus('scholar', 'howlbelly')) {
+          const md = (this.data.monsters || []).find(m => m.id === monsterId) || {};
+          const hpMax = Array.isArray(md.hp) ? md.hp[1] : 999;
+          if (hpMax < 50 && Math.random() < 0.5) {
+            const mn = this.monsterDisplayName ? this.monsterDisplayName(monsterId) : 'it';
+            this.say(`Something in your belly lets out a low howl-burp. The ${mn} freezes — decides you are not worth it — and melts back into the dark.`);
+            return false;
+          }
+        }
+      } catch (e) {}
       if (s && s.insideTent) {
         if (!this.wandererFindsYou(monsterId)) {
           this.say('Something heavy moves past outside in the dark. It pauses — snuffles at the wind — and moves on. It never knew you were here.');
@@ -16006,6 +16050,35 @@
     },
 
     // --- free minors ---
+    // maybeMonsterWeirdness(it): the eat-time roll for monster-meat weirdness
+    // (Steve 2026-10-08). Cooking isn't a cure-all — some flesh carries
+    // consequences that survive the fire. First taste is a surprise; the Codex
+    // remembers, and the next cook warns you honestly.
+    maybeMonsterWeirdness(it) {
+      const meatMid = it.plantId && it.plantId.startsWith('meat_') ? it.plantId.slice(5) : null;
+      if (!meatMid) return false;
+      const dz = ((this.data.cooking || {}).monsterDiseases || []).find(d => (d.monsters || []).includes(meatMid));
+      if (!dz) return false;
+      if (this.hasStatus && this.hasStatus('scholar', dz.id)) return false;
+      const ch = it.foodState === 'cooked' ? dz.cookedChance : dz.rawChance;
+      if (Math.random() >= ch) return false;
+      this.applyStatus('scholar', dz.id, { source: 'the ' + it.name });
+      this.say(dz.onset);
+      try {
+        this.state.codex.monsters = this.state.codex.monsters || {};
+        const me = this.state.codex.monsters[meatMid] || {};
+        me.meatDisease = dz.id;
+        this.state.codex.monsters[meatMid] = me;
+      } catch (e) {}
+      if (dz.id === 'witness_maw') {
+        try {
+          const trust = (this.state.village && this.state.village.trust) || {};
+          for (const vid of Object.keys(trust)) trust[vid] = Math.max(0, (trust[vid] || 0) - 2);
+          this.say('Around the fire, people edge away from you. The black tears do that. (-2 trust, everyone)');
+        } catch (e) {}
+      }
+      return true;
+    },
     eat() {
       const scholar = this.state.scholar;
       if (this.over) return;
@@ -16018,6 +16091,10 @@
       // eat most-perishable first until the bar is full or food runs out
       scholar.inventory.sort((a, b) => (a.spoilDay ?? 99999) - (b.spoilDay ?? 99999));
       let ate = 0;
+      // SHELLGUT (Steve 2026-10-08): an armored gut absorbs less (-25%) but
+      // nothing ingested — poison or food-borne disease — can touch you.
+      const shellgut = this.hasStatus && this.hasStatus('scholar', 'shellgut');
+      let shellgutLoss = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
       let medAte = 0, medName = null; // medicinal plant units eaten (herb skill hook)
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
@@ -16031,7 +16108,7 @@
         const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false && !isSpoiled(i));
         if (foodIdx === -1) break; // no food left
         const it = scholar.inventory[foodIdx];
-        const kcal = it.kcalEach;
+        let kcal = it.kcalEach;
         // symbiote: it tastes your food first. Warns you of poison.
         if (it.safe === false && this.hasAbility('symbiote') && !it.symWarned) {
           it.symWarned = true;
@@ -16054,19 +16131,21 @@
         }
         // FOOD REALITY: state-based disease risk. Raw meat, must-cook plants.
         // Shown honestly before eating ("Risky: raw") — the gamble is informed.
-        if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
+        if (it.diseaseRisk && !shellgut && Math.random() < it.diseaseRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
           // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
           this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
         }
         // POISON: belltoad throat sac, etc. Purify cures it.
-        if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
+        if (it.poisonRisk && !shellgut && Math.random() < it.poisonRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - 10);
           // POISON (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
           this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
           this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
         }
+        this.maybeMonsterWeirdness(it);
+        if (shellgut) { const lost = kcal - Math.round(kcal * 0.75); shellgutLoss += lost; kcal = Math.round(kcal * 0.75); }
         scholar.kcal += kcal; ate += kcal;
         // MEDICINE (Steve): chewing medicinal plants is a skill. Track it —
         // the knowledgeable use them deliberately, the ignorant chew and hope.
@@ -16097,6 +16176,7 @@
         }
       }
       const bankNote = bankedNow > 0 ? ` Past full — the bank takes it. (+${bankedNow} banked. ${this.feastLine ? this.feastLine() : ''})` : '';
+      if (shellgutLoss > 0) this.say(`Your armored gut takes its cut — food moves slow through shell. (-${shellgutLoss} kcal absorbed)`);
       // LEVEL 3: Uses. Eat it 3 times, you learn what it does to you.
       // Vitamin C, medicine, energy. "Have you tasted it?" Yes. Now you know.
       for (const [pid, count] of Object.entries(tasted)) {
@@ -16202,19 +16282,23 @@
           }
         }
       }
-      if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
+      // SHELLGUT (Steve 2026-10-08): armor gut — nothing ingested touches you.
+      const shellgut1 = this.hasStatus && this.hasStatus('scholar', 'shellgut');
+      if (it.diseaseRisk && !shellgut1 && Math.random() < it.diseaseRisk.p) {
         this.addHealth(-it.diseaseRisk.dmg);
         // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
         this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
         this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
       }
-      if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
+      if (it.poisonRisk && !shellgut1 && Math.random() < it.poisonRisk.p) {
         this.addHealth(-10);
         // POISON (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
         this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
         this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
       }
-      const kcal = it.kcalEach;
+      this.maybeMonsterWeirdness(it);
+      let kcal = it.kcalEach;
+      if (shellgut1) kcal = Math.round(kcal * 0.75); // armor takes its cut
       scholar.kcal = Math.min(cap, scholar.kcal + kcal);
       if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
       it.units -= 1;
@@ -17405,7 +17489,13 @@
         const kcalEach = item.kcalEach || 0;
         if (kcalEach <= 0 || (this.isSpoiled && this.isSpoiled(item))) { i++; continue; }
         // villagers cook raw food if they know how (abstracted: they get cooked value if any villager knows)
-        let effectiveKcal = item.rawKcal ? (item.cookedKcal || item.rawKcal * 1.5) : kcalEach;
+        let effectiveKcal = kcalEach;
+        if (item.rawKcal) {
+          // Village cooking, abstracted: the shared digestibility math at a
+          // perfect outcome — the village cook's contribution is safety + skill.
+          const vR = this.cookTransform(item, { knows: true, outcome: { key: 'perfect', mult: 1.0 } });
+          if (vR) effectiveKcal = vR.kcalEach;
+        }
         // FOOD REALITY: raw cleaned meat in the pantry gets cooked value only if
         // someone (a cook-specialist villager, or you) actually knows cooking.
         // Otherwise the village eats it raw — at raw value. Specialists matter.
@@ -19568,6 +19658,8 @@
       const hpFrac = p.hp / p.maxHp;
       if (this.hasAbility('rage') && hpFrac < 0.5) { d *= 2; this.say('RAGE: +100% damage.'); }
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
+      // GRISTLEFIT (Steve 2026-10-08): the rage in your shoulders lands harder.
+      if (this.hasStatus && this.hasStatus('scholar', 'gristlefit')) { d = Math.round(d * 1.25); this.say('GRISTLEFIT: your knotted shoulders put everything behind it. (+25% damage)'); }
       let wasCrit = false; // DRAMA B1: crits get the full spectacle
       if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; wasCrit = true; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
       // ABILITY ACTIONS (Steve 2026-10-07): consume take_aim, ambush, haymaker,
@@ -19806,6 +19898,22 @@
         this.tbRefreshTelegraphUI();
       }
       if (tAfter && !tAfter.alive && !isHuman) this.tbStyle(20, `dropped the ${this.encTheName(tAfter)}!`);
+      // GRISTLEFIT LASH-OUT: the rage doesn't aim. 15% per strike — a wild
+      // backhand at a random other adjacent fighter, friend or foe.
+      try {
+        if (this.hasStatus && this.hasStatus('scholar', 'gristlefit') && Math.random() < 0.15) {
+          const f2 = this.tbfight || {};
+          const others = (f2.fighters || []).filter(x => x && x.key !== 'p' && x.key !== t.key && x.alive && !x.fled);
+          if (others.length) {
+            const v = others[Math.floor(Math.random() * others.length)];
+            const lash = Math.max(1, Math.round(d * 0.5));
+            let vName = v.name || 'it';
+            try { vName = this.encShortLabel(v) || this.encTheName(v) || vName; } catch (e) {}
+            this.say(`GRISTLEFIT: your shoulders move on their own — a backhanded lash catches ${vName}!`);
+            this.tbDamage(v.key, lash, 'your gristlefit', 'p', { quiet: true });
+          }
+        }
+      } catch (e) {}
       this.tbAfterPlayerAction();
       return true;
     },

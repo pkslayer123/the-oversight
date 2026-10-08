@@ -134,17 +134,21 @@ const origRandom = Math.random;
     ok('cookAll refused without fire', s.inventory[carIdx2].foodState === 'cleaned');
     Game.nearFire = () => true;
     ok('cook technique unknown before first cook', Game.knowsTechnique('cook') === false);
+    // DIGESTIBILITY (Steve 2026-10-08): messy cook rolls decent — meat class:
+    // gross 1200/0.6=2000, cooked 2000*0.85*0.8=1360 -> 340/unit. Honest gain.
+    Game.cookOutcome = () => ({ key: 'decent', mult: 0.8 });
     Game.cookAll();
     const cooked = s.inventory[carIdx2];
-    ok('messy cook: 85% of cleaned yield', cooked.kcalEach === 255); // COOK PRESERVES (2026-10-08): skilled-cleaned 1200 *0.85/4 — "messy" is the first-time cook, not the clean
+    ok('messy cook: digestibility gain (decent)', cooked.kcalEach === 340); // 1200 cleaned -> 1360 cooked /4
     ok('messy cook: safe + spoilDay +5', cooked.safe === true && !cooked.diseaseRisk && cooked.spoilDay === s.day + 5);
     ok('messy cook: teaches', Game.knowsTechnique('cook') === true);
     // skilled cook on a fresh turkey: full value
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     const carIdx3 = s.inventory.findIndex(i => i.foodState === 'carcass');
     Game.cleanCarcass(carIdx3);
+    Game.cookOutcome = () => ({ key: 'perfect', mult: 1.0 });
     Game.cookAll();
-    ok('skilled cook: preserves cleaned yield', s.inventory[carIdx3].kcalEach === 300); // 1200 cleaned/4 — same as raw, now safe (no phantom 2.5x)
+    ok('skilled cook: full digestibility gain', s.inventory[carIdx3].kcalEach === 425); // 1200 cleaned -> 1700 cooked /4 — fire unlocks the gross
     Game.nearFire = origNear;
 
     // preserve
@@ -153,7 +157,7 @@ const origRandom = Math.random;
     Game.preserveFood(cookIdx);
     const smoked = s.inventory[cookIdx];
     ok('preserved messy: keeps ~2 weeks', smoked.foodState === 'preserved' && smoked.spoilDay === s.day + 15);
-    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(191 * 0.8)); // messy: no technique
+    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(255 * 0.8)); // messy-cleaned 225 -> decent 255, then *0.8
     // skilled preserve: full month
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     Game.state.codex.techniques.preserve = true;
