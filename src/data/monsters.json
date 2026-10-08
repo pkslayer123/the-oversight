@@ -1103,6 +1103,7 @@
     "systemDesignation": "Acoustic lure unit (audience-tested)",
     "encounter": {
       "aggroAudio": "staticCry",
+      "resolveAudio": "staticBreak",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1123,7 +1124,8 @@
         "reveal": " \ud83d\udcfb REVEALED"
       },
       "comment": "Encounter framework client. THE LURE: call (holds its ground, cries in a voice you know \u2014 walking toward it feeds the lure and it creeps to meet you) \u2192 approach (voice sharpens, commits) \u2192 reveal (resist 2 turns: the act breaks, honest fight, exposed, takes hits badly). Distress Call is direct/range 3, undodgeable once declared.",
-      "knownCue": "The voice is bait. It wants you to come closer \u2014 don't."
+      "knownCue": "The voice is bait. It wants you to come closer \u2014 don't.",
+      "knownTactics": "The first cry is always someone you know \u2014 the second is static wearing their shape. Move TOWARD the cry once and the mimic drops the voice; it can\u2019t hold the shape under attention. Fire scrambles the broadcast."
     },
     "loot": {
       "chance": 0.15,
@@ -1420,6 +1422,7 @@
     "systemDesignation": "Illumination event (contained)",
     "encounter": {
       "aggroAudio": "eurekaTick",
+      "resolveAudio": "eurekaDetonate",
       "fifo": true,
       "noticeRange": 6,
       "phases": [
@@ -1442,7 +1445,8 @@
         "ember": " \ud83d\udca1 EMBER"
       },
       "comment": "Encounter framework client. THE BRIGHTENING: settle (drifts until a foe is within 4, then SETS \u2014 never moves once set) \u2192 brighten (2 beats, escalating, holds position) \u2192 bloom (burst radius 2, 22-34) \u2192 ember (2 turns spent, harmless). Daylight disperses it.",
-      "knownCue": "It glows brighter before detonation. When it flares, RUN."
+      "knownCue": "It glows brighter before detonation. When it flares, RUN.",
+      "knownTactics": "The bloom is the timer: two beats of brightening, then white. Be three tiles out or behind cover when it flares. The ember beat after is safe \u2014 it is spent."
     },
     "loot": {
       "chance": 0.15,
@@ -1524,6 +1528,7 @@
     "systemDesignation": "Affective recall projector",
     "encounter": {
       "aggroAudio": "projectorHum",
+      "resolveAudio": "projectorFire",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -1544,7 +1549,8 @@
         "static": " \ud83d\udcfc STATIC"
       },
       "comment": "Encounter framework client. THE SPELL: watch (2 turns, curious \u2014 leave now) \u2192 spell (Home Movies declared: beam length 5, windup 2, aim locked; the light PULLS a still target 1 tile/turn toward it; moving 2+ tiles breaks the spell) \u2192 static (1 turn, confused). It fears movement.",
-      "knownCue": "The picture holds you still. Keep moving and it can't lock on."
+      "knownCue": "The picture holds you still. Keep moving and it can't lock on.",
+      "knownTactics": "Look away during the SPELL beat \u2014 the beam needs your eyes. The screen burns brightest just before it fires; that brightness is your two-turn warning. Cover breaks the spell."
     },
     "loot": {
       "chance": 0.15,
@@ -1642,7 +1648,8 @@
       "painText": "\"\u2014BAD CONNECTION\u2014\" The voice fragments, furious. It hangs up on {who} and redials.",
       "proximityText": "Too close. It stops ringing \u2014 it doesn't need the phone anymore. It's right there.",
       "comment": "Encounter framework client. THE CALL: dial (1 turn, locks the target's position \u2014 the number it dialed) \u2192 ring (1 turn, the tell: audio + dread line; moving 2+ tiles from the dialed position DROPS the call) \u2192 pitch (rush, speed 4, no grid telegraph \u2014 the ring was the warning) \u2192 redial (2 turns). Pain = bad connection = hang up + redial. Relentless: no fear, it always calls back. Distinct from the mimic (patient watcher, one rush per approach, fire counter): impatient, rushes every cycle, needs you still.",
-      "knownCue": "It can only dial a stationary target. Keep moving and it can't place the call."
+      "knownCue": "It can only dial a stationary target. Keep moving and it can't place the call.",
+      "knownTactics": "The RING is the telegraph \u2014 the pitch itself gives no warning. Move two or more tiles from where you stood when it dialed and the call drops. Never end a turn still; a stationary target is a dialed target."
     },
     "loot": {
       "chance": 0.15,
@@ -1973,7 +1980,8 @@
       ],
       "telegraph": "It goes still. It is doing the thing you do before you do it.",
       "pattern": {
-        "type": "direct"
+        "type": "direct",
+        "windup": 2
       },
       "damageType": "physical"
     },
@@ -2017,6 +2025,7 @@
     "systemDesignation": "Behavioral acquisition unit (field model)",
     "encounter": {
       "aggroAudio": "understudyWatch",
+      "resolveAudio": "understudyPerform",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -2029,6 +2038,7 @@
       "painSwitch": true,
       "shortName": "understudy",
       "knownCue": "It only knows what you've SHOWN it. Switch weapons and the copy falls apart \u2014 the familiar is what kills you. Never let it get a clean read on your favorite move.",
+      "knownTactics": "It only knows what you have SHOWN it \u2014 switch weapons mid-fight and the copy falls apart. The REHEARSING beat is the tell: what it rehearses is what it performs. Kill it before IMPROV; an understudy that improvises has stopped copying and started creating.",
       "noticeText": "A blank shape at the tree line. It is watching {who} fight. Learning.",
       "phaseBadges": {
         "watching": "\ud83d\udc41 WATCHING",
@@ -2062,7 +2072,8 @@
       ],
       "telegraph": "It hammers another sign into the dirt. The sign has your name on it. It always had your name on it.",
       "pattern": {
-        "type": "direct"
+        "type": "direct",
+        "windup": 2
       },
       "damageType": "physical"
     },
@@ -2108,6 +2119,7 @@
     "systemDesignation": "Parcel acquisition unit (field model)",
     "encounter": {
       "aggroAudio": "landlordClaim",
+      "resolveAudio": "landlordEvict",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -2120,6 +2132,7 @@
       "painSwitch": true,
       "shortName": "landlord",
       "knownCue": "The ground is the weapon, not the landlord. Rent comes due every round you end on leased ground \u2014 and every Addendum raises it. Keep moving; never let it serve notice on your position.",
+      "knownTactics": "Rent comes due every round you end on leased ground \u2014 keep moving and the ledger starves. Each ADDENDUM raises the rent and heals it; break the survey and it cannot serve notice.",
       "noticeText": "\"THIS PARCEL IS NOW LEASED.\" {who} is standing on it.",
       "phaseBadges": {
         "surveying": "\ud83d\udccb SURVEYING",
@@ -2150,12 +2163,13 @@
     "attack": {
       "name": "You Call That A Swing?",
       "damage": [
-        8,
-        12
+        12,
+        18
       ],
       "telegraph": "It leans in, grinning. \"Oh, this ought to be good.\"",
       "pattern": {
-        "type": "direct"
+        "type": "direct",
+        "windup": 2
       },
       "damageType": "psychic"
     },
@@ -2203,6 +2217,7 @@
     "systemDesignation": "Morale suppression unit (field model)",
     "encounter": {
       "aggroAudio": "hecklerLaugh",
+      "resolveAudio": "hecklerHeadliner",
       "fifo": true,
       "noticeRange": 6,
       "phases": [
@@ -2214,6 +2229,7 @@
       "painSwitch": true,
       "shortName": "heckler",
       "knownCue": "Its words are the weapon \u2014 SHAME is what hurts, not the swing. Answer back (WAIT) to clear it before the HEADLINER compulsion lands, or end it fast: it's all mouth, no armor.",
+      "knownTactics": "SHAME is the damage, not the swing \u2014 WAIT to answer back and clear it before the HEADLINER pile-on. Stuns interrupt the narration. It is all mouth, no armor, and it knows it.",
       "noticeText": "Laughter in the dark \u2014 aimed at {who}, specifically.",
       "phaseBadges": {
         "warming_up": "\ud83c\udfa4 WARMING UP",
@@ -2244,7 +2260,11 @@
       ],
       "telegraph": "The lens steadies. You hear the shutter think about it.",
       "pattern": {
-        "type": "burst"
+        "type": "burst",
+        "radius": 2,
+        "windup": 2,
+        "burstStyle": "exposure",
+        "burstDesc": "The flash builds over two beats. When the shutter fires, the exposure hits a 2-tile radius — and every photo makes the next one harder to dodge."
       },
       "damageType": "physical"
     },
@@ -2289,6 +2309,7 @@
     "systemDesignation": "Subject documentation unit (field model)",
     "encounter": {
       "aggroAudio": "paparazzoShutter",
+      "resolveAudio": "paparazzoExclusive",
       "fifo": true,
       "noticeRange": 6,
       "phases": [
@@ -2305,7 +2326,8 @@
         "tracking": "\ud83c\udfaf TRACKING",
         "exclusive": "\u2b50 EXCLUSIVE"
       },
-      "knownCue": "Every shot refines its model \u2014 dodging the flash won't slow it down. Four shots is all it needs: the money shot can't be dodged. End it fast, or be in reach when it comes."
+      "knownCue": "Every shot refines its model \u2014 dodging the flash won't slow it down. Four shots is all it needs: the money shot can't be dodged. End it fast, or be in reach when it comes.",
+      "knownTactics": "Four shots is the whole fight \u2014 break line of sight before the fourth and the model starves. The EXCLUSIVE cannot be dodged, only prevented: end it fast, or be somewhere else when the shutter thinks about it."
     },
     "armor": 0,
     "resistances": {
@@ -2334,7 +2356,8 @@
       ],
       "telegraph": "It licks the pencil. \"Let's put this one in writing.\"",
       "pattern": {
-        "type": "direct"
+        "type": "direct",
+        "windup": 2
       },
       "damageType": "psychic"
     },
@@ -2379,6 +2402,7 @@
     "systemDesignation": "Collective action coordinator (field model)",
     "encounter": {
       "aggroAudio": "unionBullhorn",
+      "resolveAudio": "unionWalkout",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -2395,7 +2419,8 @@
         "picketing": "\u270a PICKETING",
         "walkout": "\ud83d\udea8 WALKOUT"
       },
-      "knownCue": "Kill the rep before it organizes. Every ally it rallies hits +3 harder \u2014 and at WALKOUT they hit +8 while the rep goes UNTARGETABLE behind the picket line. Scatter the line or union-bust it early: once it climbs on the bullhorn, the fight is uphill."
+      "knownCue": "Kill the rep before it organizes. Every ally it rallies hits +3 harder \u2014 and at WALKOUT they hit +8 while the rep goes UNTARGETABLE behind the picket line. Scatter the line or union-bust it early: once it climbs on the bullhorn, the fight is uphill.",
+      "knownTactics": "It does not fight, it organizes \u2014 break the picket line before WALKOUT or the stomp lands as one. Filed grievances stack: keep moving and vary your position, or the paperwork buries you."
     },
     "loot": {
       "chance": 0.15,
@@ -2739,8 +2764,8 @@
     "attack": {
       "name": "The Broadcast",
       "damage": [
-        10,
-        16
+        12,
+        18
       ],
       "telegraph": "The kite stops dead in the sky. It's framing the shot.",
       "pattern": {
