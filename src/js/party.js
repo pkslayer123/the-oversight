@@ -172,7 +172,10 @@
         const line = eager[Math.floor(Math.random() * eager.length)];
         this.say(`🤝 ${dname} joins your party. ${line}`);
         this.sysSay(`${dname.toUpperCase()} HAS JOINED THE PARTY! The audience coos!`);
-        return { ok: true, msg: `${dname} joins your party.` };
+        // The conversation transcript shows the VOICED line — the bare
+        // summary only ever reached the main log, so the player never heard
+        // the acceptance in the chat (socialite playtest 2026-10-07).
+        return { ok: true, msg: line };
       }
 
       // Acceptance: trust helps, personality and goals decide.
@@ -200,7 +203,8 @@
         const line = yes[Math.floor(Math.random() * yes.length)];
         this.say(`🤝 ${dname} joins your party. ${line}`);
         this.sysSay(`${dname.toUpperCase()} HAS JOINED THE PARTY!`);
-        return { ok: true, msg: `${dname} joins your party.` };
+        // Voiced line goes to the transcript (see backstabber branch above).
+        return { ok: true, msg: line };
       }
       // Refusal. Contextual, not a wall.
       const no = goal === 'alone'
@@ -211,7 +215,10 @@
             ? `"Out there? With YOU leading? ...Let me think about it."`
             : `"Not right now. I've got my own things to handle."`;
       this.say(`${dname} shakes their head. ${no}`);
-      return { ok: false, msg: `${dname} declined.` };
+      // The contextual refusal goes to the transcript — the player is looking
+      // at the chat, not the main log. A bare "X declined." with no reason
+      // read as broken (socialite playtest 2026-10-07).
+      return { ok: false, msg: no };
     },
 
     dismissFromParty(vid) {

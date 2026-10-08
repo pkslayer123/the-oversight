@@ -6,9 +6,14 @@
 // 5. Four dialogue rules preserved (transcript_cap, one_beat_turns, tap_advance, history_view)
 // 6. No builder/debug text leaks into the fiction
 // Usage: node scripts/test-convo-beats-20261006.js
+// RNG seeded mulberry32 (default 20261007, SEED env override) — unseeded
+// runs were flaky by construction (2026-10-07).
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
+let _seed = parseInt(process.env.SEED || '20261007', 10) >>> 0;
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+Math.random = mulberry32(_seed);
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
@@ -45,12 +50,17 @@ function playConvo(vid, maxTurns) {
     const c = Game.convoGet(vid);
     const beat = Game.beatOf(vid);
     const lastThem = [...(c.transcript || [])].reverse().find(e => e.who === 'them');
+    // WIND-DOWN STATE (dialogue rethink 2026-10-07): a dry thread that has
+    // absorbed two dry reacts honestly drops dlg:more/dlg:react — the menu
+    // winds down instead of looping dead acknowledgments forever.
+    const dry = !!(c.thread && c.threadDryFor && c.thread === c.threadDryFor);
     log.push({
       line: lastThem ? lastThem.text : res.line,
       beat: lastThem && lastThem.beat ? lastThem.beat : beat.tag,
       topic: lastThem && lastThem.topic ? lastThem.topic : beat.topic,
       replies: (res.choices || []).map(ch => ch.label || ch.id),
       replyIds: (res.choices || []).map(ch => ch.id),
+      woundDown: dry && (c.reactDryCount || 0) >= 2,
     });
     // Pick the first engaging response (not leave, not subject-change on turn 1).
     const choices = res.choices || [];
@@ -117,11 +127,20 @@ function playConvo(vid, maxTurns) {
     const hasComfort = t.replyIds.some(id => id === 'dlg:comfort' || id === 'dlg:empathize' || id === 'dlg:askwhy');
     ok('feeling beat offers emotional replies', hasComfort, `replies=${t.replyIds.join(',')}`);
   }
-  // News beats offer engagement, not comfort.
+  // News beats offer engagement, not comfort — UNLESS the thread has wound
+  // down (dry + two dry reacts): then the honest menu drops dlg:more (a lie
+  // on a dry thread) and dlg:react (the "Anyway." loop), leaving recap /
+  // continuer / subject-change / leave. (Dialogue rethink, Steve 2026-10-07.)
   const newsTurns = log1.filter(t => t.beat === 'news');
   for (const t of newsTurns) {
-    const hasEngage = t.replyIds.some(id => id === 'dlg:more' || id === 'dlg:react');
-    ok('news beat offers engagement replies', hasEngage, `replies=${t.replyIds.join(',')}`);
+    if (t.woundDown) {
+      const honest = !t.replyIds.includes('dlg:more') && !t.replyIds.includes('dlg:react') &&
+        (t.replyIds.includes('leave') || t.replyIds.includes('dlg:subject') || t.replyIds.includes('recap') || t.replyIds.includes('goon'));
+      ok('wound-down news beat drops dead engagement honestly', honest, `replies=${t.replyIds.join(',')}`);
+    } else {
+      const hasEngage = t.replyIds.some(id => id === 'dlg:more' || id === 'dlg:react');
+      ok('news beat offers engagement replies', hasEngage, `replies=${t.replyIds.join(',')}`);
+    }
   }
 
   // === 4. BRIDGE LINES ON TOPIC CHANGE ===

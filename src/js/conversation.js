@@ -2610,6 +2610,16 @@
           if (a.id === threadAsk || n >= topicCapMood) continue;
           sub.push(a); n++;
         }
+        // GOSSIP VERBS (fix 2026-10-07): ask:gossip / ask:spread_rumor are
+        // earned verbs, not intimacy-budget topics. The topic cap (2 for
+        // deflectors) permanently starved them behind t2fresh + ask:personal
+        // — prickly/withdrawn/restless villagers could NEVER be gossiped
+        // with, contradicting the 2026-10-06 "GOSSIP FIRST, never starved"
+        // intent. They ride after the capped topics once gossipOpen.
+        for (const gid of ['ask:gossip', 'ask:spread_rumor']) {
+          const g = asks.find(a => a.id === gid);
+          if (g && g.id !== threadAsk && !sub.some(s => s.id === gid)) sub.push(g);
+        }
         // PARTY INVITE survives the subject menu — the ask you came to make
         // is not small talk. (Fix 2026-10-07: the subject-menu early return
         // discarded `choices`, where invite_party already sat, so the
@@ -2656,6 +2666,13 @@
         for (const a of t2discussed) {
           if (a.id === threadAsk || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
           choices.push(a); topicsAdded++;
+        }
+        // GOSSIP VERBS (fix 2026-10-07): same starvation as the subject menu —
+        // earned verbs, not intimacy-budget topics. They fill remaining slots
+        // once gossipOpen, like the other discovery actions below.
+        for (const gid of ['ask:gossip', 'ask:spread_rumor']) {
+          const g = asks.find(a => a.id === gid);
+          if (g && g.id !== threadAsk && choices.length < MAXC && !choices.some(s => s.id === gid)) choices.push(g);
         }
       }
       // THEORIZE: joint discovery, a signature mechanic — not small talk.

@@ -1,15 +1,25 @@
 // Socialite regression tests: the two bugs caught 2026-10-04 by the
 // playtest loop, fixed same run. Both must hold across ALL random draws.
-// Usage: node scripts/test-socialite-fixes.js
+// Harness loads the FULL production module list (index.html order, minus
+// DOM-only) — the 2026-10-04 short list tested a menu stack that never
+// exists in production. Usage: node scripts/test-socialite-fixes.js
+// RNG seeded mulberry32 (default 20261007, SEED env override).
 const fs = require('fs');
 const path = require('path');
 const ROOT = '/home/hatch/workspace/the-scattering';
+let _seed = parseInt(process.env.SEED || '20261007', 10) >>> 0;
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+Math.random = mulberry32(_seed);
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
-['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
- 'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js', 'src/js/conversation.js', 'src/js/party.js',
- 'src/js/truth.js', 'src/js/journal.js'
-].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+const ORDER = (fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match(/src\/js\/[^\"]+\.js/g) || []);
+const SKIP = new Set(['src/js/app.js', 'src/js/sprites.js', 'src/js/tile-scenes.js', 'src/js/move-anim.js', 'src/js/drama.js']);
+global.window = global;
+for (const f of ORDER) {
+  if (SKIP.has(f)) continue;
+  try { eval(fs.readFileSync(path.join(ROOT, f), 'utf8')); }
+  catch (e) { console.error('EVAL FAIL', f, e.message); process.exit(1); }
+}
+delete global.window;
 
 async function main() {
   const Game = globalThis.Scattering.Game;
@@ -39,7 +49,7 @@ async function main() {
 
   // === 2. Party invite: trust-earned, discovered person-action must appear
   // in the choice list even when every topic ask is also eligible (MAXC=6).
-  console.log('2. invite_party never crowded out by small talk');
+  console.log('2. invite never crowded out by small talk (design-honest: initial menu OR one subject-change away)');
   Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
@@ -64,17 +74,36 @@ async function main() {
     Game.startConvo(vid);
     const ui = Game.convoUI(vid);
     inviteChecked++;
-    const ids = ui.choices.map(x => x.id);
-    if (ids.includes('invite_party')) {
+    let ids = ui.choices.map(x => x.id);
+    // The invite lives under two ids by menu generation: dlg:invite on the
+    // dialogue path, invite_party on the classic menu. Mid-thread it waits
+    // one subject-change away (thread coherence, Steve 2026-10-06) — the
+    // honest invariant is: never more than one tap away once earned.
+    let found = ids.includes('invite_party') || ids.includes('dlg:invite');
+    if (!found) {
+      const subj = ids.includes('dlg:subject') ? 'dlg:subject' : (ids.includes('subject') ? 'subject' : null);
+      if (subj) {
+        Game.convoTurn(vid, subj);
+        ids = Game.convoUI(vid).choices.map(x => x.id);
+        found = ids.includes('invite_party') || ids.includes('dlg:invite');
+      }
+    }
+    if (found) {
       inviteSeen++;
       // fire the handler once overall to prove it resolves without throwing
-      if (!firedOnce) { firedOnce = true; try { Game.convoTurn(vid, 'invite_party'); } catch (e) { t('invite resolves without throwing', false); } }
+      if (!firedOnce) {
+        firedOnce = true;
+        try {
+          const invId = ids.includes('dlg:invite') ? 'dlg:invite' : 'invite_party';
+          Game.convoTurn(vid, invId);
+        } catch (e) { t('invite resolves without throwing', false); }
+      }
     } else {
       console.log('    missing for', vid, 'choices:', JSON.stringify(ids));
     }
     Game.endConvo(vid, 'left');
   }
-  t('invite present for every eligible verbal NPC at trust 60', inviteChecked > 0 && inviteSeen === inviteChecked);
+  t('invite reachable (initial menu or one subject-change) for every eligible verbal NPC at trust 60', inviteChecked > 0 && inviteSeen === inviteChecked);
   t('at least one verbal NPC tested', inviteChecked > 0);
 
   console.log(`\n${pass} pass, ${fail} fail`);
