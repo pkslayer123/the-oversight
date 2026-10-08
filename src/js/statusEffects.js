@@ -176,6 +176,21 @@
       var idx = list.indexOf(st);
       if (idx === -1) return null;
       list.splice(idx, 1);
+      // LEGACY BRIDGE (survivalist loop 2026-10-07): applyStatus pushes one
+      // s.diseases/s.poisons mirror entry per engine entry. Natural expiry
+      // (tickStatuses) used to leave the mirror behind — a ghost disease that
+      // kept the journal badge on and the herbal_remedy/purify "cure" gates
+      // open forever. Expiry drops the mirror with the engine entry.
+      try {
+        var def = this.seDef && this.seDef(st.id);
+        if (def && def.bridge && target === 'scholar') {
+          var s = this.state.scholar;
+          if (s) {
+            if (def.bridge.legacy === 'diseases' && (s.diseases || []).length) s.diseases.shift();
+            if (def.bridge.legacy === 'poisons' && (s.poisons || []).length) s.poisons.shift();
+          }
+        }
+      } catch (e) {}
       return st;
     },
 
