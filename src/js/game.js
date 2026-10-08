@@ -13688,13 +13688,112 @@
           return;
         }
         this.encounterDone = true;
-        this.pendingEncounter = true;
-        // NAME DISCIPLINE: the panel must show the descriptor/village name,
-        // never the true name — remember which beast this is for the UI.
-        this.pendingMonsterId = w.monsterId;
         this.state.wandererNextDay = this.state.scholar.day + 4; // it comes back. they always come back.
+        const mid = w.monsterId;
         this.wanderer = null;
+        // TENT-AWARE (Steve 2026-10-08): the tile entry is physical now.
+        this.triggerEncounter(mid);
       }
+    },
+    // TENT DETECTION (Steve 2026-10-08): the night encounter doesn't get a
+    // free pull anymore. The monster finds you through your signals — or it
+    // doesn't. A lit interior fire is a beacon: light through the canvas,
+    // smoke on the wind. Sealed and dark, you're just a smell in the night.
+    wandererFindsYou(monsterId) {
+      const s = this.state.scholar;
+      if (!s || !s.insideTent) return true; // out in the open: it sees you
+      const ins = s.insideTent;
+      let p = 0.12; // base: canvas, sweat, snoring
+      const fireLit = this.tentFireLit();
+      const ventOpen = this.tentVentOpenAt(ins.tx, ins.ty, ins.cx, ins.cy);
+      if (fireLit) p += ventOpen ? 0.45 : 0.30;
+      else if (!ventOpen) p -= 0.04;
+      try {
+        const mdef = (this.data.monsters || []).find(m => m.id === monsterId) || {};
+        if (mdef.scentHunter) p *= 1.5;
+      } catch (e) {}
+      p = Math.max(0.02, Math.min(0.95, p));
+      const found = Math.random() < p;
+      if (this._detectLog) this._detectLog.push({ monsterId, p: Math.round(p * 100) / 100, found, fireLit, ventOpen });
+      return found;
+    },
+    // ENCOUNTER CHOKE POINT (Steve 2026-10-08): every "it comes for you" panel
+    // routes through here so the tent is always part of the world. Inside your
+    // tent, the monster must find you (detection), then it enters or busts.
+    // Returns true if an encounter is now pending.
+    triggerEncounter(monsterId) {
+      const s = this.state.scholar;
+      if (s && s.insideTent) {
+        if (!this.wandererFindsYou(monsterId)) {
+          this.say('Something heavy moves past outside in the dark. It pauses — snuffles at the wind — and moves on. It never knew you were here.');
+          return false;
+        }
+        this.wandererTentBreach(monsterId);
+        return true;
+      }
+      this.pendingEncounter = true;
+      this.pendingMonsterId = monsterId;
+      return true;
+    },
+    // WANDERER TENT BREACH: it found you. Small things come through the flap —
+    // it's IN the tent with you. Big things don't use doors: the tent comes
+    // down and you're thrown clear.
+    wandererTentBreach(monsterId) {
+      const mdef = (this.data.monsters || []).find(m => m.id === monsterId) || {};
+      const s = this.state.scholar;
+      let mname = 'something big';
+      try { mname = this.monsterDisplayName(monsterId) || mname; } catch (e) {}
+      // eyes_in_back: ambushes never surprise — you catch it at the flap, and
+      // it doesn't get inside. A regular fight, on your feet.
+      if (this.hasAbility('eyes_in_back')) {
+        s.insideTent = null;
+        s.tentSmoke = 0;
+        this.pendingEncounter = true;
+        this.pendingMonsterId = monsterId;
+        this.say(`Your back-eyes catch it first — ${mname}, at the flap, coming IN. You're out the other side before it gets inside. (no ambush)`);
+        return;
+      }
+      if ((mdef.size || 1) >= 2) {
+        const ins = s.insideTent;
+        this.wreckTent(ins.tx, ins.ty, ins.cx, ins.cy);
+        s.insideTent = null;
+        s.tentSmoke = 0;
+        s.health = Math.max(1, Math.round(s.health || 0) - 5);
+        this.pendingEncounter = true;
+        this.pendingMonsterId = monsterId;
+        this.say(`The canvas EXPLODES inward — poles snapping, a weight like a falling tree. You're thrown clear, sprawling in the dirt (-5 health). The tent is wreckage. And ${mname} is still coming.`);
+        return;
+      }
+      this.pendingEncounter = true;
+      this.pendingInTent = true;
+      this.pendingMonsterId = monsterId;
+      this.say(`The flap stirs. A shape detaches from the dark inside your tent — eyes catching the firelight. ${mname} is IN here with you.`);
+    },
+    // wreckTent: one tent cell, gone. No salvage, no packing — wreckage.
+    wreckTent(tx, ty, cx, cy) {
+      try {
+        const detail = this.genDetail(tx, ty);
+        const t = this.tileAt(tx, ty);
+        if (detail[cy] && detail[cy][cx] === 'tent') {
+          detail[cy][cx] = 'dirt';
+          if (t && t.secrets) delete t.secrets[cx + ',' + cy];
+        }
+      } catch (e) {}
+    },
+    // faceTentIntruder: the thing is IN your tent. You burst out through the
+    // flap and it comes right out behind you — the fight starts at arm's
+    // length, not across the grid.
+    faceTentIntruder() {
+      const mid = this.pendingMonsterId;
+      this.pendingInTent = false;
+      this.exitTent(true); // forced: adrenaline, no tick cost
+      const s = this.state.scholar;
+      const px = s.mx ?? 4, py = s.my ?? 4;
+      // Spawn source override: the tent mouth, adjacent — not across the grid.
+      this._tentBreachSpawn = { mx: Math.min(8, px + 1), my: py };
+      this.say('You burst out through the flap — and it comes right out behind you. No distance. No warning. NOW.');
+      this.startCombat(mid);
+      return null;
     },
 
     // SLICE 2: THE SYSTEM ARRIVES (day 7).
@@ -15058,8 +15157,9 @@
         this.say('💨 SILENT RUSH — the lead comes out of the treeline at a dead run, silent as snowfall. The other two fan wide to cut you off.');
         try { this.audioEvent('wolfSnarl'); } catch (e) {}
         try { this.villageEvent('monster_attack'); } catch (e) {}
-        this.pendingEncounter = true;
-        this.pendingMonsterId = 'hushwolf';
+        // TENT-AWARE (Steve 2026-10-08): the rush goes through the encounter
+        // choke point — in your tent, the pack must find you first.
+        if (!this.triggerEncounter('hushwolf')) return true;
         this.say('⚠ It\'s on you. FACE IT — or run. (Your move.)');
       }
       s.quietWoods = null;
@@ -17925,8 +18025,15 @@
       if (packDelayed > 0) {
         this._pendingPack = { id: mdef.id, count: packDelayed, mdef: mdef };
       }
-      const srcMx = (s.monster && s.monster.mx !== undefined) ? s.monster.mx : px;
-      const srcMy = (s.monster && s.monster.my !== undefined) ? s.monster.my : py;
+      const srcMx0 = (s.monster && s.monster.mx !== undefined) ? s.monster.mx : px;
+      const srcMy0 = (s.monster && s.monster.my !== undefined) ? s.monster.my : py;
+      // TENT BREACH (Steve 2026-10-08): the intruder came out right behind you —
+      // the fight starts at arm's length, at the tent mouth, not across the grid.
+      let srcMx = srcMx0, srcMy = srcMy0;
+      if (this._tentBreachSpawn) {
+        srcMx = this._tentBreachSpawn.mx; srcMy = this._tentBreachSpawn.my;
+        this._tentBreachSpawn = null;
+      }
       const hasFear = this.hasAbility('fear_aura');
       const hasSand = this.hasAbility('pocket_sand');
       // PACK SPAWN (Steve 2026-10-05): all members visible from the start,
@@ -18191,6 +18298,7 @@
       this.fight = null; // old menu combat retired
       this.pendingEncounter = false;
       this.pendingMonsterId = null;
+      this.pendingInTent = false;
       // face to face: the ambiguity does NOT end. Descriptor and dread, not a name.
       try { this.identifyMonster(mdef.id); } catch (e) {}
       this.removeWorldMonster(this.playerMonster()); // it's in the fight now, not wandering
@@ -25588,13 +25696,11 @@
       if (this.migrateLumps) this.migrateLumps();
       // TENT ROOMS: no phantom rooms — the tent might be gone.
       try { this.validateInsideTent(); } catch (e) {}
-      // TENT IS NOT INVISIBILITY: trouble finds you even in canvas. Something
-      // out there — you're through the flap before you decide to move.
-      if (this.pendingEncounter && s.insideTent) {
-        s.insideTent = null;
-        s.tentSmoke = 0;
-        this.say('⚠️ Something big moves outside — canvas tearing, or about to. You\'re out of the tent before you decide to move.');
-      }
+      // NOTE (Steve 2026-10-08): the old "yank" lived here — pendingEncounter
+      // used to drag you out of the tent with a generic warning. Replaced by
+      // the causal system: triggerEncounter → detection → enter or bust.
+      // A pending encounter while inside the tent is legitimate now (it's IN
+      // there with you); the room screen renders its panel.
       return {
         day: s.day, dayPart: DAY_PARTS[this.dayPart], dayPartHint: DAY_PART_HINT[DAY_PARTS[this.dayPart]],
         // ACTION CLOCK: ticks for the UI day-timer. 512 ticks = the full day.

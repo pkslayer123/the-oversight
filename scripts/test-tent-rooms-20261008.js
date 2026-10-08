@@ -309,12 +309,17 @@ async function main() {
     Game.packTent(5, 4);
     check('7a. cannot pack the tent you are inside',
       said.some(m => /inside it/.test(m)) && Game.genDetail(4, 4)[4][5] === 'tent');
-    // encounter yank
+    // encounter while inside: NO yank anymore (Steve 2026-10-08) — the causal
+    // breach system owns this now. A pending encounter inside the tent is
+    // legitimate (it's IN there with you); status() leaves it alone.
     Game.pendingEncounter = true;
+    Game.pendingInTent = true;
+    Game.pendingMonsterId = 'hushwolf';
+    said.length = 0;
     Game.status();
-    check('7b. pending encounter yanks you out of the tent', !st.scholar.insideTent);
-    check('7c. yank is narrated', said.some(m => /out of the tent/.test(m)));
-    Game.pendingEncounter = false;
+    check('7b. status() does NOT yank you out (breach system owns it)',
+      !!st.scholar.insideTent && Game.pendingEncounter === true);
+    Game.pendingEncounter = false; Game.pendingInTent = false;
     // phantom room validation
     Game.enterTent(5, 4);
     Game.genDetail(4, 4)[4][5] = 'dirt';

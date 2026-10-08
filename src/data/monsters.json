@@ -118,6 +118,7 @@
     "id": "hushwolf",
     "activity": "nocturnal",
     "name": "Hushpuppy",
+    "scentHunter": true,
     "biomes": [
       "se_woodlands"
     ],

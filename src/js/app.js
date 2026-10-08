@@ -13000,11 +13000,22 @@
     const rawCount = (s.inventory || []).filter(i => i.rawKcal).length;
     let prev = null;
     try { prev = Game.sleepPreview(); } catch (e) {}
+    // TENT BREACH: the encounter panel lives here now — it's IN the tent.
+    let breachCard = '';
+    if (Game.pendingEncounter && Game.pendingInTent) {
+      const pmid = Game.pendingMonsterId || 'bulldozer';
+      const praw = (Game.monsterDisplayName ? Game.monsterDisplayName(pmid) : null) || 'something big';
+      const pname = String(praw[0]).toUpperCase() + String(praw).slice(1);
+      breachCard = `<div class="card warn"><h3>⚠ ${esc(pname)}</h3>
+        <p class="small">It is INSIDE the tent with you. Eyes in the dark, breath on your face.</p>
+        <button class="btn sm" id="tr-face">Face it</button></div>`;
+    }
     const screen = document.getElementById('screen');
     screen.innerHTML = `
       <div id="exphead">${expHeadHTML(st)}</div>
       <div id="daytickwrap">${dayTickBar(st)}</div>
       <div class="game-cols"><div class="game-col-main">
+      ${breachCard}
       <div class="card"><h3>⛺ Your tent — inside</h3>
         <p class="small">${esc(fireLine)}</p>
         <p class="small">${esc(wxLine)}</p>
@@ -13032,6 +13043,7 @@
     wire('tr-vent', () => Game.setTentVent(!ventOpen));
     wire('tr-sleep', () => Game.sleep());
     wire('tr-exit', () => Game.exitTent());
+    wire('tr-face', () => Game.faceTentIntruder());
     try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
   }
 
@@ -13410,9 +13422,15 @@
       const pmid = Game.pendingMonsterId || 'bulldozer';
       const praw = (Game.monsterDisplayName ? Game.monsterDisplayName(pmid) : null) || 'something big';
       const pname = praw[0].toUpperCase() + praw.slice(1);
+      // TENT BREACH (Steve 2026-10-08): it's IN the tent with you — different
+      // panel, different stakes. Face it and the fight starts at arm's length.
+      const inTent = !!Game.pendingInTent;
+      const sub = inTent
+        ? 'It is INSIDE the tent with you. Eyes in the dark, breath on your face.'
+        : 'It crashes from the thicket. It is not going around.';
       return `
       <div class="card warn"><h3>⚠ ${pname}</h3>
-      <p class="small">It crashes from the thicket. It is not going around.</p>
+      <p class="small">${sub}</p>
       <button class="btn sm" id="p-face">Face it</button></div>`;
     }
     // COMBAT renders in the main column, directly under the grid
@@ -13905,7 +13923,13 @@
 
   function wirePanel(st, n) {
     const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
-    on('p-face', () => { Game.startCombat(); rerender(); });
+    on('p-face', () => {
+      // TENT BREACH: the thing is IN your tent — facing it means bursting out
+      // through the flap with it right behind you.
+      if (Game.pendingInTent) Game.faceTentIntruder();
+      else Game.startCombat();
+      rerender();
+    });
     wireCombatPanel();
     wireDialogueBox();
     // CONTEST in narration box: wire choice buttons (Steve 2026-10-05)
