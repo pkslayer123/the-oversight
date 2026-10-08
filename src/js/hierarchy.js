@@ -13,8 +13,10 @@
 //   - hierarchyDaily()
 //   - linkTick(a, b)
 //   - onLeaderDeath(vid)
+//   - _nudgeOpinion(villageId, delta)
 // rules:
-//   - (none documented)
+//   - courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually decline (judgeLink base 38) — the climb is earned. (code: hierarchy.js)
+//   - join_surfaces_village_news: joining a village reads up to 3 recent village.news entries (named catch-up deaths/births) at their fire. (code: hierarchy.js)
 // consumes:
 //   - state.otherVillages
 /* INTER-VILLAGE HIERARCHY — src/js/hierarchy.js
@@ -96,6 +98,24 @@
       } catch (e) { return null; }
     },
 
+    // ---------- OPINION (the courtship currency) ----------
+
+    // _nudgeOpinion: a village's opinion of Haven moves ONLY through lived
+    // contact — joining them, honoring their knowledge, deeds on the
+    // broadcast (ledger.arenaAct), or breaking faith (decline/breakLink).
+    // Clamped ±100. Drifter loop 2026-10-08: before this, joining a village,
+    // living at their fire, and studying their codex moved opinion by exactly
+    // nothing — the only positive source was arena broadcasts, and the
+    // proposal was nearly free anyway. The climb didn't exist.
+    _nudgeOpinion(villageId, delta) {
+      try {
+        var ov = this._otherVillage(villageId);
+        if (!ov) return 0;
+        ov.opinion = Math.max(-100, Math.min(100, (ov.opinion || 0) + delta));
+        return ov.opinion;
+      } catch (e) { return 0; }
+    },
+
     // ---------- REPRESENTATIVES ----------
 
     // linkStanding: earned standing, never appointed. Deeds + the village's
@@ -125,9 +145,14 @@
 
     // judgeLink: the negotiation, scored. The stronger village has leverage;
     // tribute offered smooths it; alliances and opinion open doors.
+    // COURTSHIP IS THE CLIMB (drifter loop 2026-10-08): a cold proposal with
+    // no relationship behind it usually declines — the door isn't shut, but
+    // opinion has to be EARNED first (join them, learn their codex, deeds on
+    // the broadcast). Base 38, not 50: the old base accepted ~80% of cold
+    // proposals, skipping the climb entirely.
     judgeLink(targetId, opts) {
       opts = opts || {};
-      var score = 50, reasons = [];
+      var score = 38, reasons = [];
       var rep = this.representative();
       var repS = rep ? rep.standing : 0;
       score += Math.min(20, repS / 2);
@@ -188,7 +213,7 @@
         return link;
       }
       this.say(`${nm} declines. ${j.reasons.join(' ')} The door isn't shut — just not today.`);
-      try { ov.opinion = (ov.opinion || 0) - 5; } catch (e) {}
+      try { if (this._nudgeOpinion) this._nudgeOpinion(targetId, -5); else ov.opinion = (ov.opinion || 0) - 5; } catch (e) {}
       return null;
     },
 
@@ -572,6 +597,52 @@
     G.registerDeath = function (opts) {
       var r = _registerDeath.apply(this, arguments);
       try { if (this.onLeaderDeath) this.onLeaderDeath(opts && opts.villagerId); } catch (e) {}
+      return r;
+    };
+  }
+
+  // COURTSHIP (drifter loop 2026-10-08): joining a village and honoring their
+  // knowledge moves their opinion of Haven — once per village, no farming.
+  // Joining also surfaces their catch-up history: the sim records named
+  // deaths and births in village.news, but nothing ever READ it to the
+  // player. Around their fire, they tell you what the years did.
+  var _joinVillageH = G.joinVillage;
+  if (_joinVillageH) {
+    G.joinVillage = function (villageId) {
+      var r = _joinVillageH.apply(this, arguments);
+      try {
+        var ov = (this.state.otherVillages || []).find(function (x) { return x.id === villageId; });
+        if (ov && !ov._joinOpinionGiven) {
+          ov._joinOpinionGiven = true;
+          if (this._nudgeOpinion) this._nudgeOpinion(villageId, 5);
+          var news = (ov.news || []).slice(-3);
+          if (news.length) {
+            this.say(`Around their fire, you hear what the years did:\n${news.join('\n')}`);
+          }
+        }
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  // studyVillageCodex: honoring their book moves opinion, once per village.
+  var _studyVillageCodexH = G.studyVillageCodex;
+  if (_studyVillageCodexH) {
+    G.studyVillageCodex = function (villageId) {
+      var r = _studyVillageCodexH.apply(this, arguments);
+      try {
+        // success = a study summary ("You study..." or "...holds nothing you
+        // don't already know."); failures return the "No codex here." /
+        // "You need to be at the village to study" lines.
+        var ok = (typeof r === 'string') && r.indexOf('No codex here.') !== 0 &&
+                 r.indexOf('You need to be at the village') !== 0;
+        var ov = (this.state.otherVillages || []).find(function (x) { return x.id === villageId; });
+        if (ok && ov && !ov._codexOpinionGiven) {
+          ov._codexOpinionGiven = true;
+          if (this._nudgeOpinion) this._nudgeOpinion(villageId, 3);
+          this.say(`Word gets around ${ov.name || 'the village'}: you sat with their book and treated it like it mattered. They noticed.`);
+        }
+      } catch (e) {}
       return r;
     };
   }

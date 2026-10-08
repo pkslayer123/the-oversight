@@ -13280,6 +13280,9 @@
     document.querySelectorAll('[data-mship-build]').forEach(b => b.onclick = () => { Game.buildShelter(); refresh(); });
     // Hierarchy: tribute + demands (Haven panel).
     document.querySelectorAll('[data-link-pay]').forEach(b => b.onclick = () => { Game.payTribute(b.dataset.linkPay); refresh(); });
+    // Hierarchy: propose a link (drifter loop 2026-10-08 — was engine-only).
+    document.querySelectorAll('[data-link-propose-sub]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposeSub, { asSubordinate: true, tributeKcalPerWeek: 4000 }); refresh(); });
+    document.querySelectorAll('[data-link-propose-prim]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposePrim, { asSubordinate: false, tributeKcalPerWeek: 4000 }); refresh(); });
     document.querySelectorAll('[data-demand-yes]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandYes, true); refresh(); });
     document.querySelectorAll('[data-demand-no]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandNo, false); refresh(); });
     wirePanel(st, n);
@@ -13607,17 +13610,35 @@
           ${(() => {
             try {
               const links = Game.villageLinks('haven');
-              if (!links.length) return '';
-              return '<div style="margin-top:4px"><p class="small"><b>⛓️ Links:</b></p>' + links.map(l => {
-                const other = l.subordinate === 'haven' ? l.primary : l.subordinate;
-                const nm = Game._ovName(other);
-                const sub = l.subordinate === 'haven';
-                const paid = (l.tributePaidWeek >= Math.floor(Game.state.scholar.day / 7));
-                let html = `<p class="small">⛓️ ${sub ? 'Bows to ' + nm : nm + ' bows to Haven'} · trust ${l.trust} · tribute ${l.tributeKcalPerWeek.toLocaleString()} kcal/wk${sub ? (paid ? ' (paid ✓)' : ' (DUE ⚠)') : ''}`;
-                if (sub && !paid) html += ` <button class="btn sm" data-link-pay="${l.id}">Pay tribute</button>`;
-                if (l.pendingDemand) html += `<br>📯 ${l.pendingDemand.detail}<br><button class="btn sm" data-demand-yes="${l.id}">Honor it</button> <button class="btn sm ghost" data-demand-no="${l.id}">Refuse</button>`;
-                return html + '</p>';
-              }).join('') + '</div>';
+              let html = '';
+              if (links.length) {
+                html = '<div style="margin-top:4px"><p class="small"><b>⛓️ Links:</b></p>' + links.map(l => {
+                  const other = l.subordinate === 'haven' ? l.primary : l.subordinate;
+                  const nm = Game._ovName(other);
+                  const sub = l.subordinate === 'haven';
+                  const paid = (l.tributePaidWeek >= Math.floor(Game.state.scholar.day / 7));
+                  let h = `<p class="small">⛓️ ${sub ? 'Bows to ' + nm : nm + ' bows to Haven'} · trust ${l.trust} · tribute ${l.tributeKcalPerWeek.toLocaleString()} kcal/wk${sub ? (paid ? ' (paid ✓)' : ' (DUE ⚠)') : ''}`;
+                  if (sub && !paid) h += ` <button class="btn sm" data-link-pay="${l.id}">Pay tribute</button>`;
+                  if (l.pendingDemand) h += `<br>📯 ${l.pendingDemand.detail}<br><button class="btn sm" data-demand-yes="${l.id}">Honor it</button> <button class="btn sm ghost" data-demand-no="${l.id}">Refuse</button>`;
+                  return h + '</p>';
+                }).join('') + '</div>';
+              }
+              // PROPOSE (drifter loop 2026-10-08): proposeLink had no UI — the
+              // whole link system was engine-only and unreachable. Court them
+              // first (join, learn their codex, deeds); cold proposals decline.
+              if (typeof Game.proposeLink === 'function') {
+                const linked = {};
+                for (const l of links) { linked[l.primary] = 1; linked[l.subordinate] = 1; }
+                const cands = (Game.state.otherVillages || []).filter(v => v.id !== 'haven' && !linked[v.id]);
+                if (cands.length) {
+                  html += '<div style="margin-top:4px"><p class="small" style="opacity:.75"><b>⛓️ No link yet — propose one:</b></p>' + cands.map(v => {
+                    const op = v.opinion || 0;
+                    const opTxt = op >= 20 ? ' (they think well of us)' : op <= -20 ? ' (they think poorly of us)' : '';
+                    return `<p class="small">${v.name || v.id}${opTxt}<br><button class="btn sm ghost" data-link-propose-sub="${v.id}">Bow to them (4k kcal/wk)</button> <button class="btn sm ghost" data-link-propose-prim="${v.id}">Ask them to bow</button></p>`;
+                  }).join('') + '</div>';
+                }
+              }
+              return html;
             } catch (e) { return ''; }
           })()}`;
         } catch (e) { return ''; }

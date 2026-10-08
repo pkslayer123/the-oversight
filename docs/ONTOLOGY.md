@@ -446,10 +446,11 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 ### hierarchy (`hierarchy.js`)
 Inter-village hierarchy. Villages have relationships, rivalries, trade.
 
-**Provides:** hierarchyState(), linkWith(vid, other), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerDemand(a, b), payTribute(a, b), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid)
+**Provides:** hierarchyState(), linkWith(vid, other), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerDemand(a, b), payTribute(a, b), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid), _nudgeOpinion(villageId, delta)
 
 **Rules:**
-- (none documented)
+- courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually decline (judgeLink base 38) — the climb is earned. (code: hierarchy.js)
+- join_surfaces_village_news: joining a village reads up to 3 recent village.news entries (named catch-up deaths/births) at their fire. (code: hierarchy.js)
 
 **Consumes:** state.otherVillages
 
