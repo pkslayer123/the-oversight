@@ -1,0 +1,90 @@
+[
+  {
+    "name": "tg-nevermore-unknown",
+    "label": "Nevermore — STRAFE declare (line lane), first contact",
+    "known": false,
+    "attack": "the attack",
+    "pattern": "line",
+    "turnsLeft": 1,
+    "ncells": 3,
+    "phase": null,
+    "cue": "Its shadow slides off the branch without it — a straight black lane, growing."
+  },
+  {
+    "name": "tg-nevermore-known",
+    "label": "Nevermore — STRAFE declare (line lane), pattern learned",
+    "known": true,
+    "attack": "the attack",
+    "pattern": "line",
+    "turnsLeft": 1,
+    "ncells": 3,
+    "phase": null,
+    "cue": "Its shadow slides off the branch without it — a straight black lane, growing. You know this one: The Unkind Cut strikes in a straight line. The shadow moves first. When it detaches, the lane is already chosen — MOVE OFF IT. Step OFF the strafing lane, not along it — it can't turn mid-run. It always lands after a run, hit or miss. Punish the landing."
+  },
+  {
+    "name": "tg-nightcourt-unknown",
+    "label": "Night Court — DIVE declare (single moon-shadow tile), first contact",
+    "known": false,
+    "attack": "the attack",
+    "pattern": "single",
+    "turnsLeft": 1,
+    "ncells": 1,
+    "phase": null,
+    "cue": "No sound. The shadow on the ground is growing."
+  },
+  {
+    "name": "tg-nightcourt-known",
+    "label": "Night Court — DIVE declare (single moon-shadow tile), pattern learned",
+    "known": true,
+    "attack": "the attack",
+    "pattern": "single",
+    "turnsLeft": 1,
+    "ncells": 1,
+    "phase": null,
+    "cue": "No sound. The shadow on the ground is growing. You know this one: Adjournment picks one target and commits — the windup tells you how to beat it. No sound is the tell. When the shadow grows, MOVE — and move again, because it's already re-aiming. Watch the ground-shadow, not the sky — the dive is silent. A missed dive comes again instantly at your new position: dodge TWICE. Then it's spent."
+  },
+  {
+    "name": "tg-bulldozer-unknown",
+    "label": "Bulldozer — CHARGE declare (charge lane), first contact",
+    "known": false,
+    "attack": "China-Shop Charge",
+    "pattern": "charge",
+    "turnsLeft": 1,
+    "ncells": 5,
+    "phase": null,
+    "cue": "Lowers its head, paws the earth. Dust rises. It is not going around the tree. It has never gone around anything. It's about to break loose!"
+  },
+  {
+    "name": "tg-bulldozer-known",
+    "label": "Bulldozer — CHARGE declare (charge lane), pattern learned",
+    "known": true,
+    "attack": "China-Shop Charge",
+    "pattern": "charge",
+    "turnsLeft": 1,
+    "ncells": 5,
+    "phase": null,
+    "cue": "Lowers its head, paws the earth. Dust rises. It is not going around the tree. It has never gone around anything. It's about to break loose! You know this one: China-Shop Charge charges in a straight line, trampling everything in its path. It never turns. When it lowers its head, it's committed — sidestep, don't backpedal. Sidestep the lane — never try to outrun it. It never goes around."
+  },
+  {
+    "name": "tg-mirrormoth-unknown",
+    "label": "Flashbulb Moth — FLASH declare (burst), first contact",
+    "known": false,
+    "attack": "Wing Flash",
+    "pattern": "burst",
+    "turnsLeft": 1,
+    "ncells": 25,
+    "phase": null,
+    "cue": "It lands. It folds its wings. The light in the clearing changes, like someone adjusting a lamp. It's about to break loose!"
+  },
+  {
+    "name": "tg-mirrormoth-known",
+    "label": "Flashbulb Moth — FLASH declare (burst), pattern learned",
+    "known": true,
+    "attack": "Wing Flash",
+    "pattern": "burst",
+    "turnsLeft": 1,
+    "ncells": 25,
+    "phase": null,
+    "cue": "It lands. It folds its wings. The light in the clearing changes, like someone adjusting a lamp. It's about to break loose! You know this one: Wing Flash hits everything close around it. Wing Flash only fires FORWARD — it must face you. Circle behind it before the wings open."
+  }
+]
