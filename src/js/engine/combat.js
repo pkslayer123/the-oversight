@@ -13,7 +13,7 @@
 //   - stepAway(fx, fy, tx, ty, blocked, avoidCells)
 //   - villagerDecide(f, fighters, blocked, dangerCells)
 // rules:
-//   - (none documented)
+//   - zero-range: beam/line/charge with attacker and target on the same tile covers the shared tile — zero range never whiffs. (code: patternCells)
 // consumes:
 //   - (none documented)
 /* Turn-based grid combat engine — pure helpers.
@@ -53,6 +53,12 @@
       // point; at 8-way angles the output is identical to the old snap.
       const ex = tx - ax, ey = ty - ay;
       const n = Math.max(Math.abs(ex), Math.abs(ey));
+      // ZERO-RANGE (break-it 2026-10-08): attacker and target share a tile.
+      // The lane is the tile itself — a beam/line/charge at zero range hits
+      // what's on top of you. (Was: empty cell list — the attack whiffed
+      // forever, and beams lied "cover works" while standing on your square.
+      // Same-tile spawns are real: bump-in-the-dark, door-flee re-engage.)
+      if (n === 0) cells.push({ cx: ax, cy: ay });
       const len = pattern.length || 5, w = pattern.width || 1;
       const dx = Math.sign(ex), dy = Math.sign(ey);
       for (let i = 1; n > 0 && i <= len; i++) {

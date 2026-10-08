@@ -2526,7 +2526,7 @@
     "loot": {
       "chance": 0.12,
       "tier": 4,
-      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Wave-2 apex slot: tier 4 (Steve 2026-10-06)."
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Wave-2 apex, tier 4 on its own terms (Steve 2026-10-06; framing corrected 2026-10-07: tier 4 is earned, not one-apex-per-wave)."
     },
     "armor": 4,
     "resistances": {

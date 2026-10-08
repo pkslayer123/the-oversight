@@ -21,7 +21,6 @@
 //   - scheduleSystemEvents() (schedules from events.json scheduledDay; data-driven)
 //   - glasswingTrapCells() -> {tile, turns, splash} | null (dive-shadow grid contract)
 //   - tbTerraform(x, y, type) (monster-reshaped ground; fight-scoped)
-//   - tbSeedAmbushZone(m, pattern, opts) -> zone | null, tbAmbushZoneTick() (seeded-ground ambush: visible arming beat when stepped in, fires a beat later; fight-scoped; code: combat.js 'ambush-zone'/zoneArmed)
 //   - tbTerrainAt(x, y) -> type | null
 //   - tbTerrainCost(x, y) -> 1 | 2 (difficult terrain costs double)
 //   - modIs(m) (wave-2 apex id gate: the Moderator)
@@ -49,7 +48,6 @@
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
 //   - terraform_scope: fight-scoped, dies with the fight (code: tbTerraform)
-//   - ambush_zone_beat: seeded zone arms when stepped in with a visible beat (text + grid + audio), fires one beat later at whoever is inside (code: tbSeedAmbushZone/tbAmbushZoneTick)
 //   - lockon_relock: lockon telegraphs re-lock at fire time against the locked target's current square — windup-cells == action-cells per call (code: tbMonsterTurn resolve 'lockon')
 //   - moderator_field: radius 2, 3 in shadowban; re-projected each of its turns (code: modProjectField)
 //   - moderator_violation: muted verb inside the field spends the turn, +3 strike damage each (code: modVerbBlocked)
@@ -17990,14 +17988,6 @@
       if (wave === 4) this.state.wave4Slain = (this.state.wave4Slain || 0) + 1;
     },
 
-    // Can this monster appear? Checks wave assignment.
-    monsterWaveAvailable(monsterId) {
-      const mdef = this.data.monsters.find(m => m.id === monsterId);
-      if (!mdef) return false;
-      const wave = mdef.wave || 1;
-      return wave <= this.unlockedWave();
-    },
-
     // WAVE RATIO (Steve 2026-10-06): which wave a fresh spawn belongs to.
     // Single source of truth for the 60%-newest-wave ratios — used by both
     // castMonster (wanderer/contest casting) and checkEncounter (tile-entry
@@ -19309,96 +19299,6 @@
       return null;
     },
 
-    // === AMBUSH-ZONE: seeded ground (Steve 2026-10-07) ===
-    // combat.js 'ambush-zone' patterns: the zone is centered on
-    // pattern.center (fixed ground, not the attacker), arms when stepped
-    // in, and runs a visible arming beat before firing. The beat is the
-    // dodge window. Fight-scoped: zones die with the fight, like terraform.
-    // tbSeedAmbushZone: a monster lays the trap. Returns the zone.
-    tbSeedAmbushZone(m, pattern, opts) {
-      const f = this.tbfight;
-      if (!f || f.over || !m || !pattern || pattern.type !== 'ambush-zone') return null;
-      f.ambushZones = f.ambushZones || [];
-      const zone = {
-        pattern: Object.assign({ radius: 1 }, pattern),
-        seededBy: m.key,
-        seedId: (m.mdef || {}).id || '?',
-        attackName: (opts && opts.attackName) || ((m.mdef || {}).attack || {}).name || 'seeded ambush',
-        dmg: (opts && opts.dmg) || ((m.mdef || {}).attack || {}).damage || '2d6',
-        armed: false, beatsLeft: 0, spent: false,
-      };
-      f.ambushZones.push(zone);
-      // THE BULGE: seeding is visible ground. The grid marks the circle —
-      // the grid IS the telegraph. Knowledge gates the coaching, never the mark.
-      const cells = S.combat.patternCells(zone.pattern, m.mx, m.my, m.mx, m.my);
-      this.warnCells(cells, 99);
-      const known = this.tbPatternKnown(zone.seedId, zone.attackName);
-      this.say('⚠ ' + S.combat.telegraphText(zone.pattern, 'windup', known));
-      this.tbRefreshTelegraphUI();
-      return zone;
-    },
-    // tbAmbushZoneTick: run after every player action and on each round —
-    // the ground checks itself. Unarmed zones ARM the moment a fighter
-    // steps in (visible arming beat: text + grid + audio); armed zones
-    // FIRE one beat later at whatever is still inside.
-    tbAmbushZoneTick() {
-      const f = this.tbfight;
-      if (!f || f.over) return;
-      const zones = f.ambushZones || [];
-      if (!zones.length) return;
-      for (const z of zones) {
-        if (z.spent) continue;
-        if (!z.armed) {
-          // Keep the marked circle lit while it waits.
-          this.warnCells(S.combat.patternCells(z.pattern, 0, 0, 0, 0), 2);
-          // Arming: anyone (not the seeder) standing in seeded ground?
-          const stepped = (f.fighters || []).some(fr =>
-            fr.alive && !fr.fled && fr.key !== z.seededBy &&
-            S.combat.zoneArmed(z.pattern, fr.mx, fr.my));
-          if (stepped) {
-            z.armed = true; z.beatsLeft = 1;
-            this.warnCells(S.combat.patternCells(z.pattern, 0, 0, 0, 0), 2);
-            const known = this.tbPatternKnown(z.seedId, z.attackName);
-            // THE ARMING BEAT: the ground stirs. One beat — MOVE. Spoken
-            // (not silent like windup cues) because this is the last dodge
-            // window before the spines come up.
-            this.say('⚠ ' + S.combat.telegraphText(z.pattern, 'arming', known));
-            this.audioEvent('telegraph', { urgency: 1, pattern: 'ambush-zone' });
-            // DRAMA (Steve 2026-10-07): ambush arming — red vignette + warning at zone center
-            try {
-              const zc = (z.pattern && z.pattern.center) || { x: 4, y: 4 };
-              this.drama('ambush', zc.x, zc.y);
-            } catch (e) {}
-            this.tbRefreshTelegraphUI();
-          }
-        } else {
-          z.beatsLeft -= 1;
-          if (z.beatsLeft > 0) continue;
-          // FIRE: spines through every fighter (not the seeder) still inside.
-          const cells = S.combat.patternCells(z.pattern, 0, 0, 0, 0);
-          const victims = (f.fighters || []).filter(fr =>
-            fr.alive && !fr.fled && fr.key !== z.seededBy &&
-            cells.some(c => c.cx === fr.mx && c.cy === fr.my));
-          const known = this.tbPatternKnown(z.seedId, z.attackName);
-          this.say('💥 ' + S.combat.telegraphText(z.pattern, 'action', known));
-          this.audioEvent('ambushSnap');
-          for (const v of victims) {
-            const dmg = S.combat.roll(z.dmg);
-            this.tbDamage(v.key, dmg, (z.seedId || 'something') + "'s " + z.attackName, z.seededBy);
-          }
-          z.spent = true;
-          // Surviving teaches the pattern: the codex earns it, never given.
-          for (const v of victims) {
-            if (v.kind === 'player' && v.alive) {
-              const seeder = this.tbFighter(z.seededBy);
-              if (seeder) this.tbLearnPattern(seeder);
-            }
-          }
-          this.tbRefreshTelegraphUI();
-        }
-      }
-    },
-
     // audioEvent: optional hook for the Web Audio terror system (app.js).
     // If no audio system is attached, this is a silent no-op.
     audioEvent(name, data) {
@@ -20128,9 +20028,6 @@
       // tbAdvance only checks after AI turns, so check here too. Otherwise
       // killing the final foe soft-locks the fight on your turn forever.
       if (this.tbEndCheck()) return;
-      // AMBUSH-ZONE (Steve 2026-10-07): seeded ground checks after every
-      // player action — stepping into a zone arms it with a visible beat.
-      this.tbAmbushZoneTick();
       // ACTION ECONOMY (Steve): the turn ends when you're out of actions —
       // no end-turn ceremony. Spend moves + the acted action and it advances
       // on its own. (Wait forfeits the rest via tbPlayerWait.)
@@ -20179,8 +20076,6 @@
           }
           this.sysSay(`ROUND ${f.round}!`);
           this.audioEvent('round', { round: f.round });
-          // AMBUSH-ZONE (Steve 2026-10-07): the ground ticks with the round.
-          this.tbAmbushZoneTick();
           // BELLTOAD CHORUS (Steve 2026-10-05): the sound IS the mechanic.
           // Every 2 rounds, another answers the call (up to 4), even if the
           // original is dead. The croak carries for miles.
@@ -20311,8 +20206,6 @@
         f.turnIdx = 0; f.round++;
         try { this.sysSay(`ROUND ${f.round}!`); } catch (e) {}
         try { this.audioEvent('round', { round: f.round }); } catch (e) {}
-        // AMBUSH-ZONE (Steve 2026-10-07): the ground ticks with the round (async path).
-        try { this.tbAmbushZoneTick(); } catch (e) {}
       }
       const key = f.order[f.turnIdx];
       const c = this.tbFighter(key);
@@ -21888,17 +21781,37 @@
           const dd = Math.max(Math.abs(cx - m.mx), Math.abs(cy - m.my));
           if (dd < bd) { bd = dd; ex = cx; ey = cy; }
         }
+        const bx0 = m.mx, by0 = m.my;
         for (let i = 0; i < m.speed; i++) {
           if (m.mx === ex && m.my === ey) break;
           if (!stepTo(ex, ey)) break;
         }
+        const boltMoved = (m.mx !== bx0 || m.my !== by0);
         if (m.mx === 0 || m.mx === 8 || m.my === 0 || m.my === 8) {
           m.fled = true;
           const lost = m.stolen ? m.stolen.name : 'nothing';
           m.stolen = null; // it's gone. so is your stuff.
           this.say(`It's over the ridge with your ${lost}. Gone.`);
           this.audioEvent('lockpickChitter');
+        } else if (!boltMoved) {
+          // STUCK (break-it 2026-10-08): the nearest edge sits behind
+          // terrain it can't cross — stepTo fails every turn and the bolt
+          // looped forever ("pure getaway", going nowhere, fight never
+          // ending). A raccoon doesn't wait for a door: two no-progress
+          // bolt turns and it finds a gap in the treeline. The two turns
+          // preserve the counterplay — hit it and it drops your things.
+          m.boltStuck = (m.boltStuck || 0) + 1;
+          if (m.boltStuck >= 2) {
+            m.fled = true;
+            const lost = m.stolen ? m.stolen.name : 'nothing';
+            m.stolen = null; // it's gone. so is your stuff.
+            this.say(`It finds a gap in the treeline — over the ridge with your ${lost}. Gone.`);
+            this.audioEvent('lockpickChitter');
+          } else {
+            this.say(`It bolts — ${m.stolen ? 'your ' + m.stolen.name + ' in its hands' : 'empty-handed'} — pure getaway.`);
+          }
         } else {
+          m.boltStuck = 0;
           this.say(`It bolts — ${m.stolen ? 'your ' + m.stolen.name + ' in its hands' : 'empty-handed'} — pure getaway.`);
         }
         this.tbEndCheck();
@@ -22378,9 +22291,6 @@
       for (const [pred, field, phase, text, audio] of specs) {
         if (this[pred](m) && (m[field] || 0) > 0) {
           m[field] -= 1;
-          // The crowd-deflate flag dies with the cooldown — next hype cycle
-          // starts clean.
-          if (m[field] <= 0) delete m.hypeDeflateCrowd;
           this.encSetPhase(m, phase);
           this.say(typeof text === 'function' ? text(m) : text);
           if (audio) this.audioEvent(audio);
@@ -25464,9 +25374,11 @@
     // contest rewards (Steve 2026-10-05). mdef.loot = {chance, tier}.
     // Returns an item id or null. Chances are LOW by design — alien loot
     // should feel like a gift from a confused god, not a paycheck.
-    // LOOT TIERS (Steve 2026-10-06): difficulty gates reward.
+    // LOOT TIERS (Steve 2026-10-06; apex framing corrected 2026-10-07):
+    // difficulty gates reward. Tier 4 is earned through the hardest kills
+    // at low rates on its own terms — NOT "one apex per wave."
     // - Base wave-1 monsters: tier 1-2 max (data).
-    // - Wave-1 apex (gallowdeer, mdef.apex): tier 4 — one apex per wave.
+    // - Wave-1 apex (gallowdeer, mdef.apex): tier 4.
     // - Wave-1 VETERAN variants (fighter.veteranVariant: scarred/elder/
     //   pack-leader): tier up to 3, ONLY after wave 2 unlocks
     //   (unlockedWave() >= 2). Before that they drop wave-1 loot.

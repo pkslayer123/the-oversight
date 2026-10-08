@@ -34,10 +34,20 @@ function ok(name, cond, extra) {
   const noWave = Game.data.monsters.filter(m => !m.wave);
   ok('all monsters have wave', noWave.length === 0, `missing: ${noWave.map(m => m.id).join(',')}`);
   
-  // Test 3: Wave 1 monsters available, wave 2+ not
-  ok('hummice (w1) available', Game.monsterWaveAvailable('hummice'));
-  ok('hushwolf (w2) NOT available at wave 1', !Game.monsterWaveAvailable('hushwolf'));
-  ok('gallowdeer (w4) NOT available at wave 1', !Game.monsterWaveAvailable('gallowdeer'));
+  // Test 3: Wave gating — wave-2 monsters are locked until the gate opens.
+  // (2026-10-08: the old availability helper is gone — removed as dead
+  // code, zero game callers. The live gate is unlockedWave(); availability
+  // = data wave <= it. Old assertions here named hushwolf/gallowdeer as
+  // w2/w4 — both are wave 1 now — and cited a retired boar id. Assert
+  // current data instead.)
+  const w1ids = Game.data.monsters.filter(m => (m.wave || 1) === 1).map(m => m.id);
+  const w2ids = Game.data.monsters.filter(m => (m.wave || 1) === 2).map(m => m.id);
+  ok('hummice is wave 1', w1ids.includes('hummice'));
+  ok('hushwolf is wave 1 (animal shock)', w1ids.includes('hushwolf'));
+  ok('gallowdeer is wave 1 (the 160 HP benchmark)', w1ids.includes('gallowdeer'));
+  ok('wave-2 pool is non-empty', w2ids.length > 0, `got ${w2ids.length}`);
+  ok('wave 1: no wave-2 monster passes the gate',
+    w2ids.every(id => (Game.data.monsters.find(m => m.id === id).wave || 1) > Game.unlockedWave()));
   
   // Test 4: Cast monster returns wave-appropriate
   for (let i = 0; i < 10; i++) {
@@ -61,10 +71,19 @@ function ok(name, cond, extra) {
   const hummice = Game.data.monsters.find(m => m.id === 'hummice');
   ok('hummice wave 1', hummice.wave === 1);
   ok('hummice loot tier 1', hummice.loot.tier === 1);
-  
-  const boar = Game.data.monsters.find(m => m.id === 'thornback_boar');
-  ok('boar wave 2', boar.wave === 2);
-  ok('boar loot tier 2', boar.loot.tier === 2);
+
+  // (2026-10-08: the retired boar id is gone — assert live wave-2
+  // monsters instead.)
+  const drone = Game.data.monsters.find(m => m.id === 'review_drone');
+  ok('review_drone wave 2', drone.wave === 2);
+  ok('review_drone loot tier 2', drone.loot.tier === 2);
+  const mimic = Game.data.monsters.find(m => m.id === 'voice_mimic_radio');
+  ok('voice_mimic_radio wave 2, loot tier 2-3', mimic.wave === 2 && mimic.loot.tier >= 2 && mimic.loot.tier <= 3);
+  // Apex tiers are earned on their own terms (Steve 2026-10-07), not
+  // "one apex per wave": both apexes carry tier 4 at low chance.
+  const apexes = Game.data.monsters.filter(m => m.apex);
+  ok('apexes carry tier 4', apexes.length > 0 && apexes.every(m => m.loot.tier === 4),
+    `got ${apexes.map(m => m.id + ':' + m.loot.tier).join(',')}`);
   
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail > 0 ? 1 : 0);
