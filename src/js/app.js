@@ -11353,8 +11353,8 @@
         </details>`;
       };
 
-      let html = `<details open style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
-        <summary style="cursor:pointer;font-size:15px;font-weight:bold">🎒 Abilities <span style="opacity:.6;font-weight:normal">(${equipped.length}/${maxSlots})</span></summary>
+      let html = `<details style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
+        <summary style="cursor:pointer;font-size:15px;font-weight:bold">⚡ Abilities <span style="opacity:.6;font-weight:normal">(${equipped.length}/${maxSlots})</span></summary>
         <div style="margin-top:6px">`;
 
       // System abilities (the 6 slots)
@@ -11516,16 +11516,23 @@
               const bond = item.bonded ? ` <span class="small" style="opacity:.75">bond ${item.bond||0}${item.heirloom ? ' \u00B7 heirloom' : ''}</span>` : '';
               return `<p class="small"><b>${lbl}:</b> ${itemSpriteHtml(item)}${esc(item.name)}${bond} <button class="btn ghost sm" data-unequip-slot="${slot}">Take off</button></p>`;
             }).join('');
-            return `<div style="margin:8px 0"><b>Equipped</b>${rows}</div>`;
+            const eqCount = Object.keys(eq).filter(k => eq[k]).length;
+            return `<details style="margin:8px 0"><summary style="cursor:pointer;font-weight:bold">🛡️ Equipped <span style="opacity:.6;font-weight:normal">(${eqCount} worn)</span></summary><div style="margin-top:6px">${rows}</div></details>`;
           } catch (e) { return ''; }
         })()}
-        ${renderAbilitiesSection()}
-        ${renderSkillsSection()}
-        ${renderSynergiesSection()}
-${renderBuildIndicator()}
-        ${renderSynergyStirrings()}
-        ${renderIntegrationLevel()}
-        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''} <button class="btn ghost sm" data-pourwater="1" title="Pour out 1L, risky first. Water is heavy.">Pour out 1L</button></p>`; })()}
+        ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small" style="margin:8px 0;padding:8px;background:#1a2a3a;border-radius:6px"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''} <button class="btn ghost sm" data-pourwater="1" title="Pour out 1L, risky first. Water is heavy.">Pour out 1L</button></p>`; })()}
+        <details style="margin:10px 0;border-top:1px solid #333;padding-top:8px">
+          <summary style="cursor:pointer;font-size:15px;font-weight:bold">🧬 Character <span style="opacity:.6;font-weight:normal">abilities · skills · synergies</span></summary>
+          <div style="margin-top:6px">
+            ${renderAbilitiesSection()}
+            ${renderSkillsSection()}
+            ${renderSynergiesSection()}
+            ${renderBuildIndicator()}
+            ${renderSynergyStirrings()}
+            ${renderIntegrationLevel()}
+          </div>
+        </details>
+        <h3 style="margin:12px 0 6px">🎒 Carried <span style="opacity:.6;font-weight:normal;font-size:13px">(${inv.length} items)</span></h3>
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
           let foodBtns = '';
@@ -11584,8 +11591,7 @@ ${renderBuildIndicator()}
           } catch (e) { return (i.kcalEach || 0) * i.units; } })()} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
-        ${(() => { const acts = Game.activatableAbilities ? Game.activatableAbilities() : []; if (!acts.length) return ''; return `<h3 style="margin-top:12px">\u26A1 Abilities</h3>` + acts.map(a => `<p class="small"><b>${a.name}</b> \u2014 ${a.desc} ${a.available ? `<button class="btn ghost sm" data-activate="${a.id}">Use</button>` : `<span class="small" style="opacity:.6">(${a.why || 'not now'})</span>`}</p>`).join(''); })()}
-        ${tools.length ? `<h3 style="margin-top:12px">Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
+        ${tools.length ? `<h3 style="margin-top:12px">🔧 Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
         ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> \u2014 ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}`;
 
     slot.innerHTML = `<div class="inlinecard">

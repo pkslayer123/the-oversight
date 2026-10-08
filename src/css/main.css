@@ -84,8 +84,9 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
   font-size: 18px; color: var(--dim); border: 1px solid transparent; border-radius: 4px;
   cursor: pointer; user-select: none; min-height: 40px;
 }
-/* Detail grid is 9x9, world map is 7x7 (Steve 2026-10-06) */
+/* Detail grid is 9x9, world map is 9x9 (Steve 2026-10-07: was 7x7, tiles overflowed at 100%/7) */
 .detail .tile { width: calc(100% / 9); }
+.map .tile, .minimap .tile { width: calc(100% / 9); }
 .tile.fog { color: #1c241c; background: #0d120d; border-color: #141a14; }
 .tile.me { color: var(--bg); background: var(--acc); font-weight: bold; }
 /* (world-map player outline removed Steve 2026-10-06: no "you are here"
@@ -373,17 +374,22 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
    Cell is flex with align/justify center; sprite is 90% of cell, overflow visible
    for slight overlap. The border shows the standing tile. */
 .cell.me { position: relative; }
+/* PLAYER PROMINENCE (Steve 2026-10-07): player must be easy to spot on the grid.
+   The vtoken fills the cell; the sprite scales with cell size (not a fixed px cap).
+   Name sits below in the column flow. */
 .cell.me .vtoken { display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 100%; }
-.cell.me .vtoken .vsprite { display: block; width: 90%; height: 90%;
+  width: 100%; flex: 1 1 auto; min-height: 0; }
+.cell.me .vtoken .vsprite { display: block; width: 100%; height: 100%;
+  max-width: 56px; max-height: 56px;
   overflow: visible; pointer-events: none; }
 .cell.me .vtoken .vsprite svg.sprite { width: 100%; height: 100%; display: block;
   overflow: visible; }
 .cell.villager .vtoken .vsprite { display: inline-block; width: 2em; height: 2em; vertical-align: -0.2em; }
-/* HARD CONSTRAINT (Steve 2026-10-06): player sprite was massive, breaking grid */
+/* HARD CONSTRAINT (Steve 2026-10-06): sprites must not break the grid layout.
+   Villager/monster sprites capped at 40px. Player has its own larger cap above. */
 .cell .vsprite, .detail .vsprite { max-width: 100% !important; max-height: 100% !important; }
-.cell .vsprite svg, .detail .vsprite svg { max-width: 40px !important; max-height: 40px !important; width: auto !important; height: auto !important; }
-.cell.villager .vtoken .vsprite svg.sprite, .cell.me .vtoken .vsprite svg.sprite { width: 100%; height: 100%; display: block; }
+.cell.villager .vsprite svg, .detail .vsprite svg { max-width: 40px !important; max-height: 40px !important; width: auto !important; height: auto !important; }
+.cell.villager .vtoken .vsprite svg.sprite { width: 100%; height: 100%; display: block; }
 /* HUMANOID MONSTER SPRITES (Steve 2026-10-06): calm SVG on the grid. */
 /* SPRITE SIZE (Steve 2026-10-06): sprites must FILL the cell, not hide in the corner.
    Emoji set the bar: font-size clamp(16px, 5.2vw, 44px). Sprites match it. */
