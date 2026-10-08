@@ -68,11 +68,42 @@ Player-initiated topics (village/past/goal/plans/gossip/personal/theorize + gene
 - **Memory:** `remember(vid, type, note)` → `state.village.memory[vid]` (cap 20, day-stamped). `you_said` records answers; `convoSaidFact`/`convoFactRecalled` track told facts; wrongly-accused memories exist (detective).
 - **Knowledge:** teach/learn flows gate on codex; `noteAskedQ`/`villageAskedQs` prevent repeat questions village-wide.
 
-## 7. Mood system (convo-mood.js) — [child report pending]
+## 7. Mood system (convo-mood.js, 234 lines)
 
-## 8. Want system (convo-wants.js) — [child report pending]
+Temperature model: integer −3..+3 per conversation (`c.mood`), re-derived fresh each conversation from trust + npcMood (never stored per villager). Bands: warm ≥2, friendly 1, neutral 0, cool −1, tense ≤−2. Init clamps to [−2,2] — a conversation can never START at ±3.
 
-## 9. Topic/ask system (convoTopics.js) — [child report pending]
+- `convoMoodShift(vid, delta)`: one-shot GUARD absorbs a warming move when receptivity<0 ("Something in them almost softens — then doesn't. Not yet."); one-shot GRACE absorbs a cooling move when receptivity>0. Otherwise clamps and queues a band-crossing stage-direction beat via `convoMoodFlush` → `c.heldBeats` (continuer reveals it — one-beat-turns rule).
+- `convoMoodReceptivity(vid)`: scores LIVED MEMORY over last 5 days (warm kinds: gift/comforted/promise_kept/shared_fear…; hurt kinds: promise_broken/hostile/confronted/ignored/rumor_about_them…), not personality. Clamped ±3, used only as sign.
+- `convoMoodSilence`: silence is temperature-dependent (warm: +1 comfortable quiet; cool: −1 pointed; tense: flat).
+- `convoMoodGoodbye`: warm send-off / tense clipped goodbye.
+- `convoMoodMod`: c.mood×5 (−15..+15) for success rolls elsewhere.
+- Consumers: react branches shift mood by sign of trust delta ("warmth_from_trust"); endConvo nudges trust by ±mood ("mood_lingers"). Nothing gates menus on mood directly — it's a reaction layer, not a gate.
+
+**Bugs/gaps found:** (1) `convoMoodBeat` pool missing `up:cool` (tense→cool warming falls back to generic "The mood shifts, subtly."). (2) Want deflect sets `resolution='deflected'` but resolve recomputes `stage>=2 → 'engaged'` — deflected wants resolve as ENGAGED (see §8). (3) `convoMoodInit` has no caller in either file — verified called from startConvo.
+
+## 8. Want system (convo-wants.js, 562 lines)
+
+Six wants: `share_news` (bursting to tell), `ask_favor` (needs help — food/company/watch), `seek_comfort` (scared/grieving), `warn_you` (danger knowledge), `curious` (wants to know YOU, trust-gated 40+), `just_company` (fallback). Selection: seeds first (`state.village.convoSeeds[vid]`, 7-day expiry), else weighted lottery on needs (hunger/fear/energy/social, recent attacks, days-since-talk). **Personality plays no role despite the header comment claiming it.**
+
+Lifecycle: `c.want = {id, def, stage, fromSeed}`; stages 0 unspoken → 1 surfaced → 2 engaged → 3 resolved. Surfacing via `convoWantPostTurn` (turns≥1 → heldBeat `{wantSurface:true}`); seed-wants surface immediately in startConvo wrapper. Engage: `dlg:help/comfort/empathize` → stage 2. Deflect: `dlg:cant` → stage 3. Resolve in endConvo wrapper: stage≥2 → 'engaged' planting a seed (next conversation's opener); stage 0 → 'unestablished', plants nothing (phantom-seed fix).
+
+**Bugs found:** (1) **Deflect resolves as engaged** — `convoAdvanceWant` sets stage=3/resolution='deflected', but `convoResolveWant` recomputes `stage>=2?'engaged'`, so refusing a favor plants the ENGAGED seed. `ask_favor` deflect plants the `repay` seed ("the favor they still owe you for") — for a favor that was refused. (2) `repay` and `closeness` seeds reference wantIds that don't exist in WANTS — they sit unreadable until 7-day expiry. (3) Want `thread` ('small'/'personal') is written but never read — dead data; 'personal' exists in neither beat tags nor any consumer. (4) Wants never touch mood or trust; the want system and mood system share only `c.heldBeats` and never interact. (5) `'ignore'` playerKind documented, unhandled. (6) Surfacing comment says "second or third beat"; code does turns≥1 (first post-turn).
+
+**Design note:** wants give conversations DIRECTION, mood gives them TEMPERATURE, and they never talk to each other. Nobody's in a bad mood because their favor was refused — the `HURT_KINDS: 'deflected'` slot in mood receptivity suggests someone intended that wiring and it was never built.
+
+## 9. Topic/ask system (convoTopics.js, 726 lines — "topic2")
+
+Generated topic layer coexisting with legacy topics in conversation.js. Every line composed from villager identity (backstory, fear, hope, occupation, temperament, intel type) + live run state — never a pooled list (unique-person law).
+
+**9 topic2 defs** (`t2defs()`): `lately` (live run events only — naming debates, mourning, threats, betrayals, hunger, gratitude), `you` (30/deep — what they think of the PLAYER, from memory entries), `fears` (25/deep), `others` (20 — gossip target via grievance/close/random), `advice` (20), `oldworld` (15), `skills` (0), `systemtake` (system-arrived), `loved` (40/deep — lost love's name rolled ONCE at trust 60+, persisted via saidFacts).
+
+**Generation:** `t2gen_<topic>` openers + `t2fol_<topic>` 3-stage follow-ups; `t2pick` → `convoPick` (per-villager no-repeat); `t2fill` chokepoint (fillTalkLine + {fear}/{hope}/{quirk}/{habit} + pronouns); `t2clock` hashes trust-band+day+exiles+grief+memory — re-asking after the clock moves prefixes a "it's different now" line.
+
+**Gating:** `t2gate` — minTrust OR convo-count escape hatch (count≥4 unlocks 40+ topics at trust 10). **Design-vs-code tension:** "intimacy is earned" framing vs bypasses that unlock `loved` after 4 conversations regardless of trust.
+
+**Menu integration:** `topic2Asks` feeds conversation.js's ask menu (~2621); t2 topics get first crack at topic budget; gossip verbs exempt from cap. `topic2SubjectOpts` is DEAD (zero callers, still in ontology provides). `convoThreadBeat` double-runs `fillTalkLine` on topic2 beats (t2fill already filled). Legacy topics (village/past/goal/plans/gossip/personal/spread_rumor) remain in conversation.js's `convoAskTopic` switch. Single trust write for topics: +2 (cap 40) on past/goal/deep asks, owned by conversation.js.
+
+**Change-over-run done right:** `t2clock`/`t2changeLine` — re-asked topics acknowledge elapsed time. This is the model for the whole rethink: the game notices that time passed.
 
 ## 10. Coherence breakdowns (observed)
 
