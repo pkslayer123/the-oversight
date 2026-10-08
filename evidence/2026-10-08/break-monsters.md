@@ -133,3 +133,15 @@ dusk sunbasker keeps basking (lie documented); patched: dusk flattens
 - scripts/test-break-monsters-deadcode-20261008.js (new)
 - scripts/test-break-monsters-wavegate-20261008.js (new)
 - scripts/test-break-monsters-sunbasker-20261008.js (new)
+
+## Landing status (2026-10-08, end of run)
+- COMMITTED (f29b09a): wave-gate unification, sunbasker dusk honesty,
+  comment updates, proof tests, this evidence file. All proof tests green.
+- PENDING — dead-code purge (Catch 1): the 460-line deletion in src/js/game.js
+  is staged in the worktree as UNCOMMITTED changes. safe-commit.sh REFUSED it
+  (492-line deletion guard = stale-revert signature). This is the documented
+  intentional-deletion case, verified by a 252-scenario differential vs HEAD
+  (0 diffs) — but per run rules it needs coordinator approval for
+  --force-delete. The full end-state is in the worktree, tests green against
+  it. Do NOT let the reaper or another run touch this tree until the purge
+  decision is made.

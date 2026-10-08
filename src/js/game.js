@@ -18212,14 +18212,6 @@
               this.say('(It counts down THREE-TWO-ONE then fires along the projected line. Move OFF the line. It can\'t handle crowds — bring friends.)');
             }
             this.audioEvent('droneHum');
-          } else if (this.swarmIs(mo)) {
-            // INFLUENCER: first contact is dread. The cameras are the fight.
-            this.say('Click. Clickclickclick. Dozens of tiny cameras on spindly legs, all pointed at you. "SMILE! You\'re going VIRAL!"');
-            const swstage = (this.ensureMonsterEntry('camera_swarm') || {}).stage;
-            if (swstage === 'observed' || swstage === 'slain') {
-              this.say('(The flashes build — burst radius 2. They\'re fragile (+25% damage). Fire scatters them. Don\'t let them surround you.)');
-            }
-            this.audioEvent('swarmFilm');
           }
         }
       } catch (e) {}
@@ -19027,8 +19019,8 @@
       }
       // Retired monsters (service_mimic, contract_golem, camera_swarm,
       // hype_horn — Steve 2026-10-06) were never batch-4-routed; their bespoke
-      // cues died with them (removal staged by the break-it monsters run,
-      // Steve 2026-10-08).
+      // cues died with them. Removed with their AI blocks by the break-it
+      // monsters run (Steve 2026-10-08).
       return null;
     },
 
@@ -20285,24 +20277,6 @@
         final = Math.round(final * 1.5);
         this.say('The signal scrambles — exposed, it takes the hit badly.');
       }
-      // - contract golem: it's paper. A torch does what fire does.
-      if (t.kind === 'monster' && this.cgIs(t) && String(sourceLabel) === 'you') {
-        let witem = '';
-        try { witem = String((((this.state.scholar || {}).equipped || {}).weapon || {}).itemId || ''); } catch (e) {}
-        if (/torch/.test(witem)) {
-          final = Math.round(final * 3);
-          this.say('It\'s paper. The torch does what torches do.');
-        }
-      }
-      // INFLUENCER (camera_swarm): fragile. Every hit knocks cameras out of
-      // the sky — it takes +25% from everything, and the game says so once.
-      if (t.kind === 'monster' && this.swarmIs(t)) {
-        final = Math.round(final * 1.25);
-        if (!t.fragileNoted && final > 0) {
-          t.fragileNoted = true;
-          this.say('Cameras shatter across the dirt — the swarm is FRAGILE. Every hit knocks lenses out of the sky.');
-        }
-      }
       // FLYERS, GROUNDED (Steve 2026-10-06): wings in the dirt — out of their
       // element. Any flyer at 'low' altitude takes +50% while it's down.
       // (Generalizes the old glasswing-only rule; same numbers.)
@@ -20972,13 +20946,12 @@
     vmIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'voice_mimic_radio')); },
     biIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'bright_idea')); },
     mpIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'memory_projector')); },
-    smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
-    cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
     wcIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'warranty_caller')); },
     // WAVE-2 ROSTER REDESIGN (Steve 2026-10-06): retired monsters (hype_horn,
     // camera_swarm, service_mimic, contract_golem, delegate_beast) have no
-    // data defs. Their id predicates + bespoke AI are dead code — removal is
-    // staged by the break-it monsters run (Steve 2026-10-08).
+    // data defs. Their id predicates + bespoke AI were dead code — removed by
+    // the break-it monsters run (Steve 2026-10-08). No behavior change: the
+    // predicates could never match.
     usIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'understudy')); },
     llIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'landlord')); },
     hkIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'heckler')); },
@@ -21089,8 +21062,6 @@
     // MONSTER BATCH 4 (corporate horrors): id gates for the bespoke layer,
     // following the deerIs pattern. The generic engine does the rest.
     droneIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'review_drone')); },
-    swarmIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'camera_swarm')); },
-    hornIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hype_horn')); },
     encConfig(m) { return (m && m.mdef && m.mdef.encounter) || null; },
     // SHADE (sunbasker): canopy shade = orthogonally adjacent to a tree.
     // The grid is honest about it — trees are visible, so shade is readable.
@@ -22067,36 +22038,6 @@
       m.dodgeEff = eff;
       return eff;
     },
-    // the swarm creeps toward its muse (the player) even mid-windup — one
-    // tile, never onto anyone, never into fire. It cannot stop filming.
-    swarmCreep(m) {
-      const f = this.tbfight;
-      if (!f) return;
-      const p = this.tbFighter('p');
-      if (!p || !p.alive) return;
-      if (Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my)) <= 1) return;
-      const detail = this.genDetail(this.map.px, this.map.py);
-      const s = this.tbStepToward(m, p.mx, p.my, (x, y) => {
-        if (x < 0 || x > 8 || y < 0 || y > 8) return true;
-        const cell = detail[y] && detail[y][x];
-        if (cell && this.cellProps(cell).blocks) return true;
-        // Match the scatter trigger radius (2) — creeping to within 2
-        // would instantly lose the shot.
-        if (this.tbNearestFire(x, y, 2)) return true;
-        return false;
-      });
-      if (s) {
-        // The greedy stepToward falls back to a blocked step when every
-        // improving step is blocked — verify the destination isn't inside
-        // the scatter radius before committing.
-        if (this.tbNearestFire(s.x, s.y, 2)) return;
-        m.mx = s.x; m.my = s.y;
-        if (m.telegraph && !m.telegraph.creepNarrated) {
-          m.telegraph.creepNarrated = true;
-          this.say('It never stops filming — the swarm closes in even as the flashes build.');
-        }
-      }
-    },
 
     // BATCH 4 breather beats: post-attack recovery, one full turn each.
     // Returns true when the monster spent its turn breathing.
@@ -22104,13 +22045,6 @@
       const specs = [
         ['droneIs', 'droneRecalc', 'recalc',
           'The drone hovers, re-running the numbers. "RECALIBRATING METRICS."', 'droneRecalc'],
-        ['hornIs', 'hypeCooldown', 'deflate',
-          // Two sags, two stories: crowd-deflate = stage fright (it never
-          // encouraged anyone); post-detonation = spent. The comment at the
-          // crowd-deflate call site says "loses its nerve" — this is that.
-          (m) => m.hypeDeflateCrowd
-            ? 'It sags, shrinking from all those eyes. One-on-one or nothing — the crowd broke its nerve.'
-            : 'It sags, spent — the encouragement took everything out of it.', 'hypeDeflate'],
       ];
       for (const [pred, field, phase, text, audio] of specs) {
         if (this[pred](m) && (m[field] || 0) > 0) {
@@ -22129,29 +22063,6 @@
       return false;
     },
     // REMOVED 2026-10-08: beastCircle() — the retired delegate_beast's circle beat. Uncalled since the Phase-1 bespoke-AI removal; fired delegateCircle, now also removed from the audio registry (Steve 2026-10-08).
-    // INFLUENCER's chase: up to full speed at the player, stopping at arm's
-    // length — never onto anyone, never into fire. It fears fire (instinct).
-    swarmChase(m) {
-      const f = this.tbfight;
-      if (!f) return;
-      const p = this.tbFighter('p');
-      if (!p || !p.alive) return;
-      const detail = this.genDetail(this.map.px, this.map.py);
-      const danger = this.tbDangerCells(m.key);
-      for (let i = 0; i < (m.speed || 6); i++) {
-        const d = Math.max(Math.abs(p.mx - m.mx), Math.abs(p.my - m.my));
-        if (d <= 1) break;
-        const s = this.tbStepToward(m, p.mx, p.my, (x, y) => {
-          if (x < 0 || x > 8 || y < 0 || y > 8) return true;
-          const cell = detail[y] && detail[y][x];
-          if (cell && this.cellProps(cell).blocks) return true;
-          if (this.tbNearestFire(x, y, 1)) return true;
-          return false;
-        }, danger);
-        if (!s) break;
-        m.mx = s.x; m.my = s.y;
-      }
-    },
 
     // tbStepToward: gravity-aware movement. A gravity-held monster strains
     // but doesn't move — the well holds its position, not its malice.
@@ -22284,51 +22195,6 @@
           return;
         }
       }
-      // CROWD DEFLATE (horn): it can't encourage a crowd — it only does
-      // one-on-one. The windup fizzles and it loses its nerve for two turns.
-      if (useFifo && this.hornIs(m)) {
-        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
-        const live = this.encThreatQueue(m).filter(k => {
-          const t = this.tbFighter(k); return t && t.alive && !t.fled;
-        });
-        if (live.length > limit) {
-          m.telegraph = null;
-          this.encSetPhase(m, 'deflate');
-          m.hypeCooldown = 2;
-          // STAGE FRIGHT (Steve 2026-10-06): flag the crowd-deflate so the
-          // breather text matches — it never encouraged anyone here; the
-          // crowd broke its nerve. Distinct from the post-detonation sag.
-          m.hypeDeflateCrowd = true;
-          this.saySituationOnce(m, 'deflate:crowd:' + live.slice().sort().join('+'),
-            '📣 "YOU\'RE ALL WINNERS, I\'M JUST—" It deflates. It only does one-on-one.');
-          this.audioEvent('hypeDeflate');
-          this.tbRefreshTelegraphUI();
-          if (this.tbEndCheck()) return;
-          return;
-        }
-      }
-      // FIRE SCATTERS THE SWARM: it follows you — lead it into hazards. A
-      // burning cell within 2 and it loses the shot entirely.
-      if (this.swarmIs(m)) {
-        const fire = this.tbNearestFire(m.mx, m.my, 2);
-        if (fire) {
-          m.telegraph = null;
-          this.encSetPhase(m, 'scatter');
-          this.saySituationOnce(m, 'scatter:fire:' + fire.x + ',' + fire.y,
-            'The shutters stutter. Smoke — no, FIRE — in the lenses. "LOSING THE SHOT! LOSING THE—" It breaks off.');
-          this.audioEvent('swarmScatter');
-          const detail = this.genDetail(this.map.px, this.map.py);
-          for (let i = 0; i < 2; i++) {
-            const s = this.tbStepToward(m, m.mx * 2 - fire.x, m.my * 2 - fire.y,
-              (x, y) => x < 0 || x > 8 || y < 0 || y > 8 || (detail[y] && detail[y][x] && this.cellProps(detail[y][x]).blocks));
-            if (!s) break;
-            m.mx = s.x; m.my = s.y;
-          }
-          this.tbRefreshTelegraphUI();
-          if (this.tbEndCheck()) return;
-          return;
-        }
-      }
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
@@ -22409,36 +22275,6 @@
             const word = tg.turnsLeft === 2 ? 'TWO.' : tg.turnsLeft === 1 ? 'ONE.' : '…';
             this.say(`📊 "${word}" DODGE EFFICIENCY: ${this.droneEff(m)}%. The projected line brightens.`);
             this.audioEvent('droneCount', { count: tg.turnsLeft });
-          }
-          // the swarm never stops filming — it closes in even while the
-          // flashes build. Keep moving.
-          if (this.swarmIs(m)) {
-            if (useFifo) this.encSetPhase(m, 'build');
-            this.swarmCreep(m);
-            if (tg.turnsLeft === 1) this.say('📸 "ENGAGEMENT CRITICAL!" The shutters are a strobe now. COVER YOUR EYES.');
-            else this.say('The shutters quicken. The flashes are building…');
-            this.audioEvent('swarmShutters', { urgency: tg.turnsLeft });
-          }
-          // the pep talk escalates — each beat a louder promise.
-          if (this.hornIs(m)) {
-            if (useFifo) this.encSetPhase(m, 'encourage');
-            const shout = tg.turnsLeft === 2 ? "YOU'RE A WINNER!" : tg.turnsLeft === 1 ? 'NEVER GIVE UP!' : "YOU'VE GOT THIS!";
-            this.say(`📣 "${shout}" It's swelling — the air ripples. GET CLEAR.`);
-            this.audioEvent('hypeEncourage', { n: tg.turnsLeft });
-            // ADVANCING ENCOURAGEMENT (Steve 2026-10-06): wave-2 escalation.
-            // It doesn't hold still while it winds up — it advances on you,
-            // one step per beat. The radius-3 burst can't be outwalked; you
-            // must sprint, break line of sight, or silence it mid-shout.
-            // (The burst re-centers at resolve, so the threat genuinely moves.)
-            const ht = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
-            if (ht && ht.alive && !ht.fled) {
-              const hd = Math.max(Math.abs(ht.mx - m.mx), Math.abs(ht.my - m.my));
-              if (hd > 1) {
-                const hstp = this.tbStepToward(m, ht.mx, ht.my,
-                  (x, y) => x < 0 || x > 8 || y < 0 || y > 8 || this.tbBlocked(x, y));
-                if (hstp) { m.mx = hstp.x; m.my = hstp.y; }
-              }
-            }
           }
           this.tbRefreshTelegraphUI();
           this.audioEvent('telegraph', { urgency: tg.turnsLeft, windupTick: true });
@@ -22845,24 +22681,6 @@
             }
             this.audioEvent('droneCorrect');
             m.droneRecalc = 1; // it re-runs the numbers before grading again
-          }
-          if (this.swarmIs(m)) {
-            if (useFifo) this.encSetPhase(m, 'flash');
-            const anyHit = f.fighters.some(o => o.alive && o.key !== m.key && S.combat.isFoe(m, o) && hitKeys.has(o.mx + ',' + o.my));
-            if (!anyHit) {
-              m.escalation = (m.escalation || 0) + 1;
-              this.say('📸 "ENGAGEMENT DROPPING! ESCALATING!" The swarm got no reaction — the next flash will hit harder.');
-              this.audioEvent('swarmEscalate');
-            } else if (m.escalation) {
-              m.escalation = 0; m.swWidened = false;
-              this.say('📸 "WE HAVE ENGAGEMENT!" The swarm got its reaction. For now.');
-            }
-            this.audioEvent('swarmFlash');
-          }
-          if (this.hornIs(m)) {
-            if (useFifo) this.encSetPhase(m, 'detonate');
-            this.audioEvent('hypeDetonate');
-            m.hypeCooldown = 1; // spent. The encouragement took everything.
           }
           // GLASSWING: the dive lands where it lands. A hit means it snatched
           // its target and climbed — a miss means it crashed, wings tangled,
@@ -23538,90 +23356,6 @@
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
-      // ---- INFLUENCER (camera_swarm): THE FLASH MOB ----
-      // film → build → flash → scatter. Burst radius 2. Fragile (+25% damage).
-      // Speed 6 — it WILL catch you. Fire scatters it. The flashes build:
-      // each turn the shutters quicken. When it flashes, burst hits radius 2.
-      if (this.swarmIs(m)) {
-        const ff = fifoFoe(); if (ff) foe = ff;
-        const t = foe.f;
-        const pat = (m.mdef.attack && m.mdef.attack.pattern) || {};
-        // (Swarm phases are film/build/flash. If in a generic phase, start filming.
-        // After a flash, go back to film to re-declare.)
-        if (!m.beamPhase || !['film', 'build', 'flash'].includes(m.beamPhase) || m.beamPhase === 'flash') {
-          this.encSetPhase(m, 'film');
-        }
-        let swPhase = m.beamPhase;
-        const dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
-        // Don't declare the flash if the shot would instantly scatter — the
-        // swarm knows fire kills the shot. It waits for a cleaner angle.
-        const nearFire = !!this.tbNearestFire(m.mx, m.my, 2);
-        if (swPhase === 'film' && dist <= 4 && !m.telegraph && !nearFire) {
-          // BUILD: shutters quicken, 2-turn windup. The burst is centered on
-          // the target's tile AT DECLARE — keep moving and it lands where you
-          // were. Grid-clamped. (Windup ticks in the generic pending section.)
-          // WIDENING THE SHOT (Steve 2026-10-06): wave-2 escalation. Starve
-          // it of engagement and the flash gets BIGGER — the safe zone
-          // shrinks the longer you dodge perfectly.
-          this.encSetPhase(m, 'build');
-          const r = (pat.radius || 2) + ((m.escalation || 0) >= 2 ? 1 : 0);
-          if ((m.escalation || 0) >= 2 && !m.swWidened) {
-            m.swWidened = true;
-            this.say('📸 "ENGAGEMENT DROPPING! WIDENING THE SHOT!" The ring of lenses pulls back — the next flash covers more ground.');
-          }
-          const cells = [];
-          for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-            if (Math.max(Math.abs(dx), Math.abs(dy)) > r) continue;
-            const cx = t.mx + dx, cy = t.my + dy;
-            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
-            cells.push({ cx, cy });
-          }
-          // (Apply escalation: missed flashes hit harder.)
-          const swDmg = (m.mdef.attack || {}).damage || [14, 18];
-          const swK = 1 + 0.15 * Math.min(m.escalation || 0, 4);
-          m.telegraph = { kind: 'burst', cells,
-            dmg: [Math.round(swDmg[0] * swK), Math.round(swDmg[1] * swK)],
-            attackName: this.encAttackName(m, 'Flash Mob'),
-            pattern: pat, turnsLeft: 2,
-            // DEAD FALLBACK, GATED-DREAD (Steve 2026-10-06): tbBatch4Cue intercepts
-            // camera_swarm before this cueText is ever read, so it can't
-            // surface — but the "COVER YOUR EYES or MOVE" coaching was a live
-            // leak waiting for a refactor to resurrect. Dread-only now.
-            cueText: '"ENGAGEMENT DROPPING! ESCALATING!" The shutters quicken — clickclickCLICK.' };
-          this.say('"SMILE! You\'re going VIRAL!" The cameras swarm closer, flashes building.');
-          this.audioEvent('swarmBuild');
-          swPhase = 'build'; // the phase changed — creep, don't dash, on the declare turn
-        }
-        // Movement: speed 6, chases the player (its muse). Creeps while building.
-        // It FEARS fire — if it's too close to a blaze it backs off to a
-        // cleaner angle instead of chasing straight through the flames
-        // (which scattered the shot every single turn). Circling, filming,
-        // waiting for you to leave the fire.
-        const speed = swPhase === 'build' ? 2 : 6;
-        for (let i = 0; i < speed; i++) {
-          const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
-          if (d <= 1) break;
-          let stp;
-          if (this.tbNearestFire(m.mx, m.my, 2)) {
-            const fire = this.tbNearestFire(m.mx, m.my, 2);
-            stp = this.tbStepToward(m, m.mx * 2 - fire.x, m.my * 2 - fire.y, blocked, danger);
-            if (stp && !m.swFireNoted) {
-              m.swFireNoted = true;
-              this.say('The swarm veers away from the flames — it won\'t risk the shot near fire. It\'s waiting for you to step away from the blaze.');
-            }
-          } else {
-            m.swFireNoted = false;
-            stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
-            // Don't step INTO the fire's radius — the greedy stepToward can't
-            // see ahead, so check the destination. Better to hold than to
-            // scatter the shot you just declared.
-            if (stp && this.tbNearestFire(stp.x, stp.y, 2)) stp = null;
-          }
-          if (!stp) break;
-          m.mx = stp.x; m.my = stp.y;
-        }
-        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-      }
 
       // ---- BRIGHT IDEA ("Inspiration"): THE BRIGHTENING ----
       // settle → brighten → bloom → ember. It never moves once set: it drifts
@@ -24281,95 +24015,6 @@
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
-      // ---- SERVICE MIMIC ("Customer Service"): THE WATCH ----
-      // watching → dialing → hold. No telegraph on the rush — that's the
-      // point. But it watches first (2-3 turns of escalating politeness):
-      // that's your window — leave, or get fire near you (it won't dial
-      // through firelight). It only rushes once per approach; after the rush
-      // it goes on hold and resets instead of chasing.
-      if (this.smIs(m)) {
-        const ff = fifoFoe(); if (ff) foe = ff;
-        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'watching'); m.smWatch = 2 + Math.floor(Math.random() * 2); }
-        const smPhase = m.beamPhase;
-        let nearFire = false;
-        try { nearFire = this.scholarNearCell ? !!this.scholarNearCell('fire', 3) : false; } catch (e) {}
-        if (smPhase === 'hold') {
-          m.smHold = (m.smHold === undefined ? 2 : m.smHold) - 1;
-          if (m.smHold <= 0) {
-            this.encSetPhase(m, 'watching'); m.smWatch = 2 + Math.floor(Math.random() * 2);
-            this.say('"Thank you for holding." The line clicks. It\'s watching again.');
-          } else this.say('Hold music plays from somewhere in the dark. It isn\'t moving. It\'s waiting for you to come back.');
-          this.audioEvent('holdMusic', {});
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-        }
-        if (smPhase === 'watching') {
-          if (nearFire) {
-            // DEDUP (Steve 2026-10-06): the line spoke every turn the fire
-            // stayed near. It speaks once per fire position now — the
-            // situation re-speaks only when the fire moves.
-            const smFire = this.tbNearestFire(foe.f.mx, foe.f.my, 3);
-            this.saySituationOnce(m, 'watch:fire:' + (smFire ? smFire.x + ',' + smFire.y : 'near'),
-              '"We appear to be experiencing— experiencing—" The script breaks. The firelight is too much. It won\'t come closer.');
-            this.audioEvent('holdMusic', { broken: true });
-            this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-          }
-          m.smWatch = (m.smWatch === undefined ? 2 : m.smWatch) - 1;
-          if (m.smWatch <= 0) {
-            this.encSetPhase(m, 'dialing');
-            this.say('"Please hold while we connect you to—" The voice cuts out. It\'s moving.');
-            this.audioEvent('lineCut');
-          } else {
-            const esc = [
-              '"Hello? Are you still there?" It\'s watching. It\'s always been watching.',
-              '"Your call is very important to us." The voice is syrup. It hasn\'t blinked.',
-              '"We\'re experiencing higher than normal fear volumes." It leans forward, listening to your breathing.',
-            ];
-            // CODEX-GATED (Steve 2026-10-06): the mimic never declares, so
-            // its data knownCue had no surface — it hung dead in
-            // monsters.json. The watching beat carries it once learned:
-            // dread for first-timers, the tell for veterans.
-            const smKnown = this.encTelegraphKnown(m);
-            const smKc = ((m.mdef || {}).encounter || {}).knownCue;
-            this.say(esc[Math.min(esc.length - 1, Math.max(0, 2 - m.smWatch))] +
-              ((smKnown && smKc) ? ' ' + smKc : ''));
-            this.audioEvent('holdMusic', { watching: true });
-          }
-          this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-        }
-        // dialing: THE RUSH. No telegraph — it just goes. (Same shape as the
-        // generic rush: up to speed, hit if adjacent.) Then it resets to hold.
-        const t = foe.f;
-        for (let i = 0; i < m.speed; i++) {
-          if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) break;
-          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
-          if (!stp) break;
-          m.mx = stp.x; m.my = stp.y;
-        }
-        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) {
-          const known = this.encTelegraphKnown(m);
-          this.say(known
-            ? `"Your fear is important to us." No telegraph — it just moved. (${atk.name}.)`
-            : 'Something is right behind you, and a syrupy voice says: "Your fear is important to us."');
-          this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
-          // PLEASE HOLD (Steve 2026-10-06): wave-2 escalation. The rush
-          // doesn't just hurt — it puts you ON HOLD: your next turn is hold
-          // music, no move, no act. The 2-3 turns of watching were the
-          // warning; this is the price of letting it reach you.
-          if (t.kind === 'player') {
-            // STUN (statusEffects engine, Steve 2026-10-07): full turn loss.
-            this.applyStatus(t, 'stun_full', { turns: 1, source: 'the hold music', silent: true });
-            this.say('"Please hold—" The music swells and the world tilts. You\'re on hold. (stunned: next turn lost)');
-          }
-          // AUDIO (Steve 2026-10-06): the rush resolve — hold music slammed into motion.
-          try { this.audioEvent('serviceRush'); } catch (e) {}
-          this.audioEvent('impact', {});
-          this.tbLearnPattern(m);
-        } else {
-          this.say('It rushes — and finds only empty air where you were. The line goes quiet.');
-        }
-        this.encSetPhase(m, 'hold'); m.smHold = 2;
-        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-      }
 
       // ---- WARRANTY CALLER ("Extended Warranty"): THE CALL ----
       // dial → ring → pitch → redial. Rush pattern, but the tell is AUDIO:
@@ -24501,74 +24146,6 @@
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
 
-      // ---- CONTRACT GOLEM ("Terms & Conditions"): THE FINE PRINT ----
-      // unfold → clause → bound. Speed 1 — just walk away. The attack
-      // (direct, range 3) is undodgeable by movement once declared, but the
-      // declaration only comes after 2 consecutive turns in proximity:
-      // staying IS accepting. Leaving resets the clause. Never flees.
-      if (this.cgIs(m)) {
-        const ff = fifoFoe(); if (ff) foe = ff;
-        if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'unfold'); m.cgClause = 0; }
-        // post-resolve: the agreement discharged → back to unfolding
-        if (m.cgDeclared && !m.telegraph) {
-          m.cgDeclared = false; m.cgClause = 0;
-          this.encSetPhase(m, 'unfold');
-          this.say('The ink dries. The pages settle. It begins unfolding again — there is always more fine print.');
-        }
-        const t = foe.f;
-        // SPREADING JURISDICTION (Steve 2026-10-06): wave-2 escalation. The
-        // longer you stay in its reach, the further its reach extends —
-        // pages spreading across the ground. Walking away still works, but
-        // the safe distance grows. Leaving resets it (proximity was the
-        // whole contract).
-        const cgBase = (pat.range || 3);
-        // +1 because the clause below increments after this read: two
-        // consecutive turns in proximity grows the range.
-        const cgRange = Math.min(6, cgBase + Math.floor(((m.cgClause || 0) + 1) / 2));
-        if (cgRange > cgBase && cgRange > (m.cgRangeShown || cgBase)) {
-          m.cgRangeShown = cgRange;
-          this.say('"ADDENDUM: this agreement now covers a WIDER AREA." The pages spread further across the ground.');
-          this.audioEvent('paperRustle', { spread: true });
-        }
-        // speed 1: one deliberate step toward the list-head
-        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) > cgRange) {
-          const stp = this.tbStepToward(m, t.mx, t.my, blocked, danger);
-          if (stp) {
-            // TERRAFORM (Steve 2026-10-06): it sheds as it goes — paper on
-            // the tile it leaves. The fine print, everywhere.
-            this.tbTerraform(m.mx, m.my, 'paper');
-            if (this.tbfight && !this.tbfight.terraformShed) {
-              this.tbfight.terraformShed = true;
-              this.say('Paper scatters behind it — the fine print, everywhere. Watch your step.');
-            }
-            m.mx = stp.x; m.my = stp.y;
-          }
-        }
-        const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
-        if (d <= cgRange) {
-          m.cgClause = (m.cgClause || 0) + 1;
-          if (m.cgClause === 1) {
-            this.encSetPhase(m, 'clause');
-            this.say('"SECTION 7, SUBSECTION C..." Small text crawls up your legs. You can feel the clauses tightening. You should move.');
-            this.audioEvent('paperRustle', {});
-          } else if (!m.telegraph) {
-            this.encSetPhase(m, 'bound');
-            m.cgDeclared = true;
-            const known = this.encTelegraphKnown(m);
-            this.encDeclareDirect(m, t, known
-              ? '"BY REMAINING IN PROXIMITY, YOU HAVE ACCEPTED." The agreement binds — no dodging it now. (You could have walked away. It moves one tile a turn.)'
-              : '"BY REMAINING IN PROXIMITY," it rustles, "YOU HAVE ACCEPTED." The fine print tightens around you.');
-            this.audioEvent('paperRustle', { binding: true });
-          }
-        } else {
-          if ((m.cgClause || 0) > 0) this.say('The text loosens as you leave its reach. Proximity was the whole contract.');
-          m.cgClause = 0; m.cgRangeShown = 0;
-          if (m.beamPhase !== 'unfold') this.encSetPhase(m, 'unfold');
-          this.say('It unfolds — paper and ink and fine print, spreading across the ground toward you. So slowly. One tile a turn.');
-          this.audioEvent('paperRustle', {});
-        }
-        this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
-      }
       // ---- THE UNDERSTUDY: THE REHEARSAL ----
       // It has no tricks of its own — so it steals yours. Watches your attacks
       // (hooked in tbPlayerStrike); after seeing an attack twice it copies it.
@@ -25362,26 +24939,6 @@
       }
       // MOTH: it doesn't advance — it drifts, erratically, toward light.
       let approachHandled = false;
-      // INFLUENCER: it doesn't advance on the queue — it chases its muse (the
-      // player), relentlessly, and only declares the flash when close.
-      // (Falls through to declare below; the generic approach loop is skipped.)
-      let swarmChased = false;
-      if (this.swarmIs(m)) {
-        const pl = this.tbFighter('p');
-        if (pl && pl.alive) {
-          const pd = Math.max(Math.abs(pl.mx - m.mx), Math.abs(pl.my - m.my));
-          if (pd > 3) {
-            this.swarmChase(m);
-            if (useFifo) this.encSetPhase(m, 'film');
-            this.say('Click. Clickclickclick. It\'s still filming you. All of it is filming you.');
-            this.tbRefreshTelegraphUI();
-            if (this.tbEndCheck()) return;
-            return;
-          }
-          this.swarmChase(m);
-        }
-        swarmChased = true;
-      }
       if (!heronStatue && this.mothIs(m)) approachHandled = this.tbMothApproach(m, foe, blocked);
       else if (!heronStatue) for (let i = 0; i < m.speed; i++) {
         const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
@@ -25480,18 +25037,6 @@
         if (this.droneIs(m)) {
           if (useFifo) this.encSetPhase(m, 'project');
           this.audioEvent('droneHum');
-        }
-        if (this.swarmIs(m)) {
-          if (useFifo) this.encSetPhase(m, 'build');
-          if (m.escalation > 0) {
-            const k = 1 + 0.15 * Math.min(m.escalation, 4);
-            m.telegraph.dmg = [Math.round(atk.damage[0] * k), Math.round(atk.damage[1] * k)];
-          }
-          this.audioEvent('swarmShutters');
-        }
-        if (this.hornIs(m)) {
-          if (useFifo) this.encSetPhase(m, 'inflate');
-          this.audioEvent('hypeInflate');
         }
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
