@@ -821,7 +821,6 @@
       }
 
       // there IS a lie. How do they handle being caught?
-      try { this.audioEvent('liarConfront', { phase: 'tension' }); } catch (e) {}
       const motive = lie.motive;
       const roll = Math.random();
 
@@ -908,7 +907,6 @@
           this.remember(vid, 'hostile', 'turned on you when questioned');
         } catch (e) {}
       }
-      try { this.audioEvent('liarConfront', { outcome }); } catch (e) {}
       return { ok: true, line, outcome };
     },
 
@@ -920,7 +918,6 @@
     confrontTheft(vid, doubtId) {
       const doubt = (this.state.codex.doubts || []).find(d => d.id === doubtId);
       if (!doubt || doubt.resolved || !doubt.theft) return { ok: false, line: '"Never mind."' };
-      try { this.audioEvent('liarConfront', { phase: 'tension' }); } catch (e) {}
       const t = doubt.theft;
       const what = t.label || 'your buried food';
       const vp = this.vpOf(vid) || {};
@@ -968,7 +965,6 @@
           this.remember(vid, 'hostile', 'turned on you when accused of theft');
         } catch (e) {}
       }
-      try { this.audioEvent('liarConfront', { outcome }); } catch (e) {}
       return { ok: true, line, outcome };
     },
     truthSlip(vid, lie) {

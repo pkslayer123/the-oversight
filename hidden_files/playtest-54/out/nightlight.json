@@ -1,0 +1,34 @@
+{
+ "name": "nightlight",
+ "verdict": null,
+ "setup": "🐞 SCENARIO: nightlight catfish. A soft green glow under the water, three tiles east. Pretty.",
+ "setupEx": null,
+ "played": "",
+ "notes": [],
+ "keywords": {
+  "glow": 1,
+  "still": 0,
+  "lure": 0,
+  "water": 4
+ },
+ "fighters": [],
+ "log": [
+  "📖 LEARNED: Herbal Medicine (Level 1). Willow bark = aspirin. Yarrow stops bleeding. Plantain draws out infection. The pharmacy is outside.",
+  "📖 LEARNED: Reading the Land (Level 1). Eat the landscape with your eyes first: green + water + sun means food grows here. Start where those three meet.",
+  "📖 Your old life taught you things. 2 skills from your past — check your Journal.",
+  "Nothing here looks like home. You know none of these plants. Learn fast.",
+  "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.",
+  "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.",
+  "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Andre Adeyemi. Wild food forager. From Minneapolis, USA. That was yesterday. This is now. You have: Hard Candy, Lucky Coin, Knife roll, Boot stone, Trail compass. That's everything you own in this world. Haven. Twelve people. The fire is lit. They found a deer this morning. Inside out. Not eaten — unmade. Like something was trying to understand how it worked. It didn't finish.",
+  "A woman, maybe 50s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"",
+  "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+  "🐞 SCENARIO: nightlight catfish. A soft green glow under the water, three tiles east. Pretty."
+ ],
+ "walkSteps": 30,
+ "turns": 0,
+ "fightEnded": true,
+ "fightResult": "no-fight",
+ "actions": [],
+ "logTruncated": false,
+ "totalLines": 10
+}

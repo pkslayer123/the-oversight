@@ -1,0 +1,138 @@
+{
+ "reviewdrone_sidestep": {
+  "lines": [
+   "\"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE...\" The projector draws a burning line across the dirt.",
+   "📊 \"TWO.\" DODGE EFFICIENCY: 41%. The projected line brightens.",
+   "📊 \"ONE.\" DODGE EFFICIENCY: 41%. The projected line brightens.",
+   "You're not where it landed. Clean dodge.",
+   "📊 DODGE EFFICIENCY: 49% — CLEAN DODGE. LOGGED. BELOW TARGET. CORRECTIVE ACTION SCHEDULED.",
+   "📖 Codex: Scored Assessment — fires in a straight line from itself. You won't forget this.",
+   "📊 \"DODGE PATTERN RECOGNIZED. ADJUSTING AIM.\" The projected line slides sideways — toward where you went last time.",
+   "\"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE...\" The projector draws a burning line across the dirt.",
+   "📊 \"TWO.\" DODGE EFFICIENCY: 49%. The projected line brightens.",
+   "📊 \"ONE.\" DODGE EFFICIENCY: 49%. The projected line brightens.",
+   "The Scored Assessment hits you for 27.",
+   "📊 DODGE EFFICIENCY: 37% — HIT TAKEN. LOGGED. BELOW TARGET. CORRECTIVE ACTION SCHEDULED."
+  ],
+  "sidestepTo": [
+   4,
+   7
+  ],
+  "telegraphCells": [
+   [
+    5,
+    5
+   ],
+   [
+    4,
+    6
+   ],
+   [
+    4,
+    7
+   ],
+   [
+    4,
+    8
+   ]
+  ],
+  "threatenedBefore": true,
+  "playerHp": 73,
+  "outcome": "NOT-OVER"
+ },
+ "inspiration_detonation": {
+  "lines": [
+   "The glow intensifies — the air tastes like copper. Brighter.",
+   "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+   "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+   "Where the light struck, the ground is cratered and black.",
+   "The attack hits you for 29.",
+   "White — then spots that won't clear. You're dazzled. (blinded 2 rounds)",
+   "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. For now.",
+   "The ember flickers, dim. It can't brighten yet.",
+   "The ember steadies. Somewhere inside the glass, an idea is forming again.",
+   "The glow intensifies — the air tastes like copper. Brighter.",
+   "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+   "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+   "Where the light struck, the ground is cratered and black.",
+   "The Eureka hits you for 23."
+  ],
+  "playerHp": "dead",
+  "outcome": "null"
+ },
+ "ducks_split": {
+  "lines": [
+   "🦆 The line breaks! Now there are TWO snakes — and both are coming for you.",
+   "Quacking, closer than it should be. Six heads, one line. It's noticed you.",
+   "Quacking, closer than it should be. Six heads, one line. It's noticed you.",
+   "The ducks stop milling. One by one they fall into line — head to tail, too precise, too quiet. The head dips. It has picked a line.",
+   "The line reaches you — beaks up, all down the row. NIP.",
+   "Quacking, closer than it should be. Six heads, one line. It's noticed you.",
+   "🦆 The line NIPS you as it passes — beaks everywhere. (8)",
+   "The line reaches you — beaks up, all down the row. NIP.",
+   "The line reforms — head to tail, perfect order. They're organized. Break the formation — isolate one.",
+   "Quacking, closer than it should be. Six heads, one line. It's noticed you.",
+   "🦆 The line NIPS you as it passes — beaks everywhere. (8)",
+   "The ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one.",
+   "The line reforms — head to tail, perfect order. They're organized. Break the formation — isolate one.",
+   "The ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one.",
+   "The line reaches you — beaks up, all down the row. NIP.",
+   "Quacking, closer than it should be. Six heads, one line. It's noticed you."
+  ],
+  "kill_0": "m_snake_6 segIdx 6",
+  "kill_1": "m_snake_13 segIdx 6",
+  "segmentsLeft": "null",
+  "playerHp": "dead",
+  "outcome": "null"
+ },
+ "nostalgia_passive": {
+  "lines": [
+   "The picture LOCKS — home, sharp, impossibly close. And the light has edges. The edges are sharp.",
+   "The attack hits you for 18.",
+   "📖 Codex: Home Movies — fires in a straight line from itself. You won't forget this.",
+   "The screen collapses to gray static, hissing. It's confused — the picture won't come back yet.",
+   "The picture LOCKS — home, sharp, impossibly close. And the light has edges. The edges are sharp.",
+   "💥 Home Movies!",
+   "The Home Movies hits you for 17.",
+   "The screen collapses to gray static, hissing. It's confused — the picture won't come back yet.",
+   "The light flickers. Shapes resolve. Is that... is that home?",
+   "The picture LOCKS — home, sharp, impossibly close. And the light has edges. The edges are sharp.",
+   "💥 Home Movies!",
+   "The Home Movies hits you for 22.",
+   "The screen collapses to gray static, hissing. It's confused — the picture won't come back yet.",
+   "The light flickers. Shapes resolve. Is that... is that home?",
+   "The picture LOCKS — home, sharp, impossibly close. And the light has edges. The edges are sharp.",
+   "💥 Home Movies!",
+   "The Home Movies hits you for 24.",
+   "The screen collapses to gray static, hissing. It's confused — the picture won't come back yet."
+  ],
+  "playerHp": 19,
+  "monsterHp": "82",
+  "outcome": "NOT-OVER"
+ },
+ "static_kite": {
+  "lines": [
+   "💥 crying in the dark — a voice you almost recognize's the attack finds you — no dodging it.",
+   "Crying in the dark — a voice you almost recognize's the attack hits you for 21.",
+   "The voice falters... then starts again, somewhere else in the dark. It is still hungry.",
+   "💥 crying in the dark — a voice you almost recognize's Distress Call finds you — no dodging it.",
+   "Crying in the dark — a voice you almost recognize's Distress Call hits you for 20.",
+   "The voice falters... then starts again, somewhere else in the dark. It is still hungry.",
+   "You don't move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It's a radio. It was always a radio.",
+   "Your own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.",
+   "Crying in the dark — a voice you almost recognize hits you for 21.",
+   "The static crackles, furious. No voice left. Just the radio — and it wants you dead.",
+   "The radio crackles, furious, advancing on dead air.",
+   "(crying in the dark — a voice you almost recognize's hide absorbs 3.)",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 25 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "Your own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.",
+   "Crying in the dark — a voice you almost recognize hits you for 22.",
+   "(crying in the dark — a voice you almost recognize's hide absorbs 3.)",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 24 (Fire-hardened spear)."
+  ],
+  "playerHp": "dead",
+  "monsterHp": "null",
+  "outcome": "null"
+ }
+}

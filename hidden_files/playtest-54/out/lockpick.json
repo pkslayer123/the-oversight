@@ -1,0 +1,50 @@
+{
+ "name": "lockpick",
+ "verdict": null,
+ "setup": "🐞 SCENARIO: lockpick raccoon. Too many fingers, working at something, four tiles east.",
+ "setupEx": null,
+ "played": "",
+ "notes": [],
+ "keywords": {
+  "steal": 0,
+  "stole": 0,
+  "pack": 3,
+  "food": 1
+ },
+ "fighters": [],
+ "log": [
+  "📖 LEARNED: Herbal Medicine (Level 2). You know dosages, preparations, contraindications. This is real medicine, just old.",
+  "📖 Your old life taught you things. 1 skill from your past — check your Journal.",
+  "Nothing here looks like home. You know none of these plants. Learn fast.",
+  "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.",
+  "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.",
+  "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Hank Diallo. Midwife. From Minneapolis, USA. That was yesterday. This is now. You have: Hard Candy, Brass Locket, Field suture kit, Knife roll, Notebook. That's everything you own in this world. Haven. Twelve people. The fire is lit. You heard it in the dark. Breathing. Not yours. It knew your name — it said it wrong, like it learned the shape of the sound but not what it meant.",
+  "A person, maybe 40s, with a broad frame: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"",
+  "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+  "🐞 SCENARIO: lockpick raccoon. Too many fingers, working at something, four tiles east.",
+  "It sits up on its hind legs, hands moving too fast to follow. It's trying to figure out your pack.",
+  "It chitters — offended. Those clever hands curl into fists.",
+  "It sits up on its hind legs — hands moving too fast to follow. It's not looking at you. It's looking at your pack.",
+  "You don't know what that was. a raccoon with too many fingers, working at something Someone at the haven should hear about this.",
+  "⚔ A RACCOON WITH TOO MANY FINGERS, WORKING AT SOMETHING! You're on your own.",
+  "Turn-based now. Tap a tile to move — speed is squares. Then act.",
+  "It circles once, eyes never leaving your pack — those hands never stop moving.",
+  "🖐️ Its hands blur — and suddenly it's holding your Fire-hardened spear! It's already running.",
+  "(raccoon with too many fingers, working at something's hide absorbs 2.)",
+  "You STRIKE the raccoon with too many fingers, working at something for 11.",
+  "It yelps — drops your Fire-hardened spear — and runs for its life, empty-handed.",
+  "It got away. No meat, no trophy — but you're breathing, and now you know its moves."
+ ],
+ "walkSteps": 4,
+ "turns": 1,
+ "fightEnded": true,
+ "fightResult": "no-fight",
+ "actions": [
+  "strike m_0(a raccoon with too many fingers, working at something) d=0",
+  "move->5,3",
+  "move->6,3",
+  "move->5,3"
+ ],
+ "logTruncated": false,
+ "totalLines": 21
+}

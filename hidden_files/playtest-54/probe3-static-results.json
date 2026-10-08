@@ -1,0 +1,74 @@
+{
+ "trial0": {
+  "lines": [],
+  "monsterMaxHp": 69,
+  "act1": "php=77 mhp=69 phase=call",
+  "act2": "php=34 mhp=69 phase=reveal",
+  "act3": "php=11 mhp=34 phase=reveal",
+  "act4": "php=11 mhp=1 phase=reveal",
+  "act5": "php=dead mhp=dead phase=-",
+  "playerEnd": "dead",
+  "outcome": "null",
+  "keyLines": [
+   "Crying in the dark — a voice you almost recognize's the attack hits you for 23.",
+   "Crying in the dark — a voice you almost recognize's Distress Call hits you for 22.",
+   "You don't move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It's a radio. It was always a radio.",
+   "Crying in the dark — a voice you almost recognize hits you for 21.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 23 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "Crying in the dark — a voice you almost recognize hits you for 23.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 22 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 25 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "The crying in the dark — a voice you almost recognize falls."
+  ]
+ },
+ "trial1": {
+  "lines": [],
+  "monsterMaxHp": 74,
+  "act1": "php=84 mhp=74 phase=call",
+  "act2": "php=45 mhp=74 phase=reveal",
+  "act3": "php=22 mhp=38 phase=reveal",
+  "act4": "php=dead mhp=dead phase=-",
+  "playerEnd": "dead",
+  "outcome": "null",
+  "keyLines": [
+   "Crying in the dark — a voice you almost recognize's the attack hits you for 16.",
+   "Crying in the dark — a voice you almost recognize's Distress Call hits you for 21.",
+   "You don't move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It's a radio. It was always a radio.",
+   "Crying in the dark — a voice you almost recognize hits you for 18.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 24 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "Crying in the dark — a voice you almost recognize hits you for 23.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 27 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "The crying in the dark — a voice you almost recognize falls."
+  ]
+ },
+ "trial2": {
+  "lines": [],
+  "monsterMaxHp": 89,
+  "act1": "php=84 mhp=89 phase=call",
+  "act2": "php=42 mhp=89 phase=reveal",
+  "act3": "php=24 mhp=50 phase=reveal",
+  "act4": "php=24 mhp=8 phase=reveal",
+  "act5": "php=dead mhp=dead phase=-",
+  "playerEnd": "dead",
+  "outcome": "null",
+  "keyLines": [
+   "Crying in the dark — a voice you almost recognize's the attack hits you for 16.",
+   "Crying in the dark — a voice you almost recognize's Distress Call hits you for 20.",
+   "You don't move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It's a radio. It was always a radio.",
+   "Crying in the dark — a voice you almost recognize hits you for 22.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 26 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "Crying in the dark — a voice you almost recognize hits you for 18.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 28 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "You STRIKE the crying in the dark — a voice you almost recognize for 24 (Fire-hardened spear).",
+   "The signal scrambles — exposed, it takes the hit badly.",
+   "The crying in the dark — a voice you almost recognize falls."
+  ]
+ }
+}

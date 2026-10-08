@@ -1,0 +1,47 @@
+{
+ "name": "flashbulb",
+ "verdict": null,
+ "setup": "🐞 SCENARIO: flashbulb moth. A dinner-plate moth, catching light wrong, four tiles east.",
+ "setupEx": null,
+ "played": "",
+ "notes": [],
+ "keywords": {
+  "flash": 1,
+  "wing": 4,
+  "fold": 1,
+  "dazzl": 0
+ },
+ "fighters": [],
+ "log": [
+  "📖 LEARNED: Herbal Medicine (Level 2). You know dosages, preparations, contraindications. This is real medicine, just old.",
+  "📖 Your old life taught you things. 1 skill from your past — check your Journal.",
+  "Nothing here looks like home. You know none of these plants. Learn fast.",
+  "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.",
+  "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.",
+  "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Omar Osei. Midwife. From Minneapolis, USA. That was yesterday. This is now. You have: Dead Phone, Hard Candy, Field suture kit, Knife roll, Contract Quill. That's everything you own in this world. Haven. Twelve people. The fire is lit. They found a deer this morning. Inside out. Not eaten — unmade. Like something was trying to understand how it worked. It didn't finish.",
+  "A woman, maybe 30s, with ink-stained fingers: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"",
+  "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+  "🐞 SCENARIO: flashbulb moth. A dinner-plate moth, catching light wrong, four tiles east.",
+  "Walk toward it.",
+  "It spirals closer, wings catching light that isn't there. It's interested in you. Specifically you.",
+  "🦋 It moves.",
+  "It lands. It folds its wings. The light in them is building.",
+  "You don't know what that was. a moth the size of a dinner plate, catching light wrong Someone at the haven should hear about this.",
+  "⚔ A MOTH THE SIZE OF A DINNER PLATE, CATCHING LIGHT WRONG! You're on your own.",
+  "Turn-based now. Tap a tile to move — speed is squares. Then act.",
+  "It lands on a branch at eye level — wings half-open, catching light that isn't there. Watching you watch it.",
+  "You STRIKE the moth the size of a dinner plate, catching light wrong for 31 (Fire-hardened spear).",
+  "The moth the size of a dinner plate, catching light wrong falls.",
+  "Mostly wing. Crunchy. Tastes like dust and regret. It's dead. The carcass is there on the ground — search the body if you want the meat. But you don't know this flesh. Clean it, test it cautiously, or ask someone who knows. And don't leave it long: meat rots where it lies.",
+  "You clutch your Dead Phone, Hard Candy, Field suture kit, Knife roll, Contract Quill. You're still here."
+ ],
+ "walkSteps": 7,
+ "turns": 1,
+ "fightEnded": true,
+ "fightResult": "no-fight",
+ "actions": [
+  "strike m_0(a moth the size of a dinner plate, catching light wrong) d=1"
+ ],
+ "logTruncated": false,
+ "totalLines": 21
+}

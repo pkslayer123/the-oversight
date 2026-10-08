@@ -1,0 +1,52 @@
+{
+ "name": "glasswing",
+ "verdict": null,
+ "setup": "🐞 SCENARIO: glasswing darter. A shadow moves wrong against the sun, three tiles east.",
+ "setupEx": null,
+ "played": "",
+ "notes": [],
+ "keywords": {
+  "shadow": 8,
+  "land": 0,
+  "ground": 5,
+  "dive": 0
+ },
+ "fighters": [],
+ "log": [
+  "📖 LEARNED: Debris Shelter (Level 2). The debris hut: ridgepole, ribs, 2 feet of leaves. Survived -40° in testing. Really.",
+  "📖 LEARNED: Reading Tracks (Level 2). Gait tells story: walking (alternating), running (grouped), injured (drag marks). Count toes, measure stride.",
+  "📖 LEARNED: Cordage (Level 2). Reverse-wrap technique makes rope strong enough to hold weight. Braid for more strength.",
+  "📖 Your old life taught you things. 3 skills from your past — check your Journal.",
+  "Nothing here looks like home. You know none of these plants. Learn fast.",
+  "📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.",
+  "📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.",
+  "You wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Fatima Weiss. Trail crew lead. From Minneapolis, USA. That was yesterday. This is now. You have: Lucky Coin, Dead Phone, Trail compass, Seed packet, Dispatcher's headset. That's everything you own in this world. Haven. Twelve people. The fire is lit. Last night, something walked past the treeline on two legs. Too tall. It stopped. It listened. Then it kept going. Nobody slept after that.",
+  "A man, maybe 40s, with tattooed arms: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"",
+  "📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.",
+  "🐞 SCENARIO: glasswing darter. A shadow moves wrong against the sun, three tiles east.",
+  "The air feels wrong. A high whine, circling — then nothing. Silence.",
+  "A shadow on the ground — faint. Something is falling.",
+  "A shadow on the ground — darker. Something is falling.",
+  "Something SLAMS into you from above! 21 damage. Wings thrash — it's GROUNDED.",
+  "A shadow moves wrong against the sun — circling. Something up there is looking down at you.",
+  "You don't know what that was. a shadow moving wrong against the sun Someone at the haven should hear about this.",
+  "⚔ A SHADOW MOVING WRONG AGAINST THE SUN! You're on your own.",
+  "Turn-based now. Tap a tile to move — speed is squares. Then act.",
+  "The darter thrashes on the dirt, wings tangled. NOW. While it's down. Kill it.",
+  "PATIENT AIM: first strike, doubled.",
+  "You STRIKE the shadow moving wrong against the sun for 62 (Fire-hardened spear).",
+  "Wings tangled — it takes the hit badly. (+50% while grounded)",
+  "The shadow moving wrong against the sun falls.",
+  "Dragonfly the size of a hawk. Gamey. The wings are like cellophane. It's dead. The carcass is there on the ground — search the body if you want the meat. But you don't know this flesh. Clean it, test it cautiously, or ask someone who knows. And don't leave it long: meat rots where it lies.",
+  "You clutch your Lucky Coin, Dead Phone, Trail compass, Seed packet, Dispatcher's headset. You're still here."
+ ],
+ "walkSteps": 3,
+ "turns": 1,
+ "fightEnded": true,
+ "fightResult": "no-fight",
+ "actions": [
+  "strike m_0(a shadow moving wrong against the sun) d=0"
+ ],
+ "logTruncated": false,
+ "totalLines": 26
+}

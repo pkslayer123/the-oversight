@@ -1,0 +1,12 @@
+{
+ "startDist": 2,
+ "act1": "php=100 mhp=45 dist=2",
+ "act2": "php=100 mhp=38 dist=2",
+ "act3": "php=100 mhp=30 dist=2",
+ "act4": "php=100 mhp=29 dist=2",
+ "act5": "php=100 mhp=24 dist=2",
+ "act6": "php=100 mhp=18 dist=2",
+ "act7": "php=100 mhp=10 dist=2",
+ "act8": "php=100 mhp=5 dist=2",
+ "error": "TypeError: Cannot read properties of null (reading 'mx')|    at main (/home/hatch/workspace/the-scattering/hidden_files/playtest-54/probe4-turtle.js:43:116)"
+}

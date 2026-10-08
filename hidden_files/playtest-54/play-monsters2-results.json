@@ -1,0 +1,1872 @@
+{
+ "scenarios": {
+  "reviewdrone": {
+   "name": "reviewdrone",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a hovering clipboard, projecting light onto the ground@(5,4) hp101/101 {\"beamPhase\":\"stalk\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "telegraph-dump:{\"kind\":\"line\",\"cells\":[{\"cx\":4,\"cy\":4},{\"cx\":3,\"cy\":4},{\"cx\":2,\"cy\":4},{\"cx\":1,\"cy\":4},{\"cx\":0,\"cy\":4}],\"dmg\":[18,28],\"attackName\":\"the attack\",\"pattern\":{\"type\":\"beam\",\"length\":6,\"width\":1,\"windup\":3},\"turnsLeft\":3,\"threatenedPlayer\":true,\"cueText\":\"\\\"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGE",
+      "dodge→moved→(3,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "📊 \"TWO.\" DODGE EFFICIENCY: 41%. The projected line brightens."
+     ]
+    },
+    {
+     "act": 3,
+     "round": 4,
+     "tl": [
+      "telegraph-dump:{\"kind\":\"line\",\"cells\":[{\"cx\":4,\"cy\":4},{\"cx\":3,\"cy\":4},{\"cx\":2,\"cy\":4},{\"cx\":1,\"cy\":4},{\"cx\":0,\"cy\":4}],\"dmg\":[18,28],\"attackName\":\"the attack\",\"pattern\":{\"type\":\"beam\",\"length\":6,\"width\":1,\"windup\":3},\"turnsLeft\":2,\"threatenedPlayer\":true,\"cueText\":\"\\\"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGE",
+      "dodge→moved→(3,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "📊 \"ONE.\" DODGE EFFICIENCY: 41%. The projected line brightens."
+     ]
+    },
+    {
+     "act": 4,
+     "round": 5,
+     "tl": [
+      "telegraph-dump:{\"kind\":\"line\",\"cells\":[{\"cx\":4,\"cy\":4},{\"cx\":3,\"cy\":4},{\"cx\":2,\"cy\":4},{\"cx\":1,\"cy\":4},{\"cx\":0,\"cy\":4}],\"dmg\":[18,28],\"attackName\":\"the attack\",\"pattern\":{\"type\":\"beam\",\"length\":6,\"width\":1,\"windup\":3},\"turnsLeft\":1,\"threatenedPlayer\":true,\"cueText\":\"\\\"DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGE",
+      "dodge→moved→(3,4)"
+     ],
+     "php": "79/100",
+     "mhp": "m_0:79",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "💥 The light hits!",
+      "The attack hits you for 21.",
+      "📊 DODGE EFFICIENCY: 29% — HIT TAKEN. LOGGED. BELOW TARGET. CORRECTIVE ACTION SCHEDULED.",
+      "📖 Codex: Scored Assessment — fires in a straight line from itself. You won't forget this.",
+      "The drone hovers, re-running the numbers. \"RECALIBRATING METRICS.\""
+     ]
+    },
+    {
+     "act": 5,
+     "round": 6,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "79/100",
+     "mhp": "m_0:54",
+     "lines": [
+      "(hovering clipboard, projecting light onto the ground's hide absorbs 6.)",
+      "You STRIKE the hovering clipboard, projecting light onto the ground for 25 (Fire-hardened spear).",
+      "\"RECALIBRATION COMPLETE. RESUMING EVALUATION.\""
+     ]
+    },
+    {
+     "act": 6,
+     "round": 7,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "79/100",
+     "mhp": "m_0:30",
+     "lines": [
+      "(hovering clipboard, projecting light onto the ground's hide absorbs 6.)",
+      "You STRIKE the hovering clipboard, projecting light onto the ground for 24 (Fire-hardened spear).",
+      "\"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE...\" The projector draws a burning line across the dirt."
+     ]
+    },
+    {
+     "act": 7,
+     "round": 8,
+     "tl": [
+      "telegraph-dump:{\"kind\":\"line\",\"cells\":[{\"cx\":4,\"cy\":4},{\"cx\":3,\"cy\":4},{\"cx\":2,\"cy\":4},{\"cx\":1,\"cy\":4},{\"cx\":0,\"cy\":4}],\"dmg\":[18,28],\"attackName\":\"Scored Assessment\",\"pattern\":{\"type\":\"beam\",\"length\":6,\"width\":1,\"windup\":3},\"turnsLeft\":3,\"threatenedPlayer\":true,\"cueText\":\"\\\"DODGE EFFICIENCY CURRENTLY AT 41%. BELO",
+      "dodge→moved→(3,4)"
+     ],
+     "php": "79/100",
+     "mhp": "m_0:30",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "📊 \"TWO.\" DODGE EFFICIENCY: 29%. The projected line brightens."
+     ]
+    },
+    {
+     "act": 8,
+     "round": 9,
+     "tl": [
+      "telegraph-dump:{\"kind\":\"line\",\"cells\":[{\"cx\":4,\"cy\":4},{\"cx\":3,\"cy\":4},{\"cx\":2,\"cy\":4},{\"cx\":1,\"cy\":4},{\"cx\":0,\"cy\":4}],\"dmg\":[18,28],\"attackName\":\"Scored Assessment\",\"pattern\":{\"type\":\"beam\",\"length\":6,\"width\":1,\"windup\":3},\"turnsLeft\":2,\"threatenedPlayer\":true,\"cueText\":\"\\\"DODGE EFFICIENCY CURRENTLY AT 41%. BELO",
+      "dodge→moved→(3,4)"
+     ],
+     "php": "79/100",
+     "mhp": "m_0:30",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "📊 \"ONE.\" DODGE EFFICIENCY: 29%. The projected line brightens."
+     ]
+    },
+    {
+     "act": 9,
+     "round": 10,
+     "tl": [
+      "telegraph-dump:{\"kind\":\"line\",\"cells\":[{\"cx\":4,\"cy\":4},{\"cx\":3,\"cy\":4},{\"cx\":2,\"cy\":4},{\"cx\":1,\"cy\":4},{\"cx\":0,\"cy\":4}],\"dmg\":[18,28],\"attackName\":\"Scored Assessment\",\"pattern\":{\"type\":\"beam\",\"length\":6,\"width\":1,\"windup\":3},\"turnsLeft\":1,\"threatenedPlayer\":true,\"cueText\":\"\\\"DODGE EFFICIENCY CURRENTLY AT 41%. BELO",
+      "dodge→moved→(3,4)"
+     ],
+     "php": "52/100",
+     "mhp": "m_0:30",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "💥 Scored Assessment!",
+      "The Scored Assessment hits you for 27.",
+      "📊 DODGE EFFICIENCY: 17% — HIT TAKEN. LOGGED. BELOW TARGET. CORRECTIVE ACTION SCHEDULED.",
+      "The drone hovers, re-running the numbers. \"RECALIBRATING METRICS.\""
+     ]
+    },
+    {
+     "act": 10,
+     "round": 11,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "52/100",
+     "mhp": "m_0:6",
+     "lines": [
+      "(hovering clipboard, projecting light onto the ground's hide absorbs 6.)",
+      "You STRIKE the hovering clipboard, projecting light onto the ground for 24 (Fire-hardened spear).",
+      "\"RECALIBRATION COMPLETE. RESUMING EVALUATION.\""
+     ]
+    },
+    {
+     "act": 11,
+     "round": -1,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "(hovering clipboard, projecting light onto the ground's hide absorbs 6.)",
+      "You STRIKE the hovering clipboard, projecting light onto the ground for 19 (Fire-hardened spear).",
+      "The hovering clipboard, projecting light onto the ground falls.",
+      "It is a drone. Do not eat the drone.",
+      "✨ ALIEN LOOT: Gravity hook. Pulls things toward you. Including, occasionally, things you did not aim at. Pack accordingly. It's on the body — search it.",
+      "You clutch your Mixtape, Dead Phone, Carpenter's square, Trail compass, Spare Socks. You're still here."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Engines (Level 2). Diesel: compression ignition, glow plugs, and why bad fuel kills injectors.\n📖 LEARNED: Repair & Mending (Level 2). Splint, splice, and bind — a repair doesn't have to be pretty, it has to hold. The right lashing beats the wrong nail.\n📖 Your old life taught you things. 2 skills from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Victor Cohen. Mechanic. From Minneapolis, USA. That was yesterday. This is now. You have: Mixtape, Dead Phone, Carpenter's square, Trail compass, Spare Socks. That's everything you own in this world. Haven. Twelve people. The fire is lit. They found a deer this morning. Inside out. Not eaten — unmade. Like something was trying to understand how it worked. It didn't finish.\nA woman, maybe 40s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: performance review drone. It is already evaluating you, three tiles east.",
+   "mid": "review_drone",
+   "combatIntro": "\"SUBJECT DETECTED. COMMENCING BASELINE EVALUATION.\" A drone hovers, projecting a grid over the ground. It is taking notes. On you.\nYou don't know what that was. a hovering clipboard, projecting light onto the ground Someone at the haven should hear about this.\n⚔ A HOVERING CLIPBOARD, PROJECTING LIGHT ONTO THE GROUND! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.",
+   "playerActs": 11,
+   "advances": 0,
+   "struck": 5,
+   "fightersEnd": "null",
+   "sayTail": "📊 DODGE EFFICIENCY: 29% — HIT TAKEN. LOGGED. BELOW TARGET. CORRECTIVE ACTION SCHEDULED.\n📖 Codex: Scored Assessment — fires in a straight line from itself. You won't forget this.\nThe drone hovers, re-running the numbers. \"RECALIBRATING METRICS.\"\n(hovering clipboard, projecting light onto the ground's hide absorbs 6.)\nYou STRIKE the hovering clipboard, projecting light onto the ground for 25 (Fire-hardened spear).\n\"RECALIBRATION COMPLETE. RESUMING EVALUATION.\"\n(hovering clipboard, projecting light onto the ground's hide absorbs 6.)\nYou STRIKE the hovering clipboard, projecting light onto the ground for 24 (Fire-hardened spear).\n\"SUBJECT LOCKED. COMMENCING CORRECTIVE ACTION IN THREE...\" The projector draws a burning line across the dirt.\nNo path there.\nYou hold still, watching.\n📊 \"TWO.\" DODGE EFFICIENCY: 29%. The projected line brightens.\nNo path there.\nYou hold still, watching.\n📊 \"ONE.\" DODGE EFFICIENCY: 29%. The projected line brightens.\nNo path there.\nYou hold still, watching.\n💥 Scored Assessment!\nThe Scored Assessment hits you for 27.\n📊 DODGE EFFICIENCY: 17% — HIT TAKEN. LOGGED. BELOW TARGET. CORRECTIVE ACTION SCHEDULED.\nThe drone hovers, re-running the numbers. \"RECALIBRATING METRICS.\"\n(hovering clipboard, projecting light onto the ground's hide absorbs 6.)\nYou STRIKE the hovering clipboard, projecting light onto the ground for 24 (Fire-hardened spear).\n\"RECALIBRATION COMPLETE. RESUMING EVALUATION.\"\n(hovering clipboard, projecting light onto the ground's hide absorbs 6.)\nYou STRIKE the hovering clipboard, projecting light onto the ground for 19 (Fire-hardened spear).\nThe hovering clipboard, projecting light onto the ground falls.\nIt is a drone. Do not eat the drone.\n✨ ALIEN LOOT: Gravity hook. Pulls things toward you. Including, occasionally, things you did not aim at. Pack accordingly. It's on the body — search it.\nYou clutch your Mixtape, Dead Phone, Carpenter's square, Trail compass, Spare Socks. You're still here.",
+   "threw": 0
+  },
+  "influencer": {
+   "name": "influencer",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a single eye in the dark. it has been watching for a while.@(5,4) hp83/83 {\"beamPhase\":\"candid\",\"telegraph\":\"\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "86/100",
+     "mhp": "m_0:55",
+     "lines": [
+      "📖 Codex: Flash Photography — hits everything close around it. You won't forget this.",
+      "\"Say cheese.\" The lens steadies. (Flash incoming — freeze 1 turn. Prediction 2/4.)",
+      "You're frozen — you can't move. (stunned)"
+     ]
+    },
+    {
+     "act": 2,
+     "round": 4,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "53/100",
+     "mhp": "m_0:25",
+     "lines": [
+      "You STRIKE the single eye in the dark. it has been watching for a while. for 30 (Fire-hardened spear).",
+      "💥 Flash Photography!",
+      "The Flash Photography hits you for 16.",
+      "FLASH. The world goes white — you're frozen mid-step. (Prediction 2/4 — it learns your dodge.)",
+      "\"Hold still. Hold— STILL.\" The lens is tracking you now. (It is learning your dodge.)",
+      "\"Hold still. Yes. Just like that.\" Standing still makes it learn you FASTER. (Prediction climbing double.)",
+      "\"WIDENING THE SHOT.\" The flash covers more ground.",
+      "\"Say cheese.\" The lens steadies. (Flash incoming — freeze 1 turn. Prediction 4/4.)",
+      "You're frozen — you can't move. (stunned)",
+      "💥 Flash Photography!",
+      "The Flash Photography hits you for 17.",
+      "FLASH. The world goes white — you're frozen mid-step. (Prediction 4/4 — it learns your dodge.)",
+      "\"GOT IT. The money shot.\" It knows exactly where you'll go. (PREDICTION 4: the flash is now UNBLOCKABLE — break line of sight.)",
+      "The shutter doesn't even bother aiming. It knows. (UNAVOIDABLE flash — break line of sight or eat it.)",
+      "You're frozen — you can't move. (stunned)"
+     ]
+    },
+    {
+     "act": 3,
+     "round": -1,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "You STRIKE the single eye in the dark. it has been watching for a while. for 28 (Fire-hardened spear).",
+      "The single eye in the dark. it has been watching for a while. falls.",
+      "It is mostly lens. Glass is not food.",
+      "You clutch your Dead Phone, Photo Album, Trail compass, Field suture kit, Search locket. You're still here."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Reading Weather (Level 1). Red sky at night, shepherd's delight. Red sky at morning, shepherd's warning. It works.\n📖 LEARNED: Star Navigation (Level 1). North Star is constant. Find the Big Dipper, follow the pointer stars. You always know north.\n📖 LEARNED: Managing Fear (Level 1). Fear is data, not orders. Acknowledge it, then decide anyway. Courage is fear that kept going.\n📖 LEARNED: Radios & Signals (Level 1). Continuity, batteries, and solder. Most dead electronics are just broken connections.\n📖 Your old life taught you things. 4 skills from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Talia Mendez. Bush pilot. From Minneapolis, USA. That was yesterday. This is now. You have: Dead Phone, Photo album, Trail compass, Field suture kit, Search locket. That's everything you own in this world. Haven. Twelve people. The fire is lit. Last night, something walked past the treeline on two legs. Too tall. It stopped. It listened. Then it kept going. Nobody slept after that.\nA person, maybe 60s: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: paparazzo. Flashbulbs, three tiles east. They want content. You are content.",
+   "mid": "paparazzo",
+   "combatIntro": "You don't know what that was. a single eye in the dark. it has been watching for a while. Someone at the haven should hear about this.\n⚔ A SINGLE EYE IN THE DARK. IT HAS BEEN WATCHING FOR A WHILE.! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.\nThe lens steadies. You hear the shutter think about it.",
+   "playerActs": 3,
+   "advances": 0,
+   "struck": 3,
+   "fightersEnd": "null",
+   "sayTail": "You STRIKE the single eye in the dark. it has been watching for a while. for 28 (Fire-hardened spear).\n💥 It erupts!\nThe attack hits you for 14.\nFLASH. The world goes white — you're frozen mid-step. (Prediction 1/4 — it learns your dodge.)\n📖 Codex: Flash Photography — hits everything close around it. You won't forget this.\n\"Say cheese.\" The lens steadies. (Flash incoming — freeze 1 turn. Prediction 2/4.)\nYou're frozen — you can't move. (stunned)\nYou STRIKE the single eye in the dark. it has been watching for a while. for 30 (Fire-hardened spear).\n💥 Flash Photography!\nThe Flash Photography hits you for 16.\nFLASH. The world goes white — you're frozen mid-step. (Prediction 2/4 — it learns your dodge.)\n\"Hold still. Hold— STILL.\" The lens is tracking you now. (It is learning your dodge.)\n\"Hold still. Yes. Just like that.\" Standing still makes it learn you FASTER. (Prediction climbing double.)\n\"WIDENING THE SHOT.\" The flash covers more ground.\n\"Say cheese.\" The lens steadies. (Flash incoming — freeze 1 turn. Prediction 4/4.)\nYou're frozen — you can't move. (stunned)\n💥 Flash Photography!\nThe Flash Photography hits you for 17.\nFLASH. The world goes white — you're frozen mid-step. (Prediction 4/4 — it learns your dodge.)\n\"GOT IT. The money shot.\" It knows exactly where you'll go. (PREDICTION 4: the flash is now UNBLOCKABLE — break line of sight.)\nThe shutter doesn't even bother aiming. It knows. (UNAVOIDABLE flash — break line of sight or eat it.)\nYou're frozen — you can't move. (stunned)\nYou STRIKE the single eye in the dark. it has been watching for a while. for 28 (Fire-hardened spear).\nThe single eye in the dark. it has been watching for a while. falls.\nIt is mostly lens. Glass is not food.\nYou clutch your Dead Phone, Photo Album, Trail compass, Field suture kit, Search locket. You're still here.",
+   "threw": 0
+  },
+  "customerservice": {
+   "name": "customerservice",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a blank shape at the tree line, watching. learning.@(5,4) hp118/118 {\"beamPhase\":\"watching\",\"usWatchTurns\":1}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:91",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:61",
+     "lines": [
+      "You STRIKE the blank shape at the tree line, watching. learning. for 30 (Fire-hardened spear).",
+      "It is doing the thing you do before you do it. Badly. But recognizably. (It copies at 50% — it learns fast.)"
+     ]
+    },
+    {
+     "act": 3,
+     "round": 4,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:30",
+     "lines": [
+      "You STRIKE the blank shape at the tree line, watching. learning. for 31 (Fire-hardened spear).",
+      "It stands the way you stand. Moves the way you move. \"I've got it now.\" Your Fire-hardened spear — it has seen that one 3 times. It knows where it lands. (OPENING STEAL: your next Fire-hardened spear strike is anticipated — switch weapons.)"
+     ]
+    },
+    {
+     "act": 4,
+     "round": 5,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "44/100",
+     "mhp": "m_0:15",
+     "lines": [
+      "You STRIKE the blank shape at the tree line, watching. learning. for 30 (Fire-hardened spear).",
+      "It knew that one was coming — it was already gone. Your Fire-hardened spear glances off its guard. (OPENING STEAL: anticipated — half damage. Switch weapons.)",
+      "It answers with YOUR Fire-hardened spear.",
+      "Blank shape at the tree line, watching. learning.'s stolen Fire-hardened spear hits you for 27.",
+      "💥 a blank shape at the tree line, watching. learning.'s the attack finds you — no dodging it.",
+      "A blank shape at the tree line, watching. learning.'s the attack hits you for 29.",
+      "📖 Codex: Your Move — locks onto one target — moving won't dodge it. You won't forget this.",
+      "\"No no no—\" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (DESPERATE IMPROV: it chains everything it learned — two of your moves, badly, frantically.)"
+     ]
+    },
+    {
+     "act": 5,
+     "round": -1,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "You STRIKE the blank shape at the tree line, watching. learning. for 30 (Fire-hardened spear).",
+      "The blank shape at the tree line, watching. learning. falls.",
+      "It tastes like nothing. Like a rehearsal.",
+      "You clutch your Dog Tags, Photo Album, Knife roll, Coat button, Trail compass. You're still here."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Animal Behavior (Level 2). Predators test: they approach, watch, decide. Prey freezes or bolts. Learn which you're looking at.\n📖 Your old life taught you things. 1 skill from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Nora Baker. Rancher. From Minneapolis, USA. That was yesterday. This is now. You have: Dog tags, Photo album, Knife roll, Coat button, Trail compass. That's everything you own in this world. Haven. Twelve people. The fire is lit. You heard it in the dark. Breathing. Not yours. It knew your name — it said it wrong, like it learned the shape of the sound but not what it meant.\nA man, maybe 40s, with a limp: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: understudy. It has been watching how you fight. Three tiles east. It is learning.",
+   "mid": "understudy",
+   "combatIntro": "You don't know what that was. a blank shape at the tree line, watching. learning. Someone at the haven should hear about this.\n⚔ A BLANK SHAPE AT THE TREE LINE, WATCHING. LEARNING.! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.\nA blank shape at the tree line, watching. Learning.",
+   "playerActs": 5,
+   "advances": 0,
+   "struck": 5,
+   "fightersEnd": "null",
+   "sayTail": "You STRIKE the blank shape at the tree line, watching. learning. for 27 (Fire-hardened spear).\nYou STRIKE the blank shape at the tree line, watching. learning. for 30 (Fire-hardened spear).\nIt is doing the thing you do before you do it. Badly. But recognizably. (It copies at 50% — it learns fast.)\nYou STRIKE the blank shape at the tree line, watching. learning. for 31 (Fire-hardened spear).\nIt stands the way you stand. Moves the way you move. \"I've got it now.\" Your Fire-hardened spear — it has seen that one 3 times. It knows where it lands. (OPENING STEAL: your next Fire-hardened spear strike is anticipated — switch weapons.)\nYou STRIKE the blank shape at the tree line, watching. learning. for 30 (Fire-hardened spear).\nIt knew that one was coming — it was already gone. Your Fire-hardened spear glances off its guard. (OPENING STEAL: anticipated — half damage. Switch weapons.)\nIt answers with YOUR Fire-hardened spear.\nBlank shape at the tree line, watching. learning.'s stolen Fire-hardened spear hits you for 27.\n💥 a blank shape at the tree line, watching. learning.'s the attack finds you — no dodging it.\nA blank shape at the tree line, watching. learning.'s the attack hits you for 29.\n📖 Codex: Your Move — locks onto one target — moving won't dodge it. You won't forget this.\n\"No no no—\" It stumbles, the copy breaking. Then it comes at you with ALL of it at once. (DESPERATE IMPROV: it chains everything it learned — two of your moves, badly, frantically.)\nYou STRIKE the blank shape at the tree line, watching. learning. for 30 (Fire-hardened spear).\nThe blank shape at the tree line, watching. learning. falls.\nIt tastes like nothing. Like a rehearsal.\nYou clutch your Dog Tags, Photo Album, Knife roll, Coat button, Trail compass. You're still here.",
+   "threw": 0
+  },
+  "inspiration": {
+   "name": "inspiration",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a light in the dark that wasn't there yesterday@(5,4) hp63/63 {\"beamPhase\":\"stalk\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:55",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "telegraph-seen→moved→(3,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:55",
+     "lines": [
+      "You hold still, watching.",
+      "The glow intensifies — the air tastes like copper. Brighter."
+     ]
+    },
+    {
+     "act": 3,
+     "round": 4,
+     "tl": [
+      "telegraph-seen→moved→(2,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:55",
+     "lines": [
+      "You hold still, watching.",
+      "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+      "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+      "Where the light struck, the ground is cratered and black.",
+      "💥 It erupts!",
+      "You're not where it landed. Clean dodge.",
+      "📖 Codex: Eureka — hits everything close around it. You won't forget this."
+     ]
+    },
+    {
+     "act": 4,
+     "round": 5,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:55",
+     "lines": [
+      "You hold still, watching.",
+      "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. For now.",
+      "The ember flickers, dim. It can't brighten yet."
+     ]
+    },
+    {
+     "act": 5,
+     "round": 6,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:48",
+     "lines": [
+      "(light in the dark that wasn't there yesterday resists physical — 28 → 7.)",
+      "You STRIKE the light in the dark that wasn't there yesterday for 7 (Fire-hardened spear).",
+      "The ember steadies. Somewhere inside the glass, an idea is forming again."
+     ]
+    },
+    {
+     "act": 6,
+     "round": 7,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "(light in the dark that wasn't there yesterday resists physical — 28 → 7.)",
+      "You STRIKE the light in the dark that wasn't there yesterday for 7 (Fire-hardened spear)."
+     ]
+    },
+    {
+     "act": 7,
+     "round": 8,
+     "tl": [
+      "telegraph-seen→moved→(2,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The glow intensifies — the air tastes like copper. Brighter."
+     ]
+    },
+    {
+     "act": 8,
+     "round": 9,
+     "tl": [
+      "telegraph-seen→moved→(1,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+      "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+      "Where the light struck, the ground is cratered and black.",
+      "💥 Eureka!",
+      "You're not where it landed. Clean dodge."
+     ]
+    },
+    {
+     "act": 9,
+     "round": 10,
+     "tl": [
+      "moved→(2,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.",
+      "The ember steadies. Somewhere inside the glass, an idea is forming again."
+     ]
+    },
+    {
+     "act": 10,
+     "round": 11,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 11,
+     "round": 12,
+     "tl": [
+      "telegraph-seen→moved→(2,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The glow intensifies — the air tastes like copper. Brighter."
+     ]
+    },
+    {
+     "act": 12,
+     "round": 13,
+     "tl": [
+      "telegraph-seen→moved→(1,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+      "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+      "Where the light struck, the ground is cratered and black.",
+      "💥 Eureka!",
+      "You're not where it landed. Clean dodge."
+     ]
+    },
+    {
+     "act": 13,
+     "round": 14,
+     "tl": [
+      "moved→(2,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.",
+      "The ember steadies. Somewhere inside the glass, an idea is forming again."
+     ]
+    },
+    {
+     "act": 14,
+     "round": 15,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 15,
+     "round": 16,
+     "tl": [
+      "telegraph-seen→moved→(2,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The glow intensifies — the air tastes like copper. Brighter."
+     ]
+    },
+    {
+     "act": 16,
+     "round": 17,
+     "tl": [
+      "telegraph-seen→moved→(1,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+      "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+      "Where the light struck, the ground is cratered and black.",
+      "💥 Eureka!",
+      "You're not where it landed. Clean dodge."
+     ]
+    },
+    {
+     "act": 17,
+     "round": 18,
+     "tl": [
+      "moved→(2,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.",
+      "The ember steadies. Somewhere inside the glass, an idea is forming again."
+     ]
+    },
+    {
+     "act": 18,
+     "round": 19,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 19,
+     "round": 20,
+     "tl": [
+      "telegraph-seen→moved→(2,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The glow intensifies — the air tastes like copper. Brighter."
+     ]
+    },
+    {
+     "act": 20,
+     "round": 21,
+     "tl": [
+      "telegraph-seen→moved→(1,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+      "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+      "Where the light struck, the ground is cratered and black.",
+      "💥 Eureka!",
+      "You're not where it landed. Clean dodge."
+     ]
+    },
+    {
+     "act": 21,
+     "round": 22,
+     "tl": [
+      "moved→(2,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.",
+      "The ember steadies. Somewhere inside the glass, an idea is forming again."
+     ]
+    },
+    {
+     "act": 22,
+     "round": 23,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 23,
+     "round": 24,
+     "tl": [
+      "telegraph-seen→moved→(2,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The glow intensifies — the air tastes like copper. Brighter."
+     ]
+    },
+    {
+     "act": 24,
+     "round": 25,
+     "tl": [
+      "telegraph-seen→moved→(1,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+      "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+      "Where the light struck, the ground is cratered and black.",
+      "💥 Eureka!",
+      "You're not where it landed. Clean dodge."
+     ]
+    },
+    {
+     "act": 25,
+     "round": 26,
+     "tl": [
+      "moved→(2,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.",
+      "The ember steadies. Somewhere inside the glass, an idea is forming again."
+     ]
+    },
+    {
+     "act": 26,
+     "round": 27,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 27,
+     "round": 28,
+     "tl": [
+      "telegraph-seen→moved→(2,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The glow intensifies — the air tastes like copper. Brighter."
+     ]
+    },
+    {
+     "act": 28,
+     "round": 29,
+     "tl": [
+      "telegraph-seen→moved→(1,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "BRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.",
+      "WHITE. The idea detonates — light with teeth. Then the long gutter down.",
+      "Where the light struck, the ground is cratered and black.",
+      "💥 Eureka!",
+      "You're not where it landed. Clean dodge."
+     ]
+    },
+    {
+     "act": 29,
+     "round": 30,
+     "tl": [
+      "moved→(2,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching.",
+      "The light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.",
+      "The ember steadies. Somewhere inside the glass, an idea is forming again."
+     ]
+    },
+    {
+     "act": 30,
+     "round": 31,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:41",
+     "lines": [
+      "You hold still, watching."
+     ]
+    }
+   ],
+   "outcome": "NOT-OVER (round 31)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Wound Care (Level 2). Honey is antibacterial. Sugar packs wounds. Yarrow stops bleeding. The old ways work.\n📖 LEARNED: Anatomy (Level 2). Pressure points: brachial, femoral, carotid. You can stop bleeding or drop someone with a thumb.\n📖 LEARNED: Calming Panic (Level 2). You can talk someone down from a full panic attack. Voice low, steady, certain. You are the calm.\n📖 LEARNED: Managing Fear (Level 2). You can function through terror. Your hands shake but they work. This is a trained skill.\n📖 Your old life taught you things. 4 skills from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Amara Reyes. Paramedic. From Minneapolis, USA. That was yesterday. This is now. You have: Brass Locket, Dead Phone, Field suture kit, Home key, Seed packet. That's everything you own in this world. Haven. Twelve people. The fire is lit. Last night, something walked past the treeline on two legs. Too tall. It stopped. It listened. Then it kept going. Nobody slept after that.\nA man, maybe 20s: \"Don't bother picking around the tents. Walk out. The land feeds people who go looking.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: inspiration. A bright idea, three tiles east. It will not leave you alone.",
+   "mid": "bright_idea",
+   "combatIntro": "You don't know what that was. a light in the dark that wasn't there yesterday Someone at the haven should hear about this.\n⚔ A LIGHT IN THE DARK THAT WASN'T THERE YESTERDAY! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.",
+   "playerActs": 30,
+   "advances": 0,
+   "struck": 3,
+   "fightersEnd": "p:You@(3,4) hp100/100 {}\n    m_0:a light in the dark that wasn't there yesterday@(5,4) hp41/63 {\"beamPhase\":\"brighten\",\"telegraph\":\"\"}",
+   "sayTail": "💥 Eureka!\nYou're not where it landed. Clean dodge.\nYou hold still, watching.\nThe light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.\nThe ember steadies. Somewhere inside the glass, an idea is forming again.\nYou hold still, watching.\nYou hold still, watching.\nThe glow intensifies — the air tastes like copper. Brighter.\nYou hold still, watching.\nBRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.\nWHITE. The idea detonates — light with teeth. Then the long gutter down.\nWhere the light struck, the ground is cratered and black.\n💥 Eureka!\nYou're not where it landed. Clean dodge.\nYou hold still, watching.\nThe light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.\nThe ember steadies. Somewhere inside the glass, an idea is forming again.\nYou hold still, watching.\nYou hold still, watching.\nThe glow intensifies — the air tastes like copper. Brighter.\nYou hold still, watching.\nBRIGHTER. The light is wrong now, too bright to look at. It's about to break loose.\nWHITE. The idea detonates — light with teeth. Then the long gutter down.\nWhere the light struck, the ground is cratered and black.\n💥 Eureka!\nYou're not where it landed. Clean dodge.\nYou hold still, watching.\nThe light gutters down to a dying ember. It's spent — dim, flickering, harmless. But it guttered faster this time. It's learning how to come back.\nThe ember steadies. Somewhere inside the glass, an idea is forming again.\nYou hold still, watching.",
+   "threw": 0
+  },
+  "speedbump": {
+   "name": "speedbump",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a boulder with opinions about where you're walking@(5,4) hp53/53 {\"beamPhase\":\"rock\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "70/100",
+     "mhp": "m_0:46",
+     "lines": [
+      "💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.",
+      "A boulder with opinions about where you're walking hits you for 30.",
+      "📖 Codex: Snap Decision — strikes without warning when you get close. You won't forget this."
+     ]
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "42/100",
+     "mhp": "m_0:40",
+     "lines": [
+      "(boulder with opinions about where you're walking's hide absorbs 15.)",
+      "(boulder with opinions about where you're walking resists physical — 12 → 6.)",
+      "You STRIKE the boulder with opinions about where you're walking for 6 (Fire-hardened spear).",
+      "💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.",
+      "A boulder with opinions about where you're walking hits you for 28."
+     ]
+    },
+    {
+     "act": 3,
+     "round": 4,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "15/100",
+     "mhp": "m_0:32",
+     "lines": [
+      "(boulder with opinions about where you're walking's hide absorbs 15.)",
+      "(boulder with opinions about where you're walking resists physical — 16 → 8.)",
+      "You STRIKE the boulder with opinions about where you're walking for 8 (Fire-hardened spear).",
+      "💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.",
+      "A boulder with opinions about where you're walking hits you for 27."
+     ]
+    },
+    {
+     "act": 4,
+     "round": -1,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "(boulder with opinions about where you're walking's hide absorbs 15.)",
+      "(boulder with opinions about where you're walking resists physical — 10 → 5.)",
+      "You STRIKE the boulder with opinions about where you're walking for 5 (Fire-hardened spear).",
+      "💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.",
+      "A boulder with opinions about where you're walking hits you for 26.",
+      "You go down.",
+      "🕯️ Wren Dubois is dead — combat. The village stops. Somebody screams. Somebody else starts digging.",
+      "Jae picks up the journal. Their hands shake. Then they open it, and keep writing.",
+      "🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"",
+      "📖 The Codex turns a page: Wren Dubois, 1 days. The mantle passes to Jae Morozov."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "You escape. The thicket keeps its secrets.\n📖 LEARNED: Reading People (Level 1). Microexpressions leak truth. Watch the eyes, not the mouth. People tell you who they are.\n📖 LEARNED: Calming Panic (Level 1). Ground them: 5 things you see, 4 you hear, 3 you touch. Breathe with them. Slow is fast.\n📖 LEARNED: Mediation (Level 1). Let each side talk without interruption. Repeat back what you heard. People de-escalate when heard.\n📖 LEARNED: Keeping Morale (Level 1). People need small wins. Celebrate the little things. Despair is the real killer.\n📖 Your old life taught you things. 4 skills from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Wren Dubois. Esl teacher. From Minneapolis, USA. That was yesterday. This is now. You have: Wedding ring, Dispatcher's headset, Seed packet, Trail compass, Dad's Thermos. That's everything you own in this world. Haven. Twelve people. The fire is lit. Last night, something walked past the treeline on two legs. Too tall. It stopped. It listened. Then it kept going. Nobody slept after that.\nA woman, maybe 30s, with ink-stained fingers: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: speedbump turtle. Midday sun on its shell. It is crossing your path at its own ancient pace.",
+   "mid": "speedbump_turtle",
+   "combatIntro": "You don't know what that was. a boulder with opinions about where you're walking Someone at the haven should hear about this.\n⚔ A BOULDER WITH OPINIONS ABOUT WHERE YOU'RE WALKING! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.",
+   "playerActs": 4,
+   "advances": 0,
+   "struck": 4,
+   "fightersEnd": "null",
+   "sayTail": "(boulder with opinions about where you're walking's hide absorbs 15.)\n(boulder with opinions about where you're walking resists physical — 13 → 7.)\nYou STRIKE the boulder with opinions about where you're walking for 7 (Fire-hardened spear).\n💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.\nA boulder with opinions about where you're walking hits you for 30.\n📖 Codex: Snap Decision — strikes without warning when you get close. You won't forget this.\n(boulder with opinions about where you're walking's hide absorbs 15.)\n(boulder with opinions about where you're walking resists physical — 12 → 6.)\nYou STRIKE the boulder with opinions about where you're walking for 6 (Fire-hardened spear).\n💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.\nA boulder with opinions about where you're walking hits you for 28.\n(boulder with opinions about where you're walking's hide absorbs 15.)\n(boulder with opinions about where you're walking resists physical — 16 → 8.)\nYou STRIKE the boulder with opinions about where you're walking for 8 (Fire-hardened spear).\n💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.\nA boulder with opinions about where you're walking hits you for 27.\n(boulder with opinions about where you're walking's hide absorbs 15.)\n(boulder with opinions about where you're walking resists physical — 10 → 5.)\nYou STRIKE the boulder with opinions about where you're walking for 5 (Fire-hardened spear).\n💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.\nA boulder with opinions about where you're walking hits you for 26.\nYou go down.\n🕯️ Wren Dubois is dead — combat. The village stops. Somebody screams. Somebody else starts digging.\nJae picks up the journal. Their hands shake. Then they open it, and keep writing.\n🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"\n📖 The Codex turns a page: Wren Dubois, 1 days. The mantle passes to Jae Morozov.",
+   "threw": 0
+  },
+  "ducksinarow": {
+   "name": "ducksinarow",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_snake_0:something moving (head)@(4,3) hp10/10 {\"beamPhase\":\"line_up\",\"isHead\":true}\n    m_snake_1:something moving (2)@(6,4) hp8/8 {\"beamPhase\":\"line_up\",\"segmentIndex\":1}\n    m_snake_2:something moving (3)@(7,4) hp8/8 {\"beamPhase\":\"line_up\",\"segmentIndex\":2}\n    m_snake_3:something moving (4)@(8,4) hp8/8 {\"beamPhase\":\"line_up\",\"segmentIndex\":3}\n    m_snake_4:something moving (5)@(5,3) hp10/10 {\"beamPhase\":\"line_up\",\"segmentIndex\":4}\n    m_snake_5:something moving (6)@(6,3) hp11/11 {\"beamPhase\":\"line_up\",\"segmentIndex\":5}\n    m_snake_6:something moving (7)@(4,4) hp10/10 {\"beamPhase\":\"line_up\",\"segmentIndex\":6}\n    m_snake_7:something moving (8)@(4,5) hp11/11 {\"beamPhase\":\"line_up\",\"segmentIndex\":7}\n    m_snake_8:something moving (9)@(5,5) hp9/9 {\"beamPhase\":\"line_up\",\"segmentIndex\":8}\n    m_snake_9:something moving (10)@(6,5) hp10/10 {\"beamPhase\":\"line_up\",\"segmentIndex\":9}\n    m_snake_10:something moving (11)@(3,2) hp11/11 {\"beamPhase\":\"line_up\",\"segmentIndex\":10}\n    m_snake_11:something moving (12)@(6,2) hp9/9 {\"beamPhase\":\"line_up\",\"segmentIndex\":11}\n    m_snake_12:something moving (13)@(7,2) hp8/8 {\"beamPhase\":\"line_up\",\"segmentIndex\":12}\n    m_snake_13:something moving (14)@(3,3) hp9/9 {\"beamPhase\":\"line_up\",\"segmentIndex\":13}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_snake_13:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "moved→(4,2) (approach)"
+     ],
+     "php": "93/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "🦆 The duck bites! (7 damage)",
+      "The line reaches you — beaks up, all down the row. NIP."
+     ]
+    },
+    {
+     "act": 3,
+     "round": 4,
+     "tl": [
+      "moved→(4,2) (approach)"
+     ],
+     "php": "86/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "🦆 The line NIPS you as it passes — beaks everywhere. (7)",
+      "📖 Codex: Coordinated Nip — locks onto one target — moving won't dodge it. You won't forget this."
+     ]
+    },
+    {
+     "act": 4,
+     "round": 5,
+     "tl": [
+      "moved→(4,2) (approach)"
+     ],
+     "php": "86/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "The line reforms — head to tail, perfect order. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 5,
+     "round": 6,
+     "tl": [
+      "moved→(4,2) (approach)"
+     ],
+     "php": "86/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "The ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 6,
+     "round": 7,
+     "tl": [
+      "moved→(4,2) (approach)"
+     ],
+     "php": "86/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "No path there.",
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 7,
+     "round": 8,
+     "tl": [
+      "moved→(4,2) (approach)"
+     ],
+     "php": "67/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "No path there.",
+      "You hold still, watching.",
+      "🦆 The train drives over you — duck 2 bites as it passes! (6)",
+      "🦆 The duck bites! (7 damage)",
+      "🦆 The duck bites! (6 damage)",
+      "The line reaches you — beaks up, all down the row. NIP."
+     ]
+    },
+    {
+     "act": 8,
+     "round": 9,
+     "tl": [
+      "moved→(4,4) (approach)"
+     ],
+     "php": "60/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (10).",
+      "You hold still, watching.",
+      "🦆 The line NIPS you as it passes — beaks everywhere. (7)"
+     ]
+    },
+    {
+     "act": 9,
+     "round": 10,
+     "tl": [
+      "moved→(4,4) (approach)"
+     ],
+     "php": "60/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (10).",
+      "You hold still, watching.",
+      "The line reforms — head to tail, perfect order. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 10,
+     "round": 11,
+     "tl": [
+      "moved→(4,4) (approach)"
+     ],
+     "php": "60/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (10).",
+      "You hold still, watching.",
+      "The ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 11,
+     "round": 12,
+     "tl": [
+      "moved→(4,4) (approach)"
+     ],
+     "php": "60/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (10).",
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 12,
+     "round": 13,
+     "tl": [
+      "moved→(4,4) (approach)"
+     ],
+     "php": "38/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:8 m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (10).",
+      "You hold still, watching.",
+      "🦆 The train drives over you — duck 2 bites as it passes! (8)",
+      "🦆 The duck bites! (8 damage)",
+      "🦆 The duck bites! (6 damage)",
+      "The line reaches you — beaks up, all down the row. NIP."
+     ]
+    },
+    {
+     "act": 13,
+     "round": 14,
+     "tl": [
+      "strike→m_snake_12:true"
+     ],
+     "php": "32/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:9 m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "(something moving (13)'s hide absorbs 1.)",
+      "You STRIKE the something moving (13) for 28 (Fire-hardened spear).",
+      "The something moving (13) falls.",
+      "🦆 The line NIPS you as it passes — beaks everywhere. (6)"
+     ]
+    },
+    {
+     "act": 14,
+     "round": 15,
+     "tl": [
+      "strike→m_snake_11:true"
+     ],
+     "php": "32/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "(something moving (12)'s hide absorbs 1.)",
+      "You STRIKE the something moving (12) for 25 (Fire-hardened spear).",
+      "The something moving (12) falls.",
+      "The line reforms — head to tail, perfect order. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 15,
+     "round": 16,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "32/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (2).",
+      "You hold still, watching.",
+      "The ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 16,
+     "round": 17,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "32/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (2).",
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 17,
+     "round": 18,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "10/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (2).",
+      "You hold still, watching.",
+      "🦆 The train drives over you — duck 2 bites as it passes! (7)",
+      "🦆 The duck bites! (7 damage)",
+      "🦆 The duck bites! (8 damage)",
+      "The line reaches you — beaks up, all down the row. NIP."
+     ]
+    },
+    {
+     "act": 18,
+     "round": 19,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "4/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (4).",
+      "You hold still, watching.",
+      "🦆 The line NIPS you as it passes — beaks everywhere. (6)"
+     ]
+    },
+    {
+     "act": 19,
+     "round": 20,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "4/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (4).",
+      "You hold still, watching.",
+      "The line reforms — head to tail, perfect order. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 20,
+     "round": 21,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "4/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (2).",
+      "You hold still, watching.",
+      "The ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one."
+     ]
+    },
+    {
+     "act": 21,
+     "round": 22,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "4/100",
+     "mhp": "m_snake_0:10 m_snake_1:8 m_snake_2:8 m_snake_3:8 m_snake_4:10 m_snake_5:11 m_snake_6:10 m_snake_7:11 m_snake_8:9 m_snake_9:10 m_snake_10:11 m_snake_11:-16X m_snake_12:-20X m_snake_13:-17X",
+     "lines": [
+      "You don't stroll through a something moving (2).",
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 22,
+     "round": -1,
+     "tl": [
+      "moved→(4,3) (approach)"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "You don't stroll through a something moving (2).",
+      "You hold still, watching.",
+      "🦆 The train drives over you — duck 2 bites as it passes! (8)",
+      "You go down.",
+      "The line marches — head to tail, straight at you. Do not be in the way.",
+      "🕯️ Oscar Nair is dead — combat. The village stops. Somebody screams. Somebody else starts digging.",
+      "Lena picks up the journal. Their hands shake. Then they open it, and keep writing.",
+      "🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"",
+      "📖 The Codex turns a page: Oscar Nair, 1 days. The mantle passes to Lena Ruiz."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Calming Panic (Level 1). Ground them: 5 things you see, 4 you hear, 3 you touch. Breathe with them. Slow is fast.\n📖 Your old life taught you things. 1 skill from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Oscar Nair. Emergency dispatcher. From Minneapolis, USA. That was yesterday. This is now. You have: Dead Phone, Mother's Ring, Dispatcher's headset, Trail compass, Marked Bus Map. That's everything you own in this world. Haven. Twelve people. The fire is lit. The stars are wrong. They move when you aren't looking. Yesterday there were seven. Tonight there are nine. They're getting closer.\nA man, maybe 40s, with a limp: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: ducks in a row. They are very organized. Suspiciously organized.",
+   "mid": "ducks_in_a_row",
+   "combatIntro": "You don't know what that was. Something moving. Someone at the haven should hear about this.\n⚔ SOMETHING MOVING! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.\nThe ducks stop milling. One by one they fall into line — head to tail, too precise, too quiet. The head dips. It has picked a line.\n⚠️ 1 threats: something moving (head) (×14) — all here, all now.\nYour party: just you. You are outnumbered — fight like it.",
+   "playerActs": 22,
+   "advances": 0,
+   "struck": 3,
+   "fightersEnd": "null",
+   "sayTail": "You hold still, watching.\nThe ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one.\nYou don't stroll through a something moving (2).\nYou hold still, watching.\nYou don't stroll through a something moving (2).\nYou hold still, watching.\n🦆 The train drives over you — duck 2 bites as it passes! (7)\n🦆 The duck bites! (7 damage)\n🦆 The duck bites! (8 damage)\nThe line reaches you — beaks up, all down the row. NIP.\nYou don't stroll through a something moving (4).\nYou hold still, watching.\n🦆 The line NIPS you as it passes — beaks everywhere. (6)\nYou don't stroll through a something moving (4).\nYou hold still, watching.\nThe line reforms — head to tail, perfect order. They're organized. Break the formation — isolate one.\nYou don't stroll through a something moving (2).\nYou hold still, watching.\nThe ducks line up — head to tail, perfect order. The head dips toward you. They're organized. Break the formation — isolate one.\nYou don't stroll through a something moving (2).\nYou hold still, watching.\nYou don't stroll through a something moving (2).\nYou hold still, watching.\n🦆 The train drives over you — duck 2 bites as it passes! (8)\nYou go down.\nThe line marches — head to tail, straight at you. Do not be in the way.\n🕯️ Oscar Nair is dead — combat. The village stops. Somebody screams. Somebody else starts digging.\nLena picks up the journal. Their hands shake. Then they open it, and keep writing.\n🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"\n📖 The Codex turns a page: Oscar Nair, 1 days. The mantle passes to Lena Ruiz.",
+   "threw": 0
+  },
+  "static": {
+   "name": "static",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:crying in the dark — a voice you almost recognize@(5,4) hp65/65 {\"beamPhase\":\"stalk\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 3,
+     "tl": [
+      "wait(no-approach)"
+     ],
+     "php": "83/100",
+     "mhp": "m_0:65",
+     "lines": [
+      "Crying in the dark — a voice you almost recognize's the attack hits you for 17.",
+      "📖 Codex: Distress Call — locks onto one target — moving won't dodge it. You won't forget this.",
+      "The voice falters... then starts again, somewhere else in the dark. It is still hungry."
+     ]
+    },
+    {
+     "act": 2,
+     "round": 5,
+     "tl": [
+      "wait(no-approach)"
+     ],
+     "php": "44/100",
+     "mhp": "m_0:65",
+     "lines": [
+      "You hold still, watching.",
+      "💥 crying in the dark — a voice you almost recognize's Distress Call finds you — no dodging it.",
+      "Crying in the dark — a voice you almost recognize's Distress Call hits you for 22.",
+      "The voice falters... then starts again, somewhere else in the dark. It is still hungry.",
+      "You don't move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It's a radio. It was always a radio.",
+      "Your own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.",
+      "Crying in the dark — a voice you almost recognize hits you for 17.",
+      "You hold still, watching.",
+      "The static crackles, furious. No voice left. Just the radio — and it wants you dead.",
+      "The radio crackles, furious, advancing on dead air."
+     ]
+    },
+    {
+     "act": 3,
+     "round": 7,
+     "tl": [
+      "wait(no-approach)"
+     ],
+     "php": "26/100",
+     "mhp": "m_0:65",
+     "lines": [
+      "You hold still, watching.",
+      "Your own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.",
+      "Crying in the dark — a voice you almost recognize hits you for 18.",
+      "You hold still, watching.",
+      "The static crackles, furious. No voice left. Just the radio — and it wants you dead.",
+      "The radio crackles, furious, advancing on dead air."
+     ]
+    },
+    {
+     "act": 4,
+     "round": 9,
+     "tl": [
+      "wait(no-approach)"
+     ],
+     "php": "4/100",
+     "mhp": "m_0:65",
+     "lines": [
+      "You hold still, watching.",
+      "Your own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.",
+      "Crying in the dark — a voice you almost recognize hits you for 22.",
+      "You hold still, watching.",
+      "The static crackles, furious. No voice left. Just the radio — and it wants you dead.",
+      "The radio crackles, furious, advancing on dead air."
+     ]
+    },
+    {
+     "act": 5,
+     "round": -1,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "(crying in the dark — a voice you almost recognize's hide absorbs 3.)",
+      "You STRIKE the crying in the dark — a voice you almost recognize for 24 (Fire-hardened spear).",
+      "The signal scrambles — exposed, it takes the hit badly.",
+      "Your own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.",
+      "Crying in the dark — a voice you almost recognize hits you for 20.",
+      "You go down.",
+      "🕯️ Oscar Garcia is dead — combat. The village stops. Somebody screams. Somebody else starts digging.",
+      "Lena picks up the journal. Their hands shake. Then they open it, and keep writing.",
+      "🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"",
+      "📖 The Codex turns a page: Oscar Garcia, 1 days. The mantle passes to Lena Ruiz."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Boiling Water (Level 1). Rolling boil for 1 minute kills most pathogens. The simplest safe water.\n📖 LEARNED: Wound Care (Level 1). Clean it, close it, cover it. Pressure stops bleeding. Clean water is better than dirty hands.\n📖 LEARNED: Anatomy (Level 1). You know where the important bits are. Arteries, joints, organs. Useful for healing or hurting.\n📖 LEARNED: Herbal Medicine (Level 1). Willow bark = aspirin. Yarrow stops bleeding. Plantain draws out infection. The pharmacy is outside.\n📖 LEARNED: Calming Panic (Level 1). Ground them: 5 things you see, 4 you hear, 3 you touch. Breathe with them. Slow is fast.\n📖 Your old life taught you things. 5 skills from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Oscar Garcia. Er nurse. From Minneapolis, USA. That was yesterday. This is now. You have: Lucky Coin, Mother's Ring, Field suture kit, Dispatcher's headset, Father's Whetstone. That's everything you own in this world. Haven. Twelve people. The fire is lit. You heard it in the dark. Breathing. Not yours. It knew your name — it said it wrong, like it learned the shape of the sound but not what it meant.\nA man, maybe 40s, with tattooed arms: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: static. It sounds like your friend calling. It is not your friend.",
+   "mid": "voice_mimic_radio",
+   "combatIntro": "Crying, in the dark. A voice you know. It sounds exactly like them — but they're safe at the haven. Aren't they?\nYou don't know what that was. crying in the dark — a voice you almost recognize Someone at the haven should hear about this.\n⚔ CRYING IN THE DARK — A VOICE YOU ALMOST RECOGNIZE! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.",
+   "playerActs": 5,
+   "advances": 0,
+   "struck": 1,
+   "fightersEnd": "null",
+   "sayTail": "Crying in the dark — a voice you almost recognize's Distress Call hits you for 22.\nThe voice falters... then starts again, somewhere else in the dark. It is still hungry.\nYou don't move. The crying stutters... fragments... stops. Silence — then a small, furious crackle of static. It's a radio. It was always a radio.\nYour own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.\nCrying in the dark — a voice you almost recognize hits you for 17.\nYou hold still, watching.\nThe static crackles, furious. No voice left. Just the radio — and it wants you dead.\nThe radio crackles, furious, advancing on dead air.\nYou hold still, watching.\nYour own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.\nCrying in the dark — a voice you almost recognize hits you for 18.\nYou hold still, watching.\nThe static crackles, furious. No voice left. Just the radio — and it wants you dead.\nThe radio crackles, furious, advancing on dead air.\nYou hold still, watching.\nYour own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.\nCrying in the dark — a voice you almost recognize hits you for 22.\nYou hold still, watching.\nThe static crackles, furious. No voice left. Just the radio — and it wants you dead.\nThe radio crackles, furious, advancing on dead air.\n(crying in the dark — a voice you almost recognize's hide absorbs 3.)\nYou STRIKE the crying in the dark — a voice you almost recognize for 24 (Fire-hardened spear).\nThe signal scrambles — exposed, it takes the hit badly.\nYour own voice screams out of the radio — no words, just fury — and it's already on you. No voice. No warning. Teeth of static.\nCrying in the dark — a voice you almost recognize hits you for 20.\nYou go down.\n🕯️ Oscar Garcia is dead — combat. The village stops. Somebody screams. Somebody else starts digging.\nLena picks up the journal. Their hands shake. Then they open it, and keep writing.\n🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"\n📖 The Codex turns a page: Oscar Garcia, 1 days. The mantle passes to Lena Ruiz.",
+   "threw": 0
+  },
+  "griefcounselor": {
+   "name": "griefcounselor",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:something tall, flashing in the treeline — like sunlight on glass@(5,4) hp107/107 {\"beamPhase\":\"confront\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 3,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 4,
+     "tl": [
+      "sidestep→(4,5)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": [
+      "You hold still, watching.",
+      "💥 It slams through!",
+      "📖 Codex: Confrontation — charges in a straight line, trampling everything in its path. You won't forget this."
+     ]
+    },
+    {
+     "act": 3,
+     "round": 5,
+     "tl": [
+      "moved→(3,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": [
+      "You hold still, watching.",
+      "It wheels on a hoof — no windup this time. The mirror is already on you. MOVE."
+     ]
+    },
+    {
+     "act": 4,
+     "round": 6,
+     "tl": [
+      "sidestep→(3,5)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": [
+      "You hold still, watching.",
+      "💥 Confrontation!"
+     ]
+    },
+    {
+     "act": 5,
+     "round": 7,
+     "tl": [
+      "moved→(4,4) (approach)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:79",
+     "lines": [
+      "You hold still, watching.",
+      "It angles the mirror toward you. Don't look. Don't look."
+     ]
+    },
+    {
+     "act": 6,
+     "round": 8,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:50",
+     "lines": [
+      "(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)",
+      "You STRIKE the something tall, flashing in the treeline — like sunlight on glass for 29 (Fire-hardened spear).",
+      "It lowers its head. The mirror catches the light. It's going to charge — in a straight line. MOVE SIDWAYS."
+     ]
+    },
+    {
+     "act": 7,
+     "round": 9,
+     "tl": [
+      "sidestep→(4,4)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:50",
+     "lines": [
+      "You hold still, watching.",
+      "The reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon."
+     ]
+    },
+    {
+     "act": 8,
+     "round": 10,
+     "tl": [
+      "sidestep→(4,4)"
+     ],
+     "php": "75/100",
+     "mhp": "m_0:50",
+     "lines": [
+      "You hold still, watching.",
+      "💥 Confrontation!",
+      "The Confrontation hits you for 25."
+     ]
+    },
+    {
+     "act": 9,
+     "round": 11,
+     "tl": [
+      "moved→(3,5) (approach)"
+     ],
+     "php": "75/100",
+     "mhp": "m_0:50",
+     "lines": [
+      "You hold still, watching.",
+      "It angles the mirror toward you. Don't look. Don't look."
+     ]
+    },
+    {
+     "act": 10,
+     "round": 12,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "75/100",
+     "mhp": "m_0:26",
+     "lines": [
+      "(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)",
+      "You STRIKE the something tall, flashing in the treeline — like sunlight on glass for 24 (Fire-hardened spear).",
+      "It lowers its head. The mirror catches the light. It's going to charge — in a straight line. MOVE SIDWAYS."
+     ]
+    },
+    {
+     "act": 11,
+     "round": 13,
+     "tl": [
+      "sidestep→(3,5)"
+     ],
+     "php": "75/100",
+     "mhp": "m_0:26",
+     "lines": [
+      "You hold still, watching.",
+      "The reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon."
+     ]
+    },
+    {
+     "act": 12,
+     "round": 14,
+     "tl": [
+      "sidestep→(3,5)"
+     ],
+     "php": "51/100",
+     "mhp": "m_0:26",
+     "lines": [
+      "You hold still, watching.",
+      "💥 Confrontation!",
+      "The Confrontation hits you for 24."
+     ]
+    },
+    {
+     "act": 13,
+     "round": 15,
+     "tl": [
+      "moved→(4,4) (approach)"
+     ],
+     "php": "51/100",
+     "mhp": "m_0:26",
+     "lines": [
+      "You hold still, watching.",
+      "It angles the mirror toward you. Don't look. Don't look."
+     ]
+    },
+    {
+     "act": 14,
+     "round": 16,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "51/100",
+     "mhp": "m_0:1",
+     "lines": [
+      "(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)",
+      "You STRIKE the something tall, flashing in the treeline — like sunlight on glass for 25 (Fire-hardened spear).",
+      "It angles the mirror toward you. Don't look. Don't look."
+     ]
+    },
+    {
+     "act": 15,
+     "round": -1,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)",
+      "You STRIKE the something tall, flashing in the treeline — like sunlight on glass for 26 (Fire-hardened spear).",
+      "Something tall, flashing in the treeline — like sunlight on glass falls.",
+      "Venison, technically. The mirror-face is not edible. Do not eat the mirror. It's dead. The carcass is there on the ground — search the body if you want the meat. But you don't know this flesh. Clean it, test it cautiously, or ask someone who knows. And don't leave it long: meat rots where it lies.",
+      "You clutch your Dead Phone, Hard Candy, Knife roll, Search locket, Dispatcher's headset. You're still here."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Reading Weather (Level 2). Falling pressure = weather coming. Your joints ache? That's a barometer. So are the birds — silent birds mean storm.\n📖 LEARNED: Animal Behavior (Level 2). Predators test: they approach, watch, decide. Prey freezes or bolts. Learn which you're looking at.\n📖 LEARNED: Food Preservation (Level 2). Cold smoking (under 90°F) preserves without cooking. Jerky done right lasts months.\n📖 LEARNED: Cordage (Level 2). Reverse-wrap technique makes rope strong enough to hold weight. Braid for more strength.\n📖 LEARNED: Reading the Land (Level 2). Edges are the grocery store — where meadow meets woods, where water meets bank. Disturbed ground regrows first and fattest.\n📖 Your old life taught you things. 5 skills from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Tomás Ortiz. Farmer. From Minneapolis, USA. That was yesterday. This is now. You have: Dead Phone, Hard Candy, Knife roll, Search locket, Dispatcher's headset. That's everything you own in this world. Haven. Twelve people. The fire is lit. Last night, something walked past the treeline on two legs. Too tall. It stopped. It listened. Then it kept going. Nobody slept after that.\nA man, maybe 50s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: grief counselor. It shows you yourself. Do not look too long.",
+   "mid": "mirror_stag",
+   "combatIntro": "It turns its face toward you. The face is a mirror. You see yourself — tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.\nYou don't know what that was. something tall, flashing in the treeline — like sunlight on glass Someone at the haven should hear about this.\n⚔ SOMETHING TALL, FLASHING IN THE TREELINE — LIKE SUNLIGHT ON GLASS! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.\nYou meet its gaze in the mirror. Yourself, tired and afraid — and you can't look away. FROZEN.\nYou're frozen — you can't move. (stunned)",
+   "playerActs": 15,
+   "advances": 0,
+   "struck": 5,
+   "fightersEnd": "null",
+   "sayTail": "You hold still, watching.\nIt angles the mirror toward you. Don't look. Don't look.\n(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)\nYou STRIKE the something tall, flashing in the treeline — like sunlight on glass for 29 (Fire-hardened spear).\nIt lowers its head. The mirror catches the light. It's going to charge — in a straight line. MOVE SIDWAYS.\nYou hold still, watching.\nThe reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon.\nYou hold still, watching.\n💥 Confrontation!\nThe Confrontation hits you for 25.\nYou hold still, watching.\nIt angles the mirror toward you. Don't look. Don't look.\n(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)\nYou STRIKE the something tall, flashing in the treeline — like sunlight on glass for 24 (Fire-hardened spear).\nIt lowers its head. The mirror catches the light. It's going to charge — in a straight line. MOVE SIDWAYS.\nYou hold still, watching.\nThe reflection sharpens. It sees you seeing yourself — tired, dirty, scared — and it lowers its head. The mirror becomes a weapon.\nYou hold still, watching.\n💥 Confrontation!\nThe Confrontation hits you for 24.\nYou hold still, watching.\nIt angles the mirror toward you. Don't look. Don't look.\n(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)\nYou STRIKE the something tall, flashing in the treeline — like sunlight on glass for 25 (Fire-hardened spear).\nIt angles the mirror toward you. Don't look. Don't look.\n(something tall, flashing in the treeline — like sunlight on glass's hide absorbs 2.)\nYou STRIKE the something tall, flashing in the treeline — like sunlight on glass for 26 (Fire-hardened spear).\nSomething tall, flashing in the treeline — like sunlight on glass falls.\nVenison, technically. The mirror-face is not edible. Do not eat the mirror. It's dead. The carcass is there on the ground — search the body if you want the meat. But you don't know this flesh. Clean it, test it cautiously, or ask someone who knows. And don't leave it long: meat rots where it lies.\nYou clutch your Dead Phone, Hard Candy, Knife roll, Search locket, Dispatcher's headset. You're still here.",
+   "threw": 0
+  },
+  "motivationalspeaker": {
+   "name": "motivationalspeaker",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:something in the dark, laughing at you specifically.@(5,4) hp97/97 {\"beamPhase\":\"heckling\",\"hkShame\":1}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:68",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "92/100",
+     "mhp": "m_0:42",
+     "lines": [
+      "You STRIKE the something in the dark, laughing at you specifically. for 28 (Fire-hardened spear).",
+      "The words stick. Your arms feel heavier. (SHAME 2: -2 damage.)",
+      "It laughs at you. Specifically at you. The laugh has notes. The laugh multiplies — a whole crowd that isn't there, and every throat is laughing at you. (PILE-ON: +2 SHAME)",
+      "\"Oh, we've got a LIVE ONE!\" It has your number now. (3+ SHAME: answer back next turn or act and take +2.)",
+      "📖 Codex: You Call That A Swing? — locks onto one target — moving won't dodge it. You won't forget this.",
+      "The words find the soft places. (8 psychic — the mockery cuts.)",
+      "The words become a weight. You WANT to answer back. (Next turn: WAIT to answer (lose the turn, clear 3 shame) or act and take +2 shame.)"
+     ]
+    },
+    {
+     "act": 3,
+     "round": 5,
+     "tl": [
+      "wait(answer-back)"
+     ],
+     "php": "81/100",
+     "mhp": "m_0:42",
+     "lines": [
+      "\"Oh, you want to TALK about it?\" You answer back — it costs the turn, but the words lose their weight. (-3 SHAME)",
+      "You hold still, watching.",
+      "💥 something in the dark, laughing at you specifically.'s You Call That A Swing? finds you — no dodging it.",
+      "Something in the dark, laughing at you specifically.'s You Call That A Swing? hits you for 11.",
+      "\"The crowd goes mild!\" (SHAME 2)"
+     ]
+    },
+    {
+     "act": 4,
+     "round": 6,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "74/100",
+     "mhp": "m_0:15",
+     "lines": [
+      "You STRIKE the something in the dark, laughing at you specifically. for 29 (Fire-hardened spear).",
+      "\"I've seen better footwork from a landslide.\" (SHAME 4) The laugh multiplies — a whole crowd that isn't there, and every throat is laughing at you. (PILE-ON: +2 SHAME)",
+      "The words find the soft places. (7 psychic — the mockery cuts.)",
+      "The words become a weight. You WANT to answer back. (Next turn: WAIT to answer (lose the turn, clear 3 shame) or act and take +2 shame.)"
+     ]
+    },
+    {
+     "act": 5,
+     "round": 8,
+     "tl": [
+      "wait(answer-back)"
+     ],
+     "php": "74/100",
+     "mhp": "m_0:15",
+     "lines": [
+      "\"Oh, you want to TALK about it?\" You answer back — it costs the turn, but the words lose their weight. (-3 SHAME)",
+      "\"THAT'S the swing? My grandmother hits harder and she's a concept.\" (SHAME 2)",
+      "You hold still, watching."
+     ]
+    },
+    {
+     "act": 6,
+     "round": -1,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "You STRIKE the something in the dark, laughing at you specifically. for 25 (Fire-hardened spear).",
+      "Something in the dark, laughing at you specifically. falls.",
+      "It is all mouth. You are not hungry enough.",
+      "You clutch your Mixtape, Dog tags, Busker's harmonica, Seed packet, Dispatcher's headset. You're still here."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Ritual & Meaning (Level 1). Marking the dead matters. Even without religion, ritual holds grief.\n📖 Your old life taught you things. 1 skill from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Ellis Khan. Street artist. From Minneapolis, USA. That was yesterday. This is now. You have: Mixtape, Dog tags, Busker's harmonica, Seed packet, Dispatcher's headset. That's everything you own in this world. Haven. Twelve people. The fire is lit. You heard it in the dark. Breathing. Not yours. It knew your name — it said it wrong, like it learned the shape of the sound but not what it meant.\nA man, maybe 40s, with tattooed arms: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: heckler. \"YOU CALL THAT A FIGHT?\" Three tiles east. It is shouting.",
+   "mid": "heckler",
+   "combatIntro": "You don't know what that was. something in the dark, laughing at you specifically. Someone at the haven should hear about this.\n⚔ SOMETHING IN THE DARK, LAUGHING AT YOU SPECIFICALLY.! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.\nIt is watching you the way a cat watches a dropped glass.\n\"Do it again! Do it again, I want to see if it gets worse.\"",
+   "playerActs": 6,
+   "advances": 0,
+   "struck": 4,
+   "fightersEnd": "null",
+   "sayTail": "You STRIKE the something in the dark, laughing at you specifically. for 30 (Fire-hardened spear).\nThe words stick. Your arms feel heavier. (SHAME 1: -1 damage.)\n\"Do it again! Do it again, I want to see if it gets worse.\"\nYou STRIKE the something in the dark, laughing at you specifically. for 28 (Fire-hardened spear).\nThe words stick. Your arms feel heavier. (SHAME 2: -2 damage.)\nIt laughs at you. Specifically at you. The laugh has notes. The laugh multiplies — a whole crowd that isn't there, and every throat is laughing at you. (PILE-ON: +2 SHAME)\n\"Oh, we've got a LIVE ONE!\" It has your number now. (3+ SHAME: answer back next turn or act and take +2.)\n📖 Codex: You Call That A Swing? — locks onto one target — moving won't dodge it. You won't forget this.\nThe words find the soft places. (8 psychic — the mockery cuts.)\nThe words become a weight. You WANT to answer back. (Next turn: WAIT to answer (lose the turn, clear 3 shame) or act and take +2 shame.)\n\"Oh, you want to TALK about it?\" You answer back — it costs the turn, but the words lose their weight. (-3 SHAME)\nYou hold still, watching.\n💥 something in the dark, laughing at you specifically.'s You Call That A Swing? finds you — no dodging it.\nSomething in the dark, laughing at you specifically.'s You Call That A Swing? hits you for 11.\n\"The crowd goes mild!\" (SHAME 2)\nYou STRIKE the something in the dark, laughing at you specifically. for 29 (Fire-hardened spear).\n\"I've seen better footwork from a landslide.\" (SHAME 4) The laugh multiplies — a whole crowd that isn't there, and every throat is laughing at you. (PILE-ON: +2 SHAME)\nThe words find the soft places. (7 psychic — the mockery cuts.)\nThe words become a weight. You WANT to answer back. (Next turn: WAIT to answer (lose the turn, clear 3 shame) or act and take +2 shame.)\n\"Oh, you want to TALK about it?\" You answer back — it costs the turn, but the words lose their weight. (-3 SHAME)\n\"THAT'S the swing? My grandmother hits harder and she's a concept.\" (SHAME 2)\nYou hold still, watching.\nYou STRIKE the something in the dark, laughing at you specifically. for 25 (Fire-hardened spear).\nSomething in the dark, laughing at you specifically. falls.\nIt is all mouth. You are not hungry enough.\nYou clutch your Mixtape, Dog tags, Busker's harmonica, Seed packet, Dispatcher's headset. You're still here.",
+   "threw": 0
+  },
+  "termsconditions": {
+   "name": "termsconditions",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a figure in a high-visibility vest, hammering signs into the dirt.@(5,4) hp110/110 {\"beamPhase\":\"stalk\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike",
+      "relocate→(5,3)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:86",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "strike",
+      "relocate→(4,2)"
+     ],
+     "php": "78/100",
+     "mhp": "m_0:66",
+     "lines": [
+      "(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)",
+      "You STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 23 (Fire-hardened spear).",
+      "No path there.",
+      "💥 a figure in a high-visibility vest, hammering signs into the dirt.'s the attack finds you — no dodging it.",
+      "A figure in a high-visibility vest, hammering signs into the dirt.'s the attack hits you for 22.",
+      "📖 Codex: Eviction Notice — locks onto one target — moving won't dodge it. You won't forget this.",
+      "\"NOTICE SERVED — CURRENT OCCUPANT.\" Your ground is being bought out from under you. (MOVE — rent comes due.)",
+      "\"ADDENDUM #1: this agreement now covers a WIDER AREA.\" The leased ground spreads. The safe ground shrinks.",
+      "It stands on its own land, and the land pays rent. (+3)"
+     ]
+    },
+    {
+     "act": 3,
+     "round": 4,
+     "tl": [
+      "strike",
+      "relocate→(4,2)"
+     ],
+     "php": "58/100",
+     "mhp": "m_0:44",
+     "lines": [
+      "(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)",
+      "You STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 26 (Fire-hardened spear).",
+      "No path there.",
+      "💥 a figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice finds you — no dodging it.",
+      "A figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice hits you for 18.",
+      "\"RENT'S DUE.\" The leased ground takes its cut. (2)",
+      "\"NOTICE SERVED — CURRENT OCCUPANT.\" Your ground is being bought out from under you. (MOVE — rent comes due.)",
+      "\"FORECLOSURE PROCEEDINGS INITIATED.\" The signs multiply. The rent climbs. (Its healing climbs too — end this.)",
+      "It stands on its own land, and the land pays rent. (+4)"
+     ]
+    },
+    {
+     "act": 4,
+     "round": 5,
+     "tl": [
+      "strike",
+      "relocate→(4,2)"
+     ],
+     "php": "29/100",
+     "mhp": "m_0:22",
+     "lines": [
+      "(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)",
+      "You STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 26 (Fire-hardened spear).",
+      "No path there.",
+      "💥 a figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice finds you — no dodging it.",
+      "A figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice hits you for 26.",
+      "\"RENT'S DUE.\" The leased ground takes its cut. (3)",
+      "It stands on its own land, and the land pays rent. (+4)"
+     ]
+    },
+    {
+     "act": 5,
+     "round": -1,
+     "tl": [
+      "strike"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)",
+      "You STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 25 (Fire-hardened spear).",
+      "The figure in a high-visibility vest, hammering signs into the dirt. falls.",
+      "It is mostly vest. Do not eat the vest.",
+      "You clutch your Mixtape, Dog tags, Knife roll, Trail compass, Boot stone. You're still here."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Food Preservation (Level 2). Cold smoking (under 90°F) preserves without cooking. Jerky done right lasts months.\n📖 Your old life taught you things. 1 skill from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Ellis Lund. Baker. From Minneapolis, USA. That was yesterday. This is now. You have: Mixtape, Dog tags, Knife roll, Trail compass, Boot stone. That's everything you own in this world. Haven. Twelve people. The fire is lit. They found a deer this morning. Inside out. Not eaten — unmade. Like something was trying to understand how it worked. It didn't finish.\nA man, maybe 50s: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: landlord. It is very large and very legal. Three tiles east. It is already claiming the ground.",
+   "mid": "landlord",
+   "combatIntro": "You don't know what that was. a figure in a high-visibility vest, hammering signs into the dirt. Someone at the haven should hear about this.\n⚔ A FIGURE IN A HIGH-VISIBILITY VEST, HAMMERING SIGNS INTO THE DIRT.! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.",
+   "playerActs": 5,
+   "advances": 0,
+   "struck": 5,
+   "fightersEnd": "null",
+   "sayTail": "(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)\nYou STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 23 (Fire-hardened spear).\nNo path there.\n💥 a figure in a high-visibility vest, hammering signs into the dirt.'s the attack finds you — no dodging it.\nA figure in a high-visibility vest, hammering signs into the dirt.'s the attack hits you for 22.\n📖 Codex: Eviction Notice — locks onto one target — moving won't dodge it. You won't forget this.\n\"NOTICE SERVED — CURRENT OCCUPANT.\" Your ground is being bought out from under you. (MOVE — rent comes due.)\n\"ADDENDUM #1: this agreement now covers a WIDER AREA.\" The leased ground spreads. The safe ground shrinks.\nIt stands on its own land, and the land pays rent. (+3)\n(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)\nYou STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 26 (Fire-hardened spear).\nNo path there.\n💥 a figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice finds you — no dodging it.\nA figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice hits you for 18.\n\"RENT'S DUE.\" The leased ground takes its cut. (2)\n\"NOTICE SERVED — CURRENT OCCUPANT.\" Your ground is being bought out from under you. (MOVE — rent comes due.)\n\"FORECLOSURE PROCEEDINGS INITIATED.\" The signs multiply. The rent climbs. (Its healing climbs too — end this.)\nIt stands on its own land, and the land pays rent. (+4)\n(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)\nYou STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 26 (Fire-hardened spear).\nNo path there.\n💥 a figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice finds you — no dodging it.\nA figure in a high-visibility vest, hammering signs into the dirt.'s Eviction Notice hits you for 26.\n\"RENT'S DUE.\" The leased ground takes its cut. (3)\nIt stands on its own land, and the land pays rent. (+4)\n(figure in a high-visibility vest, hammering signs into the dirt.'s hide absorbs 3.)\nYou STRIKE the figure in a high-visibility vest, hammering signs into the dirt. for 25 (Fire-hardened spear).\nThe figure in a high-visibility vest, hammering signs into the dirt. falls.\nIt is mostly vest. Do not eat the vest.\nYou clutch your Mixtape, Dog tags, Knife roll, Trail compass, Boot stone. You're still here.",
+   "threw": 0
+  },
+  "middlemanager": {
+   "name": "middlemanager",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a clipboard. a bullhorn. a sense of grievance.@(5,4) hp82/82 {\"beamPhase\":\"picketing\",\"telegraph\":\"\"}\n    m_ur_49086:the thing with headlights for eyes, standing too still (picket)@(6,4) hp153/153 {}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "82/100",
+     "mhp": "m_0:56 m_ur_49086:153",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "strike→m_0:true"
+     ],
+     "php": "82/100",
+     "mhp": "m_0:33 m_ur_49086:153",
+     "lines": [
+      "(clipboard. a bullhorn. a sense of grievance.'s hide absorbs 4.)",
+      "You STRIKE the clipboard. a bullhorn. a sense of grievance. for 23 (Fire-hardened spear).",
+      "💥 A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.",
+      "The light touches the ground where you were standing. It has not found you yet.",
+      "The beam holds its line, burning where you were. It did not have to move at all.",
+      "\"WALKOUT! WALKOUT!\" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (Allies +8 damage. The rep is UNTARGETABLE while coordinating.)"
+     ]
+    },
+    {
+     "act": 3,
+     "round": -1,
+     "tl": [
+      "strike→m_0:false"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "You can't get a clean shot — it's behind the picket line, bullhorn up, coordinating. (Untargetable during WALKOUT — break the line first.)",
+      "You hold still, watching.",
+      "The beam holds its line, burning where you were. It did not have to move at all.",
+      "🔥 the beam doesn't need to sweep — it SITS on you! (77)",
+      "The attack hits you for 85.",
+      "You go down.",
+      "It barely had to move to track you. MOVE and the beam has to chase — stand still and it parks the full beam on you.",
+      "🕯️ Sam Petrov is dead — combat. The village stops. Somebody screams. Somebody else starts digging.",
+      "Lena picks up the journal. Their hands shake. Then they open it, and keep writing.",
+      "🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"",
+      "📖 The Codex turns a page: Sam Petrov, 1 days. The mantle passes to Lena Ruiz."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Food Preservation (Level 2). Cold smoking (under 90°F) preserves without cooking. Jerky done right lasts months.\n📖 Your old life taught you things. 1 skill from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Sam Petrov. Baker. From Minneapolis, USA. That was yesterday. This is now. You have: Mixtape, Dog tags, Knife roll, Carpenter's square, Boot stone. That's everything you own in this world. Haven. Twelve people. The fire is lit. They found a deer this morning. Inside out. Not eaten — unmade. Like something was trying to understand how it worked. It didn't finish.\nA man, maybe 50s: \"We've got days of stores, not weeks. The treeline is the pantry now. Learn what's out there.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: union rep. It is circling. It wants to \"sync up.\" Three tiles east.",
+   "mid": "union_rep",
+   "combatIntro": "You don't know what that was. a clipboard. a bullhorn. a sense of grievance. Someone at the haven should hear about this.\n⚔ A CLIPBOARD. A BULLHORN. A SENSE OF GRIEVANCE.! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.\nIt is holding a meeting. About you.\n\"PICKET LINE!\" A Highbeam Deer lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)\n\"Brothers, sisters, monsters — gather round.\" It is holding a meeting. About you.\n⚠️ Two threats: a clipboard. a bullhorn. a sense of grievance. and the thing with headlights for eyes, standing too still (picket) — all here, all now.\nYour party: just you. You are outnumbered — fight like it.",
+   "playerActs": 3,
+   "advances": 0,
+   "struck": 3,
+   "fightersEnd": "null",
+   "sayTail": "(clipboard. a bullhorn. a sense of grievance.'s hide absorbs 4.)\nYou STRIKE the clipboard. a bullhorn. a sense of grievance. for 26 (Fire-hardened spear).\nThe deer's head swings toward you. Another light in its eyes. You're all on the list now.\nIt BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.\n💥 a clipboard. a bullhorn. a sense of grievance.'s the attack finds you — no dodging it.\nA clipboard. a bullhorn. a sense of grievance.'s the attack hits you for 18.\n📖 Codex: Grievance Filed — locks onto one target — moving won't dodge it. You won't forget this.\n(clipboard. a bullhorn. a sense of grievance.'s hide absorbs 4.)\nYou STRIKE the clipboard. a bullhorn. a sense of grievance. for 23 (Fire-hardened spear).\n💥 A ray of light lances FROM ITS EYES — and it's swinging toward you. MOVE.\nThe light touches the ground where you were standing. It has not found you yet.\nThe beam holds its line, burning where you were. It did not have to move at all.\n\"WALKOUT! WALKOUT!\" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (Allies +8 damage. The rep is UNTARGETABLE while coordinating.)\nYou can't get a clean shot — it's behind the picket line, bullhorn up, coordinating. (Untargetable during WALKOUT — break the line first.)\nYou hold still, watching.\nThe beam holds its line, burning where you were. It did not have to move at all.\n🔥 the beam doesn't need to sweep — it SITS on you! (77)\nThe attack hits you for 85.\nYou go down.\nIt barely had to move to track you. MOVE and the beam has to chase — stand still and it parks the full beam on you.\n🕯️ Sam Petrov is dead — combat. The village stops. Somebody screams. Somebody else starts digging.\nLena picks up the journal. Their hands shake. Then they open it, and keep writing.\n🌟 \"MANTLE TRANSFER DETECTED. ...Oh! New face! Same job! We hardly noticed. (That is a lie. We noticed. The audience CRIED.)\"\n📖 The Codex turns a page: Sam Petrov, 1 days. The mantle passes to Lena Ruiz.",
+   "threw": 0
+  },
+  "nostalgia": {
+   "name": "nostalgia",
+   "say": [],
+   "fightersStart": "p:You@(2,4) hp100/100 {}\n    m_0:a flickering light at dusk, showing... something. you couldn't look away@(5,4) hp74/74 {\"beamPhase\":\"stalk\"}",
+   "turns": [
+    {
+     "act": 1,
+     "round": 2,
+     "tl": [
+      "strike",
+      "relocate→(5,3)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:46",
+     "lines": []
+    },
+    {
+     "act": 2,
+     "round": 3,
+     "tl": [
+      "strike",
+      "relocate→(4,2)"
+     ],
+     "php": "100/100",
+     "mhp": "m_0:19",
+     "lines": [
+      "(flickering light at dusk, showing... something. you couldn't look away's hide absorbs 2.)",
+      "You STRIKE the flickering light at dusk, showing... something. you couldn't look away for 27 (Fire-hardened spear)."
+     ]
+    },
+    {
+     "act": 3,
+     "round": -1,
+     "tl": [
+      "strike"
+     ],
+     "php": "gone",
+     "mhp": "fight-null",
+     "lines": [
+      "(flickering light at dusk, showing... something. you couldn't look away's hide absorbs 2.)",
+      "You STRIKE the flickering light at dusk, showing... something. you couldn't look away for 28 (Fire-hardened spear).",
+      "The flickering light at dusk, showing... something. you couldn't look away falls.",
+      "It is a projector. Do not eat the projector.",
+      "You clutch your Daughter's Drawing, Hard Candy, Busker's harmonica, Boot stone, Dispatcher's headset. You're still here."
+     ]
+    }
+   ],
+   "outcome": "fight-null (ended)",
+   "error": null,
+   "setupSay": "📖 LEARNED: Radios & Signals (Level 2). Radios: frequencies, antennas, and why height beats power every time.\n📖 Your old life taught you things. 1 skill from your past — check your Journal.\nNothing here looks like home. You know none of these plants. Learn fast.\n📖 Your hands remember: knap a Stone knife (stone + vine) — the oldest tool there is. Find the stone.\n📖 Your hands remember: weave cloth (3 plant fiber — strip it from cleared brush), and build a Water Filter (cloth + charcoal from fire ashes). Dirty water doesn't have to stay dirty.\nYou wake up with dirt in your mouth and blood on your hands that isn't yours. The sky is the wrong color — not sunset-wrong, wound-wrong. Andre Nair. Programmer. From Minneapolis, USA. That was yesterday. This is now. You have: Daughter's Drawing, Hard Candy, Busker's harmonica, Boot stone, Dispatcher's headset. That's everything you own in this world. Haven. Twelve people. The fire is lit. Last night, something walked past the treeline on two legs. Too tall. It stopped. It listened. Then it kept going. Nobody slept after that.\nA woman, maybe 30s, with a buzz cut: \"Nothing grows here but dirt and tents. Past the treeline — that's where the green is. That's where the food is.\"\n📓 Journal: Food won't come to Haven. Walk past the treeline — learn what grows out there, bring it back, and get it named at camp.\n🐞 SCENARIO: nostalgia. It is showing you home. Do not follow it there.",
+   "mid": "memory_projector",
+   "combatIntro": "You don't know what that was. a flickering light at dusk, showing... something. you couldn't look away Someone at the haven should hear about this.\n⚔ A FLICKERING LIGHT AT DUSK, SHOWING... SOMETHING. YOU COULDN'T LOOK AWAY! You're on your own.\nTurn-based now. Tap a tile to move — speed is squares. Then act.",
+   "playerActs": 3,
+   "advances": 0,
+   "struck": 3,
+   "fightersEnd": "null",
+   "sayTail": "(flickering light at dusk, showing... something. you couldn't look away's hide absorbs 2.)\nYou STRIKE the flickering light at dusk, showing... something. you couldn't look away for 28 (Fire-hardened spear).\nThe light flickers. Shapes resolve. Is that... is that home?\n(flickering light at dusk, showing... something. you couldn't look away's hide absorbs 2.)\nYou STRIKE the flickering light at dusk, showing... something. you couldn't look away for 27 (Fire-hardened spear).\n(flickering light at dusk, showing... something. you couldn't look away's hide absorbs 2.)\nYou STRIKE the flickering light at dusk, showing... something. you couldn't look away for 28 (Fire-hardened spear).\nThe flickering light at dusk, showing... something. you couldn't look away falls.\nIt is a projector. Do not eat the projector.\nYou clutch your Daughter's Drawing, Hard Candy, Busker's harmonica, Boot stone, Dispatcher's headset. You're still here.",
+   "threw": 0
+  }
+ }
+}

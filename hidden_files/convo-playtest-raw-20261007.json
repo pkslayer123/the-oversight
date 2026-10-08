@@ -1,0 +1,213 @@
+[
+  {
+    "vid": "gen_zxhb4vv",
+    "beat": "small/small",
+    "line": "\"Don't mind me. I'm having a whole argument in my head and losing.\"",
+    "choices": [
+      "[dlg:more] \"Yeah?\"",
+      "[dlg:react] \"Huh.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_zxhb4vv",
+    "turn": 1,
+    "beat": "small/small",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:react] \"I see.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_zxhb4vv",
+    "turn": 2,
+    "beat": "small/small",
+    "line": "\"Anyway.\" A small smile.",
+    "choices": [
+      "[dlg:more] \"Go on.\"",
+      "[dlg:react] \"Oh nice.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_zxhb4vv",
+    "turn": 3,
+    "beat": "small/small",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:more] \"Mmhm.\"",
+      "[dlg:react] \"Huh.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_eplt0i1",
+    "beat": "small/small",
+    "line": "\"It's okay to be scared. Fear just means you understand the situation.\"",
+    "choices": [
+      "[dlg:more] \"Mmhm.\"",
+      "[dlg:react] \"Huh.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_eplt0i1",
+    "turn": 1,
+    "beat": "small/small",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:react] \"Oh nice.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_eplt0i1",
+    "turn": 2,
+    "beat": "small/small",
+    "line": "\"Anyway.\" A small smile.",
+    "choices": [
+      "[dlg:more] \"Yeah?\"",
+      "[dlg:react] \"I see.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_eplt0i1",
+    "turn": 3,
+    "beat": "small/small",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:more] \"Go on.\"",
+      "[dlg:react] \"Oh nice.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_80c2txz",
+    "beat": "small/small",
+    "line": "\"The others look to me for making do. Fine. Someone has to know something.\"",
+    "choices": [
+      "[dlg:more] \"Mmhm.\"",
+      "[dlg:react] \"Huh.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_80c2txz",
+    "turn": 1,
+    "beat": "small/small",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:react] \"I see.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_80c2txz",
+    "turn": 2,
+    "beat": "small/small",
+    "line": "\"Anyway.\" A small smile.",
+    "choices": [
+      "[dlg:more] \"Yeah?\"",
+      "[dlg:react] \"Oh nice.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_80c2txz",
+    "turn": 3,
+    "beat": "small/small",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:more] \"Go on.\"",
+      "[dlg:react] \"Huh.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_1sixp8i",
+    "beat": "small/nonverbal",
+    "line": "Rune speaks only 🇳🇴 Norwegian. No shared words at all — just eyes, hands, and patience.\n«Hei! Du..",
+    "choices": [
+      "[nv:nod] (nod slowly)",
+      "[nv:smile] (smile)",
+      "[nv:pointself] (point: you, them, together)",
+      "[nv:listen] (listen hard — catch words)",
+      "[nv:translate] (ask the woman in her 20s to translate)",
+      "[leave] (walk away)"
+    ]
+  },
+  {
+    "vid": "gen_1sixp8i",
+    "turn": 1,
+    "beat": "small/nonverbal",
+    "line": "«Stemmer.» — the woman in her 20s translates: \"That's right.\" They nod back, slowly.",
+    "choices": [
+      "[nv:nod] (nod slowly)",
+      "[nv:smile] (smile)",
+      "[nv:pointself] (point: you, them, together)",
+      "[nv:listen] (listen hard — catch words)",
+      "[nv:translate] (ask the woman in her 20s to translate)",
+      "[leave] (walk away)"
+    ]
+  },
+  {
+    "vid": "gen_4ngb782",
+    "beat": "news/taughtref",
+    "line": "\"Sassafras — I keep thinking about what you said. I'm seeing it everywhere now.\"",
+    "choices": [
+      "[dlg:more] \"Tell me more.\"",
+      "[dlg:react] \"Yeah.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_4ngb782",
+    "turn": 1,
+    "beat": "news/taughtref",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:react] \"I see.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_4ngb782",
+    "turn": 2,
+    "beat": "news/taughtref",
+    "line": "\"Anyway.\" A small smile.",
+    "choices": [
+      "[dlg:more] \"And then?\"",
+      "[dlg:react] \"Huh.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  },
+  {
+    "vid": "gen_4ngb782",
+    "turn": 3,
+    "beat": "news/taughtref",
+    "line": "\"That's... pretty much all of it, honestly.\"",
+    "choices": [
+      "[dlg:more] \"Go on.\"",
+      "[dlg:react] \"Yeah.\"",
+      "[dlg:subject] \"Can I ask you something else?\"",
+      "[leave] \"Nice talking to you.\""
+    ]
+  }
+]
