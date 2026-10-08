@@ -4488,6 +4488,7 @@
     },
 
     resolveOneAssignment(vid, a) {
+      const v = this.state.village;
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         /* unified: getPerson */ || {};
       const first = this.displayName(vid);
@@ -4528,7 +4529,12 @@
               day: this.state.scholar.day,
               level: deepLearner ? 2 : 1, // experts learn deeper
             };
-            const pname = p.name || p.id;
+            // KNOWLEDGE GATE (break-it 2026-10-08): the report goes to the
+            // PLAYER, who by the guard above does NOT know this plant. Name it
+            // only if known; otherwise the descriptor — same pattern as
+            // firesideTeaching. The teaching moment (not the report) is what
+            // earns the name.
+            const pname = this.plantKnown(p.id) ? (p.name || p.id) : (p.description || 'a plant');
             learned = ` ${first} also learned to recognize ${pname} — village knowledge grows.`;
             if (this.state.systemArrived) this.flowVillageKnowledge();
           }
@@ -10918,7 +10924,11 @@
       const cur = this.state.codex.plants[pid];
       const curLevel = cur ? (cur.level || 0) : 0;
       if (level <= curLevel) return false; // no downgrade, no repeat
-      // L1 identification: use the rich path (unless already identified)
+      // L1 identification goes through identifyPlant (rich logic). A grant
+      // that promises MORE than L1 (deep books, linked village codices)
+      // identifies first, THEN lands the deeper level in the same beat —
+      // the old early-return squashed every L2/L3 grant to L1 while callers
+      // claimed the deeper level (break-it 2026-10-08).
       if (!cur && level >= 1) {
         const teacherName = src.by || (src.type === 'taught' ? 'your teacher' : null);
         const idSource = src.type === 'taught' ? 'taught'
@@ -10926,13 +10936,16 @@
           : src.type === 'shared' ? 'shared'
           : src.type === 'background' ? 'background'
           : 'discovery';
-        return this.identifyPlant(pid, idSource, teacherName);
+        if (!this.identifyPlant(pid, idSource, teacherName)) return false;
+        if (level <= 1) return true;
+        // fall through: the fresh L1 entry gets the promised deeper level below
       }
       // Level-up beyond L1: update directly with metadata
-      this.state.codex.plants[pid] = Object.assign({}, cur, {
+      const fresh = this.state.codex.plants[pid] || {};
+      this.state.codex.plants[pid] = Object.assign({}, fresh, {
         level: level,
         learnedDay: src.day,
-        learnedFrom: src.by || (cur.learnedFrom || null),
+        learnedFrom: src.by || (fresh.learnedFrom || null),
         via: src.type,
       });
       this.say(`\u2605 ${p.name} — deeper understanding (Level ${level}).`);

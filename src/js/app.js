@@ -15129,6 +15129,17 @@
         }
         return `<div class="card codex"><h3>${esc(name)}</h3>${m.villageName ? `<p class="small" style="opacity:.7">named by the village</p>` : `<p class="small" style="opacity:.7">not yet named — the village is arguing about it</p>`}<p>${esc(stageText)}</p>${attacks}</div>`;
       }).join('') : ''}
+      ${Object.entries(Game.state.codex.animals || {}).length ? '<h1 class="title" style="font-size:18px">ANIMALS</h1><p class="small"><i>what the land runs on — named only once learned. (break-it 2026-10-08: animal codex entries had no readable surface.)</i></p>' + Object.entries(Game.state.codex.animals).map(([aid, e]) => {
+        const ad = (Game.data.animals || []).find(x => x.id === aid) || {};
+        const aKnown = Game.encAnimalKnown ? Game.encAnimalKnown(aid) : true;
+        const aName = aKnown ? (ad.name || aid) : (ad.unknown || 'something');
+        const aLvl = e.level || 1;
+        const aText = ((ad.knowledgeLevels || {})[String(aLvl)] || '');
+        return `<div class="card codex"><h3>${esc(aName)} <span class="small" style="opacity:.7">[L${aLvl}]</span></h3>${aText ? `<p class="small"><i>${esc(aText)}</i></p>` : ''}${e.learnedFrom ? `<p class="small" style="opacity:.5">via ${esc(e.via || 'discovery')}${e.learnedFrom ? ' — ' + esc(e.learnedFrom) : ''}</p>` : ''}</div>`;
+      }).join('') : ''}
+      ${Object.entries(Game.state.codex.trees || {}).length ? '<h1 class="title" style="font-size:18px">TREES</h1><p class="small"><i>timber you know by name. (break-it 2026-10-08: tree codex entries had no readable surface.)</i></p>' + Object.entries(Game.state.codex.trees).map(([sp, e]) => {
+        return `<div class="card codex"><h3>${esc(sp)} <span class="small" style="opacity:.7">[L${e.level || 1}]</span></h3>${e.via ? `<p class="small" style="opacity:.5">via ${esc(e.via)}</p>` : ''}</div>`;
+      }).join('') : ''}
       ${codexAliensSection(Game.state.codex.aliens || {})}
       <button class="btn ghost" id="b-back">Back</button>`;
     document.getElementById('b-back').onclick = () => expeditionScreen();
