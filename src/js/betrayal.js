@@ -982,6 +982,11 @@
     const c = this.getCase(caseId); if (!c) return null;
     if (c.status !== 'open' && c.status !== 'dormant') return null;
     const caller = byId || this.villagerId;
+    if (this.isPlayer(caller)) {
+      // PLAYER-CONVENED (Steve 2026-10-08): the moot is yours — tallyVotes
+      // must always include your vote (see tallyVotes).
+      c.playerConvened = true;
+    }
     // post-System: the moot is BROADCAST. Countdown energy, the galaxy watching.
     if (this.state.systemArrived) {
       this.sysSay(`🔴 LIVE! THE MOOT! The fire's built HIGH and the whole GALAXY is watching!`);
@@ -1116,8 +1121,10 @@
     const trialSwing = (wildDay ? (R() * 140 - 70) : (R() * 24 - 12)) + mood * 0.5;
     const noise = () => (R() * 30 - 15);
     let guilty = 0, votes = [];
-    // the player's role: always at the moot unless they're the one accused
-    const playerVoter = !c.accused.includes(this.villagerId) && R() < 0.9;
+    // the player's role: always at the moot unless they're the one accused.
+    // PLAYER-CONVENED moots (Steve 2026-10-08): you called it, you're there —
+    // the vote is unconditional. Otherwise attendance is 90%.
+    const playerVoter = !c.accused.includes(this.villagerId) && (c.playerConvened ? true : R() < 0.9);
     for (const vid of present) {
       if (vid === this.villagerId) continue; // player votes via choice below
       // belief is capped in its pull: evidence matters enormously, but the
@@ -2975,17 +2982,19 @@
     const parts = choiceId.split(':');
     const act = parts[1];
     let line = null, youSaid = null;
-    const finish = (l, you) => {
+    const finish = (l, you, narr) => {
       line = l; youSaid = you || null;
       try {
         if (you) c.transcript.push({ who: 'you', text: you });
-        c.transcript.push({ who: 'them', text: line });
+        c.transcript.push({ who: narr ? 'narr' : 'them', text: line });
         while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
         c.exchanges = (c.exchanges || 0) + 1;
-        // One quote layer via sayLine: lines arriving pre-quoted (e.g. from
-        // ambushExchange/acceptInvite) keep their layer; bare narration gets
-        // wrapped. Never `Name: ""line""` again. (Steve 2026-10-06)
-        this.sayLine(vid, line);
+        // AFTERMATH NARRATION (Steve 2026-10-08): the escape beat is not the
+        // leader speaking — they tried to kill you; they don't narrate your
+        // escape. Narration goes through this.say with a 'narr' transcript
+        // tag instead of sayLine on the ambusher.
+        if (narr) this.say(line);
+        else this.sayLine(vid, line);
       } catch (e) {}
       return { line, choices: this.convoChoices(vid), ended: false, transcript: (c.transcript || []).slice() };
     };
@@ -2997,7 +3006,7 @@
         try {
           c.thread = null; c.ambushPlot = null;
         } catch (e) {}
-        return finish(res.line || `You get out. Breathing hard, alive.`, act === 'run' ? '(run)' : act === 'talk' ? '(talk)' : '(fight)');
+        return finish(res.line || `You get out. Breathing hard, alive.`, act === 'run' ? '(run)' : act === 'talk' ? '(talk)' : '(fight)', true);
       }
       return finish(res.line || `The moment stretches.`, act === 'run' ? '(run)' : act === 'talk' ? '(talk)' : '(fight)');
     }
