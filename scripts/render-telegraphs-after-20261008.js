@@ -35,7 +35,7 @@ const SCENES = [
   { id: 'voice_mimic_radio', mpos: [4, 1], voice: 'w2aStatic — VOICE-RIPPLE: violet ripple ring + ≋ glyph (boosted)' },
   { id: 'paparazzo',         mpos: [4, 2], voice: 'pzFlash — EXPOSURE: near-black cell, white strobe, viewfinder brackets' },
   { id: 'bright_idea',       mpos: [4, 2], voice: 'ideaHeat — EUREKA WARM-UP: radial ember glow (windup ticks)' },
-  { id: 'statickite',        mpos: [4, 2], voice: 'burstRadius — generic orange burst (unchanged reference)' },
+  { id: 'statickite',        mpos: [4, 2], voice: 'w2bKite — THE BROADCAST: electric static bands + ↯ (NOT an orange burst)' },
   { id: 'mirror_stag',       mpos: [4, 0], voice: 'w2aStag — mirror-shimmer lane (regression check)' },
   { id: 'review_drone',      mpos: [4, 0], voice: 'w2aDrone — cyan dotted projection (regression check)' },
 ];
@@ -58,6 +58,10 @@ function routeScene(mdef, scene, opts) {
     if (ptype === 'beam' && mdef.id === 'review_drone') voice = 'w2aDrone';
     if (ptype === 'burst' && pat.burstStyle === 'exposure') voice = 'w2bPz';
     if (ptype === 'burst' && pat.burstStyle === 'detonation') voice = 'w2bIdea';
+    // STATIC KITE (Steve 2026-10-08): no burstStyle in data — the voice is
+    // keyed by monster id in the app.js mon map (_w2aMon === 'statickite'
+    // ? ' w2bKite'), electric static discharge not an orange explosion.
+    if (mdef.id === 'statickite' && ptype === 'burst') voice = 'w2bKite';
   }
   if (opts && opts.biHot) { voice = 'biHot'; base = 'burst'; }
   return { cells, voice, base, ptype };

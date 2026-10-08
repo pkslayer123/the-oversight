@@ -154,5 +154,32 @@ KNOWN = true;
   ok('6b: learned patterns still show', r2.direct.size === 1 && r2.mon['4,4'] === 'landlord');
 }
 
+// ---------- 7. statickite mon-map identity + w2bKite class ----------
+KNOWN = true;
+{
+  const r = runFor([monFighter('statickite', 'burst'), playerFighter()]);
+  ok('7a: statickite records its own identity (mon map)', r.mon['3,3'] === 'statickite' || Object.values(r.mon).includes('statickite'), JSON.stringify(r.mon));
+  ok('7b: statickite class is w2bKite', classMap.statickite === 'w2bKite', classMap.statickite);
+  ok('7c: w2bKite voice is NOT the generic orange burst', classMap.statickite !== undefined && classMap.statickite !== 'burstRadius');
+}
+
+// ---------- 8. player-tile alert rings (tgPlayerAlertClasses) ----------
+{
+  const m = appSrc.match(/function tgPlayerAlertClasses\([\s\S]*?\n  \}\n/);
+  ok('8a: tgPlayerAlertClasses extracts from app.js', !!m);
+  const tgPlayerAlertClasses = eval('(' + m[0].replace(/^function tgPlayerAlertClasses/, 'function') + ')');
+  const RINGS = { voice_mimic_radio: 'staticTarget', understudy: 'underTarget', landlord: 'lordTarget', heckler: 'heckTarget', union_rep: 'unionTarget', moderator: 'modTarget' };
+  const seen = new Set();
+  for (const mid of Object.keys(RINGS)) {
+    const tg = runFor([monFighter(mid, 'direct'), playerFighter()]);
+    const cls = tgPlayerAlertClasses(tg, null, 4, 4);
+    ok(`8b: ${mid} on player tile rings the marker (${RINGS[mid]})`, cls.includes(RINGS[mid]), JSON.stringify(cls));
+    seen.add(RINGS[mid]);
+    // ring CSS exists for each class
+    ok(`8c: .vent.${RINGS[mid]} ring CSS exists`, new RegExp('\\.vent\\.' + RINGS[mid] + '::before').test(appSrc));
+  }
+  ok('8d: all 6 ring classes are distinct', seen.size === 6, JSON.stringify([...seen]));
+}
+
 console.log(`\n${pass} passed, ${fail} failed (seed ${SEED})`);
 process.exit(fail ? 1 : 0);
