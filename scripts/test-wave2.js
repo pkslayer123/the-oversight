@@ -8,12 +8,13 @@ const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+ 'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js',
+ 'src/js/statusEffects.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 const Game = globalThis.Scattering.Game;
 const S = globalThis.Scattering;
 
-const WAVE2 = ['voice_mimic_radio','mirror_stag','review_drone','camera_swarm','hype_horn',
-  'service_mimic','contract_golem','delegate_beast','bright_idea','memory_projector'];
+const WAVE2 = ['voice_mimic_radio','mirror_stag','review_drone','bright_idea','memory_projector',
+  'warranty_caller','understudy','landlord','heckler','paparazzo','union_rep','moderator','statickite'];
 
 let pass = 0, fail = 0;
 const ok = (cond, label) => { if (cond) { pass++; } else { fail++; console.log('FAIL:', label); } };
@@ -24,24 +25,24 @@ const ok = (cond, label) => { if (cond) { pass++; } else { fail++; console.log('
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
 
   // 1. pool gating: pre-arrival = wave 1 only
-  // (counts updated 2026-10-06: wave-2C added monsters + warranty_caller — 13 wave-1, 24 total.
+  // (counts updated 2026-10-08: 15 wave-1 (13 + 2 flyers) + 13 wave-2 = 28 total.
   // The load-bearing assertions are wave-1-only pre-arrival and all-wave-2
   // present post-arrival; counts just track the data file.)
   let pool = Game.monsterWavePool();
-  ok(pool.length === 13 && pool.every(m => (m.wave || 1) === 1),
+  ok(pool.length === 15 && pool.every(m => (m.wave || 1) === 1),
     `pre-arrival pool is wave-1 only (got ${pool.length})`);
 
   // 2. post-arrival = wave 1 + 2
   Game.state.systemArrived = true;
   pool = Game.monsterWavePool();
-  ok(pool.length === 24, `post-arrival pool is 24 (got ${pool.length})`);
+  ok(pool.length === 28, `post-arrival pool is 28 (got ${pool.length})`);
   const missing = WAVE2.filter(id => !pool.find(m => m.id === id));
   ok(missing.length === 0, `all wave2 in pool (missing: ${missing.join(',')})`);
 
   // 3. wave-3 hook: not yet spawned (no wave-3 monsters exist, but gate logic present)
   Game.state.scholar.integration = 85;
   pool = Game.monsterWavePool();
-  ok(pool.length === 24, `deep integration doesn't break pool (got ${pool.length})`);
+  ok(pool.length === 28, `deep integration doesn't break pool (got ${pool.length})`);
   Game.state.scholar.integration = 5;
 
   // 4. data integrity for each wave-2 monster

@@ -13501,7 +13501,7 @@
     // monster's attack in its own visual voice (mirror-shimmer, projected
     // grid, flashbulbs, voice-ripple). Knowledge-gated like the rest.
     out.mon = {};
-    const W2A_IDS = { mirror_stag: 1, review_drone: 1, camera_swarm: 1, voice_mimic_radio: 1 };
+    const W2A_IDS = { mirror_stag: 1, review_drone: 1, voice_mimic_radio: 1 };
     // WAVE 1 STYLE VOICES (Steve 2026-10-06): burstStyle/chargeStyle existed
     // in monsters.json but NOTHING consumed them — the bulldozer's charge
     // and the hype_horn/hummice/belltoad/mirrormoth bursts all rendered as

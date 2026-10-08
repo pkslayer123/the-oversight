@@ -30,15 +30,17 @@ stare at our reflections, we fear performance reviews.
 | Monster | Concept | Pattern | Activity |
 |---|---|---|---|
 | Static 📻 | Voice-mimic radio, cries like your friends | direct (range 3) | nocturnal |
-| Grief Counselor 🪞 | Mirror-faced deer, shows you yourself | charge (6x1) | diurnal |
+| Grief Counselor 🪞 | Mirror-faced deer, shows you yourself | charge (6x1, windup 2) | diurnal |
 | Performance Review 📊 | Drone that grades your dodges aloud | beam (6, windup 3) | diurnal |
-| Influencer 🤳 | Camera swarm, wants CONTENT | burst (r2) | both |
-| Motivational Speaker 🎤 | Sonic predator, encouragement as weapon | burst (r3) | crepuscular |
-| Customer Service 📞 | Polite ambush mimic, no telegraph | rush | nocturnal |
-| Terms & Conditions 📜 | Paper golem, speed 1, undodgeable | direct (range 3) | diurnal |
-| Middle Manager 💼 | Circling pack alpha | charge (4x2) | both |
-| Inspiration 💡 | Glowing detonation predator | burst (r2) | nocturnal |
+| Inspiration 🔆 | Glowing detonation predator, greed as a targeting laser | burst (r2, windup 2) | nocturnal |
 | Nostalgia 📼 | Memory projector, shows you home | beam (5, windup 2) | crepuscular |
+| Extended Warranty 📱 | The call you cannot hang up on, dials stationary targets | rush | both |
+| The Understudy 🎭 | Your own build, turned around — learns your favorite move | direct (windup 2) | nocturnal |
+| The Landlord 🏚️ | The ground is the monster — leased tiles tax stillness | direct (windup 2) | diurnal |
+| The Heckler 🗣️ | Morale damage — shame stacks, the swing is incidental | direct (windup 2) | nocturnal |
+| The Paparazzo 📷 | Four shots to the money shot — flash builds over two beats | burst (r2, windup 2) | nocturnal |
+| The Union Rep 📋 | It does not fight, it organizes — the picket line is the damage | direct (windup 2) | diurnal |
+| The Moderator 🔨 | Wave-2 apex: content enforcement — muting and shadowban before removal | direct (range 4) | nocturnal |
 | The Static Kite 🪁 | System surveillance kite, marks 3x3 scan-zones then dips to transmit (the dip is the melee window) | burst (r1, windup 2) | both |
 
 ## Wave 3: Reserved (integration 80+)
@@ -55,5 +57,5 @@ System has stopped pretending these are animals at all.
   `scholar.integration`.
 - `checkEncounter()` uses the pool. The wanderer is hardcoded wave-1.
 - Wave-2 announcement woven into `checkSystemArrival()` dialogue.
-- Tests: `scripts/test-wave2.js` (115 checks: gating, integrity, combat smoke).
+- Tests: `scripts/test-wave2.js` (148 checks: gating, integrity, combat smoke).
 - Content gate: `node scripts/validate-data.js` (monster count now 28).
