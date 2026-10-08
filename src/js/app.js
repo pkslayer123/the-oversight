@@ -14149,8 +14149,6 @@
         // keep this in app.js (no CSS file touch — precedent: glasswing trap).
         //  biHot: the bright idea's burst, white-hot on the last windup
         //    tick — "about to break loose", distinct from burstPulse.
-        //  circleRing: the delegate's closing circle — dotted amber ring at
-        //    chebyshev distance 2 around the player while it paces 'circle'.
         //  mpBeam tint: the memory projector's film-beam — warm amber
         //    home-light, not the highbeam deer's harsh red. (The generic
         //    beamLane renderer also covers these cells; the inline tint
@@ -14161,10 +14159,9 @@
         if (_tg.biHot.has(_k)) {
           _w2cStyle = 'outline:3px solid #ffffff;outline-offset:-3px;background-color:rgba(255,255,255,.42);box-shadow:inset 0 0 20px rgba(255,255,255,.95)';
         }
-        const _circle = (typeof Game.beastCircleKeys === 'function') ? Game.beastCircleKeys() : null;
-        if (_circle && _circle.has(_k) && !_w2cStyle) {
-          _w2cStyle = 'outline:2px dotted #ffb020;outline-offset:-2px;background-color:rgba(255,176,32,.07)';
-        }
+        // (delegate circle ring retired 2026-10-08 with delegate_beast: the
+        // delegate's circle beat is cue-only now, no grid cells — the
+        // Game.beastCircleKeys() helper no longer exists.)
         const _mpKeys = (typeof Game.mpBeamKeys === 'function') ? Game.mpBeamKeys() : null;
         if (_mpKeys && _mpKeys.has(_k) && !_w2cStyle) {
           _w2cStyle = 'outline:2px solid #ffca7a;outline-offset:-2px;background-color:rgba(255,190,110,.16);box-shadow:inset 0 0 14px rgba(255,200,120,.45)';
@@ -14886,7 +14883,28 @@
         const md = Game.data.monsters.find(x => x.id === id);
         const name = Game.monsterDisplayName ? Game.monsterDisplayName(id) : md.name;
         const stageText = md.codexStages[m.stage] || md.codexStages.unknown || '';
-        const attacks = (m.attacksSeen || []).length ? `<p class="small">You've seen it attack ${m.attacksSeen.length}× — ${esc((md.attack || {}).telegraph || 'it gives warning first')}.</p>` : '';
+        // KNOWLEDGE GATE (Steve 2026-10-07): the telegraph tell is EARNED —
+        // seeing the attack once isn't enough; you must survive a full
+        // discharge (tbPatternKnown) or slay it. Before that the codex
+        // names the gap honestly instead of leaking the tell.
+        const atkName = (md.attack || {}).name;
+        const tgKnown = m.stage === 'slain' || (atkName && Game.tbPatternKnown ? Game.tbPatternKnown(id, atkName) : false);
+        let attacks = '';
+        if ((m.attacksSeen || []).length) {
+          const enc = md.encounter || {};
+          let coach = '';
+          if (tgKnown) {
+            // EARNED KNOWLEDGE SURFACES (Steve 2026-10-08): the pattern you
+            // paid for — its name, its tell, and what the village figured
+            // out. This is the payoff beat.
+            coach = ` — <b>${esc(atkName || 'its attack')}</b>: ${esc((md.attack || {}).telegraph || 'it gives warning first')}` +
+              (enc.knownCue ? `<br>💡 ${esc(enc.knownCue)}` : '') +
+              (enc.knownTactics ? `<br>📋 ${esc(enc.knownTactics)}` : '');
+          } else {
+            coach = ` — <i>you haven't lived through its full attack yet. Survive one and the codex writes the pattern.</i>`;
+          }
+          attacks = `<p class="small">You've seen it attack ${m.attacksSeen.length}×${coach}</p>`;
+        }
         return `<div class="card codex"><h3>${esc(name)}</h3>${m.villageName ? `<p class="small" style="opacity:.7">named by the village</p>` : `<p class="small" style="opacity:.7">not yet named — the village is arguing about it</p>`}<p>${esc(stageText)}</p>${attacks}</div>`;
       }).join('') : ''}
       <button class="btn ghost" id="b-back">Back</button>`;
