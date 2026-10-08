@@ -2189,44 +2189,10 @@
       return null;
     },
 
-    convoChoices(vid) {
-      const c = this.convoGet(vid);
-      const choices = [];
-      // Answering their question comes first — it's rude to ignore it.
-      if (c.pendingQ) {
-        for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: a.label });
-        choices.push({ id: 'deflect_q', label: '(avoid the question)' });
-        choices.push({ id: 'leave', label: '"I should go."' });
-        return choices;
-      }
-      if (c.thread === 'nonverbal') {
-        return [
-          { id: 'nv:nod', label: '(nod slowly)' },
-          { id: 'nv:smile', label: '(smile)' },
-          { id: 'nv:pointself', label: '(point: you, them, together)' },
-          { id: 'leave', label: '(walk away)' },
-        ];
-      }
-      if (c.thread && this.convoThreadHasMore(vid)) choices.push({ id: 'more', label: '"Tell me more."' });
-      const threadAsk = { goal: 'ask:goal', past: 'ask:past', village: 'ask:village', plans: 'ask:plans' }[c.thread];
-      const asked = c.askedTopics || [];
-      const asks = [];
-      if (!this.goalKnown(vid) && asked.indexOf('goal') === -1) asks.push({ id: 'ask:goal', label: '"What do you want? Out of all this."' });
-      if (asked.indexOf('past') === -1) asks.push({ id: 'ask:past', label: '"What did you do — before?"' });
-      if (asked.indexOf('village') === -1) asks.push({ id: 'ask:village', label: '"How\'s everyone holding up?"' });
-      if (asked.indexOf('plans') === -1) asks.push({ id: 'ask:plans', label: '"What\'s your plan for tomorrow?"' });
-      for (const a of asks) if (a.id !== threadAsk && choices.length < 4) choices.push(a);
-      if (this.goalKnown(vid) && !c.offeredHelp && choices.length < 5) choices.push({ id: 'offer_help', label: '"I could help with that."' });
-      const reacts = [
-        { id: 'agree', label: '"You\'re right."' },
-        { id: 'joke', label: '(crack a joke)' },
-        { id: 'silence', label: '(say nothing)' },
-      ];
-      if (choices.length < 5) choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
-      if (c.thread && c.thread !== 'small' && choices.length < 5) choices.push({ id: 'subject', label: '"Actually — different subject."' });
-      choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
-      return choices;
-    },
+    // NOTE (dialog rethink Phase 1, Steve 2026-10-08): the conversation menu
+    // builder lives in exactly one place — Game.buildMenu in conversation.js
+    // (Game.convoChoices is a thin wrapper around it, for the betrayal /
+    // party-formal / truth wrappers). A stale duplicate lived here; deleted.
 
     startConvo(vid) {
       const vp = this.vpOf(vid);

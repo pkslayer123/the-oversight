@@ -5,14 +5,14 @@
 //   - threadBeatTag(thread) -> beat tag for a conversation thread
 //   - Game.beatOf(vid) -> current beat {tag, topic, line}
 //   - Game.bridgeLine(vid, fromTopic) -> contextual bridge when leaving a topic
-//   - dialogueResponses(vid) -> beat+topic aware replies with variation
+//   - Game.beatMenuResponses(vid) -> beat+topic aware replies with variation
 // rules:
 //   - tag_at_source: every NPC line is tagged when generated, not classified after the fact (code: convo-beats.js wrapOpening/wrapThreadBeat, Steve 2026-10-06)
-//   - beat_drives_replies: reply options derive from (beat, topic), never from state flags alone (code: dialogueResponses, Steve 2026-10-06)
+//   - beat_drives_replies: reply options derive from (beat, topic), never from state flags alone (code: beatMenuResponses, Steve 2026-10-06)
 //   - bridge_on_shift: topic changes speak a bridge line tied to the old topic (code: bridgeLine, Steve 2026-10-06)
-//   - no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: dialogueResponses, Steve 2026-10-06)
+//   - no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: beatMenuResponses, Steve 2026-10-06)
 //   - four_rules_kept: transcript_cap, one_beat_turns, tap_advance, history_view untouched (code: conversation.js ontology)
-//   - probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: dialogueResponses, Steve 2026-10-06)
+//   - probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: beatMenuResponses, Steve 2026-10-06)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -273,9 +273,10 @@
     },
   };
 
-  // Override dialogueResponses with the beat+topic matrix.
+  // beatMenuResponses: the beat+topic matrix menu builder. Called by
+  // Game.buildMenu (conversation.js) — no longer an override of anything.
   // Questions and offers-with-machinery still defer (existing handlers).
-  Game.dialogueResponses = function (vid) {
+  Game.beatMenuResponses = function (vid) {
     const c = this.convoGet(vid);
     const beat = this.beatOf(vid);
     const tag = beat.tag;
@@ -413,23 +414,9 @@
     };
   }
 
-  // Also override dialogueBeatKind to prefer tags over regex.
-  // (convo-dialogue.js defined it with regex classification; tags win now.)
-  Game.dialogueBeatKind = function (vid) {
-    const beat = this.beatOf(vid);
-    // Map our 5 tags onto the 6 kinds dialogueResponses expects.
-    // 'news' -> 'share', 'feeling' -> 'feel', 'offer' -> 'want'/'offer',
-    // 'question' -> 'question', 'small' -> 'small'.
-    const c = this.convoGet(vid);
-    if (beat.tag === 'question') return 'question';
-    if (beat.tag === 'offer') {
-      if (c.thread === 'trade' || c.pendingTrade || c.pendingHawk) return 'offer';
-      return 'want';
-    }
-    if (beat.tag === 'feeling') return 'feel';
-    if (beat.tag === 'news') return 'share';
-    return 'small';
-  };
+  // NOTE (dialog rethink Phase 1, Steve 2026-10-08): the dead
+  // dialogueBeatKind override that lived here is deleted — no callers
+  // remained after convo-dialogue.js's dead dialogueResponses was cut.
 
   Game.BEAT_TAGS = BEAT_TAGS;
 })();

@@ -2429,49 +2429,187 @@
       return null;
     },
 
-    convoChoices(vid) {
+    // Thin wrapper: the additive wrappers (betrayal.js, party-formal.js,
+    // truth.js) wrap convoChoices; the single builder is buildMenu.
+    convoChoices(vid) { return this.buildMenu(vid); },
+
+    // ============ DISPOSITION (dialog rethink Phase 1, Steve 2026-10-08) ============
+    // Principle 4: your character shapes your voice; your choices reshape it.
+    // Axis: -3 (cruel) .. +3 (kind). Baseline from this life's temperament;
+    // shifts with played moral choices (shiftDisposition). The menu reorders
+    // by temper match; out-of-character picks cost more socially.
+    playerDisposition() {
+      const s = this.state.scholar || {};
+      if (typeof s.disposition !== 'number') {
+        let base = 0;
+        try {
+          const pv = this.playerVoice ? this.playerVoice() : null;
+          const temp = pv && pv.temp;
+          if (temp === 'warm' || temp === 'gentle') base = 2;
+          else if (temp === 'cautious') base = 1;
+          else if (temp === 'prickly' || temp === 'intense') base = -1;
+        } catch (e) {}
+        s.disposition = base;
+      }
+      return Math.max(-3, Math.min(3, s.disposition));
+    },
+
+    // Shift the moral trajectory. Called on kind/cruel conversational
+    // choices. Small steps — you become who you act like, gradually.
+    shiftDisposition(delta) {
+      if (!delta) return;
+      const s = this.state.scholar || {};
+      const cur = this.playerDisposition();
+      s.disposition = Math.max(-3, Math.min(3, cur + delta));
+    },
+
+    // relDays: relationship age in days (for trust gating — the count
+    // bypasses are dead; intimacy is trust-tier + time, per Steve 2026-10-08).
+    relDays(vid) {
+      try {
+        const c = this.convoGet(vid);
+        const day = (this.state.scholar || {}).day || 1;
+        const first = c.firstDay || day;
+        return Math.max(0, day - first);
+      } catch (e) { return 0; }
+    },
+
+    // finalizeMenu: cross-cutting rules applied to every menu the single
+    // builder produces (Principles 4, 5, 10, 12, 13).
+    finalizeMenu(vid, choices) {
+      const c = this.convoGet(vid);
+      let out = (choices || []).slice();
+      // 1. Room-fit (Principle 5): cruel options are suppressed vs close
+      // friends (trust 35+) unless the player already escalated in-scene.
+      // Hostility toward enemies/strangers is honest with teeth — it stays.
+      // deflect_q is the legible rude dodge: always available, always costs.
+      try {
+        const trust = ((this.state.village || {}).trust || {})[vid] || 10;
+        if (trust >= 35 && !c.escalated) {
+          out = out.filter(ch => !ch || ch.id === 'deflect_q' || (ch.temper || 'neutral') !== 'cruel');
+        }
+      } catch (e) {}
+      // 2. Disposition reorder (Principle 4): matching temper first among
+      // content choices; structural options (leave/goon/subject) stay pinned.
+      // Out-of-character options don't vanish — they sit last, and cost more
+      // on use (see dispositionCostMult).
+      try {
+        const disp = this.playerDisposition();
+        if (disp !== 0) {
+          const pinned = new Set(['leave', 'goon', 'subject', 'dlg:subject']);
+          const score = (ch) => {
+            const t = (ch && ch.temper) || 'neutral';
+            if (disp > 0) return t === 'kind' ? 0 : (t === 'neutral' || t === 'honest-hard') ? 1 : 2;
+            return t === 'cruel' ? 0 : (t === 'neutral' || t === 'honest-hard') ? 1 : 2;
+          };
+          const content = [], rest = [];
+          for (const ch of out) (pinned.has(ch && ch.id) ? rest : content).push(ch);
+          content.sort((a, b) => score(a) - score(b));
+          out = content.concat(rest);
+        }
+      } catch (e) {}
+      // 3. Silence on every menu (Principle 10): "..." via the existing
+      // mood-silence machinery — one generic react per mood, never bespoke
+      // branches (research: unchosen options are dialogue's priciest content).
+      try {
+        if (!out.some(ch => ch && (ch.id === 'silence' || ch.id === 'nv:listen'))) {
+          out.push({ id: 'silence', label: '"..."', temper: 'neutral' });
+        }
+      } catch (e) {}
+      return out;
+    },
+
+    // dispositionCostMult: out-of-character picks cost more socially.
+    // A kind player choosing cruelty (or vice versa) pays +1 on negative
+    // trust/mood deltas — becoming someone new isn't free (Principle 4).
+    dispositionCostMult(vid, temper) {
+      try {
+        const disp = this.playerDisposition();
+        const t = temper || 'neutral';
+        if (disp > 0 && t === 'cruel') return 2;
+        if (disp < 0 && t === 'kind') return 2;
+      } catch (e) {}
+      return 1;
+    },
+
+    // markEscalated: the player chose a hard/cruel move in-scene — room-fit
+    // suppression lifts for the rest of this conversation (Principle 5:
+    // escalation, not ambush).
+    markEscalated(vid) {
+      try { this.convoGet(vid).escalated = true; } catch (e) {}
+    },
+
+    // ============ THE MENU BUILDER (dialog rethink Phase 1) ============
+    // Game.buildMenu is the SINGLE place conversation menus are built.
+    // Pipeline (§3.2 of the rethink): focused machineries first (narrowed),
+    // then the beat matrix, then the topic-assembly fallback. finalizeMenu
+    // applies the cross-cutting rules: disposition filter, stranger gating,
+    // silence. Game.convoChoices is a thin wrapper (betrayal / party-formal /
+    // truth wrap it additively — those wrappers are not part of the old
+    // override chain and stay).
+    buildMenu(vid) {
       const c = this.convoGet(vid);
       const choices = [];
       // Answering their question comes first — it's rude to ignore it.
       if (c.pendingQ) {
         const region = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'far from here';
-        for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: String(a.label).replaceAll('{region}', region) });
-        // HONEST OPT-OUT (Steve 2026-10-08): every bespoke question
-        // guarantees a free, graceful "I'd rather not say." Data authors
-        // can supply a bespoke one flagged honest_opt_out — the engine
-        // never double-adds. No trust cost, no mood cool, ever.
+        for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: String(a.label).replaceAll('{region}', region), temper: (a && a.temper) || 'neutral' });
+        // HONEST OPT-OUT (Steve 2026-10-08, revised per his corrections):
+        // every bespoke question guarantees "I'd rather not say." Honesty
+        // is always AVAILABLE — but honest words have WEIGHT (Principle 3).
+        // This is a boundary, not an attack: low consequence, gracefully
+        // received. Data authors can supply a bespoke one flagged
+        // honest_opt_out — the engine never double-adds.
         const hasHonestOptOut = (c.pendingQ.answers || []).some(a => a && a.honest_opt_out);
-        if (!hasHonestOptOut) choices.push({ id: 'ans:' + c.pendingQ.id + ':honest_pass', label: '"I\'d rather not say."' });
+        if (!hasHonestOptOut) choices.push({ id: 'ans:' + c.pendingQ.id + ':honest_pass', label: '"I\'d rather not say."', temper: 'neutral' });
         // (change the subject) is the genuinely rude option now that an
-        // honest opt-out is free — choosing it is a real choice to dodge,
-        // so the small trust cost is fair and the rudeness is legible.
-        choices.push({ id: 'deflect_q', label: '(change the subject)' });
-        choices.push({ id: 'leave', label: '"I should go."' });
-        return choices;
+        // honest opt-out exists — choosing it is a real choice to dodge,
+        // so the trust cost is fair and the rudeness is legible.
+        choices.push({ id: 'deflect_q', label: '(change the subject)', temper: 'cruel' });
+        choices.push({ id: 'leave', label: '"I should go."', temper: 'neutral' });
+        return this.finalizeMenu(vid, choices);
       }
       if (c.thread === 'nonverbal') {
-        return [
+        // (moved from the old :4384 IIFE replacement — now part of the
+        // single pipeline)
+        const out = [
           { id: 'nv:nod', label: '(nod slowly)' },
           { id: 'nv:smile', label: '(smile)' },
           { id: 'nv:pointself', label: '(point: you, them, together)' },
-          { id: 'leave', label: '(walk away)' },
+          { id: 'nv:listen', label: '(listen hard — catch words)' },
         ];
+        const lang = c.nativeLang || this.npcNativeLang(vid);
+        const yid = this.findInterpreter(vid, lang);
+        c.interpreter = yid || null;
+        if (yid) {
+          const yn = this.firstRef(yid);
+          out.push({ id: 'nv:translate', label: `(ask ${yn} to translate)` });
+        }
+        try {
+          if (!c.speakBackDone && lang && lang !== 'english' &&
+              this.langExposure(lang) >= 3 && this.translatorStage() < 2) {
+            out.push({ id: 'speak_back', label: `(try your ${this.langDef(lang).name})` });
+          }
+        } catch (e) {}
+        out.push({ id: 'leave', label: '(walk away)' });
+        if ((c.heldBeats || []).length) out.unshift({ id: 'goon', label: this.convoGoonLabel(vid) });
+        return this.finalizeMenu(vid, out);
       }
       // TRADE THREAD: focused. They've laid out terms; you decide.
       if (c.thread === 'trade' && c.pendingTrade) {
-        return [
+        return this.finalizeMenu(vid, [
           { id: 'trade_yes', label: '"Deal."' },
           { id: 'trade_no', label: '"Another time, maybe."' },
           { id: 'leave', label: '"I should go."' },
-        ];
+        ]);
       }
       // HAWKER THREAD: a villager's offer. Same shape as the trade thread.
       if (c.pendingHawk) {
-        return [
+        return this.finalizeMenu(vid, [
           { id: 'hawker_yes', label: '"Deal."' },
           { id: 'hawker_no', label: '"Not today."' },
           { id: 'leave', label: '"I should go."' },
-        ];
+        ]);
       }
       // CONTINUER (Steve 2026-10-05): one-beat turns. When the engine held
       // follow-on beats, the continuer leads the choices — voiced per
@@ -2526,7 +2664,7 @@
           for (const [ty, label] of types) rlist.push({ id: 'rumor:type:' + ty, label });
         }
         rlist.push({ id: 'leave', label: '"Never mind."' });
-        return rlist;
+        return this.finalizeMenu(vid, rlist);
       }
       const suppressPivot = !!c.reactiveQ || !!c.genericQ || c.thread === 'grief' || c.thread === 'cheer';
       // MAXC: the chat view has room for a real choice list. Topic asks
@@ -2674,8 +2812,19 @@
           }
         } catch (e) {}
         sub.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
-        return sub;
+        return this.finalizeMenu(vid, sub);
       }
+
+      // BEAT MATRIX (dialog rethink Phase 1, Steve 2026-10-08): the live
+      // beat+topic menu from convo-beats.js. Tried before the topic-assembly
+      // fallback below; returns null when the fallback should run. This
+      // replaces the old load-order override chain (convo-dialogue.js:427)
+      // with an explicit call inside the single pipeline.
+      try {
+        const beatMenu = typeof this.beatMenuResponses === 'function'
+          ? this.beatMenuResponses(vid) : null;
+        if (beatMenu) return this.finalizeMenu(vid, beatMenu);
+      } catch (e) {}
 
       // THREAD COHERENCE (Steve 2026-10-06): mid-thread, the menu IS the
       // thread. Follow-ups lead; other topics wait behind the explicit
@@ -2840,7 +2989,7 @@
       // pivot); on openers it rides the remaining slots as before.
       if (c.thread && c.thread !== 'small' && (onThread || choices.length < MAXC)) choices.push({ id: 'subject', label: '"Can I ask you something else?"' });
       choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
-      return choices;
+      return this.finalizeMenu(vid, choices);
     },
 
     startConvo(vid) {
@@ -3102,6 +3251,26 @@
         const regionNow = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'there';
         react = react.replaceAll('{region}', regionNow);
         const saidLabel = ad && ad.label ? String(ad.label).replaceAll('{region}', regionNow) : null;
+        // HONEST WEIGHT (dialog rethink Phase 1, Steve 2026-10-08): honest
+        // words land. Data answers may carry trust/mood; honest-hard and
+        // cruel tempers move the relationship and mark escalation. The
+        // disposition cost multiplier applies to out-of-character picks.
+        const atemper = (ad && ad.temper) || 'neutral';
+        if (atemper === 'cruel' || atemper === 'honest-hard') this.markEscalated(vid);
+        try {
+          const mult = this.dispositionCostMult(vid, atemper);
+          let tdelta = (ad && typeof ad.trust === 'number') ? ad.trust : 0;
+          let mdelta = (ad && typeof ad.mood === 'number') ? ad.mood : 0;
+          // honest-hard defaults: the truth lands, even without data numbers.
+          if (atemper === 'honest-hard' && tdelta === 0 && mdelta === 0) { tdelta = -1; mdelta = -1; }
+          if (tdelta < 0) tdelta *= mult;
+          if (mdelta < 0) mdelta *= mult;
+          if (tdelta) { const tt = this.state.village.trust || {}; tt[vid] = Math.max(0, Math.min(100, (tt[vid] || 10) + tdelta)); }
+          if (mdelta) mshift(mdelta);
+          // Moral trajectory: kind/cruel answers reshape the palette.
+          if (atemper === 'kind') this.shiftDisposition(0.5);
+          else if (atemper === 'cruel') this.shiftDisposition(-0.5);
+        } catch (e) {}
         done(this.voiceLine(vid, this.fillTalkLine(react, this.vpOf(vid))), saidLabel);
         this.remember(vid, 'you_said', qid + '=' + aid);
         // FOLLOW-UP BEAT: answering a real question sometimes earns a second
@@ -3116,11 +3285,16 @@
         c.pendingQ = null;
         if (qid && c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
         try { this.noteAskedQ(qid); } catch (e) {}
+        // DISPOSITION (Phase 1): dodging is a cruel-temper move. Out-of-
+        // character for a kind player — costs more. Marks escalation.
+        const dmult = this.dispositionCostMult(vid, 'cruel');
+        this.markEscalated(vid);
+        this.shiftDisposition(-0.5);
         const t = this.state.village.trust || {};
-        t[vid] = Math.max(0, (t[vid] || 10) - 1);
+        t[vid] = Math.max(0, (t[vid] || 10) - dmult);
         // MOOD: dodging a direct question cools the room. Fair now that an
-        // honest opt-out is free — this is a choice to be rude, not a trap.
-        mshift(-1);
+        // honest opt-out exists — this is a choice to be rude, not a trap.
+        mshift(-dmult);
         done('"Okay." Something shutters, just slightly.', '(change the subject)');
       } else if (choiceId.indexOf('react:') === 0) {
         // REACTIVE ANSWER: engaged their direct question. The outcome must
@@ -4376,46 +4550,7 @@
     return st;
   };
 
-  // 2. convoChoices: nonverbal gets gestures + listen + interpreter.
-  // NOTE: the base convoChoices (defined earlier in this file) is replaced
-  // here rather than wrapped, because we need the nonverbal branch changed.
-  // We capture the base first.
-  const _convoChoices = Game.convoChoices;
-  Game.convoChoices = function (vid) {
-    const c = this.convoGet(vid);
-    if (c.thread === 'nonverbal') {
-      const out = [
-        { id: 'nv:nod', label: '(nod slowly)' },
-        { id: 'nv:smile', label: '(smile)' },
-        { id: 'nv:pointself', label: '(point: you, them, together)' },
-        { id: 'nv:listen', label: '(listen hard — catch words)' },
-      ];
-      const lang = c.nativeLang || this.npcNativeLang(vid);
-      const yid = this.findInterpreter(vid, lang);
-      c.interpreter = yid || null;
-      if (yid) {
-        const yn = this.firstRef(yid);
-        out.push({ id: 'nv:translate', label: `(ask ${yn} to translate)` });
-      }
-      // SPEAK IT BACK (Steve 2026-10-06): the nonverbal thread is exactly
-      // where trying your hard-won words belongs — you can't converse yet,
-      // but you can try a phrase. Same gates as the verbal menu.
-      try {
-        if (!c.speakBackDone && lang && lang !== 'english' &&
-            this.langExposure(lang) >= 3 && this.translatorStage() < 2) {
-          out.push({ id: 'speak_back', label: `(try your ${this.langDef(lang).name})` });
-        }
-      } catch (e) {}
-      out.push({ id: 'leave', label: '(walk away)' });
-      // ONE-BEAT TURNS (Steve 2026-10-05): queued beats surface as a
-      // gestural continuer, first.
-      if ((c.heldBeats || []).length) out.unshift({ id: 'goon', label: this.convoGoonLabel(vid) });
-      return out;
-    }
-    return _convoChoices.call(this, vid);
-  };
-
-  // 3. convoTurn: nv: kinds route through nvRespond (real foreign answers).
+  // 2. convoTurn: nv: kinds route through nvRespond (real foreign answers).
   const _convoTurn = Game.convoTurn;
   Game.convoTurn = function (vid, choiceId) {
     if (typeof choiceId === 'string' && choiceId.indexOf('nv:') === 0) {
@@ -4451,7 +4586,7 @@
     return _convoTurn.call(this, vid, choiceId);
   };
 
-  // 4. endConvo: gesture exits for nonverbal conversations.
+  // 3. endConvo: gesture exits for nonverbal conversations.
   // wasNonverbal is deliberately NOT cleared here (startConvo clears it):
   // a redundant endConvo on an already-over nonverbal chat still exits
   // with a gesture, never a sudden English "I should go."

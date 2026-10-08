@@ -81,131 +81,11 @@
     leave: 'always available — "I should go."',
   };
 
-  // ============ BEAT CLASSIFICATION ============
-  // What did the NPC just DO? Not what thread we're on — what they said.
-  Game.dialogueBeatKind = function (vid) {
-    const c = this.convoGet(vid);
-    // Direct questions come first — the existing machinery handles them.
-    // We don't override; we just don't add dialogue responses on top.
-    if (c.pendingQ || (c.reactiveQ && c.reactiveQ.id) || c.genericQ) return 'question';
-    if (c.thread === 'nonverbal') return 'nonverbal';
-    if (c.thread === 'trade' && c.pendingTrade) return 'offer';
-    if (c.pendingHawk) return 'offer';
-    if (c.thread === 'spread_rumor' && !c.rumorDone) return 'rumor';
-
-    // Check the want system — what does this NPC want right now?
-    try {
-      if (typeof this.convoWant === 'function') {
-        const want = this.convoWant(vid);
-        if (want === 'ask_favor') return 'want';
-        if (want === 'seek_comfort') return 'feel';
-        if (want === 'warn_you') return 'share';
-        if (want === 'share_news') return 'share';
-      }
-    } catch (e) {}
-
-    // Classify by thread + content cues.
-    const t = c.thread;
-    // Emotional threads.
-    if (t === 'grief' || t === 'cheer') return t === 'grief' ? 'feel' : 'share';
-    if (t === 'secret' || t === 'want') return 'share';
-    // The last NPC line — check for emotional/question content.
-    const transcript = c.transcript || [];
-    const lastThem = [...transcript].reverse().find(e => e.who === 'them');
-    if (lastThem) {
-      const text = String(lastThem.text || '').toLowerCase();
-      // Emotional cues.
-      if (/scared|afraid|crying|tears|sad|lost |died|dead|hurt|alone/.test(text)) return 'feel';
-      // They need something.
-      if (/help|need|please|could you|would you/.test(text)) return 'want';
-      // They offered something.
-      if (/trade|deal|have.*for you|want.*this/.test(text)) return 'offer';
-    }
-    // Topic threads are shares — they told you something.
-    if (['goal', 'past', 'village', 'plans', 'gossip', 'personal', 'theorize'].includes(t)) return 'share';
-    // Default: small talk.
-    return 'small';
-  };
-
-  // ============ RESPONSE GENERATION ============
-  // 3-4 things a person would actually say back to THIS beat.
-  Game.dialogueResponses = function (vid) {
-    const c = this.convoGet(vid);
-    const kind = this.dialogueBeatKind(vid);
-    const out = [];
-
-    // Questions and special threads use existing machinery — don't override.
-    if (kind === 'question' || kind === 'nonverbal' || kind === 'rumor') return null;
-    // Offers use the focused trade shape — already dialogue-driven.
-    if (kind === 'offer') return null;
-
-    const pv = typeof this.playerVoice === 'function' ? this.playerVoice() : null;
-    const voice = (blunt, soft, plain) => {
-      if (!pv) return plain;
-      if (pv.voiceClass === 'blunt') return blunt;
-      if (pv.voiceClass === 'soft') return soft;
-      return plain;
-    };
-
-    // Doubts unlock confrontation — contextual, not menued.
-    const hasDoubts = (() => {
-      try { return this.getDoubts && this.getDoubts(vid).length > 0; } catch (e) { return false; }
-    })();
-
-    // THREAD DRY (2026-10-06): "tell me more" is honest only while the thread
-    // has beats. Once dry, offering it again just loops the admission line
-    // forever — drop it and let the thread wind down (react / subject change
-    // / leave). The marker is thread-specific (threadDryFor), so a new thread
-    // re-enables the option automatically.
-    const threadDry = !!(c.thread && c.threadDryFor && c.thread === c.threadDryFor);
-
-    if (kind === 'share') {
-      // They told you something. Respond to IT.
-      if (!threadDry) out.push({ id: 'dlg:more', label: voice('"Go on."', '"Tell me more."', '"And then?"') });
-      out.push({ id: 'dlg:react', label: voice('"Huh."', '"Oh wow."', '"I see."') });
-      if (hasDoubts) out.push({ id: 'dlg:doubt', label: '"That doesn\'t quite add up."' });
-      // Theorize surfaces contextually on mystery beats.
-      const lastThem = [...(c.transcript || [])].reverse().find(e => e.who === 'them');
-      const text = lastThem ? String(lastThem.text || '').toLowerCase() : '';
-      if (/system|monster|strange|weird|don't understand|why/.test(text)) {
-        out.push({ id: 'dlg:theorize', label: '"What do you think it means?"' });
-      }
-    } else if (kind === 'feel') {
-      // They're feeling something. Acknowledge it.
-      out.push({ id: 'dlg:comfort', label: voice('"You alright?"', '"Are you okay?"', '"Hey — you alright?"') });
-      out.push({ id: 'dlg:empathize', label: voice('"Yeah. I get it."', '"That sounds really hard."', '"I hear you."') });
-      out.push({ id: 'dlg:askwhy', label: '"What happened?"' });
-    } else if (kind === 'want') {
-      // They need something. Engage or decline kindly.
-      out.push({ id: 'dlg:help', label: '"How can I help?"' });
-      out.push({ id: 'dlg:details', label: '"Tell me more about it."' });
-      out.push({ id: 'dlg:cant', label: voice('"Can\'t right now."', '"I wish I could, but not right now."', '"Not right now, sorry."') });
-    } else {
-      // Small talk — natural responses.
-      // NOTE: this dialogueResponses is OVERRIDDEN by convo-beats.js (beat-tagged
-      // replies) — the live menu builder. Menu-shape changes belong there; the
-      // dlg: turn handlers below are still live (convo-beats wraps convoTurn).
-      if (!threadDry) out.push({ id: 'dlg:more', label: voice('"Yeah?"', '"Mmhm."', '"Go on."') });
-      out.push({ id: 'dlg:react', label: voice('"Huh."', '"Oh nice."', '"I see."') });
-    }
-
-    // Party invite — contextual on positive beats with trust.
-    try {
-      const trust = (this.state.village.trust || {})[vid] || 10;
-      if (this.state.systemArrived && this.partyUnlocked && this.partyUnlocked() &&
-          !this.inParty(vid) && !this.partyFull() && this.hasDiscovered('party') &&
-          trust >= 20 && (kind === 'share' || kind === 'small')) {
-        out.push({ id: 'dlg:invite', label: '"Want to come with us?"' });
-      }
-    } catch (e) {}
-
-    // Subject change — the old topic menu, explicitly framed.
-    out.push({ id: 'dlg:subject', label: '"Can I ask you something else?"' });
-    // Leave is always available.
-    out.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
-
-    return out;
-  };
+  // NOTE (dialog rethink Phase 1, Steve 2026-10-08): beat classification
+  // and response generation now live in exactly one place —
+  // Game.beatMenuResponses in convo-beats.js, called by Game.buildMenu
+  // in conversation.js. The dead dialogueBeatKind/dialogueResponses
+  // that lived here (overridden by load order) were deleted.
 
   // ============ DIALOGUE TURN HANDLERS ============
   // These process the dialogue responses. They hook into existing systems —
@@ -353,11 +233,17 @@
       }
 
       if (dlg === 'cant') {
-        // Kind decline — small trust cost, honest.
+        // Refusing a favor (dialog rethink Phase 1, Steve 2026-10-08):
+        // kind in the moment, but it COOLS the mood and WRITES a
+        // 'deflected' memory — they remember you turned them down
+        // (HURT_KINDS:'deflected' in convo-mood.js). Honest, and honest
+        // things leave marks.
         c.transcript.push({ who: 'you', text: '"I can\'t right now."' });
         try {
           const t = this.state.village.trust || {};
           t[vid] = Math.max(0, (t[vid] || 10) - 1);
+          if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, -1);
+          this.remember(vid, 'deflected', 'you turned down their ask');
         } catch (e) {}
         const line = '"Oh. ...No, I get it. Thanks for being straight with me."';
         c.transcript.push({ who: 'them', text: line });
@@ -419,32 +305,11 @@
     return origTurn.call(this, vid, choiceId);
   };
 
-  // ============ HOOK INTO CHOICE GENERATION ============
-  // Prepend dialogue responses to the menu. The old systems still work —
-  // they're just no longer the default. Questions keep priority.
-
-  const origChoices = Game.convoChoices;
-  Game.convoChoices = function (vid) {
-    const c = this.convoGet(vid);
-    // If we're explicitly choosing a subject, use the old menu directly.
-    // (The dialogue layer sent us here via dlg:subject.)
-    if (c.choosingSubject) {
-      const choices = origChoices.call(this, vid);
-      // choosingSubject is cleared by the ask: handler; ensure it's set.
-      return choices;
-    }
-    // Get dialogue responses for the current beat.
-    let dlgResponses = null;
-    try { dlgResponses = this.dialogueResponses(vid); } catch (e) {}
-    // If the beat kind defers to existing machinery (question/offer/etc.),
-    // or we're mid-thread with follow-ups, use the original menu.
-    // The dialogue layer activates on share/feel/want/small beats.
-    if (!dlgResponses) return origChoices.call(this, vid);
-
-    // Dialogue responses lead. The old menu is available via subject change.
-    // We still append leave (already in dlgResponses) — no duplication.
-    return dlgResponses;
-  };
+  // NOTE (dialog rethink Phase 1, Steve 2026-10-08): the menu-dispatch
+  // override that lived here is deleted. Game.buildMenu in conversation.js
+  // is now the single menu builder; it calls Game.beatMenuResponses
+  // (convo-beats.js) for the beat matrix. This file keeps the dlg: turn
+  // handlers only.
 
   // Expose the feature map for tests and documentation.
   Game.DIALOGUE_FEATURE_MAP = DIALOGUE_FEATURE_MAP;
