@@ -299,8 +299,20 @@ for (const rid of den) {
   const line = Game.convoAskTopic(rid, 'past');
   const claimed = lies.occupation.told;
   note(`   ${nm(rid)}: "${String(line).slice(0, 150)}"`);
-  ok(`${nm(rid)}: told the cover, not the truth`,
-    String(line).toLowerCase().includes(String(claimed).toLowerCase()) && !String(line).toLowerCase().includes(String(lies.occupation.truth).toLowerCase()));
+  // DESIGN CALL (Steve 2026-10-07 standing order — worker judgment, 2026-10-08):
+  // a low-trust withdrawn/prickly villager may DEFLECT (pastDeflected) instead
+  // of performing their cover — the person shutting down, not the lie failing.
+  // That's a third legal outcome in the known set {cover told, deflect}, and
+  // the deflect branch predates this test (living-world convo pass). The hard
+  // design requirement is the knowledge gate — the unconfessed TRUTH must never
+  // be spoken — enforced on every line by the scanLeaks audit below, not here.
+  // So: cover told OR deflected is legal; truth told is not.
+  const deflected = !!(Game.convoGet(rid) || {}).pastDeflected;
+  const toldCover = String(line).toLowerCase().includes(String(claimed).toLowerCase());
+  const toldTruth = String(line).toLowerCase().includes(String(lies.occupation.truth).toLowerCase());
+  ok(`${nm(rid)}: told the cover (or deflected), never the truth`,
+    (toldCover || deflected) && !toldTruth,
+    `cover=${toldCover} deflected=${deflected} truth=${toldTruth}`);
   drain(); scanLeaks('claim'); Game.endConvo(rid, 'left'); drain();
 }
 // confront every denizen — drive the wheel until deflect AND hostile branches land
