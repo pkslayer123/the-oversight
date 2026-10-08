@@ -83,3 +83,79 @@ phantom-counter writes — E2's two were the only ones.
   activation) that was deliberately removed. Needs update or deletion by a future run.
 - Main tree left with one untracked sibling file: `evidence/2026-10-08/dialog-phase2-brief.md`
   (dialog-phase2 loop's, active worktree) — not mine, not touched.
+
+---
+
+# BREAK-IT: food economy — second run (2026-10-08, ~10:30 CDT, worker break-food)
+
+Deeper pass on the same target. Prior run's fixes (blood cap, phantom pantry,
+dead data-actions) verified holding. Four new catches, all fixed + proven.
+
+## EXPLOIT — broke + fixed (2)
+
+**F1. Name-only stack merging laundered value on every transfer path.**
+`takeFromPantryBulk`/`takeFromPantry` merged into the pack stack by name alone,
+keeping the pack's `kcalEach` — measured **+200 kcal created from nothing** on a
+5-unit take (low-quality pantry units into a high-quality pack stack).
+`donateToPantry` did the mirror (destroyed donated value). `digUpCache`/
+`takeFromCache` same via caches. Sibling sweep: `thief.steal_pantry`
+(abilityActions.js) and stolen/taken-rations merges (game.js) — same class,
+including spoilDay clock contamination across theft days. **Disease-risk
+laundering**: risky pantry meat merged into a safe pack stack silently dropped
+`diseaseRisk`. Bonus: single `takeFromPantry` stripped processing state
+(plantId/foodState/diseaseRisk/wellMade) — taken-back "cleaned" meat forgot it
+was cleaned. Fix: `Game.stacksMatch(a,b)` fungibility gate (food.js) — 16
+fields must match — applied at all 8 merge sites + full field copies on take.
+Proof `scripts/test-break-food-merges.js`: 6/7 FAILED pre-fix, 7/7 PASS post.
+
+**F2. putAwayFinished bypassed the pantry cap.** `donateToPantry` refused at
+120,000 kcal, but `putAwayFinished → pantryAdd` pushed unconditionally —
+measured 7,250 kcal over cap. Fix: `pantryAdd` is the single choke point
+(returns false when full); blocked batches stay on the counter, honestly
+announced. Proof `scripts/test-break-food-pantrycap.js`: 6/6 PASS.
+
+## HONESTY — broke + fixed (2)
+
+**F3. time_skip's cost was fictional; uses unlimited.** "Ages you 1 day" fed
+`ageDebt` — write-only, never read anywhere. Unlimited skips = free night
+avoidance, contest-countdown skips, blood-cap resets. Plus a second dead button
+(`time_skip.skip_time`, no impl, unenforceable `age_days` cost), no combat
+guard. Fix (design call): **1/day gate** (`s.timeSkipDay`) enforced in
+`_activateAbilityInner` + live UI (`_legacyActivatables`); combat refused; dead
+`ageDebt` removed; stale `actions` array deleted from abilities.json (surgical
+edit, escape style preserved); label names the real cost. Structural note:
+game.js's `activatableAbilities()` is **shadowed dead code** — abilityActions.js's
+version overwrites it (verified at runtime). Proof
+`scripts/test-break-food-timeskip.js`: 10/10 PASS.
+
+**F4. Spoilage boundary was five different boundaries.** `preservation_instinct`
++days honored only in eat()/eatOne(); the dawn sweep discarded food the eater
+would accept; labels/badges/processing gates/gift filters used raw spoilDay.
+Fix: `isSpoiled(it, bonus)` defaults the bonus via new `spoilBonusDays()` —
+one boundary everywhere (pack/stash/pantry gates, badges, clocks, gift/meal
+filters). Corpses + buried caches keep the raw clock deliberately (the earth
+doesn't grade on storage technique). Proof
+`scripts/test-break-food-spoilage.js`: 9/9 PASS.
+
+## Steve's blood_magic lead — VERIFIED, already gated
+2/day-part cap holds (10 activations → exactly 1000 kcal); F3 closes the
+time_skip cap-reset vector. Residual blood+med loop is HP-bounded min-maxing,
+not infinite. cannibal_frenzy gate holds.
+
+## HELD (attacked, resisted)
+eat/eatOne consumption + clamps; spoilage-resurrection refusals (prior run's
+fixes re-verified); cache bury/dig location/weight/spoilage; metabolism floors
++ slow telegraphed starvation; pantry access gating (UI ≡ engine);
+Feastburn/mealQuality/wellMade math; drop destroys; expandStorage honest;
+sortBag/testCautiously consume from lumps; giveFood consumes honestly.
+Dead-code: all food.js methods reachable; food.js+storage.js loaded. Dead
+wires noted: app.js `[data-activate]` handler never rendered.
+
+## Files changed
+food.js (stacksMatch, spoilBonusDays, isSpoiled default, unified gates/labels,
+pantryAdd cap, putAwayFinished honesty, ontology provides), game.js (fungible
+merges, time_skip gate, spoilage filters), storage.js (fungible merges),
+abilityActions.js (thief merge, legacy time_skip gate), app.js (bonus-aware
+badges), abilities.json (time_skip stale actions removed, honest copy).
+Proofs: `scripts/test-break-food-{merges,timeskip,spoilage,pantrycap,engines}.js`
+— all green. Ontology 47/47 valid.
