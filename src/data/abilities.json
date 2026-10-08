@@ -702,8 +702,8 @@
       }
     ],
     "name": "Berserker Rage",
-    "description": "+100% damage, but you attack the nearest thing (friend or foe). Lasts 3 rounds.",
-    "flavor": "ANGRY! SO ANGRY! Hit the... oh no! That was a friend! ...they'll understand! Maybe!",
+    "description": "+100% damage for 3 rounds. The red comes down \u2014 hold on.",
+    "flavor": "ANGRY! SO ANGRY! Three rounds of pure red! Hit the thing! THE THING! (You know the one. The one trying to kill you.)",
     "pool": "system",
     "tier": "risky",
     "unlock": {
