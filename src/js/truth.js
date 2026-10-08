@@ -237,6 +237,33 @@
         `"Ha." Not amused. "So you figured it out. Yeah, I took {what}. What are you going to do about it?"`,
         `{first} won't meet your eyes. "I told myself finders keepers. It wasn't finders keepers. I'm sorry."`,
       ],
+      // CONFRONTATION WINDUP (flesh-out loop 2026-10-08): the accusation
+      // LANDING. Stage direction only — these never name the lie's truth
+      // (knowledge gating: the crack is yours to state; the truth is
+      // theirs to give). Per-game no-repeat like every other pool.
+      accuseFace: [
+        `Something crosses their face — quick, then gone. The practiced expression clicks back into place.`,
+        `They go very still. Not relaxed-still. Held-still.`,
+        `A flicker at the corner of their mouth. Not quite a smile. Not quite anything.`,
+        `Their eyes do the math before their mouth does. You can see the calculation happening.`,
+        `The easy manner evaporates. What's left is watching you back.`,
+        `They glance toward the fire, toward the others — checking who's listening.`,
+      ],
+      // CODEX-GATED SOCIAL COACHING (flesh-out loop 2026-10-08): these only
+      // fire when the ledger says the player has LIVED the pattern. Never
+      // advice about something they haven't survived yet.
+      coachDeflect: [
+        `You've seen the smooth deflect before — it buys them time, not truth. Thin evidence gets deflected. Bring one more thread before you go again.`,
+        `The deflect is a move you know now. It works when what you have is thin. Make it thick.`,
+      ],
+      coachAttack: [
+        `You know the counter-attack now — the anger IS the tell. It means the accusation landed. Don't flinch.`,
+        `Last time, they came at you for asking. That's not innocence talking. Hold your ground.`,
+      ],
+      coachConfess: [
+        `You've pulled a confession before — they come when the evidence is heavy. One thread isn't a rope.`,
+        `Confessions need weight behind them. What you have right now is a thread. Find the rope.`,
+      ],
     },
 
     // drawTruthLine(poolKey, vid, vars): pick a line, avoid immediate repeats
@@ -757,6 +784,104 @@
     },
 
     // ---- confrontation ----
+    // ---- confrontation phase beats (flesh-out loop 2026-10-08) ----
+    // A confrontation is a three-beat scene: ACCUSATION (windup — you lay
+    // out what you've gathered, they hear it land) → REACTION (the existing
+    // confess/deflect/attack) → AFTERMATH (the existing trust/gossip
+    // consequences). Before, the windup was one generic line and the scene
+    // jumped straight to the verdict. The accusation never names the lie's
+    // TRUTH — only what the player gathered (the cover they were told, the
+    // evidence they saw). Knowledge gating: if you don't know it, you can't
+    // say it.
+    socialLedger() {
+      const cx = this.state.codex;
+      cx.socialLessons = cx.socialLessons || { confront: 0, confessed: 0, deflected: 0, attacked: 0, cleared: 0 };
+      return cx.socialLessons;
+    },
+    noteSocialLesson(outcome) {
+      try {
+        const L = this.socialLedger();
+        L.confront = (L.confront || 0) + 1;
+        if (outcome && L[outcome] !== undefined) L[outcome]++;
+      } catch (e) {}
+    },
+    // the richest piece of gathered evidence, spoken aloud — bookkeeping
+    // entries ("confronted (day 3) — deflected") don't count.
+    confrontEvidenceText(doubt) {
+      const ev = (doubt.evidence || []).filter(e => !/confronted \(day/.test(String(e)));
+      let best = String((doubt.text || '')).trim();
+      for (const e of ev) if (String(e).length > best.length) best = String(e);
+      // evidence entries carry bookkeeping prefixes ("observed: ...") — the
+      // player speaks the fact, not the label.
+      best = best.replace(/^(observed|gossip|slip|contradiction)\s*:\s*/i, '');
+      best = best.charAt(0).toUpperCase() + best.slice(1);
+      if (best.length > 200) best = best.slice(0, 197) + '...';
+      return best;
+    },
+    confrontWindup(vid, doubt, lie) {
+      const first = this.firstRef(vid);
+      const ev = this.confrontEvidenceText(doubt);
+      const kind = doubt.kind;
+      // beat 1 — YOU speak. Per-kind opener + the gathered evidence.
+      // The theft path names the sighting; the lie paths name the cover and
+      // the crack — never the truth behind it.
+      let spoken;
+      // the cover claim is always fair game — they told it to you themselves
+      // (goal ids render as the human phrase, never the id).
+      const claimBit = (lie && lie.told)
+        ? (lie.field === 'goal'
+          ? ` You said you wanted ${this.goalWantText(lie.told)}.`
+          : ` You said you were ${/^[aeiou]/i.test(String(lie.told)) ? 'an' : 'a'} ${lie.told}.`)
+        : '';
+      if (doubt.theft) {
+        const t = doubt.theft;
+        const what = t.label || 'my buried food';
+        const where = t.place ? ` at ${t.place}` : '';
+        spoken = `"My cache${where} — ${what}. The dirt was fresh, dug up the same day. And the trail led here. It was you."`;
+      } else if (kind === 'contradiction') {
+        spoken = `"You told me one thing, then another.${claimBit} ${ev}"`;
+      } else if (kind === 'gossip') {
+        spoken = `"Someone told me something about you that doesn't match what you told me.${claimBit} ${ev}"`;
+      } else if (kind === 'slip') {
+        spoken = `"You let something slip.${claimBit} ${ev}"`;
+      } else {
+        spoken = `"I've been watching, ${first}.${claimBit} ${ev}"`;
+      }
+      // no-lie doubts get the tentative version — the player is asking, not accusing
+      if (!lie && !doubt.theft) spoken = `"Something's been bothering me, ${first}. ${ev} — help me understand it."`;
+      // beat 2 — their face, as it lands.
+      const face = this.drawTruthLine('accuseFace', vid);
+      // beat 3 — codex-gated coaching: only patterns the player has LIVED.
+      const L = this.socialLedger();
+      const priorDeflect = (doubt.evidence || []).some(e => /deflected/.test(String(e)));
+      let coach = null;
+      if (priorDeflect) {
+        coach = `They've deflected you before. The evidence needs to be heavier this time — one more thread before you speak.`;
+      } else if ((L.deflected || 0) >= 2) {
+        coach = this.drawTruthLine('coachDeflect', vid);
+      } else if ((L.attacked || 0) >= 1) {
+        coach = this.drawTruthLine('coachAttack', vid);
+      } else if ((L.confessed || 0) >= 1 && (doubt.evidence || []).length <= 1) {
+        coach = this.drawTruthLine('coachConfess', vid);
+      }
+      const beats = [{ who: 'you', text: spoken }];
+      if (face) beats.push({ who: 'narr', text: face });
+      if (coach) beats.push({ who: 'narr', text: `*${coach}*` });
+      try { this.audioEvent('liarConfront', { phase: 'tension' }); } catch (e) {}
+      // say them in player-voice / narrator-voice, and land them in the
+      // active convo transcript so the scene reads whole on replay.
+      let c = null;
+      try { c = this.convoGet(vid); } catch (e) {}
+      for (const b of beats) {
+        this.say(b.text);
+        if (c && c.active) {
+          c.transcript.push({ who: b.who, text: b.text });
+          while (c.transcript.length > 200) c.transcript.shift();
+        }
+      }
+      return beats;
+    },
+
     // confrontDoubt(vid, doubtId): "You told me X, but [evidence]."
     // Personality-driven. Can resolve (truth) or deepen (better lies).
     confrontDoubt(vid, doubtId) {
@@ -764,7 +889,7 @@
       if (!doubt || doubt.resolved) return { ok: false, line: '"Never mind."' };
       const vp = this.vpOf(vid);
       const temp = this.npcTemper(vid);
-      const dark = vp.personality && vp.personality.dark;
+      const dark = vp && vp.personality && vp.personality.dark;
       const trust = ((this.state.village.trust || {})[vid]) || 10;
       const name = this.displayName(vid);
       const first = this.firstRef(vid);
@@ -787,7 +912,6 @@
         }
       }
 
-      const evText = doubt.evidence.length ? doubt.evidence.join('; ') : 'things you\'ve noticed';
       let line, outcome;
 
       // CACHE THEFT suspicion: the doubt carries the crime, not a lie about
@@ -812,16 +936,20 @@
       }
 
       if (!lie) {
-        // no lie behind this doubt — it was a misunderstanding. Honest clearing.
+        // no lie behind this doubt — it was a misunderstanding. The player
+        // still raises it (tentative windup), then the honest clearing.
+        this.confrontWindup(vid, doubt, null);
         line = this.drawTruthLine('clears', vid);
         outcome = 'cleared';
         this.resolveDoubt(doubtId, 'misunderstanding — they explained it');
+        this.noteSocialLesson('cleared');
         try { this.bumpTrust(vid, 3); } catch (e) {}
         return { ok: true, line, outcome };
       }
 
       // there IS a lie. How do they handle being caught?
-      try { this.audioEvent('liarConfront', { phase: 'tension' }); } catch (e) {}
+      // the windup speaks the accusation first — the reaction follows.
+      this.confrontWindup(vid, doubt, lie);
       const motive = lie.motive;
       const roll = Math.random();
 
@@ -908,6 +1036,7 @@
           this.remember(vid, 'hostile', 'turned on you when questioned');
         } catch (e) {}
       }
+      this.noteSocialLesson(outcome);
       try { this.audioEvent('liarConfront', { outcome }); } catch (e) {}
       return { ok: true, line, outcome };
     },
@@ -920,7 +1049,8 @@
     confrontTheft(vid, doubtId) {
       const doubt = (this.state.codex.doubts || []).find(d => d.id === doubtId);
       if (!doubt || doubt.resolved || !doubt.theft) return { ok: false, line: '"Never mind."' };
-      try { this.audioEvent('liarConfront', { phase: 'tension' }); } catch (e) {}
+      // the accusation lands first (windup owns the tension beat) — then the reaction.
+      this.confrontWindup(vid, doubt, null);
       const t = doubt.theft;
       const what = t.label || 'your buried food';
       const vp = this.vpOf(vid) || {};
@@ -968,6 +1098,7 @@
           this.remember(vid, 'hostile', 'turned on you when accused of theft');
         } catch (e) {}
       }
+      this.noteSocialLesson(outcome);
       try { this.audioEvent('liarConfront', { outcome }); } catch (e) {}
       return { ok: true, line, outcome };
     },
