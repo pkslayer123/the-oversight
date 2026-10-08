@@ -153,6 +153,8 @@
       if (p && this.state.systemArrived) {
         this.say('◈ You understand now: that wasn\'t human. That was ' + p.name + ' — ' + p.title + ' — wearing a person like a suit. (' + how + ')');
       }
+      // CODEX (Steve 2026-10-08): the book catches up to the truth.
+      try { this.apCodexEntry(pid); } catch (e) {}
     },
 
     // ---------- EXCLUSIVE POOL: human-impersonator encounters ----------
@@ -788,6 +790,11 @@
       }
 
       ap.met[pid] = rec;
+
+      // CODEX (Steve 2026-10-08): every encounter is discoverable truth.
+      // Knowledge-gated inside apCodexEntry — pre-reveal the entry reads
+      // as the human persona, never the alien truth.
+      try { this.apCodexEntry(pid); } catch (e) {}
     },
 
     // ---------- fan favor ----------
@@ -1107,20 +1114,27 @@
       var ap = this.apState();
       var rec = ap.met[pid] || { encounters: 0 };
 
-      entry.name = p.name;
-      entry.title = p.title;
-      entry.species = p.species;
-      entry.disposition = ap.known[pid] ? p.disposition : 'unknown';
+      entry.name = p.name; // the human persona's name — safe pre-reveal
+      // KNOWLEDGE GATE (Steve 2026-10-08): title/species/disposition name the
+      // alien truth. Pre-reveal the entry reads as the human persona only —
+      // "if you don't know, it doesn't show."
+      var known = !!ap.known[pid];
+      entry.title = known ? p.title : 'stranger';
+      entry.species = known ? p.species : 'unknown';
+      entry.disposition = known ? p.disposition : 'unknown';
       // Progressive disclosure
       if (rec.encounters >= 1) {
         entry.stage = 'encountered';
-        entry.note = 'That wasn\'t a person. It moved like someone wearing a human suit.';
+        // Pre-reveal: suspicion, never conclusion. The alien truth stays hidden.
+        entry.note = known
+          ? 'That wasn\'t a person. It moved like someone wearing a human suit.'
+          : 'A stranger crossed you out in the wild. Moved wrong — too smooth, too practiced. You can\'t place why.';
       }
       if (ap.known[pid]) {
         entry.stage = 'identified';
         entry.note = p.name + ' — ' + p.title + '. ' + p.backstory.slice(0, 200) + '...';
       }
-      if (rec.encounters >= 5) {
+      if (known && rec.encounters >= 5) {
         entry.stage = 'understood';
         entry.note = p.name + ' — ' + p.title + '. ' + p.backstory + ' Motivation: ' + p.motivation;
       }
@@ -2009,22 +2023,10 @@
     };
 
     // Contest interference: alien players rig, save, and sway contests.
-    // Wrapped on _contestVerdict (contests.js) — applied before the verdict roll.
-    var _verdict = G._contestVerdict;
-    if (_verdict) {
-      G._contestVerdict = function (ac) {
-        var interference = { winMod: 0, deathSave: false, note: null };
-        try {
-          if (this.apContestInterference) interference = this.apContestInterference(ac) || interference;
-        } catch (e) {}
-        // Stash for the verdict logic to consume
-        if (ac) {
-          ac._apWinMod = interference.winMod || 0;
-          ac._apDeathSave = !!interference.deathSave;
-        }
-        return _verdict.apply(this, arguments);
-      };
-    }
+    // WIRED (Steve 2026-10-08): contests.js _contestVerdict calls
+    // apContestInterference(ac) directly and applies winMod/deathSave.
+    // The old self-wrap here is REMOVED — it would double-fire the
+    // interference (double messages, double RNG, double limits).
 
     // ============ ARMOR TRANSITION WRAPS (Steve 2026-10-07) ============
 

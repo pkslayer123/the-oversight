@@ -3095,6 +3095,14 @@
     // WATCHER AGENCY (Steve 2026-10-06): cheering moves the needle for your
     // people. Capped at +15% — the audience's love is real but not rigged.
     const cheer = Math.min(0.15, ac.cheer || 0);
+    // ALIEN PLAYERS (Steve 2026-10-08): fan favor and alien meddling bend the
+    // verdict — sadistic rigging, benevolent lifelines, crowd mood. Bends
+    // odds and beats; the sequence still runs (contest interruption law
+    // holds: participation is unavoidable, interference never skips it).
+    let apInt = null;
+    try { if (this.apContestInterference) apInt = this.apContestInterference(ac) || null; } catch (e) { apInt = null; }
+    const apWinMod = (apInt && apInt.winMod) || 0;
+    const apDeathSave = !!(apInt && apInt.deathSave);
     const pids = (ac.participants && ac.participants.length) ? ac.participants.slice() : [ac.participant];
     const s = this.state.scholar;
     let anyWon = false;
@@ -3103,11 +3111,18 @@
       ac.participant = pid;
       // MULTI-TAKE learn pacing: only the primary's fate teaches.
       ac._suppressLearn = i > 0;
-      const winOdds = Math.min(0.95, winBase + cheer);
+      const winOdds = Math.min(0.95, Math.max(0.01, winBase + cheer + apWinMod));
       let outcome;
       if (dieBase > 0 && Math.random() < dieBase) {
-        this._contestDie(ac, 'The verdict came down hard.');
-        outcome = 'died';
+        if (apDeathSave && pid === 'player') {
+          // BENEVOLENT LIFELINE: the killing blow misses (the feed already
+          // said so). You still lose — the sequence runs, nobody skips.
+          this._contestEnd(ac, 'lost', false);
+          outcome = 'lost';
+        } else {
+          this._contestDie(ac, 'The verdict came down hard.');
+          outcome = 'died';
+        }
       } else {
         const won = Math.random() < winOdds;
         this._contestEnd(ac, won ? 'won' : 'lost', won);

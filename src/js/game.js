@@ -9861,6 +9861,10 @@
       v.gossip = v.gossip.filter(g => (this.state.scholar.day - g.day) < 3);
       // monster encounter reports travel the same social lines
       try { this.spreadMonsterNews(); } catch (e2) {}
+      // ALIEN PLAYERS (Steve 2026-10-08): villagers talk about the audience
+      // and the strangers. Self-limited inside (eligibility + 2-day cooldown
+      // + chance) — safe to call from the gossip flow.
+      try { if (this.apVillageGossip) this.apVillageGossip(); } catch (e3) {}
     },
     // spreadPlantKnowledge: word of mouth is SLOW (Steve 2026-10-05). Each
     // day-part, for each plant that's "going around," a knower may teach one
