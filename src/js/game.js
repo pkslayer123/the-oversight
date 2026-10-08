@@ -13004,7 +13004,19 @@
         }
       } else {
         const darkness = ['faint', 'darker', 'almost black'][trap.turns - 1] || 'darker';
-        this.say(`A shadow on the ground — ${darkness}. Something is falling.`);
+        // CODEX-GATED APPROACH COACHING (Steve 2026-10-07): the approach is a
+        // phase of the dive — veterans who earned the pattern get the knownCue
+        // beat ("move when it grows") instead of dread-only text. First-timers
+        // get dread. encTelegraphKnown reads the codex, so it works in world
+        // mode; the attack name comes from the def, never hardcoded.
+        let gwKnown = false;
+        try {
+          const gdef = (this.data.monsters || []).find(mm => mm.id === trap.monsterId) || {};
+          gwKnown = this.encTelegraphKnown({ mdef: { id: trap.monsterId, attack: gdef.attack } });
+        } catch (e) {}
+        this.say(gwKnown
+          ? `A shadow on the ground — ${darkness}. You know this shadow: MOVE when it grows. It can't turn mid-dive.`
+          : `A shadow on the ground — ${darkness}. Something is falling.`);
         // SHADOW CLOSES IN (Steve 2026-10-06): the trap's darkening turns are
         // a phase of the dive — audible, escalating. (Synth belongs to the
         // audio worker; audioEvent no-ops until it lands — projectorFire
@@ -22488,6 +22500,11 @@
             m.sbCharge = 0;
             if (useFifo) this.encSetPhase(m, 'bask');
             this.say('The charge is spent — dull brown again, already tilting back toward the sun.');
+            // BITE-LAND AUDIO (Steve 2026-10-07): the molten-gold bite needs
+            // its own landing sound, not the generic impact. (Synth belongs
+            // to the audio worker; audioEvent no-ops until it lands —
+            // glasswingShadowClose precedent, 2026-10-06.)
+            this.audioEvent('sunbaskerBite');
           }
         } else {
           // COVER WORKS: if the lane was fully blocked at declare time, the
@@ -23678,8 +23695,16 @@
           this.encSetPhase(m, 'dive');
           m.altitude = 'low'; // descending — it's coming down to you now
           const known = this.encTelegraphKnown(m);
+          // TARGET-AWARE COACHING (Steve 2026-10-07): the dive locks the FIFO
+          // target's tile — that isn't always the player. Coaching that says
+          // "YOUR tile" when a villager is the mark is a lie that gets them
+          // killed. Name the real mark; the counterplay reads the same.
+          const gwAimIsPlayer = t.kind === 'player';
+          const gwAimName = gwAimIsPlayer ? 'YOU' : (t.name || 'your friend');
           const cueText = known
-            ? 'The shadow detaches — it\'s diving at YOUR tile. MOVE. (Watch the shadow, not the bug.)'
+            ? (gwAimIsPlayer
+              ? 'The shadow detaches — it\'s diving at YOUR tile. MOVE. (Watch the shadow, not the bug.)'
+              : `The shadow detaches — it's diving at ${gwAimName}'s tile. SHOUT. (Watch the shadow, not the bug.)`)
             : 'A shadow crosses the ground — growing fast. Something is falling out of the sky.';
           const p0 = this.tbFighter('p');
           m.telegraph = { kind: 'squares', cells: [{ cx: t.mx, cy: t.my }],
@@ -24010,7 +24035,11 @@
           // FLATTEN: no sun, no fight. Still killable — it's a lizard.
           if (!m.sbFlat) {
             m.sbFlat = true; m.sbCharge = 0;
-            if (useFifo) this.encSetPhase(m, 'bask');
+            // HONEST BADGE (Steve 2026-10-07): 'flat' is not in the data
+            // phaseBadges table, so encPhaseBadge renders nothing — correct,
+            // because there is no active phase to badge. Setting 'bask' here
+            // printed "☀️ BASKING" next to "No sun, no fight." — a lie.
+            if (useFifo) this.encSetPhase(m, 'flat');
             this.say(night
               ? 'The sun is gone — and so is the fight in it. It flattens, dull brown, trying to disappear into the dirt.'
               : 'It shuffles into the tree-shade and flattens, dull brown. No sun, no fight.');
@@ -24019,7 +24048,10 @@
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         m.sbFlat = false;
-        if (!m.beamPhase || m.beamPhase === 'stalk') this.encSetPhase(m, 'bask');
+        // UNFLATTEN (Steve 2026-10-07): the sun is back — leave the honest
+        // 'flat' phase for a live one, or the badge stays blank while it
+        // charges. (Flatten set 'flat'; stale 'stalk' still normalizes.)
+        if (!m.beamPhase || m.beamPhase === 'stalk' || m.beamPhase === 'flat') this.encSetPhase(m, 'bask');
         const d = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
         if (d > 1 && !m.telegraph) {
           // not adjacent: close in. No basking on the move.
@@ -24084,7 +24116,15 @@
             this.encDeclareDirect(m, t, biteCue);
             m.telegraph.dmg = this.sbBiteDmg(m);
           } else {
-            this.say(this.pickFresh([
+            // BASK COACHING (Steve 2026-10-07): charge 1 is the veteran's
+            // warning beat — one more sunny turn and the bite is live. The
+            // knownCue counterplay ("hit it every turn") surfaces here for
+            // players who earned the pattern; first-timers get dread-only
+            // ambience. The bite-declare coaching covers charge 2+.
+            this.say(known ? this.pickFresh([
+              'Gold spreading across its back — one more sunny turn and the bite is charged. Hit it NOW.',
+              'It drinks the sun, utterly still. The charge is building — break it before it\'s fully gold.',
+            ], 'sbBaskKnown') : this.pickFresh([
               'Its scales go from dull brown to gold. Heat shimmers off its back. It\'s charging.',
               'It tilts its back to the sun, utterly still. Charging.',
             ], 'sbBask'));
