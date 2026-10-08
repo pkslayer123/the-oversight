@@ -7,7 +7,7 @@
 //      monster with the closest comparable telegraph voice (bespoke unknown
 //      cue, knowledge-gated coaching via knownCue/knownTactics).
 //  (b) tgPlayerAlertClasses emits player-coincident shadow/lock markers
-//      (helper-level, not pixels) + renderDetail wires them into the pmark.
+//      (helper-level, not pixels) + renderDetail wires them into the vent marker.
 // Usage: node scripts/test-telegraph-judgment.js
 const fs = require('fs');
 const path = require('path');
@@ -92,8 +92,8 @@ function extractHelper() {
   // Wiring: renderDetail feeds the helper into the player marker + styles the ring.
   const appSrc = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
   ok('b10: renderDetail wires helper into pmark', appSrc.includes('tgPlayerAlertClasses(_tg, _gwDive, pmx, pmy)'));
-  ok('b11: diveTarget ring styled on marker ::before', appSrc.includes('.cell.me .pmark.diveTarget::before'));
-  ok('b12: sbLockTarget ring styled on marker ::before', appSrc.includes('.cell.me .pmark.sbLockTarget::before'));
+  ok('b11: diveTarget ring styled on marker ::before', appSrc.includes('.cell.me .vent.diveTarget::before'));
+  ok('b12: sbLockTarget ring styled on marker ::before', appSrc.includes('.cell.me .vent.sbLockTarget::before'));
   ok('b13: dive ▼ skipped on player tile (ring carries the read)', appSrc.includes('if (!isMe) g += `<span style="position:absolute;inset:0;'));
 
   console.log(`\n${pass} passed, ${fail} failed`);

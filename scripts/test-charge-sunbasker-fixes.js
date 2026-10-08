@@ -15,11 +15,47 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
+// DETERMINISTIC RNG (Steve 2026-10-08): several modules capture `const R = Math.random`
+// at load time — install one shared resettable RNG as Math.random BEFORE eval so every
+// load-time capture stays deterministic too. resetRng() re-seeds (SEED env override to
+// explore other seeds). Never rely on unseeded Math.random for assertions: flaky by
+// construction.
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const DEFAULT_SEED = (process.env.SEED !== undefined ? Number(process.env.SEED) : 0xC0FFEE) >>> 0;
+let _rng = mulberry32(DEFAULT_SEED);
+function resetRng(seed) { _rng = mulberry32((seed === undefined ? DEFAULT_SEED : Number(seed)) >>> 0); }
+Math.random = () => _rng();
+// FULL PRODUCTION EVAL LIST (Steve 2026-10-08): every src/js/*.js in index.html load
+// order, minus DOM-only app.js/sprites.js/tile-scenes.js/move-anim.js and minus
+// drama.js (top-level document access crashes node eval). A short list silently drops
+// real systems (a missing statusEffects.js caused a false `seMoveMod is not a function`
+// crash here; a missing corpses.js once nearly produced a false bug report) — keep
+// this list complete. WINDOW STUB: equipment.js needs `window` at load, but a stub left
+// in place flips combat to the async path and headless fights stall forever — stub for
+// the eval phase, then `delete global.window` before playing.
+global.window = global;
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js', 'src/js/conversation.js', 'src/js/journal.js', 'src/js/party.js',
- 'src/js/truth.js', 'src/js/storage.js', 'src/js/perceive.js', 'src/js/carexplore.js',
- 'src/js/justice.js', 'src/js/debug-scenarios.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+ 'src/js/game.js', 'src/js/encounters.js', 'src/js/conversation.js', 'src/js/convo-mood.js',
+ 'src/js/convoTopics.js', 'src/js/convo-wants.js', 'src/js/convo-dialogue.js',
+ 'src/js/convo-beats.js', 'src/js/examine.js', 'src/js/equipment.js',
+ 'src/js/journal.js', 'src/js/party.js', 'src/js/party-formal.js', 'src/js/truth.js',
+ 'src/js/contests.js', 'src/js/alienPlayers.js', 'src/js/storage.js',
+ 'src/js/perceive.js', 'src/js/carexplore.js', 'src/js/justice.js', 'src/js/food.js',
+ 'src/js/betrayal.js', 'src/js/corpses.js', 'src/js/lifeseed.js', 'src/js/progression.js',
+ 'src/js/ledger.js', 'src/js/abilityActions.js', 'src/js/monsterBehaviors.js',
+ 'src/js/statusEffects.js', 'src/js/villager-agency.js', 'src/js/codex-people.js',
+ 'src/js/membership.js', 'src/js/hierarchy.js', 'src/js/debug-scenarios.js',
+ 'src/js/build.js'].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+delete global.window;
+
 const Game = globalThis.Scattering.Game;
 const C = globalThis.Scattering.combat;
 
