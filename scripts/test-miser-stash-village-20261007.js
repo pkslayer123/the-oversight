@@ -83,7 +83,6 @@ function runBatches(n) {
   const r30 = runBatches(30 * 16);
   const stAfter = Game.stashState();
   const skimLines = stAfter.ledger.filter(e => e.kind === 'take' && e.vid === null);
-  const namedBlame = stAfter.ledger.filter(e => e.kind === 'take' && e.vid !== null && e.vid !== ME());
   const totalBefore = before30.wood + before30.branch + before30.stone;
   const totalAfter = ['wood','branch','stone'].reduce((s, m) => s + (stAfter.materials[m] || 0), 0);
   console.log(`  30 days closed: skim announcements=${r30.skims}, contributions=${r30.contribs}, ` +
@@ -93,7 +92,17 @@ function runBatches(n) {
   ok('skim ledger entries are anonymous (vid null)', skimLines.length >= 1, String(skimLines.length));
   const lt = Game.stashLedgerText(30);
   ok('ledger text says "someone" for skims', /someone took/.test(lt));
-  ok('no skim blamed on a named villager', namedBlame.length === 0, JSON.stringify(namedBlame.map(e => e.vid)));
+  // WITNESS (miser loop 2026-10-08): a skim seen by the hall-bound player now
+  // names the real robber + plants a doubt. Ledger honesty becomes: every take
+  // is either anonymous ("someone") or blames a REAL roster member — never a
+  // phantom, never the player for a skim they didn't do.
+  const rosterIds = new Set(Game.state.village.roster || []);
+  const badBlame = stAfter.ledger.filter(e => e.kind === 'take' && e.vid && !rosterIds.has(e.vid));
+  ok('skim takes blame real villagers or no one', badBlame.length === 0, JSON.stringify(badBlame.map(e => e.vid)));
+  const witnessed = stAfter.ledger.filter(e => e.kind === 'take' && e.vid && e.vid !== ME());
+  const wdoubts = (Game.state.codex.doubts || []).filter(d => d.theft && d.theft.kind === 'stash');
+  ok('witnessed skims plant stash-theft doubts', wdoubts.length >= Math.min(witnessed.length, 1) && (witnessed.length === 0 || wdoubts.length >= 1),
+    `witnessed=${witnessed.length} doubts=${wdoubts.length}`);
   ok('the pile drains over a closed month', totalAfter < totalBefore, `${totalBefore}→${totalAfter}`);
 
   // ---------- ACT 3: wary dead zone, then open ----------

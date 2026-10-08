@@ -257,7 +257,11 @@
       this.stashLog('give', def.name, n);
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
-      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 1);
+      // TRUST SCALES WITH THE HAUL (miser loop 2026-10-08): the old flat +1
+      // per call farmed infinite trust via donate-one/take-one-back cycles.
+      // Pantry precedent: token donations don't count; real hauls do.
+      const tGain = Math.min(5, Math.floor(n / 10));
+      if (tGain > 0) v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + tGain);
       v.stashGives = v.stashGives || {};
       v.stashGives[vid] = (v.stashGives[vid] || 0) + n;
       this.observe('donate');
@@ -299,6 +303,13 @@
         this.observe('hoard');
         if (Math.random() < 0.4) this.say('Someone watches you take from the stash. They say nothing. The ledger says everything.');
       }
+      // EXPLOIT: donate-then-take-back (miser loop 2026-10-08). Mirrors the
+      // pantry rule in takeFromPantry: they remember you gave, they remember
+      // you took it back. That's worse.
+      if ((v.stashGives[vid] || 0) > 0 && net <= 0) {
+        v.trust[vid] = Math.max(0, (v.trust[vid] === undefined ? 15 : v.trust[vid]) - 5);
+        this.say('You took back what you gave. They noticed. Trust -5.');
+      }
       this.say(`Took ${n} ${matName(mat, n)} from the stash.`);
       return this.tickAction(2) || this.status();
     },
@@ -320,6 +331,10 @@
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
       v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
+      // TAKE-BACK TRACKING (miser loop 2026-10-08): donating then re-taking
+      // the same tool farmed +2 trust per cycle. Tracked like materials.
+      v.stashToolGives = v.stashToolGives || {};
+      v.stashToolGives[vid] = (v.stashToolGives[vid] || 0) + 1;
       this.say(`Left your ${item.name || def.name} in the stash. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },
@@ -336,6 +351,17 @@
       const inv = this.state.scholar.inventory || [];
       inv.push({ itemId, name: tool.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
       this.stashLog('take', tool.name, 1);
+      // TAKE-BACK (miser loop 2026-10-08): taking back a tool you donated is
+      // noticed, same as the pantry rule. Kills the donate/take +2 farm.
+      const v2 = this.state.village, vid2 = this.state.scholar.villagerId;
+      v2.stashToolGives = v2.stashToolGives || {}; v2.stashToolTakes = v2.stashToolTakes || {};
+      v2.stashToolTakes[vid2] = (v2.stashToolTakes[vid2] || 0) + 1;
+      const tNet = (v2.stashToolGives[vid2] || 0) - (v2.stashToolTakes[vid2] || 0);
+      if ((v2.stashToolGives[vid2] || 0) > 0 && tNet <= 0) {
+        v2.trust = v2.trust || {};
+        v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 5);
+        this.say('You took back the tool you left. They noticed. Trust -5.');
+      }
       const lvl = this.villageTrustLevel();
       if (lvl === 'closed' && Math.random() < 0.5) {
         this.say(`You take the ${tool.name}. In this village, people notice who takes tools.`);
@@ -794,8 +820,33 @@
           const mat = mats[Math.floor(Math.random() * mats.length)];
           const n = Math.min(st.materials[mat], 1 + Math.floor(Math.random() * 2));
           st.materials[mat] -= n;
-          this.stashLog('take', MAT_DEFS[mat].name, n, null); // vid null = someone
-          this.say(`The stash count is off. ${n} ${matName(mat, n)} missing. Nobody saw anything. Everybody suspects something.`);
+          // THE SKIMMER IS REAL (miser loop 2026-10-08): like cache robbery,
+          // the thief is a villager with a name, not weather. If the player is
+          // at the hall they might SEE it — a witnessed skim plants a real
+          // doubt the detective loop (confrontDoubt) can work. Unseen, the
+          // ledger just says "someone", and the keeper's only verb is to pull
+          // the pile back out before it bleeds dry.
+          let robber = null, seen = false;
+          try {
+            robber = this.pickCacheRobber();
+            seen = !!(robber && this.state.scholar.insideHaven && Math.random() < 0.35);
+          } catch (e) {}
+          if (seen) {
+            this.stashLog('take', MAT_DEFS[mat].name, n, robber);
+            const rName = this.displayName(robber);
+            const wtext = `You saw ${rName} palm ${n} ${matName(mat, n)} from the village stash and slide it into their pack.`;
+            this.say(`👁️ ${wtext}`);
+            try {
+              const d = this.addDoubt(robber, 'observation', wtext,
+                [`saw them take ${n}× ${MAT_DEFS[mat].name} from the stash (day ${day()})`, 'closed-village skim'],
+                { quiet: true, field: 'stash_skim' });
+              if (d) d.theft = { kind: 'stash', label: `${n}× ${MAT_DEFS[mat].name}`, day: day(), witness: 'you' };
+            } catch (e) {}
+            this.say('The stash count is off — and this time you know exactly where it went.');
+          } else {
+            this.stashLog('take', MAT_DEFS[mat].name, n, null); // vid null = someone
+            this.say(`The stash count is off. ${n} ${matName(mat, n)} missing. Nobody saw anything. Everybody suspects something.`);
+          }
           this.observe('stole');
         }
       }

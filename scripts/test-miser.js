@@ -116,10 +116,12 @@ const ME = () => Game.state.scholar.villagerId;
   Game.playerCaches().push({ id: 'near', node: { x: hx, y: hy }, desc: 'near', label: 'near', items: [{ name: 'x' }], found: false, day: 0 });
   Game.playerCaches().push({ id: 'far', node: { x: hx + 14, y: hy + 14 }, desc: 'far', label: 'far', items: [{ name: 'x' }], found: false, day: 0 });
   let nearHit = 0, farHit = 0;
-  const TRIALS = 30;
+  const TRIALS = 30, DAYS = 30;
   for (let t = 0; t < TRIALS; t++) {
     for (const c of Game.playerCaches()) { c.found = false; c.items = [{ name: 'x' }]; }
-    for (let b = 0; b < 120; b++) Game.npcBatchTurn();
+    // Cache theft is a per-day roll (dailyCacheCheck, 2026-10-07); npcBatchTurn
+    // no longer rolls it. Drive the daily roll directly.
+    for (let d = 0; d < DAYS; d++) Game.dailyCacheCheck();
     if (Game.playerCaches()[0].found) nearHit++;
     if (Game.playerCaches()[1].found) farHit++;
   }

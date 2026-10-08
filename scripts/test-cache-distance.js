@@ -43,10 +43,12 @@ function freshGame() {
   Game.playerCaches().push({ id: 'near', node: { x: hx, y: hy }, desc: '', label: 'near', items: [{ name: 'x' }], found: false, day: 0 });
   Game.playerCaches().push({ id: 'far', node: { x: hx + 10, y: hy + 10 }, desc: '', label: 'far', items: [{ name: 'x' }], found: false, day: 0 });
   let nearFound = 0, farFound = 0;
-  const TRIALS = 40, BATCHES = 60;
+  const TRIALS = 40, DAYS = 60;
   for (let t = 0; t < TRIALS; t++) {
     for (const c of Game.playerCaches()) { c.found = false; }
-    for (let b = 0; b < BATCHES; b++) Game.npcBatchTurn();
+    // Cache theft is a per-day roll (dailyCacheCheck, 2026-10-07) — the old
+    // per-batch gate compounded to near-certain robbery. Drive the daily roll.
+    for (let d = 0; d < DAYS; d++) Game.dailyCacheCheck();
     if (Game.playerCaches().find(c => c.id === 'near').found) nearFound++;
     if (Game.playerCaches().find(c => c.id === 'far').found) farFound++;
   }
