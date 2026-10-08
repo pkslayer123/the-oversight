@@ -636,7 +636,7 @@ Data-driven status effect engine. Statuses (poison, disease, bleed, stun, fear, 
 ### tools-stashes (`storage.js`)
 Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/load lives in engine/state.js.)
 
-**Provides:** MAT_DEFS (code: storage.js), hasToolItem(itemId), woodcutTier(), canFell(), canPrune(), cutInfo(), pruneBranches(), gatherFallen(), addMaterial(mat, n), spendMaterial(mat, n), takeMaterial(mat, n), materialCount(mat), donateMaterial(mat, n), donateTool(itemId), takeTool(itemId), isStashableTool(item), stashState(), stashHtml(), stashLog(), stashLedgerText(), buryCache(), digUpCache(), takeFromCache(cacheId, itemIdx, qty), playerCaches(), cachesHtml(), cacheTheftChance(), pickCacheRobber(), plantCacheTheftSuspicion(), villageTrustLevel()
+**Provides:** MAT_DEFS (code: storage.js), hasToolItem(itemId), woodcutTier(), canFell(), canPrune(), cutInfo(), pruneBranches(), gatherFallen(), addMaterial(mat, n), spendMaterial(mat, n), takeMaterial(mat, n), materialCount(mat), donateMaterial(mat, n), donateTool(itemId), takeTool(itemId), isStashableTool(item), stashState(), stashHtml(), stashLog(), stashLedgerText(), _stashLedgers(vid), _stashToolLedgers(vid), _stashTotalNet(vid), buryCache(), digUpCache(), takeFromCache(cacheId, itemIdx, qty), playerCaches(), cachesHtml(), cacheTheftChance(), pickCacheRobber(village?), plantCacheTheftSuspicion(vid, c, village?), villageTrustLevel()
 
 **Rules:**
 - (none documented)
