@@ -1776,8 +1776,9 @@
   //   (service_mimic resolve — wired: game.js rush-resolve),
   //   monsterDown() (wired: game.js death fallthrough for monsters with no
   //   deathAudio) / monsterHurt() (wired: game.js tbDamage, solid hits,
-  //   once per round), delegateDebrief() (wired: game.js:19032 manager
-  //   death-line). contractBind() REMOVED 2026-10-07: dead synth (no
+  //   once per round). delegateDebrief() REMOVED 2026-10-08: dead synth —
+  //   retired delegate_beast, zero call sites (tbFifoBreather spec restructured,
+  //   dispatch gone). contractBind() REMOVED 2026-10-07: dead synth (no
   //   contract_golem in monsters.json) — design preserved in
   //   evidence/2026-10-07/audio-hook-map-20261007.md.
   //   WOUND TEMPERAMENTS (Steve 2026-10-07): woundEnraged()/woundCunning()/
@@ -3142,186 +3143,6 @@
         sg.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.94);
         s.connect(sg); sg.connect(sfxBus); s.start(t + dur * 0.5); s.stop(t + dur);
       }
-    }
-    function managerCircle() {
-      // PACING + DICTATION: rhythmic hoofbeats in a circle, under a faint
-      // warble — it's dictating into nothing. "Per my last roar..."
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      for (let i = 0; i < 4; i++) {
-        const dt = t + i * 0.32;
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(95 - i * 4, dt);
-        o.frequency.exponentialRampToValueAtTime(60, dt + 0.12);
-        g.gain.setValueAtTime(0.0001, dt);
-        g.gain.exponentialRampToValueAtTime(0.22, dt + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.2);
-      }
-      // dictation warble: thin, self-important
-      const w = ctx.createOscillator(), wg = ctx.createGain();
-      w.type = 'triangle'; w.frequency.setValueAtTime(520, t);
-      w.frequency.linearRampToValueAtTime(480, t + 1.3);
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.type = 'sine'; lfo.frequency.value = 9; lg.gain.value = 25;
-      lfo.connect(lg); lg.connect(w.frequency);
-      wg.gain.setValueAtTime(0.0001, t);
-      wg.gain.exponentialRampToValueAtTime(0.05, t + 0.4);
-      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
-      w.connect(wg); wg.connect(sfxBus);
-      w.start(t); w.stop(t + 1.35); lfo.start(t); lfo.stop(t + 1.35);
-    }
-    function managerCharge() {
-      // THE CHARGE: thundering hooves, low and inevitable — plus the tie
-      // flapping like a flag. It delegated the violence to itself.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      for (let i = 0; i < 6; i++) {
-        const dt = t + i * 0.16;
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(80 - i * 3, dt);
-        o.frequency.exponentialRampToValueAtTime(50, dt + 0.1);
-        g.gain.setValueAtTime(0.0001, dt);
-        g.gain.exponentialRampToValueAtTime(0.26, dt + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.14);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.16);
-      }
-      // tie flap: thin rapid flutter
-      const f = ctx.createOscillator(), fg = ctx.createGain();
-      f.type = 'square'; f.frequency.value = 55;
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.type = 'sine'; lfo.frequency.value = 22; lg.gain.value = 20;
-      lfo.connect(lg); lg.connect(f.frequency);
-      fg.gain.setValueAtTime(0.0001, t);
-      fg.gain.exponentialRampToValueAtTime(0.05, t + 0.3);
-      fg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
-      f.connect(fg); fg.connect(sfxBus);
-      f.start(t); f.stop(t + 1.05); lfo.start(t); lfo.stop(t + 1.05);
-    }
-    function managerDebrief() {
-      // TAKING NOTES: pen scratching + a satisfied sigh. The meeting is minuted.
-      // (deepened Steve 2026-10-06): the office is HAUNTED by its own
-      // infrastructure — a faint fluorescent hum (60Hz + 120Hz, joyless)
-      // sits over everything — and the sigh gets a second voice agreeing
-      // with it: a faint "mm-hm", two short descending tones, slightly late.
-      // Satisfaction, minuted in stereo.
-      if (!ensure()) return;
-      const t = ctx.currentTime, dur = 1.0;
-      const nb = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
-      const ch = nb.getChannelData(0);
-      for (let i = 0; i < ch.length; i++) {
-        const ph = (i / ctx.sampleRate * 7) % 1; // scratch rhythm
-        ch[i] = (Math.random() * 2 - 1) * (ph < 0.3 ? 0.25 : 0.03);
-      }
-      const src = ctx.createBufferSource(); src.buffer = nb;
-      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.08, t + 0.2);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      src.connect(hp); hp.connect(g); g.connect(sfxBus); src.start(t);
-      // satisfied sigh: descending breathy tone
-      const o = ctx.createOscillator(), g2 = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.setValueAtTime(340, t + 0.55);
-      o.frequency.exponentialRampToValueAtTime(220, t + 1.0);
-      g2.gain.setValueAtTime(0.0001, t + 0.55);
-      g2.gain.exponentialRampToValueAtTime(0.1, t + 0.7);
-      g2.gain.exponentialRampToValueAtTime(0.0001, t + 1.05);
-      o.connect(g2); g2.connect(sfxBus); o.start(t + 0.55); o.stop(t + 1.1);
-      // the agreement: a faint "mm-hm" — two short descending tones, late
-      [[0.75, 300, 260], [0.92, 280, 230]].forEach(([off, f0, f1]) => {
-        const dt = t + off;
-        const m2 = ctx.createOscillator(), mg = ctx.createGain();
-        m2.type = 'triangle'; m2.frequency.setValueAtTime(f0, dt);
-        m2.frequency.exponentialRampToValueAtTime(f1, dt + 0.12);
-        mg.gain.setValueAtTime(0.05, dt);
-        mg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
-        m2.connect(mg); mg.connect(sfxBus); m2.start(dt); m2.stop(dt + 0.18);
-      });
-      // the fluorescent hum: 60 + 120, faint, joyless — except the 120 is
-      // drifting: the ballast is dying
-      [[60, 0.012], [121.3, 0.008]].forEach(([fq, vol]) => {
-        const h = ctx.createOscillator(), hg = ctx.createGain();
-        h.type = 'sine'; h.frequency.value = fq;
-        hg.gain.value = vol;
-        h.connect(hg); hg.connect(sfxBus); h.start(t); h.stop(t + dur + 0.2);
-      });
-    }
-    function delegateDebrief() {
-      // DICTATING INTO NOTHING (Steve 2026-10-06): this used to alias
-      // managerDebrief — same satisfied pen-scratch for two different
-      // monsters. The delegate doesn't take notes; it dictates action items
-      // into a dead mic. Flat corporate tone-pair (detuned, joyless), a
-      // paper-shredder stutter for the paperwork, and the words thinning
-      // into nothing because nothing is listening.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // the dead mic: flat tone-pair, detuned and joyless
-      [[440, 438], [445.5, 443]].forEach(([f0, f1]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square';
-        o.frequency.setValueAtTime(f0, t);
-        o.frequency.linearRampToValueAtTime(f1, t + 0.9);
-        const f = ctx.createBiquadFilter();
-        f.type = 'lowpass'; f.frequency.value = 1400;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.07, t + 0.1);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
-        o.connect(f); f.connect(g); g.connect(sfxBus);
-        o.start(t); o.stop(t + 1.0);
-      });
-      // the paperwork: shredder stutter, irregular
-      const nz = noise(0.8), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'highpass'; nf.frequency.value = 2800;
-        const sh = ctx.createOscillator(), sg = ctx.createGain();
-        sh.type = 'square'; sh.frequency.value = 9.7; // uneven chew
-        sg.gain.value = 0.4;
-        sh.connect(sg); sg.connect(ng.gain);
-        ng.gain.setValueAtTime(0.0001, t + 0.2);
-        ng.gain.exponentialRampToValueAtTime(0.12, t + 0.35);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t + 0.2); nz.stop(t + 0.85);
-        sh.start(t + 0.2); sh.stop(t + 0.85);
-      }
-      // the words going nowhere: three descending blips, each quieter,
-      // talking into a void that doesn't answer
-      [660, 550, 440].forEach((fq, i) => {
-        const dt = t + 0.15 + i * 0.28;
-        const b = ctx.createOscillator(), bg = ctx.createGain();
-        b.type = 'sine'; b.frequency.value = fq * 0.985; // flat, unheard
-        bg.gain.setValueAtTime(0.0001, dt);
-        bg.gain.exponentialRampToValueAtTime(0.09 - i * 0.03, dt + 0.04);
-        bg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.18);
-        b.connect(bg); bg.connect(sfxBus);
-        b.start(dt); b.stop(dt + 0.22);
-      });
-    }
-    function managerFear() {
-      // RETREAT: hoofbeats receding + nervous paper rustle. Too many stakeholders.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      for (let i = 0; i < 4; i++) {
-        const dt = t + i * 0.28;
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(100, dt);
-        o.frequency.exponentialRampToValueAtTime(65, dt + 0.1);
-        const amp = 0.2 - i * 0.04; // receding
-        g.gain.setValueAtTime(0.0001, dt);
-        g.gain.exponentialRampToValueAtTime(Math.max(0.05, amp), dt + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.14);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.16);
-      }
-      // nervous paper rustle
-      const nb = ctx.createBuffer(1, ctx.sampleRate * 0.9, ctx.sampleRate);
-      const ch = nb.getChannelData(0);
-      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * 0.12 * (0.5 + 0.5 * Math.sin(i / 900));
-      const src = ctx.createBufferSource(); src.buffer = nb;
-      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4000;
-      const g = ctx.createGain(); g.gain.value = 0.5;
-      src.connect(hp); hp.connect(g); g.connect(sfxBus); src.start(t + 0.2);
     }
     function staticCry(opts) {
       // VOICE IN STATIC: filtered noise shaped like a cry. Freaky: it almost
@@ -10759,10 +10580,6 @@
       projectorBreak() { projectorBreak(); },
       projectorPull() { projectorPull(); },
       projectorFire() { projectorFire(); },
-      managerCircle() { managerCircle(); },
-      managerCharge() { managerCharge(); },
-      managerDebrief() { managerDebrief(); },
-      managerFear() { managerFear(); },
       hypeInflate() { hypeInflate(); },
       hypeEncourage(d) { hypeEncourage(d); },
       hypeDetonate() { hypeDetonate(); },
@@ -10828,9 +10645,7 @@
       swarmEscalate() { swarmEscalate(); },
       swarmScatter() { swarmScatter(); },
       swarmShutters(d) { swarmShutters(d); }, // (Steve 2026-10-06): urgency now heard
-      // delegateCircle: the one delegate* name game.js actually fires (game.js:19087).
-      // delegateAnnounce/delegateCharge shims removed 2026-10-07 — never fired.
-      delegateCircle() { managerCircle(); },
+      // delegateCircle/managerCircle removed 2026-10-08 — retired delegate_beast/manager monster ids; zero call sites (Steve 2026-10-08).
       // System events
       confront() { confront(); },
       // CONTESTS + JUSTICE OUTCOMES (Steve 2026-10-06): hooks for the
@@ -10899,7 +10714,6 @@
       serviceRush() { serviceRush(); },   // service_mimic: hold music slammed into motion
       monsterDown() { monsterDown(); },   // generic death — collapse, breath out, wrong note
       monsterHurt() { monsterHurt(); },   // generic wound — a flinch, cut off
-      delegateDebrief() { delegateDebrief(); }, // (Steve 2026-10-06): was a pure alias of managerDebrief — now its own dictating-into-nothing synth
       // WOUND TEMPERAMENTS (Steve 2026-10-07): game.js fires these on
       // wound-state shifts (dynamic 'wound'+wcap) + contests.js beat arrays.
       // wound() (Steve 2026-10-08, audio-hook sweep): the GENERIC wound voice

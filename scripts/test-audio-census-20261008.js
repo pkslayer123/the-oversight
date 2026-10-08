@@ -79,8 +79,11 @@ ok('patternWindup reachable via drama phaseShift mate',
 const encSrc = fs.readFileSync(path.join(SRC, 'encounters.js'), 'utf8');
 ok("animalPanic fired via encAudio cornered branches",
   (encSrc.match(/encAudio\('animalPanic'\)/g) || []).length >= 3 && registry.has('animalPanic'));
-ok('delegateDebrief wired in tbFifoBreather spec',
-  gameSrc.includes("'delegateDebrief']") && gameSrc.includes('if (audio) this.audioEvent(audio)'));
+ok('delegateDebrief fully retired: no registry entry, no fire site',
+  !registry.has('delegateDebrief') && ![...fired].includes('delegateDebrief'));
+// (delegate_beast retired 2026-10-08; its debrief synth + registry entry were
+// removed in the retired-id cleanup. The old assertion here checked the
+// tbFifoBreather spec, whose dispatch was restructured away earlier that day.)
 
 // pattern-dispatch coverage: every attack pattern type in monsters.json must
 // resolve to a voice in telegraph()/impact() (ambush windup silent BY DESIGN).
@@ -109,7 +112,9 @@ const ALLOW_INDIRECT = new Set([
   'humStop',                                            // via combatEnd()
   'impactWild',                                         // via impact() fallthrough
   'deerCall',                                           // internal, via deerNotice/deerAggro/deerDown
-  'animalPanic', 'delegateDebrief',                     // variable dispatch (verified above)
+  'animalPanic',                                    // variable dispatch (verified above)
+  // NOTE: 'delegateDebrief' was here while the retired delegate_beast's synth
+  // was still registered; removed 2026-10-08 with the registry entry.
   'woundEnraged', 'woundCunning', 'woundDesperate',      // 'wound'+wcap (verified above)
   'patternWindup',                                      // drama audioFor (verified above)
   'boarNotice', 'ducksQuack',                           // data-driven noticeAudio
@@ -246,25 +251,28 @@ async function main() {
       'fired=[' + [...new Set(audioFired)].slice(0, 12).join(',') + ']');
   }
 
-  // ---- B1c: REGISTERED-BUT-UNREACHABLE aggro hooks (the hunt's catch) ----
-  // Each is registered in app.js and named in monsters.json, but its monster's
-  // bespoke turn code returns before the generic declare dispatch
-  // (game.js:25434 `dcfg.aggroAudio`) — verified by code-path analysis, and
-  // confirmed dynamically below (full fight, hook never requested).
-  const UNREACHABLE = [
+  // ---- B1c: FORMERLY-UNREACHABLE aggro hooks — now wired (audio-hook sweep,
+  // Steve 2026-10-08). These were registered in app.js and named in
+  // monsters.json but their monsters' bespoke turn code returned before the
+  // generic declare dispatch — so the census asserted they NEVER fired. The
+  // audio-game worker's generic-declare fix wired them; the 2026-10-08 audio
+  // census re-verification proved they fire (probe: FIRES on seeds 20261008,
+  // 7, 42). The old DOCUMENTED-GAP assertions were failing BECAUSE the hooks
+  // fire — stale assertions, not real gaps. Now asserted as fired.
+  const NOW_WIRED = [
     ['speedbump_turtle', 'turtleGrind', 'turtle never declares by design (ambush snap, no warning) — game.js:25200'],
     ['glasswing', 'glasswingBuzz', 'bespoke circle/dive path fires glasswingDive, returns before generic declare — game.js:23826'],
     ['sunbasker', 'sunbaskerShimmer', 'bespoke bask path fires baskCharge via encDeclareDirect (no aggroAudio) — game.js:21710/24213'],
     ['heckler', 'hecklerLaugh', 'bespoke warming_up/heckling path fires hecklerPileOn/hecklerHeadliner only — game.js:24788'],
     ['lockpick_raccoon', 'lockpickFingers', 'bespoke tbLockpickTurn consumes the turn; generic declare only on cornered fallthrough — game.js:22998'],
   ];
-  for (const [id, hook, why] of UNREACHABLE) {
+  for (const [id, hook, why] of NOW_WIRED) {
     // turtle snaps only when adjacent — place the player next to it so the
     // fight exercises the real attack path, not an idle standoff.
     const adj = id === 'speedbump_turtle';
     newFight(id, 4, 4, adj ? 4 : 4, adj ? 5 : 6);
     stepTurns(40);
-    ok('DOCUMENTED GAP (never fires): ' + hook, !audioFired.includes(hook), why);
+    ok('FIRED in combat (wired 2026-10-08): ' + hook, audioFired.includes(hook), why);
   }
   // the turtle's resolve path DOES work when adjacent — prove the snap voice fires
   {

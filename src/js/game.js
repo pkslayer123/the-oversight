@@ -21975,45 +21975,7 @@
       }
       return false;
     },
-    // DELEGATE's circle: two steps orbiting the target — it commits to a
-    // direction and keeps turning that way (no pacing out and back), holding
-    // roughly the same distance. All while dictating the meeting into nothing.
-    beastCircle(m, tgt) {
-      const detail = this.genDetail(this.map.px, this.map.py);
-      const angDiff = (a, b) => {
-        let d = a - b;
-        while (d > Math.PI) d -= 2 * Math.PI;
-        while (d < -Math.PI) d += 2 * Math.PI;
-        return d;
-      };
-      let px = m.mx, py = m.my, dirSign = 0;
-      for (let step = 0; step < 2; step++) {
-        const d0 = Math.max(Math.abs(tgt.mx - m.mx), Math.abs(tgt.my - m.my));
-        const ang0 = Math.atan2(m.my - tgt.my, m.mx - tgt.mx);
-        let best = null, bestScore = -99, bestDa = 0;
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-          if (!dx && !dy) continue;
-          const nx = m.mx + dx, ny = m.my + dy;
-          if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue;
-          if (nx === px && ny === py) continue; // no backtracking
-          const cell = detail[ny] && detail[ny][nx];
-          if (cell && this.cellProps(cell).blocks) continue;
-          const d = Math.max(Math.abs(tgt.mx - nx), Math.abs(tgt.my - ny));
-          const da = angDiff(Math.atan2(ny - tgt.my, nx - tgt.mx), ang0);
-          if (dirSign !== 0 && Math.sign(da) !== dirSign) continue; // keep turning
-          const score = Math.abs(da) - Math.abs(d - d0) * 0.6;
-          if (score > bestScore) { bestScore = score; best = { x: nx, y: ny }; bestDa = da; }
-        }
-        if (!best) break;
-        px = m.mx; py = m.my;
-        if (dirSign === 0 && bestDa !== 0) dirSign = Math.sign(bestDa);
-        m.mx = best.x; m.my = best.y;
-      }
-      m.circled = true;
-      this.encSetPhase(m, 'circle');
-      this.say('⚠ ' + ((m.mdef.attack || {}).telegraph || 'It paces a wide circle around you.'));
-      this.audioEvent('delegateCircle');
-    },
+    // REMOVED 2026-10-08: beastCircle() — the retired delegate_beast's circle beat. Uncalled since the Phase-1 bespoke-AI removal; fired delegateCircle, now also removed from the audio registry (Steve 2026-10-08).
     // INFLUENCER's chase: up to full speed at the player, stopping at arm's
     // length — never onto anyone, never into fire. It fears fire (instinct).
     swarmChase(m) {
@@ -22975,8 +22937,9 @@
       // DELEGATE (Steve 2026-10-06): the bespoke branch below owns the
       // circle beat (one circle turn per cycle, knowledge-gated cue). The
       // old beastCircle() pre-pass double-circled and double-played the
-      // circle synth (delegateCircle aliases managerCircle). Removed — the
-      // beastCircle() helper stays for any sibling use.
+      // circle synth (delegateCircle aliases managerCircle). Removed in
+      // Phase-1; the helper itself was deleted 2026-10-08 with the retired
+      // delegate_beast (zero call sites).
       const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
