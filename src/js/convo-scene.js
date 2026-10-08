@@ -178,8 +178,13 @@
       const wasActive = c.active;
       c.active = true;
       try {
-        const hasHonest = (menu) => menu.some(ch => ch && ch.id &&
-          (/honest_pass/.test(ch.id) || /:honest_pass$/.test(ch.id)));
+        const hasHonest = (menu, answers) => menu.some(ch => {
+          if (!ch || !ch.id) return false;
+          if (/honest_pass/.test(ch.id)) return true;
+          // Data-authored honest boundary (honest_opt_out flag).
+          const aid = ch.id.split(':').pop();
+          return !!(answers || []).some(a => a.id === aid && a.honest_opt_out);
+        });
         const hasSilence = (menu) => menu.some(ch => ch && ch.id &&
           (ch.id === 'silence' || ch.id === 'nv:listen'));
         const hasRealAnswer = (menu, prefix) => menu.some(ch => ch && ch.id &&
@@ -197,7 +202,7 @@
           c.reactiveQ = null; c.genericQ = null; c.thread = null; c.heldBeats = [];
           const menu = this.buildMenu(vid);
           if (!hasRealAnswer(menu, 'ans:')) failures.push(q.id + ': no real answer offered');
-          if (!hasHonest(menu)) failures.push(q.id + ': missing honest opt-out');
+          if (!hasHonest(menu, ans)) failures.push(q.id + ': missing honest opt-out');
           if (!hasSilence(menu)) failures.push(q.id + ': missing silence');
           // honest-hard answers, where they exist, must be offered.
           for (const a of ans) {
@@ -255,6 +260,22 @@
         shared_goal: 'what we talked about wanting',
       };
       return MEM_LABELS[memType] || null;
+    },
+
+    // convoRecallYouSaid: read the you_said ledger — what the player told
+    // this NPC before. Returns the note (e.g. "q_trust=a_yes") or null.
+    // This is the read site for the you_said writes (Telltale-theater rule).
+    convoRecallYouSaid(vid, qid) {
+      try {
+        const mem = (((this.state.village || {}).memory || {})[vid]) || [];
+        for (let i = mem.length - 1; i >= 0; i--) {
+          const m = mem[i];
+          if (m && m.t === 'you_said' && String(m.note || '').indexOf(qid + '=') === 0) {
+            return String(m.note).slice(qid.length + 1);
+          }
+        }
+      } catch (e) {}
+      return null;
     },
 
     // convoWhatsAlive: memory-driven "what can we talk about" (Principle 8).

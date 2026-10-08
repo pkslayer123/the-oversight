@@ -2425,7 +2425,15 @@
       try {
         const nlang = this.npcNativeLang(vid);
         if (nlang && nlang !== 'english' && this.langExposure(nlang) >= 3 && this.translatorStage() < 2) {
-          return { id: 'speak_back', label: `(try your ${this.langDef(nlang).name})` };
+          // THEY REMEMBER YOU TRYING (spoke_<lang> ledger read): a repeat
+          // attempt is labeled as one — continuity, not amnesia.
+          let tried = false;
+          try {
+            const mem = (((this.state.village || {}).memory || {})[vid]) || [];
+            tried = mem.some(m => m && m.t === 'spoke_' + nlang);
+          } catch (e) {}
+          const lname = this.langDef(nlang).name;
+          return { id: 'speak_back', label: tried ? `(try your ${lname} again)` : `(try your ${lname})` };
         }
       } catch (e) {}
       return null;
@@ -2841,15 +2849,50 @@
         return this.finalizeMenu(vid, sub);
       }
 
+      // WHAT'S ALIVE (dialog rethink Phase 2, Principle 8): the menu leads
+      // with what's alive between you — open threads, fresh memories,
+      // want-driven questions, world events — not the static pool. Placed
+      // before the beat matrix so lived continuity outranks the topic pool.
+      if (!onThread && !suppressPivot && !reactiveDef && !gqActive) {
+        try {
+          const alive = (typeof this.convoWhatsAlive === 'function') ? this.convoWhatsAlive(vid) : [];
+          let aliveAdded = 0;
+          for (const a of alive) {
+            if (choices.length >= MAXC || aliveAdded >= 3) break;
+            if (choices.some(ch => ch && ch.id === a.id)) continue;
+            choices.push(a); aliveAdded++;
+          }
+        } catch (e) {}
+      }
       // BEAT MATRIX (dialog rethink Phase 1, Steve 2026-10-08): the live
       // beat+topic menu from convo-beats.js. Tried before the topic-assembly
       // fallback below; returns null when the fallback should run. This
       // replaces the old load-order override chain (convo-dialogue.js:427)
       // with an explicit call inside the single pipeline.
+      // CONTRACT (Phase 2): a hanging direct question owns the menu — the
+      // beat matrix must not override reactive/generic answers. Answering
+      // comes first; it's rude to ignore it.
+      if (reactiveDef || gqActive) {
+        return this.finalizeMenu(vid, choices);
+      }
       try {
         const beatMenu = typeof this.beatMenuResponses === 'function'
           ? this.beatMenuResponses(vid) : null;
-        if (beatMenu) return this.finalizeMenu(vid, beatMenu);
+        if (beatMenu) {
+          // Alive items ride along: prepend them to the beat menu so the
+          // conversation leads with what's alive, not just what's next.
+          try {
+            const alive = (typeof this.convoWhatsAlive === 'function') && !onThread && !suppressPivot
+              ? this.convoWhatsAlive(vid) : [];
+            const pre = [];
+            for (const a of (alive || [])) {
+              if (pre.length >= 2) break;
+              if (!beatMenu.some(ch => ch && ch.id === a.id)) pre.push(a);
+            }
+            if (pre.length) return this.finalizeMenu(vid, pre.concat(beatMenu));
+          } catch (e) {}
+          return this.finalizeMenu(vid, beatMenu);
+        }
       } catch (e) {}
 
       // THREAD COHERENCE (Steve 2026-10-06): mid-thread, the menu IS the
@@ -2877,20 +2920,6 @@
         if (choices.length < MAXC) pushReact();
       } else {
         let topicsAdded = 0;
-        // WHAT'S ALIVE (dialog rethink Phase 2, Principle 8): the topic menu
-        // leads with what's alive between you — open threads, fresh memories,
-        // want-driven questions, world events — not the static pool. The
-        // subject-change menu becomes "things between us."
-        if (!suppressPivot) {
-          try {
-            const alive = (typeof this.convoWhatsAlive === 'function') ? this.convoWhatsAlive(vid) : [];
-            for (const a of alive) {
-              if (choices.length >= MAXC || topicsAdded >= 3) break;
-              if (choices.some(ch => ch && ch.id === a.id)) continue;
-              choices.push(a); topicsAdded++;
-            }
-          } catch (e) {}
-        }
         for (const a of t2fresh) {
           if (a.id === threadAsk || topicsAdded >= freshCap || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
           choices.push(a); topicsAdded++;
@@ -3204,9 +3233,6 @@
       const mood = this.npcMood(vid);
       let line = null, youSaid = null;
       const done = (l, you) => { line = l; youSaid = you || null; };
-      // MOOD-SAFE shift (convo-mood.js): old harnesses may load
-      // conversation.js without the mood module — never crash alone.
-      const mshift = (d) => { if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, d); };
       // answeredReactive: this turn engaged their direct question — the
       // follow-up logic must not fire. extraQ: a formal question that lands
       // as a second beat in the same turn (rq_personal -> real question).
@@ -3253,6 +3279,17 @@
                 hb.text = '"You asked me that before. It\'s a different question now." ' + hb.text;
               }
               c.qsnap[hb.ask.id] = qclock;
+              // THEY REMEMBER WHAT YOU SAID (you_said ledger read): a re-ask
+              // names your previous answer — continuity, not amnesia.
+              const prevAid = (typeof this.convoRecallYouSaid === 'function')
+                ? this.convoRecallYouSaid(vid, hb.ask.id) : null;
+              if (prevAid && prevAid !== 'honest_pass') {
+                const pqq = (cg.questions || []).find(q => q.id === hb.ask.id);
+                const paa = pqq && (pqq.answers || []).find(a => a.id === prevAid);
+                if (paa && paa.label) {
+                  hb.text += ' "Last time you said ' + String(paa.label).replace(/^"|"$/g, '') + ' — still true?"';
+                }
+              }
             } catch (e) {}
           }
           const gl = this.convoGoonLabel(vid);
@@ -3804,7 +3841,8 @@
           const l = this.convoPick(vid, 'agree:' + temp, poolA)
             || this.convoPickCycle(vid, 'agreefill', ['"Yeah."', '"Mm."', '"Right."', 'Nods along.']);
           // MOOD: being agreeable warms the room, a little, every time.
-          mshift(1);
+          // SCENE (Phase 2): through the resolver.
+          this.resolveConsequence(vid, { mood: 1, temper: 'kind', name: 'agree' });
           done(l, '"You\'re right."');
         }
       } else if (choiceId === 'joke') {
@@ -3829,8 +3867,11 @@
         const l = this.convoPick(vid, key, poolJ)
           || this.convoPickCycle(vid, 'jokefill', ['A short laugh.', 'Snorts.', 'Grins.']);
         // MOOD: jokes warm — unless they're grieving or scared, in which
-        // case it lands badly. Read the room.
-        mshift((mood === 'grieving' || mood === 'scared') ? -1 : 1);
+        // case it lands badly. Read the room. SCENE (Phase 2): resolver.
+        this.resolveConsequence(vid, {
+          mood: (mood === 'grieving' || mood === 'scared') ? -1 : 1,
+          temper: 'neutral', name: 'joke',
+        });
         done(l, '(crack a joke)');
         const vg = this.state.village;
         vg.cheer = Math.max(vg.cheer || 0, 1);
@@ -3849,7 +3890,8 @@
         // comfortable when warm, pointed when cold. (convo-mood.js)
         const ms = typeof this.convoMoodSilence === 'function'
           ? this.convoMoodSilence(vid) : { line: '"..."', shift: 0 };
-        mshift(ms.shift);
+        // SCENE (Phase 2): through the resolver.
+        if (ms.shift) this.resolveConsequence(vid, { mood: ms.shift, temper: 'neutral', name: 'silence' });
         done(ms.line, '(say nothing)');
         }
       } else if (choiceId === 'subject') {
@@ -4383,7 +4425,6 @@
       const fname = (this.firstRef ? this.firstRef(vid) : this.displayName(vid)) || 'them';
       const aid = this.translatorStage() === 1;
       c.speakBackDone = true;
-      const mshift = (d) => { if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, d); };
       if (!lang || lang === 'english' || exp < 3) {
         return { line: 'The moment passes — you don\u2019t have the words yet.', youSaid: '(the words won\u2019t come)' };
       }
@@ -4405,7 +4446,9 @@
           `"WAIT. Say that again!" ${fname} grabs your sleeve. "You SOUND like my grandmother. Say more!" You do. Some of it even lands.`,
         ];
         line = this.convoPick(vid, 'speakback:level', reacts) || reacts[0];
-        gain(1); this.trustGain(vid, 3); mshift(1);
+        gain(1);
+        // SCENE (Phase 2): speaking their tongue is a real act — resolver, no talk cap.
+        this.resolveConsequence(vid, { trust: 3, mood: 1, talk: false, temper: 'kind', name: 'speak_back:level' });
         jtext = `spoke ${def.name} with ${fname} \u2014 it worked. Just two people talking`;
       } else if (exp >= 10) {
         // MID: the shape is right, one word wrong — a funny misunderstanding.
@@ -4415,7 +4458,9 @@
           `"Hm. Almost." ${fname} corrects the one word, gently, like setting a bone. "Again." You say it right. They nod, satisfied with both of you.`,
         ];
         line = this.convoPick(vid, 'speakback:mid', reacts) || reacts[0];
-        gain(1); this.trustGain(vid, 2); mshift(1);
+        gain(1);
+        // SCENE (Phase 2): resolver, no talk cap (real effort).
+        this.resolveConsequence(vid, { trust: 2, mood: 1, talk: false, temper: 'kind', name: 'speak_back:mid' });
         jtext = `tried speaking ${def.name} with ${fname} \u2014 one wrong word, we both laughed`;
       } else {
         // LOW: mostly wrong, charming failure. The correction teaches.
@@ -4434,7 +4479,8 @@
         gain(2);
         // Endearing if rapport is high, awkward if not. Never punished —
         // awkward is a beat, not a penalty.
-        if (trust >= 30) { this.trustGain(vid, 1); mshift(1); }
+        // SCENE (Phase 2): resolver.
+        if (trust >= 30) this.resolveConsequence(vid, { trust: 1, mood: 1, talk: false, temper: 'kind', name: 'speak_back:low' });
         jtext = `tried speaking ${def.name} with ${fname} \u2014 mangled it, they corrected me${trust >= 30 ? ' and laughed' : ''}`;
       }
       try { this.journalLearn(vid, 'note', jtext, {}); } catch (e) {}
