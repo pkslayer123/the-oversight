@@ -12907,8 +12907,6 @@
     } catch (e) {}
     // DIAL GLITCH: played once — the System replacing your time-sense.
     if (st.dialGlitch) { try { Game.clearDialGlitch(); } catch (e) {} }
-    const targets = Game.travelTargets();
-    const tset = new Set(targets.map(t => t.x + ',' + t.y));
     const n = Game.nodeDetail();
 
     screen.innerHTML = `
@@ -12960,8 +12958,10 @@
       compass.onclick = () => {
         try { if (Game.backfillSeen) Game.backfillSeen(); } catch (e) {}
         const st = Game.state;
-        const tset = new Set(); // travel dest, if any
-        try { const td = Game.travelDest ? Game.travelDest() : null; if (td) for (const k of td) tset.add(k); } catch (e) {}
+        // No travel-destination system exists (the old destination hook was
+        // removed) — the map highlights nothing as a destination. renderMap
+        // keeps the tset parameter for the highlight machinery.
+        const tset = new Set();
         const _seenCount = Object.keys((Game.state.scholar || {}).seenTiles || {}).length;
         overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World (${_seenCount} seen)</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
         overlay.classList.remove('hidden');
@@ -12996,7 +12996,8 @@
             // Travel happens by walking. The map shows where you've been.
             const how = seen === 'shared' ? ' <span class="dim">(shown to you by someone)</span>' : '';
             const glyph = (typeof S !== 'undefined' && S.TILE_GLYPH && tl) ? (S.TILE_GLYPH[tl.type] || '·') : '·';
-            mapInfoEl.innerHTML = `${glyph} <b>${esc(tl ? tl.type : 'unknown')}</b>${how}.`;
+            const tname = tl ? (((typeof S !== 'undefined' && S.TILE_NAME && S.TILE_NAME[tl.type]) || tl.type)) : 'unknown';
+            mapInfoEl.innerHTML = `${glyph} <b>${esc(tname)}</b>${how}.`;
           };
         });
       };
@@ -14602,14 +14603,9 @@
         if (d > 0) parts.push(`🏘️ ${dirArrow(hv.px - px, hv.py - py)}${d}`);
       }
     } catch (e) {}
-    // Destination (if traveling)
-    try {
-      const tset = Game.travelDest ? Game.travelDest() : null;
-      if (tset && tset.size) {
-        const [tx, ty] = [...tset][0].split(',').map(Number);
-        parts.push(`🎯 ${dirArrow(tx - px, ty - py)}${dist(tx, ty)}`);
-      }
-    } catch (e) {}
+    // (No travel-destination marker: the old destination hook was removed.
+    // The compass marks haven, discovered villages, and the revealed beast —
+    // all earned.)
     // Wanderer/beast
     try {
       const w = st.wanderer;
@@ -14761,7 +14757,7 @@
         } else {
           // HAVEN/VILLAGE ICON (Steve 2026-10-06): havens and villages ALWAYS
           // show the 🏘️ icon, not terrain. You need to see where people are.
-          // Haven is always at (3,3); check coords directly (tile data may be null).
+          // Haven is always at (4,4); check coords directly (tile data may be null).
           const isHavenTile = (x === 4 && y === 4) || (tl && (tl.type === 'haven' || tl.village));
           if (isHavenTile) {
             g = '🏘️';
