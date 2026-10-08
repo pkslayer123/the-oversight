@@ -26,6 +26,11 @@ if [ "$usepct" -gt 85 ]; then
   exit 1
 fi
 
+# Self-unblocking: reap dead trees BEFORE checking the cap, so a new worker
+# never blocks on cleanable orphans — only on genuinely active trees.
+# (Runs before we take the registry lock; reap takes/releases its own.)
+bash "$(dirname "$0")/worktree-reap.sh" >/dev/null 2>&1 || true
+
 exec 200>"$LOCK"
 flock -x 200
 
