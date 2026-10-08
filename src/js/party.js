@@ -614,6 +614,10 @@
           helped: false,
         });
       }
+      // FLAG HYGIENE (flesh-out loop 2026-10-07): this fight bypasses
+      // startCombat — reset per-fight combat flags or the last fight's
+      // rage/trade/debt would leak in for free.
+      this.resetPerFightFlags();
       this.tbfight = {
         fighters,
         order: (globalThis.Scattering.combat || {}).turnOrder

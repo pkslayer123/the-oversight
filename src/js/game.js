@@ -17599,20 +17599,27 @@
       return { id: pick.id, veteran: isVeteran };
     },
 
-    startCombat(monsterId) {
+    // PER-FIGHT FLAG HYGIENE (flesh-out loop 2026-10-07): per-fight combat
+    // flags set by brawler/hunter abilities must not leak into the NEXT
+    // fight. Monster fights go through startCombat(); the uprising and
+    // party-betrayal fights build this.tbfight directly (justice.js,
+    // party.js) — all three call this reset. (fightRead is intentionally
+    // NOT cleared — read_fight banks +2 speed for the NEXT fight when used
+    // out of combat. layWaitActive is intentionally NOT cleared — it holds
+    // for the next animal encounter, consumed by checkAnimals, not by
+    // fights. cleanShotReady IS cleared — a lined-up hunting shot doesn't
+    // survive a monster fight.)
+    resetPerFightFlags() {
       const s = this.state.scholar;
       // BRAWLER (Steve 2026-10-07): per-fight damage ledger for Settle the
       // Debt. (The audit found "once per fight" flags were once-per-save;
       // at minimum the ledger itself must reset or the debt is dishonest.)
       s.fightDamageTaken = 0;
       // HAYMAKER WHIFF (brawler loop 2026-10-07): off-balance never leaks
-      // across fights. (Beside the ledger, not in the flag-hygiene block
-      // below, so the reset stands on its own.)
+      // across fights.
       delete s.haymakerOffBalance;
       // BRAWLER FLAG HYGIENE (wired 2026-10-07): the remaining per-fight flags
-      // must not leak across fights either. (fightRead is intentionally NOT
-      // cleared — read_fight banks +2 speed for the NEXT fight when used out
-      // of combat.)
+      // must not leak across fights either.
       delete s.rageActive;
       delete s.tradeOpen;
       delete s.debtSettled;
@@ -17621,16 +17628,18 @@
       delete s.shakeOffUsed;
       delete s.haymakerReady;
       // HUNTER FLAG HYGIENE (wired 2026-10-07): per-strike flags armed by
-      // useAbility() actions must not leak into the next fight. (layWaitActive
-      // is intentionally NOT cleared — it holds for the next animal encounter,
-      // consumed by checkAnimals, not by fights. cleanShotReady is cleared
-      // too — a lined-up hunting shot doesn't survive a monster fight.)
+      // useAbility() actions must not leak into the next fight.
       delete s.aimBonus;
       delete s.deadAimShot;
       delete s.ambushReady;
       delete s.ignoreArmorNext;
       delete s.noDodgeNext;
       delete s.cleanShotReady;
+    },
+
+    startCombat(monsterId) {
+      this.resetPerFightFlags();
+      const s = this.state.scholar;
       this.syncMonsterAlias();
       const px = s.mx ?? 4, py = s.my ?? 4;
       // WANDERER CONTACT (forager loop 2026-10-05): the "Face it" button calls
