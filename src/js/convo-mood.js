@@ -78,7 +78,12 @@
       'shared_fear', 'shared_goal', 'hero', 'mediated', 'rally'];
     const HURT_KINDS = ['promise_broken', 'hostile', 'you_threatened',
       'confronted', 'ignored', 'rumor_about_them', 'suspects_you_stealing',
-      'started_rumor', 'deal_refused', 'stingy_gift', 'deflected', 'slip'];
+      'started_rumor', 'deal_refused', 'stingy_gift', 'deflected', 'slip',
+      // WRONGLY_ACCUSED (detective playtest 2026-10-08): truth.js promises
+      // "people remember being called a liar" and stores the memory — but it
+      // was never read here, so a false accusation cost 2 trust and nothing
+      // socially. Now it cools the relationship like any other hurt.
+      'wrongly_accused'];
     let r = 0;
     try {
       const day = (this.state.scholar || {}).day || 0;

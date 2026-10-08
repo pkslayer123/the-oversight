@@ -3761,12 +3761,18 @@
         c.rumorDone = true; c.thread = null; c.rumorTarget = null; c.rumorTargets = null;
         // Sharing a secret is intimate: a little trust, and they remember.
         // SCENE (Phase 2): through the resolver (words cap; the memory is the act).
-        this.resolveConsequence(vid, {
-          trust: 2, temper: 'cruel',
-          memory: { type: 'you_told_rumor', note: `${type} about ${this.displayName(rtarget)}` },
-          name: 'rumor:spread',
-        });
-        try { this.socialTick(vid); } catch (e) {}
+        // DEDUPE GATE (detective playtest 2026-10-08): the reward fires ONLY
+        // when a rumor actually started. The dedupe path (same target, same
+        // day-part) spread nothing but still paid +trust per fresh
+        // conversation — an infinite trust farm for repeating one rumor.
+        if (g) {
+          this.resolveConsequence(vid, {
+            trust: 2, temper: 'cruel',
+            memory: { type: 'you_told_rumor', note: `${type} about ${this.displayName(rtarget)}` },
+            name: 'rumor:spread',
+          });
+          try { this.socialTick(vid); } catch (e) {}
+        }
         // Reaction in their temperament voice — not a canned pivot.
         const temp = this.npcTemper(vid);
         const reacts = {
@@ -3781,7 +3787,7 @@
           restless: [`"Huh — okay, that's worth knowing."`],
         };
         const pool = reacts[temp] || [`"Oh? ...I'll keep that in mind."`];
-        done(g ? this.convoPick(vid, 'rumorreact:' + type, pool) : `"Hmm. No one's around to hear that yet."`,
+        done(g ? this.convoPick(vid, 'rumorreact:' + type, pool) : `"It's already going around."`,
           typeLabels[type] || `"Word about ${tname}."`);
       } else if (choiceId === 'theorize') {
         // Think TOGETHER. Topic order: the System (if it's here), the monsters,

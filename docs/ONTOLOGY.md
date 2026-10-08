@@ -673,6 +673,7 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - gossip_intel_forms_lead_without_claim: true (code: checkGossipClaim)
 - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
+- confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
 
 **Consumes:** village.gossip
 

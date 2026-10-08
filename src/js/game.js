@@ -9756,8 +9756,22 @@
           }
           // TRACING: the subject might figure out who started this.
           // Higher distortion = harder to trace. Direct witness = easy.
+          // PLAYER ATTRIBUTION (detective playtest 2026-10-08): the first
+          // hearer is the one you told directly — when THEY are the teller,
+          // the subject traces the rumor to YOU, not to an innocent repeater.
+          // spreadRumor always promised "if caught lying, the player's
+          // reputation tanks"; the old trace blamed an NPC and cost you
+          // nothing, so false rumors were free reputation destruction plus
+          // a trust reward for spreading them.
           if (subject !== this.villagerId && Math.random() < 0.15) {
-            this.remember(subject, 'rumor_about_them', `heard a rumor about themselves, traced to ${teller}`);
+            const caught = g.playerRumor && g.heard[0] === teller;
+            const blamed = caught ? 'you' : this.displayName(teller);
+            this.remember(subject, 'rumor_about_them', `heard a rumor about themselves, traced to ${blamed}`);
+            if (caught) {
+              const nasty = ['untrustworthy', 'scheming', 'stingy', 'coward'].includes(g.action);
+              this.applyRep(this.villagerId, nasty ? { honest: -10, trustworthy: -8 } : { honest: -3 }, 1, true);
+              this.bumpTrust(subject, nasty ? -6 : -2);
+            }
           }
         }
       }

@@ -19,6 +19,7 @@
 //   - gossip_intel_forms_lead_without_claim: true (code: checkGossipClaim)
 //   - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 //   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
+//   - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
 // consumes:
 //   - village.gossip
 // ============ TRUTH-FINDING ============
@@ -903,6 +904,13 @@
     confrontDoubt(vid, doubtId) {
       const doubt = (this.state.codex.doubts || []).find(d => d.id === doubtId);
       if (!doubt || doubt.resolved) return { ok: false, line: '"Never mind."' };
+      // IDENTITY GUARD (detective playtest 2026-10-08): the doubt must belong
+      // to the person being confronted. Without this, confronting A with B's
+      // doubt punished A (-trust, hostile memories), resolved B's doubt
+      // (softlocking B's detective thread — the legitimate call then returns
+      // "Never mind." forever), and the theft path made an INNOCENT villager
+      // confess to B's crime, on the record, in the journal.
+      if (doubt.vid !== vid) return { ok: false, line: '"Never mind."' };
       const vp = this.vpOf(vid);
       const temp = this.npcTemper(vid);
       const dark = vp && vp.personality && vp.personality.dark;
@@ -1076,6 +1084,9 @@
     confrontTheft(vid, doubtId) {
       const doubt = (this.state.codex.doubts || []).find(d => d.id === doubtId);
       if (!doubt || doubt.resolved || !doubt.theft) return { ok: false, line: '"Never mind."' };
+      // IDENTITY GUARD (detective playtest 2026-10-08): see confrontDoubt.
+      // The accused must be the doubt's subject — never a bystander.
+      if (doubt.vid !== vid) return { ok: false, line: '"Never mind."' };
       // the accusation lands first (windup owns the tension beat) — then the reaction.
       this.confrontWindup(vid, doubt, null);
       const t = doubt.theft;
