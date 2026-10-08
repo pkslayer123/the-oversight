@@ -308,17 +308,43 @@
 
     // _stanceHint: return a human-readable hint about a monster's likely next move.
     // Used by read_stance and read_fight. Generic fallback if no specific intel.
+    // Returns a full sentence — both call sites only reach this on the KNOWN
+    // path (pattern learned), so naming the attack is earned, not given.
     _stanceHint: function (m) {
-      if (!m) return 'something violent';
-      // Check for telegraphed next move if the monster has one.
+      if (!m) return 'Something violent is coming — you can\'t tell what yet.';
+      // Active telegraph (object form): name the incoming attack and its
+      // timing. (HUNTER LOOP 2026-10-08: m.telegraph is an object for
+      // telegraphed attacks — the old string-only check fell through to
+      // 'something violent' even with a live telegraph, so read_stance named
+      // nothing for every wave-2 monster mid-windup.)
       try {
-        if (m.nextMove) return m.nextMove;
-        if (m.telegraph) return m.telegraph;
+        if (m.telegraph && typeof m.telegraph === 'object') {
+          var an = m.telegraph.attackName || ((m.telegraph.pattern || {}).type);
+          if (an) {
+            var tl = m.telegraph.turnsLeft;
+            var when = (tl != null) ? (tl <= 1 ? 'lands next beat' : 'lands in ' + tl + ' beats') : 'coming soon';
+            return 'It\'s winding up ' + an + ' — ' + when + '.';
+          }
+        }
+        if (m.nextMove) return 'It\'s about to ' + m.nextMove + '.';
+        if (typeof m.telegraph === 'string' && m.telegraph) return 'It\'s about to ' + m.telegraph + '.';
       } catch (e) {}
       // Generic based on monster behavior flags.
-      if (m.charging) return 'a charge';
-      if (m.windingUp) return 'a big attack';
-      return 'something violent';
+      if (m.charging) return 'It\'s lining up a charge.';
+      if (m.windingUp) return 'It\'s winding up something big.';
+      // Learned patterns (codex): name what you know it can do, honestly
+      // flagged as not-yet-incoming when nothing is telegraphed.
+      try {
+        var mid = (m.mdef && m.mdef.id) || null;
+        var cx = mid && this.state.codex.monsters && this.state.codex.monsters[mid];
+        var pats = cx && cx.patterns ? Object.keys(cx.patterns) : [];
+        if (pats.length) {
+          var pk = pats[0];
+          var more = pats.length > 1 ? ' — and ' + (pats.length - 1) + ' other trick' + (pats.length > 2 ? 's' : '') : '';
+          return 'Nothing\'s winding up yet — it\'s circling. You know its moves: ' + pk + ' (' + cx.patterns[pk] + ')' + more + '.';
+        }
+      } catch (e) {}
+      return 'Something violent is coming — you can\'t tell what yet.';
     },
 
     // _applyAbilityActionMods: called from tbPlayerStrike to consume action flags.
@@ -591,8 +617,8 @@
       var known = false;
       try { known = game.tbPatternKnown(mid); } catch (e) {}
       if (known) {
-        game.say('You read its weight, its breath, the set of its shoulders. It\'s about to ' +
-          game._stanceHint(m) + '. (Read Stance — pattern known.)');
+        game.say('You read its weight, its breath, the set of its shoulders. ' +
+          game._stanceHint(m) + ' (Read Stance — pattern known.)');
       } else {
         game.say('You study it — the way it shifts, the tension coiling. You don\'t know this one well enough to read it yet. Keep watching. (Read Stance — pattern unknown.)');
       }
@@ -984,7 +1010,7 @@
         var known = false;
         try { known = game.tbPatternKnown(mid); } catch (e) {}
         if (known) {
-          game.say('You\'ve seen this dance. ' + game._stanceHint(m) + ' — and you\'re already moving. +2 speed for the rest of the fight. (Read the Fight)');
+          game.say('You\'ve seen this dance. ' + game._stanceHint(m) + ' You\'re already moving. +2 speed for the rest of the fight. (Read the Fight)');
         } else {
           game.say('You study the way it moves — but you don\'t know this one yet. +2 speed anyway; you\'re learning fast. (Read the Fight — pattern unknown.)');
         }
