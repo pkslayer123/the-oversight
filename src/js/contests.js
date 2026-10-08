@@ -24,6 +24,7 @@
 //   - _cxTakenLine(ids) -> taken announcement (single or multi)
 //   - _cxPluralBeats(text, name) -> verb-agreement fix for multi-take watch beats
 //   - _cxKillContestant(pid) -> real roster removal for contest deaths (removeVillager wrapper is a no-op)
+//   - _cxGossip(how, pid, contestName) -> seeds contest-outcome gossip so the village talks about wins/deaths (Steve 2026-10-08)
 //   - _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06)
 //   - _cxCoaching(contest)
 //   - _cxPhaseSay(text)
@@ -70,6 +71,10 @@
 //   - pool_expansion_20261006b: the four smallest pools (puzzle/detective/forage/chance, 3 each) each gain a bespoke variant — sorting (conveyor triage), witness (fabrication hunt), cache (audit heist), longodds (push-your-luck dice). NOT reskins: sorting is triage-under-time not Q&A (riddle); witness is forgery-forensics not liar-hunting (informant); cache is hiding not gathering (calorie_run); longodds is stakes-escalation not pure draw (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
 //   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06); price/impress/exchange/auction beats now resolve (justiceVerdict+exileWalk, levelup+contestSpared, contestCall+rushHit, contestCall+horrorSting) — were silent no-ops (code: CX_BEAT_DEFS, Steve 2026-10-06); the 30 older contests now have per-phase composed beats contest<Id>Declare|Escalate|Climax|Resolve in CX_BEAT_DEFS, named by _cxB (Steve 2026-10-08); _contestEnd/_contestDie/_contestRefuse fire the Resolve beat (code: CX_BEAT_DEFS, _cxB, Steve 2026-10-08); the participate/refuse choice screen fires the small shared contestChoice beat (droneCorrect+lineCut), never a contest's Declare beat — firing Declare there double-stings on Participate and plays the bespoke sting on Refuse (code: contestInterruption choicePhase, Steve 2026-10-08)
 //   - no_intro_repeat: the choice-phase text must not re-say contest name+desc (contestInterruption says it two lines earlier); it says only "The System waits." (code: contestInterruption, Steve 2026-10-08)
+//   - countdown_announced: the warning names the grab ("at dawn, one more day"); the grab lands a dread beat first ("It is today") (code: fireContest, resolveContest, Steve 2026-10-08)
+//   - gossip_aftermath: contest outcomes seed village gossip (contest_won/contest_survived/contest_died) via _cxGossip — news travels by mouth, distorted by retelling, not broadcast; villagers only (code: _cxGossip, _contestEnd, _contestDie, _contestResolveOthers, Steve 2026-10-08)
+//   - fan_favor_contests: televised wins move the fan club (+4 player, +2 villager); a player win can shake loose a fan care package (code: _contestEnd, Steve 2026-10-08)
+//   - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
 //   - scholar.day
@@ -393,6 +398,10 @@
       this.sysSay(`📺 ⚠️ HARDENED VARIANT — you've seen this before. It's worse now.`);
     }
     this.sysSay(`📺 ${this._cxTakenLine(ids)} The village holds its breath.`);
+    // COUNTDOWN DREAD (Steve 2026-10-08): the announcement never said WHEN
+    // the grab happens — the countdown was invisible, so there was no dread.
+    // One day. Named. The village holds its breath for a reason now.
+    this.sysSay(`📺 The grab comes at dawn. One more day. Sleep if you can.`);
     // AUDIO (Steve 2026-10-06): the contest window gets its own sting —
     // game-show jingle curdles. No-op when no audio system is attached.
     this.audioEvent('contestCall');
@@ -642,6 +651,10 @@
     }
     if (!finalIds.length) return;
 
+    // COUNTDOWN DREAD (Steve 2026-10-08): the grab was announced yesterday;
+    // today the cameras are already here. One beat of dread before the
+    // interruption lands — the village has been holding its breath all day.
+    this.sysSay(`📺 It is today. You dreamed about the cameras. Everyone did. The village is very quiet.`);
     // INTERRUPTION (Steve 2026-10-05): the contest doesn't resolve via dice roll.
     // It INTERRUPTS. You go through the sequence. Participate or don't.
     // If you're not involved, you watch.
@@ -2524,14 +2537,35 @@
         this.sysSay(`📺 ${contest.name} — ${pname.toUpperCase()} WIN${multiWin ? '' : 'S'}. The crowd is a weather system.`);
         this.sysSay(`📺 ${pname} is alive. Shaking, grinning, alive. You were there to see it.`);
         this.addNotability(ac.participant, 'contestWin');
-        // Villager gets the prize (not the player)
+        // GOSSIP (Steve 2026-10-08): the village will talk about this win.
+        this._cxGossip('won', ac.participant, contest.name);
+        // ALIEN PLAYERS (Steve 2026-10-08): a televised win moves the fan
+        // club — your people winning entertains the crowd too.
+        try { if (this.apAdjustFavor) this.apAdjustFavor(2, pname + ' won ' + contest.name + ' on camera'); } catch (e) {}
+        // Villager gets the prize (not the player) — REAL, not a line: the
+        // winner brings home alien rations the whole village feels.
+        // (Steve 2026-10-08: "the System's favor (and a story)" was a
+        //  placeholder prize.)
         if (prize) {
-          this.sysSay(`📺 Prize for ${pname}: the System's favor (and a story they'll tell forever).`);
+          try {
+            const vv = this.state.village;
+            vv.pantry = vv.pantry || [];
+            const pday = (this.state.scholar || {}).day || 1;
+            vv.pantry.push({ name: "Winner's share (alien rations)", kcalEach: 300, units: 2, spoilDay: pday + 9, safe: true });
+            this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
+          } catch (e2) {
+            this.sysSay(`📺 Prize for ${pname}: the System's favor (and a story they'll tell forever).`);
+          }
         }
       } else {
         this.sysSay(`📺 ${contest.name} — YOU WIN. The crowd is a weather system.`);
         this.addNotability('player', 'contestWin');
         try { this.leadShift('showmanship', 2); } catch (e) {}
+        // ALIEN PLAYERS (Steve 2026-10-08): winning on camera moves the fan
+        // club — the crowd watched, and the crowd has opinions. A televised
+        // win can also shake loose a fan care package (rate-limited inside).
+        try { if (this.apAdjustFavor) this.apAdjustFavor(4, 'won ' + contest.name + ' on camera'); } catch (e) {}
+        try { if (this.apCarePackage) this.apCarePackage(); } catch (e) {}
         if (prize) {
           try {
             const loot = this.rollAlienLoot({ wave: this.unlockedWave(), loot: { chance: 1, tier: this.unlockedWave() } });
@@ -2557,6 +2591,9 @@
       if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, isWatch ? 'watched' : 'lost'); } catch (e) {} }
       if (isWatch) {
         this.sysSay(`📺 ${contest.name} — over. ${pname} survived. The audience is polite.`);
+        // GOSSIP (Steve 2026-10-08): surviving is news too — the village
+        // talks about who came back and how they looked.
+        this._cxGossip('survived', ac.participant, contest.name);
         // WATCH-COMFORT (Steve 2026-10-06): "Give them space" must be honored.
         if (ac.comfort) this.sysSay(`📺 You go to ${pname}. They're quiet. They'll talk about it later. Or never.`);
         else this.sysSay(`📺 You give ${pname} space. The cameras move on. You don't.`);
@@ -2663,6 +2700,10 @@
       // A villager died on camera. The village buries them; the player lives
       // with having watched. (Steve 2026-10-06: this used to call playerDeath
       // unconditionally — a watched death killed the PLAYER.)
+      // GOSSIP (Steve 2026-10-08): a death on camera is the biggest news the
+      // village will get all week — seed it before the roster removal so the
+      // name still resolves.
+      this._cxGossip('died', ac.participant, contest.name);
       // _cxKillContestant: removeVillager alone is a no-op wrapper — the
       // dead must actually leave the roster.
       this._cxKillContestant(ac.participant);
@@ -3184,6 +3225,27 @@
       if (v.positions) delete v.positions[pid];
     } catch (e2) {}
   };
+  // GOSSIP AFTERMATH (Steve 2026-10-08): contest news travels by mouth, not
+  // broadcast — the village talks about who went, who won, who died, who
+  // survived. Seeded as first-hand talk from a witness; spreadGossip
+  // distorts it from there along social lines. Per-pid partKey so
+  // multi-take outcomes never dedupe each other away. Villagers only — the
+  // player's own fate is already on the record (notability, ledger).
+  G._cxGossip = function(how, pid, contestName) {
+    try {
+      if (!pid || pid === 'player') return;
+      const v = this.state.village;
+      v.gossip = v.gossip || [];
+      const day = (this.state.scholar || {}).day || 1;
+      const partKey = day + ':contest:' + (contestName || '') + ':' + how + ':' + pid;
+      if (v.gossip.some(g => g.partKey === partKey)) return;
+      const heard = [];
+      const roster = (v.roster || []).filter(id => id !== this.villagerId && id !== pid);
+      if (roster.length) heard.push(roster[Math.floor(Math.random() * roster.length)]);
+      v.gossip.push({ action: 'contest_' + how, dims: { who: pid }, heard,
+        distortion: 0, day, partKey, noTrust: false, source: 'contest' });
+    } catch (e) {}
+  };
   // MULTI-TAKE FATES (Steve 2026-10-06): when the player is taken alongside
   // villagers, each of them has their own off-screen contest. Their fates
   // roll here at the end of the player's sequence — they can win, lose, or
@@ -3207,6 +3269,8 @@
       if (dieOdds > 0 && Math.random() < dieOdds) {
         this.sysSay(`📺 ${pname} didn't come home.`);
         this.sysSay('📺 ' + this._contestDeathLine(contest, '', pname));
+        // GOSSIP (Steve 2026-10-08): their arena, their fate, the village's news.
+        this._cxGossip('died', pid, contest.name);
         this._cxKillContestant(pid);
         try { this.say(`☠ ${pname} is gone. The village will say the name for a long time.`); } catch (e) {}
         try { this.leadShift('fracture', 1); } catch (e) {}
@@ -3214,6 +3278,7 @@
       } else if (Math.random() < winOdds) {
         this.sysSay(`📺 ${pname} WON. You didn't see it — you had your own arena. The village will tell you about it for weeks.`);
         this.addNotability(pid, 'contestWin');
+        this._cxGossip('won', pid, contest.name);
       } else {
         const survived = [
           `📺 ${pname} survived. Barely, by the look of them when the lights came up.`,
@@ -3222,6 +3287,7 @@
           `📺 ${pname} walked out under their own power. The cameras lingered a little too long.`,
         ];
         this.sysSay(survived[Math.floor(Math.random() * survived.length)]);
+        this._cxGossip('survived', pid, contest.name);
       }
     }
   };
