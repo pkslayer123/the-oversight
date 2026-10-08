@@ -58,12 +58,21 @@
       return { ok: true };
     },
     // hp: deduct from health. Block if would kill (leave at least 1).
+    // COMBAT (Steve 2026-10-08, break-it round 2): in a fight the live pool
+    // is the fighter's — a raw s.health write was erased at tbEnd, making
+    // the HP cost free mid-combat. Route through addHealth; the
+    // would-kill check reads the fighter too.
     hp: function (game, amount) {
       var s = game.state.scholar;
-      if ((s.health || 0) <= amount) {
+      var cur = (s.health || 0);
+      try {
+        var pf = game.inCombat() ? game.tbFighter('p') : null;
+        if (pf && pf.alive) cur = pf.hp || 0;
+      } catch (e) {}
+      if (cur <= amount) {
         return { ok: false, why: 'Too weak — need ' + (amount + 1) + '+ HP.' };
       }
-      s.health -= amount;
+      game.addHealth(-amount);
       return { ok: true };
     },
     // turn: spend the combat action. Only valid in combat.

@@ -7339,6 +7339,12 @@
       if (!item || !this.isUsable(item)) return null;
       // RELIC BOND: you'd never use that up. It's yours.
       if (item.bonded) { this.say(`You'd never use up your ${item.name}. It's not a supply. It's yours.`); return null; }
+      // COMBAT (Steve 2026-10-08, break-it round 2): using a consumable from
+      // Pack in combat costs your action — eating, drinking, using items, all
+      // of it (spendCombatAction). The old code charged nothing here, and the
+      // heals below wrote scholar.health directly — erased at fight end, so a
+      // mid-fight first-aid kit printed "+30 health" and delivered nothing.
+      const _useInCombat = this.inCombat();
       const name = item.name.toLowerCase();
       const def0 = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
       // DICE (Steve 2026-10-05): roll with the village. Fast decisions, random
@@ -7350,13 +7356,13 @@
         v.diceDay = today;
         v.cheer = (v.cheer || 0) + 1;
         this.say('You roll the dice with whoever\'s nearby. Fast decisions, random blame, real laughter. (Village cheer +1.)');
-        this.tickAction(8);
+        if (_useInCombat) this.spendCombatAction('use'); else this.tickAction(8);
         return null;
       }
       if (name.includes('first aid')) {
         // triage: healing hands. First aid does more.
         const amt = Math.round(this.modTarget('healing.amount', 30));
-        this.state.scholar.health = Math.min(this.maxHealth(), this.state.scholar.health + amt);
+        this.addHealth(amt);
         this.say(`You use the first aid kit. +${amt} health.`);
       } else {
         // ALIEN HEALING (Steve 2026-10-05): healAmount items heal honestly.
@@ -7368,7 +7374,7 @@
             amt = Math.round(amt * 1.25);
             this.say('(The stethoscope finds the real problem first.)');
           }
-          this.state.scholar.health = Math.min(this.maxHealth(), this.state.scholar.health + amt);
+          this.addHealth(amt);
           this.say(`You use the ${item.name}. +${amt} health.`);
         }
       }
@@ -7381,6 +7387,7 @@
       if (item.units <= 0) {
         this.state.scholar.inventory.splice(idx, 1);
       }
+      if (_useInCombat) this.spendCombatAction('use');
       return null;
     },
 
@@ -8138,11 +8145,13 @@
       const b = s.water[idx];
       s.water.splice(idx, 1);
       // ACTION CLOCK: a drink is 1 tick (time-only — drinking costs no effort).
-      this.tickAction(1);
+      // In combat, time doesn't pass — the drink costs your action instead,
+      // like every other consumable (Steve 2026-10-05).
+      if (this.inCombat()) this.spendCombatAction('drink'); else this.tickAction(1);
       if (b.quality === 'risky') {
         // 30% chance of sickness
         if (Math.random() < 0.3) {
-          s.health = Math.max(0, (s.health || 100) - 15);
+          this.addHealth(-15);
           this.state.codex = this.state.codex || {};
           this.state.codex.waterWise = true; // learned the hard way
           this.say(`Drank risky water (${b.source}). Stomach cramps. -15 health. Boil it next time. (You won't make that mistake again — you can read water now.)`);
@@ -14098,7 +14107,7 @@
         const healCost = 100;
         if ((s.kcal || 0) < healCost) { this.say(`Too hungry to heal — need ${healCost} kcal.`); return false; }
         s.kcal -= healCost;
-        s.health = Math.min(this.maxHealth(), (s.health || 0) + heal);
+        this.addHealth(heal);
         this.say(`Field medicine: clean the wound, poultice it, bind it. +${heal} HP, -${healCost} kcal.`);
       } else if (id === 'herbal_remedy') {
         if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return false; }
@@ -15765,19 +15774,19 @@
         } else {
           const pChance = this.modTarget('food.poison_chance', 0.2);
           if (Math.random() < pChance) {
-            scholar.health = Math.max(0, scholar.health - 5);
+            this.addHealth(-5);
             this.say(`The ${it.name} was off. Your stomach knots. (-5 health)`);
           }
         }
       }
       if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
-        scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
+        this.addHealth(-it.diseaseRisk.dmg);
         // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
         this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
         this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
       }
       if (it.poisonRisk && Math.random() < it.poisonRisk.p) {
-        scholar.health = Math.max(0, (scholar.health || 100) - 10);
+        this.addHealth(-10);
         // POISON (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
         this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
         this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
@@ -15853,10 +15862,10 @@
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
           if (mentry.deepKnown) {
-            scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
+            this.addHealth(5);
           }
           if (mentry.masterKnown) {
-            scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
+            this.addHealth(5);
           }
         } else {
           const entry = this.state.codex.plants[it.plantId] = this.state.codex.plants[it.plantId] || { level: 0, harvests: 0, tastings: 0 };
@@ -15887,12 +15896,15 @@
           // L3 benefit, as announced: knowing a plant deeply means eating it
           // well — the knowledgeable get real nourishment from it.
           if (entry.level >= 3) {
-            scholar.health = Math.min(this.maxHealth(), (scholar.health || 100) + 5);
+            this.addHealth(5);
           }
         } // end else (plant track) — meat took the animal branch above
       }
-      // COMBAT: eating from pack costs an action (Steve 2026-10-05)
-      if (this.playerMonster() || this.state.inCombat) {
+      // COMBAT: eating from pack costs an action (Steve 2026-10-05).
+      // (Was playerMonster() || state.inCombat — state.inCombat is never
+      // assigned, so the cost silently never fired. inCombat() is the only
+      // safe check. Break-it 2026-10-08.)
+      if (this.inCombat()) {
         this.spendCombatAction('eat');
       } else {
         this.tickAction(1);
@@ -17453,6 +17465,12 @@
     // survive a monster fight.)
     resetPerFightFlags() {
       const s = this.state.scholar;
+      // BELLTOAD CHORUS (Steve 2026-10-08, break-it round 2): the delayed
+      // pack is per-fight state. Fleeing (door/barrier) ends the fight via
+      // tbEnd('fled') WITHOUT the chorus check, so a stale _pendingPack
+      // survived into the NEXT fight and spawned phantom belltoads there —
+      // mid-fight, in unrelated encounters. Clear it with everything else.
+      this._pendingPack = null;
       // BRAWLER (Steve 2026-10-07): per-fight damage ledger for Settle the
       // Debt. (The audit found "once per fight" flags were once-per-save;
       // at minimum the ledger itself must reset or the debt is dishonest.)
@@ -19454,6 +19472,26 @@
       return true;
     },
 
+    // COMBAT HP ROUTING (Steve 2026-10-08, break-it round 2): the live HP pool
+    // in a fight is the player fighter's (p.hp) — scholar.health is synced
+    // FROM it by tbDamage/tbEnd. Writing scholar.health directly mid-fight
+    // was silently erased at fight end: bad-food damage became free kcal,
+    // first-aid / field-medicine / mastery-meal heals became phantom "+N HP"
+    // lies. Route every HP delta through here; in a fight it hits the
+    // fighter (and can end the fight), outside it behaves exactly as before.
+    addHealth(n) {
+      const s = this.state.scholar;
+      const p = this.inCombat() ? this.tbFighter('p') : null;
+      if (p && p.alive) {
+        p.hp = Math.max(0, Math.min(p.maxHp, (p.hp || 0) + n));
+        s.health = Math.max(0, p.hp);
+        if (p.hp <= 0) this.tbEndCheck();
+        return s.health;
+      }
+      s.health = Math.max(0, Math.min(this.maxHealth(), (s.health || 0) + n));
+      return s.health;
+    },
+
     // SPEND COMBAT ACTION (Steve 2026-10-05): using a consumable from Pack
     // in combat costs your action. Eating, drinking, using items — all of it.
     spendCombatAction(kind) {
@@ -20211,7 +20249,7 @@
             const got = this.tbLockpickReturn(t);
             this.say(`Your ${got} is still clutched in its clever hands. You take it back.`);
           }
-          try { this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
+          try { t._deathCorpse = this.registerDeath({ kind: 'monster', monsterId: (t.mdef || {}).id, monsterName: t.name, name: t.name, mx: t.mx, my: t.my, cause: 'combat', killerId: this.villagerId, witnesses: this.fightWitnesses() }); } catch (e) {}
           const tdCfg = ((t.mdef || {}).encounter) || {};
           if (tdCfg.deathAudio) this.audioEvent(tdCfg.deathAudio);
           else if ((t.mdef || {}).id === 'gallowdeer') this.audioEvent('deerDown');
@@ -24772,6 +24810,26 @@
       const f = this.tbfight;
       if (!f || f.over) return f ? f.over : false;
       const p = this.tbFighter('p');
+      // DOUBLE-KO (Steve 2026-10-08, break-it round 2): the player can die on
+      // the same tick the last monster drops (death-throes beam). The old
+      // order checked monsters first and declared 'won' for a corpse — the
+      // 'lost' death flow (playerDeath → village-as-protagonist respawn)
+      // never ran, leaving a 0-HP scholar wandering. If you're dead, the
+      // fight is lost, even if you took it with you. Checked before the
+      // chorus too: the dead don't get encores.
+      if (p && !p.alive) {
+        this.state.scholar.health = Math.max(0, p.hp);
+        if (this.maybeCheatDeath()) {
+          p.hp = this.state.scholar.health;
+          if (p.hp > 0) { p.alive = true; this.say('You refuse to stay down. The fight goes on.'); return false; }
+        }
+        this.tbEnd('lost');
+        return true;
+      }
+      if (p && p.fled) {
+        this.tbEnd('fled');
+        return true;
+      }
       const monstersFighting = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled);
       const monstersAlive = f.fighters.some(x => x.kind === 'monster' && x.alive);
       // BELLTOAD CHORUS CONTINUES (Steve 2026-10-05): even if you kill them all,
@@ -24781,19 +24839,6 @@
         return false;
       }
       if (!monstersFighting.length) { this.tbEnd(monstersAlive ? 'routed' : 'won'); return true; }
-      if (p && (!p.alive || p.fled)) {
-        if (!p.alive) {
-          this.state.scholar.health = Math.max(0, p.hp);
-          if (this.maybeCheatDeath()) {
-            p.hp = this.state.scholar.health;
-            if (p.hp > 0) { p.alive = true; this.say('You refuse to stay down. The fight goes on.'); return false; }
-          }
-          this.tbEnd('lost');
-        } else {
-          this.tbEnd('fled');
-        }
-        return true;
-      }
       return false;
     },
 
@@ -24883,6 +24928,10 @@
     // back to creating one at the fighter's position (never silently drops).
     corpseForKill(mdef, mf) {
       try {
+        // BREAK-IT 2026-10-08: prefer the corpse registered for THIS kill.
+        // The node+species search below misfiles when two of the same species
+        // die in one fight (both carcasses landed on the last corpse).
+        if (mf && mf._deathCorpse) return mf._deathCorpse;
         const list = this.corpses ? this.corpses() : (this.state.corpses || []);
         for (let i = list.length - 1; i >= 0; i--) {
           const c = list[i];
@@ -24952,14 +25001,29 @@
         // (e.g. a human-only fight that didn't route through the betrayal
         // end path) skips the carcass economy instead of crashing on
         // undefined.mdef (2026-10-05).
-        const mf = f.fighters.find(x => x.kind === 'monster');
-        const mdef = (mf && mf.mdef) || null;
-        if (mdef) {
+        // PER-KILL REWARDS (Steve 2026-10-08, break-it round 2): every body
+        // you drop pays out — one carcass + one loot roll per creature. The
+        // old code paid once per FIGHT on the first monster fighter: pack
+        // fights left the other corpses barren and never marked their species
+        // 'slain' in the codex. Snake segments share one body (per snakeId).
+        const _dead = f.fighters.filter(x => x.kind === 'monster' && !x.alive && x.mdef);
+        const _seenBodies = new Set();
+        const _kills = [];
+        for (const _m of _dead) {
+          const _bk = (_m.mdef.snake && _m.snakeId) ? 'snake:' + _m.snakeId : 'body:' + _m.key;
+          if (_seenBodies.has(_bk)) continue;
+          _seenBodies.add(_bk);
+          _kills.push(_m);
+        }
+        const mf = _kills[0] || null;
+        if (mf) {
+        this.audioEvent('victory');
+        this.sysSay(`WINNER! Style score: ${f.style || 0}. The gamblers ${((f.style || 0) >= 40) ? 'are ecstatic!' : 'nod approvingly.'}`);
+        for (const _km of _kills) {
+        const mdef = _km.mdef;
         this.state.codex.monsters = this.state.codex.monsters || {};
         const cur = this.state.codex.monsters[mdef.id] || {};
         this.state.codex.monsters[mdef.id] = Object.assign(cur, { stage: 'slain' });
-        this.audioEvent('victory');
-        this.sysSay(`WINNER! Style score: ${f.style || 0}. The gamblers ${((f.style || 0) >= 40) ? 'are ecstatic!' : 'nod approvingly.'}`);
         if (mdef.edible) {
           // ZERO-CALORIE FIX (Steve 2026-10-05): explicit nullish check — a
           // 0-calorie "do not eat" monster yields NO meat, not 1000 kcal of
@@ -24983,7 +25047,7 @@
               unit: 'carcass', kg: Math.max(0.5, kcal / 1000),
               prep: 'A carcass. Clean it with a knife — quickly. Spoils fast.'
             };
-            const meatCorpse = this.corpseForKill(mdef, mf);
+            const meatCorpse = this.corpseForKill(mdef, _km);
             if (meatCorpse) meatCorpse.items.push(meatEntry);
             else s.inventory.push(meatEntry); // fallback: never lose the kill
             this.say(`${mdef.edible.note || ''} It's dead. The carcass is there on the ground — search the body if you want the meat. But you don't know this flesh. Clean it, test it cautiously, or ask someone who knows. And don't leave it long: meat rots where it lies.`);
@@ -24996,10 +25060,10 @@
         // leaves confused gifts for impressive violence. Show/contest rewards
         // plug into rollAlienLoot(tier) when that system lands.
         try {
-          const dropId = this.rollAlienLoot(mdef, mf);
+          const dropId = this.rollAlienLoot(mdef, _km);
           if (dropId) {
             // LOOT-AS-ACTION: the System's gift stays with the body. Search it.
-            const lootCorpse = this.corpseForKill(mdef, mf);
+            const lootCorpse = this.corpseForKill(mdef, _km);
             const granted = this.alienLootGrant(dropId, lootCorpse);
             if (granted) {
               // KNOWLEDGE-GATED (Steve 2026-10-06): name + flavor are the
@@ -25010,21 +25074,22 @@
             }
           }
         } catch (e) {}
-        } // end monster-reward block
-        this.notePlaystyle('bold');
-        try { this.villageEvent('victory'); } catch (e) {}
-        try { this.checkPromises('fight'); } catch (e) {}
         if (this.hasAbility('grave_robber') && Math.random() < 0.5) {
           const gear = ['bone knife', 'cracked helm', 'war horn', 'tooth necklace'];
           const g = gear[Math.floor(Math.random() * gear.length)];
           // LOOT-AS-ACTION: even the grave robber searches the body — the
           // trophy is on the corpse, not in the pack.
-          const grCorpse = this.corpseForKill(mdef, mf);
+          const grCorpse = this.corpseForKill(mdef, _km);
           const trophy = { name: g, kcalEach: 0, units: 1, spoilDay: 9999, unit: 'trophy', kg: 0.5 };
           if (grCorpse) grCorpse.items.push(trophy);
           else s.inventory.push(trophy);
           this.say(`Grave robber: its ${g} is on the body. The dead don't need it — but you'll have to take it.`);
         }
+        } // end per-kill loop
+        } // end monster-reward block
+        this.notePlaystyle('bold');
+        try { this.villageEvent('victory'); } catch (e) {}
+        try { this.checkPromises('fight'); } catch (e) {}
         for (const r of this.relicItems()) {
           const rdef = this.data.items.find(i => i.id === (r.itemId || r.id));
           if (rdef && rdef.class === 'sentimental') {
