@@ -1753,6 +1753,9 @@
       else if (this.topic2Has && this.topic2Has(t)) l = this.topic2Beat(vid);
       if (!l) return null;
       c.depth++;
+      // A landed beat re-opens the conversation — the consecutive dead-react
+      // count restarts (wind-down fix, Steve 2026-10-08).
+      c.reactDryCount = 0;
       return this.fillTalkLine(l, vp);
     },
 
@@ -2626,6 +2629,18 @@
         // invite was unreachable after browsing topics.)
         const inv = choices.find(ch => ch.id === 'invite_party');
         if (inv) sub.push(inv);
+        // TEACH (socialite fix 2026-10-08): "let me show you something" is a
+        // subject too. Earned knowledge-sharing rides with the other earned
+        // verbs — hiding it behind a topic pick would put the conversation
+        // on-thread, where teach correctly waits, stranding the intent.
+        try {
+          const youKnow = Object.keys(this.state.codex.plants || {});
+          const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
+          if (!suppressPivot && youKnow.some(pid => theyKnow.indexOf(pid) === -1) &&
+              !sub.some(s => s.id === 'teach')) {
+            sub.push({ id: 'teach', label: this.convoActionLabel(vid, 'teach') });
+          }
+        } catch (e) {}
         sub.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
         return sub;
       }
@@ -2754,12 +2769,17 @@
       // TEACHING happens in conversation now — show, don't menu.
       // Suppressed while a direct question hangs: no burdock non sequiturs.
       // (Thread coherence: off-thread — waits behind the subject-change.)
-      if (!onThread && choices.length < MAXC && !suppressPivot) {
+      // STARVATION FIX (2026-10-08): teach used to compete for the remaining
+      // MAXC slots and lost on full menus — the same starvation the gossip
+      // verbs were fixed for (2026-10-07). Earned knowledge-sharing rides
+      // after the capped topics instead of losing the slot lottery.
+      let teachChoice = null;
+      if (!onThread && !suppressPivot) {
         try {
           const youKnow = Object.keys(this.state.codex.plants || {});
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
           if (youKnow.some(pid => theyKnow.indexOf(pid) === -1)) {
-            choices.push({ id: 'teach', label: this.convoActionLabel(vid, 'teach') });
+            teachChoice = { id: 'teach', label: this.convoActionLabel(vid, 'teach') };
           }
         } catch (e) {}
       }
@@ -2782,6 +2802,8 @@
         ];
         choices.push(reacts[Math.floor(Math.random() * reacts.length)]);
       }
+      // Earned verbs ride after the capped topics (see TEACHING above).
+      if (teachChoice) choices.push(teachChoice);
       // The subject-change is always available mid-thread (it's the explicit
       // pivot); on openers it rides the remaining slots as before.
       if (c.thread && c.thread !== 'small' && (onThread || choices.length < MAXC)) choices.push({ id: 'subject', label: '"Can I ask you something else?"' });

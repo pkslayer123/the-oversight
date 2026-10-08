@@ -257,10 +257,14 @@
         // They continue or wind down naturally. On a dry thread, don't fish
         // for beats — go straight to the wind-down.
         const dry = c.thread && c.threadDryFor && c.thread === c.threadDryFor;
-        // WIND-DOWN (dialogue rethink, Steve 2026-10-07): dry "Anyway."
-        // loops forever — after two of them the menu stops offering the
-        // react (convo-beats.js reads c.reactDryCount).
-        if (dry) c.reactDryCount = (c.reactDryCount || 0) + 1;
+        // WIND-DOWN (dialogue rethink, Steve 2026-10-07; farm fix 2026-10-08):
+        // every react that lands on no beat is a dead "Anyway." — count it
+        // whether or not the thread was formally marked dry. A thread that
+        // merely ran out of beats (never dried via dlg:more) used to offer
+        // react forever, each tap printing +0.5 trust: an infinite trust
+        // farm on a dead button. After two dead reacts in a row the menu
+        // stops offering it (convo-beats.js reads c.reactDryCount); a landed
+        // beat resets the count (see convoThreadBeat).
         const beat = (!dry && Math.random() < 0.6) ? this.convoThreadBeat(vid) : null;
         if (beat) {
           c.threadDryFor = null;
@@ -268,6 +272,7 @@
           this.sayLine(vid, beat);
           return { line: beat, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
         }
+        c.reactDryCount = (c.reactDryCount || 0) + 1;
         const line = '"Anyway." A small smile.';
         c.transcript.push({ who: 'them', text: line });
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };

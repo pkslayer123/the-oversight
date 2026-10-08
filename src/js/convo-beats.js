@@ -303,11 +303,13 @@
     const seen = new Set();
     for (const entry of topicPool) {
       if (seen.has(entry.id)) continue;
-      // Skip "tell me more" if the thread is dry. Skip the bare react too
-      // once it's gone dry twice — the "Anyway." loop winds down instead of
-      // offering the same dead acknowledgment forever (rethink 2026-10-07).
-      if (threadDry && (entry.id === 'dlg:more' ||
-          (entry.id === 'dlg:react' && (c.reactDryCount || 0) >= 2))) continue;
+      // Skip "tell me more" if the thread is dry. Skip the bare react once
+      // it has produced two dead "Anyway."s in a row — the loop winds down
+      // instead of offering the same dead acknowledgment forever (rethink
+      // 2026-10-07; 2026-10-08: threadless wind-downs count too — a thread
+      // that merely ran out of beats is the same dead button).
+      if ((threadDry && entry.id === 'dlg:more') ||
+          (entry.id === 'dlg:react' && (c.reactDryCount || 0) >= 2)) continue;
       seen.add(entry.id);
       const label = (typeof this.convoPickCycle === 'function')
         ? this.convoPickCycle(vid, 'reply:' + tag + ':' + topic + ':' + entry.id, entry.v)
@@ -362,6 +364,25 @@
           !this.inParty(vid) && !this.partyFull() && this.hasDiscovered('party') &&
           trust >= 20 && (tag === 'news' || tag === 'small' || tag === 'feeling')) {
         out.push({ id: 'dlg:invite', label: '"Want to come with us?"' });
+      }
+    } catch (e) {}
+
+    // TEACH (socialite fix 2026-10-08): the player showing a villager a plant
+    // they know. The base menu gates this off-thread, but the live dialogue
+    // menu never offered it at all — villagers on the dialogue path (the
+    // common case after an opener) could never be taught by the player, even
+    // though the teach handler and its topical-coherence rule exist. Same
+    // gate as the base menu: not mid-topic-thread, not mid-grief/cheer,
+    // and actually something teachable.
+    try {
+      const TOPIC_THREADS = ['village', 'past', 'goal', 'plans', 'gossip', 'personal'];
+      const onThread = TOPIC_THREADS.indexOf(c.thread) !== -1;
+      if (!onThread && c.thread !== 'grief' && c.thread !== 'cheer') {
+        const youKnow = Object.keys(this.state.codex.plants || {});
+        const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
+        if (youKnow.some(pid => theyKnow.indexOf(pid) === -1)) {
+          out.push({ id: 'teach', label: this.convoActionLabel(vid, 'teach') });
+        }
       }
     } catch (e) {}
 
