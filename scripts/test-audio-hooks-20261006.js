@@ -18,6 +18,14 @@
 // human ear (Steve's phone is the final gate).
 //
 // Usage: node scripts/test-audio-hooks-20261006.js
+//
+// Revision 2026-10-08 (audio sweep worker): drive list synced to the landed
+// removals — unionRepChant, contractBind, delegateDebrief, paparazzoFlash,
+// understudyLearn, ducksRejoin, landlordStamp, manager*/delegate* registry
+// entries were removed 2026-10-07/08 (dead synths: registered, unfired, no
+// fire sites; manager/delegate monsters retired). Two fired-but-silent hooks
+// (alienRetreat, meleeHit — encounters.js fired them with no registered synth)
+// gained real synths in the same sweep and are now driven.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -191,18 +199,15 @@ const scenarios = [
   ['hecklerHeadliner', {}, 'wave2:heckler headliner'],
   ['hecklerJibe', {}, 'wave2:heckler jibe'],
   ['unionBullhorn', {}, 'wave2:union_rep aggro (monsters.json aggroAudio)'],
-  ['unionRepChant', {}, 'wave2:union_rep chant (registered, unfired — dead?)'],
   ['unionPicket', {}, 'wave2:union_rep picket'],
   ['unionWalkout', {}, 'wave2:union_rep walkout'],
   ['unionRepWhistle', {}, 'wave2:union_rep whistle'],
   ['paparazzoShutter', {}, 'wave2:paparazzo aggro (monsters.json aggroAudio)'],
   ['paparazzoExclusive', {}, 'wave2:paparazzo exclusive'],
-  ['paparazzoFlash', {}, 'wave2:paparazzo flash (registered, unfired — dead?)'],
   ['understudyWatch', {}, 'wave2:understudy aggro (monsters.json aggroAudio)'],
   ['understudyRehearse', {}, 'wave2:understudy rehearse'],
   ['understudyCopy', { fidelity: 0.6 }, 'wave2:understudy copy'],
   ['understudyPerform', {}, 'wave2:understudy perform'],
-  ['understudyLearn', {}, 'wave2:understudy learn (registered, unfired — dead?)'],
   ['modNotice', {}, 'wave2:moderator aggro (monsters.json aggroAudio)'],
   ['modNoted', {}, 'wave2:moderator noted'],
   ['modMute', {}, 'wave2:moderator mute'],
@@ -352,7 +357,6 @@ const scenarios = [
   ['duckNip', {}, 'wave1:duck nip'],
   ['duckRegroup', {}, 'wave1:duck regroup'],
   ['duckScreech', {}, 'wave1:duck screech'],
-  ['ducksRejoin', {}, 'wave1:ducks rejoin (registered, unfired — dead?)'],
   ['catfishLure', {}, 'wave1:catfish lure'],
   ['catfishSnap', {}, 'wave1:catfish snap'],
   ['catfishStill', {}, 'wave1:catfish still'],
@@ -361,23 +365,19 @@ const scenarios = [
   ['mothFlash', {}, 'wave1:moth flash'],
   ['mothFlutter', {}, 'wave1:moth flutter'],
   ['snakeSplit', {}, 'wave1:snake split'],
-  // Manager aliases + generic wound/death + misc
-  ['managerCircle', {}, 'manager: circle'],
-  ['managerAnnounce', {}, 'manager: announce (registered, unfired — dead?)'],
-  ['managerCharge', {}, 'manager: charge'],
-  ['managerDebrief', {}, 'manager: debrief'],
-  ['managerFear', {}, 'manager: fear'],
-  ['delegateCircle', {}, 'manager: delegateCircle alias'],
-  ['delegateAnnounce', {}, 'manager: delegateAnnounce alias (registered, unfired — dead?)'],
-  ['delegateCharge', {}, 'manager: delegateCharge alias (registered, unfired — dead?)'],
-  ['delegateDebrief', {}, 'manager: delegateDebrief'],
+  // Hook-completion 2026-10-08: the last two fired-but-silent encounter hooks —
+  // both were fired in encounters.js with no registered synth (silent no-ops).
+  // (manager*/delegate* registry entries were REMOVED 2026-10-07/08 along
+  // with their retired monsters; re-adding their voices is a future
+  // owner follow-up, not a drive-target here.)
+  ['alienRetreat', {}, 'encounters: broke persona breaks off (was silent no-op)'],
+  ['meleeHit', {}, 'encounters: AP-persona melee strike lands (was silent no-op)'],
   ['monsterDown', {}, 'generic: monster death fallthrough'],
   ['monsterHurt', {}, 'generic: monster wound'],
   ['staticScream', {}, 'wave2: voice_mimic reveal scream'],
   ['staticCry', {}, 'wave2: static cry'],
   ['staticBreak', {}, 'wave2: static break'],
   ['serviceRush', {}, 'wave2: service_mimic rush resolve'],
-  ['contractBind', {}, 'wave2: contractBind (registered, unfired — dead?)'],
   ['holdMusic', { mood: 'watching' }, 'system: hold music'],
   ['lineCut', {}, 'system: line cut'],
   ['paperRustle', {}, 'system: paper rustle'],
@@ -388,7 +388,6 @@ const scenarios = [
   ['landlordClaim', {}, 'landlord: claim'],
   ['landlordSpread', {}, 'landlord: spread'],
   ['landlordEvict', {}, 'landlord: evict'],
-  ['landlordStamp', {}, 'landlord: stamp (registered, unfired — dead?)'],
 ];
 
 const silentObserved = [];

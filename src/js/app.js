@@ -1778,9 +1778,17 @@
   //   deathAudio) / monsterHurt() (wired: game.js tbDamage, solid hits,
   //   once per round). delegateDebrief() REMOVED 2026-10-08: dead synth —
   //   retired delegate_beast, zero call sites (tbFifoBreather spec restructured,
-  //   dispatch gone). contractBind() REMOVED 2026-10-07: dead synth (no
-  //   contract_golem in monsters.json) — design preserved in
-  //   evidence/2026-10-07/audio-hook-map-20261007.md.
+  //   dispatch gone). contractBind() REMOVED 2026-10-07: dead synth — no
+  //   contract_golem in monsters.json, zero fire sites, unfired since creation.
+  //   unionRepChant() REMOVED 2026-10-07: dead synth — deepened 2026-10-06
+  //   but never wired to a fire site (union_rep's voices are unionBullhorn
+  //   aggro / unionWalkout resolve / unionPicket / unionRepWhistle); the
+  //   2026-10-07 stale-tree damage commit briefly re-added it and 7b49fc5
+  //   reverted. paparazzoFlash()/understudyLearn()/ducksRejoin()/
+  //   landlordStamp() REMOVED 2026-10-07: same class — registered, unfired,
+  //   no fire sites; manager*/delegate* voices likewise removed (retired
+  //   manager/delegate_beast monsters; pending future owner follow-up per
+  //   2026-10-08 audio sweep).
   //   WOUND TEMPERAMENTS (Steve 2026-10-07): woundEnraged()/woundCunning()/
   //   woundDesperate() — wired: game.js wound-temperament dispatch (dynamic
   //   'wound'+wcap; the audited literal always resolves) + contests.js beat
@@ -10391,6 +10399,98 @@
         nz.start(t + 1.1); nz.stop(t + 1.5);
       }
     }
+    function alienRetreat() {
+      // THE WITHDRAWAL (Steve 2026-10-08, audio-hook sweep): encounters.js
+      // fires this when a broke alien-persona breaks off instead of dying —
+      // "backing away, hands raised, then GONE into the treeline." This is
+      // not a panicked flee; it is attention being WITHDRAWN. Three layers:
+      // (1) the held tone that was keeping the scene taut sags a quarter-tone
+      // and dissolves — like someone letting go of a thought; (2) two
+      // footfalls that get quieter and lower, and a third that STARTS to
+      // rise and is CUT before it lands — the step that never happens;
+      // (3) the treeline swallowing the air: a reversed-breath swell of
+      // filtered noise, cut hard. What's gone is gone mid-gesture.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the released hold: two near-unison highs, beating, bending down a
+      // quarter-tone as they fade — the grip letting go
+      [1568, 1582.6].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(fq, t);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.9727, t + 0.9); // quarter-tone sag
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.06, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.05);
+      });
+      // steps that don't land: two real, one aborted
+      thump(t, 0.35);
+      thump(t + 0.35, 0.22);
+      const st = ctx.createOscillator(), sg = ctx.createGain();
+      st.type = 'sine'; st.frequency.value = 48;
+      sg.gain.setValueAtTime(0.0001, t + 0.7);
+      sg.gain.exponentialRampToValueAtTime(0.15, t + 0.95); // rising toward the step…
+      sg.gain.setValueAtTime(0.15, t + 0.99);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0); // …cut. Never lands.
+      st.connect(sg); sg.connect(sfxBus); st.start(t + 0.7); st.stop(t + 1.05);
+      // the treeline: reversed-breath swell of filtered air, hard cut
+      const nz = noise(1.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 900;
+        ng.gain.setValueAtTime(0.0001, t + 0.3);
+        ng.gain.exponentialRampToValueAtTime(0.12, t + 1.0);
+        ng.gain.setValueAtTime(0.12, t + 1.08);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.1); // swallowed
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.3); nz.stop(t + 1.15);
+      }
+    }
+    function meleeHit() {
+      // THE CLOSE STRIKE (Steve 2026-10-08, audio-hook sweep): encounters.js
+      // fires this when an AP-persona lands a melee strike — "strikes...
+      // Efficient. Practiced. No wasted motion." Violence here is desperate
+      // and traumatic, never cinematic: no whoosh-swash, no glory. A wet
+      // contact transient, the body-mass thump, a too-close exhale cut
+      // short, and one metallic wrong note that doesn't resolve. Distinct
+      // from monsterHurt (a flinch, cut off) and wound (damage that stays).
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the contact: wet transient, close-miked
+      const c = noise(0.07), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+      if (c) {
+        cf.type = 'bandpass'; cf.frequency.value = 1900; cf.Q.value = 2.5;
+        cg.gain.setValueAtTime(0.28, t);
+        cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+        c.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+        c.start(t); c.stop(t + 0.09);
+      }
+      // the mass: body behind it
+      thump(t, 0.5);
+      // the exhale, too close: swells and is cut — no follow-through
+      const h = noise(0.3), hf = ctx.createBiquadFilter(), hg = ctx.createGain();
+      if (h) {
+        hf.type = 'bandpass'; hf.frequency.value = 700; hf.Q.value = 1.2;
+        hg.gain.setValueAtTime(0.0001, t + 0.03);
+        hg.gain.exponentialRampToValueAtTime(0.13, t + 0.18);
+        hg.gain.setValueAtTime(0.13, t + 0.22);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + 0.24); // cut — no follow-through
+        h.connect(hf); hf.connect(hg); hg.connect(sfxBus);
+        h.start(t + 0.03); h.stop(t + 0.3);
+      }
+      // the wrong note: a detuned metallic pair, low, decaying, unresolved
+      [466, 469.5].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square';
+        o.frequency.setValueAtTime(fq, t + 0.02);
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1200;
+        g.gain.setValueAtTime(0.0001, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.05, t + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t + 0.02); o.stop(t + 0.5);
+      });
+    }
     function wound() {
       // THE WOUND (Steve 2026-10-08, audio-hook sweep): the generic wound
       // voice — the sound of damage that STAYS. Distinct from monsterHurt
@@ -10724,6 +10824,10 @@
       woundEnraged() { woundEnraged(); },     // BLEEDING — and it likes it: accelerating pounding + tritone scream
       woundCunning() { woundCunning(); },     // goes quiet and clever: hush, counting ticks, watcher tone
       woundDesperate() { woundDesperate(); }, // hurt bad, knows it: erratic stabs + failing-engine sputter
+      // HOOK-COMPLETION 2026-10-08 (Steve 2026-10-05 census): the last two
+      // fired-but-silent hooks in the encounter system.
+      alienRetreat() { alienRetreat(); },     // broke persona breaks off — the withdrawal: held tone lets go, a step that never lands, the treeline swallows the air
+      meleeHit() { meleeHit(); },             // AP-persona melee strike lands — wet contact, body thump, cut-off exhale, one unresolved wrong note
       // WAVE-1 CONTRACT HOOKS (Steve 2026-10-06): promised in the HOOK
       // CONTRACT above, never defined until now
       boarNotice() { boarNotice(); },
