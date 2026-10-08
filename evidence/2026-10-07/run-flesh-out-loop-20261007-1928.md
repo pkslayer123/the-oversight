@@ -32,11 +32,13 @@
 
 ## Coordinator completion flow
 1. Verified all worker files exist as new untracked files; coordinator re-ran the readiness gate (54/0, exit 0).
-2. Committed worker deliverables + this run note via private-index route (scripts/safe-commit.sh extracted from HEAD — it is staged-deleted in the worktree index), new files only.
+2. Committed worker deliverables + this run note via private-index route (recipe inline — scripts/safe-commit.sh extracted to /tmp fails: it cds relative to its own dirname, which resolves to /tmp), new files only → `861d64d`.
 3. Ontology gate: 46/46 validated, release permitted.
 4. Pushed origin/master + main mirror.
-5. Version bump via detached worktree at new HEAD (bump script from HEAD extract — staged-deleted in worktree index); 4 version files committed via private index from detached copies (sibling-dirty worktree copies never touched).
-6. Pushed; LIVE VERIFIED via version.json on GitHub raw (master + main) and the-oversight.vercel.app.
+5. Version bump via detached worktree at 861d64d (bump script extracted from HEAD into `<worktree>/scripts/` — root-level placement broke the ontology gate via wrong cwd). 4 version files committed via private index from detached copies (sibling-dirty worktree copies never touched) → `31e88a8` (`861d64d-20261008-005200`).
+6. **Sibling interleave (handled cleanly)**: between my push and my bump commit, a sibling landed `b508a23` (Miser stolen-food recognition in giveFood, trustOf 0-honesty, addDoubt honors quiet — small, focused, no revert signature) + their bump `8527ba3` (`b508a23-20261008-005211`). My bump commit's race-proof base check read the moved HEAD fresh and parented correctly — history stayed linear, no action needed.
+7. Synced main to master (`branch -f main master`, push) per the both-branches convention.
+8. **LIVE VERIFIED**: GitHub raw master serves `b508a23-20261008-005211`; the-oversight.vercel.app serves `b508a23-20261008-005211`. (My interim tag `861d64d-20261008-005200` was briefly live on main/Vercel before the sibling's bump superseded it — normal hot-tree behavior, latest wins.)
 
 ## Queue status after this run
 - DONE this run: patch-set readiness (all three sets GO, gate script committed); telegraph coverage (28/28 complete with honest by-design gaps documented).
