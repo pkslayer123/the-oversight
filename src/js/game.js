@@ -18885,6 +18885,12 @@
         cue += known
           ? ' That projected line is exactly where the beam fires — it cannot re-aim once announced. Step off it.'
           : ' Light plays across the dirt in a straight line. Probably decorative. Probably.';
+        // CODEX-GATED COACHING (Steve 2026-10-08): tbBatch4Cue short-circuits
+        // before tbTelegraphCue's knownTail, so the drone's data knownCue had
+        // NO surface — it hung dead in monsters.json. Veterans who earned the
+        // pattern get the coaching here; first-timers get dread only.
+        const drKc = (((m.mdef || {}).encounter) || {}).knownCue;
+        if (learned && drKc) cue += ' ' + drKc;
         return cue + learned;
       }
       // service_mimic + contract_golem: NOT batch-4-routed (guard above).
@@ -19039,8 +19045,11 @@
       if (pathCost > p.moveLeft) { this.say(`Too far — ${p.moveLeft} squares left.`); return false; }
       for (const o of f.fighters) {
         if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && o.mx === cx && o.my === cy) {
-          // Descriptors start with "a"/"an" ("a light in the dark...") — don't double the article.
-          const onm = /^(a|an) /i.test(o.name) ? o.name : 'a ' + o.name;
+          // ARTICLE COMPOSITION (Steve 2026-10-08): named monsters carry
+          // "The" ("The Static Kite") — naive "a " prefixing produced
+          // "a The Static Kite". encSubject already composes the article
+          // correctly for named and descriptor forms alike.
+          const onm = this.encSubject(o).replace(/^The /, 'the ');
           this.say("You don't stroll through " + onm + '.'); return false;
         }
       }
