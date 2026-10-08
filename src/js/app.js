@@ -1729,6 +1729,11 @@
   //   animalPant()   — winded state: sides heaving, spent
   //   animalRattle() — timber rattlesnake warning: dry pulsed buzz (Steve 2026-10-06)
   //   animalSpray()  — striped skunk spray: wet sibilant burst + oily thump (Steve 2026-10-06)
+  //   animalButcher() — the butcher's beat: knife scrape finding its rhythm,
+  //     joints parting, one drip landing too loud (Steve 2026-10-06; wired:
+  //     food.js cleanCarcass + specialist butcher task). Per-CARCASS, not
+  //     per-part: the bison "horn" butcher-schema yield (2026-10-08) needs no
+  //     dedicated horn hook — the horn is collected inside this beat.
   //   NEW ANIMALS (Steve 2026-10-06) — the animals worker's new beats:
   //   animalQuill()  — porcupine: dry gourd rattle warning + quill strike (one ping rings too long)
   //   animalHonk()   — goose: harsh detuned HONK blast + wing hammering (metallic ring)
@@ -1776,8 +1781,13 @@
   //   contract_golem in monsters.json) — design preserved in
   //   evidence/2026-10-07/audio-hook-map-20261007.md.
   //   WOUND TEMPERAMENTS (Steve 2026-10-07): woundEnraged()/woundCunning()/
-  //   woundDesperate() — wired: encounters.js fires on wound-state shifts
-  //   (were mute; registry entries added here, no emitter change needed).
+  //   woundDesperate() — wired: game.js wound-temperament dispatch (dynamic
+  //   'wound'+wcap; the audited literal always resolves) + contests.js beat
+  //   arrays (pit/gauntlet/siege/etc. escalates). wound() (Steve 2026-10-08,
+  //   audio-hook sweep): the GENERIC wound voice — damage that stays — and
+  //   the safety net so the dynamic dispatch can never go silent. Emitters
+  //   moved from encounters.js to game.js in a stale-tree-revert repair;
+  //   doc corrected 2026-10-08.
   //   projectorFire() (memory_projector resolve: whine swelling into the cold
   //   pull tone, hard cut — the light has edges).
   //   WAVE-2 FLYER VOICES (Steve 2026-10-06): nevermoreCroak/nevermoreStrafe/
@@ -1785,7 +1795,10 @@
   //   croak — wired: game.js first-contact/strafe/land/climb dispatch),
   //   nightcourtSilence/nightcourtLand/nightcourtClimb (negative space, hush,
   //   sub-bass — the dive makes NO sound; silence is the telegraph; wired:
-  //   game.js), kiteHum/kiteMark/kiteTransmit/kiteBroadcast/kiteClimb
+  //   game.js), nightcourtTurn (roost head-turn beat — the owl rotates its
+  //   head while ROOSTING, tracking; fires ~1/3 of roost turns via
+  //   tbAggroAudio; the dive stays silent BY DESIGN — Steve 2026-10-08),
+  //   nightcourtDive (judgment descends — declareAudio, monsters.json), kiteHum/kiteMark/kiteTransmit/kiteBroadcast/kiteClimb
   //   (detuned kite-string whine + radio-static bursts — wired: game.js
   //   first-contact/mark/transmit/broadcast/climb dispatch).
   //   WAVE-1 CONTRACT, NOW DEFINED (Steve 2026-10-06): boarNotice/boarSnort/
@@ -10442,7 +10455,7 @@
       c.start(t + 0.4); c.stop(t + 0.85);
     }
 
-    // WOUND TEMPERAMENTS (Steve 2026-10-07): encounters.js fires these when a
+    // WOUND TEMPERAMENTS (Steve 2026-10-07): game.js fires these when a
     // monster's wound-state changes the fight's personality — the registry
     // entries never existed, so every temperament shift played mute. Three
     // voices, three psychologies. All synthesis, bounded node counts.
@@ -10556,6 +10569,61 @@
         nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
         nz.start(t + 1.1); nz.stop(t + 1.5);
       }
+    }
+    function wound() {
+      // THE WOUND (Steve 2026-10-08, audio-hook sweep): the generic wound
+      // voice — the sound of damage that STAYS. Distinct from monsterHurt
+      // (a flinch, cut off — brief) and from the temperament trio (which are
+      // psychology shifts, not the injury itself). Violence here is desperate
+      // and traumatic, so this is not a hit-marker: it is wet, heavy, and
+      // unfinished. Also the safety net for game.js's dynamic 'wound'+wcap
+      // dispatch — the audited literal always resolves, so a future
+      // temperament value can never go silent.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the crack: wet transient, the moment of damage
+      const c = noise(0.09), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+      if (c) {
+        cf.type = 'bandpass'; cf.frequency.value = 1900; cf.Q.value = 2.5;
+        cg.gain.setValueAtTime(0.3, t);
+        cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+        c.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+        c.start(t); c.stop(t + 0.1);
+      }
+      // the thud: sub-bass body — the mass of it landing
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'sine';
+      b.frequency.setValueAtTime(95, t);
+      b.frequency.exponentialRampToValueAtTime(38, t + 0.2);
+      bg.gain.setValueAtTime(0.32, t);
+      bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+      b.connect(bg); bg.connect(sfxBus); b.start(t); b.stop(t + 0.26);
+      // the hitched breath: swells, then gets CUT HARD mid-exhale — the
+      // breath that doesn't finish. Desperate, not dramatic.
+      const h = noise(0.5), hf = ctx.createBiquadFilter(), hg = ctx.createGain();
+      if (h) {
+        hf.type = 'bandpass'; hf.frequency.value = 800; hf.Q.value = 1.5;
+        hg.gain.setValueAtTime(0.0001, t + 0.15);
+        hg.gain.exponentialRampToValueAtTime(0.14, t + 0.45);
+        hg.gain.setValueAtTime(0.14, t + 0.52);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + 0.54); // cut — unfinished
+        h.connect(hf); hf.connect(hg); hg.connect(sfxBus);
+        h.start(t + 0.15); h.stop(t + 0.56);
+      }
+      // the sag: two saws a semitone apart, beating, both sagging flat and
+      // never resolving. The body keeps score.
+      [110, 116.54].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(fq, t + 0.3);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.93, t + 1.7); // sags flat
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500;
+        g.gain.setValueAtTime(0.0001, t + 0.3);
+        g.gain.exponentialRampToValueAtTime(0.07, t + 0.6);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.75);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t + 0.3); o.stop(t + 1.8);
+      });
     }
     return {
       ensureAudio() { return ensure(); },
@@ -10832,8 +10900,13 @@
       monsterDown() { monsterDown(); },   // generic death — collapse, breath out, wrong note
       monsterHurt() { monsterHurt(); },   // generic wound — a flinch, cut off
       delegateDebrief() { delegateDebrief(); }, // (Steve 2026-10-06): was a pure alias of managerDebrief — now its own dictating-into-nothing synth
-      // WOUND TEMPERAMENTS (Steve 2026-10-07): encounters.js fires these on
-      // wound-state shifts — they were mute (no registry entries) until now.
+      // WOUND TEMPERAMENTS (Steve 2026-10-07): game.js fires these on
+      // wound-state shifts (dynamic 'wound'+wcap) + contests.js beat arrays.
+      // wound() (Steve 2026-10-08, audio-hook sweep): the GENERIC wound voice
+      // — damage that stays (wet crack + sub thud + hitched breath + sagging
+      // semitone pair). Safety net so the dynamic dispatch's audited literal
+      // always resolves; distinct from monsterHurt (a flinch, cut off).
+      wound() { wound(); },
       woundEnraged() { woundEnraged(); },     // BLEEDING — and it likes it: accelerating pounding + tritone scream
       woundCunning() { woundCunning(); },     // goes quiet and clever: hush, counting ticks, watcher tone
       woundDesperate() { woundDesperate(); }, // hurt bad, knows it: erratic stabs + failing-engine sputter
