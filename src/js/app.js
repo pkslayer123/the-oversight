@@ -696,7 +696,7 @@
       const label = blockType === 'creek' ? 'The creek runs fast here.' : 'The path is washed out.';
       html = `<div class="card"><p>🌊 ${label}</p><div class="actions">
         <button class="btn sm" data-act="bridge" ${wood < 4 ? 'disabled' : ''}>🌉 Build bridge (4 wood — you have ${wood})</button>`;
-      if (canSwim) html += `<button class="btn sm" data-act="swim">🏊 Swim across</button>`;
+      if (canSwim) html += `<button class="btn sm" data-act="swim">🏊 Swim across (20 kcal)</button>`;
       html += `${goAround}</div><p class="small">No bridge, no swim? Pick another tile — there's always another way.</p></div>`;
     }
     info.innerHTML = html;

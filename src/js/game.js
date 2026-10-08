@@ -6258,7 +6258,9 @@
       return this.tickAction(32) || this.status();
     },
 
-    // --- travel: costs the day-part's action. destinations are decisions. ---
+    // --- travel: node travel is FREE (Steve 2026-10-05) — crossing a boundary is
+    // just walking; the steps to reach the edge already cost. Destinations are
+    // still decisions: the world moves while you walk. ---
     // FOG OF WAR: you can walk into "?" — the unknown. Adjacent unrevealed tiles are valid.
     // You don't know what's there until you arrive. Hope nothing's waiting.
     travelTargets() {
@@ -13071,7 +13073,13 @@
       if (!t.revealed) return { name: 'Unknown ground', text: 'Fog. You haven\'t seen this ground yet.' };
       const epithet = this.nodeEpithet(x, y);
       if (t.type === 'haven') return { name: 'Haven', text: 'Home. Twelve people, one fire.' };
-      if (t.type === 'ruin') return { name: epithet, text: (t.loot || []).length ? 'Pre-Burn ruin. There might be cans left.' : 'Pre-Burn ruin. Picked clean.' };
+      if (t.type === 'ruin') {
+        // RUIN LOOT IS INTERIOR KNOWLEDGE (explorer loop 2026-10-08): a scout's
+        // report or a distant glimpse reveals the tile, not what's inside it.
+        // Loot state is only known once you've walked the ground — never from afar.
+        if (!t.visited) return { name: epithet, text: 'Pre-Burn ruin. You haven\'t worked this ground — no idea what\'s left inside yet.' };
+        return { name: epithet, text: (t.loot || []).length ? 'Pre-Burn ruin. There might be cans left.' : 'Pre-Burn ruin. Picked clean.' };
+      }
       if (t.knownPlant) {
         const kp = this.data.plants.find(p => p.id === t.knownPlant);
         if (kp) {
