@@ -23675,14 +23675,34 @@
           m.altitude = 'low';
           m.gwGrounded = (m.gwGrounded || 1) - 1;
           if (m.gwGrounded <= 0) {
-            // ESCAPE (Steve 2026-10-05): if you didn't kill it while it was down,
-            // it's GONE. Not circling for another dive — the window closed.
-            // The kill window is real: 2 turns, then it leaves.
-            this.say('The darter\'s wings find the air — it climbs, screaming, back into the sun. Gone.');
+            // RE-CIRCLE (design pass 2026-10-08; Steve 2026-10-07 "figure it
+            // out yourself"): the grounded window is a ROUND of the loop, not
+            // the end of the fight. The old ESCAPE made the in-combat dive
+            // declare unreachable in natural play — combat only ever opens
+            // grounded (trap hit) and the darter left instead of climbing, so
+            // circle → dive never fired outside debug seeding. The block
+            // header's loop is circle → dive → grounded, and a hit-dive
+            // already re-circles (dive resolve, below) — a recovered darter
+            // climbs too. It climbs a couple tiles out so the circling reads
+            // honestly on the grid; the declare fires when it closes back
+            // within dive range. Fleeing is always the player's out.
+            this.encSetPhase(m, 'circle'); m.gwDive = null; m.altitude = 'high';
+            m.groundedNoted = false;
+            let gbx = m.mx, gby = m.my, gbest = -1;
+            for (const [ux, uy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+              let nx = m.mx, ny = m.my;
+              for (let i = 0; i < 2; i++) {
+                const gx2 = nx + ux, gy2 = ny + uy;
+                if (gx2 < 0 || gx2 > 8 || gy2 < 0 || gy2 > 8) break;
+                nx = gx2; ny = gy2;
+              }
+              const gd = Math.max(Math.abs(nx - t.mx), Math.abs(ny - t.my));
+              if (gd > gbest) { gbest = gd; gbx = nx; gby = ny; }
+            }
+            m.mx = gbx; m.my = gby;
+            this.say('The darter\'s wings find the air — it climbs, screaming, back into the sun. It\'s circling for another dive.');
             this.audioEvent('glasswingClimb');
-            // Remove from combat: it escaped
-            m.alive = false; m.fled = true;
-            this.tbEndCheck();
+            this.audioEvent('glasswingCircle');
           } else {
             this.say('The darter thrashes on the dirt, wings tangled. NOW. While it\'s down. Kill it.');
           }
