@@ -1834,8 +1834,12 @@
       // materials are the work.
       this.state.codex.recipes['cloth'] = { level: 3 };
       this.state.codex.recipes['water_filter'] = { level: 3 };
-      this.dayPart = 0; this.ap = 1; this.over = false; this.won = false;
-      this.state.scholar.dayTicks = 0; this.state.scholar.actionClock = 0; // action clock: fresh budget
+      // AFTERNOON SPAWN (Steve 2026-10-08): new runs used to start at dawn,
+      // dayTicks 0 — lightLevel 0.25, the whole first impression in gloom.
+      // You arrive mid-afternoon now: full light, half a day to get your
+      // bearings before the first dusk. (Later days still roll over at dawn.)
+      this.dayPart = 1; this.ap = 1; this.over = false; this.won = false;
+      this.state.scholar.dayTicks = 192; this.state.scholar.actionClock = 0; // action clock: fresh budget
       this.villageLost = false; this.wanderer = null; this.fight = null; this.pendingEncounter = false; this.pendingMonsterId = null;
       this.encounterDone = false; this.log = [];
       // (say AFTER the log reset above — anything said before it is wiped and
@@ -7846,7 +7850,9 @@
     },
     // sweepDeadFires: expired player fires go cold — back to plain dirt.
     // Called lazily at every fire-touching path; only tracked fires are scanned.
+    // Also the rain-tax choke point: every fire touch accounts weather burn.
     sweepDeadFires() {
+      try { this.taxFires(); } catch (e) {}
       const now = this._absTick();
       const fires = this.state.fires || [];
       for (let i = fires.length - 1; i >= 0; i--) {
@@ -8072,11 +8078,183 @@
         }
       } catch (e) {}
       this.say(`Your camp is gone — ${r}. The tent's wrecked, the fire's cold. That's the deal with camps: they're not havens.`);
+      // TENT ROOMS: if you were inside the tent, the wreck dumps you outside.
+      try {
+        const s = this.state.scholar;
+        if (s && s.insideTent) {
+          s.insideTent = null;
+          s.tentSmoke = 0;
+          this.say('The canvas comes down around you — you crawl out into the open, coughing.');
+        }
+      } catch (e) {}
       delete this.state.camp;
     },
     atPlayerCamp() {
       const c = this.state.camp;
       return c && this.map.px === c.px && this.map.py === c.py;
+    },
+    // TENT ROOMS (Steve 2026-10-08): a pitched tent is a room. Enter it and
+    // the sky stops mattering — rain can't touch you or your fire in here.
+    // The tent hosts a small interior fire: rain-immune, but small (less
+    // capacity, slower cooking), and it smokes if you seal the flap.
+    // The room is the abstraction; the tent is just the first room.
+    shelteredFromSky() {
+      const s = this.state.scholar;
+      return !!(s && (s.insideTent || s.insideHaven));
+    },
+    tentSecretAt(tx, ty, cx, cy) {
+      try {
+        const t = this.tileAt(tx, ty);
+        return t && t.secrets && t.secrets[cx + ',' + cy];
+      } catch (e) { return null; }
+    },
+    tentVentOpenAt(tx, ty, cx, cy) {
+      const sec = this.tentSecretAt(tx, ty, cx, cy);
+      return !sec || sec.vent !== false; // default: flap open
+    },
+    // validateInsideTent: the tent you were in might be gone (wrecked while
+    // you were away, save loaded after the world moved on). No phantom rooms.
+    validateInsideTent() {
+      const s = this.state.scholar;
+      const ins = s && s.insideTent;
+      if (!ins) return;
+      try {
+        const detail = this.genDetail(ins.tx, ins.ty);
+        const cell = detail[ins.cy] && detail[ins.cy][ins.cx];
+        const sec = this.tentSecretAt(ins.tx, ins.ty, ins.cx, ins.cy);
+        if (cell !== 'tent' || !sec || !sec.yours) {
+          s.insideTent = null;
+          this.say('The tent you were in is gone — wrecked while you were away. You pick yourself up from the dirt.');
+        }
+      } catch (e) { s.insideTent = null; }
+    },
+    enterTent(cx, cy) {
+      if (this.over) return null;
+      const s = this.state.scholar;
+      if (s.insideTent) { this.say('You are already inside your tent.'); return null; }
+      const detail = this.genDetail(this.map.px, this.map.py);
+      if (!detail[cy] || detail[cy][cx] !== 'tent') { this.say('No tent there.'); return null; }
+      const t = this.playerTile();
+      const sec = t.secrets && t.secrets[cx + ',' + cy];
+      if (!sec || !sec.yours) { this.say("That's not yours to enter."); return null; }
+      if (sec.condition === 'shredded') { this.say('The tent is shredded — wind and teeth. No shelter in that.'); return null; }
+      s.insideTent = { tx: this.map.px, ty: this.map.py, cx, cy };
+      s.mx = cx; s.my = cy;
+      s.tentSmoke = 0;
+      this.tickAction(8);
+      this.say('You duck through the flap. Canvas walls, your pack, your space. The sky can do what it wants out there.');
+      return null;
+    },
+    exitTent(forced) {
+      const s = this.state.scholar;
+      if (!s || !s.insideTent) return null;
+      s.insideTent = null;
+      s.tentSmoke = 0;
+      if (!forced) {
+        this.tickAction(8);
+        this.say('You duck back out through the flap — open air.');
+      }
+      return null;
+    },
+    setTentVent(open) {
+      const s = this.state.scholar;
+      const ins = s && s.insideTent;
+      if (!ins) return null;
+      const sec = this.tentSecretAt(ins.tx, ins.ty, ins.cx, ins.cy);
+      if (!sec) return null;
+      sec.vent = !!open;
+      s.tentSmoke = 0;
+      this.say(open
+        ? 'You open the vent flap. Fresh air moves through — no smoke can build now. (The draft makes the fire burn a little faster.)'
+        : 'You close the vent flap tight. Cozy — and dark. If the fire is lit, the smoke has nowhere to go.');
+      return null;
+    },
+    tentFire() {
+      const s = this.state.scholar;
+      const ins = s && s.insideTent;
+      if (!ins) return null;
+      this.sweepDeadFires();
+      const now = this._absTick();
+      return (this.state.fires || []).find(f => f.inside && f.tx === ins.tx && f.ty === ins.ty && f.cx === ins.cx && f.cy === ins.cy && f.till > now) || null;
+    },
+    tentFireLit() { return !!this.tentFire(); },
+    lightTentFire() {
+      if (this.over) return null;
+      const s = this.state.scholar;
+      if (!s.insideTent) { this.say('You need to be inside your tent.'); return null; }
+      if (this.tentFireLit()) { this.say('The tent fire is already going.'); return null; }
+      const fuel = this.fireFuel();
+      if (!fuel) { this.say('You need fuel — gather fallen branches, or cut a log.'); return null; }
+      // Small fire, sheltered work: 16 ticks + 30 kcal. It will never be a bonfire.
+      s.kcal = Math.max(0, (s.kcal || 0) - 30);
+      this.tickAction(16);
+      this.spendFireFuel(fuel);
+      const ins = s.insideTent;
+      const burn = Math.round(fuel.burn * 0.6);
+      const now = this._absTick();
+      (this.state.fires = this.state.fires || []).push({ tx: ins.tx, ty: ins.ty, cx: ins.cx, cy: ins.cy, till: now + burn, burn0: burn, inside: true, lastTax: now });
+      this.say('A small fire catches in the fire pan. It throws dancing light on the canvas — and no rain in the world can touch it in here.');
+      this.discover('firecraft');
+      return null;
+    },
+    feedTentFire() {
+      if (this.over) return null;
+      const s = this.state.scholar;
+      if (!s.insideTent) { this.say('You need to be inside your tent.'); return null; }
+      const f = this.tentFire();
+      if (!f) { this.say('No fire going in here.'); return null; }
+      const fuel = this.feedFuel();
+      if (!fuel) { this.say('Nothing to feed it with — gather fallen branches, or cut a log.'); return null; }
+      this.spendFireFuel(fuel);
+      // Small fire, small capacity: it can't hold a bonfire's worth of fuel.
+      const add = Math.round(fuel.burn * 0.6);
+      f.till = Math.min(f.till + add, this._absTick() + (f.burn0 || add) * 2);
+      this.tickAction(8);
+      this.say('You feed the little fire. It takes it — a while more light and warmth.');
+      return null;
+    },
+    cookInTent() {
+      if (this.over) return null;
+      if (!this.tentFireLit()) { this.say('Need the tent fire lit to cook in here.'); return null; }
+      // Small fire, slow cooking: honest label, honest cost.
+      this.tickAction(24);
+      return this.cookAll();
+    },
+    // RAIN TAX (Steve 2026-10-08): fires in general care about rain now — not
+    // just friction ignition. An exposed fire hit by rain loses half its
+    // remaining burn when the rain starts (the hiss on the coals) and burns
+    // 2x while it rains. Weak fires gutter out; strong ones burn through it,
+    // weakened. Interior tent fires are immune — canvas is the answer.
+    // (A vented tent lets a draft through: the interior fire burns 1.25x,
+    // still never gutters.)
+    taxFires() {
+      const now = this._absTick();
+      const raining = this.state.weather === 'rain';
+      const fires = this.state.fires || [];
+      for (const f of fires) {
+        if (f.till <= now) continue;
+        if (f.lastTax == null) f.lastTax = now;
+        const elapsed = Math.max(0, now - f.lastTax);
+        let rate = 1;
+        if (f.inside) {
+          rate = this.tentVentOpenAt(f.tx, f.ty, f.cx, f.cy) ? 1.25 : 1;
+        } else if (raining) {
+          rate = 2;
+        }
+        if (elapsed > 0 && rate > 1) f.till -= elapsed * (rate - 1);
+        f.lastTax = now;
+        // Rain onset, once per rain per fire: half the remaining burn, named honestly.
+        if (raining && !f.inside && !f.rainHit) {
+          f.rainHit = true;
+          const rem = f.till - now;
+          if (rem > 0) {
+            f.till = now + Math.floor(rem / 2);
+            this.say('🌧️ The rain hisses on your fire — half its life, gone in steam. Feed it, or get a fire under canvas.');
+          }
+        } else if (!raining) {
+          f.rainHit = false;
+        }
+      }
     },
     // packTent: strike your pitched tent. Shelter becomes pack weight again.
     packTent(cx, cy) {
@@ -8087,6 +8265,12 @@
       const t = this.playerTile();
       const sec = t.secrets && t.secrets[cx + ',' + cy];
       if (!sec || !sec.yours) { this.say("That's not yours to pack."); return null; }
+      // TENT ROOMS: you can't pack the tent you're standing inside.
+      const ins = s.insideTent;
+      if (ins && ins.tx === this.map.px && ins.ty === this.map.py && ins.cx === cx && ins.cy === cy) {
+        this.say('You are inside it — duck out through the flap first.');
+        return null;
+      }
       detail[cy][cx] = 'dirt';
       delete t.secrets[cx + ',' + cy];
       s.inventory = s.inventory || [];
@@ -10923,6 +11107,21 @@
           this.checkSystemArrival();
           transitioned = true;
         }
+        // TENT SMOKE: sealed flap + lit interior fire = smoke builds. The tent
+        // tells you before it hurts you — coughing fits, then the lesson.
+        try {
+          const ins = s.insideTent;
+          if (ins && typeof this.tentFireLit === 'function' && this.tentFireLit()) {
+            if (!this.tentVentOpenAt(ins.tx, ins.ty, ins.cx, ins.cy)) {
+              s.tentSmoke = (s.tentSmoke || 0) + n;
+              if (s.tentSmoke >= 100) {
+                s.tentSmoke = 40;
+                s.energy = Math.max(0, (s.energy || 0) - 3);
+                this.say('💨 Smoke stings your eyes, thick in the sealed tent — coughing. Open the vent flap. Fire needs air, and so do you.');
+              }
+            } else s.tentSmoke = 0;
+          } else s.tentSmoke = 0;
+        } catch (e) {}
       } finally { this._ticking = false; }
       return transitioned ? this.status() : undefined;
     },
@@ -10957,14 +11156,39 @@
       const T = this.TIME.TICKS_PER_DAY;
       return Math.max(0, Math.min(1, (s.dayTicks || 0) / T));
     },
-    // lightLevel: 0..1, smooth. Dawn ramps up, midday is full, dusk falls,
+    // lightLevel: 0..1, smooth. Dawn kindles, midday is full, dusk dies,
     // night is moonlight (not pitch black — you can still move, carefully).
+    // DARKNESS HAS NUANCE (Steve 2026-10-08): weather dims the day (a rainy
+    // midday is gloom, not noon), havens hold a comfortable light at all
+    // times (hearths, lamps, people awake — the hall never goes dark), and
+    // firelight pools around burning fires after dark. Inside your tent at
+    // night, a lit interior fire makes the canvas glow; without it, it's
+    // just dark — bring the light with you.
     lightLevel() {
       const p = this.dayProgress();
-      if (p < 0.25) return 0.25 + 0.75 * (p / 0.25);       // dawn: kindling
-      if (p < 0.5) return 1;                               // midday: full
-      if (p < 0.75) return 1 - 0.82 * ((p - 0.5) / 0.25);  // dusk: dying
-      return 0.15;                                         // night: moonlight
+      let l;
+      if (p < 0.25) l = 0.25 + 0.75 * (p / 0.25);       // dawn: kindling
+      else if (p < 0.5) l = 1;                          // midday: full
+      else if (p < 0.75) l = 1 - 0.82 * ((p - 0.5) / 0.25); // dusk: dying
+      else l = 0.15;                                    // night: moonlight
+      // Weather: rain steals the sky.
+      if (this.state.weather === 'rain') l = Math.max(0.12, l * 0.7);
+      // Firelight pools around a burning fire after dark.
+      try { if (typeof this.nearFire === 'function' && this.nearFire() && l < 0.45) l = 0.45; } catch (e) {}
+      // Havens hold comfortable light at all times.
+      try {
+        const t = typeof this.playerTile === 'function' ? this.playerTile() : null;
+        if (t && t.type === 'haven' && l < 0.65) l = 0.65;
+      } catch (e) {}
+      // Tent interior at night: lit fire glows through the canvas; no fire, dark.
+      try {
+        const s = this.state.scholar;
+        if (s && s.insideTent) {
+          const lit = typeof this.tentFireLit === 'function' && this.tentFireLit();
+          l = lit ? Math.max(l, 0.55) : Math.min(l, 0.2);
+        }
+      } catch (e) {}
+      return Math.max(0, Math.min(1, l));
     },
     isNight() { return this.dayPart === 3; },
     // NIGHT ECOLOGY: the cast changes after dark. Weighted, not gated —
@@ -11631,6 +11855,19 @@
           : prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
         if (crisis) exposureNote = ' You ran on empty — no water, no food, no real recovery. The body keeps score. (Drink and eat before you sleep.)';
       }
+      // TENT SMOKE INHALATION: sleeping in the tent with the interior fire
+      // lit and the flap sealed is the oldest mistake in the book. Carbon
+      // monoxide doesn't care that you're cozy. -10 health, half-rest.
+      try {
+        const ins = s.insideTent;
+        if (ins && typeof this.tentFireLit === 'function' && this.tentFireLit() &&
+            !this.tentVentOpenAt(ins.tx, ins.ty, ins.cx, ins.cy)) {
+          s.health = Math.max(1, Math.round(s.health || 0) - 10);
+          s.energy = Math.min(s.energy || 0, 50);
+          rested = 'coughing, head full of smoke';
+          exposureNote += ' You sealed the flap with the fire lit and breathed smoke all night — headache, raw throat, no real rest. (Vent the tent or let the fire die before you sleep.)';
+        }
+      } catch (e) {}
       // NIGHTMARES: trauma follows you into sleep. You did things. The dark replays them.
       let nightmareNote = '';
       const trauma = s.trauma || 0;
@@ -12119,6 +12356,8 @@
           actions.push(sec.condition === 'good' ? 'Rest (a while)' : 'Use');
           // Your own pitched tent can be struck and carried again.
           if (sec.yours) actions.push('Pack up tent');
+          // TENT ROOMS: your own intact tent is enterable — a room, not furniture.
+          if (sec.yours && sec.condition !== 'shredded' && !this.state.scholar.insideTent) actions.push('Enter tent');
         }
         else actions.push('Use');
         if (cell === 'tree' || cell === 'bigtree') {
@@ -15998,11 +16237,11 @@
           let atHaven = this.location === 'haven';
           const ct = this.playerTile();
           if (ct && ct.type === 'haven') atHaven = true;
-          if (!atHaven && !this.nearFire()) {
+          if (!atHaven && !this.shelteredFromSky() && !this.nearFire()) {
             const sc = this.state.scholar;
             if (!this.hasAbility('cold_blooded')) {
               sc.kcal = Math.max(0, (sc.kcal || 0) - 20);
-              this.say('The cold snap steals your warmth — breath smoking, fingers clumsy. (-20 kcal shivering. Fire or the hall.)');
+              this.say('The cold snap steals your warmth — breath smoking, fingers clumsy. (-20 kcal shivering. Fire, the hall, or your tent.)');
             } else {
               this.say('Cold-blooded: the snap means nothing to your budgeted body. (No shiver tax.)');
             }
@@ -25347,6 +25586,15 @@
       if (this.migrateReserve) this.migrateReserve();
       // One-time migration: old per-species unfamiliar piles fold into lumps.
       if (this.migrateLumps) this.migrateLumps();
+      // TENT ROOMS: no phantom rooms — the tent might be gone.
+      try { this.validateInsideTent(); } catch (e) {}
+      // TENT IS NOT INVISIBILITY: trouble finds you even in canvas. Something
+      // out there — you're through the flap before you decide to move.
+      if (this.pendingEncounter && s.insideTent) {
+        s.insideTent = null;
+        s.tentSmoke = 0;
+        this.say('⚠️ Something big moves outside — canvas tearing, or about to. You\'re out of the tent before you decide to move.');
+      }
       return {
         day: s.day, dayPart: DAY_PARTS[this.dayPart], dayPartHint: DAY_PART_HINT[DAY_PARTS[this.dayPart]],
         // ACTION CLOCK: ticks for the UI day-timer. 512 ticks = the full day.

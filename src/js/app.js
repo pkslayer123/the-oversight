@@ -772,6 +772,7 @@
     if (label === 'Feed the fire') { Game.feedFire(cx, cy); return; }
     if (label === 'Pitch tent') { Game.pitchTent(cx, cy); return; }
     if (label === 'Pack up tent') { Game.packTent(cx, cy); return; }
+    if (label === 'Enter tent') { Game.enterTent(cx, cy); return; }
     if (label === 'Set up camp') {
       // Steve 2026-10-07: confirm before setting up camp — it's a commitment
       if (confirm('Set up camp here? Your tent and fire become a camp — a shitty, breakable version of a haven. You can only have one camp.')) {
@@ -12965,9 +12966,80 @@
   });
   document.addEventListener('keyup', () => MoveAnim.clearHold());
 
+  // TENT ROOM (Steve 2026-10-08): when you're inside your tent, the grid steps
+  // aside — a room screen, not a map. One screen, no scroll: the fire, the
+  // vent flap, your pack, sleep, and the way out. Moment-to-moment play
+  // never scrolls, even in canvas.
+  function tentRoomScreen() {
+    const st = Game.status();
+    if (st.over) return ending();
+    const s = Game.state.scholar;
+    const ins = s.insideTent;
+    if (!ins) { expeditionScreen(); return; }
+    let fireLine = 'No fire — dark and cold canvas.';
+    let fireLit = false, fireLow = false;
+    try {
+      const f = Game.tentFire();
+      if (f) {
+        fireLit = true;
+        const rem = f.till - Game._absTick();
+        fireLow = rem < 48;
+        fireLine = fireLow ? '🔥 The little fire is burning low — feed it soon.'
+          : rem > 128 ? '🔥 The tent fire burns strong. Light dances on the canvas.'
+          : '🔥 The tent fire burns steady.';
+      }
+    } catch (e) {}
+    let ventOpen = true;
+    try { ventOpen = Game.tentVentOpenAt(ins.tx, ins.ty, ins.cx, ins.cy); } catch (e) {}
+    const wx = Game.state.weather;
+    const wxLine = wx === 'rain' ? '🌧️ Rain hammers the canvas. In here: dry.'
+      : wx === 'cold' ? '❄️ Cold snap outside. In here: out of the wind.'
+      : '🌤️ Clear outside. The canvas glows faintly.';
+    const smoke = s.tentSmoke || 0;
+    const hasFuel = (() => { try { return !!Game.feedFuel(); } catch (e) { return false; } })();
+    const rawCount = (s.inventory || []).filter(i => i.rawKcal).length;
+    let prev = null;
+    try { prev = Game.sleepPreview(); } catch (e) {}
+    const screen = document.getElementById('screen');
+    screen.innerHTML = `
+      <div id="exphead">${expHeadHTML(st)}</div>
+      <div id="daytickwrap">${dayTickBar(st)}</div>
+      <div class="game-cols"><div class="game-col-main">
+      <div class="card"><h3>⛺ Your tent — inside</h3>
+        <p class="small">${esc(fireLine)}</p>
+        <p class="small">${esc(wxLine)}</p>
+        <p class="small">Vent flap: <b>${ventOpen ? 'open' : 'closed'}</b>${!ventOpen && fireLit ? ' — smoke has nowhere to go.' : ''}${ventOpen && fireLit ? ' — the draft feeds the fire (burns a little faster).' : ''}</p>
+        ${smoke > 60 ? '<p class="small" style="color:#e8a33d">💨 Smoke is building — vent the flap or let the fire die down.</p>' : ''}
+        ${prev ? `<p class="small" style="opacity:.6">😴 ${esc(prev.name)} · +${prev.heal} health${prev.note ? `<br>${esc(prev.note)}` : ''}${prev.warn ? `<br>⚠️ ${esc(prev.warn)}` : ''}</p>` : ''}
+      </div>
+      <div class="actions">
+        ${!fireLit ? '<button class="btn" id="tr-light">🔥 Light tent fire</button>'
+          : hasFuel ? '<button class="btn" id="tr-feed">🪵 Feed the fire</button>' : ''}
+        ${fireLit && rawCount ? `<button class="btn" id="tr-cook">🍲 Cook (slow, ${rawCount} raw)</button>` : ''}
+        <button class="btn sm ghost" id="tr-vent">${ventOpen ? 'Close vent flap' : 'Open vent flap'}</button>
+        <button class="btn sm" id="tr-sleep">😴 Sleep</button>
+        <button class="btn sm ghost" id="tr-exit">🚪 Exit tent</button>
+      </div>
+      <div class="ord-status">${statusBars(st)}</div>
+      </div><div class="game-col-side">
+        <div class="ord-narration">${narrationBoxHTML(st, null)}</div>
+        ${feedbackHTML()}
+      </div></div>`;
+    const wire = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = () => { fn(); refresh(); }; };
+    wire('tr-light', () => Game.lightTentFire());
+    wire('tr-feed', () => Game.feedTentFire());
+    wire('tr-cook', () => Game.cookInTent());
+    wire('tr-vent', () => Game.setTentVent(!ventOpen));
+    wire('tr-sleep', () => Game.sleep());
+    wire('tr-exit', () => Game.exitTent());
+    try { if (Game.feedbackMark) Game.feedbackMark(); } catch (e) {}
+  }
+
   function expeditionScreen() {
     const st = Game.status();
     if (st.over) return ending();
+    // TENT ROOM: inside your tent, the room screen replaces the grid.
+    try { if (Game.state.scholar && Game.state.scholar.insideTent) return tentRoomScreen(); } catch (e) {}
     // DIALOGUE BOX (Steve 2026-10-05, revising the old "conversation is the one
     // acceptable full-screen interruption" rule): talking no longer takes over
     // the screen. A Pokémon-style box sits under the grid — speaker tab, one
