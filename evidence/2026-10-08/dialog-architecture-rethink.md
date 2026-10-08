@@ -20,16 +20,21 @@ The honest-opt-out patch (paused, commit a92b30d) fixes (b) at the surface. It d
 
 ## 2. Principles (laws of the new architecture)
 
+Steve's corrections, 2026-10-08 (folded in — these overrule the earlier draft):
+
 1. **One driver per conversation: the Scene.** Every conversation is a scene with a dramatic question (the want), a temperature (mood), a relationship (trust+memory), and a beat (what was just said). All four feed ONE menu pipeline. No parallel philosophies.
-2. **The Ask/Answer Contract.** Every NPC question ships with: 2+ real answers, 1 free honest opt-out, and an inferable reason for asking. If the system can't offer a real choice, it doesn't ask.
-3. **Honesty is never punished; rudeness is always legible.** Declining, not-knowing, and staying silent are free and graced. Being cruel, lying, or dodging when honesty was available is labeled as such and has proportionate social consequences. The player must be able to tell which kind of choice each option is FROM THE LABEL.
-4. **Every choice moves something legible.** Trust, mood, knowledge, or memory — at least one, visible in the fiction. No dead choices. (Narrative-design rule: "I'll help you later" is not a meaningful choice.)
-5. **Failure is content.** A refused favor, a deflected want, a blown probe — all produce story, never dead ends. (Disco Elysium: failing a check gives you the scene where you fail, and it's good.)
-6. **Characters remember; the ledger is continuity.** What we talk about is driven by what happened (memory + world state), not by a topic menu. Re-asking after the world moved gets an acknowledgment, never a repeat. (The `t2clock` "it's different now" pattern becomes universal.)
-7. **Questions come from character.** An NPC asks what THEY would ask — from their want, their fear, their relationship with you — not from a global pool of 36. The question IS the want surfacing.
-8. **Silence is always an option.** "..." on every menu. NPCs notice per mood (the `convoMoodSilence` machinery already exists). Cheapest content, highest realism. (Oxenfree.)
-9. **Knowledge gates everything, including conversation.** "If you don't know, it doesn't show" applies to dialogue: you can't ask about what you haven't heard, confront with what you can't prove, or teach what you don't know. (Outer Wilds: knowledge is the only progression.)
-10. **One screen, no scroll, max ~6 options.** Mobile law is non-negotiable. Depth comes from the scene changing, not from longer menus.
+2. **The Ask/Answer Contract.** Every NPC question ships with: 2+ real answers, 1 free honest opt-out, and an inferable reason for asking. If the system can't offer a real choice, it doesn't ask. (Extended: the answer set must include the mean moves where they fit — see 5.)
+3. **Honesty is always available; honest words have weight.** The player is NEVER locked out of honesty — but honesty is not consequence-free, and that's the point. "I don't trust you" said honestly lands like it should: they hear it, and the relationship moves. The system never punishes you *for being honest* (no hidden penalty for picking the true option), but people react to what you actually said. "I'd rather not say" is a boundary, not an attack — low consequence, gracefully received. Lying stays available too — cheap now, expensive if caught. The earlier draft ("honesty is never punished") was too simple: consequences aren't punishments, they're the fiction working.
+4. **Your character shapes your voice; your choices reshape it.** Each life's background sets the starting answer palette — a gentle farmer doesn't open with threats, a hard scavenger doesn't open with poetry. As you act kind or cruel in conversation, your disposition shifts and the palette follows. Kind players see kind framings naturally; cruel options don't vanish but read as out-of-character and cost more socially when used. Cruel players unlock meaner moves that fit who they've become. You become who you act like — the menu is the mirror. (Disco Elysium's thought-cabinet lineage: behavior shapes the moves, not just stats.)
+5. **Mean must fit the room.** Cruel options appear where cruelty is plausible: toward enemies, rivals, low-trust strangers. Toward a friend who trusts you, cruelty isn't a menu option — it's a betrayal: bigger trust damage, longer memory, and the fiction names it. The menu never offers cartoon villainy; hostility toward an enemy is just honesty with teeth.
+6. **Every choice moves something legible.** Trust, mood, knowledge, or memory — at least one, visible in the fiction. No dead choices. (Narrative-design rule: "I'll help you later" is not a meaningful choice.)
+7. **Failure is content.** A refused favor, a deflected want, a blown probe — all produce story, never dead ends. (Disco Elysium: failing a check gives you the scene where you fail, and it's good.)
+8. **Characters remember; the ledger is continuity.** What we talk about is driven by what happened (memory + world state), not by a topic menu. Re-asking after the world moved gets an acknowledgment, never a repeat. (The `t2clock` "it's different now" pattern becomes universal.)
+9. **Questions come from character.** An NPC asks what THEY would ask — from their want, their fear, their relationship with you — not from a global pool of 36. The question IS the want surfacing.
+10. **Silence is always an option.** "..." on every menu. NPCs notice per mood (the `convoMoodSilence` machinery already exists). Cheapest content, highest realism. (Oxenfree.) Kept cheap: one generic react per mood, not bespoke branches — unchosen options are dialogue's most expensive content.
+11. **Knowledge gates everything, including conversation.** "If you don't know, it doesn't show" applies to dialogue: you can't ask about what you haven't heard, confront with what you can't prove, or teach what you don't know. (Outer Wilds: knowledge is the only progression.)
+12. **Strangers get small talk.** Fresh conversations offer small talk + shared past history (things seen/heard in the world) only. Fears, hopes, secrets, confrontations, deep wants — trust-gated, earned slowly. The slowness is the design; the loops test the pacing (see §4).
+13. **One screen, no scroll, max ~6 options.** Mobile law is non-negotiable. Depth comes from the scene changing, not from longer menus.
 
 ## 3. The architecture: one pipeline
 
@@ -67,9 +72,21 @@ buildMenu(vid):
      b. BEAT responses: 2 from the beat+topic matrix (kept from convo-beats.js)
      c. RELATIONSHIP options: gated by trust tier + relationship age (NOT convo count —
         the count≥2/3/4 bypasses die; intimacy is earned or it isn't)
-     d. "..." (silence — always)
+     d. "..." (silence — always; one generic react per mood)
   3. subject change ("Can I ask you something else?") + leave — always last
 ```
+
+Then the disposition filter runs over the whole menu (Principle 4): every candidate
+option carries a `temper` tag (kind / neutral / cruel / honest-hard). The player's
+current disposition (background baseline + moral trajectory from played choices)
+reorders and gates:
+- Options matching disposition surface naturally.
+- Cruel options for a kind player (or kind options for a cruel one) don't vanish —
+  they read as out-of-character: present but marked, and cost more socially when used.
+  Becoming someone new must be possible; it just isn't free.
+- Cruel options additionally require room-fit (Principle 5): vs enemies/rivals/low-trust
+  they surface normally; vs high-trust friends they're suppressed unless the player
+  has already chosen cruelty in the scene (escalation, not ambush).
 
 Cap: 6 content options + subject + leave. The old topic grab-bag survives ONLY behind the explicit subject change (existing rule, kept).
 
@@ -106,7 +123,7 @@ The topic menu inverts: instead of "pick a subject," the game surfaces **what's 
 
 ## 4. How it serves the social-survival core
 
-- **Trust:** becomes truly slow and legible. Earned through want engagement, honesty, and remembered kindness — never farmed (reactDryCount rule kept and extended to all repeatable +trust verbs). The count-bypasses die, so trust MEANS something again.
+- **Trust:** becomes truly slow and legible. Earned through want engagement, honesty, and remembered kindness — never farmed (reactDryCount rule kept and extended to all repeatable +trust verbs). The count-bypasses die, so trust MEANS something again. Strangers get small talk + shared history only (Principle 12); deep topics are trust-tier gated. **The slowness needs testing:** the playtest loop gets a standing directive to pace-test stranger→acquaintance→confidant arcs and report where the gates feel wrong — too fast (cheap intimacy) or too slow (grinding).
 - **Gossip:** the rumor thread and gossip asks keep their machinery, but gossip now flows through the scene: a villager with the `share_news` want GOSSIPS AT you; you can only spread what you've actually heard (knowledge gating). Distortion through retelling (existing) stays.
 - **Knowledge:** conversation is a knowledge instrument. Teach/learn, naming debates, monster descriptors, the codex — all keep working, but now gated by the scene: you can't teach someone who's tense, can't confront without evidence (existing), can't ask about the System before it arrives (existing).
 
@@ -130,9 +147,35 @@ Each phase is independently playable and shippable. Nothing here requires new ar
 - No dialogue timers (Oxenfree's interruption pressure doesn't fit a calm mobile game; the design keeps tap-advance).
 - No voice acting assumptions. Text-first, as now.
 
-## 8. Open questions for Steve (and the pending deep-research)
+## 8. Open questions for Steve (answered with research, 2026-10-08)
 
-1. **Should the player ever be locked out of honesty?** E.g., mid-interrogation, mid-moot — are there scenes where "I'd rather not say" shouldn't be free? (Proposal: yes, but the scene must SAY SO — "they're waiting for an answer" — never silently.)
-2. **How mean can the player be?** The cruelty verbs exist (bribery, threats, confrontation). Should cruelty have a dedicated menu section or stay contextual?
-3. **Trust bypasses:** killing the count≥2/3/4 escape hatches makes deep topics purely trust-gated. Some villagers may take many conversations to open. Is that the right slowness?
-4. Pending: deep-research findings on dialogue design — incorporate on arrival, especially anything on question-driven (vs topic-driven) conversation models and on failure-as-content economies.
+1. **Should the player ever be locked out of honesty?** Research answer: yes, but ONLY when the scene says so explicitly. The "But Thou Must" anti-pattern (Rennick & Roberts 2025) shows unmotivated coercion alienates players from their own character; the fix is motivating it in-fiction ("they're waiting for an answer") or escalating (ritual-refusal sequences), never repeating verbatim. Proposal stands: lockouts allowed, always legible, never silent.
+2. **How mean can the player be?** Research answer: keep cruelty contextual, and label pragmatic intent + tone on every option (the paper's core prescription; DA2's wheel icons are the shipped example). ME telemetry: only ~8% picked renegade — a limited-but-right set satisfies more than a large-but-wrong one. Don't build a cruelty menu section; build honest tone labels.
+3. **Trust bypasses:** killing the count≥2/3/4 escape hatches makes deep topics purely trust-gated. Research answer: slowness is fine IF the arc is legible. Citizen Sleeper's clocks make social investment visible without approval meters; Firewatch hides numbers entirely and lets regret do the work. So: kill the bypasses, but make relationship arcs legible (what's alive, what's owed, what's changed) — never show the numbers.
+
+## 9. What the deep research changed (folded 2026-10-08)
+
+Full report: 16 games/theory sources, research_notes/dialogue-realism-games-20261008-1002. Headline findings and what they do to this proposal:
+
+**Confirms the proposal's direction:**
+- **Hybrid wins.** Shipped practice converges on authored beats/pools selected by systemic managers (Valve response rules, Firewatch event log, Emily Short storylets) — exactly the Scene pipeline (§3). Pure trees and pure AI both lose.
+- **Fail forward** (Disco Elysium): refused favors and blown probes must produce story, never dead ends. Already Principle 5 — now with precedent.
+- **Hide the numbers** (Firewatch): stakes are warmth, teasing, devastating silence — regret beats stat loss. The consequence resolver (§3.4) naming movement in fiction is the right call; numbers never leak.
+- **Event-logged coherence** (Firewatch, Valve memory bits): coherence from accumulated facts + specific situational lines, not tree position. The `t2clock` "it's different now" pattern going universal (§3.5) is the right move.
+
+**Sharpens the proposal:**
+- **Paraphrase mismatch is the #1 shipped failure** (Mass Effect wheel → Fallout 4; a 2M-download full-text mod is the community's verdict). Labels must convey pragmatic intent + tone above all — "the exact content being mostly irrelevant." This hardens the Ask/Answer Contract (§3.3): consequence legibility isn't polish, it's the load-bearing wall.
+- **Adjacency pairs** (Rennick & Roberts 2025, corpus of 355 choices): end NPC turns with questions and players expect FEW options — economize there; invest option budget after NPC statements, where responses are unpredictable. 66% of real choices vary at the pragmatic level (accept/decline, politeness, truth/lie). Direct implication for our menus: cover the pragmatic moves honestly first; wording variety is secondary. This is why the honest opt-out matters more than more bespoke answers.
+- **Filter pools, don't branch** (Emily Short on Mask of the Rose): draw each turn's options from a large pool filtered to what's suitable — the set is always in-character because unsuitable lines never surface. This is the mechanism for §5's rule: no global-pool content without passing through (identity × relationship × memory × world-state).
+- **Silence: keep it cheap.** Oxenfree/Firewatch prove silence is a real choice NPCs should notice — but AdHoc's Dispatch cut it because <1% used it while each silent branch multiplied costs. Our "..." stays (convoMoodSilence machinery exists), but silent branches get ONE generic react per mood, not bespoke content. Unchosen options are dialogue's most expensive content.
+- **"X will remember that" theater** (Telltale): promised memory rarely honored. Our remember() ledger must actually pay off in later lines — or stop promising. Every memory write needs a read site.
+- **NPC Amnesia** is the named anti-pattern for dialogue not keyed to world-state — exactly what memory-driven topics (§3.5) kill.
+
+**New idea worth stealing:**
+- **Citizen Sleeper's distributed expression:** when "which dice I spend on you" IS the character statement, dialogue options only need emotional honesty, not verbatim fidelity. For us: the player's actions (who they seek out, what they do, what they bring) already carry expression — the dialogue menu doesn't have to bear the full load. Menus can be smaller and more honest when the game reads behavior elsewhere. (Supports the 6-option cap: depth from the scene changing, not longer menus.)
+- **Disco Elysium's gate-by-truth:** skill thresholds hide options the character wouldn't plausibly take — the menu can't lie about who you are. Our identity plumbing (voiceLine, playerVoice, t2fill) is the seed; the Scene pipeline should filter options through it, not just voice them.
+
+**Explicitly rejected for us:**
+- Real-time/expiling dialogue (Oxenfree bubbles, Alpha Protocol 2–3s timers): timing pressure doesn't fit a calm mobile game; tap-advance stays. (Noted in §7; research confirms the tradeoff is real — illegible interruption is Oxenfree's own cited flaw.)
+- LLM NPCs at runtime: the research deprioritized them as unshipped/experimental with known coherence problems (Façade's NLU lessons). Hand-authored + procedural stays (§7).
+- Negotiation-as-combat abstraction (Griftlands): the Eurogamer caveat applies — when abstraction drifts from recognizable social action, the spreadsheet shows through. Our stakes stay social and legible.
