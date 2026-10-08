@@ -93,7 +93,13 @@ console.log('F1: talked-down ambush escape beat');
   }
   ok('talk-down outcome reachable via real betrayalTurn', !!win && !win.error, win && win.error);
   if (win && !win.error) {
-    ok('escape beat line is the fallback', win.line === 'You get out. Breathing hard, alive.', JSON.stringify(win.line));
+    // SUPERSEDED 2026-10-08 (social-fixes): the fallback was an escape line
+    // landing on a talk-down. ambushAftermath now returns a per-outcome
+    // closing line; talked_down gets its own beat, still narration.
+    ok('closing beat is the talk-down line, not the escape fallback',
+      win.line === 'You talked them down. Now you have to live next to them.', JSON.stringify(win.line));
+    ok('no escape line on the talk-down resolution',
+      win.line !== 'You get out. Breathing hard, alive.');
     ok('escape beat NOT spoken by the leader', !win.spoken.some(s => String(s.line) === win.line),
       'spoken=' + JSON.stringify(win.spoken.map(s => String(s.line).slice(0, 40))));
     ok('escape beat rendered as narration', win.narr.some(m => m === win.line),

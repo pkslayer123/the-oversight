@@ -764,7 +764,17 @@
       const n = [plot.leader, ...((plot.accomplices || []).filter(Boolean))].filter(Boolean).length;
       return n <= 1 ? 'One voice' : n === 2 ? 'Two voices' : n === 3 ? 'Three voices' : `${n} voices`;
     })()}, one story, rehearsed on the walk back.`);
-    return { aftermath: true, caseId: c.id, outcome };
+    // CLOSING LINE (Steve 2026-10-08): the aftermath branch in convoTurn
+    // renders res.line as narration. Each outcome gets its own closing beat —
+    // the old single fallback ("You get out. Breathing hard, alive.") was an
+    // escape line that also landed on talk-downs, knockouts, and fights won.
+    const closingLine = {
+      escaped: `You get out. Breathing hard, alive.`,
+      talked_down: `You talked them down. Now you have to live next to them.`,
+      fought_off: `Down, not dead. And the whole village is about to hear about it.`,
+      knocked_out: `Lighter, hurting, alive. And owed an answer.`,
+    }[outcome] || `You get out. Breathing hard, alive.`;
+    return { aftermath: true, caseId: c.id, outcome, line: closingLine };
   },
   openCase(plot, charge) {
     const bs = this.betrayalState();
@@ -1070,7 +1080,7 @@
       const p = b.trace === false ? 0.35 : 0.8;
       if (R() < p) found.push(b);
     }
-    if (!found.length) { this.say(`You follow the food, the gifts, the sudden friendliness. Nothing you can prove. Yet.`); return []; }
+    if (!found.length) { this.say(`You follow the food, the gifts, the sudden friendliness. Nothing you can prove — yet. Dig again; the trail is still warm.`); return []; }
     for (const b of found) {
       this.say(`There it is: ${this.whoTag(b.by)} bought ${this.whoTag(b.voter)}. Follow the food — it always works.`);
     }
@@ -3058,7 +3068,7 @@
         cs2.foundBribes = cs2.foundBribes || [];
         for (const b of f) if (!cs2.foundBribes.some(y => y.voter === b.voter)) cs2.foundBribes.push(b);
       }
-      return finish(f.length ? 'Found something. Follow it to the moot.' : 'Nothing you can prove. Yet.', '(follow the food)');
+      return finish(f.length ? 'Found something. Follow it to the moot.' : 'Nothing you can prove — yet. Dig again; the trail is still warm.', '(follow the food)');
     }
     if (act === 'letlie') { this.letItLie(parts[2]); return finish('You say nothing. The silence sits at the fire with everyone else.', '(say nothing)'); }
     if (act === 'vote_guilty') { this.castPlayerVote(parts[2], true); return finish('Counted.', 'GUILTY.'); }
