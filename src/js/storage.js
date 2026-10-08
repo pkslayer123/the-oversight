@@ -630,7 +630,10 @@
       for (const it of good) {
         if (it.material) this.addMaterial(it.material, it.units);
         else {
-          const ex = inv.find(e => e.name === it.name && !e.material);
+          // FUNGIBILITY (break-it food 2026-10-08): merge only into a truly
+          // identical stack — name-only merging laundered kcalEach upward and
+          // dropped diseaseRisk here too.
+          const ex = inv.find(e => !e.material && this.stacksMatch(e, it));
           if (ex) ex.units = (ex.units || 0) + (it.units || 1);
           else inv.push(Object.assign({}, it));
         }
@@ -704,7 +707,10 @@
       it.units -= qty;
       if (it.material) this.addMaterial(it.material, qty);
       else {
-        const ex = inv.find(e => e.name === it.name && !e.material);
+        // FUNGIBILITY (break-it food 2026-10-08): merge only into a truly
+        // identical stack — name-only merging laundered kcalEach upward and
+        // dropped diseaseRisk here too.
+        const ex = inv.find(e => !e.material && this.stacksMatch(e, Object.assign({}, it, { units: qty })));
         if (ex) ex.units = (ex.units || 0) + qty;
         else inv.push(Object.assign({}, it, { units: qty }));
       }

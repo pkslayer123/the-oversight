@@ -6,6 +6,9 @@
 //   - cleanCarcass()
 //   - cookFood()
 //   - preserveFood()
+//   - stacksMatch()       (fungibility gate for stack merging)
+//   - spoilBonusDays()    (preservation_instinct shelf-life bonus)
+//   - isSpoiled()         (bonus-aware spoilage boundary)
 // rules:
 //   - raw_penalty: true (code: food.js)
 //   - processing_required: true (code: food.js)
@@ -363,7 +366,8 @@
     cleanCarcass(idx, container) {
       const inv = container || this.state.scholar.inventory;
       const day = this.state.scholar.day;
-      const rotten = (it) => !!it && it.spoilDay !== undefined && it.spoilDay <= day;
+      // SPOILAGE BOUNDARY: one boundary everywhere (isSpoiled, bonus-aware).
+      const rotten = (it) => this.isSpoiled(it);
       // SPOILAGE (hunter loop, Steve 2026-10-05): rot is past saving. A
       // neglected kill is lost — honestly and visibly — never cleaned back
       // into food. Silent rot that could be scrubbed into dinner made the
@@ -475,12 +479,12 @@
       if (idx !== undefined) {
         const it = inv[idx];
         if (it && it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.foodState === 'cooked')
-            && it.spoilDay !== undefined && it.spoilDay <= day) { dropRotten(idx); return null; }
+            && this.isSpoiled(it)) { dropRotten(idx); return null; }
       } else {
         for (let i = inv.length - 1; i >= 0; i--) {
           const it = inv[i];
           if (it && it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.foodState === 'cooked')
-              && it.spoilDay !== undefined && it.spoilDay <= day) dropRotten(i);
+              && this.isSpoiled(it)) dropRotten(i);
         }
       }
       const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
@@ -518,7 +522,7 @@
       if (it.foodState === 'unknown') m = '? unknown \u2014 not food yet';
       else if (it.foodState === 'in_shell') m = 'needs shelling';
       else if (it.foodState === 'carcass') {
-        if (it.spoilDay !== undefined && it.spoilDay <= this.state.scholar.day) m = 'spoiled — beyond cleaning';
+        if (this.isSpoiled(it)) m = 'spoiled — beyond cleaning';
         else {
           const t = this.knowsTechnique('clean');
           m = t ? (this.hasCuttingTool() ? 'needs cleaning' : 'needs cleaning (no knife)') : 'needs cleaning (you don\'t know how)';
@@ -540,7 +544,7 @@
     // spoilClockShort: the visible countdown for food near its spoilDay.
     spoilClockShort(it) {
       if (!it || it.spoilDay === undefined || it.spoilDay === null || it.spoilDay >= 9999) return '';
-      const left = it.spoilDay - this.state.scholar.day;
+      const left = it.spoilDay + this.spoilBonusDays() - this.state.scholar.day;
       if (left < 0) return ''; // the UI rows flag spoiled items themselves
       if (left === 0) return '\u26A0 SPOILING TODAY';
       if (left === 1) return 'spoils tomorrow';
@@ -620,7 +624,7 @@
       // rot either — ANY task. Rot can't be cooked or smoked back into food
       // (the cook/preserver branches rewrote spoilDay to day+5 / day+30+ with
       // no check). Honest, visible loss — same as the butcher branch had.
-      if (it.spoilDay !== undefined && it.spoilDay <= day) {
+      if (this.isSpoiled(it)) {
         const verb = task === 'butcher' ? 'cleaning' : task === 'cook' ? 'cooking' : 'smoking';
         this.say(`The ${it.name} went bad — ${spec.name} (${spec.occupation}) won't touch it. Beyond ${verb}. You leave it for the flies.`);
         inv.splice(idx, 1);
@@ -1538,7 +1542,7 @@
 
     // stashClock(it): the visible spoilage clock.
     stashClock(it) {
-      const left = (it.spoilDay ?? 9999) - this.state.scholar.day;
+      const left = (it.spoilDay ?? 9999) + this.spoilBonusDays() - this.state.scholar.day;
       if (left < 0) return 'spoiled';
       if (left === 0) return 'SPOILING TODAY';
       if (left === 1) return 'spoils tomorrow';
@@ -1548,9 +1552,22 @@
     // isSpoiled: spoilDay <= today means spoiled. Matches the UI's ⚠ spoiled
     // marker and the giftable-count exclusion — one boundary everywhere.
     // Optional bonus: preservation_instinct grants +days before it turns.
+    // The bonus DEFAULTS from the player's modifiers (break-it food
+    // 2026-10-08): eat()/eatOne() passed it explicitly, but the dawn sweep,
+    // the stash, the processing gates, and the UI badges all compared raw
+    // spoilDay — the sweep threw away food the eater would still accept,
+    // and labels cried rot on good food. One boundary, everywhere.
     isSpoiled(it, bonus) {
+      if (bonus === undefined || bonus === null) bonus = this.spoilBonusDays();
       return !!it && it.spoilDay !== undefined && it.spoilDay !== null
         && (it.spoilDay + (bonus || 0)) <= this.state.scholar.day;
+    },
+
+    // spoilBonusDays: preservation_instinct grants +days before food turns
+    // ("you store food right"). The engine and every label read this one.
+    spoilBonusDays() {
+      try { return Math.round(this.modTarget('food.spoilage_days', 0)); }
+      catch (e) { return 0; }
     },
 
     // sweepSpoiled: overnight, rotten food leaves your pack (and the prep
@@ -1618,7 +1635,10 @@
           for (let i = c.items.length - 1; i >= 0; i--) {
             const it = c.items[i];
             if (!it || it.bonded) continue;
-            if (this.isSpoiled(it)) {
+            // CORPSE CLOCK: raw spoilDay, no storage-skill bonus — a carcass
+            // in the woods isn't "stored right". The earth doesn't grade on
+            // technique. (Pack/pantry use the bonus-aware boundary.)
+            if (this.isSpoiled(it, 0)) {
               const here = c.node && c.node.x === this.map.px && c.node.y === this.map.py;
               lostCorpse.push({ name: it.name || 'something', here: !!here, kind: c.kind });
               c.items.splice(i, 1);
@@ -1637,7 +1657,7 @@
     // putAwayFinished: batch — finished food goes to the pantry.
     putAwayFinished() {
       const stash = this.prepStash();
-      let n = 0, kcal = 0;
+      let n = 0, kcal = 0, blocked = 0;
       for (let i = stash.length - 1; i >= 0; i--) {
         const it = stash[i];
         // SPOILAGE (adversarial forager 2026-10-08): rot isn't pantry stock.
@@ -1649,13 +1669,20 @@
           continue;
         }
         if (!this.isFinishedFood(it)) continue;
-        this.pantryAdd(it);
+        // PANTRY CAP (break-it food 2026-10-08): pantryAdd enforces the cap
+        // and reports; a full pantry leaves the batch on the counter —
+        // honestly, not silently vanished, not overfilled.
+        if (!this.pantryAdd(it)) {
+          this.say(`The pantry is full (${Math.round(this.pantryCapKcal()).toLocaleString()} kcal cap) — ${it.name} stays on the counter. Expand storage to take more.`);
+          blocked++;
+          continue;
+        }
         kcal += (it.kcalEach || 0) * (it.units || 1);
         stash.splice(i, 1);
         n++;
       }
       if (n) this.say(`Put away: ${n} finished batch${n > 1 ? 'es' : ''} (${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'}) → pantry. The counter breathes.`);
-      else this.say('Nothing finished to put away — the counter is all work-in-progress.');
+      else if (!blocked) this.say('Nothing finished to put away — the counter is all work-in-progress.');
       return null;
     },
 
@@ -1667,7 +1694,7 @@
       const day = this.state.scholar.day;
       // SPOILAGE: the counter's rot isn't food. The dawn sweep clears it; mid-day it's refused.
       if (!it || (it.kcalEach || 0) <= 0 || it.edible === false
-          || (it.spoilDay !== undefined && it.spoilDay <= day)) { this.say('Nothing edible there.'); return null; }
+          || this.isSpoiled(it)) { this.say('Nothing edible there.'); return null; }
       const s = this.state.scholar;
       if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
         s.health = Math.max(0, (s.health || 100) - it.diseaseRisk.dmg);
@@ -1683,10 +1710,50 @@
       return null;
     },
 
+    // stacksMatch(a, b): FUNGIBILITY GATE for stack merging (Steve 2026-10-08,
+    // break-it food run). Name-only merging laundered kcalEach upward — taking
+    // low-quality pantry units into a high-quality pack stack created calories
+    // from nothing (measured +200 kcal on a 5-unit take); donating did the
+    // reverse (destroyed value); spoilDay mismatches contaminated clocks
+    // (spoilage bypass); diseaseRisk silently dropped (risk laundering). Two
+    // stacks merge ONLY when every value-bearing field matches — otherwise
+    // they ride as separate stacks. (Precedent: the 2026-10-06 villager-surplus
+    // fix already gate-kept spoilDay; this generalizes the rule.)
+    stacksMatch(a, b) {
+      if (!a || !b) return false;
+      if ((a.name || '') !== (b.name || '')) return false;
+      const num = (v) => (v === undefined || v === null) ? null : Number(v);
+      if (num(a.kcalEach) !== num(b.kcalEach)) return false;
+      if (num(a.spoilDay) !== num(b.spoilDay)) return false;
+      if (num(a.kg) !== num(b.kg)) return false;
+      if (num(a.hiddenKcal) !== num(b.hiddenKcal)) return false;
+      if (num(a.rawKcal) !== num(b.rawKcal)) return false;
+      // safe/edible are only ever false when explicitly false.
+      if ((a.safe === false) !== (b.safe === false)) return false;
+      if ((a.edible === false) !== (b.edible === false)) return false;
+      if ((a.foodKind || '') !== (b.foodKind || '')) return false;
+      if ((a.foodState || '') !== (b.foodState || '')) return false;
+      if (!!a.needsCooking !== !!b.needsCooking) return false;
+      if (!!a.wellMade !== !!b.wellMade) return false;
+      if ((a.plantId || '') !== (b.plantId || '')) return false;
+      if ((a.unit || '') !== (b.unit || '')) return false;
+      const dr = (r) => r ? `${r.p}|${r.dmg}|${r.note || ''}` : '';
+      if (dr(a.diseaseRisk) !== dr(b.diseaseRisk)) return false;
+      const pr = (r) => r ? `${r.p}|${r.dmg}|${r.note || ''}` : '';
+      if (pr(a.poisonRisk) !== pr(b.poisonRisk)) return false;
+      return true;
+    },
+
     // pantryAdd: one finished item into the real pantry (shared shape).
+    // Enforces the pantry cap — the single choke point (break-it food
+    // 2026-10-08: putAwayFinished bypassed the donateToPantry cap check and
+    // overfilled the pantry). Returns false when the item doesn't fit.
     pantryAdd(item) {
       const vv = this.state.village;
       vv.pantry = vv.pantry || [];
+      const kcal = (item.kcalEach || 0) * (item.units || 1);
+      const cap = this.pantryCapKcal();
+      if (this.pantryKcal() + kcal > cap) return false;
       vv.pantry.push({
         name: item.name || 'Finished food', plantId: item.plantId,
         kcalEach: item.kcalEach, units: item.units,
@@ -1697,6 +1764,7 @@
         wellMade: item.wellMade,
       });
       vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+      return true;
     },
 
     // howFarOptions(it): the depth decision — stated BEFORE committing.
@@ -1884,7 +1952,7 @@
     // rot honestly; the cook paths were missed and resurrected it (spoilDay
     // rewrite to day+5). Same voice, same loss.
     const day0 = this.state.scholar.day;
-    if (item && item.spoilDay !== undefined && item.spoilDay <= day0) {
+    if (item && this.isSpoiled(item)) {
       this.say(`The ${item.name} went bad — cooking won't save it. You leave it for the flies.`);
       inv.splice(idx, 1);
       return null;
@@ -1976,7 +2044,7 @@
     const item = this.state.scholar.inventory[idx];
     // SPOILAGE (adversarial forager 2026-10-08): you can't donate rot to the
     // village — no trust for garbage, and the pantry never stocks it.
-    if (item && item.spoilDay !== undefined && item.spoilDay <= this.state.scholar.day) {
+    if (item && this.isSpoiled(item)) {
       this.say(`The ${item.name} went bad — you can't feed the village rot. You leave it for the flies.`);
       this.state.scholar.inventory.splice(idx, 1);
       return null;

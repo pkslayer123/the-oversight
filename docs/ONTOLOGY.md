@@ -426,7 +426,7 @@ Examine action + observation memory + recognition. Looking closely at a plant is
 ### food (`food.js`)
 Food reality system. Food must be known-edible AND in edible state. Processing changes net calories.
 
-**Provides:** foodMarker(), cleanCarcass(), cookFood(), preserveFood()
+**Provides:** foodMarker(), cleanCarcass(), cookFood(), preserveFood(), stacksMatch()       (fungibility gate for stack merging), spoilBonusDays()    (preservation_instinct shelf-life bonus), isSpoiled()         (bonus-aware spoilage boundary)
 
 **Rules:**
 - raw_penalty: true (code: food.js)
