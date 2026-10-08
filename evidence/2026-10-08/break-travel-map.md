@@ -51,6 +51,18 @@ Hostile-player attack on the travel & map system. Verdict: **BROKE + FIXED — 3
 - `scripts/test-action-clock.js` — stale "travel = 32 ticks" assertion → free-travel rule
 - `scripts/test-break-travel-spam-20261008.js`, `test-break-travel-animal-20261008.js`, `test-break-travel-clamps-20261008.js` — new proof tests (BEFORE=1 runs pre-fix code from git HEAD)
 
+## Sibling sweep: stale 7×7 clamps (break-travel-sib, commit 7bb1288)
+
+Repo-wide grep for coordinate `Math.min(6` found exactly three more instances of the stale-clamp class the main run fixed (non-coordinate hits — hierarchy.js:382 influence gain, ledger.js:763 viewership — left alone):
+
+1. **`src/js/villager-agency.js` `startExpedition`** — expedition target `tx/ty` clamp 0..6 → 0..8. Before: villagers could never target rim nodes 7-8 (a third of the map expedition-free by construction).
+2. **`src/js/villager-agency.js` `expeditionLeg`** — per-leg `nx/ny` clamp 0..6 → 0..8. Softlock analysis: not a true livelock (expeditions terminate on duration when the base loop clears `v.away`), but a 7-8 target would clamp the villager at (6,6) forever with legs++ burning and the destination never reached. Now converges.
+3. **`src/js/game.js` `seedVillagerMaps`** — villager map-seed scatter clamp 0..6 → 0..8 (supersedes the "redundant but harmless" note above — matters for off-center havens; see design flag below).
+
+**Proof:** `scripts/test-break-travel-sib-clamps-20261008.js` (BEFORE=1 runs pre-fix code from git HEAD, seeded mulberry32). BEFORE: expedition targets max coord 6 (0/400 rim targets); legs clamp at (6,6) 39/40 legs, never reach (8,8); off-center-haven seeds yield 0 rim tiles. AFTER: 162/400 expedition targets on rim nodes; legs reach (8,8) in 4 legs, stay arrived, no drift; off-center seeds produce 11 rim tiles; COMPARE MAPS merges a forced rim tile. ALL CHECKS PASSED in both modes; main clamp test still 4/4. `npcMaxDist` verified coherent (explorer 6 ≥ world radius 4 from haven) — no change.
+
+**DESIGN FLAG for Steve (not changed — out of bug class):** with the standard centered haven (4,4), `seedVillagerMaps`' scatter radius is only ±2, so seeds land on 2..6 regardless of the clamp — rim tiles are structurally excluded from villager map knowledge even after this fix. The clamp fix only matters for off-center havens. Widening the scatter radius is a design call.
+
 ## Verification
 - `node --check` on both changed source files: OK
 - `scripts/validate-ontology.js`: 47/47 systems validated, release permitted
