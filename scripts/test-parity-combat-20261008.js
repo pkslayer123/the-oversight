@@ -75,9 +75,10 @@ function check(name, cond, extra) {
   Game.state.scholar.awayNews = [];
 
   function runBatch(vid, monsterId, n) {
-    const out = { kill: 0, drive: 0, mauled: 0, die: 0 };
+    const out = { kill: 0, drive: 0, mauled: 0, die: 0, winsCostBlood: 0, winsTotal: 0 };
     const origHurt = Game.hurtVillager;
     const origRemove = Game.removeWorldMonster;
+    const origFF = Game.fieldFight;
     // real HP: what spawnWorldMonster would give (base of the monster's hp range)
     const mdef0 = (Game.data.monsters || []).find(x => x.id === monsterId) || {};
     const baseHp = (mdef0.hp && mdef0.hp[0]) || 20;
@@ -86,17 +87,26 @@ function check(name, cond, extra) {
       const m = { id: monsterId, tx: hx + 1, ty: hy, mx: 4, my: 4, hp: baseHp, maxHp: baseHp };
       // restore health between trials (we measure odds, not attrition)
       v.health[vid] = vid === strong ? 100 : 20;
-      let hurt = 0, removed = false;
+      let hurt = 0, outcome = null;
       Game.hurtVillager = (id, dmg) => { if (id === vid) hurt = dmg; };
-      Game.removeWorldMonster = (mm) => { removed = true; };
+      Game.removeWorldMonster = (mm) => {};
+      // classify by the fight's REAL outcome (2026-10-08: every outcome now
+      // routes wounds through hurtVillager, so "hurt > 0" no longer implies
+      // a mauling — wins cost blood too)
+      Game.fieldFight = function (v2, mdef, m2, opts) {
+        const r = origFF.call(this, v2, mdef, m2, opts);
+        outcome = r.outcome;
+        return r;
+      };
       Game.resolveWildMonsterEncounter(vid, m);
-      if (removed) out.kill++;
-      else if (hurt >= 500) out.die++;
-      else if (hurt > 0) out.mauled++;
-      else out.drive++;
+      if (outcome === 'vKill') { out.kill++; out.winsTotal++; if (hurt > 0) out.winsCostBlood++; }
+      else if (outcome === 'mFlee') { out.drive++; out.winsTotal++; if (hurt > 0) out.winsCostBlood++; }
+      else if (outcome === 'vDie') out.die++;
+      else out.mauled++; // vFlee
     }
     Game.hurtVillager = origHurt;
     Game.removeWorldMonster = origRemove;
+    Game.fieldFight = origFF;
     return out;
   }
 
@@ -125,6 +135,9 @@ function check(name, cond, extra) {
   check('strong+armed vs Highbeam: NOBODY kills it alone',
     sVsW2.kill === 0,
     `strong+armed kills ${sVsW2.kill}/${N}`);
+  check('every win cost blood (no free victories — wounds land on vKill/mFlee too)',
+    sVsW.winsTotal > 0 && sVsW.winsCostBlood === sVsW.winsTotal,
+    `wins costing blood ${sVsW.winsCostBlood}/${sVsW.winsTotal}`);
 
   Game.say = origSay;
   console.log('\n' + pass + ' passed, ' + fail + ' failed');

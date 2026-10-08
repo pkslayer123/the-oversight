@@ -11656,11 +11656,17 @@
       const rec = this.fieldFight(vid, mdef, m, {});
       const summary = this.fieldFightSummary(rec, name, mName);
       if (rec.outcome === 'vKill') {
+        // real wounds from the real fight — the win cost blood too.
+        // (2026-10-08: these were silently dropped; villagers fought for
+        // free and the gossip lied about wounds that never landed.)
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
         this.removeWorldMonster(m);
         tell(`\u2694\uFE0F ${summary} The village cheers.`);
         try { this.bumpTrust(vid, 4); } catch (e) {}
         try { if (this.remember) this.remember(vid, 'hero', 'killed ' + mName); } catch (e) {}
       } else if (rec.outcome === 'mFlee') {
+        // standing it down still cost whatever the record says it cost
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
         const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].sort(() => Math.random() - 0.5);
         for (const d of dirs) {
           const nx = m.tx + d[0], ny = m.ty + d[1];
@@ -11672,7 +11678,7 @@
         }
         tell(`\u2694\uFE0F ${summary} It's still out there, somewhere.`);
         try { this.bumpTrust(vid, 2); } catch (e) {}
-      } else if (rec.outcome === 'vFlee' || rec.outcome === 'standoff') {
+      } else if (rec.outcome === 'vFlee') {
         // real wounds from the real fight — not a scaled table number
         try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
         tell(`\U0001FA78 ${summary}`);

@@ -310,8 +310,12 @@
         return;
       }
       // contact: they fought. Fighting teaches, whatever the ending.
+      // (2026-10-08: wins and drive-offs used to walk away unwounded —
+      // the record said "44 taken" while health never moved. Every
+      // outcome now pays the fight's real price through the hurt pipeline.)
       a.know[vid].monsters++;
       if (rec.outcome === 'vKill') {
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
         a.know[vid].monsters++;
         a.xp[vid].bravery += 3 * (st.potential[vid] ? 2 : 1);
         a.stats[vid].monsterKills++;
@@ -320,13 +324,14 @@
         return;
       }
       if (rec.outcome === 'mFlee') {
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
         a.xp[vid].bravery += 1;
         st.exped[vid].encounters.push('stood down ' + (m.id || 'it') + ' (' + fightNote + ')');
         this.recordDeed(vid, 'stood_down', `${nm} stood down ${mName} and kept walking. ${fightNote}.`, 4);
         return;
       }
       if (rec.outcome === 'vDie') return this.expedDeath(vid, mName, nm, playerAtHaven);
-      // vFlee / standoff: real wounds from the real fight, then the hurt pipeline
+      // vFlee: real wounds from the real fight, then the hurt pipeline
       try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
       return this.expedHurt(vid, mName + ' (' + fightNote + ')', nm);
     },

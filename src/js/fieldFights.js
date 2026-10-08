@@ -6,6 +6,7 @@
 // rules:
 //   - rounds: initiative by speed each round; the monster acts with its real attack data (name, damage range, pattern, pack, thrash); the villager strikes with the tactical formula roll([4+wb, 8+wb]), wb = round(wbonus/2). (code: fieldFight)
 //   - morale: flee is driven by wounds + bravery + temperament, never a flat roll. (code: fieldFight)
+//   - pack: the lead IS the world-monster entity (members[0]) — wound it and the pack breaks, kill it and the pack dies/scatters with it; members never promote. (code: fieldFight)
 //   - hard: an average villager vs a real monster usually gets hurt, driven off, or killed. (code: fieldFight)
 //   - record: every fight returns rounds, wounds both ways, and outcome — feeds deeds, gossip, scars. (code: fieldFight)
 //   - cheap: round cap 15, no grid, no UI. (code: fieldFight)
@@ -74,7 +75,7 @@
     //      room"). Decides CONTACT, not outcome.
     // Returns: { outcome, rounds, vTaken, mDealt, vHpLeft, mHpLeft,
     //   packCount, log[] }
-    //   outcome: 'evade' | 'vKill' | 'mFlee' | 'vFlee' | 'vDie' | 'standoff'
+    //   outcome: 'evade' | 'vKill' | 'mFlee' | 'vFlee' | 'vDie'
     fieldFight: function (vid, mdef, m, opts) {
       opts = opts || {};
       mdef = mdef || {};
@@ -189,15 +190,19 @@
         // ---- morale: wounds drive it, never a flat roll ----
         if (vHp <= 0) { vAlive = false; rec.outcome = 'vDie'; break; }
         if ((vHp / vHpMax) < vBreak) { rec.outcome = 'vFlee'; break; }
-        var leadAlive = null;
-        for (var lj = 0; lj < members.length; lj++) { if (members[lj].hp > 0) { leadAlive = members[lj]; break; } }
-        if (!leadAlive) {
-          // lead down: broken coordination — the pack's documented weakness
+        // THE LEAD FALLS: the pack coordinates through the lead animal —
+        // the world-monster entity IS members[0]. Wound it below the break
+        // line and the pack breaks (mFlee); kill it and the pack dies or
+        // scatters with it — members never promote to a second lead.
+        // (Tactical-engine parity: "without the lead, the pack melts away";
+        // data: hushwolf weakness "broken coordination (wound the lead)".)
+        if (members[0].hp <= 0) {
           rec.outcome = 'vKill';
           for (var mj = 0; mj < members.length; mj++) { members[mj].hp = 0; members[mj].alive = false; }
+          rec.log.push('The lead falls — the pack\'s coordination shatters. The rest scatter or die.');
           break;
         }
-        if ((leadAlive.hp / leadAlive.maxHp) < mBreak) { rec.outcome = 'mFlee'; break; }
+        if ((members[0].hp / members[0].maxHp) < mBreak) { rec.outcome = 'mFlee'; break; }
       }
       if (!rec.outcome) {
         // round cap: the worse-off side disengages
@@ -220,7 +225,7 @@
         return vName + ' killed the ' + mName + ' alone — ' + r + ' rounds, ' + rec.vTaken + ' taken. Word travels fast.';
       if (rec.outcome === 'mFlee')
         return vName + ' stood down the ' + mName + ' and kept walking — ' + r + ' rounds, bloodied but breathing.';
-      if (rec.outcome === 'vFlee' || rec.outcome === 'standoff')
+      if (rec.outcome === 'vFlee')
         return 'The ' + mName + ' mauled ' + vName + ' (-' + rec.vTaken + ' health) over ' + r + ' rounds. They\'re lucky to be breathing.';
       if (rec.outcome === 'vDie')
         return 'The ' + mName + ' killed ' + vName + ' in ' + r + ' rounds. The village mourns.';

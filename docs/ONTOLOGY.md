@@ -451,6 +451,7 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 **Rules:**
 - rounds: initiative by speed each round; the monster acts with its real attack data (name, damage range, pattern, pack, thrash); the villager strikes with the tactical formula roll([4+wb, 8+wb]), wb = round(wbonus/2). (code: fieldFight)
 - morale: flee is driven by wounds + bravery + temperament, never a flat roll. (code: fieldFight)
+- pack: the lead IS the world-monster entity (members[0]) — wound it and the pack breaks, kill it and the pack dies/scatters with it; members never promote. (code: fieldFight)
 - hard: an average villager vs a real monster usually gets hurt, driven off, or killed. (code: fieldFight)
 - record: every fight returns rounds, wounds both ways, and outcome — feeds deeds, gossip, scars. (code: fieldFight)
 - cheap: round cap 15, no grid, no UI. (code: fieldFight)
