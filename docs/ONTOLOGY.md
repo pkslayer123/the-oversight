@@ -553,7 +553,7 @@ Data-driven monster behavior dispatch. Replaces per-species if/else branches in 
 **Rules:**
 - identical: migrated hooks are VERBATIM extractions from tbMonsterTurn — relocation, not redesign. Behavior must be bit-identical. (code: mbRunPreTurn)
 - dispatch: monsterBehaviors.json declares preTurnHooks per monster id; the interpreter runs them in order. A hook returning true consumes the turn. (code: mbRunPreTurn)
-- dead: hornIs/swarmIs reference deleted monster ids (hype_horn/camera_swarm) — those branches are dead code, NOT migrated. Flagged for Steve. (code: mbRunPreTurn)
+- dead: hornIs/swarmIs referenced deleted monster ids (hype_horn/camera_swarm) — those branches were dead code. Removed 2026-10-08 by the break-it monsters run (with smIs/cgIs + the service_mimic/contract_golem/camera_swarm/hype_horn bespoke AI blocks). (code: mbRunPreTurn)
 - incremental: migrate species one at a time with differential tests. Do not bulk-migrate. (code: monsterBehavior)
 
 **Consumes:** tbAntlerThrash, tbHumSwarmCheck, tbEndCheck, tbRefreshTelegraphUI, encUsesFifo, encScanThreats, encSetPhase, encPhaseFor, encConfig, encThreatQueue, tbFighter, say, saySituationOnce, audioEvent
