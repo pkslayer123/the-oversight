@@ -9185,57 +9185,28 @@
               if (this.map.px === hx && this.map.py === hy) {
                 this.say(`${first} came back. They don't say where they went.`);
               }
+            } else if (away.purpose === 'water' || away.purpose === 'traps' || away.purpose === 'visit' || away.purpose === 'guard') {
+              // OBJECTIVES (villager-objectives.js): new purposes from the
+              // objective system. Effects + honest return lines live there.
+              try { this.objReturnEffect(rid, away.purpose); } catch (e) {}
             }
             // 'leave' purpose with no return: they're gone. The village notices.
             continue;
           }
-          // Still away: drift to adjacent nodes (they're out there, living).
-          if (Math.random() < 0.3) {
-            const dx = Math.floor(Math.random() * 3) - 1;
-            const dy = Math.floor(Math.random() * 3) - 1;
-            if (dx || dy) this.npcSetNode(rid, node.nx + dx, node.ny + dy);
-          }
+          // Still away: objective-driven movement (villager-objectives.js) —
+          // pursue the target, meander a little. Replaces the old pure drift.
+          try { this.objAwayStep(rid, node, away, hx, hy); } catch (e) {}
           continue;
         }
 
         // AT HAVEN (or wherever they are): decide to leave.
+        // OBJECTIVES (villager-objectives.js): departures are objective-driven
+        // with a danger check — go / ask (companion) / tighten / defer.
+        // The old dice triggers (hungry→forage, escape→leave, bold→explore,
+        // curious) are subsumed: hunger/pantry drive FORAGE, escape drives
+        // LEAVE, bold/restless lean EXPLORE via range profiles.
         if (night) continue; // nobody sets out at night
-        let leaveChance = 0, purpose = null, duration = 4;
-        const n = this.npcNeeds(rid);
-        // Hungry NPCs forage — this is survival, not tourism.
-        if ((n.hunger || 0) > 60 && atHaven) { leaveChance = 0.35; purpose = 'forage'; duration = 2 + Math.floor(Math.random() * 3); }
-        // The 'escape' goal: they leave. Maybe for good.
-        else if (goal === 'escape' && atHaven) { leaveChance = 0.15; purpose = 'leave'; duration = 999; }
-        // Bold/restless NPCs explore.
-        else if ((temp === 'bold' || temp === 'restless') && atHaven) { leaveChance = 0.12; purpose = 'explore'; duration = 3 + Math.floor(Math.random() * 4); }
-        // Curious minds wander.
-        else if (atHaven && Math.random() < 0.04) { leaveChance = 1; purpose = 'explore'; duration = 2 + Math.floor(Math.random() * 3); }
-
-        if (purpose && Math.random() < leaveChance) {
-          // Step to an adjacent node — not a teleport across the map.
-          const dx = Math.floor(Math.random() * 3) - 1;
-          const dy = Math.floor(Math.random() * 3) - 1;
-          if (!dx && !dy) continue;
-          const nx = Math.max(0, Math.min(8, node.nx + dx)); // 9x9 world (2026-10-07)
-          const ny = Math.max(0, Math.min(8, node.ny + dy));
-          if (nx === node.nx && ny === node.ny) continue;
-          this.npcSetNode(rid, nx, ny);
-          v.away = v.away || {};
-          v.away[rid] = { nx, ny, purpose, sinceDay: s.day, sincePart: this.dayPart, duration };
-          const first = this.displayName(rid);
-          if (this.map.px === hx && this.map.py === hy) {
-            if (purpose === 'forage') this.say(`${first} heads out to forage. "Back before dark. Probably."`);
-            else if (purpose === 'explore') this.say(`${first} wanders off. "I want to see what's out there."`);
-            else if (purpose === 'leave') this.say(`${first} walks away from Haven. They don't look back.`);
-          }
-          // Leaving is gossip-worthy. Someone always sees someone go — seed
-          // two witnesses so the rumor can actually travel the fire.
-          try {
-            const seen = (this.state.village.roster || []).filter(id => id !== rid && id !== this.villagerId);
-            const shuf = [...seen].sort(() => Math.random() - 0.5);
-            this.seedGossip('departure', { who: rid }, shuf.slice(0, 2));
-          } catch (e) {}
-        }
+        try { this.objMaybeDepart(rid, node, atHaven, hx, hy); } catch (e) {}
 
         // THE DOOR: villagers at Haven drift through it on their own agency.
         // Inside/outside is a per-character sub-state — the hall and the grounds

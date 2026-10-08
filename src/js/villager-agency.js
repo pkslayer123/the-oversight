@@ -191,6 +191,17 @@
         var night = false;
         try { night = this.isNight(); } catch (e) {}
         if (night) continue;
+        // OBJECTIVES (villager-objectives.js): the objective system owns the
+        // door. Indoor-objective holders don't get expeditions, and expedition
+        // launches respect the village danger level (tighten/defer territory
+        // means nobody walks far today). Chain-safe: module may be absent.
+        try {
+          if (this.objOf) {
+            var oo = this.objOf(rid);
+            if (oo && oo.indoor && oo.state === 'indoor') continue;
+          }
+          if (this.objVillageDanger && this.objVillageDanger() >= 4) continue;
+        } catch (e) {}
         var chance = prof === 'explorer' ? 0.09 : 0.045;
         if (a.potential[rid]) chance *= 1.6;
         if (R() < chance) this.startExpedition(rid, hx, hy, playerAtHaven);

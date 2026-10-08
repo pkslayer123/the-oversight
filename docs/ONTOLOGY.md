@@ -687,3 +687,15 @@ Villager AI. Villagers act on their own with goals and routines.
 
 **Consumes:** village.villagers
 
+### villager-objectives (`villager-objectives.js`)
+Villager objective AI. Villagers pursue objectives instead of drifting randomly.
+
+**Provides:** objState(), objOf(vid), objPick(vid, hx, hy), objDanger(vid, tx, ty, hx, hy), objMaybeDepart(rid, node, atHaven, hx, hy), objAwayStep(rid, node, away, hx, hy), objAskCompanion(vid, obj, hx, hy), objTick()
+
+**Rules:**
+- objectives_drive_departures: npcNodeTravel's old dice triggers are replaced by objMaybeDepart (code: villager-objectives.js)
+- night_departure_ban: nobody sets out at night, hard rule kept from base (code: villager-objectives.js)
+- danger_gates_departure: every departure verdicts go / ask / tighten / defer via objDanger (code: villager-objectives.js)
+
+**Consumes:** village.roster, village.away, village.nodePos, village.gossip, npcNode, npcSetNode, npcInside, npcSetInside, npcTemper, npcGoal, npcNeeds, npcRangeProfile, npcMaxDist (villager-agency.js), agencyState
+

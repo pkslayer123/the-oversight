@@ -72,6 +72,13 @@ for (const f of LIST) {
   try { eval(fs.readFileSync(p, 'utf8')); }
   catch (e) { console.error('EVAL FAIL ' + p + ': ' + e.message); process.exit(2); }
 }
+// AFTER only: the objective system (villager-objectives.js) owns away-movement
+// now — npcNodeTravel calls this.objAwayStep. BEFORE mode must keep testing
+// genuine old code, so it stays unloaded there.
+if (!BEFORE) {
+  try { eval(fs.readFileSync(path.join(ROOT, 'src/js', 'villager-objectives.js'), 'utf8')); }
+  catch (e) { console.error('EVAL FAIL villager-objectives.js: ' + e.message); process.exit(2); }
+}
 try { eval(fs.readFileSync(dbgFile, 'utf8')); } catch (e) { console.error('EVAL FAIL dbg: ' + e.message); process.exit(2); }
 delete global.window;
 const Game = globalThis.Scattering.Game;
@@ -114,26 +121,42 @@ function fresh() {
   else ok('AFTER: npcSetNode reaches (8,8)', n.nx === 8 && n.ny === 8, `got (${n.nx},${n.ny})`);
 }
 
-// ---- ATTACK B: away-drift across the old clamp line ----
+// ---- ATTACK B: away-movement across the old clamp line ----
+// (2026-10-08 objectives update: away movement is no longer pure drift —
+// villagers pursue objective targets with a little meander. The property this
+// attack pins is the CLAMP: movement must be able to cross x=6. The AFTER
+// branch pins it through the new pursue path, deterministically.)
 {
   const rid = fresh();
   const v = Game.state.village, s = Game.state.scholar;
   Game.npcSetNode(rid, 6, 4);
   v.away = v.away || {};
   v.away[rid] = { nx: 6, ny: 4, purpose: 'explore', sinceDay: s.day, sincePart: Game.dayPart, duration: 9999 };
-  const realRoster = v.roster;
-  v.roster = [Game.villagerId, rid]; // only our NPC moves: scripted randoms stay aligned
-  // script: drift fires (0.1<0.3), dx=+1 (0.9), dy=0 (0.5); then fall back to seeded rng
-  const script = [0.1, 0.9, 0.5];
-  const realRandom = Math.random;
-  Math.random = () => script.length ? script.shift() : realRandom();
-  try { Game.npcNodeTravel(); } finally { Math.random = realRandom; }
-  v.roster = realRoster;
+  if (BEFORE) {
+    const realRoster = v.roster;
+    v.roster = [Game.villagerId, rid]; // only our NPC moves: scripted randoms stay aligned
+    // script: drift fires (0.1<0.3), dx=+1 (0.9), dy=0 (0.5); then fall back to seeded rng
+    const script = [0.1, 0.9, 0.5];
+    const realRandom = Math.random;
+    Math.random = () => script.length ? script.shift() : realRandom();
+    try { Game.npcNodeTravel(); } finally { Math.random = realRandom; }
+    v.roster = realRoster;
+    const n = Game.npcNode(rid);
+    console.log(`  [info] B: drift from (6,4) east -> (${n.nx},${n.ny})`);
+    ok('BEFORE: drift swallowed at the 6-clamp', n.nx === 6 && n.ny === 4, `got (${n.nx},${n.ny})`);
+  } else {
+    // new model: objective with a rim target, tightened (no meander — the
+    // pursue step is deterministic). Must step (6,4) -> (7,4).
+    const hx = v.px ?? 4, hy = v.py ?? 4;
+    const o = Game.objOf(rid);
+    o.kind = 'EXPLORE'; o.purpose = 'explore'; o.state = 'out'; o.indoor = false;
+    o.tx = 8; o.ty = 4; o.tightness = 6; o.tightened = true; o.partsLeft = 4;
+    Game.objAwayStep(rid, Game.npcNode(rid), v.away[rid], hx, hy);
+    const n = Game.npcNode(rid);
+    console.log(`  [info] B: pursue (6,4)->(8,4) -> (${n.nx},${n.ny})`);
+    ok('AFTER: pursue crosses into (7,4)', n.nx === 7 && n.ny === 4, `got (${n.nx},${n.ny})`);
+  }
   delete v.away[rid];
-  const n = Game.npcNode(rid);
-  console.log(`  [info] B: drift from (6,4) east -> (${n.nx},${n.ny})`);
-  if (BEFORE) ok('BEFORE: drift swallowed at the 6-clamp', n.nx === 6 && n.ny === 4, `got (${n.nx},${n.ny})`);
-  else ok('AFTER: drift crosses into (7,4)', n.nx === 7 && n.ny === 4, `got (${n.nx},${n.ny})`);
 }
 
 // ---- ATTACK C: toWildNode spawn-rule honesty ----
