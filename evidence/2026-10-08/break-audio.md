@@ -67,3 +67,56 @@ had their voice lists updated (both green after).
 - `deerSnort`/`stagSnort`/`projectorStatic`/`paperRustle`/`projectorHum` start finite buffer
   sources without explicit `.stop()` — benign (self-terminating), but a future worker adding
   `.stop()` calls would make the intent explicit and silence naive leak-checkers.
+
+## SECOND PASS (2026-10-08, worktree break-audio @ c6a4545) — census sweep
+
+The morning run covered exploit/softlock/honesty/dead-code deeply. This pass
+ran the CENSUS the morning pass didn't: every literal `audioEvent('name')`
+across src/js + every data-declared hook (declareAudio/noticeAudio/aggroAudio/
+deathAudio/resolveAudio in JSON, schemas.json excluded) + every
+DRAMA_AUDIO_MATES value, cross-checked against the CombatAudio registry;
+and every registry voice checked for wiring (audioEvent literal,
+Game.audio.X call, or bare-function call inside the IIFE minus its own shim).
+
+### CATCH (DEAD HOOK, fixed): `stasisBlock` — fired, never voiced
+
+`alienPlayers.js:2210` fires `this.audioEvent('stasisBlock')` when Rax's
+stasis field eats the barrier exit ("The air goes still — ... You leave when
+Rax says you leave"). The voice never existed — `audioEvent()` silently
+no-ops on unknown names, so this dramatic diegetic beat played NOTHING since
+the stasis system landed. The bug class is invisible by design (anti-crash
+no-op), so it can only be caught by census.
+**Fix:** added `stasisBlock` synth + registry entry (app.js). Fiction-fit:
+metallic snap (field engaging), one held detuned high tone (frozen time) over
+a rising sub that is CUT, never resolved. One-shot, self-terminating — no
+sustained nodes, routes through sfxBus→master (mute-honest).
+**Proof:** scripts/test-audio-break.js — 9/9. BEFORE: hook absent from registry
+(git show HEAD:src/js/app.js census); AFTER: resolves, fires without throwing,
+zero leaked nodes, fires only in the stasis-field branch (context-honest).
+**Sibling sweep:** the census IS the sweep — it covered every module and data
+file. `stasisBlock` was the ONLY fired-silent hook; DRAMA_AUDIO_MATES all
+resolve; registry dead-voice count = 0. The `string?` hit was a schemas.json
+artifact (schema type annotations), not a real hook.
+Regressions: test-audio-break-exploit-20261008.js 13/13,
+test-audio-break-honesty-20261008.js 21/21, test-declare-audio-20261008.js
+15/15, validate-ontology.js 48/48.
+
+### Structural guard landed with the fix
+
+`scripts/test-audio-break.js` now contains the census as a regression test:
+any future fired-but-unregistered hook fails the run. The bug class (silent
+no-op on unknown names) is now guarded, not just patched.
+
+### HELD — what resisted
+
+- **Mute honesty:** toggleMute ramps master gain live (not just at ensure);
+  isMuted paints the 🔊/🔇 button. No lie.
+- **Per-frame hooks:** zero audioEvent call sites in render/tile/animation
+  paths (tile-scenes.js, sprites.js, move-anim.js are clean).
+- **No audio assets:** system is 100% WebAudio synth — no asset 404 / missing
+  file surface at all. Nothing to go missing.
+- **Dynamic dispatch:** `syncName` (drama audioFor) and data-driven hooks
+  (`cfg.aggroAudio || 'deerAggro'` etc.) all resolve; fallbacks exist where
+  data can be sparse.
+
+Commit: c6a4545 (src/js/app.js +46, scripts/test-audio-break.js new).
