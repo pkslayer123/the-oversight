@@ -493,8 +493,11 @@
       };
       if (opts.field) doubt.field = opts.field;
       cx.doubts.push(doubt);
-      // surface in the journal as a ❓ note — visible in the current UI
-      try { this.journalLearn(vid, 'note', '❓ ' + text, { via: 'doubt', quiet: false }); } catch (e) {}
+      // surface in the journal as a ❓ note — visible in the current UI.
+      // Honor opts.quiet: callers that already said the payload outright
+      // (storage.js cache-theft gossip) pass quiet:true so the generic
+      // "jotted down what they said" label doesn't double-post.
+      try { this.journalLearn(vid, 'note', '❓ ' + text, { via: 'doubt', quiet: !!opts.quiet }); } catch (e) {}
       return doubt;
     },
 

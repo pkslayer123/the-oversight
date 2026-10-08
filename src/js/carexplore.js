@@ -85,7 +85,10 @@
     catch (e) { return 'steady'; }
   }
   function trustOf(vid) {
-    return ((Game.state.village.trust || {})[vid]) || 10;
+    // unset defaults to 10, but a real 0 must stay 0 (same invariant as
+    // bumpTrust in game.js — `|| 10` resurrected hated villagers).
+    const t = (Game.state.village.trust || {})[vid];
+    return t === undefined ? 10 : t;
   }
   function setTrust(vid, v) {
     const t = Game.state.village.trust || (Game.state.village.trust = {});
@@ -121,6 +124,15 @@
     const temp = npcTemper.call(this, vid);
     const goal = this.npcGoal ? this.npcGoal(vid) : null;
 
+    // STOLEN-FOOD RECOGNITION (miser playtest 2026-10-07): handing a victim
+    // back their own stolen rations isn't generosity. If they suspect you (or
+    // caught you), stolen food goes first in the handoff and they recognize
+    // it — no trust gain, a small sting for the brazenness. The food is still
+    // theirs: hunger eases, the handoff completes, but nobody is fooled.
+    const vmems = ((this.state.village.memory || {})[vid]) || [];
+    const knowsTheft = vmems.some(m => m.t === 'suspects_you_stealing' || m.t === 'caught_you_stealing');
+    if (knowsTheft) stacks.sort((a, b) => ((b.stolen ? 1 : 0) - (a.stolen ? 1 : 0)));
+
     // how much can we actually give?
     const totalUnits = stacks.reduce((s, i) => s + (i.units || 0), 0);
     let units = 1;
@@ -128,11 +140,12 @@
     else if (amount === 'full') units = Math.min(totalUnits, Math.ceil(hunger / 25) + 1);
 
     // take the food — best stacks first (lowest kcal? no: use oldest/spoiling first is complex; just take in order)
-    let taken = 0, takenName = stacks[0].name, takenKcal = 0;
+    let taken = 0, takenName = stacks[0].name, takenKcal = 0, stolenTaken = 0;
     for (const st of stacks) {
       if (taken >= units) break;
       const take = Math.min(st.units, units - taken);
       st.units -= take; taken += take; takenKcal += take * (st.kcalEach || 0);
+      if (st.stolen) stolenTaken += take;
       if (!takenName) takenName = st.name;
     }
     this.state.scholar.inventory = this.state.scholar.inventory.filter(i => (i.units || 0) > 0);
@@ -141,6 +154,17 @@
     // ---- the decision's consequences ----
     const hungerRelief = amount === 'bite' ? 25 : amount === 'meal' ? 60 : 120;
     n.hunger = Math.max(0, hunger - hungerRelief);
+
+    // recognized theft: the generosity beats below don't apply
+    if (knowsTheft && stolenTaken > 0) {
+      setTrust.call(this, vid, Math.max(0, trust - 5));
+      this.remember(vid, 'returned_stolen', 'handed back their own stolen rations');
+      this.say(`${first} goes very still over the ${takenName}. "Those are mine." The silence is worse than shouting.`);
+      this.socialTick(vid);
+      this.tickAction(1); // a handoff is quick — the food is the real cost
+      this.save();
+      return { ok: true, amount, units: taken, public: pub, trustGain: -5, recognized: true };
+    }
 
     let trustGain = amount === 'bite' ? 4 : amount === 'meal' ? 10 : 16;
     let note = null;
