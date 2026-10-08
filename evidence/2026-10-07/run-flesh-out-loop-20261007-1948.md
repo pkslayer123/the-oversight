@@ -54,3 +54,9 @@
 - Verified, awaiting application: audio deepening round 5 (patch + 91/91 proof).
 - Still blocked: wave-2 escalation patches ×10 (monsters.json worktree-dirty — sibling); Alien Players integration (sibling territory); wave2c engine backlog (sibling); drift fixes (MONSTER-WAVES.md table, test-wave2.js retired ids, app.js W2A_IDS camera_swarm, tg-middlemanager stale proofs).
 - Standing hazard: shared index still holds ~66 staged deletions + staged version-file mods (sibling cleanup in progress). Armed stale-base revert on game.js/drama.js remains DEFUSED (index matches HEAD; drama.js worktree-dirty is sibling's live edit — do not touch).
+
+## Postscript — sibling interleave + live verification
+- After my bump push (d3dbe8b), sibling landed `39d571a` (forager loop: quadratic unknown-lump weight re-fix + knowledge-gated village quests — matches the worktree game.js questPlantRef churn observed mid-run) + bump `099b8e5` (`39d571a-20261008-014717`). History linear, no action needed.
+- **LIVE VERIFIED**: GitHub raw master AND Vercel both serve `39d571a-20261008-014717` (includes 9709eba).
+- Revert-watch after sibling commit: all markers intact in HEAD — gallowdeerAim/animalPanic (app.js), evFanPackage/checkTrialExpiry (game.js), fan_package (events.json), 7 encounter-nested aggroAudio wirings (monsters.json).
+- False alarm noted: marker check initially looked for TOP-LEVEL aggroAudio; the 7 wirings are correctly NESTED in `encounter` (matches game.js:13237 reader + proof assertion). Sibling's uncommitted worktree edit moves hummice aggroAudio encounter→top-level; no top-level reader exists in HEAD yet — their in-flight work, left untouched.
