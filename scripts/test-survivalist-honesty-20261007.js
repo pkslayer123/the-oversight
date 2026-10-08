@@ -8,6 +8,8 @@
 //      nightmares) — the player compares the number to their health bar.
 //   3. boilWater silently charged 30 kcal ("TENDING A FIRE IS WORK" in a code
 //      comment, nowhere in the fiction). Named now, both fire and moss paths.
+//      (2026-10-08 survivalist loop: the flat 30 purified 10L as cheaply as 1L —
+//      cost now scales 30 + 5/L, named honestly in the message.)
 // Usage: node scripts/test-survivalist-honesty-20261007.js  (SEED env override)
 const fs = require('fs');
 const path = require('path');
@@ -94,8 +96,9 @@ const s = () => Game.state.scholar;
   s().kcal = 2000;
   says.splice(0);
   Game.boilWater();
-  check('boil names -30 kcal', /-30 kcal tending the fire/.test(lastSay(2)), lastSay(2).slice(0, 150));
-  check('boil charged 30', Math.round(s().kcal) === 1970, `kcal=${Math.round(s().kcal)}`);
+  // SCALED COST (survivalist loop 2026-10-08): 30 + 5/L — 1L = 35 kcal.
+  check('boil names -35 kcal', /-35 kcal tending the fire/.test(lastSay(2)), lastSay(2).slice(0, 150));
+  check('boil charged 35', Math.round(s().kcal) === 1965, `kcal=${Math.round(s().kcal)}`);
   // moss path: no fire anywhere
   for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) if (detail[y] && detail[y][x] === 'fire') detail[y][x] = 'dirt';
   try { Game.state.fires = (Game.state.fires || []).filter(f => !(f.tx === Game.map.px && f.ty === Game.map.py)); } catch (e) {}
@@ -103,7 +106,7 @@ const s = () => Game.state.scholar;
   s().water = [{ liters: 1, quality: 'risky', source: 'Creek (unknown)' }];
   says.splice(0);
   Game.boilWater();
-  check('moss boil names its cost', /-30 kcal coaxing your moss-tinder/.test(lastSay(2)), lastSay(2).slice(0, 150));
+  check('moss boil names its cost', /-35 kcal coaxing your moss-tinder/.test(lastSay(2)), lastSay(2).slice(0, 150));
   check('moss boil cleaned the water', (s().water || []).every(b => b.quality === 'clean'), '');
 
   console.log(`\npass=${pass} fail=${fail}`);

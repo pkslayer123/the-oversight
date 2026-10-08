@@ -7695,15 +7695,19 @@
           n++;
         }
       }
+      // TENDING A FIRE IS WORK — and it scales with the batch. A liter is real
+      // labor: heating, watching, pouring. (survivalist loop 2026-10-08: the
+      // old flat 30 kcal purified 10L as cheaply as 1L, so the "prevents free
+      // infinite purification" note was only true for small pots.)
+      const boilCost = 30 + 5 * n;
       if (n > 0) {
-        // TENDING A FIRE IS WORK. 30 kcal. (prevents free infinite purification)
-        s.kcal = Math.max(0, (s.kcal || 0) - 30);
+        s.kcal = Math.max(0, (s.kcal || 0) - boilCost);
       }
-      // COST HONESTY (survivalist loop 2026-10-07): the 30 kcal charge was
-      // silent. Name it. Moss-tinder boiling (no fire) still costs the work —
+      // COST HONESTY (survivalist loop 2026-10-07): the charge was silent.
+      // Name it. Moss-tinder boiling (no fire) still costs the work —
       // coaxing damp moss into enough heat to boil a liter is real labor.
       const mossBoil = n > 0 && !this.nearFire() && this.hasAbility('beard_moss');
-      this.say(n ? `Boiled ${n}L. Bacteria dead. (-30 kcal ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       return null;
     },
     // gatherCharcoal: rake charcoal from a campfire's ashes. Wood fires make
@@ -7894,6 +7898,14 @@
       let p = 0.40 + (known ? 0.30 : 0) + (moss ? 0.15 : 0) + Math.min(0.30, 0.05 * (fc.successes || 0)) + Math.min(0.32, 0.08 * (fc.failures || 0));
       if (hasDrill && !known) { p += 0.30; fireNote = fireNote || 'The hand drill does what knowledge would — mechanics instead of memory.'; }
       if (hasTorch) { p += 0.25; fireNote = fireNote || 'You coax the torch\'s flame onto the fuel.'; }
+      // RAIN (survivalist loop 2026-10-08): wet fuel fights you. Friction fire
+      // in the rain is a worse bet — the sky has teeth too. (A lighter is fire
+      // on demand; a prepared tinder bundle is dry. Friction is the suffering
+      // path, and rain used to not touch it at all.)
+      if (this.state.weather === 'rain' && !autoFire) {
+        p -= 0.25;
+        fireNote = (fireNote ? fireNote + ' ' : '') + 'Rain soaks everything — wet fuel, worse odds.';
+      }
       if (fc.knack) p = 1;
       if (autoFire) p = 1;
       if (Math.random() < p) {
@@ -7931,6 +7943,9 @@
       ];
       let hint = hints[Math.min(fc.attempts - 1, hints.length - 1)];
       if (fc.failures >= 3) hint += " Your hands are learning the rhythm — it has to catch soon.";
+      // HONEST FAILURE (survivalist loop 2026-10-08): if the rain took its cut,
+      // say so — the player should know the sky is part of why the spark died.
+      if (this.state.weather === 'rain' && !autoFire) hint += " (The rain isn't helping — wet fuel, worse odds.)";
       this.say(hint);
       return null;
     },
@@ -15947,6 +15962,27 @@
       try { this.npcNodeTravel(); } catch (e) {}
       // small energy tick per part
       this.state.scholar.energy = Math.max(0, this.state.scholar.energy - 5);
+      // COLD DAYS BITE (survivalist loop 2026-10-08): the cold snap used to be
+      // pure flavor while you were awake — only sleepers paid. Your body burns
+      // fuel to stay warm whether you're moving or not: each day part spent
+      // exposed in a cold snap costs 20 kcal, named honestly. The hall hearth
+      // and your own fire are the answers. cold_blooded bodies budget through it.
+      if (this.state.weather === 'cold' && this.dayPart < 3 && !this.over) {
+        try {
+          let atHaven = this.location === 'haven';
+          const ct = this.playerTile();
+          if (ct && ct.type === 'haven') atHaven = true;
+          if (!atHaven && !this.nearFire()) {
+            const sc = this.state.scholar;
+            if (!this.hasAbility('cold_blooded')) {
+              sc.kcal = Math.max(0, (sc.kcal || 0) - 20);
+              this.say('The cold snap steals your warmth — breath smoking, fingers clumsy. (-20 kcal shivering. Fire or the hall.)');
+            } else {
+              this.say('Cold-blooded: the snap means nothing to your budgeted body. (No shiver tax.)');
+            }
+          }
+        } catch (e) {}
+      }
       // PUSH THROUGH (iron_stomach, Steve 2026-10-07): the gut-settle wears
       // off with the day part. Expedition clock, not wall clock.
       try {
@@ -16003,6 +16039,26 @@
             'Night. The treeline is just a sound now. The fire is the whole argument against it.',
           ]));
         } catch (e) {}
+        // COLD NIGHTS BITE THE AWAKE TOO (survivalist loop 2026-10-08): the
+        // exposure penalty lived only in sleep(), so waiting through a cold
+        // night was free — the bite was fully dodged. Staying up all night in
+        // a cold snap, exposed, is its own misery: the shivering never stops.
+        // (Sleepers keep their own accounting in sleep() — _sleeping is set
+        // while the sleep loop ticks, so there's no double bite. The hall and
+        // a live fire still protect.)
+        if (!this._sleeping && this.state.weather === 'cold' && !this.over) {
+          try {
+            let atHavenN = this.location === 'haven';
+            const nt = this.playerTile();
+            if (nt && nt.type === 'haven') atHavenN = true;
+            if (!atHavenN && !this.nearFire()) {
+              const sc2 = this.state.scholar;
+              sc2.health = Math.max(1, Math.round(sc2.health || 0) - 12);
+              sc2.energy = Math.min(sc2.energy || 0, 40);
+              this.say('You stay up through the cold snap instead of sleeping — and the cold gets in anyway. Shivering all night, no real rest. (-12 health, energy won\'t rise past 40 tonight.)');
+            }
+          } catch (e) {}
+        }
       }
       this.save();
       return this.status();
