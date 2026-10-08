@@ -2604,6 +2604,17 @@
       var base = 8 + Math.floor(Math.random() * 7);
       try { base += (typeof this.apProgressLevel === 'function') ? this.apProgressLevel(pid) : 0; } catch (e) {}
       if (m._enraged) base = Math.round(base * 1.5);
+      // TOURIST CAM (break-it 2026-10-08): "Pip gets stronger the longer the
+      // fight goes (more footage)." +1 per 2 alien turns, capped +6.
+      if (pid === 'pip_quindle') {
+        try { base += Math.min(6, Math.floor((m.apTurns || 0) / 2)); } catch (e2t) {}
+      }
+      // CRYSTAL LATTICE (break-it 2026-10-08): "Stores your fear as damage.
+      // The more scared you are, the harder she hits." An afraid target
+      // takes +8 from Sable's strike.
+      if (pid === 'countess_sable') {
+        try { if (this.hasStatus && this.hasStatus(t, 'fear')) base += 8; } catch (e3t) {}
+      }
       var disp = 'neutral';
       try {
         var per = (typeof this.apPersona === 'function') ? this.apPersona(pid) : null;
@@ -2616,6 +2627,17 @@
         : 'Efficient. Practiced. No wasted motion.';
       this.say('🗡 ' + mName + ' strikes. ' + verb);
       this.tbDamage(t.key, base, mName + "'s strike");
+      // DREAD PROJECTOR (break-it 2026-10-08): "Projects your worst memory."
+      // Sable's strike leaves the player Afraid (the status engine's fizzle
+      // is the hands not listening). KNOWLEDGE GATE: the status source must
+      // not name her pre-reveal — the fighter is still a "Stranger".
+      if (pid === 'countess_sable' && t && t.kind === 'player') {
+        try {
+          var _dreadSrc = "the stranger's dread projector";
+          if (this.apKnowsAlien && this.apKnowsAlien('countess_sable')) _dreadSrc = "Sable's dread projector";
+          this.applyStatus(t, 'fear', { chance: 1, source: _dreadSrc });
+        } catch (e4t) {}
+      }
       try { this.audioEvent('meleeHit'); } catch (e) {}
     } else if (dist > 1) {
       this.say(mName + ' closes in, patient and unhurried.');

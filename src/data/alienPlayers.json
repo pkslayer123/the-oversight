@@ -73,12 +73,12 @@
       {
         "id": "phase_net",
         "name": "Phase-net",
-        "desc": "Shots phase through cover. Your hiding spots are decorative."
+        "desc": "Phase-laced filament net, worn like a shawl. It hums when you think about running."
       },
       {
         "id": "trophy_scope",
         "name": "Trophy Scope",
-        "desc": "Sees through stealth and camouflage. You cannot hide from Vex."
+        "desc": "A scope that drinks in every detail. Vex notices everything — especially you."
       }
     ],
     "combat": true
@@ -157,7 +157,7 @@
       {
         "id": "dread_projector",
         "name": "Dread Projector",
-        "desc": "Projects your worst memory. Fear effects are doubled."
+        "desc": "Projects your worst memory on loop. Her strikes leave you Afraid — and fear makes her hit harder."
       },
       {
         "id": "crystal_lattice",
@@ -241,7 +241,7 @@
       {
         "id": "nerve_mapper",
         "name": "Nerve Mapper",
-        "desc": "+accuracy against wounded targets. Rax knows exactly where it hurts."
+        "desc": "Maps your nerves in real time. Rax always knows exactly where it hurts — and likes to prolong it."
       },
       {
         "id": "stasis_field",
@@ -487,7 +487,7 @@
       {
         "id": "specimen_scanner",
         "name": "Specimen Scanner",
-        "desc": "Analyzes your fighting style. +accuracy each round (resets if you change tactics)."
+        "desc": "Analyzes your fighting style mid-combat. Fenwick adapts — the longer you fight one way, the better he reads you."
       }
     ],
     "combat": true

@@ -3,6 +3,8 @@
 // description: Late-game sentient aliens impersonating humans in an exclusive encounter pool. Sadistic trophy hunters, neutral participants, and benevolent sympathizers — with full ability sets, alien tech, off-screen rivals, secret allies, fan favor, and the System as referee. Steve (2026-10-07): they impersonate HUMANS, not monsters. Exclusive pool, separate from monsters.
 // provides:
 //   - apState()
+//   - apPersonas()
+//   - apPersona(pid)
 //   - apEligible()
 //   - apEncounterEligible()
 //   - apRollEncounter()
@@ -29,6 +31,7 @@
 //   - apStartGroupEncounter(pids)
 //   - apOnCombatEnd(pid, outcome)
 //   - apDailyTick()
+//   - apActive()
 //   - apPlaygroundTick()
 //   - apMaybeActivate()
 //   - apMaybeDeactivate()
@@ -45,6 +48,7 @@
 //   - apBeamResistText()
 //   - apReadinessCheck()
 //   - apHasBeam(pid)
+//   - apStasisFieldLive()
 //   - apBeamHit(targetKey, dmg, sourceLabel, opts)
 //   - apArmorName()
 //   - apMaybeBeamAttack(fighter)
@@ -52,6 +56,8 @@
 //   - apExperience()
 //   - apFavor()
 //   - apAdjustFavor(n, why)
+//   - apDeadDrop()
+//   - apFeedMessage()
 //   - apContestInterference(ac, opts)
 //   - apPersonaPackage()
 //   - apEventFeed()
@@ -219,6 +225,13 @@
           var w = cp.disposition === 'sadistic' ? 4 : cp.disposition === 'neutral' ? 4.5 : 1.5;
           // Existing rivals are more likely to return
           if (ap.met[cp.id] && ap.met[cp.id].encounters > 0) w *= 2;
+          // TRACKED (break-it 2026-10-08): the sadistic persona package sets
+          // flags.trackedBy ("they're watching") — the flag was never read.
+          // A tracker knows where you sleep: triple encounter weight.
+          try {
+            var _s0 = this.state.scholar || {};
+            if (_s0.flags && _s0.flags.trackedBy === cp.id) w *= 3;
+          } catch (e0t) {}
           pool.push({ p: cp, w: w });
         }
         // Fallback: if the sporting filter emptied the pool (fought the whole
@@ -229,6 +242,12 @@
             if (!this.apIsCombat(cp2.id)) continue;
             var w2 = cp2.disposition === 'sadistic' ? 4 : cp2.disposition === 'neutral' ? 4.5 : 1.5;
             if (ap.met[cp2.id] && ap.met[cp2.id].encounters > 0) w2 *= 2;
+            // TRACKED (break-it 2026-10-08): same tracker boost in the
+            // fallback pool — they find you regardless of sporting filters.
+            try {
+              var _s0b = this.state.scholar || {};
+              if (_s0b.flags && _s0b.flags.trackedBy === cp2.id) w2 *= 3;
+            } catch (e0u) {}
             pool.push({ p: cp2, w: w2 });
           }
         }
@@ -278,15 +297,15 @@
       if (p && Array.isArray(p.alienTech)) return p.alienTech;
       var TECH = {
         'vex_marlowe': [
-          { id: 'phase_net', name: 'Phase-net', desc: 'Shots phase through cover. Your hiding spots are decorative.' },
-          { id: 'trophy_scope', name: 'Trophy Scope', desc: 'Sees through stealth and camouflage. You cannot hide from Vex.' },
+          { id: 'phase_net', name: 'Phase-net', desc: 'Phase-laced filament net, worn like a shawl. It hums when you think about running.' },
+          { id: 'trophy_scope', name: 'Trophy Scope', desc: 'A scope that drinks in every detail. Vex notices everything \u2014 especially you.' },
         ],
         'countess_sable': [
-          { id: 'dread_projector', name: 'Dread Projector', desc: 'Projects your worst memory. Fear effects are doubled.' },
+          { id: 'dread_projector', name: 'Dread Projector', desc: 'Projects your worst memory on loop. Her strikes leave you Afraid \u2014 and fear makes her hit harder.' },
           { id: 'crystal_lattice', name: 'Crystal Lattice', desc: 'Stores your fear as damage. The more scared you are, the harder she hits.' },
         ],
         'rax_dentist': [
-          { id: 'nerve_mapper', name: 'Nerve Mapper', desc: '+accuracy against wounded targets. Rax knows exactly where it hurts.' },
+          { id: 'nerve_mapper', name: 'Nerve Mapper', desc: 'Maps your nerves in real time. Rax always knows exactly where it hurts \u2014 and likes to prolong it.' },
           { id: 'stasis_field', name: 'Stasis Field', desc: 'Prevents fleeing. You leave when Rax says you leave.' },
         ],
         'pip_quindle': [
@@ -296,7 +315,7 @@
           { id: 'veteran_plate', name: 'Veteran Plate', desc: 'Military-grade armor. Reduces all damage by 2. Sarge earned this.' },
         ],
         'dr_fenwick': [
-          { id: 'specimen_scanner', name: 'Specimen Scanner', desc: 'Analyzes your fighting style. +accuracy each round (resets if you change tactics).' },
+          { id: 'specimen_scanner', name: 'Specimen Scanner', desc: 'Analyzes your fighting style mid-combat. Fenwick adapts \u2014 the longer you fight one way, the better he reads you.' },
         ],
         'old_tam': [
           // Old Tam deliberately uses NO alien tech — he's trying to fight fair.
@@ -392,8 +411,16 @@
         } catch (e0) {}
         // Trigger combat with the hostile fighter
         // (Combat system handles 'hostile' kind as an enemy)
+        // HONEST (break-it 2026-10-08): startAlienCombat returns null when a
+        // fight is already active. Returning true anyway left a phantom
+        // alienEncounter (and let apStartGroupEncounter re-arm alienGroup)
+        // around a fight that never began — the next tbEnd then recorded a
+        // phantom met-encounter for combat that never happened.
         if (this.startAlienCombat) {
-          this.startAlienCombat(fighter);
+          if (!this.startAlienCombat(fighter)) {
+            try { delete this.state.alienEncounter; } catch (e2b) {}
+            return false;
+          }
         } else {
           // Fallback: use the standard combat flow
           this.say('(The stranger raises their hands. This is going to hurt.)');
@@ -861,10 +888,13 @@
       // Package quality scales with favor
       var tier = favor >= 70 ? 3 : favor >= 40 ? 2 : 1;
       var items = this.data.items || [];
+      // HONEST (break-it 2026-10-08): the old filter read `it.alien`, but
+      // items.json marks alien goods with `origin: 'alien'` — the filter
+      // matched ZERO items and the gift never fired. Filter on origin.
       var cands = items.filter(function (it) {
-        return it.alien && (it.tier || 1) <= tier;
+        return it.origin === 'alien' && (it.tier || 1) <= tier;
       });
-      if (!cands.length) cands = items.filter(function (it) { return it.alien; });
+      if (!cands.length) cands = items.filter(function (it) { return it.origin === 'alien'; });
       var gift = cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
 
       // Plus some practical supplies (the fans know you need to eat)
@@ -873,10 +903,13 @@
       this.say('📦 A care package drops from the sky with a little parachute. There\'s a note: "WE LOVE YOU! — your fans."');
       if (gift) {
         this.say('Inside: ' + (gift.name || gift.id) + (gift.desc ? ' — ' + gift.desc : ''));
+        // HONEST (break-it 2026-10-08): the gift used to land in
+        // state.scholar.pack — an array no system reads, so the item was
+        // invisible and unusable. Inventory is what equipping reads.
         try {
           var s = this.state.scholar;
-          s.pack = s.pack || [];
-          s.pack.push({ id: gift.id, name: gift.name || gift.id, qty: 1, alien: true });
+          s.inventory = s.inventory || [];
+          s.inventory.push({ itemId: gift.id, id: gift.id });
         } catch (e) {}
       }
       this.say('Plus ' + kcal + ' kcal of fan-approved snacks.');
@@ -1091,10 +1124,20 @@
       ap.lastPersonaPackageDay = day;
 
       if (per.disposition === 'sadistic') {
-        // CRUEL GIFT: looks helpful, isn't
+        // CRUEL GIFT: looks helpful, isn't — it's real AND it's a tracker.
         this.say('📦 A package arrives, wrapped in black ribbon. The card reads: "With love, ' + per.name + '."');
         this.say('Inside: a beautiful alien medkit. It\'s... ticking? No — it\'s humming. It\'s humming your name.');
-        this.say('(It\'s a tracker. ' + per.name + ' now knows where you sleep. You can smash it (lose the medkit) or keep it (they\'re watching).)');
+        // HONEST (break-it 2026-10-08): the copy promised a medkit but none
+        // was ever given. The medkit is real and usable — and it's a tracker.
+        // (The old "smash it or keep it" choice was never implemented; the
+        // copy no longer promises one. The tracking cost is real: trackedBy
+        // triples their encounter weight in apRollEncounter.)
+        try {
+          var _s2 = this.state.scholar;
+          _s2.inventory = _s2.inventory || [];
+          _s2.inventory.push({ itemId: 'medfoam_canister', id: 'medfoam_canister' });
+        } catch (e) {}
+        this.say('(It\'s a tracker. ' + per.name + ' now knows where you sleep. The medkit is real, though — out here you don\'t throw those away.)');
         // Player choice would go here — for now, knowledge-gated warning
         try {
           var s = this.state.scholar;
@@ -1979,6 +2022,29 @@
       return this.apIsCombat(pid) && pid !== 'old_tam';
     },
 
+    // apStasisFieldLive: is a stasis field active in the current fight?
+    // HONEST (break-it 2026-10-08): Rax's Stasis Field promises "Prevents
+    // fleeing. You leave when Rax says you leave." — the barrier exit had no
+    // stasis check, so fleeing worked fine. This scans the live fight for a
+    // hostile fielding the tech (base or upgraded id). Returns the persona
+    // id (for knowledge-gated messaging) or false.
+    apStasisFieldLive: function () {
+      try {
+        var f = this.tbfight;
+        if (!f || f.over || !f.fighters) return false;
+        for (var i = 0; i < f.fighters.length; i++) {
+          var m = f.fighters[i];
+          if (!m || m.kind !== 'hostile' || !m.alive || m.fled || !m.alienPid) continue;
+          var tech = m.alienTech || [];
+          for (var t = 0; t < tech.length; t++) {
+            var id = tech[t] && tech[t].id;
+            if (id === 'stasis_field' || id === 'stasis_field_plus') return m.alienPid;
+          }
+        }
+      } catch (e) {}
+      return false;
+    },
+
     apMaybeBeamAttack: function (fighter) {
       try {
         if (!fighter || !fighter.alienPid) return false;
@@ -2118,6 +2184,37 @@
     // The old self-wrap here is REMOVED — it would double-fire the
     // interference (double messages, double RNG, double limits).
 
+    // STASIS FIELD (break-it 2026-10-08): Rax's tech "prevents fleeing. You
+    // leave when Rax says you leave." While a live hostile fields a stasis
+    // field, the barrier exit is consumed with a stasis message — no 50%
+    // break roll, no travel, the fight continues. Chain-safe: delegates to
+    // the original tbBarrierExit otherwise.
+    var _tbBarrierExit = G.tbBarrierExit;
+    G.tbBarrierExit = function (dx, dy) {
+      try {
+        var _stasisPid = this.apStasisFieldLive && this.apStasisFieldLive();
+        if (_stasisPid) {
+          var f = this.tbfight;
+          if (f && !f.over && this.tbIsPlayerTurn && this.tbIsPlayerTurn()) {
+            // KNOWLEDGE GATE (break-it 2026-10-08): pre-reveal the field's
+            // owner is unnamed — saying "Rax" would leak the alien truth
+            // through the block message.
+            var _known = false, _pn = null;
+            try { _known = this.apKnowsAlien(_stasisPid); } catch (e0k) {}
+            try { _pn = this.apPersona(_stasisPid); } catch (e0p) {}
+            if (_known && _pn) {
+              this.say('🛑 The air goes still — ' + _pn.name + '\u2019s stasis field catches the barrier and HOLDS it. You can\'t push through. You leave when ' + _pn.name + ' says you leave.');
+            } else {
+              this.say('🛑 The air goes still — a stasis field catches the barrier and HOLDS it. Someone out there doesn\'t want you leaving. You can\'t push through.');
+            }
+            try { this.audioEvent('stasisBlock'); } catch (e0s) {}
+            return true; // consumed: no flee, no travel, fight continues
+          }
+        }
+      } catch (e) {}
+      return _tbBarrierExit ? _tbBarrierExit.apply(this, arguments) : false;
+    };
+
     // ============ ARMOR TRANSITION WRAPS (Steve 2026-10-07) ============
 
     // 1. READINESS GATE: don't spawn alien players until the player has
@@ -2134,25 +2231,34 @@
 
     // 2. BEAM DAMAGE INTERCEPT: alien_beam damage type bypasses normal armor.
     // Only beam-resistant gear (alien armor, bonded sentimental) reduces it.
+    // VETERAN PLATE (break-it 2026-10-08): Sarge's tech "reduces all damage
+    // by 2" was pure copy — no reduction existed in the damage path. Applied
+    // here, on the target fighter's alien tech (base or upgraded id).
+    // DEAD CODE (break-it 2026-10-08): the old `opts._beamFinal` branch below
+    // is removed — apBeamHit applies beam damage directly and never re-enters
+    // tbDamage, so no caller could ever set that flag.
     var _tbDamage = G.tbDamage;
     G.tbDamage = function (targetKey, dmg, sourceLabel, sourceKey, opts) {
       try {
-        if (opts && opts.damageType === 'alien_beam' && !opts._beamFinal) {
+        if (opts && opts.damageType === 'alien_beam') {
           // Route through the beam resolver (handles resistance + horror beat)
           if (this.apBeamHit) return this.apBeamHit(targetKey, dmg, sourceLabel, opts);
         }
-        // _beamFinal flag: apBeamHit already calculated final damage,
-        // skip normal armor reduction (beam ignores human armor entirely).
-        if (opts && opts._beamFinal) {
-          var t = this.tbFighter ? this.tbFighter(targetKey) : null;
-          if (t && t.alive) {
-            var final = Math.max(0, Math.round(dmg));
-            t.hp = Math.max(0, (t.hp || 100) - final);
-            return final;
+      } catch (e) {}
+      try {
+        var vf = this.tbFighter ? this.tbFighter(targetKey) : null;
+        if (vf && vf.alienPid && vf.alive && !vf.fled) {
+          var vtech = vf.alienTech || [];
+          for (var vi = 0; vi < vtech.length; vi++) {
+            var vid = vtech[vi] && vtech[vi].id;
+            if (vid === 'veteran_plate' || vid === 'veteran_plate_plus') {
+              if (typeof dmg === 'number' && isFinite(dmg)) dmg = Math.max(1, Math.round(dmg) - 2);
+              break;
+            }
           }
         }
-      } catch (e) {}
-      return _tbDamage ? _tbDamage.apply(this, arguments) : undefined;
+      } catch (e2) {}
+      return _tbDamage ? _tbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey, opts) : undefined;
     };
 
     // 3. BEAM ATTACKS IN COMBAT: alien fighters sometimes fire beam weapons.

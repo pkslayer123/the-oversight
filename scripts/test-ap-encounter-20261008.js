@@ -177,7 +177,7 @@ function hostileFighter() {
   const dbgSrc = read('src/js/debug-scenarios.js');
   const apSrc = read('src/js/alienPlayers.js');
   ok('encounters.js wraps checkEncounter with the guarded alien roll',
-    /G\.checkEncounter = function[\s\S]{0,1200}this\.apRollEncounter\(\)/.test(encSrc));
+    /G\.checkEncounter = function[\s\S]{0,2000}this\.apRollEncounter\(\)/.test(encSrc));
   ok('encounters.js guards module-absent (no-op when apRollEncounter missing)',
     /typeof this\.apRollEncounter !== 'function'/.test(encSrc));
   ok('encounters.js defines startAlienCombat', /G\.startAlienCombat = function/.test(encSrc));
