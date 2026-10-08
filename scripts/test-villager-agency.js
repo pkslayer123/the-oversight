@@ -38,6 +38,7 @@ globalThis.Scattering.Game.playerDeath = function (cause) {
 };
 // ---- now load the module under test (wraps capture the stubs above) ----
 eval(fs.readFileSync(path.join(ROOT, 'src/js/villager-agency.js'), 'utf8'));
+eval(fs.readFileSync(path.join(ROOT, 'src/js/fieldFights.js'), 'utf8'));
 const Game = globalThis.Scattering.Game;
 
 let pass = 0, fail = 0;

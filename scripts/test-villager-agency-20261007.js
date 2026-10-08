@@ -33,7 +33,7 @@ const FILES = [
   'src/js/party-formal.js', 'src/js/truth.js', 'src/js/contests.js', 'src/js/storage.js',
   'src/js/perceive.js', 'src/js/carexplore.js', 'src/js/justice.js', 'src/js/food.js',
   'src/js/betrayal.js', 'src/js/corpses.js', 'src/js/lifeseed.js', 'src/js/progression.js',
-  'src/js/ledger.js', 'src/js/villager-agency.js', 'src/js/codex-people.js',
+  'src/js/ledger.js', 'src/js/villager-agency.js', 'src/js/fieldFights.js', 'src/js/codex-people.js',
   'src/js/membership.js', 'src/js/hierarchy.js', 'src/js/debug-scenarios.js', 'src/js/build.js',
 ];
 FILES.forEach(f => {

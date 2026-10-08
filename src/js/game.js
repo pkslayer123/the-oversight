@@ -11576,6 +11576,10 @@
         this.resolveWildMonsterEncounter(vid, m);
       }
     },
+    // FIELD FIGHTS (Steve 2026-10-08): villager-vs-monster is a real
+    // blow-by-blow fight — real stats, the monster's real attack data —
+    // never an outcome table. fieldFight() resolves rounds; this method
+    // routes the honest record into the world's downstream systems.
     resolveWildMonsterEncounter(vid, m) {
       let person = null;
       try { person = this.getPerson ? this.getPerson(vid) : null; } catch (e) {}
@@ -11587,43 +11591,17 @@
         s.awayNews = s.awayNews || [];
         if (s.awayNews.length < 8) s.awayNews.push(msg);
       };
-      // PARITY (2026-10-08): the old table was stat-blind — a 100-HP veteran
-      // had the same 35% kill / 15% death as a 1-HP bystander against any
-      // monster, while the player fights the same beasts through the tactical
-      // engine where stats matter. Weight the abstraction by villager
-      // capability vs monster threat so the odds are honest in both
-      // directions. (Full tactical sim per off-screen encounter is
-      // POV-necessary abstraction; stat-blindness was not.)
-      const vv = this.state.village || {};
-      const vhp = (vv.health && vv.health[vid] !== undefined) ? vv.health[vid] : 100;
-      let brave = 0;
-      try { brave = (((this.agencyOf(vid) || {}).xp || {})[vid] || {}).bravery || 0; } catch (e) {}
-      let profF = 1;
-      try {
-        const prof = this.npcRangeProfile ? this.npcRangeProfile(vid) : 'forager';
-        profF = prof === 'explorer' ? 1.3 : prof === 'wanderer' ? 1.15 : prof === 'forager' ? 1.0 : 0.85;
-      } catch (e) {}
-      const capability = Math.max(0.1, vhp / 100) * Math.min(2, 1 + brave / 20) * profF;
       let mdef = {};
       try { mdef = (this.data.monsters || []).find(x => x.id === m.id) || {}; } catch (e) {}
-      const mwave = mdef.wave || 1;
-      const mhp = (m.maxHp || m.hp || 20);
-      const mdmg = (mdef.attack && mdef.attack.damage && mdef.attack.damage[0]) || 10;
-      const threat = mwave * (mhp / 40) * (mdmg / 20);
-      const edge = Math.max(0.25, Math.min(4, capability / Math.max(0.25, threat)));
-      // base table: kill .35 / drive .25 / mauled .25 / die .15 — shifted by edge
-      const killP = Math.min(0.75, Math.max(0.05, 0.35 * edge));
-      const dieP = Math.min(0.45, Math.max(0.02, 0.15 / edge));
-      const rest = Math.max(0, 1 - killP - dieP);
-      const driveP = rest * 0.5, mauledP = rest * 0.5;
-      const r = Math.random();
-      if (r < killP) {
+      const rec = this.fieldFight(vid, mdef, m, {});
+      const summary = this.fieldFightSummary(rec, name, mName);
+      if (rec.outcome === 'vKill') {
         this.removeWorldMonster(m);
-        tell(`⚔️ ${name} killed the ${mName}! Word travels fast — the village cheers.`);
+        tell(`\u2694\uFE0F ${summary} The village cheers.`);
         try { this.bumpTrust(vid, 4); } catch (e) {}
         try { if (this.remember) this.remember(vid, 'hero', 'killed ' + mName); } catch (e) {}
-      } else if (r < killP + driveP) {
-        const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => Math.random() - 0.5);
+      } else if (rec.outcome === 'mFlee') {
+        const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].sort(() => Math.random() - 0.5);
         for (const d of dirs) {
           const nx = m.tx + d[0], ny = m.ty + d[1];
           if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || this.isSafeTile(nx, ny)) continue; // 9x9 world (2026-10-07)
@@ -11632,17 +11610,15 @@
           this.touchTileScene(ox, oy); this.touchTileScene(nx, ny);
           break;
         }
-        tell(`⚔️ ${name} drove the ${mName} off! It's still out there, somewhere.`);
+        tell(`\u2694\uFE0F ${summary} It's still out there, somewhere.`);
         try { this.bumpTrust(vid, 2); } catch (e) {}
-      } else if (r < killP + driveP + mauledP) {
-        // mauled damage scales with the monster's actual attack — a bulldozer
-        // hits harder than a hushwolf (parity: the threat is real, not flat)
-        const dmg = Math.max(5, Math.round(mdmg * (0.5 + Math.random() * 0.75)));
-        try { this.hurtVillager(vid, dmg, 'monster'); } catch (e) {}
-        tell(`🩸 The ${mName} mauled ${name} (-${dmg} health). They're lucky to be breathing.`);
-      } else {
+      } else if (rec.outcome === 'vFlee' || rec.outcome === 'standoff') {
+        // real wounds from the real fight — not a scaled table number
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
+        tell(`\U0001FA78 ${summary}`);
+      } else if (rec.outcome === 'vDie') {
         try { this.hurtVillager(vid, 500, 'monster'); } catch (e) {}
-        tell(`💀 The ${mName} killed ${name}. The village mourns.`);
+        tell(`\U0001F480 ${summary}`);
         try { this.villageEvent('death'); } catch (e) {}
       }
       this.syncMonsterAlias();

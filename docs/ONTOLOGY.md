@@ -423,6 +423,21 @@ Examine action + observation memory + recognition. Looking closely at a plant is
 
 **Consumes:** state.codex.observations, state.codex.plants (plantKnown), Game.data.plants (description, taxon, seasons, tileAffinity, lookalikeNote), state.map cell species (plantSpecies/bushSpecies/tree per tile)
 
+### field-fights (`fieldFights.js`)
+Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, real stats, the monster's real attack data — never an outcome table. (Steve 2026-10-08: "It should be a fight. A hard one.")
+
+**Provides:** fieldFight(vid, mdef, m, opts)
+
+**Rules:**
+- rounds: initiative by speed each round; the monster acts with its real attack data (name, damage range, pattern, pack, thrash); the villager strikes with the tactical formula roll([4+wb, 8+wb]), wb = round(wbonus/2). (code: fieldFight)
+- morale: flee is driven by wounds + bravery + temperament, never a flat roll. (code: fieldFight)
+- hard: an average villager vs a real monster usually gets hurt, driven off, or killed. (code: fieldFight)
+- record: every fight returns rounds, wounds both ways, and outcome — feeds deeds, gossip, scars. (code: fieldFight)
+- cheap: round cap 15, no grid, no UI. (code: fieldFight)
+- awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
+
+**Consumes:** Scattering.combat.roll, village health, agency xp, equipment, monsters data
+
 ### food (`food.js`)
 Food reality system. Food must be known-edible AND in edible state. Processing changes net calories.
 

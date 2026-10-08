@@ -283,6 +283,11 @@
       // tier check: sustained ranging changes people
       this.agencyTierCheck(vid, playerAtHaven);
     },
+    // FIELD FIGHTS (Steve 2026-10-08): expedition meetings are real
+    // blow-by-blow fights — real stats, the monster's real attack data.
+    // The old flat death/hurt/evade/kill rolls are gone. The pre-fight
+    // awareness check ("saw it, gave it room") stays — it decides contact,
+    // not outcome. Once steel is crossed, the fight decides.
     expeditionMonster(vid, dist, playerAtHaven) {
       var a = this.agencyOf(vid);
       var st = this.agencyState();
@@ -293,42 +298,37 @@
       var m = pick(pool);
       var mName = 'something';
       try { mName = this.encDescribeMonster ? this.encDescribeMonster(m) : (m.unknown || 'something'); } catch (e) {}
-      var brave = a.xp[vid].bravery;
       var nm = '';
       try { nm = this.displayName(vid); } catch (e) { nm = 'Someone'; }
-      var wave = m.wave || 1;
-      // THE WILD COLLECTS FIRST: no matter how good you are, the far dark
-      // has teeth. Skill decides what happens in a fair meeting — it doesn't
-      // decide whether the meeting is fair. This is why sometimes they don't
-      // come back, and why the village tells that story for a while.
-      var r = R();
-      var deathP = dist >= 2 ? 0.006 * Math.min(3, dist / 2) : 0;
-      var hurtP = 0.04 + dist * 0.006;
-      if (r < deathP) return this.expedDeath(vid, mName, nm, playerAtHaven);
-      if (r < deathP + hurtP) return this.expedHurt(vid, mName, nm);
-      // a fair meeting: skill decides
-      var evade = 0.55 + Math.min(0.25, brave * 0.03) + (st.potential[vid] ? 0.08 : 0);
-      var r2 = R();
-      if (r2 < evade) {
+      var rec = this.fieldFight(vid, m, null, { awareness: true });
+      var fightNote = rec.rounds + ' rounds' + (rec.vTaken ? ', ' + rec.vTaken + ' taken' : '');
+      if (rec.outcome === 'evade') {
         // saw it, gave it room, lived. That's a kind of knowledge.
         a.know[vid].monsters++;
         a.xp[vid].tracking += 2 * (st.potential[vid] ? 2 : 1);
         st.exped[vid].encounters.push('evaded ' + (m.id || 'it'));
         return;
       }
-      if (wave <= 1 && r2 < evade + (1 - evade) * 0.5) {
-        // fought and killed something small. A real deed.
-        a.know[vid].monsters += 2;
+      // contact: they fought. Fighting teaches, whatever the ending.
+      a.know[vid].monsters++;
+      if (rec.outcome === 'vKill') {
+        a.know[vid].monsters++;
         a.xp[vid].bravery += 3 * (st.potential[vid] ? 2 : 1);
         a.stats[vid].monsterKills++;
-        st.exped[vid].encounters.push('killed ' + (m.id || 'it'));
-        this.recordDeed(vid, 'monster_kill', `${nm} killed ${mName} out past the ridge — alone — and walked home.`, 10);
+        st.exped[vid].encounters.push('killed ' + (m.id || 'it') + ' (' + fightNote + ')');
+        this.recordDeed(vid, 'monster_kill', `${nm} killed ${mName} out past the ridge — alone — and walked home. ${fightNote}.`, 10);
         return;
       }
-      // driven off but unhurt — stood their ground
-      a.xp[vid].bravery += 1;
-      st.exped[vid].encounters.push('stood down ' + (m.id || 'it'));
-      this.recordDeed(vid, 'stood_down', `${nm} stood down ${mName} and kept walking.`, 4);
+      if (rec.outcome === 'mFlee') {
+        a.xp[vid].bravery += 1;
+        st.exped[vid].encounters.push('stood down ' + (m.id || 'it') + ' (' + fightNote + ')');
+        this.recordDeed(vid, 'stood_down', `${nm} stood down ${mName} and kept walking. ${fightNote}.`, 4);
+        return;
+      }
+      if (rec.outcome === 'vDie') return this.expedDeath(vid, mName, nm, playerAtHaven);
+      // vFlee / standoff: real wounds from the real fight, then the hurt pipeline
+      try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
+      return this.expedHurt(vid, mName + ' (' + fightNote + ')', nm);
     },
     expedHurt(vid, mName, nm) {
       var a = this.agencyOf(vid);

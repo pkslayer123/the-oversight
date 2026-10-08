@@ -1,10 +1,14 @@
 #!/usr/bin/env node
-// Parity proof: COMBAT stat-weighting (2026-10-08).
+// Parity proof: COMBAT is real fights (2026-10-08).
 // BEFORE: resolveWildMonsterEncounter used a flat table (35% kill / 25% drive /
 // 25% mauled / 15% die) regardless of villager stats or monster threat.
-// AFTER: outcomes weight by villager capability vs monster threat.
-// A strong villager vs a weak monster must do better than a weak villager
-// vs a strong monster — in both directions.
+// The parity hunt replaced it with a stat-weighted table — Steve rejected the
+// whole approach: "It should be a fight. A hard one."
+// AFTER: resolveWildMonsterEncounter routes through fieldFight() — real
+// rounds, real stats, the monster's real attack data. No outcome table at all.
+// A strong armed villager vs a weak monster must do better than a weak
+// villager vs a strong monster — in both directions — because the FIGHT says
+// so, not because a table says so.
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
@@ -54,7 +58,7 @@ function check(name, cond, extra) {
 
   const npcIds = (v.roster || []).filter(id => id !== Game.villagerId);
   const strong = npcIds[0], weak = npcIds[1];
-  // strong: full health, veteran bravery, explorer profile
+  // strong: full health, veteran bravery, explorer profile, REAL weapon
   v.health = v.health || {};
   v.health[strong] = 100; v.health[weak] = 20;
   try {
@@ -62,6 +66,9 @@ function check(name, cond, extra) {
     const a2 = Game.agencyOf(weak); a2.xp[weak].bravery = 0;
     Game.agencyState().profiles[strong] = 'explorer';
     Game.agencyState().profiles[weak] = 'homebody';
+    const rec = (Game.data.villagers || []).find(x => x.id === strong) ||
+                (Game.data.background_survivors || []).find(x => x.id === strong);
+    if (rec) rec.equipped = { melee: { itemId: 'hunting_spear' } };
   } catch (e) {}
   // silence narration
   const origSay = Game.say; Game.say = () => {};
@@ -71,9 +78,12 @@ function check(name, cond, extra) {
     const out = { kill: 0, drive: 0, mauled: 0, die: 0 };
     const origHurt = Game.hurtVillager;
     const origRemove = Game.removeWorldMonster;
+    // real HP: what spawnWorldMonster would give (base of the monster's hp range)
+    const mdef0 = (Game.data.monsters || []).find(x => x.id === monsterId) || {};
+    const baseHp = (mdef0.hp && mdef0.hp[0]) || 20;
     for (let i = 0; i < n; i++) {
       // fresh monster each time (kill removes it)
-      const m = { id: monsterId, tx: hx + 1, ty: hy, mx: 4, my: 4, hp: 30, maxHp: 30 };
+      const m = { id: monsterId, tx: hx + 1, ty: hy, mx: 4, my: 4, hp: baseHp, maxHp: baseHp };
       // restore health between trials (we measure odds, not attrition)
       v.health[vid] = vid === strong ? 100 : 20;
       let hurt = 0, removed = false;
@@ -94,21 +104,27 @@ function check(name, cond, extra) {
   const N = 400;
   const sVsW = runBatch(strong, 'hushwolf', N);
   const wVsS = runBatch(weak, 'gallowdeer', N);
-  console.log('  strong vs weak monster:', JSON.stringify(sVsW));
+  const sVsW2 = runBatch(strong, 'gallowdeer', 200);
+  console.log('  strong+armed vs weak monster:', JSON.stringify(sVsW));
   console.log('  weak vs strong monster:', JSON.stringify(wVsS));
+  console.log('  strong+armed vs Highbeam Deer:', JSON.stringify(sVsW2));
 
-  check('strong vs weak kills more often than weak vs strong',
-    sVsW.kill > wVsS.kill * 1.5,
-    `strong kills ${sVsW.kill}/${N}, weak kills ${wVsS.kill}/${N}`);
+  const sWins = sVsW.kill + sVsW.drive, wWins = wVsS.kill + wVsS.drive;
+  check('strong+armed vs weak wins fights more often than weak vs strong (both directions)',
+    sWins > wWins * 1.5,
+    `strong wins ${sWins}/${N}, weak wins ${wWins}/${N}`);
   check('weak vs strong dies more often than strong vs weak',
     wVsS.die > sVsW.die,
     `weak dies ${wVsS.die}/${N}, strong dies ${sVsW.die}/${N}`);
-  check('strong vs weak rarely dies (capable villagers survive)',
-    sVsW.die < N * 0.08,
+  check('strong+armed vs weak rarely dies (capable villagers survive by fleeing)',
+    sVsW.die < N * 0.10,
     `strong dies ${sVsW.die}/${N}`);
-  check('weak vs strong rarely kills (no free heroics)',
-    wVsS.kill < N * 0.25,
-    `weak kills ${wVsS.kill}/${N}`);
+  check('weak vs Highbeam: never kills, almost always dies (no free heroics)',
+    wVsS.kill === 0 && wVsS.die > N * 0.75,
+    `weak kills ${wVsS.kill}/${N}, dies ${wVsS.die}/${N}`);
+  check('strong+armed vs Highbeam: NOBODY kills it alone',
+    sVsW2.kill === 0,
+    `strong+armed kills ${sVsW2.kill}/${N}`);
 
   Game.say = origSay;
   console.log('\n' + pass + ' passed, ' + fail + ' failed');
