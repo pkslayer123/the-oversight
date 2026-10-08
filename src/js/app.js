@@ -5551,6 +5551,61 @@
       o.connect(g); g.connect(sfxBus); o.start(t + 0.2); o2.start(t + 0.2);
       o.stop(t + 0.7); o2.stop(t + 0.7);
     }
+    function animalPanic() {
+      // CORNER PANIC (Steve 2026-10-07, audio round 5): trapped prey
+      // DETONATES — the hook contract in encounters.js said a real synth
+      // wins over the bolt+rustle composition. bolt RECEDES (the animal
+      // leaving); panic does not — it is close, loud, and ends cut, because
+      // the corner has no exit. Four layers: the thrash, the scream, the
+      // triple-time heart, the wrong low.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the thrash: brush exploding — broadband noise, bandpass sweeping UP,
+      // chopped by a 23Hz square stutter (prime: the claws can't find rhythm)
+      const nz = noise(0.9), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 1.2;
+        nf.frequency.setValueAtTime(400, t);
+        nf.frequency.exponentialRampToValueAtTime(3600, t + 0.55);
+        const st = ctx.createOscillator(), sg = ctx.createGain();
+        st.type = 'square'; st.frequency.value = 23; sg.gain.value = 0.16;
+        st.connect(sg); sg.connect(ng.gain);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.34, t + 0.06);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.85); st.start(t); st.stop(t + 0.85);
+      }
+      // the scream: a rabbit screams like a stepped-on toy — saw falling
+      // 2400->700 with a 31Hz vibrato, CUT not faded (something happened)
+      const sc = ctx.createOscillator(), scg = ctx.createGain();
+      sc.type = 'sawtooth';
+      sc.frequency.setValueAtTime(2400, t + 0.05);
+      sc.frequency.exponentialRampToValueAtTime(700, t + 0.5);
+      const vib = ctx.createOscillator(), vg = ctx.createGain();
+      vib.type = 'sine'; vib.frequency.value = 31; vg.gain.value = 120;
+      vib.connect(vg); vg.connect(sc.frequency);
+      const sf = ctx.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 1500; sf.Q.value = 1.5;
+      scg.gain.setValueAtTime(0.0001, t + 0.05);
+      scg.gain.exponentialRampToValueAtTime(0.22, t + 0.12);
+      scg.gain.setValueAtTime(0.22, t + 0.48);
+      scg.gain.exponentialRampToValueAtTime(0.0001, t + 0.52); // cut
+      sc.connect(sf); sf.connect(scg); scg.connect(sfxBus);
+      sc.start(t + 0.05); sc.stop(t + 0.55); vib.start(t + 0.05); vib.stop(t + 0.55);
+      // the heart: prey hearts run triple-time — thumps, accelerating
+      [0.1, 0.32, 0.5, 0.66].forEach(dt => {
+        thump(t + dt, 0.36);
+      });
+      // the wrong low: a sub that bends FLAT and stays — no exit, no resolve
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sine';
+      w.frequency.setValueAtTime(52, t);
+      w.frequency.exponentialRampToValueAtTime(45, t + 0.9);
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.2, t + 0.15);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      w.connect(wg); wg.connect(sfxBus); w.start(t); w.stop(t + 1.15);
+    }
     function animalStalk() {
       // THE STALK: the quietest beat in the hunt — this is YOUR sound, the
       // player's own careful step (Steve 2026-10-06). A good stalk makes
@@ -8675,6 +8730,301 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
       o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.8);
     }
+    // ============ ROUND-5 AGGRO VOICES (Steve 2026-10-07) ============
+    // Seven monsters declared combat with the deer bellow
+    // (cfg.aggroAudio || 'deerAggro') — a knowledge-leak-class fiction
+    // break (a glasswing bellowing like a deer). Each gets its own voice,
+    // freaky not generic, built from its fiction.
+    function gallowdeerAim() {
+      // GALLOWDEER AGGRO: the Highbeam Deer does not bellow — it AIMS.
+      // The headlights power on: a capacitor whine (two sines rising
+      // 880->3400, 33Hz apart so they beat), then the ocular hum locks in
+      // underneath — 55Hz saw and its fifth, lowpassed, the whine still
+      // bleeding through. The freeze is the telegraph.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the charge whine: twin sines, 33Hz apart — the heterodyne shimmer
+      [880, 913].forEach(f0 => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(f0 * 3.86, t + 1.1);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.055, t + 0.7);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 1.65);
+      });
+      // the ocular hum: 55Hz saw + fifth, locked in — the eyes are ON
+      [[55, 0.16], [82.5, 0.1]].forEach(([fq, vol]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = fq;
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300;
+        g.gain.setValueAtTime(0.0001, t + 0.9);
+        g.gain.exponentialRampToValueAtTime(vol, t + 1.3);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t + 0.9); o.stop(t + 2.45);
+      });
+    }
+    function mirrormothFlash() {
+      // MIRRORMOTH AGGRO: the Flashbulb Moth catches light wrong — the
+      // light has a sound. A flash-charge whine (5000->14000, nearly
+      // ultrasonic, very quiet), the FLASH itself (full-spectrum noise
+      // snap, unfiltered), then the afterimage: an 8800Hz sine with a
+      // 67Hz-beating partner, decaying 2.5s — the retinal shimmer after
+      // you look away.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the charge: rising toward the edge of hearing
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type = 'sine';
+      c.frequency.setValueAtTime(5000, t);
+      c.frequency.exponentialRampToValueAtTime(14000, t + 0.7);
+      cg.gain.setValueAtTime(0.0001, t);
+      cg.gain.exponentialRampToValueAtTime(0.03, t + 0.55);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.72);
+      c.connect(cg); cg.connect(sfxBus); c.start(t); c.stop(t + 0.75);
+      // the FLASH: unfiltered noise, everything at once
+      const nz = noise(0.2), ng = ctx.createGain();
+      if (nz) {
+        ng.gain.setValueAtTime(0.5, t + 0.72);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.86);
+        nz.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.72); nz.stop(t + 0.9);
+      }
+      // the afterimage: 8800Hz beating against 8867 — the shimmer in your eyes
+      [[8800, 0.05], [8867, 0.05]].forEach(([fq, vol]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, t + 0.85);
+        g.gain.exponentialRampToValueAtTime(vol, t + 1.0);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 3.3);
+        o.connect(g); g.connect(sfxBus); o.start(t + 0.85); o.stop(t + 3.35);
+      });
+    }
+    function lockpickFingers() {
+      // LOCKPICK AGGRO: a raccoon with too many fingers, working at
+      // something. The fingers first: tiny metallic taps in 5-against-7
+      // polyrhythm (two hands, disagreeing), then the curious chitter —
+      // three square blips rising like a question — ending on one low
+      // thoughtful hum. It wants your stuff, not your life. Probably.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // 5-against-7: two rhythms of metallic pick-taps that never line up
+      const tap = (dt) => {
+        const tz = noise(0.05), tf = ctx.createBiquadFilter(), tg = ctx.createGain();
+        if (!tz) return;
+        tf.type = 'highpass'; tf.frequency.value = 6000;
+        tg.gain.setValueAtTime(0.16, dt);
+        tg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.045);
+        tz.connect(tf); tf.connect(tg); tg.connect(sfxBus);
+        tz.start(dt); tz.stop(dt + 0.06);
+      };
+      for (let i = 0; i < 5; i++) tap(t + i * 0.19);        // five
+      for (let i = 0; i < 7; i++) tap(t + 0.07 + i * 0.135); // seven, offset — they cross, never land
+      // the chitter: three blips, each higher and each RISING — a question
+      [320, 480, 720].forEach((fq, i) => {
+        const dt = t + 1.05 + i * 0.16;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square';
+        o.frequency.setValueAtTime(fq, dt);
+        o.frequency.exponentialRampToValueAtTime(fq * 1.6, dt + 0.12);
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fq * 2; f.Q.value = 3;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.09, dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.14);
+      });
+      // the hum: one low note, considering you
+      const h = ctx.createOscillator(), hg = ctx.createGain();
+      h.type = 'sine'; h.frequency.value = 150;
+      hg.gain.setValueAtTime(0.0001, t + 1.5);
+      hg.gain.exponentialRampToValueAtTime(0.1, t + 1.7);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+      h.connect(hg); hg.connect(sfxBus); h.start(t + 1.5); h.stop(t + 2.25);
+    }
+    function turtleGrind() {
+      // SPEEDBUMP AGGRO: a boulder with opinions about where you're
+      // walking. It barely moves, so the aggro is SLOW — a sub groan with
+      // a 0.8s attack (stone waking), lowpass rumble of grinding rock —
+      // and then the snap: all the violence in 0.09 seconds, because its
+      // head is suddenly somewhere else. The speed contrast IS the freak.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the waking: 32Hz sine, slow attack — the boulder notices you
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sine'; w.frequency.value = 32;
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.22, t + 0.8);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      w.connect(wg); wg.connect(sfxBus); w.start(t); w.stop(t + 1.65);
+      // the grind partner: 32.6Hz beating against the 32 — stone on stone
+      const w2 = ctx.createOscillator(), wg2 = ctx.createGain();
+      w2.type = 'sine'; w2.frequency.value = 32.6;
+      wg2.gain.setValueAtTime(0.0001, t);
+      wg2.gain.exponentialRampToValueAtTime(0.18, t + 0.8);
+      wg2.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      w2.connect(wg2); wg2.connect(sfxBus); w2.start(t); w2.stop(t + 1.65);
+      // the grind: rock on rock, lowpassed rumble
+      const nz = noise(1.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 200;
+        ng.gain.setValueAtTime(0.0001, t + 0.2);
+        ng.gain.exponentialRampToValueAtTime(0.14, t + 0.9);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.2); nz.stop(t + 1.55);
+      }
+      // THE SNAP: 0.09 seconds — square dropping 200->60 + a highpassed crack
+      const dt = t + 1.15;
+      const s = ctx.createOscillator(), sg = ctx.createGain();
+      s.type = 'square';
+      s.frequency.setValueAtTime(200, dt);
+      s.frequency.exponentialRampToValueAtTime(60, dt + 0.08);
+      sg.gain.setValueAtTime(0.3, dt);
+      sg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
+      s.connect(sg); sg.connect(sfxBus); s.start(dt); s.stop(dt + 0.14);
+      const cn = noise(0.1), cf = ctx.createBiquadFilter(), cng = ctx.createGain();
+      if (cn) {
+        cf.type = 'highpass'; cf.frequency.value = 3000;
+        cng.gain.setValueAtTime(0.28, dt);
+        cng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.09);
+        cn.connect(cf); cf.connect(cng); cng.connect(sfxBus);
+        cn.start(dt); cn.stop(dt + 0.12);
+      }
+    }
+    function catfishLure() {
+      // NIGHTLIGHT AGGRO: a soft green glow under the water. Pretty —
+      // that's the problem. Everything lowpassed (you hear it through
+      // water): a breathing 220Hz pulse swelling at 0.7Hz (the lure,
+      // patient), one wet glug — and then the grasp: the pulse doubles,
+      // and a suction drags the lowpass down 800->150. Curiosity was
+      // the bait.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the breathing glow: 220Hz, swelling at 0.7Hz
+      const p = ctx.createOscillator(), pg = ctx.createGain();
+      p.type = 'sine'; p.frequency.value = 220;
+      const br = ctx.createOscillator(), bg = ctx.createGain();
+      br.type = 'sine'; br.frequency.value = 0.7; bg.gain.value = 0.05;
+      br.connect(bg); bg.connect(pg.gain);
+      const pf = ctx.createBiquadFilter(); pf.type = 'lowpass'; pf.frequency.value = 900;
+      pg.gain.setValueAtTime(0.0001, t);
+      pg.gain.exponentialRampToValueAtTime(0.12, t + 0.5);
+      pg.gain.setValueAtTime(0.12, t + 1.4);
+      pg.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+      p.connect(pf); pf.connect(pg); pg.connect(sfxBus);
+      p.start(t); p.stop(t + 2.65); br.start(t); br.stop(t + 2.65);
+      // the glug: one bubble rising through the glow
+      const gz = noise(0.3), gf = ctx.createBiquadFilter(), gg = ctx.createGain();
+      if (gz) {
+        gf.type = 'bandpass'; gf.frequency.value = 300; gf.Q.value = 4;
+        gg.gain.setValueAtTime(0.0001, t + 0.6);
+        gg.gain.exponentialRampToValueAtTime(0.1, t + 0.75);
+        gg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        gz.connect(gf); gf.connect(gg); gg.connect(sfxBus);
+        gz.start(t + 0.6); gz.stop(t + 1.05);
+      }
+      // THE GRASP: the pulse doubles — and the water closes over you
+      const q = t + 1.5;
+      const gr = ctx.createOscillator(), grg = ctx.createGain();
+      gr.type = 'sine'; gr.frequency.value = 110;
+      const am = ctx.createOscillator(), amg = ctx.createGain();
+      am.type = 'square'; am.frequency.value = 1.4; amg.gain.value = 0.09;
+      am.connect(amg); amg.connect(grg.gain);
+      const qf = ctx.createBiquadFilter(); qf.type = 'lowpass';
+      qf.frequency.setValueAtTime(800, q);
+      qf.frequency.exponentialRampToValueAtTime(150, q + 0.7);
+      grg.gain.setValueAtTime(0.0001, q);
+      grg.gain.exponentialRampToValueAtTime(0.2, q + 0.2);
+      grg.gain.exponentialRampToValueAtTime(0.0001, q + 0.9);
+      gr.connect(qf); qf.connect(grg); grg.connect(sfxBus);
+      gr.start(q); gr.stop(q + 0.95); am.start(q); am.stop(q + 0.95);
+      thump(q + 0.55, 0.4);
+    }
+    function glasswingBuzz() {
+      // GLASSWING AGGRO: a dragonfly the size of a hawk, circling high.
+      // The wingbeat first — 190Hz saw with 24Hz AM chop, a detuned
+      // 192.5Hz partner beating against it — rising in pitch and level as
+      // it comes DOWN at you. Then the air screams: a bandpass tear
+      // 800->5000 as the shadow detaches. The codex says watch the shadow.
+      // The sound says it's already too late.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the wingbeat: chopped saw pair, dopplering down toward you
+      [[190, 0.1], [192.5, 0.1]].forEach(([f0, vol]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(f0 * 1.37, t + 1.0);
+        const am = ctx.createOscillator(), amg = ctx.createGain();
+        am.type = 'square'; am.frequency.value = 24; amg.gain.value = vol * 0.6;
+        am.connect(amg); amg.connect(g.gain);
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1400;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.8);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + 1.35); am.start(t); am.stop(t + 1.35);
+      });
+      // the tear: the air screams as the shadow detaches
+      const nz = noise(0.7), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 2.5;
+        nf.frequency.setValueAtTime(800, t + 0.7);
+        nf.frequency.exponentialRampToValueAtTime(5000, t + 1.2);
+        ng.gain.setValueAtTime(0.0001, t + 0.7);
+        ng.gain.exponentialRampToValueAtTime(0.24, t + 1.0);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.35);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.7); nz.stop(t + 1.4);
+      }
+    }
+    function sunbaskerShimmer() {
+      // SUNBASKER AGGRO: scales going from dull brown to molten gold. Heat
+      // has a sound: a highpass shimmer sweeping up 1000->8000 (the haze
+      // rising off its back), a sizzle-crackle of 8 short bursts — and
+      // underneath, the coiled readiness: a breathing 90Hz saw that never
+      // resolves. Don't let it bask.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the heat haze: highpassed noise climbing out of hearing's middle
+      const hz = noise(1.4), hf = ctx.createBiquadFilter(), hg = ctx.createGain();
+      if (hz) {
+        hf.type = 'highpass';
+        hf.frequency.setValueAtTime(1000, t);
+        hf.frequency.exponentialRampToValueAtTime(8000, t + 1.2);
+        hg.gain.setValueAtTime(0.0001, t);
+        hg.gain.exponentialRampToValueAtTime(0.1, t + 0.9);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+        hz.connect(hf); hf.connect(hg); hg.connect(sfxBus);
+        hz.start(t); hz.stop(t + 1.45);
+      }
+      // the sizzle: 8 crackles, irregular
+      const crack = [0.15, 0.33, 0.41, 0.62, 0.78, 0.83, 1.02, 1.2];
+      crack.forEach(dt => {
+        const cz = noise(0.06), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+        if (!cz) return;
+        cf.type = 'highpass'; cf.frequency.value = 5000;
+        cg.gain.setValueAtTime(0.07, t + dt);
+        cg.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.05);
+        cz.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+        cz.start(t + dt); cz.stop(t + dt + 0.07);
+      });
+      // the coil: breathing 90Hz saw that never resolves
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'sawtooth'; b.frequency.value = 90;
+      const bf = ctx.createBiquadFilter(); bf.type = 'lowpass'; bf.frequency.value = 400;
+      const br = ctx.createOscillator(), brg = ctx.createGain();
+      br.type = 'sine'; br.frequency.value = 1.1; brg.gain.value = 0.05;
+      br.connect(brg); brg.connect(bg.gain);
+      bg.gain.setValueAtTime(0.0001, t + 0.4);
+      bg.gain.exponentialRampToValueAtTime(0.09, t + 1.0);
+      bg.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
+      b.connect(bf); bf.connect(bg); bg.connect(sfxBus);
+      b.start(t + 0.4); b.stop(t + 2.05); br.start(t + 0.4); br.stop(t + 2.05);
+    }
     // ============ STATUS SYNTHS (Steve 2026-10-07) ============
     function statusApplied() {
       // STATUS APPLIED: something wrong takes hold — a sickly descending
@@ -9577,6 +9927,17 @@
       nightcourtDive() { nightcourtDive(); }, // nightcourt declareAudio (monsters.json)
       statusApplied(data) { statusApplied(data); }, // statusEffects.js applyStatus
       statusCured(data) { statusCured(data); }, // statusEffects.js cureStatus
+      // ROUND-5 AGGRO VOICES (Steve 2026-10-07): seven monsters stopped
+      // bellowing like deer. animalPanic fulfills the encounters.js hook
+      // contract (real synth wins over the bolt+rustle composition).
+      gallowdeerAim() { gallowdeerAim(); },       // gallowdeer aggroAudio (monsters.json) — the headlights power on
+      mirrormothFlash() { mirrormothFlash(); },   // mirrormoth aggroAudio (monsters.json) — the light has a sound
+      lockpickFingers() { lockpickFingers(); },   // lockpick_raccoon aggroAudio (monsters.json) — too many fingers
+      turtleGrind() { turtleGrind(); },           // speedbump_turtle aggroAudio (monsters.json) — a boulder with opinions
+      catfishLure() { catfishLure(); },           // nightlight_catfish aggroAudio (monsters.json) — pretty is the problem
+      glasswingBuzz() { glasswingBuzz(); },       // glasswing aggroAudio (monsters.json) — the air screamed
+      sunbaskerShimmer() { sunbaskerShimmer(); }, // sunbasker aggroAudio (monsters.json) — molten gold
+      animalPanic() { animalPanic(); },           // CORNER PANIC — encounters.js ENC_AUDIO_FALLBACK contract fulfilled
       // AMBIENT STING (Steve 2026-10-06): the UI dread-beat's horrorSting was
       // referenced at the top of app.js but never defined. Now it is.
       horrorSting() { horrorSting(); },

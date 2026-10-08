@@ -14677,6 +14677,595 @@
       this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
     },
 
+// ============================================================================
+// events-handlers-20261007 — Worker B (2026-10-07)
+// 6 missing event handlers for the events-expansion fragment
+// (hidden_files/events-expansion-20261007.json):
+//   fan_package    -> evFanPackage      (drama, day 14)
+//   quiet_woods    -> evQuietWoods      (monster, day 16)
+//   cooking_lesson -> evCookingLesson   (quest, day 18)
+//   river_trader   -> evRiverTrader     (drama, day 21)
+//   trial_offer    -> evTrialOffer      (challenge, day 24)
+//   storm_front    -> evStormFront      (drama, day 27)
+//
+// INSERTION: paste every method below into the Game object literal in
+// src/js/game.js, AFTER evSystemTask (the event-handler block, ~L14672).
+// They are written as object-method shorthand, matching the file's style.
+// Helpers are prefixed _ev — game.js-ready, no invented engine APIs.
+//
+// DEFERRED CALL SITES (documented, not implemented — see INSERTION-GUIDE.md):
+//   Game.checkTrialExpiry()   — call once per dawn (next to checkTimedEvents)
+//                               so an unanswered trial auto-resolves.
+//   Game.resolveStormFront()  — call at the dusk part transition.
+//   Game.openFanPackage()     — wire to the package item's Use button.
+//   Game.investigateQuietWoods() — wire to a "Investigate (a day-part)"
+//                               contextual action while the pack circles.
+//   Game.feedRiverTrader() / Game.tradeRiverTrader(id) / Game.snubRiverTrader()
+//                             — wire to the trader's person-card buttons.
+//
+// CONVENTIONS HONORED:
+//   - Day-part cost = this.tickAction(128) (128 ticks = one full day-part).
+//     (spendDayPart() does NOT exist — the one call site is dead code in a
+//     try/catch. Do not use it.)
+//   - kcal costs via scholar.kcal / pantry item lists (see _ev helpers).
+//   - audioEvent() and drama() are safe no-ops headless; voice names used
+//     are real Game.audio voices (wolfSilence, wolfSnarl, horrorSting,
+//     victory) or real drama kinds (contestCheer, weatherShift, shake, flash).
+//   - Knowledge gating: quiet_woods never names the hushwolf — the
+//     investigation grants OBSERVED coaching (pattern learned), and
+//     identifyMonster() starts the village naming debate, per doctrine.
+//   - The System stays food-blind: its cooking notes are joyous and wrong.
+// ============================================================================
+
+    // ---- _ev helpers (private to these events) ----
+    // _evTakePantryKcal(n): remove ~n kcal from the village pantry item list.
+    // Mirrors the take pattern at game.js ~L12017, but allows fractional units:
+    // stockPantry() packs whole hauls as single units, so whole-unit takes
+    // would eat a 5000-kcal sack to feed one trader. Fractional units keep
+    // the math honest (pantryKcalLive sums kcalEach*units either way).
+    // Returns kcal actually taken.
+    _evTakePantryKcal(n) {
+      const v = this.state.village;
+      if (!v || !v.pantry) return 0;
+      let need = Math.max(0, Math.round(n || 0)), taken = 0;
+      for (const item of v.pantry) {
+        if (need <= 0) break;
+        const per = item.kcalEach || 0, units = item.units || 1;
+        if (per <= 0 || units <= 0) continue;
+        const unitsOut = Math.min(units, need / per);
+        item.units = Math.round((units - unitsOut) * 100) / 100;
+        taken += unitsOut * per; need -= unitsOut * per;
+      }
+      v.pantry = v.pantry.filter(i => (i.units || 0) > 0.001);
+      v.pantryKcal = v.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+      return Math.round(taken);
+    },
+    // _evTakePlayerFoodKcal(n): same, from the scholar's own pack. Bonded
+    // keepsakes (the duck!) are never food, no matter how hungry you are.
+    _evTakePlayerFoodKcal(n) {
+      const s = this.state.scholar;
+      if (!s || !s.inventory) return 0;
+      let need = Math.max(0, Math.round(n || 0)), taken = 0;
+      for (const item of s.inventory) {
+        if (need <= 0) break;
+        if (item.bonded || item.bookId) continue;
+        const per = item.kcalEach || 0, units = item.units || 1;
+        if (per <= 0 || units <= 0) continue;
+        const unitsOut = Math.min(units, need / per);
+        item.units = Math.round((units - unitsOut) * 100) / 100;
+        taken += unitsOut * per; need -= unitsOut * per;
+      }
+      s.inventory = s.inventory.filter(i => (i.units || 0) > 0.001);
+      return Math.round(taken);
+    },
+    // _evRawPlantKcal(): kcal of raw plant food in the scholar's pack.
+    _evRawPlantKcal() {
+      let t = 0;
+      for (const i of ((this.state.scholar || {}).inventory || [])) {
+        if (i.bonded || (i.kcalEach || 0) <= 0) continue;
+        if (i.foodKind === 'plant' || i.plantId) t += (i.kcalEach || 0) * (i.units || 1);
+      }
+      return Math.round(t);
+    },
+    // _evTakeRawPlantKcal(n): remove ~n kcal of raw plant food from the pack.
+    _evTakeRawPlantKcal(n) {
+      const s = this.state.scholar;
+      if (!s || !s.inventory) return 0;
+      let need = Math.max(0, Math.round(n || 0)), taken = 0;
+      for (const item of s.inventory) {
+        if (need <= 0) break;
+        if (item.bonded || (item.kcalEach || 0) <= 0) continue;
+        if (!(item.foodKind === 'plant' || item.plantId)) continue;
+        const per = item.kcalEach, units = item.units || 1;
+        const unitsOut = Math.min(units, need / per);
+        item.units = Math.round((units - unitsOut) * 100) / 100;
+        taken += unitsOut * per; need -= unitsOut * per;
+      }
+      s.inventory = s.inventory.filter(i => (i.units || 0) > 0.001);
+      return Math.round(taken);
+    },
+    // _evTrustAll(n): move every known village trust by n. Gains go through
+    // trustGainMult (fear_aura etc.); losses are raw — rudeness is honest.
+    _evTrustAll(n) {
+      const v = this.state.village;
+      if (!v) return;
+      v.trust = v.trust || {};
+      const g = n > 0 ? this.trustGainMult(n) : n;
+      for (const vid of Object.keys(v.trust)) {
+        v.trust[vid] = Math.max(0, Math.min(100, (v.trust[vid] || 15) + g));
+      }
+    },
+    // _evAvgTrust(): mean village trust, for social branches.
+    _evAvgTrust() {
+      const v = this.state.village;
+      const vals = Object.values((v && v.trust) || {});
+      if (!vals.length) return 15;
+      return vals.reduce((a, b) => a + b, 0) / vals.length;
+    },
+    // _evElderName(): an old-timer's name for flavor lines, or a fallback.
+    _evElderName() {
+      try {
+        const people = this.villagePeople ? this.villagePeople() : [];
+        const elder = people.find(p => (p.age || 0) >= 55) || people[people.length - 1];
+        if (elder) return this.displayName(elder.id) || elder.name || 'the old-timers';
+      } catch (e) {}
+      return 'the old-timers';
+    },
+    // _evCookName(): a village cook's name, or null.
+    _evCookName() {
+      try {
+        const people = this.villagePeople ? this.villagePeople() : [];
+        const c = people.find(p => this.specialistSkill(p, 'cook') > 0);
+        if (c) return this.displayName(c.id) || c.name || 'the cook';
+      } catch (e) {}
+      return null;
+    },
+
+    // ================= 1. FAN CARE PACKAGE (drama, day 14) =================
+    // The fans send a crate: one rubber duck, three hair ties, a note reading
+    // "FOR LUCK." Opening it is a day-part ceremony and the fans are watching.
+    evFanPackage(ev) {
+      const s = this.state.scholar;
+      s.inventory = s.inventory || [];
+      s.inventory.push({
+        name: 'Fan care package (unopened)', units: 1, kcalEach: 0, kg: 1.2,
+        unopened: true, prep: 'From the fans. It smells like... glitter?',
+      });
+      this.say('📦 INCOMING: a crate thumps down outside your door, trailing parachute silk and the smell of glitter. Stenciled on the side, in enormous cheerful letters: FOR LUCK.');
+      this.say('📺 SYSTEM: "A viewer sent this. A FAN. We checked. It is not dinner." A pause. "We checked twice. The fans are very insistent that you open it ON CAMERA."');
+      this.say('The package sits in your pack, unopened. Opening it takes a day-part — the fans demand the full unboxing. (Use it from your pack when you have a morning to spend.)');
+    },
+    // openFanPackage: the unboxing ceremony. Costs the day-part; the fans watch.
+    openFanPackage() {
+      const s = this.state.scholar;
+      const idx = (s.inventory || []).findIndex(i => i.unopened);
+      if (idx < 0) { this.say('No unopened package. The fans are already bored.'); return null; }
+      s.inventory.splice(idx, 1);
+      // THE COST: the full unboxing ceremony. The fans demand it.
+      this.tickAction(128);
+      try { this.drama('contestCheer'); } catch (e) {}
+      this.say('📦 You open it on camera, because the fans DEMAND the full unboxing. Contents: one rubber duck, three hair ties, and a note reading "FOR LUCK."');
+      this.say('📺 SYSTEM: "We have filed this under \'luck protocol.\' Is luck flammable? Asking for the fans."');
+      // The duck: a bonded keepsake. Carry it and the relic pipeline notices.
+      s.inventory.push({
+        name: 'Rubber duck', note: 'FOR LUCK', units: 1, kcalEach: 0, kg: 0.1,
+        bonded: true, bond: 0, prep: 'It squeaks. Somehow, that helps.',
+      });
+      s.inventory.push({
+        name: 'Hair ties (suspiciously strong cordage)', units: 3, kcalEach: 0, kg: 0.05,
+        prep: 'The village has never seen elastic. The kids are already fighting over them.',
+      });
+      this.say('🦆 The duck squeaks. Somehow, that helps. (Bonded keepsake — it rides in your pack now. The System is already taking notes on it.)');
+      // BRANCH: a hungry haven feels the duck differently than a fed one.
+      if ((s.kcal || 0) < 600) {
+        this.say('The kids are hungry, but the duck makes them laugh anyway — a squeak in the dark, and suddenly the morning is bearable. Hunger hurts less when you\'re laughing.');
+        this._evTrustAll(3);
+        this.say('(The village holds you a little closer: trust +3. The fans clip the laugh. They\'re not monsters.)');
+      } else {
+        this.say('The unboxing is a HIT. Somewhere out there, trillions of viewers just watched you squeak a duck at the apocalypse. You\'re somebody now.');
+        try { this.addNotability('player', 'unboxed on camera'); } catch (e) {}
+        this.say('(Fan favorite: the watchers will remember this.)');
+      }
+      try { this.integrate(2, 'fan package'); } catch (e) {}
+      return true;
+    },
+
+    // ================= 2. THE QUIET WOODS (monster, day 16) =================
+    // The birds have gone quiet. Even the crickets. A hushwolf pack is
+    // circling — the telegraph IS the silence (no rush indicator, per Steve).
+    // Investigating costs a day-part; barring the door teaches nothing.
+    evQuietWoods(ev) {
+      const s = this.state.scholar;
+      this.say('🔇 The birds have gone quiet. Even the crickets. The woods are holding their breath.');
+      this.say('Something out there knows exactly where you sleep. It isn\'t howling. That\'s the worst part — it isn\'t making a sound at all.');
+      try { this.audioEvent('wolfSilence'); } catch (e) {}
+      // Spawn the pack: 3 hushwolves (pack: 3, per monsters.json), circling.
+      // Near the player — or just outside Haven if the player is home safe.
+      let tx = this.map.px, ty = this.map.py;
+      try {
+        if (this.playerAtHaven && this.playerAtHaven()) {
+          tx = (this.state.village.px ?? 4) + 1; ty = this.state.village.py ?? 4;
+        }
+      } catch (e) {}
+      const gx = Math.max(1, Math.min(7, s.mx ?? 4)), gy = Math.max(1, Math.min(7, s.my ?? 4));
+      const spots = [[-2, 0], [2, 0], [0, -2]];
+      let n = 0;
+      for (const [dx, dy] of spots) {
+        try {
+          this.spawnWorldMonster('hushwolf', tx, ty, {
+            mx: Math.max(1, Math.min(7, gx + dx)),
+            my: Math.max(1, Math.min(7, gy + dy)),
+            stance: 'circle',
+          });
+          n++;
+        } catch (e) {}
+      }
+      s.quietWoods = { day: s.day || 1, pack: n };
+      this.say(`Three shapes at the treeline — dog-shaped silences, circling. (A real pack is out there now: ${n} of them. No names yet — nobody's lived to argue about one.)`);
+      this.say('Investigate and the morning is gone — tracking them costs a full day-part. Bar the door and you learn nothing. Your call.');
+      try { this.audioEvent('horrorSting'); } catch (e) {}
+    },
+    // investigateQuietWoods: spend the day-part tracking the pack. Branches on
+    // fire — the pack's remembered fear is the lesson, if you carry flame.
+    investigateQuietWoods() {
+      const s = this.state.scholar;
+      const pack = (this.worldMonsters ? this.worldMonsters() : []).filter(m => m.id === 'hushwolf');
+      if (!s.quietWoods && !pack.length) { this.say('The woods are just woods today. Whatever was out there has moved on.'); return null; }
+      // THE COST, named up front: the morning goes to the treeline.
+      this.tickAction(128);
+      this.say('🌲 You spend the morning working the treeline — bent grass, a print too big for any dog you know, tufts of grey fur on the blackberries. (A day-part, gone to the quiet.)');
+      const mdef = (this.data.monsters || []).find(m => m.id === 'hushwolf') || {};
+      const tactics = ((mdef.encounter || {}).knownTactics) || '';
+      if ((this.nearFire && this.nearFire())) {
+        // FIRE BRANCH: you carry flame, and the pack remembers being dogs.
+        this.say('You keep your torch high. They circle — and flinch. One whines, a sound like a kettle left too long, and the whole pack gives ground.');
+        this.say('You watch it happen: the lead\'s ears go flat at the flame. They remember being dogs. They are still loyal. Just not to you.');
+        try { this.identifyMonster('hushwolf'); } catch (e) {}
+        // Earned coaching: pattern observed, not codex-granted. Knowledge-gated
+        // surfaces (telegraph cues) unlock through the normal pipeline.
+        if (tactics) this.say('📓 Filed away, learned the hard way: ' + tactics);
+        try { this.integrate(2, 'quiet woods'); } catch (e) {}
+        this.say('(The village will argue about a name for it tonight. That\'s how naming starts: someone saw something.)');
+      } else {
+        // NO-FIRE BRANCH: the pack tests you. A real encounter, never a fizzle.
+        this.say('No telegraph you can hear. Watch the birds — when they go quiet, the pack is already moving.');
+        this.say('💨 SILENT RUSH — the lead comes out of the treeline at a dead run, silent as snowfall. The other two fan wide to cut you off.');
+        try { this.audioEvent('wolfSnarl'); } catch (e) {}
+        try { this.villageEvent('monster_attack'); } catch (e) {}
+        this.pendingEncounter = true;
+        this.pendingMonsterId = 'hushwolf';
+        this.say('⚠ It\'s on you. FACE IT — or run. (Your move.)');
+      }
+      s.quietWoods = null;
+      return true;
+    },
+
+    // ================= 3. SYSTEM COOKING LESSON (quest, day 18) =============
+    // "We have studied cooking. Step one: apply heat until food stops being
+    // food? No — wait. We had it." The System demands a demonstration. It has
+    // already cleared your morning. It WILL take notes. The notes will be wrong.
+    evCookingLesson(ev) {
+      const s = this.state.scholar;
+      this.say('📋 SYSTEM QUEST: "We have studied cooking. Step one: apply heat until food stops being food? No — wait. We had it. Teach us? Show us one cooked meal, start to finish."');
+      this.say('📺 SYSTEM: "We have already cleared your morning. You are welcome. We require 300 kcal of tubers and your full attention. The fans love a cooking segment."');
+      // THE COST: the System does not ask. It clears your schedule and tells
+      // you about it. (A day-part, taken by a well-meaning god.)
+      this.tickAction(128);
+      const rawKcal = this._evRawPlantKcal();
+      const hasFire = (this.nearFire && this.nearFire());
+      const hasTech = (this.knowsTechnique && this.knowsTechnique('cook'));
+      const fullDemo = rawKcal >= 300 && (hasTech || hasFire);
+      if (fullDemo) {
+        // FULL DEMO: tubers into the pot, start to finish.
+        const spent = this._evTakeRawPlantKcal(300);
+        this.say(`You lay out ${spent} kcal of tubers and roots, build the fire up, and start. The System watches with the intensity of a trillion eyes.`);
+        this.say('📝 SYSTEM NOTE: "Heat applied. Food is now HOT. Hypothesis: hot food is better because it is hot. ...We will allow it."');
+        this.say('📝 SYSTEM NOTE: "You stopped BEFORE it stopped being food. Restraint. We did not know restraint was a flavor. Logging it as one."');
+        this.say('📝 SYSTEM NOTE: "The tubers did not scream. Our models predicted screaming. The models have been updated. You are welcome."');
+        try { this.integrate(5, 'cooking lesson'); } catch (e) {}
+        // The System replicates your meal for the village — badly, lovingly.
+        try { this.stockPantry(400, 'System-replicated stew'); } catch (e) {}
+        try { this.drama('contestCheer'); } catch (e) {}
+        this.say('🍲 It replicates your stew for the whole haven. It added a garnish of pocket lint. It\'s still 400 kcal. You eat around the lint. (+400 kcal to the pantry. The System is SO proud.)');
+      } else if (rawKcal >= 300) {
+        // COLD DEMO: you have the tubers, but no fire worth the name and no
+        // technique to show off. The System requisitions them anyway — it does
+        // not ask. It has already cleared your morning; your tubers were next.
+        const spent = this._evTakeRawPlantKcal(300);
+        this.say(`You have ${spent} kcal of tubers. What you don't have is a fire worth the name — so it's a cold demo: all talk, raw roots, and the System taking notes on the wrong things.`);
+        this.say('📺 SYSTEM: "We have requisitioned your tubers. You are welcome. NOTE: the tubers are COLD. Hypothesis: cold is a temperature. Logging it."');
+        this.say('📝 SYSTEM NOTE: "The demonstrator keeps glancing at the fire pit. We have noted \'fire pit\' as a required emotional support structure."');
+        const cookName = this._evCookName();
+        if (cookName) {
+          this.say(`${cookName} watches you mime cooking with cold tubers, sighs the sigh of every teacher everywhere, and shows you the real motions: heat, patience, restraint. "${cookName} will lend you fire next time. Probably."`);
+          try { if (this.learnTechnique) this.learnTechnique('cook', 'watched'); } catch (e) {}
+        }
+        try { this.integrate(2, 'cooking lesson'); } catch (e) {}
+        this.say('(The System learned SOMETHING. You\'re not sure what. Neither is it. That\'s the deal.)');
+      } else {
+        // SCRAPPY DEMO: no tubers at all — you improvise.
+        this.say('You have no tubers to spare — so you demo with six roots, a flat rock, and a brave face. The System does not notice the difference. The System notices EVERYTHING and understands NOTHING, which amounts to the same thing.');
+        this.say('📝 SYSTEM NOTE: "Insufficient tubers. Enthusiasm: adequate. Proceeding with available materials."');
+        this.say('📝 SYSTEM NOTE: "The rock is hot now. Is the rock food? ...Asking for the fans."');
+        const cookName = this._evCookName();
+        if (cookName) {
+          this.say(`${cookName} watches for about thirty seconds, then takes pity on BOTH of you — you, and the trillion-eyed god taking notes. "${cookName} shows you the real motions: heat, patience, restraint."`);
+          try { if (this.learnTechnique) this.learnTechnique('cook', 'watched'); } catch (e) {}
+        } else {
+          this.say('📺 SYSTEM: "We will keep practicing on our own." You decide, firmly, not to ask what that means.');
+        }
+        try { this.integrate(2, 'cooking lesson'); } catch (e) {}
+        this.say('(The System learned SOMETHING. You\'re not sure what. Neither is it. That\'s the deal.)');
+      }
+      return true;
+    },
+
+    // ================= 4. RIVER TRADER (drama, day 21) ======================
+    // A trader from the downriver village walks into Haven: pack heavy, smile
+    // practiced, news (some of it might even be true). Feed them (~600 kcal),
+    // trade (a day-part), or be rude (free — but the river remembers).
+    evRiverTrader(ev) {
+      const s = this.state.scholar;
+      s.riverTrader = { day: s.day || 1, greeted: false };
+      this.say('🐪 A trader from the downriver village walks into Haven, pack heavy, smile practiced. River-mud on their boots, river-gossip on their tongue.');
+      this.say('"Heard you people eat REGULARLY now," they say. "Heard the sky talks to you. I have news — some of it might even be true."');
+      this.say('Feed a guest: about 600 kcal from the stores. Trading takes a full day-part. Rudeness is free — but the river remembers. (They\'ll be here till dusk.)');
+    },
+    // feedRiverTrader: the feast. Pantry first, your own pack second.
+    feedRiverTrader() {
+      const s = this.state.scholar, v = this.state.village;
+      const rt = s.riverTrader;
+      if (!rt || rt.day !== (s.day || 1)) { this.say('The trader\'s gone — downriver, by the smell of it.'); return null; }
+      const need = 600;
+      const fromPantry = this._evTakePantryKcal(need);
+      const fromPack = fromPantry < need ? this._evTakePlayerFoodKcal(need - fromPantry) : 0;
+      const total = fromPantry + fromPack;
+      rt.greeted = true;
+      if (total >= need) {
+        this.say(`You lay out a real spread — ${total} kcal of Haven's best. The trader eats like someone who was counting on this meal, and the practiced smile slips into something real.`);
+        this._evTrustAll(8);
+        this.say('(Word gets around: Haven feeds travelers. Village trust +8.)');
+        // THE TRUE NEWS: dog-shaped, silent, fears fire. Told-knowledge, honest:
+        // you haven't seen it — but now you know what to watch for.
+        this.say('Over the meal, the trader leans in. "This one\'s true, so listen. Two of ours didn\'t come home last week. Something dog-shaped. Silent. It circled their fire all night and wouldn\'t come closer."');
+        this.say('📓 You file it away: whatever it is, it fears fire. You haven\'t seen it yourself — but now you know what to watch for.');
+        s.riverNews = { topic: 'silent dogs', tactics: 'It circled the fire and wouldn\'t come closer — it fears flame.' };
+        s.inventory = s.inventory || [];
+        s.inventory.push({ name: 'Smoked fish (downriver)', units: 2, kcalEach: 100, kg: 0.3, prep: 'Downriver smoke. A thank-you gift.' });
+        this.say('🎁 They press two smoked fish into your hands on the way out. "For the road you haven\'t walked yet." (+200 kcal. Traders remember kindness too.)');
+      } else {
+        this.say(`You scrape together ${total} kcal — not the feast they hoped for, but honest food. The trader eats it all the same, and nods like someone who expected exactly this.`);
+        this._evTrustAll(3);
+        this.say('(You shared what you had. Village trust +3. It counted.)');
+        this.say('"Heard the river\'s thinking about flooding," they offer, by way of news. The river has never thought about anything. Some of it might even be true — that wasn\'t it.');
+      }
+      return true;
+    },
+    // tradeRiverTrader(goodId): a day-part of haggling. Three goods; pick, or
+    // let the trader size up what Haven needs most.
+    tradeRiverTrader(goodId) {
+      const s = this.state.scholar;
+      const rt = s.riverTrader;
+      if (!rt || rt.day !== (s.day || 1)) { this.say('The trader\'s gone — downriver, by the smell of it.'); return null; }
+      const goods = [
+        { id: 'knife', label: 'Steel knife', price: 400, blurb: 'Downriver steel. Holds an edge like a grudge.' },
+        { id: 'salt', label: 'Downriver salt (a whole pouch)', price: 350, blurb: 'Salt. For preserving. The System asks if it is "angry sugar."' },
+        { id: 'rope', label: 'River rope, twenty strides', price: 250, blurb: 'Good river rope. Twenty strides of it.' },
+      ];
+      let pick = goods.find(g => g.id === goodId);
+      if (!pick) {
+        // No pick: the trader sizes Haven up. No blade in your pack? Knife.
+        // Got steel but no salt? Salt. Otherwise the rope — everyone needs rope.
+        const inv = (s.inventory || []);
+        const hasBlade = inv.some(i => /knife|machete|axe/i.test(i.name || ''));
+        const hasSalt = inv.some(i => /salt/i.test(i.name || ''));
+        pick = !hasBlade ? goods[0] : (!hasSalt ? goods[1] : goods[2]);
+        this.say(`You let them look around. The practiced smile sharpens. "Haven needs ${pick.label.toLowerCase()}, friend. I can tell. ${pick.price} kcal of trade-goods, and it's yours."`);
+      } else {
+        this.say(`"${pick.label}," you say. "${pick.blurb}" The trader grins — the practiced one. "An eye for quality. ${pick.price} kcal."`);
+      }
+      // Payment: pantry first, your pack second.
+      const fromPantry = this._evTakePantryKcal(pick.price);
+      const fromPack = fromPantry < pick.price ? this._evTakePlayerFoodKcal(pick.price - fromPantry) : 0;
+      if (fromPantry + fromPack < pick.price) {
+        // Refund what we took — a failed haggle doesn't eat your stores.
+        if (fromPantry > 0) { try { this.stockPantry(fromPantry, 'Refunded trade goods'); } catch (e) {} }
+        this.say(`An hour of haggling goes nowhere — you can't meet the price, and the trader won't budge. The smile stays practiced. Maybe next time, with fuller stores.`);
+        return null;
+      }
+      // THE COST: trading takes the day-part. Done deal.
+      this.tickAction(128);
+      s.inventory = s.inventory || [];
+      const itemBy = {
+        knife: { name: 'Steel knife', prep: 'Downriver steel. Holds an edge like a grudge.', kg: 0.3 },
+        salt: { name: 'Downriver salt (a whole pouch)', prep: 'Salt. For preserving. Do not let the System near it.', kg: 0.5 },
+        rope: { name: 'River rope, twenty strides', prep: 'Good river rope. Twenty strides of it.', kg: 0.8 },
+      }[pick.id] || { name: pick.label, kg: 0.3 };
+      itemBy.units = 1; itemBy.kcalEach = 0;
+      s.inventory.push(itemBy);
+      rt.greeted = true;
+      this._evTrustAll(2);
+      this.say(`🤝 Done. The ${pick.label.toLowerCase()} is yours — ${pick.price} kcal of trade-goods, a day-part of haggling, and a fair deal honestly struck. (Village trust +2. The river notes that Haven trades fair.)`);
+      return true;
+    },
+    // snubRiverTrader: free. But the river remembers.
+    snubRiverTrader() {
+      const s = this.state.scholar;
+      const rt = s.riverTrader;
+      if (!rt || rt.day !== (s.day || 1)) { this.say('The trader\'s gone — downriver, by the smell of it.'); return null; }
+      rt.greeted = true;
+      this._evTrustAll(-3);
+      s.riverGrudge = (s.day || 1) + 30;
+      this.say('You don\'t have time. The trader\'s smile doesn\'t slip — that\'s the practiced part. "Another time, then," they say, in a tone that means: there won\'t be one.');
+      this.say('(Village trust −3. Turning away a hungry traveler, in front of everyone. Rudeness was free. But the river remembers — traders talk, for the next month.)');
+      return true;
+    },
+
+    // ================= 5. TRIAL OF THE SYSTEM (challenge, day 24) ==========
+    // "We have designed a trial JUST for you. Based on our observations.
+    // Which are extensive. And flattering." Pick 1 of 3. A trial takes a full
+    // day-part and leaves you drained.
+    evTrialOffer(ev) {
+      const s = this.state.scholar;
+      // The System has been WATCHING: score five trials by observed strengths,
+      // offer the three most flattering. Deterministic — no RNG in the offer.
+      const trials = [
+        { id: 'stalk', label: 'Trial of the Long Stalk', desc: 'Take game with patience, not noise.',
+          score: (this.hasAbility('game_sense') || this.hasAbility('tracker') || this.hasAbility('patient_aim')) ? 3 : 1 },
+        { id: 'meal', label: 'Trial of the Perfect Meal', desc: 'Cook something worth remembering.',
+          score: ((this.knowsTechnique && this.knowsTechnique('cook')) || this.hasAbility('camp_cook')) ? 3 : 1 },
+        { id: 'stone', label: 'Trial of Stone', desc: 'Endure. That is the whole trial. Endure.',
+          score: ((s.health || 100) >= 70 || this.hasAbility('second_wind') || this.hasAbility('iron_stomach')) ? 3 : 1 },
+        { id: 'tongues', label: 'Trial of Tongues', desc: 'Talk the village through something hard.',
+          score: (this.hasAbility('mediator') || this.hasAbility('diplomat') || this._evAvgTrust() >= 40) ? 3 : 1 },
+        { id: 'ember', label: 'Trial of the First Ember', desc: 'Make fire the old way, from nothing.',
+          score: (this.nearFire && this.nearFire()) ? 2 : 1 },
+      ];
+      trials.sort((a, b) => b.score - a.score);
+      const options = trials.slice(0, 3).map(t => ({ id: t.id, label: t.label, desc: t.desc }));
+      s.trialOffer = { day: s.day || 1, options };
+      this.say('📺 SYSTEM CHALLENGE: "We have designed a trial JUST for you. Based on our observations. Which are extensive. And flattering."');
+      this.say('It lists your recent deeds back at you — the good ones, mostly, with the embarrassing ones edited into heroics. It has been WATCHING. (Flattering.)');
+      options.forEach((o, i) => {
+        this.say(`  ${i + 1}. ${o.label} — ${o.desc}`);
+      });
+      this.say('Each trial takes a FULL day-part and leaves you drained (−250 kcal). Pick one. The System waits — it has already run the simulations, and it is terrible at keeping secrets.');
+      try { this.drama('contestAnnounce'); } catch (e) {}
+    },
+    // chooseTrialOption(id): run the chosen trial to completion.
+    chooseTrialOption(id) {
+      const s = this.state.scholar;
+      const tc = s.trialOffer;
+      if (!tc || !tc.options) { this.say('The System isn\'t offering a trial right now.'); return null; }
+      const opt = tc.options.find(o => o.id === id);
+      if (!opt) { this.say(`"${id}" isn't one of the trials. The System waits, patient as geology.`); return null; }
+      s.trialOffer = null; // accepted — clear first, so re-entry is safe.
+      this.say(`📺 TRIAL ACCEPTED: ${opt.label}. "Excellent choice. We simulated all three. This one had the best lighting."`);
+      // THE COSTS, named: a full day-part, and you are wrung out after.
+      this.tickAction(128);
+      s.kcal = Math.max(0, (s.kcal || 0) - 250);
+      this.say('(A day-part, gone to the trial. −250 kcal. Your hands are shaking. The fans loved it.)');
+      const say = (m) => this.say(m);
+      if (opt.id === 'stalk') {
+        if (this.hasAbility('game_sense') || this.hasAbility('tracker') || this.hasAbility('patient_aim')) {
+          say('🏹 TRIUMPH: you read the ground like a letter — bent grass, a print, the wind in your face. The kill is clean, quick, and kind. The System replays it eleven times.');
+          try { this.integrate(4, 'trial of the long stalk'); } catch (e) {}
+          try { this.addNotability('player', 'trial of the long stalk'); } catch (e) {}
+          try { this.stockPantry(600, 'Trial feast'); } catch (e) {}
+          say('(The village feasts tonight: +600 kcal to the pantry. The watchers will remember the stalk.)');
+        } else {
+          say('You stalk for hours and come home empty-handed — but you LEARN the patience: where the deer drink, how the wind turns at dusk. The System calls it "a successful failure," which is the nicest thing it knows how to say.');
+          try { this.integrate(2, 'trial of the long stalk'); } catch (e) {}
+        }
+      } else if (opt.id === 'meal') {
+        if ((this.knowsTechnique && this.knowsTechnique('cook')) || this.hasAbility('camp_cook')) {
+          say('🍲 TRIUMPH: you cook the meal of your life — heat, patience, restraint, and something you can\'t name that makes the whole haven go quiet for the first bite. The System is silent for a full minute. Then: "...We felt that."');
+          try { this.integrate(5, 'trial of the perfect meal'); } catch (e) {}
+          try { this.stockPantry(300, 'System-replicated (enthusiastic) meal'); } catch (e) {}
+          say('(It replicates your meal for the haven — badly, lovingly. +300 kcal. There is lint. You eat around the lint.)');
+        } else {
+          say('You burn it. Not a little — historically. The System takes seventeen notes, all of them wrong, and declares: "NOTE: carbon is also a flavor." The village eats it anyway, because that\'s what villages do.');
+          try { this.integrate(2, 'trial of the perfect meal'); } catch (e) {}
+        }
+      } else if (opt.id === 'stone') {
+        if ((s.health || 100) >= 70 || this.hasAbility('second_wind') || this.hasAbility('iron_stomach')) {
+          say('🪨 TRIUMPH: cold water, hard ground, a whole day of it — and you do not bend. The System watches you not-bend with something like awe. "NOTE: the human did not stop. We do not understand. We are taking notes anyway."');
+          try { this.integrate(4, 'trial of stone'); } catch (e) {}
+          try { this.addNotability('player', 'trial of stone'); } catch (e) {}
+        } else {
+          s.health = Math.max(1, (s.health || 100) - 10);
+          say('You endure it hurt and shivering, because quitting in front of a trillion viewers was never an option. The System respects stubbornness the way a mountain respects weather.');
+          try { this.integrate(3, 'trial of stone'); } catch (e) {}
+          say('(It cost you: −10 health. It paid: the System will remember the stubborn one.)');
+        }
+      } else if (opt.id === 'tongues') {
+        if (this.hasAbility('mediator') || this.hasAbility('diplomat') || this._evAvgTrust() >= 40) {
+          say('🗣️ TRIUMPH: two villagers, one old grievance, and you talk them through it — no winners, no losers, just the thing finally SAID out loud. The haven breathes easier. The System calls it "conflict resolution." The village calls it Tuesday.');
+          this._evTrustAll(5);
+          try { this.integrate(3, 'trial of tongues'); } catch (e) {}
+          say('(Village trust +5. Some trials are fought with talking.)');
+        } else {
+          say('You try to mediate and accidentally restart the argument twice. The System takes notes titled "DO NOT." Eventually everyone laughs, which was — technically — a resolution.');
+          try { this.integrate(2, 'trial of tongues'); } catch (e) {}
+        }
+      } else if (opt.id === 'ember') {
+        if (this.nearFire && this.nearFire()) {
+          say('🔥 TRIUMPH: bow-drill, tinder, breath — and the coal catches on the first real try, because your hands have done this a hundred times. The System slows the replay down. "NOTE: the human MADE fire. From NOTHING. We are... we need a moment."');
+          try { this.integrate(4, 'trial of the first ember'); } catch (e) {}
+        } else {
+          s.kcal = Math.max(0, (s.kcal || 0) - 100);
+          say('An hour of bow-drill with blistered hands, and nothing but smoke and philosophy. The System: "NOTE: the human failed BEAUTIFULLY. The trying is the trial. We have decided." Your hands learn the motion for next time.');
+          try { this.integrate(2, 'trial of the first ember'); } catch (e) {}
+          say('(The extra effort cost you another 100 kcal. Worth it, probably.)');
+        }
+      }
+      try { this.audioEvent('victory'); } catch (e) {}
+      return true;
+    },
+    // checkTrialExpiry: if the player never picks, the System picks for them
+    // at the next dawn ("You took too long choosing. We chose."). Call this
+    // once per dawn — suggested site: the new-day flow beside checkTimedEvents.
+    checkTrialExpiry() {
+      const s = this.state.scholar;
+      const tc = s.trialOffer;
+      if (!tc || !tc.options || !tc.options.length) return null;
+      if ((s.day || 1) <= (tc.day || 1)) return null; // still the offer day
+      this.say('📺 SYSTEM: "You took too long choosing. We chose. You\'re welcome. It was the most flattering one."');
+      return this.chooseTrialOption(tc.options[0].id);
+    },
+
+    // ================= 6. STORM FRONT (drama, day 27) =======================
+    // The sky to the west has gone the color of a bruise. Shelter by dusk and
+    // lose the dusk forage (400–800 kcal, un-walked). Get caught out and pay more.
+    evStormFront(ev) {
+      const s = this.state.scholar;
+      s.stormFront = { day: s.day || 1 };
+      const elder = this._evElderName();
+      this.say('🌩️ The sky to the west has gone the color of a bruise. ' + elder + ' is already tying things down — rope, tarps, the chicken situation. "Sky like that," ' + elder + ' says, "you don\'t argue with it."');
+      this.say('📺 SYSTEM: "We have filed a request for the sky to be less bruised. It is pending. The sky has not responded."');
+      this.say('A storm is coming, and it does not care about your plans. Be at Haven by dusk — sheltering costs the dusk foraging window (400–800 kcal you\'ll never see). Getting caught out costs more.');
+    },
+    // resolveStormFront: call at the dusk part transition. Branches on where
+    // the player actually is — the choice they made all day, made real.
+    resolveStormFront() {
+      const s = this.state.scholar;
+      const st = s.stormFront;
+      if (!st) return null;
+      s.stormFront = null;
+      let sheltered = false;
+      try { sheltered = (this.playerAtHaven && this.playerAtHaven()) || (this.isSafeTile && this.isSafeTile(this.map.px, this.map.py)); } catch (e) {}
+      try { this.drama('weatherShift', 'rain'); } catch (e) {}
+      try { this.drama('shake'); } catch (e) {}
+      try { this.audioEvent('horrorSting'); } catch (e) {}
+      const elder = this._evElderName();
+      if (sheltered) {
+        this.say('🌧️ The storm rolls over Haven like a held breath let go — rain hammering the tarps, the wind testing every knot ' + elder + ' tied. Inside, it\'s almost cozy. Almost.');
+        try { this.addWater(3, 'clean', 'storm'); } catch (e) {}
+        this.say('You set out every pot and skin — the storm fills them. (+3 clean water. The storm provides, the old-timers say, whether you ask or not.)');
+        this.say('The dusk forage goes un-walked: 400–800 kcal you\'ll never see, out there getting rained on instead of gathered. ' + elder + ' nods at the bruised sky, satisfied: "Worth it."');
+      } else {
+        this.say('🌪️ The sky OPENS. Not rain — a wall of it, sideways, with the wind behind it like something personally offended. You\'re caught out in it.');
+        s.kcal = Math.max(0, (s.kcal || 0) - 300);
+        s.health = Math.max(1, (s.health || 100) - 15);
+        // The wind takes something: first non-bonded, non-book item in the pack.
+        let lost = null;
+        try {
+          const inv = s.inventory || [];
+          const idx = inv.findIndex(i => !i.bonded && !i.bookId && !i.unopened && (i.units || 1) > 0);
+          if (idx >= 0) {
+            const it = inv[idx];
+            if ((it.units || 1) > 1) it.units -= 1; else inv.splice(idx, 1);
+            lost = it.name || 'something';
+          }
+        } catch (e) {}
+        try { this.drama('flash', 'rgba(200,220,255,0.3)', 500); } catch (e) {}
+        this.say('You fight your way home soaked, shaking, 300 kcal lighter and bruised (−15 health).' + (lost ? ` The wind took your ${lost} — it\'s in the next county by now.` : ''));
+        this.say(elder + ' looks at you over the fire, dry as a sermon: "Told you." You remember this the next time the sky bruises.');
+        this.say('(Getting caught out costs more. It always costs more.)');
+      }
+      return true;
+    },
+
     // CODEX NETWORKING: codexes talk within friendly organizations.
     // KNOWLEDGE HAS TWO PARTS:
     // --- pack weight: 15 kg. distance has a price; so does carrying. ---
@@ -15508,6 +16097,9 @@
       this.moveWanderer();
       this.dayPart += 1;
       if (this.dayPart >= 4) return this.endDay();
+      // STORM FRONT (events expansion, Steve 2026-10-07): shelter-vs-caught-out resolves
+      // when dusk arrives, on the player's actual position.
+      if (this.dayPart === 2) { try { this.resolveStormFront(); } catch (e) {} }
       // THEFT: victims notice missing rations a part later. Hunger audits.
       // Runs AFTER the part increments (moved 2026-10-05): at the top of
       // advancePart the clock still reads the theft's own part, so the sweep
@@ -16602,6 +17194,8 @@
       // SLICE 2: System arrival and timed events.
       this.checkSystemArrival();
       this.checkTimedEvents();
+      // TRIAL OFFER (events expansion, Steve 2026-10-07): unpicked trials auto-resolve at dawn.
+      try { this.checkTrialExpiry(); } catch (e) {}
       // TRAVELERS (Steve 2026-10-07): every day, villages you've never been to
       // can send a traveler your way. Word arrives BEFORE you walk there.
       try {
@@ -19593,17 +20187,36 @@
       }
       // HALF-HP TEMPERAMENT (Steve 2026-10-07, Drama B1): monsters CHANGE at
       // half HP — enraged, cunning, or desperate. encWoundCheck (encounters.js)
-      // was defined but never called; wire it here so the shift narrates once
-      // AND reads visually: red aura + 💢 + shake.
+      // was lost in a stale-tree revert, so temperament selection and the
+      // wound-voice audio hooks live here now (audio round 5, 2026-10-07):
+      // the three registered CombatAudio voices (woundEnraged/woundCunning/
+      // woundDesperate) had zero emitters — every shift played mute.
       if (t.kind === 'monster' && t.hp > 0 && !t.encWound && t.hp < t.maxHp * 0.5) {
         try {
           const wlabel = this.encShortLabel(t) || t.name;
           const wline = (typeof this.encWoundCheck === 'function') ? this.encWoundCheck(t, wlabel) : null;
           if (wline) this.say(wline);
           else {
-            // fallback if encounters.js didn't set it: default enraged
-            t.encWound = t.encWound || 'enraged';
-            this.say(`${wlabel} is BLEEDING — and it likes it. Louder, faster, no more feints.`);
+            // temperament: data-declared > pattern-derived > enraged
+            // (pattern rules from the original encTemperament, remapped to
+            // the live data shape: mdef.attack.pattern.type)
+            let temp = 'enraged';
+            try {
+              const mcfg = (t.mdef && t.mdef.encounter) || {};
+              if (mcfg.temperament === 'cunning' || mcfg.temperament === 'desperate' || mcfg.temperament === 'enraged') temp = mcfg.temperament;
+              else {
+                const pat = t.mdef && t.mdef.attack && t.mdef.attack.pattern && t.mdef.attack.pattern.type;
+                if (pat === 'ambush' || pat === 'rush') temp = 'cunning';
+                else if (pat === 'burst') temp = 'desperate';
+              }
+            } catch (e2) {}
+            t.encWound = temp;
+            const wcap = temp.charAt(0).toUpperCase() + temp.slice(1);
+            if (temp === 'cunning') this.say(`${wlabel} is hurt — and it goes quiet and clever. It stops rushing. It starts CHOOSING. Watch the spacing.`);
+            else if (temp === 'desperate') this.say(`${wlabel} is hurt bad — and it knows it. Wild swings, everything committed, nothing held back. Dangerous and sloppy.`);
+            else this.say(`${wlabel} is BLEEDING — and it likes it. Louder, faster, no more feints.`);
+            // the voice of the shift: enraged pounds, cunning counts, desperate sputters
+            this.audioEvent('wound' + wcap);
           }
           this.drama('enrage', t.mx, t.my, t.encWound || 'enraged');
         } catch (e) {}

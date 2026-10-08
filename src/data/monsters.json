@@ -291,6 +291,7 @@
     },
     "wave": 1,
     "encounter": {
+      "aggroAudio": "gallowdeerAim",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -383,6 +384,7 @@
     },
     "wave": 1,
     "encounter": {
+      "aggroAudio": "mirrormothFlash",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -587,6 +589,7 @@
     },
     "wave": 1,
     "encounter": {
+      "aggroAudio": "lockpickFingers",
       "fifo": true,
       "noticeRange": 5,
       "phases": [
@@ -895,6 +898,7 @@
     },
     "wave": 1,
     "encounter": {
+      "aggroAudio": "turtleGrind",
       "fifo": true,
       "noticeRange": 2,
       "phases": [
@@ -996,6 +1000,7 @@
     },
     "wave": 1,
     "encounter": {
+      "aggroAudio": "catfishLure",
       "fifo": true,
       "noticeRange": 4,
       "phases": [
@@ -1821,6 +1826,7 @@
     },
     "wave": 1,
     "encounter": {
+      "aggroAudio": "glasswingBuzz",
       "comment": "Daytime diver. Circles high (untargetable), shadow telegraphs dive, dodge by moving, vulnerable when grounded after miss.",
       "fifo": true,
       "knownCue": "Watch the shadow, not the bug. Move when it grows.",
@@ -1915,6 +1921,7 @@
     },
     "wave": 1,
     "encounter": {
+      "aggroAudio": "sunbaskerShimmer",
       "comment": "Solar charger. Basks to build damage, interrupt resets it. Weak in shade/dusk.",
       "fifo": true,
       "knownCue": "Don't let it bask. Hit it every turn or drag it to shade.",
