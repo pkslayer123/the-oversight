@@ -52,7 +52,7 @@
   const NUT_IDS = { hickory_nut: 1, acorn_white_oak: 1 };
   const NUT_RE = /crack|shell|husk/i;
   // Plants that MUST be cooked (raw is a gamble).
-  const MUST_COOK_RE = /must be cooked|must leach/i;
+  const MUST_COOK_RE = /must be cooked|must leach|never eat raw/i;
 
   // Occupation -> food specialties. Emergent, not classes: your old life is
   // what you know. skill 1 = competent, 2 = good, 3 = master.

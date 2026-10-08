@@ -329,9 +329,10 @@
     // ---- WIRING POINTS (game.js / app.js read this — journal.js edits no other file) ----
     // 1. game.js :: returnToVillage(), TEACHING MOMENT block: the unprocessed
     //    haul is staged onto the counter (prepStash) just above that block.
-    //    Teach FROM THE HAUL, not from a random known-species pick:
-    //      this.haulTeachingMoment(this.prepStash().slice(-staged));
-    //    The species the player carried home IS the curriculum. Lessons are
+    //    Teach FROM THE HAUL, not from a random known-species pick — WIRED
+    //    (forager loop 2026-10-08): this.haulTeachingMoment(
+    //      this.prepStash().slice(-staged), { maxLessons: 2 }). The species
+    //    the player carried home IS the curriculum. Lessons are
     //    demonstrations (specimen in hand), capped at 2 per return — a moment,
     //    not a dump.
     // 2. game.js :: teachPlant(vid, plantId) / firesideTeaching(): player-side
@@ -471,14 +472,16 @@
 
     // learnFromShowing(pid, vid, opts): THE demonstration lesson. Someone
     // shows you the actual plant — the haul moment, or a deliberate lesson.
-    // Routes the teaching through the sibling-owned quality primitive
-    // (Scattering.Examine.teachPlant: quality 0-3), then layers the journal-
-    // owned parts/thin bookkeeping on top. Returns {quality, level, parts, outcome}.
+    // Routes through the real teaching primitive (game.js teachPlant: good
+    // teachers identify instantly, poor ones only tick encounters), then
+    // layers the journal-owned parts/thin bookkeeping on top. Returns
+    // {quality, level, parts, outcome}.
+    // (forager loop 2026-10-08: this previously called
+    // Scattering.Examine.teachPlant, which does not exist — every lesson
+    // narrated but taught nothing. Now it teaches for real.)
     learnFromShowing(pid, vid, opts) {
       opts = opts || {};
       const out = { quality: 0, level: 0, parts: 0, outcome: 'none' };
-      const Ex = (globalThis.Scattering || {}).Examine;
-      if (!Ex || !Ex.teachPlant) return out;
       // BAD KNOWLEDGE first: the game owns wrong-teaching (game.js).
       if (this.wrongTeaching) {
         try {
@@ -486,33 +489,35 @@
           if (wt) { out.outcome = wt; return out; }
         } catch (err) {}
       }
-      const r = Ex.teachPlant(pid, vid, { shown: opts.shown !== false, hearsay: !!opts.hearsay });
-      out.quality = r.quality || 0;
+      const tname = this.displayName ? this.displayName(vid) : 'your teacher';
+      const before = ((this.state.codex.plants || {})[pid] || {}).level || 0;
+      const r = this.teachPlant ? this.teachPlant(vid, pid) : null;
+      if (!r) { out.outcome = 'not taught'; return out; }
       const e = (this.state.codex.plants || {})[pid];
       out.level = (e && e.level) || 0;
-      if (!r.taught) { out.outcome = r.reason || 'not taught'; return out; }
-      const tname = this.displayName ? this.displayName(vid) : 'your teacher';
-      if (out.quality >= 3) {
-        // SHOWN PROPERLY: "goes through the parts one by one" — every part
-        // is now known. Thin knowledge, if any, is confirmed solid.
-        const ee = this.state.codex.plants[pid];
-        ee.demonstrated = true; ee.demonstratedBy = tname;
-        this.thickenKnowledge(pid, tname);
-        let n = 0;
-        for (const pt of this.plantPartsList(pid)) if (this.learnPart(pid, pt.key, 'shown')) n++;
-        out.parts = n; out.outcome = 'shown-deep';
-      } else if (out.quality <= 1 && r.hearsay) {
-        // POOR TEACHING: a partial reveal only. A note, not a mechanic —
-        // honest about what it isn't.
+      if (out.level > before) {
+        // the lesson landed — a real identification.
+        out.quality = 2; out.outcome = 'named';
+        if (opts.shown !== false) {
+          // SHOWN PROPERLY: the specimen is in hand — "goes through the
+          // parts one by one". Every part is now known. Thin knowledge, if
+          // any, is confirmed solid.
+          e.demonstrated = true; e.demonstratedBy = tname;
+          this.thickenKnowledge(pid, tname);
+          let n = 0;
+          for (const pt of this.plantPartsList(pid)) if (this.learnPart(pid, pt.key, 'shown')) n++;
+          out.parts = n; out.quality = 3; out.outcome = 'shown-deep';
+        }
+      } else {
+        // POOR TEACHING: a partial reveal only — encounters ticked, nothing
+        // identified. A note, not a mechanic — honest about what it isn't.
         const p = (this.data.plants || []).find(x => x.id === pid) || {};
         const unk = this.plantPartsList(pid).find(pt => !this.partKnown(pid, pt.key));
         const note = unk
           ? `Heard ${tname} say the ${unk.key} might be the useful bit — unconfirmed.`
           : `Heard ${tname} mention ${p.name || pid} in passing — thin knowledge.`;
         this.recordThinKnowledge(pid, note, tname);
-        out.outcome = 'thin';
-      } else {
-        out.outcome = 'named';
+        out.quality = 1; out.outcome = 'thin';
       }
       try { this.journalTouch('lesson'); } catch (e2) {}
       return out;
@@ -538,6 +543,17 @@
         if (!(this.data.plants || []).some(p => p.id === pid)) continue;
         seen[pid] = true; haulPids.push(pid);
       }
+      // LUMPS (forager loop 2026-10-08): the day-1 blind haul arrives as
+      // unlabeled lumps (plantId null) — the species live in the composition.
+      // Without this the moment is silent exactly when it's most needed.
+      for (const it of (items || [])) {
+        const comp = (it && it.lump) || {};
+        for (const cpid of Object.keys(comp)) {
+          if (seen[cpid] || String(cpid).indexOf('meat_') === 0) continue;
+          if (!(this.data.plants || []).some(p => p.id === cpid)) continue;
+          seen[cpid] = true; haulPids.push(cpid);
+        }
+      }
       const myLevel = (pid) => ((this.state.codex.plants || {})[pid] || {}).level || 0;
       const cands = [];
       for (const pid of haulPids) {
@@ -560,7 +576,9 @@
         const p = (this.data.plants || []).find(x => x.id === c.pid) || {};
         const tname = this.displayName ? this.displayName(c.vid) : 'someone';
         const pname = this.plantKnown(c.pid) ? p.name : (p.description || 'a plant');
-        this.say(`You lay out the haul. ${tname} leans over the ${pname}. "Oh — THAT one. Here, look."`);
+        // (forager loop 2026-10-08: "the a tree…" — the template must not
+        // supply "the" when the description carries its own article.)
+        this.say(`You lay out the haul. ${tname} leans over ${pname}. "Oh — THAT one. Here, look."`);
         const r = this.learnFromShowing(c.pid, c.vid, { shown: true, via: 'haul' });
         lessons.push({ pid: c.pid, vid: c.vid, quality: r.quality, level: r.level, outcome: r.outcome });
         if (r.outcome === 'shown-deep') {

@@ -210,12 +210,17 @@
     const p = (g.data.plants || []).find(x => x.id === pid);
     if (!p) return false;
     const desc = (p.description || 'a plant').toLowerCase();
+    // DESCRIPTIONS CARRY THEIR OWN ARTICLE ("a tree with compound leaves…")
+    // — strip it where the template supplies "The". (forager loop
+    // 2026-10-08: "The a tree…" read aloud at the campfire. Same bug class
+    // as the 2026-10-07 "This a tree" fix.)
+    const descNoArt = desc.replace(/^(a|an|the)\s+/, '');
     const who = teacherName || 'someone';
     const whoPoss = teacherName ? `${who}'s` : "the teacher's";
     const lines = [
-      `The ${desc} — THAT's what ${who} was describing. ${p.name}. It clicks like a key turning.`,
+      `The ${descNoArt} — THAT's what ${who} was describing. ${p.name}. It clicks like a key turning.`,
       `You see it again in your mind: ${desc}. ${whoPoss} words land on the memory like a label. ${p.name}. Of course.`,
-      `${p.name}. The ${desc} you've been looking at for days finally has a name, and now you'll never unsee it.`,
+      `${p.name}. The ${descNoArt} you've been looking at for days finally has a name, and now you'll never unsee it.`,
     ];
     g.say(`\u{1F4A1} ` + lines[Math.floor(Math.random() * lines.length)]);
     // RECOGNITION HAS TEETH: examined-first identification starts deeper.

@@ -87,6 +87,40 @@ function buildRun() {
       this.state.codex.encounters[pid] = 99;
       return true;
     },
+    // teachPlant: mirrors game.js's REAL quality primitive — good teachers
+    // (cook/chef/hunter, trusted, full comms) identify instantly; poor ones
+    // only tick encounters. (The old test asserted a phantom
+    // Scattering.Examine.teachPlant that never existed — every lesson
+    // narrated but taught nothing. forager loop 2026-10-08.)
+    teachPlant(vid, pid) {
+      const teacher = (this.data.villagers || []).find(v => v.id === vid);
+      const plant = (this.data.plants || []).find(p => p.id === pid);
+      if (!teacher || !plant) return null;
+      const teacherKnows = ((this.state.village.taught || {})[vid] || []).includes(pid);
+      if (!teacherKnows) { this.say(`${this.displayName(vid)} doesn't know that one either.`); return null; }
+      const wt = this.wrongTeaching(vid, pid, 'taught');
+      if (wt) return wt;
+      const comm = this.commLevel(vid);
+      if (comm.level === 'none') { this.say(`${this.displayName(vid)} tries — gestures, dirt drawings, growing frustration.`); return null; }
+      const occ = String(teacher.formerOccupation || '').toLowerCase();
+      const trust = ((this.state.village.trust || {})[vid]) || 10;
+      const tIntel = this.npcIntel(vid).primary;
+      const trustBar = tIntel === 'practical' ? 30 : 40;
+      const good = (occ.includes('cook') || occ.includes('chef') || occ.includes('hunter')) && trust > trustBar && comm.level === 'full';
+      const medic = (occ.includes('nurse') || occ.includes('medic')) && plant.medicinal && trust > trustBar && comm.level === 'full';
+      this.state.codex.encounters = this.state.codex.encounters || {};
+      if (good || medic) {
+        if (this.identifyPlant(pid, 'taught', this.displayName(vid))) {
+          this.say(`${this.displayName(vid)} shows you — hands moving, no wasted words. You get it.`);
+          return { taught: true, quality: 3 };
+        }
+        return null;
+      }
+      const enc = (this.state.codex.encounters[pid] || 0) + 1;
+      this.state.codex.encounters[pid] = enc;
+      this.say(`${this.displayName(vid)} tries to explain. "It looks... a bit like that?" You're not sure. (${enc} encounters)`);
+      return { taught: true, quality: 1 };
+    },
   };
   globalThis.Scattering = { Game };
   for (const f of ['src/js/examine.js', 'src/js/journal.js']) {
@@ -133,37 +167,41 @@ eq(r1.lessons[0].vid, 'mara', 'haul: dandelion teacher is Mara');
 eq(r1.lessons[0].quality, 3, 'haul: Mara + specimen + depth = Q3');
 eq(r1.lessons[0].outcome, 'shown-deep', 'haul: Q3 outcome is shown-deep');
 eq(r1.lessons[1].vid, 'jesse', 'haul: ghostroot teacher is Jesse');
-eq(r1.lessons[1].quality, 2, 'haul: Jesse + specimen, no depth = Q2');
-eq(r1.lessons[1].outcome, 'named', 'haul: Q2 outcome is named');
+eq(r1.lessons[1].quality, 1, 'haul: Jesse (laborer, poor teacher) = Q1 partial');
+eq(r1.lessons[1].outcome, 'thin', 'haul: Q1 outcome is thin (encounters tick, nothing identified)');
 
 // AFTER: parts landed for the Q3 lesson, not for the Q2 one.
 eq(Game.plantLevel('dandelion'), 2, 'after: dandelion L2 (shown properly unlocks instantly)');
 eq(Game.plantPartsList('dandelion').map(p => p.key), ['roots', 'young leaves', 'petals'], 'parts parsed from knowledgeLevels[2]');
 ok(Game.partKnown('dandelion', 'roots') && Game.partKnown('dandelion', 'young leaves') && Game.partKnown('dandelion', 'petals'), 'after: all dandelion parts known');
 ok(Game.state.codex.plants.dandelion.demonstrated === true, 'after: demonstrated flag set');
-eq(Game.plantLevel('ghostroot'), 1, 'after: ghostroot L1 (decent lesson: name only)');
+eq(Game.plantLevel('ghostroot'), 0, 'after: ghostroot still L0 (poor teacher: partial reveal only)');
+eq(Game.state.codex.encounters.ghostroot, 1, 'after: ghostroot encounter ticked — the progress is real');
 eq(Game.partKnown('ghostroot', 'medicine'), false, 'after: Q2 teaches no parts');
 eq(Game.plantPartsList('ghostroot').map(p => p.key), ['medicine'], 'parts fallback to uses[] when no Parts: line');
 eq(Game.plantKnown('chickweed'), false, 'after: chickweed still unknown (capped out)');
 ok(messages.some(m => m.includes('lay out the haul')), 'feel: haul staging line fired');
 
 // POOR TEACHING: Ren half-remembers chickweed, no specimen, hearsay.
+// Partial reveal: encounters tick, nothing identified, no parts granted.
+// (Unknown plants hold no thin notes — the codex never shows what you don't
+// know — so the encounter tick IS the progress.)
 const r2 = Game.learnFromShowing('chickweed', 'ren', { shown: false, hearsay: true });
 eq(r2.quality, 1, 'poor: quality 1');
 eq(r2.outcome, 'thin', 'poor: outcome is thin');
-eq(Game.plantLevel('chickweed'), 1, 'poor: name only, level stays 1');
-ok(Game.state.codex.plants.chickweed.thin === true, 'poor: entry marked thin');
-eq(Game.state.codex.plants.chickweed.partials.length, 1, 'poor: one partial note recorded');
+eq(Game.plantLevel('chickweed'), 0, 'poor: still unknown (L0)');
+eq(Game.state.codex.encounters.chickweed, 1, 'poor: encounter ticked');
 ok(!Game.partKnown('chickweed', 'seeds'), 'poor: no parts granted');
-ok(messages.some(m => m.includes('gossip') || m.includes('thin')), 'feel: poor-teaching narration fired');
+ok(messages.some(m => m.includes('tries to explain')), 'feel: poor-teaching narration fired');
 
-// PROPER LESSON OVER THIN KNOWLEDGE: Mara shows chickweed with specimen.
+// PROPER LESSON: Mara (cook, trusted) shows chickweed with the specimen in
+// hand — instant unlock, all parts land, demonstration recorded.
 const r3 = Game.learnFromShowing('chickweed', 'mara', { shown: true });
-eq(r3.outcome, 'shown-deep', 'thicken: outcome shown-deep');
-eq(Game.plantLevel('chickweed'), 2, 'thicken: level 2');
-ok(Game.state.codex.plants.chickweed.thin === false, 'thicken: thin cleared');
-ok(Game.partKnown('chickweed', 'seeds') && Game.partKnown('chickweed', 'leaves and stems'), 'thicken: parts land');
-ok(messages.some(m => m.includes('Confirmed:')), 'feel: confirmation beat fired');
+eq(r3.outcome, 'shown-deep', 'proper: outcome shown-deep');
+eq(Game.plantLevel('chickweed'), 2, 'proper: level 2 (first part lifts)');
+ok(Game.state.codex.plants.chickweed.thin !== true, 'proper: no thin flag (nothing was thin)');
+ok(Game.partKnown('chickweed', 'seeds') && Game.partKnown('chickweed', 'leaves and stems'), 'proper: parts land');
+ok(messages.some(m => m.includes('shows you — hands moving')), 'feel: demonstration beat fired');
 
 // FEEL / HONESTY
 const line = Game.codexPlantLine('dandelion');
@@ -171,8 +209,7 @@ ok(line && line.includes('Dandelion') && line.includes('L2') && line.includes('r
 ok(line.includes('shown by Mara'), 'line: credits the teacher');
 eq(Game.codexPlantLine('mugwort'), null, 'line: k0 returns null (no leak)');
 const gapsGhost = Game.knowledgeGaps('ghostroot');
-ok(gapsGhost.some(g => g.includes('single use')), 'gaps: L1 ghostroot admits no known use');
-ok(gapsGhost.some(g => g.includes("shown you one properly") === false || true), 'gaps: ghostroot listed');
+eq(gapsGhost, [], 'gaps: L0 ghostroot shows nothing (k0 no-leak rule, same as mugwort)');
 const gapsDand = Game.knowledgeGaps('dandelion');
 ok(!gapsDand.some(g => g.includes('single use')), 'gaps: L2 dandelion no longer claims no use');
 ok(gapsDand.some(g => g.includes("haven't tasted")), 'gaps: dandelion honest about untasted');
