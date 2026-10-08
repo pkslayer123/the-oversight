@@ -530,17 +530,23 @@
 
     // feastBurn: the surge — a channeled keepsake makes the feast hit harder.
     // Arc IV makes every burn hotter. Mark feastSurgeUsed for the arc trigger.
+    // HONESTY (Steve 2026-10-08, break-it): the base feastBurn() states its own
+    // multiplier — the wrapper's extra multiplier used to apply SILENTLY
+    // (said x1.5, dealt x2.25 with a surge). Now the total is stated.
     const _feastBurn = Game.feastBurn;
     Game.feastBurn = function () {
       let mult = 1;
+      let why = '';
       try {
         const s = this.state.scholar;
-        if (s.prog && s.prog.feastSurge) { mult *= 1.5; s.prog.feastSurge = false; s.prog.feastSurgeUsed = true; }
-        if (s.arc4burn) mult *= s.arc4burn;
+        if (s.prog && s.prog.feastSurge) { mult *= 1.5; s.prog.feastSurge = false; s.prog.feastSurgeUsed = true; why += ' A channeled keepsake feeds the flames (FEAST SURGE).'; }
+        if (s.arc4burn) { mult *= s.arc4burn; why += ' Arc IV burns hotter.'; }
         if (this.ledgerAdd) this.ledgerAdd('might', 2);
       } catch (e) {}
       const r = _feastBurn ? _feastBurn.call(this) : 0;
-      return r * mult > 0 ? r * mult : r;
+      const out = r * mult > 0 ? r * mult : r;
+      if (r > 0 && mult !== 1) this.say(`The burn catches on held feeling.${why} x${Math.round(out * 100) / 100} all told.`);
+      return out;
     };
 
     // lootCorpse: taken keepsakes become bonded sentimental items with a memory

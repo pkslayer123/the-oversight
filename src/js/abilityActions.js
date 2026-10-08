@@ -195,6 +195,18 @@
         this.say(ctxCheck.why + ' (' + (def.action.name || actionId) + ')');
         return false;
       }
+      // WIRING CHECK FIRST (Steve 2026-10-08, break-it): an action defined in
+      // data but with no implementation must fail BEFORE costs are paid —
+      // the old order spent your combat turn (and kcal/hp) and then said
+      // "isn't wired up yet". Failing fast costs nothing.
+      var key = abilityId + '.' + actionId;
+      var impl = ABILITY_ACTION_IMPLS[key];
+      if (typeof impl !== 'function') {
+        // No implementation yet — this is honest, not silent.
+        // The action is defined in data but not yet wired. Flag it.
+        this.say('(' + (def.action.name || actionId) + ' isn\'t wired up yet — the data defines it but the code doesn\'t. This is a bug, not a feature. Nothing spent.)');
+        return false;
+      }
       // Cost check + payment (atomic)
       var costCheck = this.payActionCost(def.action.cost);
       if (!costCheck.ok) {
@@ -202,14 +214,6 @@
         return false;
       }
       // Dispatch to implementation
-      var key = abilityId + '.' + actionId;
-      var impl = ABILITY_ACTION_IMPLS[key];
-      if (typeof impl !== 'function') {
-        // No implementation yet — this is honest, not silent.
-        // The action is defined in data but not yet wired. Flag it.
-        this.say('(' + (def.action.name || actionId) + ' isn\'t wired up yet — the data defines it but the code doesn\'t. This is a bug, not a feature.)');
-        return false;
-      }
       var result = impl(this, target);
       // Implementation must narrate via say(). If it returned false without
       // saying anything, we add a fallback (never silent).

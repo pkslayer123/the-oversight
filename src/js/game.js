@@ -6801,6 +6801,16 @@
         const first = waiting[0];
         try {
           this.startCombat(first.id);
+          // Steve 2026-10-08 (break-it): door-flee stashed each monster's HP
+          // (monsterPositions, ~19126) but re-engage spawned a FRESH full-HP
+          // monster — beat it to 1 HP, duck inside, heal for free, walk out to
+          // a full-HP monster. A no-cost full reset of YOUR damage. Now the
+          // stashed HP is honored: they waited, and they're still bleeding.
+          if (first.hp != null && this.tbfight) {
+            const mf = this.tbfight.fighters.find(x =>
+              (x.kind === 'monster' || x.kind === 'hostile') && (x.monsterId === first.id || (x.mdef && x.mdef.id === first.id)));
+            if (mf) mf.hp = Math.max(1, Math.min(mf.maxHp, first.hp));
+          }
         } catch (e) {}
       }
       return true;
@@ -14342,27 +14352,33 @@
     // target: optional villager id or {cx, cy} for abilities that need aiming.
     // Declared in activatableAbilities() as target: 'villager' | 'cell' | 'monster' | 'self' | 'none'.
     activateAbility(id, target) {
-      const s = this.state.scholar;
-      // Steve 2026-10-07: using an ability grants XP toward leveling it.
-      // (Was only granted for diplomat/tracker/camp_cook — brawler abilities
-      // never leveled from combat, making one_person_army unreachable by fighting.)
-      // Steve 2026-10-08: gainAbilityXP already logs the use for synergy
-      // discovery — a separate noteAbilityUse here double-counted every
-      // activation as two synergy attempts. One activation = one attempt.
-      this.gainAbilityXP(id, 1);
-      // ACTION CLOCK: activating a power takes a moment of focus (2 ticks, time-only).
-      // Sustained powers (time_skip) cost more — declared at their branch.
-      // Effort kcal / metabolic upkeep are the other two costs (see metabolicDaily).
+      // Steve 2026-10-08 (break-it): XP is EARNED, not sprayed. The old code
+      // called gainAbilityXP() BEFORE the failure checks, so failed activations
+      // (too weak for the blood price, already echoed today, not sick, nothing
+      // to bury, red hunger asleep, unknown ids) granted free XP + synergy
+      // attempts with zero cost. The inner dispatch now reports whether the
+      // activation actually fired; XP is granted only then.
       this.tickAction(2);
+      const fired = this._activateAbilityInner(id, target);
+      if (fired) this.gainAbilityXP(id, 1);
+      return null;
+    },
+
+    // _activateAbilityInner: the legacy hardcoded activatable branches.
+    // Returns true when the activation actually fired, false when it failed
+    // or the id has no wired branch (the unified dispatcher in abilityActions.js
+    // routes composite "abilityId.actionId" ids to useAbility() first).
+    _activateAbilityInner(id, target) {
+      const s = this.state.scholar;
       if (id === 'blood_magic') {
         const cost = this.hasSynergy('crimson_circuit') ? 7 : 10;
-        if ((s.health || 0) <= cost) { this.say('Too weak for the Blood Price.'); return null; }
+        if ((s.health || 0) <= cost) { this.say('Too weak for the Blood Price.'); return false; }
         s.health -= cost; s.kcal += 500;
         this.say(`BLOOD PRICE: -${cost} HP, +500 kcal. Your body eats itself. Efficient. Horrifying.${cost < 10 ? ' (Crimson Circuit: the circuit closes, the price drops.)' : ''}`);
       } else if (id === 'time_skip') {
         s.ageDebt = (s.ageDebt || 0) + 1;
         this.say('TIME SKIP: the light stutters. You are a day older. The time had to come from somewhere.');
-        return this.endDayPart();
+        this.endDayPart(); return true;
       } else if (id === 'dowsing') {
         // SYNERGY: stormcaller — dowsing in the rain counts as rain_dancer use too.
         if (this.state.weather === 'rain') this.noteAbilityUse('rain_dancer');
@@ -14381,7 +14397,7 @@
           this.say(`The stick twitches — water, ${dir}. ${bestD} tiles. (dowsing)`);
         } else this.say('The stick is still. Either no water near, or it\'s lying. (dowsing failed)');
       } else if (id === 'echo_location') {
-        if (s.echoDay === s.day) { this.say('Already echoed today.'); return null; }
+        if (s.echoDay === s.day) { this.say('Already echoed today.'); return false; }
         s.echoDay = s.day;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const nx = this.map.px + dx, ny = this.map.py + dy;
@@ -14390,42 +14406,54 @@
         this.say('You clap once. The echo comes back with the shape of the land — 3x3 revealed. (echo_location)');
       } else if (id === 'field_medicine') {
         const key = `${s.day}-${this.dayPart}`;
-        if (s.fieldMedDayPart === key) { this.say('Already used field medicine this day part.'); return null; }
+        if (s.fieldMedDayPart === key) { this.say('Already used field medicine this day part.'); return false; }
         s.fieldMedDayPart = key;
         const heal = 20;
         // COST: healing burns calories. No free lunch — prevents Blood Magic infinite loop.
         // (Blood Magic: -10 HP → +500 kcal. Without a heal cost, that's infinite food.)
         const healCost = 100;
-        if ((s.kcal || 0) < healCost) { this.say(`Too hungry to heal — need ${healCost} kcal.`); return null; }
+        if ((s.kcal || 0) < healCost) { this.say(`Too hungry to heal — need ${healCost} kcal.`); return false; }
         s.kcal -= healCost;
         s.health = Math.min(this.maxHealth(), (s.health || 0) + heal);
         this.say(`Field medicine: clean the wound, poultice it, bind it. +${heal} HP, -${healCost} kcal.`);
       } else if (id === 'herbal_remedy') {
-        if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return null; }
-        if (!(s.diseases || []).length) { this.say('Not sick.'); return null; }
+        if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return false; }
+        if (!(s.diseases || []).length) { this.say('Not sick.'); return false; }
         s.herbalDay = s.day;
         // CURE (statusEffects engine, Steve 2026-10-07): clears engine + legacy.
         this.cureStatus('scholar', 'disease', 'herbal remedy');
       } else if (id === 'purify') {
-        if (s.purifyDay === s.day) { this.say('Already purified today.'); return null; }
-        if (!(s.poisons || []).length) { this.say('Not poisoned.'); return null; }
+        if (s.purifyDay === s.day) { this.say('Already purified today.'); return false; }
+        if (!(s.poisons || []).length) { this.say('Not poisoned.'); return false; }
         s.purifyDay = s.day;
         // CURE (statusEffects engine, Steve 2026-10-07): clears engine + legacy.
         this.cureStatus('scholar', 'poison', 'purify');
+      } else if (id === 'compost_king') {
+        // Steve 2026-10-08 (break-it): this body used to live inside the
+        // purify branch — purifying poison buried your food, and "Bury Food"
+        // had no branch at all (a dead button granting free XP). Split out.
         const idx = (s.inventory || []).findIndex(i => (i.kcalEach || 0) > 0);
-        if (idx === -1) { this.say('No food to bury.'); return null; }
+        if (idx === -1) { this.say('No food to bury.'); return false; }
         const it = s.inventory[idx];
         it.units -= 1; if (it.units <= 0) s.inventory.splice(idx, 1);
         this.playerTile().compost = true;
         this.say(`You bury ${it.name}. The tile will remember. (+10% forage here. compost_king)`);
       } else if (id === 'cannibal_frenzy') {
-        if ((s.kcal || 0) >= 500) { this.say('The Red Hunger sleeps. You are not starving enough.'); return null; }
+        if ((s.kcal || 0) >= 500) { this.say('The Red Hunger sleeps. You are not starving enough.'); return false; }
         s.kcal += 1000;
         const v = this.state.village; v.trust = v.trust || {};
         for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 30);
         this.say('RED HUNGER: you eat what you should not. +1000 kcal. Everyone saw. Trust -30, permanently.');
+      } else if (this.hasAbility && this.hasAbility(id)) {
+        // Real ability, no bespoke branch (e.g. a data-driven ability invoked
+        // by plain id): practicing the discipline still counts as a use.
+        return true;
+      } else {
+        // No wired branch and not a real ability — never silent, never free XP.
+        this.say(`That doesn't do anything. (Unknown activation: ${id})`);
+        return false;
       }
-      return null;
+      return true;
     },
 
     // abilitySlots: how many abilities can you hold? Integration-based.
@@ -19425,9 +19453,9 @@
         // Trauma accrues — but not blindly. Who they were and why matters.
         try { this.addTrauma(this.traumaForHurt(t.villagerId)); } catch (e) {}
       } else {
-        const wtxt = w.unarmed ? '' : ` (${w.name})`;
-        this.say(`You STRIKE the ${this.encShortLabel(t) || this.encTheName(t)} for ${d}${wtxt}.`);
-        this.tbStyle(5, 'solid hit');
+        // HONESTY (Steve 2026-10-08, break-it): the strike number is stated
+        // below, AFTER the heckler-shame / scarred-brace / opening-steal
+        // reductions — the number shown is the number dealt.
       }
       // HECKLER SHAME (Steve 2026-10-06): the words stick. SHAME reduces YOUR
       // outgoing damage by 1 per stack. Applied to d before tbDamage.
@@ -19497,6 +19525,13 @@
         }
       } catch (e) {}
       this.tbDamage(t.key, d, 'you', null, { quiet: true });
+      // HONESTY (Steve 2026-10-08, break-it): stated AFTER all reductions —
+      // the number shown is the number tbDamage just applied.
+      if (!isHuman) {
+        const wtxt2 = w.unarmed ? '' : ` (${w.name})`;
+        this.say(`You STRIKE the ${this.encShortLabel(t) || this.encTheName(t)} for ${d}${wtxt2}.`);
+        this.tbStyle(5, 'solid hit');
+      }
       // DRAMA (Steve 2026-10-07, B1): the strike LANDS — starburst on the monster.
       // Crits (DEAD AIM) get the full spectacle: CRIT! + damage number + shake.
       try {
