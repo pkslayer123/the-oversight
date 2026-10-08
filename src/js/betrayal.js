@@ -1003,10 +1003,12 @@
       this.sysSay(`TONIGHT: ${this.whoTag(c.accused[0]).toUpperCase()} stands accused — ${this.chargeLine(c.charge).toUpperCase()}! The gamblers are FRENZIED! Place your bets, place your bets!`);
     }
     if (this.isPlayer(caller)) {
-      this.say(`You call a moot. The fire gets built up. Everyone comes — even the ones who'd rather not.`);
+      // HONESTY (break-it social 2026-10-08): the engine seats ~88% of
+      // voters (tallyVotes) — the old line promised "everyone comes".
+      this.say(`You call a moot. The fire gets built up. Word travels fast — almost everyone comes, even the ones who'd rather not.`);
     } else {
       const n = (() => { try { return this.whoTag(caller); } catch (e) { return 'Someone'; } })();
-      this.say(`${this.capFirst(n)} calls the moot. The fire gets built up — word travels fast, and everyone comes.`);
+      this.say(`${this.capFirst(n)} calls the moot. The fire gets built up — word travels fast, and almost everyone comes.`);
     }
     // DRAMA (Steve 2026-10-07, C1): the moot is a spectacle — fire pulse + banner
     try {
@@ -1050,12 +1052,16 @@
     return pack + pantry >= price;
   },
   // pay for a player's bribe: carried food first, then the pantry stockpile.
+  // Returns the ACTUAL kcal that left the player's stores — whole-unit pack
+  // spends can overshoot the price, and the fiction must name what moved
+  // (BREAK-IT social 2026-10-08: the label said 800 while a chunky pack
+  // unit silently spent 1000).
   payBribe(cs, voterId, price) {
+    let spentPack = 0, spentPantry = 0;
     try {
       const p = Math.max(0, price || 0);
       let pack = this.playerPackKcal() || 0;
       const fromPack = Math.min(pack, p);
-      let spentPack = 0;
       if (fromPack > 0) spentPack = this.playerPackSpend(fromPack);
       const rest = p - spentPack; // actuals, not intentions — whole-unit spends can overshoot
       if (rest > 0) {
@@ -1071,6 +1077,7 @@
           this.state.village.pantryKcal = Math.max(0, (this.state.village.pantryKcal || 0) - rest);
           removed = rest;
         }
+        spentPantry = removed;
         if (removed > 0) {
           // payBribe is the player's bribe path — the taking is theirs.
           const v = this.state.village || {};
@@ -1079,6 +1086,7 @@
         }
       }
     } catch (e) {}
+    return Math.round(spentPack + spentPantry);
   },
   bribeVoter(caseId, voterId, byId, amount) {
     const c = this.getCase(caseId); if (!c) return null;
@@ -1131,8 +1139,15 @@
     // SELF-EXPOSURE BACKFIRES (break-it 2026-10-08): exposing your OWN bribe
     // used to swing belief +25 toward your side — a double-dip on top of the
     // bought vote itself. Confessing you bought a vote turns the fire on YOU.
+    // BREAK-IT (social 2026-10-08): the old code swung -30 (toward guilty)
+    // whenever the briber was the player — including a player VICTIM, where
+    // -30 pushed the case toward conviction and REWARDED the confession (the
+    // double-dip, still alive). Direction is by SIDE: accused-side bribery
+    // exposed -> the fire turns on the accused (-30, toward guilty);
+    // victim-side bribery exposed -> the case is tainted (+25, toward
+    // acquit). The trust detonation below still lands on the briber.
     const selfExposed = !!(this.isPlayer && this.isPlayer(b.by));
-    this.moveBelief(c, (b.by === c.accused[0] || c.accused.includes(b.by) || selfExposed) ? -30 : 25,
+    this.moveBelief(c, c.accused.includes(b.by) ? -30 : 25,
       selfExposed ? 'exposed their own bribery' : 'bribery exposed');
     this.notePlayerEvidence(c, `Exposed: ${this.displayName(b.by)} bought ${this.displayName(b.voter)} (${b.amount} kcal).`);
     // detonates on the briber too
@@ -1551,7 +1566,23 @@
     const p = s.probation;
     if (!p) return;
     const ov = (this.state.otherVillages || []).find(x => x.id === p.villageId);
-    if (!ov) { s.probation = null; return; }
+    if (!ov) {
+      // BREAK-IT (social 2026-10-08): the village record can vanish
+      // mid-probation (scattered, destroyed). The old code cleared the
+      // probation but left exiled=false with a stale joinedVillage — the
+      // player was NOWHERE: drift() said "you have a home", petition
+      // couldn't find it, no village card, no way forward. The road takes
+      // you back: exile state restored so drift/petition/founding are all
+      // reachable again.
+      s.probation = null;
+      s.joinedVillage = null;
+      s.exiled = true;
+      s.drifting = true;
+      s.exileStartDay = s.day;
+      try { this.journalNote && this.journalNote('village', 'lost', 'The village that took you in is gone — scattered or destroyed. Back on the road.'); } catch (e) {}
+      this.say(`The fires went out. Whether they scattered or something worse found them, there's no one left to vote you in — just cold ground where a village was. The road takes you back. Petition somewhere else, or build your own fire.`);
+      return;
+    }
     const d = this.map ? (Math.abs((ov.x || 0) - this.map.px) + Math.abs((ov.y || 0) - this.map.py)) : 99;
     if (d > 1) return; // not at their fire — the clock waits
     p.daysLeft -= 1;
@@ -3122,8 +3153,14 @@
       const cs = this.getCase(parts[2]);
       const price = cs ? this.caseBribePrice(cs, parts[3]) : 1600;
       const ok = this.bribeVoter(parts[2], parts[3], this.villagerId, price);
-      if (ok) this.payBribe(cs, parts[3], price);
-      return finish(ok ? 'Done. Quiet. Expensive.' : 'It didn\'t take.', '(make an offer)');
+      let spent = 0;
+      if (ok) spent = this.payBribe(cs, parts[3], price);
+      // HONESTY (break-it social 2026-10-08): whole-unit pack spends can
+      // overshoot the labeled price — the fiction names what actually moved.
+      const doneLine = !ok ? 'It didn\'t take.'
+        : spent > price ? `Done. Quiet. Expensive — ${spent} kcal changed hands; the pack wouldn't divide.`
+        : 'Done. Quiet. Expensive.';
+      return finish(doneLine, '(make an offer)');
     }
     if (act === 'hearoffer') {
       const cs = this.getCase(parts[2]);
@@ -3167,8 +3204,19 @@
         const side = pick([cs.accused[0], 'target']);
         const voters = this.npcIds().filter(id => !cs.accused.includes(id) && !(cs.bribes || []).some(b => b.voter === id));
         const v = pick(voters);
-        if (v) {
-          const by = side === 'target' ? (this.isPlayer(cs.target) ? this.villagerId : cs.target) : side;
+        let by = side === 'target' ? cs.target : side;
+        // BREAK-IT (social 2026-10-08): the sim used to attribute the bribe
+        // to the PLAYER (by = villagerId) whenever the player's side was
+        // picked — a phantom bribe the player never paid for and never
+        // chose, which investigate/expose then punished them for. Nobody
+        // buys votes in your name without your say. An NPC who likes you
+        // may act for you; otherwise the moment passes.
+        if (v && this.isPlayer(by)) {
+          const allies = this.npcIds().filter(id => !cs.accused.includes(id) && id !== v &&
+            (() => { try { return this.pairAffinity(id, this.villagerId) > 0; } catch (e) { return false; } })());
+          by = allies.length ? allies[Math.floor(R() * allies.length)] : null;
+        }
+        if (v && by) {
           cs.bribes.push({ voter: v, by, amount: 800, day: this.state.scholar.day, trace: R() < 0.5 });
         }
       }

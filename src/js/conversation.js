@@ -4186,7 +4186,7 @@
       const cm = Math.max(-3, Math.min(3, c.mood || 0));
       if (cm !== 0 && c.exchanges >= 3) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
-      try { this.checkPromises('social'); } catch (e) {}
+      try { this.checkPromises('social', vid); } catch (e) {}
       // BUGFIX (break-it 2026-10-08): `t` was undefined here — every natural
       // conversation end threw ReferenceError, skipping the exit line, mood
       // goodbye, and coherence close-beat. Pass the live trust value.

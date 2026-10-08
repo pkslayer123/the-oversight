@@ -1114,11 +1114,14 @@
     return r;
   };
 
+  // BREAK-IT (social 2026-10-08): the wrapper dropped the vid parameter —
+  // per-villager fulfillment (checkPromises('social', vid)) silently fell
+  // back to the village-wide sweep. Forward it.
   const origCheckPromises = Game.checkPromises;
-  if (origCheckPromises) Game.checkPromises = function (kind) {
+  if (origCheckPromises) Game.checkPromises = function (kind, vid) {
     const before = {};
     for (const [vid, p] of Object.entries((this.state.village.promises || {}))) before[vid] = p.kept;
-    const r = origCheckPromises.call(this, kind);
+    const r = origCheckPromises.call(this, kind, vid);
     try {
       for (const [vid, p] of Object.entries((this.state.village.promises || {}))) {
         if (before[vid] !== p.kept) {

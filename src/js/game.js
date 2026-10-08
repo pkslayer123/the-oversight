@@ -2747,7 +2747,7 @@
       this.npcNeeds(vid).hunger = Math.max(0, this.npcNeeds(vid).hunger - 60);
       this.say(`You give ${this.displayName(vid)} some ${food.name}. They look at you differently now.`);
       this.observe('give_food', { target: vid });
-      try { this.checkPromises('food'); } catch (e) {}
+      try { this.checkPromises('food', vid); } catch (e) {}
       // ACTION CLOCK: a handoff is 1 tick (time-only — the food is the real cost).
       this.tickAction(1);
       return true;
@@ -3353,7 +3353,7 @@
       this.remember(vid, 'comforted', 'sat with them when scared');
       this.observe('comfort', { target: vid });
       this.notePlaystyle('social');
-      try { this.checkPromises('heal'); } catch (e) {}
+      try { this.checkPromises('heal', vid); } catch (e) {}
       this.socialTick(vid);
       this.save();
       return { ok: true };
@@ -3558,9 +3558,22 @@
       this.discover('promise');
       this.say(`${first} looks at you for a long moment. ${promiseLines[goal] || `"I'll help. I mean it."`} Something in them settles — hope is a heavy thing to carry alone.`);
       this.remember(vid, 'promise', 'promised to help: ' + goal);
-      const t = v.trust || (v.trust = {});
-      t[vid] = Math.min(100, (t[vid] || 10) + 6);
-      this.observe('promise', { target: vid });
+      // BREAK-IT (social 2026-10-08): the promise itself is WORDS — the old
+      // direct +6 bypassed resolveConsequence entirely (no 40 talk cap, no
+      // progressive scaling, no mediation halving), so promising every
+      // villager in turn farmed trust past the cap for free. A promise is
+      // talk until it's kept: through the resolver like every other word.
+      if (typeof this.resolveConsequence === 'function') {
+        this.resolveConsequence(vid, { trust: 6, temper: 'kind', name: 'promise:made' });
+      } else {
+        const t = v.trust || (v.trust = {});
+        t[vid] = Math.min(100, (t[vid] || 10) + 6);
+      }
+      // noTrust: the village forms an OPINION of a promise-maker (rep dims
+      // shift — they heard you), but trust moves only through the resolver
+      // above. The old call bled +2/+1 trust to every witness per promise,
+      // uncapped and unprogressive — a second, silent farm on top of the +6.
+      this.observe('promise', { target: vid, noTrust: true });
       this.notePlaystyle('social');
       this.socialTick(vid);
       this.save();
@@ -3569,9 +3582,18 @@
     // checkPromises: called when relevant actions happen. Fulfilling a promise
     // is one of the biggest trust gains in the game. Breaking one (7+ days
     // ignored) is one of the biggest losses.
-    checkPromises(kind) {
+    // vid (optional): the villager the triggering action was FOR. Per-person
+    // actions (a food handoff, a conversation, comforting) keep only THAT
+    // person's promise — BREAK-IT (social 2026-10-08): the old kind-only
+    // sweep fulfilled every matching promise village-wide, so one hello
+    // kept a dozen 'belong' promises (+15 each) and one handoff kept every
+    // 'feed' promise. Communal acts (fights, tasks) pass no vid and keep the
+    // broadcast behavior — the whole village saw you.
+    checkPromises(kind, vid) {
       const v = this.state.village;
-      for (const [vid, p] of Object.entries(v.promises || {})) {
+      const entries = Object.entries(v.promises || {});
+      const targets = vid ? entries.filter(([id]) => id === vid) : entries;
+      for (const [pid, p] of targets) {
         if (p.kept) continue;
         const age = this.state.scholar.day - (p.day || 0);
         const match = (p.goal === 'feed' && kind === 'food') ||
@@ -3581,16 +3603,23 @@
           (p.goal === 'belong' && kind === 'social');
         if (match) {
           p.kept = true;
-          const t = v.trust || (v.trust = {});
-          t[vid] = Math.min(100, (t[vid] || 10) + 15);
-          this.say(`${this.displayName(vid)} catches your eye across the fire. You kept your word. That meant everything. (+15 trust)`);
-          this.remember(vid, 'promise_kept', p.goal);
+          // KEEPING is a real act, not words: talk:false (no 40 cap), but
+          // still progressive — devotion isn't a grind. Routes through the
+          // one resolver like every other gain.
+          if (typeof this.resolveConsequence === 'function') {
+            this.resolveConsequence(pid, { trust: 15, talk: false, temper: 'kind', name: 'promise:kept' });
+          } else {
+            const t = v.trust || (v.trust = {});
+            t[pid] = Math.min(100, (t[pid] || 10) + 15);
+          }
+          this.say(`${this.displayName(pid)} catches your eye across the fire. You kept your word. That meant everything.`);
+          this.remember(pid, 'promise_kept', p.goal);
         } else if (age >= 7) {
           p.kept = 'broken';
           const t = v.trust || (v.trust = {});
-          t[vid] = Math.max(0, (t[vid] || 10) - 15);
-          this.say(`${this.displayName(vid)} doesn't say anything. But they stopped looking at you the way they used to. Promises rot. (-15 trust)`);
-          this.remember(vid, 'promise_broken', p.goal);
+          t[pid] = Math.max(0, (t[pid] || 10) - 15);
+          this.say(`${this.displayName(pid)} doesn't say anything. But they stopped looking at you the way they used to. Promises rot. (-15 trust)`);
+          this.remember(pid, 'promise_broken', p.goal);
         }
       }
     },

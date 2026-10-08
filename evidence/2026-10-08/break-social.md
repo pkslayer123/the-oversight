@@ -131,3 +131,115 @@ removed, 1 dead legacy block flagged for coordinator approval.
 - scripts/test-social-progressive-trust-20261008.js (new)
 - scripts/test-social-menu-honesty-20261008.js (new)
 - scripts/test-social-party-betrayal-state-20261008.js (new)
+
+---
+
+# break-it: social systems — second run (2026-10-08, break-social worker)
+
+Target index 3 (continued). The earlier run hardened conversation trust
+(talk caps, progressive wiring, endConvo guards); this run attacked what was
+left. Verdict: **BROKE + FIXED — 6 fixes**, rest held.
+
+## CATCH 1 — promise trust farming (EXPLOIT, fixed)
+- `promiseHelp` (game.js) wrote `t[vid] = min(100, (t[vid]||10) + 6)` directly
+  — bypassing resolveConsequence entirely (no 40 talk cap, no progressive, no
+  mediation). Proof: trust 39 → 47, straight past the talk cap. Free +6 per
+  villager.
+- `checkPromises(kind)` fulfilled EVERY villager's matching promise on ANY
+  kind-matching action: one conversation end kept all 'belong' promises
+  (+15 each); one food handoff kept all 'feed' promises (+15 each). Proof:
+  2 belong promises kept by a third villager's conversation (+15/+15).
+- Sibling: `observe('promise')` bled +2/+1 trust to every witness via
+  applyRep's 0.6× rep→trust conversion — uncapped, unprogressive, a second
+  silent farm stacked on the +6.
+- Fixes: promiseHelp +6 through resolveConsequence (words until kept);
+  checkPromises(kind, vid) — per-person actions keep only that villager's
+  promise (communal fight/task stay broadcast); kept +15 via resolver
+  talk:false; observe('promise', {noTrust:true}) — opinions form, trust only
+  via resolver. **Wrapper hazard:** journal.js's checkPromises wrapper
+  dropped the new vid param — now forwards (kind, vid). Call sites scoped:
+  endConvo, both food handoffs, both comforts.
+- Proof: scripts/test-social-breakit-promises.js — 3/3 (was 0/3).
+
+## CATCH 2 — phantom bribe attribution (EXPLOIT, fixed)
+- `simBriberyTick` fabricated `by: villagerId` bribes when the sim picked
+  the victim's side and the victim was the player — a bribe never paid,
+  never chosen; investigate/expose then punished the player for it. Proof:
+  1 tick → 1 phantom bribe.
+- Fix: sim never attributes to the player; an NPC ally (pairAffinity > 0)
+  may act for the victim's side, else the moment passes.
+- Proof: scripts/test-social-breakit-bribes.js — 0 phantoms in 400 ticks.
+
+## CATCH 3 — victim self-exposure double-dip (HONESTY, fixed)
+- `exposeBribery` swung belief −30 (toward guilty) for ANY player briber —
+  including a player VICTIM confessing, where −30 rewarded the confession
+  with a conviction push. Proof: belief 0 → −300.
+- Fix: direction by SIDE — accused-side → −30 (fire on the accused);
+  victim-side → +25 (case tainted). Trust −25 still detonates on the briber.
+  Control: accused self-exposure still 0 → −330.
+
+## CATCH 4 — bribe price label vs actual (HONESTY, fixed)
+- Label "800 kcal of food"; payBribe's whole-unit pack spend silently charged
+  1000. Proof: labeled 800, charged 1000.
+- Fix: payBribe returns actual; fiction names it: "1000 kcal changed hands;
+  the pack wouldn't divide."
+
+## CATCH 5 — moot "everyone comes" vs 88% engine (HONESTY, fixed)
+- callMoot promised "Everyone comes" while tallyVotes seats ~88%.
+- Fix: "almost everyone comes" on both caller lines.
+
+## CATCH 6 — probation nowhere-state (SOFTLOCK, fixed)
+- `probationTick` with a vanished village cleared probation but left
+  exiled=false + stale joinedVillage + drifting=false: drift() said "you
+  have a home", petition found nothing, no village card. Proof: exact
+  nowhere-state reproduced (the earlier run's "no stranded state" missed
+  this path).
+- Fix: exile state restored (exiled/drfiting true, joinedVillage null,
+  exileStartDay=day) + journal note + honest line.
+- Proof: scripts/test-social-breakit-softlock.js — 5/5 (was 3/5).
+
+## SIBLING SWEEP
+- Comfort (carexplore.js) used flat unprogressive trust deltas — wired
+  through trustGainProgressive (real act: no talk cap, still progressive).
+- All remaining direct trust writes audited: uprising zeros (penalties),
+  death-mantle (once per death), moot bumpTrust (already progressive),
+  villageShareFood (real kcal cost), giveFood (already progressive). Clean.
+- No other wrappers drop params; no other phantom player-attributions.
+
+## HELD (attacked, resisted)
+- Empty moot: acquits cleanly, no hang, no throw.
+- Gossip loops: once-per-convo, 10 kcal/ask, finite pool, no XP;
+  spreadRumor deduped per day-part, +2 via resolver (cruel temper).
+- Mood-residue farming: 3+ exchanges + 10 kcal/ticks per convo, progressive
+  flattens (50+→+1, 90+→0).
+- Diplomat XP: 1 XP/open, 35 opens to max, needs the ability.
+- Menus: `leave` pinned on every path; zero-exchange label honest.
+
+## DEAD-CODE audit
+- All 14 social modules loaded in index.html; no dead functions in
+  @ontology provides. No Alien-Players-class findings.
+- Dead small helpers (reported, not deleted): plotAwareness,
+  recentTrauma (betrayal.js); memoryAidActive, npcVoiceFingerprint,
+  convoWant (conversation.js); talkTo shim + villageAction (kept alive by
+  old tests).
+- Built-but-unsurfaced (design backlog): hierarchy bidForPrimacy/
+  renegotiateLink/theirLeaderDied; membership formAlliance/memberBenefits/
+  pantryAccess/recognizedAbroad; party-formal clearRole/disbandParty/
+  partyCardHtml/roleBonus/splitParty.
+- Audit: scripts/test-social-breakit-deadcode.js.
+
+## REGRESSIONS
+- New: promises 3/3, bribes 3/3, softlock 5/5, honesty 1/1.
+- Existing: test-betrayal.js 80/80, test-betrayal-fixes-20261008.js 13/13,
+  test-convoturn-guard-20261006 16/16, ontology 47/47.
+- Pre-existing stale-harness failures (verified untouched by this diff):
+  test-betrayal-aftermath.js (file list lacks statusEffects.js),
+  test-convo-mood.js (lacks convo-scene.js),
+  test-convo-coherence-fixes-20261007.js (expects removed dialogueResponses).
+
+## FILES
+- src/js/game.js, src/js/conversation.js, src/js/carexplore.js,
+  src/js/journal.js, src/js/betrayal.js
+- scripts/social-breakit-harness.js (new),
+  scripts/test-social-breakit-{promises,bribes,softlock,honesty,deadcode}.js
+  (new)

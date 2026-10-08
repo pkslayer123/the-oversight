@@ -213,7 +213,7 @@
       this.say(`Just you and ${first}. You press ${taken > 1 ? taken + ' portions of' : 'some'} ${takenName} into their hands. No one sees. That matters, somehow.`);
     }
 
-    try { this.checkPromises('food'); } catch (e) {}
+    try { this.checkPromises('food', vid); } catch (e) {}
     this.socialTick(vid);
     this.tickAction(1); // a handoff is quick — the food is the real cost
     this.save();
@@ -289,13 +289,18 @@
 
     n.fear = Math.max(0, (n.fear || 0) + fearDelta);
     n.social = Math.max(0, (n.social || 0) - 15);
-    setTrust.call(this, vid, trust + trustDelta);
+    // PROGRESSIVE TRUST (break-it social 2026-10-08): the flat deltas paid
+    // full rate at any trust level — same class as the promiseHelp farm.
+    // Comfort is a real act (no 40 talk cap), but devotion isn't a grind.
+    const appliedDelta = (typeof this.trustGainProgressive === 'function' && trustDelta > 0)
+      ? this.trustGainProgressive(vid, trustDelta) : trustDelta;
+    setTrust.call(this, vid, trust + appliedDelta);
 
     this.say(line);
     this.remember(vid, 'comforted', `via ${approach} when ${mood}`);
     this.observe('comfort', { target: vid });
     this.notePlaystyle('social');
-    try { this.checkPromises('heal'); } catch (e) {}
+    try { this.checkPromises('heal', vid); } catch (e) {}
     this.socialTick(vid);
     this.tickAction(1);
     this.save();
