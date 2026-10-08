@@ -8339,6 +8339,63 @@
       this.say('Canvas up, poles set, guy-lines taut. Shelter — yours, wherever you are. (Sleep quality: tent. Pack it up to move it.)');
       return null;
     },
+    // CAMP (Steve 2026-10-07): a pitched tent + campfire can become a camp —
+    // a shitty breakable version of a haven. One camp at a time. Setting up
+    // a new camp abandons the old one. Camps break: storms, monsters, or
+    // just the world being unkind. Not safe like a haven.
+    hasCampfireNearby() {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const cell = detail[py + dy] && detail[py + dy][px + dx];
+          if (cell === 'campfire' || cell === 'fire') return true;
+        }
+      }
+      return false;
+    },
+    hasTentNearby() {
+      const detail = this.genDetail(this.map.px, this.map.py);
+      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const cell = detail[py + dy] && detail[py + dy][px + dx];
+          if (cell === 'tent') {
+            const t = this.playerTile();
+            const sec = t.secrets && t.secrets[(px + dx) + ',' + (py + dy)];
+            if (sec && sec.yours) return true;
+          }
+        }
+      }
+      return false;
+    },
+    canSetUpCamp() {
+      return this.hasTentNearby() && this.hasCampfireNearby() && !this.state.camp;
+    },
+    setUpCamp() {
+      if (this.over) return null;
+      if (this.state.camp) { this.say('You already have a camp. Pack it up or let it go before making a new one.'); return null; }
+      if (!this.hasTentNearby()) { this.say('You need a pitched tent to make camp.'); return null; }
+      if (!this.hasCampfireNearby()) { this.say('You need a campfire to make camp.'); return null; }
+      this.state.camp = {
+        px: this.map.px, py: this.map.py,
+        condition: 'shitty',
+        setUpDay: this.state.day || 0
+      };
+      this.say('Camp made. Tent up, fire going, your little patch of claimed ground. It\'s not a haven — wind, beasts, or bad luck can take it. But it\'s yours. (Sorting, resting, and camp rituals work here.)');
+      this.tickAction(30);
+      return null;
+    },
+    breakCamp(reason) {
+      if (!this.state.camp) return;
+      const r = reason || 'the world took it';
+      this.say(`Your camp is gone — ${r}. The tent's wrecked, the fire's cold. That's the deal with camps: they're not havens.`);
+      delete this.state.camp;
+    },
+    atPlayerCamp() {
+      const c = this.state.camp;
+      return c && this.map.px === c.px && this.map.py === c.py;
+    },
     // packTent: strike your pitched tent. Shelter becomes pack weight again.
     packTent(cx, cy) {
       if (this.over) return null;
@@ -8354,6 +8411,9 @@
       const tent = s.inventory.find(i => i.kind === 'tent');
       if (tent) tent.units = (tent.units || 0) + 1;
       else s.inventory.push({ kind: 'tent', name: 'Packed tent', units: 1, kg: 2.5, kcalEach: 0, spoilDay: 9999, unit: 'tent', prep: 'Pitch it on clear ground for shelter.' });
+      if (this.state.camp && this.map.px === this.state.camp.px && this.map.py === this.state.camp.py) {
+        this.breakCamp('you packed up the tent');
+      }
       this.tickAction(16);
       this.say('You strike the tent and pack it down. Shelter for later.');
       return null;
@@ -12388,6 +12448,10 @@
         if (['dirt', 'grass', 'clearing', 'path'].indexOf(cell) !== -1 &&
             (this.state.scholar.inventory || []).some(i => i.kind === 'tent' && (i.units || 0) > 0)) {
           actions.push('Pitch tent');
+        }
+        // CAMP (Steve 2026-10-07): tent + campfire nearby = can set up camp.
+        if (this.canSetUpCamp()) {
+          actions.push('Set up camp');
         }
       } else if (cell === 'wall' && t.type === 'ruin') {
         // RUIN WALLS (explorer loop 2026-10-05): dead taps were the explorer's

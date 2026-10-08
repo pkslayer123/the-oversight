@@ -732,7 +732,8 @@
 
     atCamp() {
       const v = this.state.village;
-      return v && this.map.px === (v.px ?? 4) && this.map.py === (v.py ?? 4);
+      if (v && this.map.px === (v.px ?? 4) && this.map.py === (v.py ?? 4)) return true;
+      return this.atPlayerCamp ? this.atPlayerCamp() : false;
     },
 
     // villagerKnowsPlants(vid): background knowledge — the seed that breaks

@@ -765,6 +765,13 @@
     if (label === 'Feed the fire') { Game.feedFire(cx, cy); return; }
     if (label === 'Pitch tent') { Game.pitchTent(cx, cy); return; }
     if (label === 'Pack up tent') { Game.packTent(cx, cy); return; }
+    if (label === 'Set up camp') {
+      // Steve 2026-10-07: confirm before setting up camp — it's a commitment
+      if (confirm('Set up camp here? Your tent and fire become a camp — a shitty, breakable version of a haven. You can only have one camp.')) {
+        Game.setUpCamp();
+      }
+      return;
+    }
     if (label === 'Step outside') { Game.exitBuilding(); return; }
     if (label === 'Go inside') { Game.enterBuilding(); return; }
     if (label === 'Rest' || label === 'Rest (a while)') { Game.doAction('rest'); return; }
