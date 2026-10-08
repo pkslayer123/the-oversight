@@ -1455,6 +1455,9 @@
       }
       // (If target not met, it's fine — RNG means some runs start leaner.)
       this.state.village.water = { clean: 20 + ((loc.startMod && loc.startMod.waterClean) || 0), dirty: 0 }; // liters. Clean and dirty separate.
+      // VILLAGE WOODPILE (Steve 2026-10-08): the hearth boils creek water at
+      // 4L/wood. Water duty feeds the pile; the pile feeds the hearth.
+      this.state.village.wood = 10;
       // (Player's personal 2L is set when the scholar object is built below.)
       // the roster: your pick + the 5 you didn't pick + 6 drawn from 36 background survivors.
       // twelve mouths, different every run. The unpicked generated characters live here too.
@@ -4136,20 +4139,25 @@
         }
         this.bumpTrust(vid, 2);
       } else if (a.task === 'wood') {
-        const wood = Math.max(1, Math.round(R(2, 5) * eff));
-        this.addWood(wood);
-        this.say(`🪵 ${first} hauls back ${wood} wood. The pile grows.`);
+        const wood = Math.max(2, Math.round(R(3, 6) * eff));
+        // VILLAGE WOODPILE (Steve 2026-10-08): village work stocks the village
+        // pile — the hearth boils creek water at 6L/wood. (Your own construction
+        // wood comes from your harvest, or take from the pile with takeWood.)
+        const vv = this.state.village;
+        vv.wood = (vv.wood || 0) + wood;
+        this.say(`🪵 ${first} hauls back ${wood} wood. The pile grows. (${vv.wood} logs now.)`);
         this.bumpTrust(vid, 1);
       } else if (a.task === 'water') {
-        const liters = Math.max(1, Math.round(R(2, 4) * eff));
+        const liters = Math.max(4, Math.round(R(10, 14) * eff));
         const vw = this.state.village.water = this.state.village.water || { clean: 0, dirty: 0 };
-        // the cistern has a real cap — overflow is reported, not silently kept.
+        // CREEK WATER IS RISKY (Steve 2026-10-08): the haul goes in dirty.
+        // The hearth boils it clean (6L/wood) — or the village drinks it raw.
         const cap = (typeof this.waterCapL === 'function') ? this.waterCapL() : 40;
         const room = Math.max(0, cap - ((vw.clean || 0) + (vw.dirty || 0)));
         const added = Math.min(liters, room);
-        vw.clean += added;
+        vw.dirty += added;
         this.say(added >= liters
-          ? `💧 ${first} returns with ${liters}L of clean water for the village.`
+          ? `💧 ${first} returns with ${liters}L of creek water. Risky until the hearth boils it.`
           : `💧 ${first} returns with ${liters}L, but the cistern only holds ${added}L more.`);
         this.bumpTrust(vid, 1);
       } else if (a.task === 'scout') {
@@ -6345,6 +6353,20 @@
       w.units -= n;
       if (w.units <= 0) inv.splice(inv.indexOf(w), 1);
       return true;
+    },
+    // takeWood: take logs from the village woodpile for your own work
+    // (construction, field fires). It's the village's pile — taking is honest,
+    // and the pile feeds the hearth first. 2kg per log; your back knows.
+    takeWood() {
+      const v = this.state.village;
+      if ((v.wood || 0) < 1) { this.say('The woodpile is empty. Put someone on wood duty, or cut your own.'); return null; }
+      const n = Math.min(4, v.wood);
+      if (!this.canCarry(n * 2)) { this.say(`Those logs are heavy (2kg each) — you can't carry ${n}. Drop weight first.`); return null; }
+      v.wood -= n;
+      this.addWood(n);
+      this.say(`You take ${n} log${n > 1 ? 's' : ''} from the woodpile. (${v.wood} left for the hearth.)`);
+      this.tickAction(2);
+      return null;
     },
 
     // --- TERRAFORMING: cut trees, clear brush. The land remembers what you did. ---
@@ -11978,7 +12000,9 @@
         const need = S.calories.dailyNeed(sch);
         const bits = [];
         if ((sch.kcal || 0) < need) bits.push(`the night burns ~${need} kcal and you haven't eaten enough today`);
-        if ((sch.hydration || 0) <= 35) bits.push('the night drinks 35 hydration');
+        // HYDRATION REALITY: telegraph the real burn (heat + exertion), not the old flat 35.
+        const hb = S.calories.hydrationBurn(sch, { weather: this.state.weather, dayTicks: sch.dayTicks });
+        if ((sch.hydration || 0) <= hb) bits.push(`the night drinks ~${hb} hydration${this.state.weather === 'clear' ? ' (hot day, hard work)' : ''}`);
         if (bits.length) {
           warn = (warn ? warn + ' ' : '') + `Tonight will cost you — ${bits.join(' and ')}. Eat and drink before you sleep, or the spiral starts at midnight.`;
         }
@@ -16841,7 +16865,11 @@
           }
           v.health[id] = Math.max(0, curH - dmgTaken);
           if (v.health[id] <= 0) {
-            v.roster = v.roster.filter(rid => rid !== id);
+            // DEAD IS DEAD (2026-10-08): wound deaths route through the real
+            // death pipeline — corpse, gossip, dead mark. No silent roster removals.
+            try { if (this.registerDeath) this.registerDeath({ kind: 'villager', villagerId: id, name: person.name, cause: 'a wound that wouldn\'t close', killerId: null }); } catch (e) {}
+            try { if (this.removeVillager) this.removeVillager(id, 'killed'); } catch (e) {}
+            try { if (this.seedGossip) this.seedGossip('death', { who: id }, []); } catch (e) {}
             if (present) {
               this.say(`💀 ${person.name} is gone. The wound was too much. The village is ${v.roster.length} now.`);
             } else {
@@ -18023,7 +18051,11 @@
           const cur = v.health[rid] !== undefined ? v.health[rid] : 100;
           v.health[rid] = Math.max(0, cur - 5);
           if (v.health[rid] <= 0) {
-            v.roster = v.roster.filter(r => r !== rid);
+            // DEAD IS DEAD (2026-10-08): starvation deaths route through the
+            // real death pipeline — corpse, gossip, dead mark.
+            try { if (this.registerDeath) this.registerDeath({ kind: 'villager', villagerId: rid, name: this.displayName(rid), cause: 'starvation', killerId: null }); } catch (e) {}
+            try { if (this.removeVillager) this.removeVillager(rid, 'killed'); } catch (e) {}
+            try { if (this.seedGossip) this.seedGossip('death', { who: rid }, []); } catch (e) {}
             this.say(`💀 ${this.displayName(rid)} starved. Slowly. The village is ${v.roster.length} now.`);
             delete v.health[rid];
           }
@@ -18049,6 +18081,64 @@
       } else {
         if (v.hungryDays) this.say('Haven eats again. The hollow look fades.');
         v.hungryDays = 0;
+      }
+    },
+
+    // villageDrinks: VILLAGERS DRINK LIKE PEOPLE (Steve 2026-10-08). Every
+    // villager draws ~2L/day from the cistern — clean first, dirty if that's
+    // all there is. No water at all: thirst costs health, honestly. (Before:
+    // villagers never drank; the 20L cistern barely moved and dirty water was
+    // nearly unreachable.)
+    villageDrinks() {
+      const v = this.state.village;
+      if (!v || !v.roster) return;
+      const vw = v.water = v.water || { clean: 0, dirty: 0 };
+      v.health = v.health || {};
+      for (const id of (v.roster || []).slice()) {
+        if (id === this.villagerId) continue; // you drink your own bottles
+        if ((this.vpOf(id) || {}).dead || !(v.roster || []).includes(id)) continue;
+        let need = 2;
+        const takeClean = Math.min(need, Math.floor(vw.clean || 0));
+        vw.clean = Math.max(0, (vw.clean || 0) - takeClean); need -= takeClean;
+        const takeDirty = Math.min(need, Math.floor(vw.dirty || 0));
+        vw.dirty = Math.max(0, (vw.dirty || 0) - takeDirty); need -= takeDirty;
+        if (takeDirty > 0) v.drankDirty = true; // the sickness tick reads this
+        if (need > 0) {
+          const cur = v.health[id] !== undefined ? v.health[id] : 100;
+          v.health[id] = Math.max(0, cur - 5);
+          if (v.health[id] <= 0) {
+            // DEAD IS DEAD: thirst kills through the real pipeline.
+            try { if (this.registerDeath) this.registerDeath({ kind: 'villager', villagerId: id, name: this.displayName(id), cause: 'thirst', killerId: null }); } catch (e) {}
+            try { if (this.removeVillager) this.removeVillager(id, 'killed'); } catch (e) {}
+            try { if (this.seedGossip) this.seedGossip('death', { who: id }, []); } catch (e) {}
+            this.say(`💀 ${this.displayName(id)} died of thirst. There was nothing to drink.`);
+          }
+        }
+      }
+    },
+
+    // hearthBoil: the village hearth tends the cistern. Dirty creek water
+    // becomes clean at 6L per wood from the village woodpile. No wood — no
+    // boiling — and the village drinks dirty. (The hearth itself stays lit;
+    // Haven's heart doesn't go out. Boiling is the work.)
+    hearthBoil() {
+      const v = this.state.village;
+      if (!v) return;
+      const vw = v.water = v.water || { clean: 0, dirty: 0 };
+      const dirty = Math.floor(vw.dirty || 0);
+      if (dirty <= 0) return;
+      const wood = v.wood || 0;
+      const canBoil = Math.min(dirty, wood * 6);
+      if (canBoil <= 0) {
+        this.say(`💧 The cistern holds ${dirty}L of creek water and no wood to boil it. Someone's drinking dirty tonight.`);
+        return;
+      }
+      const woodUsed = Math.ceil(canBoil / 6);
+      v.wood = Math.max(0, wood - woodUsed);
+      vw.dirty = Math.max(0, (vw.dirty || 0) - canBoil);
+      vw.clean = (vw.clean || 0) + canBoil;
+      if (canBoil < dirty) {
+        this.say(`💧 The hearth boiled ${canBoil}L clean (${woodUsed} wood). ${dirty - canBoil}L of creek water is still risky.`);
       }
     },
 
@@ -18166,6 +18256,14 @@
         const s = v.sick[vid];
         s.daysLeft -= 1;
         try { this.hurtVillager(vid, 2 + (s.severity || 1) * 2, 'sickness'); } catch (e) {}
+        // DEAD IS DEAD (2026-10-08): hurtVillager now routes lethal sickness
+        // through the real death pipeline. Clean up the sick record — no
+        // "on the mend" for a corpse.
+        if ((this.vpOf(vid) || {}).dead || !(v.roster || []).includes(vid)) {
+          delete v.sick[vid];
+          this.say(`💀 ${nm(vid)} succumbed to the ${s.name}. The village is ${v.roster.length} now.`);
+          continue;
+        }
         if (s.daysLeft <= 0) {
           delete v.sick[vid];
           this.say(`🤒 ${nm(vid)} is on the mend — the ${s.name} broke.`);
@@ -18207,7 +18305,10 @@
       } catch (e) {}
       if (!candidates.length) return;
       const vw = v.water || { clean: 0, dirty: 0 };
-      const drinksDirty = (vw.clean || 0) <= 0 && (vw.dirty || 0) > 0;
+      // DIRTY WATER (Steve 2026-10-08): drankDirty is set by villageDrinks when
+      // anyone drinks from the dirty side — the cistern may be empty after.
+      const drinksDirty = !!v.drankDirty || ((vw.clean || 0) <= 0 && (vw.dirty || 0) > 0);
+      v.drankDirty = false; // consumed by this tick
       for (const vid of candidates) {
         let vector = null, severity = 1;
         const hp = (v.health && v.health[vid] !== undefined) ? v.health[vid] : 100;
@@ -18355,7 +18456,7 @@
           this.say('Your gut-tenant worked overnight: 1L of water is clean now. It hums, satisfied. (symbiote)');
         }
       }
-      const res = S.calories.resolveDay(scholar, this.state.village);
+      const res = S.calories.resolveDay(scholar, this.state.village, { weather: this.state.weather, dayTicks: scholar.dayTicks });
       res.warnings.forEach(w => this.say('⚠ ' + w));
       // HONEST MIDNIGHT (survivalist loop 2026-10-07): the basal burn is the
       // single biggest daily number — it must not vanish silently. (Steve's
@@ -18392,6 +18493,10 @@
       try { if (this.playerAtHaven()) scholar.lastHavenDay = scholar.day || 1; } catch (e) {}
       this.villageLives();
       this.villageEats();
+      // WATER REALITY (Steve 2026-10-08): the hearth boils the day's haul,
+      // then everyone drinks — villagers drink like people now.
+      try { this.hearthBoil(); } catch (e) {}
+      try { this.villageDrinks(); } catch (e) {}
       // PARITY (2026-10-08): villagers get sick like you do — same vectors.
       try { this.villageSicknessTick(); } catch (e) {}
       // ECOLOGY (Steve 2026-10-07): wildlife lives whether you're watching or not

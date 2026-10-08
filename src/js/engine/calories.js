@@ -50,13 +50,27 @@
     return need;
   }
 
+  // HYDRATION REALITY (Steve 2026-10-08): the day drinks too — heat and work.
+  // Night 35 + day 15 base; clear (sunny) days sweat 1.5x, cold days 0.75x;
+  // exertion costs ~1 per 32-tick batch (a full active day: -16). A hard sunny
+  // day runs ~70+ hydration (~1.5L); an idle cold day ~45.
+  function hydrationBurn(scholar, opts) {
+    opts = opts || {};
+    let dayBurn = 15;
+    if (opts.weather === 'clear') dayBurn = Math.round(dayBurn * 1.5);
+    else if (opts.weather === 'cold') dayBurn = Math.round(dayBurn * 0.75);
+    const exert = Math.floor(((opts.dayTicks) || 0) / 32);
+    return 35 + dayBurn + exert;
+  }
+
   // Apply one day's metabolic reality. Returns {ok, warnings[]}.
   // Warnings telegraph the spiral BEFORE it arrives (design rule).
-  function resolveDay(scholar, village) {
+  // opts: { weather, dayTicks } — heat and exertion drink too (Steve 2026-10-08).
+  function resolveDay(scholar, village, opts) {
     const warnings = [];
     const need = dailyNeed(scholar);
     scholar.kcal -= need;
-    scholar.hydration -= 35;
+    scholar.hydration -= hydrationBurn(scholar, opts);
     if (scholar.kcal < 0) {
       const deficit = -scholar.kcal;
       scholar.health -= Math.min(25, 2 + deficit / 150);
@@ -81,5 +95,5 @@
   }
 
   global.Scattering = global.Scattering || {};
-  global.Scattering.calories = { BASE_BMR, ACTIVE_DAY, ACTION_COSTS, burdenTier, dailyNeed, resolveDay };
+  global.Scattering.calories = { BASE_BMR, ACTIVE_DAY, ACTION_COSTS, burdenTier, dailyNeed, hydrationBurn, resolveDay };
 })(typeof window !== 'undefined' ? window : globalThis);

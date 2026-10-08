@@ -1295,6 +1295,8 @@
           if (risky && hasFilter) actions.push([`Filter ${risky}L water`, () => { Game.filterWater(); refresh(); }]);
           // Rake charcoal from the ash bed (water filters drink it up).
           actions.push(['Rake charcoal', () => { Game.gatherCharcoal(); refresh(); }]);
+          // Village woodpile: take logs for your own work (the pile feeds the hearth first).
+          if ((Game.state.village.wood || 0) > 0) actions.push(['Take wood (2kg/log)', () => { Game.takeWood(); refresh(); }]);
         } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
           // BUILDING ROOMS: Search = examine + loot in one. No two-step.
           if (!sec || !sec.searched) actions.push(['Search', () => Game.searchRoom(cx, cy)]);
