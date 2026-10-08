@@ -16671,6 +16671,11 @@
         // The hero card comes at unlock; this is the shimmer before.
         try { this.drama('synergyShimmer'); } catch (e) {}
         this.say(`Something wants to happen when you do... whatever you just did. (${n}/3)`);
+        // HINT SPOKEN (2026-10-07): attempts 1-2 reliably hint at what's
+        // possible without saying how — the hint text belongs in the log,
+        // not just the pack panel. The seenKey above already stops re-speak
+        // spam on repeated checks.
+        this.say(dm.hint);
       }
     },
 
