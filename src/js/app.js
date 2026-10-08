@@ -3468,32 +3468,6 @@
       pg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       p.connect(pg); pg.connect(sfxBus); p.start(t); p.stop(t + dur + 0.05);
     }
-    function swarmFilm() {
-      // FILMING: tiny shutter clicks, irregular, creepy — and a slow
-      // zoom-lens whirr underneath: it's FOCUSING on you, not just watching.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      // zoom whirr: bandpassed noise, pitch slowly rising — the lens hunting
-      const nz = noise(0.9), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.Q.value = 5;
-        nf.frequency.setValueAtTime(500, t);
-        nf.frequency.exponentialRampToValueAtTime(1100, t + 0.9);
-        ng.gain.setValueAtTime(0.0001, t);
-        ng.gain.exponentialRampToValueAtTime(0.07, t + 0.3);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t); nz.stop(t + 0.95);
-      }
-      for (let i = 0; i < 5; i++) {
-        const dt = t + Math.random() * 0.8;
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square'; o.frequency.value = 2500 + Math.random() * 1000;
-        g.gain.setValueAtTime(0.08, dt);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.05);
-        o.connect(g); g.connect(sfxBus); o.start(dt); o.stop(dt + 0.06);
-      }
-    }
     function swarmBuild() {
       // FLASH BUILDING: clicks quicken, pitch rises. Freaky: it's excited —
       // an inharmonic shimmer rises with the clicks and a sub pulse quickens
@@ -4752,53 +4726,6 @@
         ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
         nz.start(t); nz.stop(t + dur + 0.05);
-      }
-    }
-    function hypeEncourage(data) {
-      // escalating shout: each beat louder. n = turnsLeft (3,2,1).
-      // (deepened Steve 2026-10-06): the hype beast doesn't shout alone —
-      // it's a detuned rally-choir, three square voices with one flat, and
-      // the crowd-noise swells under it, hungry. Encouragement as menace.
-      if (!ensure()) return;
-      const n = (data && data.n) || 2;
-      const t = ctx.currentTime, dur = 0.45;
-      const vol = n === 3 ? 0.18 : n === 2 ? 0.26 : 0.36;
-      const base = n === 3 ? 300 : n === 2 ? 380 : 480;
-      // the choir: three voices, one of them flat — it never quite harmonizes
-      const choir = [];
-      [1, 1.009, 0.971].forEach((det, i) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square';
-        o.frequency.setValueAtTime(base * det, t);
-        o.frequency.linearRampToValueAtTime(base * 1.25 * det, t + dur);
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(vol * (i === 0 ? 0.6 : 0.3), t + 0.06);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        const f = ctx.createBiquadFilter();
-        f.type = 'lowpass'; f.frequency.value = 1800;
-        o.connect(f); f.connect(g); g.connect(sfxBus);
-        o.start(t); o.stop(t + dur + 0.05);
-        choir.push(o);
-      });
-      // the wobble: a 5.5Hz vibrato across the whole choir — the hype can't
-      // hold a steady pitch, it's shaking with eagerness
-      const vib = ctx.createOscillator(), vg = ctx.createGain();
-      vib.type = 'sine'; vib.frequency.value = 5.5;
-      vg.gain.value = base * 0.02;
-      vib.connect(vg);
-      choir.forEach(o => vg.connect(o.frequency));
-      vib.start(t); vib.stop(t + dur + 0.05);
-      // the hungry crowd: noise swelling under the shout
-      const nz = noise(dur + 0.1), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-      if (nz) {
-        nf.type = 'bandpass'; nf.Q.value = 0.7;
-        nf.frequency.setValueAtTime(700, t);
-        nf.frequency.exponentialRampToValueAtTime(1400, t + dur);
-        ng.gain.setValueAtTime(0.0001, t);
-        ng.gain.exponentialRampToValueAtTime(vol * 0.35, t + dur * 0.7);
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
-        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
-        nz.start(t); nz.stop(t + dur + 0.1);
       }
     }
     function hypeDetonate() {
@@ -6781,91 +6708,6 @@
       svg.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
       sv.connect(svf); svf.connect(svg); svg.connect(sfxBus);
       sv.start(t); sv.stop(t + 0.9);
-    }
-    function swarmScatter() {
-      // SCATTERED: clicks fly apart — dopplering in all directions.
-      // (deepened Steve 2026-10-06): each click now pans across the field,
-      // and a dying whirr trails the scatter — the swarm's engine spinning
-      // down as it breaks.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      for (let i = 0; i < 8; i++) {
-        const dt = t + Math.random() * 0.4;
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square';
-        o.frequency.setValueAtTime(2500 + Math.random() * 1500, dt);
-        o.frequency.exponentialRampToValueAtTime(4000, dt + 0.1); // fleeing upward
-        g.gain.setValueAtTime(0.07, dt);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.12);
-        o.connect(g);
-        if (ctx.createStereoPanner) { // each click flies its own direction
-          const p = ctx.createStereoPanner();
-          p.pan.setValueAtTime(Math.random() * 2 - 1, dt);
-          g.connect(p); p.connect(sfxBus);
-        } else g.connect(sfxBus);
-        o.start(dt); o.stop(dt + 0.14);
-      }
-      // the whirr winding down behind them
-      const w = ctx.createOscillator(), wg = ctx.createGain();
-      w.type = 'sawtooth';
-      w.frequency.setValueAtTime(900, t);
-      w.frequency.exponentialRampToValueAtTime(140, t + 0.7);
-      const wf = ctx.createBiquadFilter(); wf.type = 'lowpass'; wf.frequency.value = 1200;
-      wg.gain.setValueAtTime(0.09, t);
-      wg.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
-      w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
-      w.start(t); w.stop(t + 0.8);
-      const w2 = ctx.createOscillator(), wg2 = ctx.createGain(); // the twin, 1% sharp
-      w2.type = 'sawtooth';
-      w2.frequency.setValueAtTime(909, t);
-      w2.frequency.exponentialRampToValueAtTime(143, t + 0.7);
-      wg2.gain.setValueAtTime(0.06, t);
-      wg2.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
-      w2.connect(wf); wf.connect(wg2); wg2.connect(sfxBus);
-      w2.start(t); w2.stop(t + 0.8);
-    }
-    function swarmShutters(d) {
-      // SHUTTERS: irregular tiny clicks — it's filming you.
-      // (deepened Steve 2026-10-06): the { urgency } the game passes is now
-      // heard — fewer turns left, faster and sharper the shutters. A film
-      // whir rides underneath, spooling up as the engagement collapses.
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      const urg = Math.max(1, Math.min(6, (d && d.urgency) || 1));
-      const n = 3 + urg;                          // more clicks as it counts down
-      const base = 0.12 / Math.sqrt(urg);         // rhythm tightens
-      for (let i = 0; i < n; i++) {
-        const dt = t + i * (base + Math.random() * 0.06); // still irregular
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'square'; o.frequency.value = 3400 + urg * 200; // pitch climbs
-        g.gain.setValueAtTime(0.06 + urg * 0.008, dt);
-        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.03);
-        const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
-        o.connect(f); f.connect(g); g.connect(sfxBus);
-        o.start(dt); o.stop(dt + 0.04);
-      }
-      // film whir: a spool spinning up, faster and thinner with urgency
-      const wdur = base * n + 0.3;
-      const w = ctx.createOscillator(), wg = ctx.createGain();
-      w.type = 'sawtooth';
-      w.frequency.setValueAtTime(140 + urg * 30, t);
-      w.frequency.exponentialRampToValueAtTime(340 + urg * 60, t + wdur);
-      const wf = ctx.createBiquadFilter(); wf.type = 'bandpass'; wf.frequency.value = 900; wf.Q.value = 2;
-      wg.gain.setValueAtTime(0.0001, t);
-      wg.gain.exponentialRampToValueAtTime(0.06, t + 0.15);
-      wg.gain.exponentialRampToValueAtTime(0.0001, t + wdur);
-      w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
-      w.start(t); w.stop(t + wdur);
-      // the whirr's twin, 1% sharp: the spool is coming apart as it spins
-      const w2 = ctx.createOscillator(), wg2 = ctx.createGain();
-      w2.type = 'sawtooth';
-      w2.frequency.setValueAtTime((140 + urg * 30) * 1.01, t);
-      w2.frequency.exponentialRampToValueAtTime((340 + urg * 60) * 1.01, t + wdur);
-      wg2.gain.setValueAtTime(0.0001, t);
-      wg2.gain.exponentialRampToValueAtTime(0.04, t + 0.15);
-      wg2.gain.exponentialRampToValueAtTime(0.0001, t + wdur);
-      w2.connect(wf); wf.connect(wg2); wg2.connect(sfxBus);
-      w2.start(t); w2.stop(t + wdur);
     }
     // ---- SYSTEM EVENTS ----
     function confront() {
@@ -10667,7 +10509,6 @@
       droneCount(opts) { droneCount(opts); },
       droneBeam() { droneBeam(); },
       droneRecalc() { droneRecalc(); },
-      swarmFilm() { swarmFilm(); },
       swarmBuild() { swarmBuild(); },
       swarmFlash() { swarmFlash(); },
       understudyCopy() { understudyCopy(); },
@@ -10730,7 +10571,6 @@
       projectorPull() { projectorPull(); },
       projectorFire() { projectorFire(); },
       hypeInflate() { hypeInflate(); },
-      hypeEncourage(d) { hypeEncourage(d); },
       hypeDetonate() { hypeDetonate(); },
       hypeDeflate() { hypeDeflate(); },
       holdMusic(d) { holdMusic(d); }, // (Steve 2026-10-06): broken/watching moods
@@ -10792,8 +10632,6 @@
       // Wave 2 gaps
       droneCorrect() { droneCorrect(); },
       swarmEscalate() { swarmEscalate(); },
-      swarmScatter() { swarmScatter(); },
-      swarmShutters(d) { swarmShutters(d); }, // (Steve 2026-10-06): urgency now heard
       // delegateCircle/managerCircle removed 2026-10-08 — retired delegate_beast/manager monster ids; zero call sites (Steve 2026-10-08).
       // System events
       confront() { confront(); },
