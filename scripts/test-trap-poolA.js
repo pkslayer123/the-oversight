@@ -97,6 +97,23 @@ function mulberry32(seed) {
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
   const s = Game.state.scholar;
+  // ECOLOGY FIXTURE (2026-10-08): traps hunt the tile's real wildlife now.
+  // Stock the test tile with every catchable species (deep counts — the
+  // distribution section runs 2000 dawn-checks per trap with no regrowth).
+  Game.playerTile().wildlife = {
+    cottontail_rabbit: 4000, gray_squirrel: 4000, opossum: 4000, wild_turkey: 4000,
+    white_tailed_deer: 4000, raccoon: 4000, muskrat: 4000, gray_fox: 4000,
+    striped_skunk: 4000, timber_rattlesnake: 4000, groundhog: 4000,
+    north_american_beaver: 4000, bobcat: 4000, nine_banded_armadillo: 4000,
+    crayfish: 4000, snapping_turtle: 4000,
+  };
+  // fish_weir is a water trap (2026-10-08: setTrap refuses it on dry land) —
+  // camp its setTrap calls at the creek, then restore the tile.
+  const withWaterFor = (id, fn) => {
+    const pt = Game.playerTile(); const was = pt.type;
+    if (id === 'fish_weir') pt.type = 'creek';
+    try { return fn(); } finally { pt.type = was; }
+  };
 
   const logLines = () => Game.log.slice();
   const newLines = (before) => Game.log.slice(before);
@@ -119,7 +136,7 @@ function mulberry32(seed) {
     let made = false;
     for (let i = 0; i < 10 && !made; i++) made = !!Game.craft(id);
     ok(`craft ${id} (L3)`, made);
-    ok(`set ${id}`, !!Game.setTrap(id));
+    ok(`set ${id}`, !!withWaterFor(id, () => Game.setTrap(id)));
   }
 
   // --- seeded distribution check: drive checkTraps directly ---
@@ -184,7 +201,7 @@ function mulberry32(seed) {
         Game.tileAt(Game.map.px, Game.map.py).traps.some(t => t.recipeId === id);
       if (!has) {
         for (let i = 0; i < 6 && !Game.craft(id); i++) {}
-        Game.setTrap(id);
+        withWaterFor(id, () => Game.setTrap(id));
       }
     }
   }

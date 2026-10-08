@@ -308,7 +308,7 @@ function waterGrid() {
   {
     const s = freshGame();
     const realPT = Game.playerTile, realAL = Game.abilityLevel, realRandom = Math.random;
-    Game.playerTile = () => ({ type: 'creek' });
+    Game.playerTile = () => ({ type: 'creek', wildlife: { creek_chub: 5 } }); // ECOLOGY FIXTURE (2026-10-08): spawns read real wildlife
     Game.abilityLevel = () => 3;
     const seq = [0.5, 0.1, 0.0]; // no spawn, hint fires, pick candidates[0]
     Math.random = () => seq.shift() ?? 0.9;
@@ -323,7 +323,7 @@ function waterGrid() {
     const s = freshGame();
     know(s, 'creek_chub');
     const realPT = Game.playerTile, realAL = Game.abilityLevel, realRandom = Math.random;
-    Game.playerTile = () => ({ type: 'creek' });
+    Game.playerTile = () => ({ type: 'creek', wildlife: { creek_chub: 5 } }); // ECOLOGY FIXTURE (2026-10-08): spawns read real wildlife
     Game.abilityLevel = () => 3;
     const seq = [0.5, 0.1, 0.0];
     Math.random = () => seq.shift() ?? 0.9;

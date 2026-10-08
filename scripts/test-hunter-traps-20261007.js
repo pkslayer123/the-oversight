@@ -56,8 +56,11 @@ function withRand(seq, fn) { let i = 0; Math.random = () => (i < seq.length ? se
   Game.learnRecipe('box_trap', 3);
   ok('box trap crafts', craftOk('box_trap'));
   ok('box trap sets', !!Game.setTrap('box_trap')); say();
-  // seq: trapChance 0.1 (<0.4 catch), catch index 0.47 -> floor(0.47*15)=7 striped_skunk
-  withRand([0.1, 0.47], () => { Game.log.length = 0; Game.checkTraps(); });
+  // ECOLOGY FIXTURE (2026-10-08): traps hunt real wildlife — stock the tile
+  // with every box-trap species so the forced catch can land on the skunk.
+  Game.playerTile().wildlife = { raccoon: 4, opossum: 4, muskrat: 4, gray_fox: 2, striped_skunk: 3, timber_rattlesnake: 2, groundhog: 2, north_american_beaver: 2, bobcat: 2, nine_banded_armadillo: 4 };
+  // seq: trapChance 0.1 (<0.4 catch), catch index 0.53 -> floor(0.53*14)=7 striped_skunk (14-entry list)
+  withRand([0.1, 0.53], () => { Game.log.length = 0; Game.checkTraps(); });
   const t1 = say();
   ok('skunk catch named', /Striped Skunk/i.test(t1));
   ok('careful line: upwind + long stick', /upwind/i.test(t1) && /long stick/i.test(t1));
@@ -69,7 +72,8 @@ function withRand(seq, fn) { let i = 0; Math.random = () => (i < seq.length ? se
   Game.learnRecipe('box_trap', 2);
   ok('box trap crafts (careless)', craftOk('box_trap'));
   ok('box trap sets (careless)', !!Game.setTrap('box_trap')); say();
-  withRand([0.1, 0.47], () => { Game.log.length = 0; Game.checkTraps(); });
+  Game.playerTile().wildlife = { raccoon: 4, opossum: 4, muskrat: 4, gray_fox: 2, striped_skunk: 3, timber_rattlesnake: 2, groundhog: 2, north_american_beaver: 2, bobcat: 2, nine_banded_armadillo: 4 };
+  withRand([0.1, 0.53], () => { Game.log.length = 0; Game.checkTraps(); });
   const t1b = say();
   ok('careless scent +5', s.skunkScent === 5);
   ok('careless line: fumble', /fumble/i.test(t1b));
@@ -79,7 +83,8 @@ function withRand(seq, fn) { let i = 0; Math.random = () => (i < seq.length ? se
   Game.learnRecipe('snare', 3);
   ok('snare crafts', craftOk('snare'));
   ok('snare sets', !!Game.setTrap('snare')); say();
-  // snare catches: [rabbit, squirrel, opossum, chipmunk]; 0.4 -> index 1 = gray_squirrel
+  Game.playerTile().wildlife = { cottontail_rabbit: 4, gray_squirrel: 4, opossum: 4 };
+  // snare catches: [rabbit, squirrel, opossum]; 0.4 -> index 1 = gray_squirrel
   withRand([0.1, 0.4], () => { Game.log.length = 0; Game.checkTraps(); });
   const t1c = say();
   ok('squirrel catch named', /Gray Squirrel/i.test(t1c));

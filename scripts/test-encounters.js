@@ -75,6 +75,9 @@ function putAnimal(s, id, mx, my) {
     // spawn message gated
     const s = freshGame();
     Game.playerTile().type = 'meadow';
+    // ECOLOGY FIXTURE (2026-10-08): spawns draw from the tile's real wildlife —
+    // stock meadow game so the spawn-message assertions measure gating, not ecology.
+    { const wl = {}; for (const a of Game.data.animals) if ((a.biomes || []).includes('meadow')) wl[a.id] = 30; Game.playerTile().wildlife = wl; }
     Game.log = [];
     // force spawn: clear animal, rig RNG via many tries
     let spawned = null;

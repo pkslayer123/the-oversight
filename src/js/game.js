@@ -2905,6 +2905,7 @@
 
     // SET TRAP: place a snare/deadfall. Check it later.
     setTrap(recipeId) {
+      if (this.over) return null;
       const _recipe = this.data.recipes.find(r => r.id === recipeId);
       // GUARD (hunter loop 2026-10-05): only trap recipes can be set. Durable
       // crafts (stone knife) live in the pack, never in tools — but if one
@@ -2924,12 +2925,30 @@
       const recipe = _recipe;
       // traps go in the current tile's detail (at your position)
       const t = this.playerTile();
+      // WATER TRAPS (hunter loop 2026-10-08): a minnow trap / fish weir is a
+      // water tool — "minnows swim in". Setting one on dry land used to catch
+      // creek chub in a meadow. Refuse honestly, like setNet does.
+      if ((recipeId === 'minnow_trap' || recipeId === 'fish_weir') &&
+          t.type !== 'creek' && t.type !== 'wetland' && t.type !== 'pond') {
+        this.say(`A ${recipe.name} needs water — a creek, wetland, or pond. Minnows don't swim through meadows.`);
+        return null;
+      }
       t.traps = t.traps || [];
       const mx = this.state.scholar.mx ?? 4, my = this.state.scholar.my ?? 4;
       t.traps.push({ recipeId, mx, my, setDay: this.state.scholar.day, uses: tool.uses });
       // remove from tools (it's set now)
       this.state.scholar.tools = this.state.scholar.tools.filter(x => x !== tool);
-      this.say(`You set a ${recipe.name} here. Check it tomorrow.`);
+      // SETTING COSTS TIME (hunter loop 2026-10-08): setting traps was free —
+      // the pit recipe's own text says "labor to dig". Digging a pit is a big
+      // job (96 ticks, about a fifth of the day); staking a snare is quick
+      // (16). Expensive buttons name their cost.
+      if (recipeId === 'pit_trap') {
+        this.say(`You dig the pit — hard labor, most of a day-part, stakes at the bottom, brushed over with leaves. Mark it well. Check it tomorrow.`);
+        this.tickAction(96);
+      } else {
+        this.say(`You set a ${recipe.name} here. Check it tomorrow.`);
+        this.tickAction(16);
+      }
       return true;
     },
 
@@ -2956,6 +2975,21 @@
           // promise. Only skip traps whose setDay is in the future (defensive).
           if (trap.setDay > this.state.scholar.day) continue;
           const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
+          // ECOLOGY (hunter loop 2026-10-08): traps hunt the tile's REAL
+          // wildlife — the simEcology populations — not conjured infinity.
+          // A trap only catches species actually present on its tile; each
+          // catch removes one animal. Empty woods = a quiet line. This is the
+          // regrowth rule made real: hunting depletes, absence lets it recover.
+          const _wl = t.wildlife || this.backfillWildlife(t, x, y);
+          const eligible = (recipe.catches || []).filter(sid => (_wl[sid] || 0) > 0);
+          if (!eligible.length) {
+            // honest quiet: said once per trap, not every dawn.
+            if (!trap.quietTold) {
+              trap.quietTold = true;
+              this.say(`Your ${recipe.name} ${dirPhrase(x, y)} sits empty — nothing it can catch is moving on this ground. Try another tile.`);
+            }
+            continue;
+          }
           // 40% chance per day (if the animal is here).
           // poisoner/scarecrow: better bait, better lies. Multiplies the odds.
           // BINOCULARS (Steve 2026-10-05): "sometimes it's dinner." You spot
@@ -2963,7 +2997,9 @@
           let trapChance = Math.min(0.95, this.modTarget('hunt.trap_catch', 0.4));
           if (this.hasItem('binoculars')) trapChance = Math.min(0.95, trapChance + 0.15);
           if (Math.random() < trapChance) {
-            const catchId = recipe.catches[Math.floor(Math.random() * recipe.catches.length)];
+            const catchId = eligible[Math.floor(Math.random() * eligible.length)];
+            // the catch leaves the tile population — hunted out is hunted out.
+            _wl[catchId]--; if (_wl[catchId] <= 0) delete _wl[catchId];
             const animal = this.data.animals.find(a => a.id === catchId);
             // FOOD REALITY: trapped game is a carcass too — clean it, don't just eat it.
             this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
@@ -3011,26 +3047,48 @@
       }
       t.nets = t.nets || [];
       const mx = this.state.scholar.mx ?? 4, my = this.state.scholar.my ?? 4;
-      t.nets.push({ mx, my, setDay: this.state.scholar.day });
+      // NETS WEAR (hunter loop 2026-10-08): a gill net used to fish forever —
+      // the one trap with no uses. Tackle frays: 12 catches, like any good net.
+      t.nets.push({ mx, my, setDay: this.state.scholar.day, uses: 12 });
       this.consumeItem('gill_net', 1);
       this.say('You stake the gill net across the current. Check it tomorrow.');
       return this.tickAction(16) || this.status();
     },
     checkNets() {
+      // the net fishes real fish: creek chub and bluegill, the tile's own stock.
+      const FISH_IDS = ['creek_chub', 'bluegill'];
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t.nets || !t.nets.length) continue;
         for (const net of [...t.nets]) {
           if (net.setDay > this.state.scholar.day) continue;
+          // ECOLOGY (hunter loop 2026-10-08): the net fishes the tile's real
+          // fish population — fished-out water stays fished out until the
+          // simEcology regrowth refills it. And nets fray (see setNet).
+          // ponds read as creek for fish (no pond biome in the animal data)
+          const _wl = t.wildlife || this.backfillWildlife(t, x, y, t.type === 'pond' ? 'creek' : t.type);
+          const fishHere = FISH_IDS.filter(id => (_wl[id] || 0) > 0);
+          if (!fishHere.length) continue;
+          if (net.uses == null) net.uses = 12; // backfill pre-fix nets
           if (Math.random() < 0.35) {
+            const fid = fishHere[Math.floor(Math.random() * fishHere.length)];
+            _wl[fid]--; if (_wl[fid] <= 0) delete _wl[fid];
             const kcal = 300 + Math.floor(Math.random() * 300);
             const animal = (this.data.animals || []).find(a => a.id === 'fish') || { id: 'fish', name: 'fish', calories: kcal };
             this.state.scholar.inventory.push(this.foodCarcass(animal, kcal, this.state.scholar.day, 'netted'));
             const px = this.map.px, py = this.map.py;
             const where = (x === px && y === py) ? 'here' : 'elsewhere';
             this.say(`Your gill net ${where} caught a fish! About ${kcal} kcal — clean it quickly (knife).`);
+            net.uses -= 1;
+            if (net.uses <= 0) {
+              this.say('The gill net is torn to shreds — it fished its last. You haul in the rags.');
+              t.nets = t.nets.filter(n => n !== net);
+            } else {
+              net.setDay = this.state.scholar.day; // check again tomorrow
+            }
+          } else {
+            net.setDay = this.state.scholar.day; // check again tomorrow
           }
-          net.setDay = this.state.scholar.day; // check again tomorrow
         }
       }
     },
@@ -5780,6 +5838,15 @@
       }
     },
 
+    // WILDLIFE BACKFILL (hunter loop 2026-10-08): tiles predating the ecology
+    // sim get a deterministic population from the world seed — never the
+    // shared Math.random, so stubbed test sequences are left undisturbed.
+    backfillWildlife(t, x, y, biome) {
+      if (!t || t.wildlife) return t ? t.wildlife : {};
+      const seed = ((((this.map && this.map.worldSeed) || 1) + (x || 0) * 31 + (y || 0) * 101) >>> 0) || 1;
+      t.wildlife = this.initTileWildlife ? this.initTileWildlife(biome || t.type, this.mulberry32(seed)) : {};
+      return t.wildlife;
+    },
     // initTileWildlife: what animals live on this tile? Based on biome.
     // Returns { speciesId: count }. Counts are small (1-4) — these are the
     // animals actually present, not an abstract abundance.
@@ -6013,7 +6080,9 @@
       // watching or not. Hunting depletes; absence lets them recover.
       for (let wy = 0; wy < 9; wy++) for (let wx = 0; wx < 9; wx++) {
         const t = tiles[wy][wx];
-        t.wildlife = this.initTileWildlife(t.type, R);
+        // ponds read as creek for wildlife (no pond biome in the animal data —
+        // otherwise pond nets are silently, permanently fishless)
+        t.wildlife = this.initTileWildlife(t.type === 'pond' ? 'creek' : t.type, R);
       }
       this.map = { tiles, px: 4, py: 4, worldSeed, worldSize: 9 };
       // STRICT FOG: at start you see haven and the ground south of it — the

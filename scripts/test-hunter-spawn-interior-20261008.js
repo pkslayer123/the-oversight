@@ -50,6 +50,13 @@ const check = (name, cond, detail) => { results.push([name, !!cond]); console.lo
   const s = Game.state.scholar;
   s.insideHaven = false; s.mx = 4; s.my = 4;
   Game.genDetail = () => Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => 'grass'));
+  // ECOLOGY FIXTURE (2026-10-08): spawns draw from the tile's real wildlife
+  // now — stock it deep so the position assertions measure spawning, not ecology.
+  {
+    const tt = Game.playerTile(); const wl = {};
+    for (const a of Game.data.animals) if ((a.biomes || []).includes(tt.type)) wl[a.id] = 500;
+    tt.wildlife = wl;
+  }
 
   let spawns = 0, edgeSpawns = 0, tooClose = 0;
   for (let i = 0; i < 300 && spawns < 60; i++) {

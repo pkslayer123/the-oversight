@@ -48,6 +48,12 @@ function freshGameWithTraps() {
   tgt = landed;
   if (!Game.setTrap('snare')) throw new Error('setTrap B failed');
   Game.map.px = home.x; Game.map.py = home.y; // go home to sleep
+  // ECOLOGY FIXTURE (hunter loop 2026-10-08): traps now hunt the tile's real
+  // wildlife — stock both trap tiles with snare game so the test measures the
+  // trapline mechanics (away tiles check at dawn), not the ecology.
+  for (const p of [home, { x: tgt.x, y: tgt.y }]) {
+    Game.tileAt(p.x, p.y).wildlife = { cottontail_rabbit: 12, gray_squirrel: 12, opossum: 8 };
+  }
   return { home, away: { x: tgt.x, y: tgt.y } };
 }
 

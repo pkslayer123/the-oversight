@@ -62,6 +62,9 @@ function lastSay() { return Game.log.slice(-1)[0] || ''; }
   ok('snare still crafts normally', !!snare);
   // set the deadfall and confirm it catches over time
   ok('setTrap deadfall', Game.setTrap('deadfall') === true);
+  // ECOLOGY FIXTURE (2026-10-08): traps hunt real wildlife — stock the tile
+  // with deadfall game (haven ground is barren by design).
+  Game.playerTile().wildlife = { cottontail_rabbit: 10, gray_squirrel: 10, wild_turkey: 6, white_tailed_deer: 4 };
   let catches = 0;
   for (let d = 0; d < 40; d++) {
     const before = s.inventory.length;

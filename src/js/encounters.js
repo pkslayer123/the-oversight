@@ -974,7 +974,15 @@
     var s = this.state.scholar;
     if (s.animal) return;
     var t = this.playerTile();
-    var candidates = (this.data.animals || []).filter(function (a) { return (a.biomes || []).indexOf(t.type) !== -1; });
+    // ECOLOGY (hunter loop 2026-10-08): animals come from the LOCAL
+    // population, not thin air. The 2026-10-08 rewrite dropped the game.js
+    // version's wildlife link; restoring it here, on the live path.
+    // Hunted-out tiles spawn nothing; simEcology regrowth refills them while
+    // you're away. Same contract as traps (checkTraps).
+    var _wl = (t && t.wildlife) || this.backfillWildlife(t, this.map.px, this.map.py);
+    var _local = Object.keys(_wl).filter(function (sid) { return _wl[sid] > 0; });
+    if (!_local.length) return; // barren ground — nothing here
+    var candidates = (this.data.animals || []).filter(function (a) { return (a.biomes || []).indexOf(t.type) !== -1 && _local.indexOf(a.id) !== -1; });
     if (!candidates.length) return;
     if (Math.random() > 0.3) {
       // SIGN (Steve 2026-10-06): the tracker reads the woods even when
@@ -1004,6 +1012,8 @@
     } while (tries < 20 && Math.max(Math.abs(ax - px), Math.abs(ay - py)) < 3);
     var cfg = this.encPreyCfg(animal.id);
     s.animal = { id: animal.id, mx: ax, my: ay, aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0 };
+    // the animal left the tile population to wander the detail grid
+    if (t.wildlife && t.wildlife[animal.id] > 0) t.wildlife[animal.id]--;
     this.say('Movement — ' + this.encDescribeAnimal(animal) + '.');
     try { this.audioEvent('animalRustle'); } catch (e) {}
     // WOODS ON EDGE (Steve 2026-10-06): a groundhog whistle or beaver

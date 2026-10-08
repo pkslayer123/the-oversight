@@ -86,7 +86,7 @@ function heard(said) { return said.join(' '); }
   // Code-read proxy: game.js checkTraps must call encIdentifyAnimal before the
   // say that names the species.
   const gameSrc = fs.readFileSync(path.join(ROOT, 'src/js/game.js'), 'utf8');
-  const trapBlock = gameSrc.slice(gameSrc.indexOf('checkTraps()'), gameSrc.indexOf('checkTraps()') + 2500);
+  const trapBlock = gameSrc.slice(gameSrc.indexOf('checkTraps()'), gameSrc.indexOf('checkTraps()') + 4500);
   const idPos = trapBlock.indexOf('encIdentifyAnimal(catchId)');
   const sayPos = trapBlock.indexOf('caught a ${animal.name}');
   ok('C4: trap catch identifies before naming (identify-before-say order)',
