@@ -14,6 +14,7 @@
 //   - apCombatLine(pid, situation)
 //   - apSayCombat(pid, situation, chance)
 //   - apCombatChatter(pid, event, fighter, playerHpRatio)
+//   - apPilotTaunt(pid)
 //   - apWealthOf(pid)
 //   - apIsCombat(pid)
 //   - apWealthStance(pid, fighter)
@@ -43,6 +44,7 @@
 //   - apBeamResistLevel()
 //   - apBeamResistText()
 //   - apReadinessCheck()
+//   - apHasBeam(pid)
 //   - apBeamHit(targetKey, dmg, sourceLabel, opts)
 //   - apArmorName()
 //   - apMaybeBeamAttack(fighter)
@@ -72,7 +74,7 @@
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
 //   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
 //   - (progression) alien players level alongside you: kit grows 3->6 abilities, tech upgrades; rich progress faster (buy), broke slower (earn) (code: alienPlayers.js)
-//   - (groups) rare late-game 2-3 persona team encounters (day 40+, 3%, 14-day cooldown, needs 2+ established rivals) with inter-alien banter (code: alienPlayers.js)
+//   - (groups) rare late-game 2-3 persona team encounters (day 40+, 3%, 14-day cooldown, needs 2+ established rivals) with inter-alien banter; they join the fight in turn via the tbEnd chain (wired break-it 2026-10-08 — was dead code) (code: alienPlayers.js, encounters.js)
 //   - (playground) active aliens persist for days: kill villagers/monsters/animals, burn map (Sable/Vex), raid pantry/fire/trust (veterans), fight each other; max 3 active (code: alienPlayers.js)
 //   - (factions) sadistic coordinate loosely (70%), benevolent solid (90%), neutral opportunistic; sadistic+benevolent never align (code: alienPlayers.js)
 //   - (veterans) most aliens played before: exploit pantry/fire/trust mechanics; Pip is the rookie who makes charming mistakes (code: alienPlayers.js)
@@ -208,10 +210,27 @@
         for (var i = 0; i < personas.length; i++) {
           var cp = personas[i];
           if (!this.apIsCombat(cp.id)) continue;
+          // SPORTING RULES (Steve 2026-10-08): min 2 days between hunts by
+          // the same persona. The due-rival gate above enforced this for the
+          // priority path, but the weighted pool below bypassed it — a
+          // hostile player could re-fight yesterday's rival daily (break-it
+          // 2026-10-08: re-picked 400/400). Filter here too.
+          if (day - (ap.lastHuntDay[cp.id] || -999) < 2) continue;
           var w = cp.disposition === 'sadistic' ? 4 : cp.disposition === 'neutral' ? 4.5 : 1.5;
           // Existing rivals are more likely to return
           if (ap.met[cp.id] && ap.met[cp.id].encounters > 0) w *= 2;
           pool.push({ p: cp, w: w });
+        }
+        // Fallback: if the sporting filter emptied the pool (fought the whole
+        // roster in 2 days — extreme), allow anyone rather than a silent no-op.
+        if (!pool.length) {
+          for (var i2 = 0; i2 < personas.length; i2++) {
+            var cp2 = personas[i2];
+            if (!this.apIsCombat(cp2.id)) continue;
+            var w2 = cp2.disposition === 'sadistic' ? 4 : cp2.disposition === 'neutral' ? 4.5 : 1.5;
+            if (ap.met[cp2.id] && ap.met[cp2.id].encounters > 0) w2 *= 2;
+            pool.push({ p: cp2, w: w2 });
+          }
         }
         var total = 0, k;
         for (k = 0; k < pool.length; k++) total += pool[k].w;
@@ -359,6 +378,18 @@
         this.say('👤 A figure steps out of the treeline. Human-shaped. But something\'s wrong.');
         this.say('They move like someone who\'s done this before. Many times. On many worlds.');
         this.apCombatIntro(pid);
+        // BEAM READINESS (Steve 2026-10-08): the player should KNOW when
+        // they're not ready. apBeamResistText was dead code — now it's the
+        // pre-fight warning, once per player, when facing a KNOWN beam-user
+        // (pre-reveal it would name the alien truth; the horror beat covers
+        // the mid-fight lesson for the unready).
+        try {
+          var s0 = this.state.scholar || {};
+          if (!s0._beamReadoutSeen && this.apKnowsAlien(pid) && this.apHasBeam(pid)) {
+            s0._beamReadoutSeen = true;
+            this.say(this.apBeamResistText());
+          }
+        } catch (e0) {}
         // Trigger combat with the hostile fighter
         // (Combat system handles 'hostile' kind as an enemy)
         if (this.startAlienCombat) {
@@ -699,14 +730,19 @@
       if (!pids || pids.length < 2) return false;
       this.apGroupBanter(pids);
       // Build fighters for each (they'll be added to the encounter)
-      // For now, start with the first and note the others as incoming
-      // (Full multi-fighter combat integration is a deeper change)
+      // They join the fight IN TURN: the tbEnd wrap chains the next persona
+      // via state.alienGroup when the current fight is won (fleeing or
+      // losing disperses the group). Break-it 2026-10-08: state.alienGroup
+      // was written here and never read — "they'll join in turn" was a lie.
       var first = pids[0];
       this.say('(The others are circling. They\'ll join the fight in turn.)');
       try {
         this.state.alienGroup = { pids: pids, current: 0 };
       } catch (e) {}
-      return this.apStartEncounter(first);
+      var ok = false;
+      try { ok = !!this.apStartEncounter(first); } catch (e2) { ok = false; }
+      if (!ok) { try { delete this.state.alienGroup; } catch (e3) {} }
+      return ok;
     },
 
 
@@ -1920,6 +1956,13 @@
 
     // apMaybeBeamAttack: called when an alien fighter attacks. Chance to use
     // beam weapon instead of normal attack. Rich/sadistic ones use it more.
+    // Who fields a beam weapon? Everyone but Old Tam (he fights fair).
+    // Shared by apMaybeBeamAttack (firing) and apStartEncounter (readiness
+    // warning) — one source of truth, not two hardcoded lists.
+    apHasBeam: function (pid) {
+      return this.apIsCombat(pid) && pid !== 'old_tam';
+    },
+
     apMaybeBeamAttack: function (fighter) {
       try {
         if (!fighter || !fighter.alienPid) return false;
@@ -1946,7 +1989,7 @@
           'old_tam': null, // Tam doesn't use beams. He fights fair.
         };
         var beamName = beamNames[pid];
-        if (!beamName) return false; // Tam won't
+        if (!beamName) return false; // Tam won't (see apHasBeam)
         this.say('🔆 ' + per.name + ' raises ' + beamName + '. The air tastes like copper.');
         // Player is the target (beam weapons are for the player)
         this.apBeamHit('player', 0, beamName, { damageType: 'alien_beam' });
@@ -1984,6 +2027,24 @@
           this.apOnCombatEnd(alienPid, outcome);
           // Clear the encounter state
           if (this.state.alienEncounter) delete this.state.alienEncounter;
+        }
+        // GROUP CHAIN (Steve 2026-10-08): when a group encounter's current
+        // fight is WON, the next persona steps in — the old fight is over
+        // (tbfight.over=true, so startAlienCombat's inCombat guard passes
+        // and the new fight replaces the corpse). Fleeing or losing
+        // disperses the group: no ambush on a retreat, no fight after death.
+        var grp = this.state.alienGroup;
+        if (grp && grp.pids && alienPid) {
+          delete this.state.alienGroup; // consume first — no re-entry loops
+          var gi = grp.pids.indexOf(alienPid);
+          var nextPid = gi >= 0 ? grp.pids[gi + 1] : null;
+          if (nextPid && outcome === 'won') {
+            this.say('👥 The next one steps out of the treeline. No rest. No mercy.');
+            var chained = false;
+            try { chained = !!this.apStartEncounter(nextPid); } catch (e2) { chained = false; }
+            if (chained) this.state.alienGroup = { pids: grp.pids, current: gi + 1 };
+          }
+          // else: group done, fled, or lost — the moment passes.
         }
       } catch (e) {}
       return r;

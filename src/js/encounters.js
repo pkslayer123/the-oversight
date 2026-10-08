@@ -2372,6 +2372,17 @@
       if (s.animal) return r;
       var px = this.map.px, py = this.map.py;
       if (this.monsterAt && this.monsterAt(px, py)) return r;
+      // GROUP ENCOUNTERS (Steve 2026-10-07, wired break-it 2026-10-08):
+      // apRollGroupEncounter/apStartGroupEncounter were dead code — built,
+      // documented in the ontology, never called. Rare late-game team fights
+      // (day 40+, 2+ established rivals, 14-day cooldown, 3%) roll first;
+      // the single-persona pool is the fallback.
+      try {
+        if (typeof this.apRollGroupEncounter === 'function' && typeof this.apStartGroupEncounter === 'function') {
+          var apGroup = this.apRollGroupEncounter();
+          if (apGroup && apGroup.length >= 2 && this.apStartGroupEncounter(apGroup)) return r;
+        }
+      } catch (e2) {}
       var pid = this.apRollEncounter();
       if (pid && typeof this.apStartEncounter === 'function') {
         this.apStartEncounter(pid);
