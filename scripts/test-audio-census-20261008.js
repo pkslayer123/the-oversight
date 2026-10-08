@@ -118,6 +118,11 @@ const ALLOW_INDIRECT = new Set([
   // but has no call site anywhere. Left here so the census stays green while
   // the gap is tracked; a future run should wire it or remove it.
   'patternResolve',
+  // CONTEST BESPOKE SET (Steve 2026-10-08): fired indirectly — contests.js
+  // CX_BEAT_DEFS composes named beats from these hooks; _cxBeat dispatches
+  // the beat name via Game.audioEvent, not an audioEvent('hook') literal.
+  // Verified firing by scripts/test-contest-synths-20261008.js.
+  'altarCurdle', 'hungerGnaw', 'predatorListen', 'teethTick', 'mindMoth', 'engineVoices',
 ]);
 const silentRegistered = [...registry].filter(x => !allRequested.has(x) && !ALLOW_INDIRECT.has(x));
 ok('no registered-but-never-fired synths outside the indirect allow-list',

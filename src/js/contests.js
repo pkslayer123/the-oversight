@@ -729,6 +729,10 @@
   // contests.js owns dispatch. New per-contest beats can't add synths to
   // app.js from this file, so each beat is a NAMED, composed dispatch over
   // already-registered Game.audio synths — zero silent, no app.js edit.
+  // BESPOKE SET (Steve 2026-10-08): six beats carry their own synths now
+  // (altarCurdle/hungerGnaw/predatorListen/teethTick/mindMoth/engineVoices),
+  // defined + registered in app.js's audio section by the contest-synths
+  // worker; the beat defs below reference them by name like any hook.
   // Registration is lazy: Game.audio doesn't exist until app.js loads,
   // which is AFTER contests.js. Phases declare beat:'name'; the first
   // presentation registers the composition, then fires it.
@@ -781,9 +785,9 @@
     contestDropEscalate: ['animalPant', 'nightcourtSilence'],
     contestDropClimax: ['rushHit', 'crash'],
     contestDropResolve: ['victory', 'exileWalk'],
-    // starve: the white room: muzak; hunger takes hold; encouragement detonates; relief with its shadow
+    // starve: the white room: muzak; hunger takes hold (hungerGnaw — the gut-growl); encouragement detonates; relief with its shadow
     contestStarveDeclare: ['contestCall', 'holdMusic'],
-    contestStarveEscalate: ['statusApplied', 'lineCut'],
+    contestStarveEscalate: ['hungerGnaw', 'lineCut'],
     contestStarveClimax: ['hypeDetonate', 'shout'],
     contestStarveResolve: ['victory', 'contestSpared'],
     // moot: televised trial: fanfare over the charges; drums compress; verdict with wrongness; the cameras move on
@@ -806,8 +810,8 @@
     contestFetchEscalate: ['animalRustle', 'lockpickChitter'],
     contestFetchClimax: ['eurekaTick', 'hypeInflate'],
     contestFetchResolve: ['victory', 'traderArrive'],
-    // hide: wave-2 predator: the count over deliberate hush; absence of sound, then ticks; the snap, the scream; the night takes it back
-    contestHideDeclare: ['droneCount', 'nightcourtSilence'],
+    // hide: wave-2 predator: the count over deliberate hush (predatorListen — it is already listening); absence of sound, then ticks; the snap, the scream; the night takes it back
+    contestHideDeclare: ['droneCount', 'predatorListen'],
     contestHideEscalate: ['nightcourtSilence', 'woundCunning'],
     contestHideClimax: ['ambushSnap', 'staticScream'],
     contestHideResolve: ['victory', 'nightcourtClimb'],
@@ -841,9 +845,9 @@
     contestPantryRaidEscalate: ['shout', 'animalBolt'],
     contestPantryRaidClimax: ['ambushSnap', 'crash'],
     contestPantryRaidResolve: ['victory', 'exileWalk'],
-    // wheel: Wheel of Teeth: the spin brightens; the ticks brighten, the counting gets heavier; the stop smashes; the teeth smile — or don't
+    // wheel: Wheel of Teeth: the spin brightens; the ticks brighten (teethTick — wet resonance, the last tick too long), the counting gets heavier; the stop smashes; the teeth smile — or don't
     contestWheelDeclare: ['contestCall', 'eurekaCharge'],
-    contestWheelEscalate: ['eurekaTick', 'round'],
+    contestWheelEscalate: ['teethTick', 'round'],
     contestWheelClimax: ['eurekaDetonate', 'crash'],
     contestWheelResolve: ['victory', 'hypeDeflate'],
     // lottery: the tokens: swell and count; muzak under the hover; the token turns over; victory deflates
@@ -851,8 +855,8 @@
     contestLotteryEscalate: ['holdMusic', 'lineCut'],
     contestLotteryClimax: ['ambushSnap', 'eurekaDetonate'],
     contestLotteryResolve: ['victory', 'hypeDeflate'],
-    // tithe: the altar: something wrong takes hold in muzak; erratic stabs under the heartbeat; the fourth measure; the basin lingers
-    contestTitheDeclare: ['statusApplied', 'holdMusic'],
+    // tithe: the altar: something wrong takes hold in muzak (altarCurdle — the notes sag, the pedal was never in the key); erratic stabs under the heartbeat; the fourth measure; the basin lingers
+    contestTitheDeclare: ['statusApplied', 'altarCurdle'],
     contestTitheEscalate: ['woundDesperate', 'heartbeat'],
     contestTitheClimax: ['horrorSting', 'lineCut'],
     contestTitheResolve: ['victory', 'horrorSting'],
@@ -876,8 +880,8 @@
     contestBeastmasterEscalate: ['animalPant', 'lockonTick'],
     contestBeastmasterClimax: ['ambushSnap', 'woundEnraged'],
     contestBeastmasterResolve: ['victory', 'paperRustle'],
-    // riddle: the Engine: drone hum; the mouths almost sound like someone you know; the static breaks
-    contestRiddleDeclare: ['droneHum', 'contestCall'],
+    // riddle: the Engine: the mouths almost sound like someone you know (engineVoices — lullaby cadence, one extra beat); the static breaks
+    contestRiddleDeclare: ['engineVoices', 'contestCall'],
     contestRiddleClimax: ['staticCry', 'horrorSting'],
     contestRiddleResolve: ['victory', 'staticBreak'],
     // confession: the lectern: the liar confronted; accuse the System on its own cameras; the static screams
@@ -898,9 +902,9 @@
     contestSecretsEscalate: ['round', 'lineCut'],
     contestSecretsClimax: ['staticScream', 'crash'],
     contestSecretsResolve: ['victory', 'paperRustle'],
-    // quiet: the room: hush over muzak; your voice ahead of your thoughts; it reads the buried one; released into the night
+    // quiet: the room: hush over muzak; your voice ahead of your thoughts (mindMoth — it reads the buried one); released into the night
     contestQuietDeclare: ['nightcourtSilence', 'holdMusic'],
-    contestQuietEscalate: ['staticCry', 'lineCut'],
+    contestQuietEscalate: ['mindMoth', 'lineCut'],
     contestQuietClimax: ['staticScream', 'horrorSting'],
     contestQuietResolve: ['victory', 'nightcourtClimb'],
     // guest: the dinner: almost-right fanfare over the cooking lesson; the taste; the toast turns; dinner is served

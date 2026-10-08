@@ -1797,6 +1797,12 @@
   //   contestSpared() — announced not-taken (relief with a dissonant shadow)
   //   justiceVerdict() — the moot decides (one heavy strike + cold held tone)
   //   exileWalk() — footsteps receding, village hum dropping voices
+  //   altarCurdle() — tithe declare: muzak curdles as the altar takes hold (Steve 2026-10-08)
+  //   hungerGnaw() — starve escalate: the white room — hunger takes hold (Steve 2026-10-08)
+  //   predatorListen() — hide declare: the sixty-count — it is already listening (Steve 2026-10-08)
+  //   teethTick() — wheel escalate: the Wheel of Teeth counts (Steve 2026-10-08)
+  //   mindMoth() — quiet escalate: the room reads the buried one (Steve 2026-10-08)
+  //   engineVoices() — riddle declare: mouths almost like someone you know (Steve 2026-10-08)
   //   NOTE: dispatch wiring for these lives in the contests/truth workers'
   //   files, not here — this section only owns the synths.
   const CombatAudio = (() => {
@@ -7069,6 +7075,248 @@
         o.start(lastDrop); o.stop(lastDrop + 2.7);
       });
     }
+    // CONTEST BESPOKE SET (Steve 2026-10-08): the 30 older contests had beats
+    // composed over existing synths; these six beats had fiction too strong
+    // for borrowed voices — each gets its own alien texture. No two share a
+    // waveform+envelope shape.
+    function altarCurdle() {
+      // THE ALTAR TAKES HOLD: muzak in a side-room key — three triangle
+      // voices, each one sagging flat mid-note, and a sub pedal that was
+      // never in the scale. The room is wrong in a way you can hum.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [196, 233.1, 311.1].forEach((fq, i) => { // G3 Bb3 Eb4 — the altar's key
+        const dt = t + i * 0.42;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(fq, dt);
+        o.frequency.exponentialRampToValueAtTime(fq * 0.94, dt + 0.38); // the curdle: each note sags
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.11, dt + 0.09);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.5);
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1200; f.Q.value = 1.2;
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.55);
+      });
+      // the pedal: a sub tone outside the scale, arriving late, staying wrong
+      const p = ctx.createOscillator(), pg = ctx.createGain();
+      p.type = 'sine'; p.frequency.value = 51.7; // between the notes — not in the key
+      pg.gain.setValueAtTime(0.0001, t + 0.9);
+      pg.gain.exponentialRampToValueAtTime(0.14, t + 1.6);
+      pg.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+      p.connect(pg); pg.connect(sfxBus); p.start(t + 0.9); p.stop(t + 2.7);
+      // the pedal warbles: a slow LFO on its frequency — the wrongness breathes
+      const pw = ctx.createOscillator(), pwg = ctx.createGain();
+      pw.type = 'sine'; pw.frequency.value = 0.4; pwg.gain.value = 2.6;
+      pw.connect(pwg); pwg.connect(p.frequency);
+      pw.start(t + 0.9); pw.stop(t + 2.7);
+    }
+    function hungerGnaw() {
+      // HUNGER TAKES HOLD: the white room gets inside you. An FM gut-growl
+      // (low carrier, slow modulator — peristalsis as synthesis) under
+      // irregular wet gurgle bursts, and one hollow thump where the broth
+      // would have been. It does not stop when the phase ends in your head.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 2.2;
+      // the growl: FM — carrier 48Hz, modulator 9Hz chewing at it
+      const car = ctx.createOscillator(), cg = ctx.createGain();
+      const mod = ctx.createOscillator(), mg = ctx.createGain();
+      car.type = 'sine'; car.frequency.value = 48;
+      mod.type = 'sine'; mod.frequency.value = 9; mg.gain.value = 26;
+      mod.connect(mg); mg.connect(car.frequency);
+      const trem = ctx.createOscillator(), tg = ctx.createGain(); // the chew rhythm
+      trem.type = 'sine'; trem.frequency.value = 2.3; tg.gain.value = 0.05;
+      trem.connect(tg); tg.connect(cg.gain);
+      cg.gain.setValueAtTime(0.0001, t);
+      cg.gain.exponentialRampToValueAtTime(0.16, t + 0.5);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      car.connect(cg); cg.connect(sfxBus);
+      car.start(t); mod.start(t); trem.start(t);
+      car.stop(t + dur + 0.05); mod.stop(t + dur + 0.05); trem.stop(t + dur + 0.05);
+      // gurgle bursts: lowpassed noise plosives, irregular
+      [0.15, 0.62, 1.05, 1.7].forEach((off, i) => {
+        const dt = t + off;
+        const nz = noise(0.12), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'lowpass'; nf.frequency.value = 400 - i * 60;
+        ng.gain.setValueAtTime(0.0001, dt);
+        ng.gain.exponentialRampToValueAtTime(0.22 - i * 0.02, dt + 0.02); // plosive: fast in
+        ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.11);          // wet tail out
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(dt); nz.stop(dt + 0.14);
+      });
+      // the hollow thump: where food should be
+      const h = ctx.createOscillator(), hg = ctx.createGain();
+      h.type = 'sine';
+      h.frequency.setValueAtTime(70, t + 0.8);
+      h.frequency.exponentialRampToValueAtTime(38, t + 0.95);
+      hg.gain.setValueAtTime(0.0001, t + 0.8);
+      hg.gain.exponentialRampToValueAtTime(0.25, t + 0.83);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      h.connect(hg); hg.connect(sfxBus); h.start(t + 0.8); h.stop(t + 1.25);
+    }
+    function predatorListen() {
+      // IT IS ALREADY LISTENING: the sixty-count over deliberate hush. Almost
+      // nothing — an infrasound pressure you feel in your teeth, five tiny
+      // clicks (twigs? ears?) that must not be yours, and one exhale too deep
+      // to be human, arriving from the wrong direction.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the pressure: 16Hz sine, felt not heard, swelling then holding
+      const sub = ctx.createOscillator(), sg = ctx.createGain();
+      sub.type = 'sine'; sub.frequency.setValueAtTime(16, t);
+      sub.frequency.exponentialRampToValueAtTime(13, t + 1.4); // the air gets heavier
+      sg.gain.setValueAtTime(0.0001, t);
+      sg.gain.exponentialRampToValueAtTime(0.2, t + 1.2);
+      sg.gain.setValueAtTime(0.2, t + 1.8);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+      sub.connect(sg); sg.connect(sfxBus); sub.start(t); sub.stop(t + 2.5);
+      // the pressure comes in waves: a slow LFO on the infrasound gain
+      const sw = ctx.createOscillator(), swg = ctx.createGain();
+      sw.type = 'sine'; sw.frequency.value = 0.13; swg.gain.value = 0.09;
+      sw.connect(swg); swg.connect(sg.gain);
+      sw.start(t); sw.stop(t + 2.5);
+      // micro-clicks: irregular, too quiet to place
+      [0.3, 0.75, 1.1, 1.55, 1.9].forEach((off) => {
+        const dt = t + off;
+        const nz = noise(0.03), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'highpass'; nf.frequency.value = 3000;
+        ng.gain.setValueAtTime(0.09, dt);
+        ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.025);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(dt); nz.stop(dt + 0.04);
+      });
+      // the exhale: lowpassed noise swell from the wrong direction
+      const nz = noise(0.6), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 500;
+        ng.gain.setValueAtTime(0.0001, t + 1.0);
+        ng.gain.exponentialRampToValueAtTime(0.18, t + 1.35);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.65);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 1.0); nz.stop(t + 1.7);
+      }
+    }
+    function teethTick() {
+      // THE WHEEL COUNTS: six ticks, each brighter than the last — dry clicks
+      // with a wet resonance rising in semitones, under a gnashing undertone
+      // that descends while the ticks climb. The last tick is too long. The
+      // teeth are smiling. Or not.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const res = [400, 462, 534, 617, 713, 823]; // rising semitone-ish
+      res.forEach((fq, i) => {
+        const dt = t + i * 0.22, last = i === res.length - 1;
+        const nz = noise(0.08), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'bandpass'; nf.frequency.value = fq; nf.Q.value = 12; // wet tooth resonance
+        ng.gain.setValueAtTime(0.0001, dt);
+        ng.gain.exponentialRampToValueAtTime(0.28, dt + 0.012); // staccato: instant in
+        ng.gain.exponentialRampToValueAtTime(0.0001, dt + (last ? 0.22 : 0.07)); // last one lingers
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(dt); nz.stop(dt + (last ? 0.26 : 0.1));
+        // the click's dry transient under the resonance
+        const hz = noise(0.02), hf = ctx.createBiquadFilter(), hg2 = ctx.createGain();
+        hf.type = 'highpass'; hf.frequency.value = 2500;
+        hg2.gain.setValueAtTime(0.12, dt);
+        hg2.gain.exponentialRampToValueAtTime(0.0001, dt + 0.02);
+        hz.connect(hf); hf.connect(hg2); hg2.connect(sfxBus);
+        hz.start(dt); hz.stop(dt + 0.03);
+      });
+      // the gnash: a saw undertone descending while the ticks climb
+      const g = ctx.createOscillator(), gg = ctx.createGain(), gf = ctx.createBiquadFilter();
+      g.type = 'sawtooth';
+      g.frequency.setValueAtTime(95, t);
+      g.frequency.exponentialRampToValueAtTime(68, t + 1.4);
+      gf.type = 'lowpass'; gf.frequency.value = 300;
+      const am = ctx.createOscillator(), amg = ctx.createGain(); // gnash rhythm
+      am.type = 'square'; am.frequency.value = 6.5; amg.gain.value = 0.03;
+      am.connect(amg); amg.connect(gg.gain);
+      gg.gain.setValueAtTime(0.0001, t);
+      gg.gain.exponentialRampToValueAtTime(0.07, t + 0.3);
+      gg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      g.connect(gf); gf.connect(gg); gg.connect(sfxBus);
+      g.start(t); am.start(t); g.stop(t + 1.7); am.stop(t + 1.7);
+    }
+    function mindMoth() {
+      // IT READS THE BURIED ONE: the quiet room leans in. Two syllables of
+      // formant-shaped noise that swell IN like a reversed tape — your voice
+      // arriving before you think it — while a high reading tone wobbles,
+      // finds the buried frequency, and locks on. It heard that.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // reverse-swell syllables: bandpassed noise, formants cycling
+      [[700, 0.0], [1100, 0.55], [2600, 1.1]].forEach(([fq, off]) => {
+        const dt = t + off;
+        const nz = noise(0.8), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'bandpass'; nf.Q.value = 6;
+        nf.frequency.setValueAtTime(fq * 1.3, dt);
+        nf.frequency.exponentialRampToValueAtTime(fq, dt + 0.6); // the voice settles onto you
+        ng.gain.setValueAtTime(0.0001, dt);
+        ng.gain.exponentialRampToValueAtTime(0.2, dt + 0.55);   // swell IN — reversed
+        ng.gain.setValueAtTime(0.2, dt + 0.6);
+        ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.68); // cut sharp
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(dt); nz.stop(dt + 0.75);
+      });
+      // the reading tone: high, pure, wobbling — then it locks on
+      const r = ctx.createOscillator(), rg = ctx.createGain();
+      r.type = 'sine';
+      r.frequency.setValueAtTime(2450, t);
+      const wob = ctx.createOscillator(), wg = ctx.createGain();
+      wob.type = 'sine'; wob.frequency.value = 13; wg.gain.value = 60;
+      wob.connect(wg); wg.connect(r.frequency);
+      rg.gain.setValueAtTime(0.0001, t);
+      rg.gain.exponentialRampToValueAtTime(0.05, t + 0.4);
+      rg.gain.setValueAtTime(0.05, t + 0.9);
+      r.connect(rg); rg.connect(sfxBus); r.start(t); wob.start(t);
+      r.stop(t + 2.0); wob.stop(t + 2.0);
+      // the lock: pitch settles onto the buried frequency as automation
+      r.frequency.setValueAtTime(2450, t + 0.9);
+      r.frequency.exponentialRampToValueAtTime(2200, t + 1.1);
+      rg.gain.exponentialRampToValueAtTime(0.07, t + 1.1);
+      rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+    }
+    function engineVoices() {
+      // THE ENGINE'S MOUTHS: a detuned saw drone — two voices a hair apart,
+      // beating against each other — and over it the mouths: vowel-shaped
+      // notes in a lullaby cadence with one extra beat, the last syllable a
+      // minor second too low. It almost sounds like someone you know.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 2.4;
+      // the drone: 110Hz and 110.8 — the beating pair
+      [110, 110.8].forEach((fq) => {
+        const d = ctx.createOscillator(), dg = ctx.createGain(), df = ctx.createBiquadFilter();
+        d.type = 'sawtooth'; d.frequency.value = fq;
+        df.type = 'lowpass'; df.frequency.value = 500;
+        dg.gain.setValueAtTime(0.0001, t);
+        dg.gain.exponentialRampToValueAtTime(0.06, t + 0.8);
+        dg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        d.connect(df); df.connect(dg); dg.connect(sfxBus);
+        d.start(t); d.stop(t + dur + 0.05);
+        // the mouths wobble: a slow vibrato on the drone pair — they can't hold the note
+        const dw = ctx.createOscillator(), dwg = ctx.createGain();
+        dw.type = 'sine'; dw.frequency.value = 4.7; dwg.gain.value = 3.2;
+        dw.connect(dwg); dwg.connect(d.frequency);
+        dw.start(t); dw.stop(t + dur + 0.05);
+      });
+      // the mouths: vowel formants on saw notes, lullaby + one extra beat
+      const vowels = [800, 500, 1200, 800, 660]; // ah oo eh ah ...uh
+      const notes = [220, 196, 246.9, 220, 207.6]; // the last one a minor 2nd low
+      vowels.forEach((form, i) => {
+        const dt = t + 0.3 + i * 0.36;
+        const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+        o.type = 'sawtooth'; o.frequency.value = notes[i];
+        f.type = 'bandpass'; f.frequency.value = form; f.Q.value = 5;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(i === 4 ? 0.14 : 0.1, dt + 0.06);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + (i === 4 ? 0.5 : 0.3)); // the last one hangs
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + (i === 4 ? 0.55 : 0.35));
+      });
+    }
     // ---- HAVEN ARC (Steve 2026-10-06): a sibling's exile/betrayal system
     // fired joinVillage/claimSite/chopWood/buildShelter/foundHaven with no
     // synths — now they have them. The exile's redemption has a sound:
@@ -10335,6 +10583,15 @@
       contestSpared() { contestSpared(); }, // announced not-taken
       justiceVerdict() { justiceVerdict(); }, // the moot has decided
       exileWalk() { exileWalk(); },         // footsteps receding, hum thinning
+      // CONTEST BESPOKE SET (Steve 2026-10-08): six beats with fiction too
+      // strong for borrowed voices — registered here, wired in contests.js
+      // CX_BEAT_DEFS.
+      altarCurdle() { altarCurdle(); },       // tithe declare: muzak curdles as the altar takes hold
+      hungerGnaw() { hungerGnaw(); },         // starve escalate: the white room — hunger takes hold
+      predatorListen() { predatorListen(); }, // hide declare: the sixty-count — it is already listening
+      teethTick() { teethTick(); },           // wheel escalate: the Wheel of Teeth counts
+      mindMoth() { mindMoth(); },             // quiet escalate: the room reads the buried one
+      engineVoices() { engineVoices(); },     // riddle declare: mouths almost like someone you know
       // Haven arc (exile redemption; were unmapped betrayal.js hooks)
       joinVillage() { joinVillage(); },   // probation: the chance they took
       claimSite() { claimSite(); },       // cairn, branch, wrong wind
