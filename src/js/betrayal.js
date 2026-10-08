@@ -1551,6 +1551,14 @@
     const s = this.state.scholar;
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
+    // DRIFTER BREAK-IT r3 2026-10-08: switching villages released nothing —
+    // the abandoned village kept the player's seat and fed a phantom mouth
+    // in every simVillageDay forever. Give the seat back first.
+    const prevId = s.joinedVillage;
+    if (prevId && prevId !== villageId) {
+      const prev = (this.state.otherVillages || []).find(x => x.id === prevId);
+      if (prev) prev.population = Math.max(0, (prev.population || 1) - 1);
+    }
     const old = this.state.village || {};
     this.state.pastVillages = this.state.pastVillages || [];
     if (!this.state.pastVillages.includes(old)) this.state.pastVillages.push(old);

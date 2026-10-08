@@ -4524,7 +4524,21 @@
       // didn't live. Sets homecomingSaid so the haul block below doesn't
       // repeat the welcome.
       let homecomingSaid = false;
-      if (!this.over) {
+      // ESTRANGED (drifter break-it r3 2026-10-08): exile severs membership
+      // (membership.js: "To Haven, you are not one of ours anymore"), and
+      // joining another village doesn't restore it. An exile — or a member
+      // of another fire — walking the old haven tile gets the cold shoulder,
+      // not the homecoming: no welcome beat, no fireside guarantee, no
+      // away-news-as-homecoming, no broker teaching, no away-clock reset.
+      // The haul below still pools (donations toward amends stay allowed).
+      const estranged = !!(s.exiled || s.joinedVillage);
+      if (!this.over && estranged) {
+        this.say(s.exiled
+          ? `You walk the old paths to the fire. Nobody meets your eyes. The pantry is closed to you — exile means exile. What you carry is still yours to give, if you want to start earning your way back.`
+          : `You walk the old paths to the fire. A few nods — you were one of them, once. But your bowl is at another fire now, and everybody knows it. Nobody offers you food.`);
+        homecomingSaid = true;
+      }
+      if (!this.over && !estranged) {
         const dayNow = s.day || 1;
         const daysAway = dayNow - (s.lastHavenDay || dayNow);
         // FIRESIDE RETURN GUARANTEE (Steve 2026-10-07): returning home is the
@@ -5190,7 +5204,15 @@
       const plantCount = Object.keys(prof.plants || {}).length;
       const effKnow = Math.max(village.knowledge || 0, plantCount / 3);
       const perPerson = (1500 + Math.random() * 700) * Math.min(1.8, 1 + 0.12 * effKnow);
-      const need = village.population * 2000;
+      // DRIFTER BREAK-IT r3 2026-10-08: the joined scholar's mouth is fed by
+      // villageMeal's SEPARATE draw (same convention as the home village's
+      // HONEST BURN exclusion) — counting it in the collective need too fed
+      // them twice a day (measured 4000 kcal/day from the joined pantry).
+      // Away from their fire, nobody feeds them: membership without presence
+      // means no draw, home convention.
+      const joinedHere = ((this.state.scholar || {}).joinedVillage === village.id);
+      const mouths = Math.max(0, (village.population || 0) - (joinedHere ? 1 : 0));
+      const need = mouths * 2000;
       // STRATEGY MATTERS (Steve 2026-10-07): each village's survival strategy
       // gives them an edge in their domain. Fishers pull more from water,
       // farmers from fields, etc. This isn't flavor — it's why their codex
@@ -5233,7 +5255,9 @@
       // eat: 2000 per person
       village.pantryKcal -= need;
       // villages eat and share surplus — they don't hoard. 4 days' buffer, max.
-      village.pantryKcal = Math.min(village.pantryKcal, village.population * 8000);
+      // (buffer counts mouths actually fed — the joined scholar draws
+      // separately via villageMeal, so they're not in the buffer math.)
+      village.pantryKcal = Math.min(village.pantryKcal, mouths * 8000);
       // starvation: lean days cost people, slowly. Never below 6 — a village
       // of six is the smallest viable peer: they can still trade, teach, and
       // take you in. (The old sim never starved anyone; pantries ballooned.)
@@ -17672,6 +17696,12 @@
     // check-ins: you stay a member while away; you just don't get fed.)
     villageMeal() {
       const scholar = this.state.scholar;
+      // DRIFTER BREAK-IT r3 2026-10-08: `const v` was declared ~30 lines
+      // below, but the camp-wild branch above it wrote `v.lastPlayerMeal` —
+      // TDZ ReferenceError on EVERY night spent off the haven tile. endDay
+      // calls villageMeal unguarded, so the day never advanced: a shipped
+      // softlock (parity-hunt commit 4960fe7). Hoisted to the top.
+      const v = this.state.village;
       // JOINED VILLAGE: their pantry is physical too — you only eat from it
       // when you're actually at their fire. (BUG 2026-10-05: the joined meal
       // drew from the joined pantry from anywhere on the map, including while
@@ -17696,9 +17726,18 @@
         v.lastPlayerMeal = 0;
         return null;
       }
+      // ESTRANGED (drifter break-it r3 2026-10-08): joined to another village
+      // but standing on the OLD haven's tile. Exile severed the membership
+      // (membership.js blocks exiles outright at this function's wrap);
+      // joining the new fire never restored the old one. Their pantry is
+      // not yours — no draw, no meal.
+      if (scholar.joinedVillage) {
+        this.say('You keep to the edge of the old fire. Nobody offers you food — and you know better than to ask. Your bowl is at another fire now.');
+        v.lastPlayerMeal = 0;
+        return null;
+      }
       // your share: 2000 kcal (a day's food), scaled by trust
       // trust < 30: half ration (they're watching you). 30+: full. 60+: full + bonus.
-      const v = this.state.village;
       const pantry = v.pantry || [];
       const trust = v.trust && v.trust[scholar.villagerId] !== undefined ? v.trust[scholar.villagerId] : 10;
       const share = trust < 30 ? 1000 : trust < 60 ? 2000 : 2200;

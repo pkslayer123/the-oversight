@@ -673,6 +673,22 @@
           this.say(`The camp at ${place} has no keeper now — the fire's gone cold. The tent still stands, if anyone walks back for it.`);
         }
       } catch (e) {}
+      // DEATH ENDS THE JOIN (drifter break-it r3 2026-10-08): the join was the
+      // dead bearer's probation, not the office. The successor is chosen from
+      // the home village's roster and wakes in its hall — not as another
+      // fire's probationer. Release the joined village's seat (otherwise it
+      // feeds a phantom mouth in every simVillageDay forever) and clear the
+      // join state. (Exile-mantle semantics — whether s.exiled passes to the
+      // successor — belong to the exile flow, not the join; untouched here.)
+      try {
+        const jvId = s.joinedVillage;
+        if (jvId) {
+          const jv = (this.state.otherVillages || []).find(x => x.id === jvId);
+          if (jv) jv.population = Math.max(0, (jv.population || 1) - 1);
+          s.joinedVillage = null;
+        }
+        s.probation = null;
+      } catch (e) {}
       // the new bearer wakes INSIDE the hall, like a new game — insideHaven
       // left undefined would read as grounds (havenStoresAccess: 'none'),
       // stranding the successor with no pantry until they find the door.
