@@ -14319,11 +14319,12 @@
     // Declared in activatableAbilities() as target: 'villager' | 'cell' | 'monster' | 'self' | 'none'.
     activateAbility(id, target) {
       const s = this.state.scholar;
-      // SYNERGY: activatable use logged for discovery.
-      this.noteAbilityUse(id);
       // Steve 2026-10-07: using an ability grants XP toward leveling it.
       // (Was only granted for diplomat/tracker/camp_cook — brawler abilities
       // never leveled from combat, making one_person_army unreachable by fighting.)
+      // Steve 2026-10-08: gainAbilityXP already logs the use for synergy
+      // discovery — a separate noteAbilityUse here double-counted every
+      // activation as two synergy attempts. One activation = one attempt.
       this.gainAbilityXP(id, 1);
       // ACTION CLOCK: activating a power takes a moment of focus (2 ticks, time-only).
       // Sustained powers (time_skip) cost more — declared at their branch.
@@ -21375,6 +21376,9 @@
           m.cased = true;
           this.say('It circles once, eyes never leaving your pack — those hands never stop moving.');
           this.audioEvent('lockpickChitter');
+          // AGGRO (Steve 2026-10-08): the casing is the lockpick's
+          // declaration — the hands ARE the sound (too many fingers).
+          this.tbAggroAudio(m);
         }
         // FAST HANDS (Steve 2026-10-05): if you're already in grab range, it
         // doesn't waste a turn circling — it steals NOW. Fighting it up close
@@ -21707,6 +21711,26 @@
     // Same telegraph shapes the generic pending section counts down and
     // resolves — only the cue text (phase-specific, codex-gated where it
     // matters) is bespoke. No parallel combat system.
+    // AGGRO AUDIO (Steve 2026-10-08): every monster's declaration fires its
+    // own data-driven aggroAudio hook (monsters.json encounter.aggroAudio).
+    // The generic declare path fired it; bespoke turns return early and
+    // never did — turtle/glasswing/sunbasker/heckler/lockpick declared in
+    // silence. Once per telegraph (repeat declares re-announce the pattern,
+    // not the beast); once per combat for telegraph-less instant declares.
+    tbAggroAudio(m) {
+      const cfg = this.encConfig(m) || {};
+      const aa = cfg.aggroAudio;
+      if (!aa) return;
+      // Once per telegraph: repeat declares re-announce the pattern, not
+      // the beast (and the generic declare path fires this twice per declare).
+      if (m.telegraph) {
+        if (m.aggroFiredFor === m.telegraph) return;
+        m.aggroFiredFor = m.telegraph;
+      }
+      // Telegraph-less instant declares (turtle snap, lockpick case) are
+      // discrete events — the call site decides frequency.
+      this.audioEvent(aa);
+    },
     encDeclareDirect(m, target, cueText) {
       const atk = m.mdef.attack || {};
       const pat = atk.pattern || { type: 'direct', range: 3 };
@@ -21715,6 +21739,8 @@
         cueText: cueText || null };
       this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
       this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: 'direct' });
+      // The declare is the monster's voice moment, not just the telegraph's.
+      this.tbAggroAudio(m);
       this.tbRefreshTelegraphUI();
     },
     encDeclareBeam(m, foe, cueText) {
@@ -22954,11 +22980,27 @@
         m.boarTrample = false;
         if ((m.boarWinded || 0) > 0) m.boarWinded -= 1;
         this.tbBoarTrample(m);
+        // WINDED (Steve 2026-10-08): the winded state must be felt, not a
+        // hidden flag. Sides heave audibly; the flanks are the punish window.
+        if ((m.boarWinded || 0) > 0) {
+          this.say(`Its sides heave — spent, flanks soft. (WINDRED ${m.boarWinded})`);
+          this.audioEvent('animalPant');
+        }
         this.tbRefreshTelegraphUI();
         this.tbEndCheck();
         return;
       }
-      if (this.boarIs(m) && (m.boarWinded || 0) > 0) m.boarWinded -= 1;
+      if (this.boarIs(m) && (m.boarWinded || 0) > 0) {
+        m.boarWinded -= 1;
+        // WINDED (Steve 2026-10-08): the wind coming back is a beat the
+        // player can hear — the punish window is closing.
+        if ((m.boarWinded || 0) > 0) {
+          this.say(`It paws the earth, sides heaving — still winded. (WINDRED ${m.boarWinded})`);
+          this.audioEvent('animalPant');
+        } else {
+          this.say('It shakes its great head — the wind is back in it.');
+        }
+      }
       // BEAM COOLDOWN: after a Discharge the deer is spent — the light is
       // embers, not a weapon. It CANNOT move while recharging; it stands and
       // breathes. But crowding it is still a mistake: it paws at anyone
@@ -23834,6 +23876,8 @@
           } catch (e) {}
           this.say(known ? cueText : 'The shadow detaches from the clouds and starts growing.');
           this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m)); // silent in combat; dedup only
+          // AGGRO (Steve 2026-10-08): the dive is the darter's declaration — the air screams first.
+          this.tbAggroAudio(m);
           this.audioEvent('glasswingDive');
         } else if (!m.telegraph) {
           // CIRCLE: airborne — over terrain, closing on the target. Out of reach.
@@ -23921,6 +23965,8 @@
           } catch (e) {}
           this.say(known ? cueText : 'Its shadow slides off the branch without it. Then, in a voice you buried — ' + this.nevermoreVoice());
           this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
+          // AGGRO (Steve 2026-10-08): the strafe is the unkindness's declaration — wings unfold first.
+          this.tbAggroAudio(m);
           this.audioEvent('nevermoreStrafe');
         } else if (!m.telegraph) {
           // PERCH: airborne, closing to strafe range. Out of reach.
@@ -24102,6 +24148,8 @@
           } catch (e) {}
           this.say(known ? cueText : 'The kite stops dead. Below it, the ground lights up in a grid.');
           this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
+          // AGGRO (Steve 2026-10-08): the mark is the kite's declaration — it unfolds to frame the shot.
+          this.tbAggroAudio(m);
           this.audioEvent('kiteMark');
         } else if (!m.telegraph) {
           // RISE: drifts at standoff range (~4), high. Out of reach.
@@ -24836,6 +24884,9 @@
         const landed = m.hkLandedHit; m.hkLandedHit = false;
         const jibeChance = Math.min(0.9, 0.55 + 0.1 * (m.hkShame || 0));
         if ((lastMissed || mocked || landed || Math.random() < jibeChance) && !m.telegraph) {
+          // AGGRO (Steve 2026-10-08): the first jibe is the heckler's
+          // declaration — the laugh, with notes, before the words start cutting.
+          if (!m.hkDeclared) { m.hkDeclared = true; this.tbAggroAudio(m); }
           m.hkShame += 1;
           f.lastPlayerMissed = false;
           // PILE-ON (Steve 2026-10-06): the moment it's headlining, the crowd
@@ -25220,6 +25271,9 @@
               : `💥 The boulder SNAPS — its head is suddenly somewhere else. No warning. There never is.`) + tuCoaching);
             const rsAudio = (this.encConfig(m) || {}).resolveAudio;
             if (rsAudio) this.audioEvent(rsAudio);
+            // AGGRO (Steve 2026-10-08): the snap is the turtle's whole
+            // declaration — it never telegraphs, so the boulder grinds here.
+            this.tbAggroAudio(m);
           } else {
             this.say(`💥 The ${this.encTheName(m)} SNAPS! No warning. There never is.`);
           }
@@ -25397,7 +25451,9 @@
           const hasDeclare = this.mothIs(m) || this.toadIs(m) || this.humiceIs(m) || this.beastIs(m);
           this.encSetPhase(m, hasDeclare ? this.encDeclarePhase(m) : this.encPhaseFor(m, 'declare'));
         }
-        this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: the beast itself must be audible (Steve heard only beam)
+        // BELLOW on declare (Steve 2026-10-06): the beast itself must be audible — Steve heard only beam.
+        // tbAggroAudio dedupes against the telegraph: one voice per declare.
+        this.tbAggroAudio(m);
         if (dcfg.declareAudio) this.audioEvent(dcfg.declareAudio);
         // MOTH: the fold locks its facing — behind it, you're safe.
         if (this.mothIs(m)) {
@@ -25430,10 +25486,10 @@
         if (this.beastIs(m)) {
           if (useFifo) this.encSetPhase(m, 'announce');
           // (Steve 2026-10-06): the data's aggroAudio + declareAudio
-          // (managerAnnounce) already fire above — the delegateAnnounce
-          // alias played the same synth a third time per declare.
+          // (managerAnnounce) already fire above via tbAggroAudio — the
+          // delegateAnnounce alias played the same synth a third time per
+          // declare, so it stays retired.
         }
-        this.audioEvent(dcfg.aggroAudio || 'deerAggro'); // BELLOW on declare: each monster's own sound (Steve heard only beam; toad was playing deer bellow)
         if (isDeer) {
           this.say('It BELLOWS — wrong, too deep, like a foghorn heard through water. The sound sits in your teeth.');
         }
