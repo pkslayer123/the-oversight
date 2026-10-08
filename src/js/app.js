@@ -13798,14 +13798,17 @@
     // (trap-shadow precedent) and is skipped from the generic buckets so
     // the dive keeps its own visual voice.
     // WAVE 1 STYLE VOICES (Steve 2026-10-06): dozeLane (bulldozer — its
-    // charge reads as a DUST WALL, not the generic charge lane), pepBurst
-    // (hype_horn — magenta sound rings), swarmHum (hummice — dotted
-    // many-bodies), resonantBurst (belltoad — green croak rings), flashBurst
-    // (mirrormoth — hard silver blink). Routed from burstStyle/chargeStyle
-    // below. Knowledge-gated like every bucket.
+    // charge reads as a DUST WALL, not the generic charge lane), swarmHum
+    // (hummice — dotted many-bodies), resonantBurst (belltoad — green croak
+    // rings), flashBurst (mirrormoth — hard silver blink). Routed from
+    // burstStyle/chargeStyle below. Knowledge-gated like every bucket.
+    // pepBurst REMOVED 2026-10-08: hype_horn retired — no monster carries
+    // burstStyle 'pep' (verified against monsters.json), so the bucket was
+    // unreachable dead code. main.css .cell.pepBurst rule now orphaned
+    // (CSS untouched by this pass).
     // No 'rush' bucket (Steve 2026-10-06): rush patterns never declare, so
     // nothing could ever paint it — removed as unreachable dead code.
-    const out = { burst: new Set(), charge: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), pzFlash: new Set(), ideaHeat: new Set(), beam: new Set(), heronStrike: new Set() };
+    const out = { burst: new Set(), charge: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), pzFlash: new Set(), ideaHeat: new Set(), beam: new Set(), heronStrike: new Set() };
     // WAVE 2 TELEGRAPH IDENTITY (Steve 2026-10-06/08): per-monster telegraph
     // identity — which monster each telegraph cell belongs to, so the grid
     // can render each monster's attack in its own visual voice. Covers every
@@ -13826,7 +13829,7 @@
     // (biHot white wins the last tick). pzFlash/ideaHeat.
     // Mirrors the W2A_IDS / wave-2-groupC per-id routing above. Unknown
     // styles fall through to the generic bucket (no crash, no silence).
-    const STYLE_BUCKETS = { bulldozer: 'dozeLane', pep: 'pepBurst', swarm: 'swarmHum', resonant: 'resonantBurst', flash: 'flashBurst', exposure: 'pzFlash', detonation: 'ideaHeat' };
+    const STYLE_BUCKETS = { bulldozer: 'dozeLane', swarm: 'swarmHum', resonant: 'resonantBurst', flash: 'flashBurst', exposure: 'pzFlash', detonation: 'ideaHeat' };
     try {
       const f = Game.tbfight;
       if (!f) return out;
@@ -14232,7 +14235,6 @@
           (_tg.biHot.has(_k) ? ' biHot' : '') +
           (_tg.sbLock.has(_k) ? ' sbLock' : '') +
           (_tg.dozeLane.has(_k) ? ' dozeLane' : '') +
-          (_tg.pepBurst.has(_k) ? ' pepBurst' : '') +
           (_tg.swarmHum.has(_k) ? ' swarmHum' : '') +
           (_tg.resonantBurst.has(_k) ? ' resonantBurst' : '') +
           (_tg.flashBurst.has(_k) ? ' flashBurst' : '') +
@@ -14353,7 +14355,6 @@
         //    position:relative (main.css).
         //  swarmHum: ◎ expanding hum rings on each declaring mouse
         //    (swarmSrc) — the hum's many throats. (.swarmRing, main.css.)
-        //  pepBurst: ♪ glyphs ride in the CSS (::after) — no inline span.
         // Knowledge-gated upstream in tbAllTelegraphCells like every bucket.
         if (_tg.dozeLane.has(_k)) {
           const _dang = _tg.dozeAngle || 0;
@@ -14933,6 +14934,28 @@
     } catch (e) { return ''; }
   }
 
+  // ---------- codex: ALIENS ----------
+  // KNOWLEDGE GATE (Steve 2026-10-08): the section renders only once the
+  // player has met at least one alien player — "if you don't know, it
+  // doesn't show." The entry fields are gated upstream in alienPlayers.js
+  // apCodexEntry: pre-reveal title reads 'stranger', species/disposition
+  // read 'unknown', and the note is suspicion-only. This renderer prints
+  // those fields verbatim and never consults apPersona — the gate lives
+  // there, never here, so no alien truth can leak through this surface.
+  function codexAliensSection(aliens) {
+    const list = Object.entries(aliens || {});
+    if (!list.length) return '';
+    const STAGE = { encountered: 'encountered', identified: 'identified', understood: 'understood' };
+    return '<h1 class="title" style="font-size:18px">ALIENS</h1>' +
+      '<p class="small"><i>not everyone out there is a person. the book keeps what you have learned about them — and nothing you have not.</i></p>' +
+      list.map(([pid, a]) => {
+        const truth = a.species && a.species !== 'unknown';
+        return `<div class="card codex"><h3>${esc(a.name || 'someone')} <span class="small" style="opacity:.7">${esc(a.title || 'stranger')}</span></h3>` +
+          `<p class="small" style="opacity:.7">${esc(STAGE[a.stage] || 'encountered')}${truth ? ` · ${esc(a.species)} · ${esc(a.disposition || 'unknown')}` : ''}</p>` +
+          `<p class="small"><i>${esc(a.note || '')}</i></p></div>`;
+      }).join('');
+  }
+
   function codexScreen() {
     const entries = Game.codexEntries();
     const inprog = Game.codexInProgress();
@@ -15002,6 +15025,7 @@
         }
         return `<div class="card codex"><h3>${esc(name)}</h3>${m.villageName ? `<p class="small" style="opacity:.7">named by the village</p>` : `<p class="small" style="opacity:.7">not yet named — the village is arguing about it</p>`}<p>${esc(stageText)}</p>${attacks}</div>`;
       }).join('') : ''}
+      ${codexAliensSection(Game.state.codex.aliens || {})}
       <button class="btn ghost" id="b-back">Back</button>`;
     document.getElementById('b-back').onclick = () => expeditionScreen();
   }
