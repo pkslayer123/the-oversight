@@ -1055,6 +1055,7 @@
     "huntText": "The herd grunts and shifts \u2014 a wall of bristly backs. The big sow turns to face you, head low.",
     "killText": "About {kcal} kcal. Cut out the musk gland FIRST (on the back) or the meat is ruined. Pork is pork \u2014 smoke it.",
     "tell": "a sharp musky smell on the wind \u2014 then grunting.",
+    "diseaseVector": "Javelinas carry brucellosis and ticks. Cook the meat through; wear gloves when gutting.",
     "butcher": {
       "hide": 1,
       "bone": 2
@@ -1094,6 +1095,11 @@
     "huntText": "It freezes mid-stride, crest raised \u2014 then it's gone, a brown streak between the scrub.",
     "killText": "About {kcal} kcal. Small bird, quick meal. The real prize is knowing this ground has fewer rattlesnakes.",
     "tell": "a rapid coo-coo-coo from the scrub, getting closer.",
+    "diseaseVector": "Wild birds can carry mites. Cook through; wash after plucking.",
+    "butcher": {
+      "feather": 2,
+      "bone": 1
+    },
     "common": true,
     "regions": [
       "southwest_desert"
@@ -1111,9 +1117,7 @@
     "description": "a fat orange-and-black lizard, slow and venomous",
     "calories": 0,
     "difficulty": "hard",
-    "method": [
-      "avoid"
-    ],
+    "method": [],
     "knowledgeLevels": {
       "1": "Gila monster. Venomous lizard. Slow. Do not touch.",
       "2": "The venom won't kill a healthy adult but the bite won't let go. Painful for days.",
@@ -1128,6 +1132,10 @@
     "huntText": "It doesn't flee. It turns its beaded head toward you, slowly, and opens its mouth.",
     "killText": "You don't eat gila monsters. Leave it be.",
     "tell": "a dry rustling in the rocks, unhurried.",
+    "diseaseVector": "Venom is the hazard, not microbes. Even so, wash after handling any reptile.",
+    "butcher": {
+      "hide": 1
+    },
     "common": false,
     "regions": [
       "southwest_desert"
@@ -1163,6 +1171,7 @@
     "huntText": "The herd lifts their heads as one. The bull steps forward, bugling \u2014 a challenge and a warning.",
     "killText": "About {kcal} kcal \u2014 this is a village-feeding animal. Work fast: gut, quarter, hang. The organs go first. Don't waste anything.",
     "tell": "a bugle in the mist \u2014 high, wild, unmistakable.",
+    "diseaseVector": "Elk carry ticks and chronic wasting disease. Cook through; check the hide for ticks.",
     "butcher": {
       "hide": 3,
       "bone": 6,
@@ -1186,8 +1195,7 @@
     "calories": 30000,
     "difficulty": "hard",
     "method": [
-      "bow",
-      "avoid"
+      "bow"
     ],
     "knowledgeLevels": {
       "1": "Black bear. Strong, smart, fast. Don't corner it. Don't get between it and cubs.",
@@ -1205,8 +1213,7 @@
     "tell": "a deep huffing sound, and the smell of wet fur.",
     "butcher": {
       "hide": 2,
-      "bone": 4,
-      "fat": 3
+      "bone": 4
     },
     "diseaseVector": "Trichinosis \u2014 cook bear meat to 160\u00b0F internal. No exceptions.",
     "common": true,
@@ -1244,6 +1251,10 @@
     "huntText": "It doesn't move. It just watches you with those dark, depthless eyes.",
     "killText": "You don't eat spotted owls. Some things are worth more alive.",
     "tell": "a soft four-note hoot in the dark timber.",
+    "diseaseVector": "Wild birds can carry mites. You should not be eating owls anyway; wash after handling.",
+    "butcher": {
+      "feather": 2
+    },
     "common": false,
     "regions": [
       "pacific_northwest"
@@ -1262,8 +1273,7 @@
     "calories": 15000,
     "difficulty": "hard",
     "method": [
-      "trap",
-      "avoid"
+      "trap"
     ],
     "knowledgeLevels": {
       "1": "Alligator. Armored, patient, fast in short bursts. Respect it.",
@@ -1279,6 +1289,7 @@
     "huntText": "The water erupts \u2014 a wall of armored muscle and teeth where the log used to be.",
     "killText": "About {kcal} kcal. Tail meat first (the best part). The hide makes exceptional leather. Respect the animal \u2014 it was here first.",
     "tell": "a low bellow that you feel in your chest more than hear.",
+    "diseaseVector": "Reptiles carry salmonella. Wash thoroughly after handling; cook the meat through.",
     "butcher": {
       "hide": 2,
       "bone": 3
@@ -1319,6 +1330,11 @@
     "huntText": "It surfaces with a snort, orange teeth bared \u2014 then dives with barely a ripple.",
     "killText": "About {kcal} kcal. Swamp rabbit, basically. The fur is usable if you need it.",
     "tell": "a splashing grunt from the cattails.",
+    "diseaseVector": "Nutria carry tularemia and leptospirosis. Cook through; wash after gutting.",
+    "butcher": {
+      "hide": 1,
+      "bone": 1
+    },
     "common": true,
     "regions": [
       "deep_south_bayou"
@@ -1336,9 +1352,7 @@
     "description": "a thick-bodied pit viper, mouth gaping white in threat",
     "calories": 0,
     "difficulty": "hard",
-    "method": [
-      "avoid"
-    ],
+    "method": [],
     "knowledgeLevels": {
       "1": "Cottonmouth. Venomous water snake. The white mouth is the warning \u2014 believe it.",
       "2": "They don't chase, but they don't move either. Most bites happen when people step on them.",
@@ -1353,6 +1367,10 @@
     "huntText": "It doesn't flee. The mouth opens wider, white as cotton, and the tail vibrates.",
     "killText": "You don't eat cottonmouths. Walk around.",
     "tell": "a dry rattle-like buzz from the bank vegetation.",
+    "diseaseVector": "The head stays dangerous even after death. Reptiles also carry salmonella; wash after handling.",
+    "butcher": {
+      "hide": 1
+    },
     "common": false,
     "regions": [
       "deep_south_bayou"
@@ -1387,6 +1405,7 @@
     "huntText": "The herd shifts. A big bull turns broadside, pawing the dirt \u2014 the universal sign for 'reconsider.'",
     "killText": "About {kcal} kcal. This is the big one. Work for days: butcher, dry, smoke, render. The hide is a winter coat. Nothing wasted.",
     "tell": "a deep grunt that rolls across the prairie, and the thud of heavy hooves.",
+    "diseaseVector": "Bison carry brucellosis. Cook the meat through; handle the hide with care.",
     "butcher": {
       "hide": 3,
       "bone": 8,
@@ -1426,6 +1445,11 @@
     "huntText": "It was watching you the whole time. Now it's a dust plume on the horizon.",
     "killText": "About {kcal} kcal. Lean and clean. You earned this one \u2014 pronghorn don't make mistakes.",
     "tell": "a snort on the wind, impossibly far away.",
+    "diseaseVector": "Pronghorn carry ticks. Check the hide; cook the meat through.",
+    "butcher": {
+      "hide": 1,
+      "bone": 2
+    },
     "common": true,
     "regions": [
       "great_plains"
@@ -1460,6 +1484,10 @@
     "huntText": "The sentry barks \u2014 sharp, urgent \u2014 and the town explodes into burrows.",
     "killText": "About {kcal} kcal. Small but plentiful. Where there's one town, there's dinner for a week.",
     "tell": "a chorus of sharp barks rolling across the grass.",
+    "diseaseVector": "Prairie dogs can carry plague fleas. Handle with gloves; cook through.",
+    "butcher": {
+      "hide": 1
+    },
     "common": true,
     "regions": [
       "great_plains"
@@ -1478,8 +1506,7 @@
     "calories": 50000,
     "difficulty": "hard",
     "method": [
-      "bow",
-      "avoid"
+      "bow"
     ],
     "knowledgeLevels": {
       "1": "Moose. Enormous. More dangerous than bears when provoked. Give it the whole wetland.",
@@ -1495,6 +1522,7 @@
     "huntText": "It lifts its massive head, water streaming from its muzzle, and just... looks at you. Deciding.",
     "killText": "About {kcal} kcal. The biggest animal in these woods. This is a village event \u2014 butcher fast, share widely.",
     "tell": "a deep grunt and the sound of something very large moving through willows.",
+    "diseaseVector": "Moose carry ticks and chronic wasting disease. Cook through; check the hide.",
     "butcher": {
       "hide": 3,
       "bone": 6,
@@ -1535,6 +1563,11 @@
     "huntText": "It was a stump. Now it's a hare, already twenty yards away, those huge feet barely touching snow.",
     "killText": "About {kcal} kcal. Northern rabbit. Same rules \u2014 lean meat, need fat alongside.",
     "tell": "a soft thumping in the underbrush, then silence.",
+    "diseaseVector": "Rabbits carry tularemia. Cook through; wear gloves when gutting.",
+    "butcher": {
+      "hide": 1,
+      "bone": 1
+    },
     "common": true,
     "regions": [
       "northeast"
@@ -1553,8 +1586,7 @@
     "calories": 12000,
     "difficulty": "hard",
     "method": [
-      "bow",
-      "avoid"
+      "bow"
     ],
     "knowledgeLevels": {
       "1": "Florida panther. Big cat. Endangered. You do not want to meet one hungry.",
@@ -1570,6 +1602,11 @@
     "huntText": "The birds go silent. Then you see it \u2014 low, fluid, already too close \u2014 and it sees you seeing it.",
     "killText": "About {kcal} kcal. You survived a panther. Tell the story for the rest of your life.",
     "tell": "a scream like a woman in the night \u2014 once heard, never forgotten.",
+    "diseaseVector": "Big cats can carry parasites and toxoplasmosis. Cook the meat thoroughly.",
+    "butcher": {
+      "hide": 2,
+      "bone": 2
+    },
     "common": false,
     "regions": [
       "florida"
@@ -1588,8 +1625,7 @@
     "calories": 8000,
     "difficulty": "hard",
     "method": [
-      "trap",
-      "avoid"
+      "trap"
     ],
     "knowledgeLevels": {
       "1": "Burmese python. Invasive. Huge. Not supposed to be here.",
@@ -1605,6 +1641,7 @@
     "huntText": "The grass parts \u2014 and keeps parting \u2014 and then you understand how big fifteen feet really is.",
     "killText": "About {kcal} kcal. Good eating, and you just did the ecosystem a favor. The skin makes excellent gear.",
     "tell": "a heavy sliding sound in the sawgrass, too regular for wind.",
+    "diseaseVector": "Pythons can carry salmonella like all reptiles. Wash after handling; cook through.",
     "butcher": {
       "hide": 2
     },
@@ -1718,7 +1755,7 @@
     "killText": "About {kcal} kcal. Tough meat. The feathers are the real value \u2014 warm as down.",
     "tell": "ear tufts go flat, eyes lock on.",
     "butcher": {
-      "feathers": 2
+      "feather": 2
     },
     "diseaseVector": "Low risk. Cook meat through.",
     "common": true,
