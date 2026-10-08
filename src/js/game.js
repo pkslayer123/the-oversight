@@ -8486,6 +8486,21 @@
       }
       detail[cy][cx] = 'dirt';
       delete t.secrets[cx + ',' + cy];
+      // BREAK-IT CAMPS-3 (2026-10-08): purge the packed tent's interior fire
+      // BEFORE breakCamp. The struck path skips breakCamp's fire sweep, and
+      // the tent sweep can't find the already-cleared cell — so the entry
+      // used to linger in state.fires: re-pitching the same cell inherited a
+      // lit fire for free (no fuel, no ticks, no 30 kcal — pay the ignite
+      // cost once, then free forever), and the struck message claimed "the
+      // fire keeps burning" for a fire whose tent was in your pack. A struck
+      // tent's fire is doused; only real remaining grid fires keep burning.
+      try {
+        const fires = this.state.fires || [];
+        for (let i = fires.length - 1; i >= 0; i--) {
+          const f = fires[i];
+          if (f.inside && f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy) fires.splice(i, 1);
+        }
+      } catch (e) {}
       s.inventory = s.inventory || [];
       const tent = s.inventory.find(i => i.kind === 'tent');
       if (tent) tent.units = (tent.units || 0) + 1;
@@ -19702,6 +19717,21 @@
           for (let i = fires.length - 1; i >= 0; i--) {
             const f = fires[i];
             if (f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy) fires.splice(i, 1);
+          }
+        } catch (e) {}
+      }
+      // SIBLING (break-it camps-3 2026-10-08): a smashed TENT's interior fire
+      // dies with it. breakCamp's tent sweep (below) can't purge it — the
+      // cell is already cleared, so the sweep never sees a 'tent' cell, and
+      // the entry used to linger: re-pitching the smashed cell inherited a
+      // lit fire for free (same class as the packTent catch). Grid fires
+      // die in the branch above; interior ones die here.
+      if (cellType === 'tent') {
+        try {
+          const fires = this.state.fires || [];
+          for (let i = fires.length - 1; i >= 0; i--) {
+            const f = fires[i];
+            if (f.inside && f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy) fires.splice(i, 1);
           }
         } catch (e) {}
       }

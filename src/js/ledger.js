@@ -643,6 +643,40 @@
       try { this.removeVillager(oldId, 'killed'); } catch (e) {}
       this.lineage().push({ name: oldName, epithet: this.leadershipEpithet(), day: s.day || 0, cause: cause || 'the wild' });
       this.say(`🕯️ ${oldName} is dead — ${cause || 'the wild'}. The village stops. Somebody screams. Somebody else starts digging.`);
+      // DEATH ENDS THE CAMP (break-it camps-3 2026-10-08): the mantle passes
+      // the office, not the claimed patch. A camp is its keeper's claim — the
+      // keeper is dead, so the claim lapses: the camp's fires die with it
+      // (same honesty as the wreck paths), the new bearer is NOT inside the
+      // old tent (no phantom room: tentRoomScreen keys off insideTent alone),
+      // and no pending breach follows them to Haven. The pitched tent itself
+      // STANDS — the expedition's canvas, still sec.yours; walk back and
+      // reclaim it. Placed here, before the successor is chosen, so even a
+      // later throw can't leave the stale room behind.
+      try {
+        if (s.insideTent) { s.insideTent = null; s.tentSmoke = 0; }
+        this.pendingEncounter = false; this.pendingMonsterId = null; this.pendingInTent = false;
+        const c = this.state.camp;
+        if (c) {
+          const fires = this.state.fires || [];
+          try {
+            const detail = this.genDetail(c.px, c.py);
+            for (let i = fires.length - 1; i >= 0; i--) {
+              const f = fires[i];
+              if (f.tx !== c.px || f.ty !== c.py) continue;
+              if (!f.inside && detail[f.cy] && detail[f.cy][f.cx] === 'fire') detail[f.cy][f.cx] = 'dirt';
+              fires.splice(i, 1);
+            }
+          } catch (e) {}
+          let place = 'the wild';
+          try { place = this.nodeEpithet(c.px, c.py) || place; } catch (e) {}
+          delete this.state.camp;
+          this.say(`The camp at ${place} has no keeper now — the fire's gone cold. The tent still stands, if anyone walks back for it.`);
+        }
+      } catch (e) {}
+      // the new bearer wakes INSIDE the hall, like a new game — insideHaven
+      // left undefined would read as grounds (havenStoresAccess: 'none'),
+      // stranding the successor with no pantry until they find the door.
+      s.insideHaven = true;
       // DRAMA (Steve 2026-10-07, Round C2): the death is a moment — fade to black,
       // soul rises. The Oversight's tone: the story continues. (Gated by systemArrived inside Game.drama.)
       try { this.drama('playerDeath', s.mx, s.my, oldName, cause || 'the wild'); } catch (e) {}
