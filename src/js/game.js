@@ -14321,6 +14321,10 @@
       const s = this.state.scholar;
       // SYNERGY: activatable use logged for discovery.
       this.noteAbilityUse(id);
+      // Steve 2026-10-07: using an ability grants XP toward leveling it.
+      // (Was only granted for diplomat/tracker/camp_cook — brawler abilities
+      // never leveled from combat, making one_person_army unreachable by fighting.)
+      this.gainAbilityXP(id, 1);
       // ACTION CLOCK: activating a power takes a moment of focus (2 ticks, time-only).
       // Sustained powers (time_skip) cost more — declared at their branch.
       // Effort kcal / metabolic upkeep are the other two costs (see metabolicDaily).
