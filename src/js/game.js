@@ -6718,6 +6718,14 @@
           _pit.uses = (_pit.uses || 1) - 1;
           if (_pit.uses <= 0) this.playerTile().traps = this.playerTile().traps.filter(t => t !== _pit);
           this.say(`Your foot goes through the brush cover — YOUR pit, the one you dug. Sharpened stakes, your own leg. ${_dmg} damage. Mark it well next time.`);
+          // PIT DEATH (break-it travel 2026-10-08): your own trap can kill
+          // you. The old code left a 0-HP scholar wandering with no death
+          // flow — no cheat-death trigger, and endDay blamed "the night".
+          // Die here, honestly, with the cause named.
+          if (this.state.scholar.health <= 0) {
+            if (!this.maybeCheatDeath()) this.playerDeath('your own pit trap');
+            return;
+          }
         } else {
           this.say(`You skirt the brushed-over hollow where your pit waits. Marked, this time.`);
         }
@@ -7607,7 +7615,15 @@
       if (tx === sx && ty === sy) return [];
       const path = this.findPath(sx, sy, tx, ty);
       if (!path) { this.say('No path there.'); return null; }
-      const cost = path.length * 10;
+      // WANDERER / SECOND SKIN (break-it travel 2026-10-08): travel.cost_mult
+      // applies here too — the promise is "-10% travel cost", and committed
+      // walks are the most expensive travel in the game. The announced cost
+      // below uses this number, so the label stays honest.
+      let cost = path.length * 10;
+      try {
+        const mult = this.modTarget('travel.cost_mult', 1);
+        if (mult !== 1) cost = Math.max(path.length, Math.round(cost * mult));
+      } catch (e) {}
       if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return null; }
       s.kcal -= cost;
       const [lx, ly] = path[path.length - 1];
@@ -7631,8 +7647,10 @@
       const cell = detail[ty] && detail[ty][tx];
       if (this.cellProps(cell).blocks) return false;
       s.facing = { x: Math.sign(tx - px), y: Math.sign(ty - py) };
-      // Same 2 kcal/step as microMove — committed walks aren't free either.
-      s.kcal = Math.max(0, (s.kcal || 0) - 2);
+      // KCAL WAS PREPAID by beginPathWalk (10/square, announced up front) —
+      // charging here too double-billed every committed walk (break-it travel
+      // 2026-10-08: the project's own test-movement.js asserted no double
+      // charge and was failing). This step costs the 1 tick of time only.
       s.mx = tx; s.my = ty;
       // MONSTERS MOVE WHEN YOU DO — per square, same as microMove.
       this.monsterTurn(); this.animalTurn();
@@ -20045,6 +20063,20 @@
       }
       // Exiting costs the rest of your movement.
       p.moveLeft = 0;
+      // BLOCKED FAR SIDE (break-it travel 2026-10-08): travelTo can refuse —
+      // a fallen tree, rubble, or fast creek on the next node. The old code
+      // said "you crash through to a new area" and ended the fight even when
+      // nothing moved — a lie, and the fight-continues branch scrambled grid
+      // positions on the node you never left. Attempt the crossing FIRST;
+      // only celebrate (or end the fight) when it actually lands.
+      let crossed = null;
+      try { crossed = this.travelTo(nx, ny); } catch (e) {}
+      if (crossed && crossed.kind === 'blockage') {
+        // travelTo already named the blockage. The push is spent; the fight
+        // is not — you hit a wall, not an exit.
+        this.say('🚪 You hurl yourself at the barrier — no escape that way. The fight continues here.');
+        return true; // consumed the push attempt
+      }
       // 50% to break contact at the barrier
       if (Math.random() < 0.5) {
         this.say('🚪 BARRIER CROSSED — you crash through the treeline to a new area. The barrier shimmers. They lose your trail. (You fled the fight by leaving the area.)');
@@ -20053,11 +20085,9 @@
         // party.js tbEndCheck wrapper — flag the player's flight here too.
         if (f.betrayal) f.playerFled = true;
         this.tbEnd('fled');
-        try { this.travelTo(nx, ny); } catch (e) {}
         return true;
       }
       this.say('🚪 BARRIER CROSSED — you stumble into a new area, but they\'re right behind you — through the barrier! The fight continues here. (The edge of the grid is an exit. They followed you.)');
-      try { this.travelTo(nx, ny); } catch (e) {}
       // They follow: reposition monsters near the entry edge on the new node
       // (combat continues; the node changed under the fight.)
       for (const m of mons) {
