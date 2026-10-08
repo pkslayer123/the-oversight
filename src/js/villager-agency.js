@@ -210,8 +210,8 @@
       var dist = 1 + Math.floor(R() * maxD);
       var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
       var d = pick(dirs);
-      var tx = Math.max(0, Math.min(6, hx + d[0] * dist));
-      var ty = Math.max(0, Math.min(6, hy + d[1] * dist));
+      var tx = Math.max(0, Math.min(8, hx + d[0] * dist)); // 9x9 world (2026-10-07)
+      var ty = Math.max(0, Math.min(8, hy + d[1] * dist)); // 9x9 world (2026-10-07)
       var duration = 8 + Math.floor(R() * 13); // 2-5 days of parts
       st.exped[vid] = {
         tx: tx, ty: ty, dist: dist, legs: 0,
@@ -252,7 +252,7 @@
       var nx = node.nx, ny = node.ny;
       if (nx !== ex.tx || ny !== ex.ty) {
         nx += Math.sign(ex.tx - nx); ny += Math.sign(ex.ty - ny);
-        nx = Math.max(0, Math.min(6, nx)); ny = Math.max(0, Math.min(6, ny));
+        nx = Math.max(0, Math.min(8, nx)); ny = Math.max(0, Math.min(8, ny)); // 9x9 world (2026-10-07)
         try { this.npcSetNode(vid, nx, ny); } catch (e) {}
         var key = nx + ',' + ny;
         a.stats[vid].nodes[key] = true;

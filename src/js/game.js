@@ -6138,8 +6138,8 @@
           const set = new Set([hx + ',' + hy]);
           const n = 2 + Math.floor(Math.random() * 4);
           for (let i = 0; i < n; i++) {
-            const x = Math.max(0, Math.min(6, hx + Math.floor(Math.random() * 5) - 2));
-            const y = Math.max(0, Math.min(6, hy + Math.floor(Math.random() * 5) - 2));
+            const x = Math.max(0, Math.min(8, hx + Math.floor(Math.random() * 5) - 2)); // 9x9 world (2026-10-07)
+            const y = Math.max(0, Math.min(8, hy + Math.floor(Math.random() * 5) - 2)); // 9x9 world (2026-10-07)
             set.add(x + ',' + y);
           }
           vp.visitedTiles = [...set];
