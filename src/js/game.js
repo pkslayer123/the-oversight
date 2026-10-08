@@ -14913,9 +14913,13 @@
       s.kcal = Math.max(0, (s.kcal || 0) - 250);
       this.say('(A day-part, gone to the trial. −250 kcal. Your hands are shaking. The fans loved it.)');
       const say = (m) => this.say(m);
+      // HONESTY (Steve 2026-10-08): the victory sting fires only on TRIUMPH.
+      // Failed trials get the "failed BEAUTIFULLY" text beat — not a fanfare.
+      let triumphed = false;
       if (opt.id === 'stalk') {
         if (this.hasAbility('game_sense') || this.hasAbility('tracker') || this.hasAbility('patient_aim')) {
           say('🏹 TRIUMPH: you read the ground like a letter — bent grass, a print, the wind in your face. The kill is clean, quick, and kind. The System replays it eleven times.');
+          triumphed = true;
           try { this.integrate(4, 'trial of the long stalk'); } catch (e) {}
           try { this.addNotability('player', 'trial of the long stalk'); } catch (e) {}
           try { this.stockPantry(600, 'Trial feast'); } catch (e) {}
@@ -14927,6 +14931,7 @@
       } else if (opt.id === 'meal') {
         if ((this.knowsTechnique && this.knowsTechnique('cook')) || this.hasAbility('camp_cook')) {
           say('🍲 TRIUMPH: you cook the meal of your life — heat, patience, restraint, and something you can\'t name that makes the whole haven go quiet for the first bite. The System is silent for a full minute. Then: "...We felt that."');
+          triumphed = true;
           try { this.integrate(5, 'trial of the perfect meal'); } catch (e) {}
           try { this.stockPantry(300, 'System-replicated (enthusiastic) meal'); } catch (e) {}
           say('(It replicates your meal for the haven — badly, lovingly. +300 kcal. There is lint. You eat around the lint.)');
@@ -14937,6 +14942,7 @@
       } else if (opt.id === 'stone') {
         if ((s.health || 100) >= 70 || this.hasAbility('second_wind') || this.hasAbility('iron_stomach')) {
           say('🪨 TRIUMPH: cold water, hard ground, a whole day of it — and you do not bend. The System watches you not-bend with something like awe. "NOTE: the human did not stop. We do not understand. We are taking notes anyway."');
+          triumphed = true;
           try { this.integrate(4, 'trial of stone'); } catch (e) {}
           try { this.addNotability('player', 'trial of stone'); } catch (e) {}
         } else {
@@ -14948,6 +14954,7 @@
       } else if (opt.id === 'tongues') {
         if (this.hasAbility('mediator') || this.hasAbility('diplomat') || this._evAvgTrust() >= 40) {
           say('🗣️ TRIUMPH: two villagers, one old grievance, and you talk them through it — no winners, no losers, just the thing finally SAID out loud. The haven breathes easier. The System calls it "conflict resolution." The village calls it Tuesday.');
+          triumphed = true;
           this._evTrustAll(5);
           try { this.integrate(3, 'trial of tongues'); } catch (e) {}
           say('(Village trust +5. Some trials are fought with talking.)');
@@ -14958,6 +14965,7 @@
       } else if (opt.id === 'ember') {
         if (this.nearFire && this.nearFire()) {
           say('🔥 TRIUMPH: bow-drill, tinder, breath — and the coal catches on the first real try, because your hands have done this a hundred times. The System slows the replay down. "NOTE: the human MADE fire. From NOTHING. We are... we need a moment."');
+          triumphed = true;
           try { this.integrate(4, 'trial of the first ember'); } catch (e) {}
         } else {
           s.kcal = Math.max(0, (s.kcal || 0) - 100);
@@ -14966,7 +14974,7 @@
           say('(The extra effort cost you another 100 kcal. Worth it, probably.)');
         }
       }
-      try { this.audioEvent('victory'); } catch (e) {}
+      if (triumphed) { try { this.audioEvent('victory'); } catch (e) {} }
       return true;
     },
     // checkTrialExpiry: if the player never picks, the System picks for them

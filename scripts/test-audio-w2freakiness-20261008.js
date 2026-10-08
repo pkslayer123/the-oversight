@@ -328,8 +328,9 @@ ok('wound(): registered (4b934b1 sweep — not duplicated here)',
   /function wound\(\)/.test(app) && /[^a-zA-Z]wound\(\) \{/.test(app));
 
 // ================= PART D: 3452732 fires resolve (item 3) =================
+// nightcourtDive REMOVED 2026-10-08 (break-it audio): dead synth, dive deliberately silent
 for (const h of ['nightcourtTurn', 'wolfSnarl', 'heronUnfold', 'heronStatic',
-  'nightcourtSilence', 'nightcourtLand', 'nightcourtClimb', 'nightcourtDive', 'animalButcher']) {
+  'nightcourtSilence', 'nightcourtLand', 'nightcourtClimb', 'animalButcher']) {
   ok(`3452732: ${h} registered`, typeof audio[h] === 'function');
 }
 const schemas = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'data', 'schemas.json'), 'utf8'));

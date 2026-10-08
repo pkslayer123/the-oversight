@@ -70,7 +70,8 @@ check('turtle has knownCue data', !!findKnownCue(turtle), 'monsters.json');
 console.log('\n=== Task 2: 4 missing monster voices ===');
 const appJs = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
 
-for (const voice of ['kiteUnfold', 'nevermoreUnfold', 'nightcourtTurn', 'nightcourtDive']) {
+// nightcourtDive REMOVED 2026-10-08 (break-it audio): dead synth, dive deliberately silent
+for (const voice of ['kiteUnfold', 'nevermoreUnfold', 'nightcourtTurn']) {
   check(
     `${voice} synth defined`,
     appJs.includes(`function ${voice}()`),
@@ -84,7 +85,7 @@ for (const voice of ['kiteUnfold', 'nevermoreUnfold', 'nightcourtTurn', 'nightco
 }
 
 // Verify the declarations exist in monsters.json
-const allVoices = ['kiteUnfold', 'nevermoreUnfold', 'nightcourtTurn', 'nightcourtDive'];
+const allVoices = ['kiteUnfold', 'nevermoreUnfold', 'nightcourtTurn']; // nightcourtDive removed 2026-10-08
 const monstersStr = JSON.stringify(mlist);
 for (const voice of allVoices) {
   check(

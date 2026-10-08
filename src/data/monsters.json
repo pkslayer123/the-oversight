@@ -2732,7 +2732,6 @@
       "painSwitch": true,
       "shortName": "owl",
       "noticeAudio": "nightcourtSilence",
-      "declareAudio": "nightcourtDive",
       "aggroAudio": "nightcourtTurn",
       "resolveAudio": "nightcourtLand",
       "knownTactics": "Watch the ground-shadow, not the sky \u2014 the dive is silent. A missed dive comes again instantly at your new position: dodge TWICE. Then it's spent.",

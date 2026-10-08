@@ -1807,7 +1807,10 @@
   //   game.js), nightcourtTurn (roost head-turn beat — the owl rotates its
   //   head while ROOSTING, tracking; fires ~1/3 of roost turns via
   //   tbAggroAudio; the dive stays silent BY DESIGN — Steve 2026-10-08),
-  //   nightcourtDive (judgment descends — declareAudio, monsters.json), kiteHum/kiteMark/kiteTransmit/kiteBroadcast/kiteClimb
+  //   nightcourtDive REMOVED 2026-10-08: dead synth — the dive is DELIBERATELY silent
+  //   ("the silence IS the telegraph"; bespoke dive path skips declareAudio by design,
+  //   Steve 2026-10-08), so the hook had zero fire sites. monsters.json entry removed too.
+  //   kiteHum/kiteMark/kiteTransmit/kiteBroadcast/kiteClimb
   //   (detuned kite-string whine + radio-static bursts — wired: game.js
   //   first-contact/mark/transmit/broadcast/climb dispatch).
   //   WAVE-1 CONTRACT, NOW DEFINED (Steve 2026-10-06): boarNotice/boarSnort/
@@ -8943,23 +8946,6 @@
         nz.start(t + 0.05); nz.stop(t + 0.5);
       }
     }
-    function nightcourtDive() {
-      // NIGHT COURT DIVES: judgment descends — a swooping tone that falls
-      // like a gavel from a great height. (nightcourt declare)
-      if (!ensure()) return;
-      const t = ctx.currentTime;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(600, t);
-      o.frequency.exponentialRampToValueAtTime(80, t + 0.7);
-      const f = ctx.createBiquadFilter(); f.type = 'lowpass';
-      f.frequency.setValueAtTime(2000, t);
-      f.frequency.exponentialRampToValueAtTime(300, t + 0.7);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.4, t + 0.1);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
-      o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.8);
-    }
     // ============ ROUND-5 AGGRO VOICES (Steve 2026-10-07) ============
     // Seven monsters declared combat with the deer bellow
     // (cfg.aggroAudio || 'deerAggro') — a knowledge-leak-class fiction
@@ -10842,7 +10828,6 @@
       kiteUnfold() { kiteUnfold(); }, // statickite aggroAudio (monsters.json)
       nevermoreUnfold() { nevermoreUnfold(); }, // nevermore aggroAudio (monsters.json)
       nightcourtTurn() { nightcourtTurn(); }, // nightcourt aggroAudio (monsters.json)
-      nightcourtDive() { nightcourtDive(); }, // nightcourt declareAudio (monsters.json)
       statusApplied(data) { statusApplied(data); }, // statusEffects.js applyStatus
       statusCured(data) { statusCured(data); }, // statusEffects.js cureStatus
       // ROUND-5 AGGRO VOICES (Steve 2026-10-07): seven monsters stopped
