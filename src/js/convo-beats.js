@@ -389,7 +389,7 @@
 
     // Subject change — explicit, with a bridge on the way out.
     out.push({ id: 'dlg:subject', label: '"Can I ask you something else?"' });
-    out.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
+    out.push({ id: 'leave', label: c.exchanges === 0 ? '"Actually — never mind."' : '"I should go."' }); // BREAK-IT (socialite 2026-10-08): the zero-exchange label must not claim a conversation happened.
 
     return out;
   };

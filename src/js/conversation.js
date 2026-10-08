@@ -51,6 +51,7 @@
 //   - drift_visible: when a drift channel crosses >=2 since the last note, the next conversation opens with one short stage-direction beat showing the change — at most once per day per villager, always matching the actual drift state (code: convoDriftNote, Steve 2026-10-07)
 //   - thread_lifecycle: open threads older than 14 days lapse into a remembered lapsed list (never silently deleted); resuming a lapsed topic gets an honest nod, and a hanging thread that gets discussed earns its closing beat at goodbye (code: convoTopicLedger/convoCloseLine/convoLapseLine, Steve 2026-10-07)
 //   - resume_honest_time: the resume opener names how long the thread hung (a 12-day-old thread is not "last time") and nods at other hanging threads so none feel orphaned (code: convoResumeOpener, Steve 2026-10-07)
+//   - goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the mood residue only lingers after 3+ exchanges (code: endConvo, break-it 2026-10-08)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -2845,7 +2846,7 @@
             sub.push({ id: 'teach', label: this.convoActionLabel(vid, 'teach') });
           }
         } catch (e) {}
-        sub.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
+        sub.push({ id: 'leave', label: c.exchanges === 0 ? '"Actually — never mind."' : '"I should go."' }); // BREAK-IT (socialite 2026-10-08): 'Nice talking to you' lied on a zero-exchange menu — the player said nothing. An aborted approach says never mind.
         return this.finalizeMenu(vid, sub);
       }
 
@@ -3057,7 +3058,7 @@
       // The subject-change is always available mid-thread (it's the explicit
       // pivot); on openers it rides the remaining slots as before.
       if (c.thread && c.thread !== 'small' && (onThread || choices.length < MAXC)) choices.push({ id: 'subject', label: '"Can I ask you something else?"' });
-      choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Nice talking to you."' : '"I should go."' });
+      choices.push({ id: 'leave', label: c.exchanges === 0 ? '"Actually — never mind."' : '"I should go."' }); // BREAK-IT (socialite 2026-10-08): see sub.push above — the zero-exchange label must not claim a conversation happened.
       return this.finalizeMenu(vid, choices);
     },
 
@@ -4105,6 +4106,16 @@
 
     endConvo(vid, how) {
       const c = this.convoGet(vid);
+      // BREAK-IT (socialite 2026-10-08): endConvo had no active-convo guard
+      // and paid its +3 trust stipend + mood residue on EVERY call. Repeat
+      // calls on a dead conversation (or the winddown auto-end followed by
+      // the UI's closeChat second call) farmed trust to 100 with no
+      // conversation at all. A goodbye is an event: it happens once, for a
+      // conversation that actually happened. Same shape as a real end so
+      // callers (convoTurn winddown, closeChat) need no changes.
+      if (!c || !c.active) {
+        return { ended: true, line: null, choices: [], transcript: (c && c.transcript || []).slice(), noop: true };
+      }
       // OPEN THREADS (Steve 2026-10-07): leaving mid-thread plants it in the
       // topic ledger — the next conversation can resume it. Must run before
       // c.thread is cleared below.
@@ -4155,9 +4166,16 @@
       // costs a little. Small, but felt over many conversations.
       // SCENE (Phase 2): both through the resolver. The talk stipend caps;
       // the mood residue is felt experience, not words (talk:false).
-      this.resolveConsequence(vid, { trust: 3, temper: 'neutral', name: 'endConvo:talk' });
+      // BREAK-IT (socialite 2026-10-08): the stipend paid +3 even for a
+      // zero-exchange hello-goodbye — spam open/close farmed to the 40 talk
+      // cap with nothing said. Words must be spoken for words to build
+      // trust: the stipend scales with actual exchanges. And the mood
+      // residue (talk:false, uncapped) only lingers on a REAL conversation —
+      // agree-spam + goodbye must not smuggle uncapped trust past the cap.
+      const stipend = c.exchanges >= 3 ? 3 : (c.exchanges >= 1 ? 1 : 0);
+      if (stipend > 0) this.resolveConsequence(vid, { trust: stipend, temper: 'neutral', name: 'endConvo:talk' });
       const cm = Math.max(-3, Math.min(3, c.mood || 0));
-      if (cm !== 0) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
+      if (cm !== 0 && c.exchanges >= 3) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social'); } catch (e) {}
       // BUGFIX (break-it 2026-10-08): `t` was undefined here — every natural

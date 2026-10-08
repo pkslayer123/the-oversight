@@ -63,7 +63,11 @@ function ok(cond, msg, extra) { A++; if (!cond) { F++; console.log('  FAIL:', ms
   const t1 = v.trust[vid] || 0;
   console.log(`dead taps before hidden: ${deadTaps}, beat taps: ${beatTaps}, trust ${t0} -> ${t1}`);
   ok(deadTaps <= 2, 'dlg:react winds down after at most 2 dead taps', `deadTaps=${deadTaps}`);
-  ok(t1 - t0 <= 1.01, 'no infinite trust farm on the dead button', `delta=${+(t1 - t0).toFixed(2)}`);
+  // Trust moves in whole points (trustGainMult rounds; 0.5 -> 1 since the
+  // dialogue rethink routes consequences through trustGainProgressive).
+  // Two dead taps = +2 max, and the menu hides the button — the farm fix
+  // is the wind-down, not the half-point.
+  ok(t1 - t0 <= 2.01, 'no infinite trust farm on the dead button', `delta=${+(t1 - t0).toFixed(2)}`);
   const idsAfter = (Game.convoChoices(vid) || []).map(x => x.id);
   ok(!idsAfter.includes('dlg:react'), 'dlg:react hidden once wound down');
   ok(idsAfter.length > 0, 'menu still offers other verbs (not a dead end)', idsAfter.join(','));

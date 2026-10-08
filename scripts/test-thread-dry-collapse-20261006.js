@@ -12,7 +12,7 @@ global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(f
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
  'src/js/game.js', 'src/js/encounters.js', 'src/js/conversation.js', 'src/js/convo-mood.js',
- 'src/js/convo-wants.js', 'src/js/convo-beats.js', 'src/js/convo-dialogue.js', 'src/js/convoTopics.js',
+ 'src/js/convo-wants.js', 'src/js/convo-beats.js', 'src/js/convo-scene.js', 'src/js/convo-dialogue.js', 'src/js/convoTopics.js',
  'src/js/journal.js', 'src/js/party.js', 'src/js/party-formal.js', 'src/js/truth.js',
  'src/js/contests.js', 'src/js/storage.js', 'src/js/perceive.js', 'src/js/carexplore.js',
  'src/js/justice.js', 'src/js/food.js', 'src/js/betrayal.js', 'src/js/corpses.js',
