@@ -5,7 +5,9 @@
 //     (heron wire snap), ambushSnap (bear-trap jaws), rushHit (hushwolf
 //     arrival), lockonHit (direct-pattern hit)
 //   Contest fear beats: hypeDetonate (the detonation is FEARED),
-//     hypeEncourage (hype-beast rally choir)
+// (break-it audio 2026-10-08: hypeEncourage was a dead synth — registered,
+// zero call sites — and was deleted from app.js. Its entries are dropped
+// here so this historical proof script stays green.)
 //   Animals (pass-2 leftovers): animalBite, animalBolt, animalRattle
 //   New distinct synths for hooks with no synth of their own:
 //     combatStartHit (combatStart was just a heartbeat), impactWild
@@ -119,7 +121,7 @@ function freqSpan(osc) {
 }
 // impactWild has no dispatch key of its own — it is reached through
 // impact({pattern:'<unknown>'}), so analyze it through that path.
-const ARGS = { hypeEncourage: { n: 2 } };
+const ARGS = {};
 const INVOKE = { impactWild: (A) => A.impact({ pattern: 'zzz-unknown' }) };
 function analyze(name) {
   nodeSeq = 0; nodes.length = 0; edges.length = 0;
@@ -165,7 +167,7 @@ function analyze(name) {
 
 const DEEPENED = [
   'droneBeam', 'lineStrike', 'ambushSnap', 'rushHit', 'lockonHit', 'impactWild',
-  'hypeDetonate', 'hypeEncourage', 'combatStart',
+  'hypeDetonate', 'combatStart',
   'animalBite', 'animalBolt', 'animalRattle',
   'delegateDebrief',
 ];
@@ -189,7 +191,7 @@ for (const n of DEEPENED) {
 // so cues are instantly distinguishable from their siblings ----------
 const GROUPS = {
   'monster telegraphs': ['droneBeam', 'lineStrike', 'ambushSnap', 'rushHit', 'lockonHit', 'impactWild'],
-  'contest fear beats': ['hypeDetonate', 'hypeEncourage', 'combatStart'],
+  'contest fear beats': ['hypeDetonate', 'combatStart'],
   'animals': ['animalBite', 'animalBolt', 'animalRattle'],
 };
 console.log('\n--- Pass-3 family spectral spread ---');

@@ -16,8 +16,10 @@
 //   texture     a noise source present
 // Each deepened synth must satisfy: layers>=3 AND (dissonance OR modulation)
 // AND (sweep OR modulation).
-// Plus param-behavior checks: swarmShutters({urgency:5}) builds strictly more
-// voices than ({urgency:1}); holdMusic honors broken/watching without throwing.
+// Plus param-behavior checks: holdMusic honors broken/watching without
+// throwing. (swarmShutters/swarmScatter were dead synths — registered, zero
+// call sites — deleted from app.js by the break-it audio run 2026-10-08;
+// their entries are dropped here so this historical proof script stays green.)
 // Usage: node scripts/test-audio-deepening-4.js
 'use strict';
 const fs = require('fs');
@@ -146,9 +148,7 @@ function analyze(name, args) {
 
 const DEEPENED = {
   // name -> representative args
-  swarmShutters: [[{ urgency: 4 }], [{}]],
   swarmEscalate: [[]],
-  swarmScatter: [[]],
   droneCorrect: [[]],
   mothFlash: [[]],
   projectorPull: [[]],
@@ -190,11 +190,6 @@ for (const [name, argSets] of Object.entries(DEEPENED)) {
 }
 
 // ---------- param-behavior: the sibling-check fixes ----------
-const lo = analyze('swarmShutters', [{ urgency: 1 }]);
-const hi = analyze('swarmShutters', [{ urgency: 5 }]);
-ok('swarmShutters hears urgency: more voices at urgency 5 than 1',
-  hi.oscs > lo.oscs, `urg1=${lo.oscs} urg5=${hi.oscs}`);
-ok('swarmShutters registered in dispatch', typeof A.swarmShutters === 'function');
 ok('holdMusic registered in dispatch with param passthrough', typeof A.holdMusic === 'function');
 ok('animalButcher registered in dispatch', typeof A.animalButcher === 'function');
 
