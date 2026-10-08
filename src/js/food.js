@@ -1773,7 +1773,13 @@
       const opts = [];
       const day = this.state.scholar.day;
       if (it.foodKind === 'meat' && it.foodState === 'cleaned') {
-        const total = (it.hiddenKcal || Math.round(it.kcalEach * 2.5 * (it.units || 1)));
+        // COOK PRESERVES (hunter loop 2026-10-08): the cleaned item's honest
+        // total is kcalEach×units (the 40%-ish butcher yield). hiddenKcal is
+        // the RAW gross — using it here promised 2.5× phantom calories and
+        // erased the clean-technique gate (blind 30% vs skilled 40% cooked to
+        // the same number). Cooking makes meat safe and keeps longer; it
+        // doesn't resurrect the 60% the butchering discarded.
+        const total = Math.round((it.kcalEach || 0) * (it.units || 1));
         const units = it.units || 1;
         const cookKcal = Math.round((this.knowsTechnique('cook') ? total : Math.round(total * 0.85)) / units);
         const smokeKcal = Math.round(cookKcal * (this.knowsTechnique('preserve') ? 0.95 : 0.80));
@@ -1902,13 +1908,24 @@
         }
       }
     }
-    // meat pipeline: cleaned -> cooked (full kcal, safe).
-    // (hiddenKcal is the TOTAL gross; kcalEach is per unit — don't mix them.)
-    let n = 0;
+    // meat pipeline: cleaned -> cooked (safe; keeps ~5d).
+    // COOK PRESERVES (hunter loop 2026-10-08): the cleaned total is
+    // kcalEach×units (the honest 40%-ish butcher yield) — hiddenKcal is the
+    // RAW gross, and using it here cooked every batch at 2.5× phantom
+    // calories while erasing the clean-technique gate. Cooking makes meat
+    // safe and keeps longer; it doesn't resurrect the butchered-away 60%.
+    // UNKNOWN FLESH: the batch button must not bypass the cautious-test
+    // gate — monster flesh you haven't cleared stays out of the batch, with
+    // the reason said out loud. (The per-item cook path keeps it unknown
+    // but never reveals it; the batch path shouldn't touch it at all.)
+    let n = 0, nUnknown = 0;
     for (const item of (this.state.scholar.inventory || [])) {
       if (item.foodKind === 'meat' && item.foodState === 'cleaned') {
+        const mId = (item.plantId || '').replace(/^meat_/, '');
+        const isMon = (this.data.monsters || []).some(m => m.id === mId);
+        if (isMon && !this.monsterFoodSafe(mId)) { nUnknown++; continue; }
         const units = item.units || 1;
-        const total = item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units);
+        const total = Math.round((item.kcalEach || 0) * units);
         const cookedTotal = knowsCook ? total : Math.round(total * 0.85);
         item.kcalEach = Math.round(cookedTotal / units);
         item.hiddenKcal = null;
@@ -1925,6 +1942,9 @@
     }
     // legacy rawKcal items: scale the just-cooked ones when technique is missing.
     // (orig already cooked them; find what changed this call.)
+    if (nUnknown > 0) {
+      captured.push(`Left ${nUnknown} unknown flesh out of the batch — you don't know it's food yet. Test it cautiously (per-item Cook) before trusting it.`);
+    }
     for (const m of captured) {
       if (n > 0 && m === 'Nothing raw to cook.') continue;
       this.say(m);
@@ -1959,15 +1979,23 @@
     }
     if (item && item.foodKind === 'meat' && item.foodState === 'cleaned') {
       if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
-      // hiddenKcal is TOTAL; kcalEach is per unit.
       const units = item.units || 1;
-      const total = item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units);
       const knows = this.knowsTechnique('cook');
       // MONSTER FOOD SAFETY: cooking doesn't teach. Unknown flesh stays
       // unknown — no kcal reveal, no "Safe." claim — until tested.
       const cMeatId = (item.plantId || '').replace(/^meat_/, '');
       const cIsMonster = (this.data.monsters || []).some(m => m.id === cMeatId);
       const cFoodSafe = !cIsMonster || this.monsterFoodSafe(cMeatId);
+      // COOK PRESERVES (hunter loop 2026-10-08): the cleaned total is
+      // kcalEach×units (the honest 40%-ish butcher yield). hiddenKcal is the
+      // RAW gross — using it here resurrected the butchered-away 60% (2.5×
+      // free calories) and erased the clean-technique gate. Unknown flesh
+      // (kcalEach 0) keeps its gross in hiddenKcal for the later
+      // cautious-test reveal math.
+      const total = (cFoodSafe && item.kcalEach > 0)
+        ? Math.round(item.kcalEach * units)
+        : (item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units));
+      // hiddenKcal is TOTAL; kcalEach is per unit.
       item.kcalEach = cFoodSafe ? Math.round((knows ? total : Math.round(total * 0.85)) / units) : 0;
       item.hiddenKcal = cFoodSafe ? null : total;
       item.foodState = 'cooked'; item.diseaseRisk = null; item.safe = cFoodSafe;

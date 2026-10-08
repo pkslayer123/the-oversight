@@ -7,11 +7,23 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
+global.window = global; // eval-time stub for equipment.js; deleted before play (else combat goes async)
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
- 'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js', 'src/js/conversation.js', 'src/js/journal.js',
- 'src/js/party.js', 'src/js/truth.js', 'src/js/storage.js', 'src/js/perceive.js'
+ 'src/js/game.js', 'src/js/encounters.js', 'src/js/conversation.js',
+ 'src/js/convo-mood.js', 'src/js/convoTopics.js', 'src/js/convo-wants.js',
+ 'src/js/convo-dialogue.js', 'src/js/convo-beats.js', 'src/js/convo-scene.js',
+ 'src/js/examine.js', 'src/js/equipment.js', 'src/js/journal.js', 'src/js/party.js',
+ 'src/js/party-formal.js', 'src/js/truth.js', 'src/js/contests.js',
+ 'src/js/alienPlayers.js', 'src/js/storage.js', 'src/js/perceive.js',
+ 'src/js/carexplore.js', 'src/js/justice.js', 'src/js/food.js',
+ 'src/js/betrayal.js', 'src/js/corpses.js', 'src/js/lifeseed.js',
+ 'src/js/progression.js', 'src/js/ledger.js', 'src/js/abilityActions.js',
+ 'src/js/monsterBehaviors.js', 'src/js/statusEffects.js', 'src/js/villager-agency.js',
+ 'src/js/codex-people.js', 'src/js/membership.js', 'src/js/hierarchy.js',
+ 'src/js/debug-scenarios.js', 'src/js/build.js',
 ].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+delete global.window; // sync combat path for the rest of the run
 const Game = globalThis.Scattering.Game;
 
 let pass = 0, fail = 0;
@@ -124,7 +136,7 @@ const origRandom = Math.random;
     ok('cook technique unknown before first cook', Game.knowsTechnique('cook') === false);
     Game.cookAll();
     const cooked = s.inventory[carIdx2];
-    ok('messy cook: 85% kcal', cooked.kcalEach === 638); // 3000*0.85/4 portions
+    ok('messy cook: 85% of cleaned yield', cooked.kcalEach === 255); // COOK PRESERVES (2026-10-08): skilled-cleaned 1200 *0.85/4 — "messy" is the first-time cook, not the clean
     ok('messy cook: safe + spoilDay +5', cooked.safe === true && !cooked.diseaseRisk && cooked.spoilDay === s.day + 5);
     ok('messy cook: teaches', Game.knowsTechnique('cook') === true);
     // skilled cook on a fresh turkey: full value
@@ -132,7 +144,7 @@ const origRandom = Math.random;
     const carIdx3 = s.inventory.findIndex(i => i.foodState === 'carcass');
     Game.cleanCarcass(carIdx3);
     Game.cookAll();
-    ok('skilled cook: full kcal', s.inventory[carIdx3].kcalEach === 750); // 3000/4 portions
+    ok('skilled cook: preserves cleaned yield', s.inventory[carIdx3].kcalEach === 300); // 1200 cleaned/4 — same as raw, now safe (no phantom 2.5x)
     Game.nearFire = origNear;
 
     // preserve
@@ -141,7 +153,7 @@ const origRandom = Math.random;
     Game.preserveFood(cookIdx);
     const smoked = s.inventory[cookIdx];
     ok('preserved messy: keeps ~2 weeks', smoked.foodState === 'preserved' && smoked.spoilDay === s.day + 15);
-    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(638 * 0.8)); // messy: no technique
+    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(191 * 0.8)); // messy: no technique
     // skilled preserve: full month
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     Game.state.codex.techniques.preserve = true;

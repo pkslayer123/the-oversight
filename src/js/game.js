@@ -2454,7 +2454,11 @@
       if (!tool && recipeId === 'snare' && this.hasItem('snare_wire')) {
         this.consumeItem('snare_wire', 1);
         tool = { recipeId: 'snare', uses: 2 };
-        this.say('(The snare wire becomes the snare.)');
+        // HONESTY (hunter loop 2026-10-08): a crafted snare has 10 uses; the
+        // wire shortcut makes an improvised one with 2. The wire path skips
+        // the pack (no "(N uses left)" row), so say the uses out loud here —
+        // otherwise the player reasonably expects a full snare.
+        this.say('(The snare wire becomes the snare — improvised, 2 uses.)');
       }
       if (!tool) { this.say('You don\'t have that trap.'); return null; }
       const recipe = _recipe;
@@ -2560,7 +2564,7 @@
             }
             trap.uses -= 1;
             if (trap.uses <= 0) {
-              this.say(`The ${recipe.name} broke. You\\'ll need another.`);
+              this.say(`The ${recipe.name} broke. You'll need another.`);
               t.traps = t.traps.filter(x => x !== trap);
             } else {
               trap.setDay = this.state.scholar.day; // reset, check again tomorrow
@@ -17406,9 +17410,12 @@
         // someone (a cook-specialist villager, or you) actually knows cooking.
         // Otherwise the village eats it raw — at raw value. Specialists matter.
         if (item.foodKind === 'meat' && item.foodState === 'cleaned' && item.hiddenKcal) {
-          const cooks = (this.villageHasSpecialty && this.villageHasSpecialty('cook')) || (this.knowsTechnique && this.knowsTechnique('cook'));
-          // hiddenKcal is TOTAL; effectiveKcal is per unit.
-          effectiveKcal = cooks ? Math.round(item.hiddenKcal / (item.units || 1)) : kcalEach;
+          // COOK PRESERVES (hunter loop 2026-10-08): village cooking makes
+          // cleaned meat safe, not more caloric. hiddenKcal is the RAW gross
+          // — valuing it here conjured 2.5× phantom calories into every meal
+          // containing village-cooked meat. The honest cooked value is the
+          // cleaned per-portion value; the cook's contribution is safety.
+          effectiveKcal = kcalEach;
         }
         const itemTotal = effectiveKcal * (item.units || 1);
         if (itemTotal <= need) {
