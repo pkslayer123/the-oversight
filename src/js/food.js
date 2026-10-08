@@ -1210,6 +1210,26 @@
       if (a.pstate === 'winded') return false;
       // it SAW you move: no clean shot, ever.
       let fleeP = (a.aware >= 0.9) ? 1 : a.aware * 0.9;
+      // FLEEDIFFICULTY (Steve 2026-10-08, animals-js-gaps): animals.json
+      // carries fleeDifficulty (trivial..dangerous) on all 48 animals. Dead
+      // data until the 2026-10-07 wiring into encPreyCfg chase tuning
+      // (notice/awareRate/stamina for non-table species); this is the other
+      // half — the strike flee-odds roll. A trivial animal barely registers
+      // a strike; a very_hard one is already gone. "Dangerous" REDUCES the
+      // bolt chance: dangerous animals stand their ground (their behaviors
+      // never-bolt via encBehaviorStrikeReact before this roll; this is the
+      // data backstop). Only the uncertainty band moves — a fully-aware
+      // animal (>=0.9) always bolts: "it saw you move" is the stealth
+      // lesson, and difficulty buys no forgiveness there.
+      if (a.aware < 0.9) {
+        try {
+          var _adef = this.encAnimalDef ? this.encAnimalDef(a.id) : null;
+          var _fd = _adef && _adef.fleeDifficulty;
+          fleeP += _fd === 'trivial' ? -0.15 : _fd === 'easy' ? -0.08
+                 : _fd === 'hard' ? 0.08 : _fd === 'very_hard' ? 0.15
+                 : _fd === 'dangerous' ? -0.20 : 0;
+        } catch (e) {}
+      }
       let trackLvl = 0;
       try { trackLvl = this.abilityLevel ? this.abilityLevel('tracker') : 0; } catch (e) {}
       fleeP -= trackLvl * 0.12; // stalking skill matters

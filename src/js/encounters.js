@@ -1636,7 +1636,16 @@
       // over; say so, every turn. It's your move — but the animal is still
       // THERE, and still a creature. (The pant audio already fired on the
       // transition; don't re-fire it every turn.)
-      this.say(this.encCap(label) + ' stands spent — sides heaving, head low. It\'s not running any more. Your move.');
+      // WINDED BEATS (Steve 2026-10-08): one line every turn read as a
+      // frozen screen. Three quiet beats in rotation — low-key, never
+      // spamy. Catchable-but-doomed, not stuck.
+      a._windedBeats = (a._windedBeats || 0) + 1;
+      var _wb = [
+        this.encCap(label) + ' stands spent — sides heaving, head low. It\'s not running any more. Your move.',
+        this.encCap(label) + ' sways where it stopped, head drooping — too blown to run. Yours to take, whenever.',
+        this.encCap(label) + ' drags in one more ragged breath, flanks shuddering. The chase is over. Your move.'
+      ];
+      this.say(_wb[(a._windedBeats - 1) % _wb.length]);
       return; // spent. your move.
     }
     if (a.pstate === 'regroup') {
