@@ -114,8 +114,8 @@
           c.threadDryFor = null; // thread is alive — clear any stale dry marker
           c.transcript.push({ who: 'them', text: beat });
           this.sayLine(vid, beat);
-          // Trust: engaging builds it.
-          try { this.trustGain(vid, 1); } catch (e) {}
+          // Trust: engaging builds it. SCENE (Phase 2): through the resolver.
+          try { this.resolveConsequence(vid, { trust: 1, temper: 'neutral', name: 'dlg:more' }); } catch (e) {}
           return { line: beat, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
         }
         // Thread's dry — honest admission, once. Mark the thread dry so the
@@ -131,7 +131,8 @@
         const reacts = ['"Huh."', '"I see."', '"Yeah."'];
         const youSaid = reacts[Math.floor(Math.random() * reacts.length)];
         c.transcript.push({ who: 'you', text: youSaid });
-        try { this.trustGain(vid, 0.5); } catch (e) {}
+        // SCENE (Phase 2): through the resolver.
+        try { this.resolveConsequence(vid, { trust: 0.5, temper: 'neutral', name: 'dlg:react' }); } catch (e) {}
         // They continue or wind down naturally. On a dry thread, don't fish
         // for beats — go straight to the wind-down.
         const dry = c.thread && c.threadDryFor && c.thread === c.threadDryFor;
@@ -160,10 +161,8 @@
         // Emotional engagement — real trust, mood shift.
         const youSaid = dlg === 'comfort' ? '"Are you okay?"' : '"That sounds really hard."';
         c.transcript.push({ who: 'you', text: youSaid });
-        try {
-          this.trustGain(vid, 2);
-          if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, 1);
-        } catch (e) {}
+        // SCENE (Phase 2): through the resolver.
+        try { this.resolveConsequence(vid, { trust: 2, mood: 1, temper: 'kind', name: 'dlg:' + dlg }); } catch (e) {}
         // They open up a little more, or accept the comfort.
         const lines = [
           '"Thanks. ...Thanks for saying that."',
@@ -183,7 +182,8 @@
         const line = beat || '"Long story. ...Maybe another time."';
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
-        try { this.trustGain(vid, 1); } catch (e) {}
+        // SCENE (Phase 2): through the resolver.
+        try { this.resolveConsequence(vid, { trust: 1, temper: 'kind', name: 'dlg:askwhy' }); } catch (e) {}
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       }
 
@@ -191,7 +191,8 @@
         // "How can I help?" — engage with their want (Steve 2026-10-06).
         // The NPC must STATE the favor concretely, not loop on "Here's the thing —".
         c.transcript.push({ who: 'you', text: '"How can I help?"' });
-        try { this.trustGain(vid, 2); } catch (e) {}
+        // SCENE (Phase 2): through the resolver.
+        try { this.resolveConsequence(vid, { trust: 2, temper: 'kind', name: 'dlg:help' }); } catch (e) {}
         // Get the specific favor from the want system, or generate one.
         let favorLine = null;
         try {
@@ -226,7 +227,8 @@
         const line = beat || '"It\'s... complicated. But thank you for asking."';
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
-        try { this.trustGain(vid, 1); } catch (e) {}
+        // SCENE (Phase 2): through the resolver.
+        try { this.resolveConsequence(vid, { trust: 1, temper: 'kind', name: 'dlg:details' }); } catch (e) {}
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       }
 
@@ -237,11 +239,14 @@
         // (HURT_KINDS:'deflected' in convo-mood.js). Honest, and honest
         // things leave marks.
         c.transcript.push({ who: 'you', text: '"I can\'t right now."' });
+        // SCENE (Phase 2): through the resolver — cools mood AND writes
+        // the 'deflected' memory (HURT_KINDS slot, wired Phase 1).
         try {
-          const t = this.state.village.trust || {};
-          t[vid] = Math.max(0, (t[vid] || 10) - 1);
-          if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, -1);
-          this.remember(vid, 'deflected', 'you turned down their ask');
+          this.resolveConsequence(vid, {
+            trust: -1, mood: -1, temper: 'neutral',
+            memory: { type: 'deflected', note: 'you turned down their ask' },
+            name: 'dlg:cant',
+          });
         } catch (e) {}
         const line = '"Oh. ...No, I get it. Thanks for being straight with me."';
         c.transcript.push({ who: 'them', text: line });
@@ -260,9 +265,8 @@
         // the odds that a later hard confrontation cracks them (truth.js).
         // Distinct verb, real effect, honest fiction.
         c.transcript.push({ who: 'you', text: '"That doesn\'t quite add up."' });
-        try {
-          if (typeof this.convoMoodShift === 'function') this.convoMoodShift(vid, -1);
-        } catch (e) {}
+        // SCENE (Phase 2): through the resolver.
+        try { this.resolveConsequence(vid, { mood: -1, temper: 'honest-hard', name: 'dlg:doubt' }); } catch (e) {}
         let prods = 0;
         try {
           const doubts = (typeof this.getDoubts === 'function' && this.getDoubts(vid)) || [];

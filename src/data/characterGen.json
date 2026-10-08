@@ -4209,7 +4209,7 @@
           {
             "id": "a_deflect",
             "honest_opt_out": true,
-            "label": "Deflect — \"I'd rather not say.\"",
+            "label": "\"I'd rather not say.\"",
             "react": "\"Okay.\" A nod. \"Some things you keep. I get that.\""
           }
         ],
@@ -4356,7 +4356,7 @@
         "answers": [
           {
             "id": "a_tell",
-            "label": "Tell them your trade.",
+            "label": "(tell them your trade)",
             "react": "\"Useful. Everything useful matters now. I mean that as a compliment.\""
           },
           {
@@ -4387,7 +4387,7 @@
           },
           {
             "id": "a_name",
-            "label": "Mention someone specific.",
+            "label": "(mention someone specific)",
             "react": "\"Interesting. I'll watch them. Thanks for trusting me with that.\""
           },
           {
@@ -4458,7 +4458,7 @@
         "answers": [
           {
             "id": "a_story",
-            "label": "Tell them something funny.",
+            "label": "(tell them something funny)",
             "react": "They laugh — really laugh, the first real one you've heard in days. \"Okay. Okay, that's good. I needed that.\""
           },
           {
@@ -4520,7 +4520,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Why do you want to know?\"",
+            "label": "\"Why do you want to know?\"",
+            "temper": "cruel",
             "react": "\"Curious, is all. Sorry — forget I asked.\" They let it go, easy."
           }
         ],
@@ -4544,7 +4545,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Regrets are a luxury now.\"",
+            "label": "\"Regrets are a luxury now.\"",
+            "temper": "cruel",
             "react": "\"Maybe. Or maybe they're the only honest thing left.\" They let it drop."
           }
         ],
@@ -4567,7 +4569,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Nothing worth mentioning.\"",
+            "label": "\"Nothing worth mentioning.\"",
+            "temper": "cruel",
             "react": "\"Everyone says that. Then they turn out to be the one who saves us all.\" A grin."
           }
         ],
@@ -4590,7 +4593,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Belief is for people with spare energy.\"",
+            "label": "\"Belief is for people with spare energy.\"",
+            "temper": "cruel",
             "react": "\"Ouch. Fair, though. I'll believe enough for both of us.\""
           }
         ],
@@ -4613,7 +4617,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"That's a dangerous question.\"",
+            "label": "\"That's a dangerous question.\"",
+            "temper": "cruel",
             "react": "\"It is. Forget I asked. But... keep your eyes open. That's all.\""
           }
         ],
@@ -4636,7 +4641,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"I'm too busy surviving to have an identity crisis.\"",
+            "label": "\"I'm too busy surviving to have an identity crisis.\"",
+            "temper": "cruel",
             "react": "\"The crisis will wait. It's patient. It'll be there when you're ready.\""
           }
         ],
@@ -4660,7 +4666,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Define 'worst.'\"",
+            "label": "\"Define 'worst.'\"",
+            "temper": "cruel",
             "react": "\"The fact that you have to ask means you're doing better than you think.\""
           }
         ],
@@ -4683,7 +4690,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Hope's a big word for small things.\"",
+            "label": "\"Hope's a big word for small things.\"",
+            "temper": "cruel",
             "react": "\"Then let's call it 'looking forward to.' Same thing, less pressure.\""
           }
         ],
@@ -4706,7 +4714,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Alone is how you get got.\"",
+            "label": "\"Alone is how you get got.\"",
+            "temper": "cruel",
             "react": "\"Practical. Fair — the woods aren't kind to wanderers. Just... come back for the fire sometimes, yeah?\""
           }
         ],
@@ -4729,7 +4738,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Laughing feels wrong now.\"",
+            "label": "\"Laughing feels wrong now.\"",
+            "temper": "cruel",
             "react": "\"It feels wrong because it matters. The wrong-feeling things are usually the important ones.\""
           }
         ],
@@ -4752,7 +4762,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"I'm not much of a teacher.\"",
+            "label": "\"I'm not much of a teacher.\"",
+            "temper": "cruel",
             "react": "\"Everyone says that. Then they show you something that saves your life. No pressure, though.\""
           }
         ],
@@ -4776,7 +4787,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Why? You heard something?\"",
+            "label": "\"Why? You heard something?\"",
+            "temper": "cruel",
             "react": "\"No, no — just asking. Idle curiosity, I swear.\""
           }
         ],
@@ -4799,7 +4811,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Everything. Next question.\"",
+            "label": "\"Everything. Next question.\"",
+            "temper": "cruel",
             "react": "\"Fair. We can do the greatest-hits version later. Or never. Your call.\""
           }
         ],
@@ -4822,7 +4835,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Kindness feels like a setup now. I don't trust it.\"",
+            "label": "\"Kindness feels like a setup now. I don't trust it.\"",
+            "temper": "cruel",
             "react": "\"I hear you. But don't let the fear eat the good parts. They're real, even when they're rare.\""
           }
         ],
@@ -4846,7 +4860,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"My old life feels like a TV show I watched once.\"",
+            "label": "\"My old life feels like a TV show I watched once.\"",
+            "temper": "cruel",
             "react": "\"Then you're writing a new season. Better writing, higher stakes. You'll figure out the character.\""
           }
         ],
@@ -4869,7 +4884,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"That's not a question you ask people.\"",
+            "label": "\"That's not a question you ask people.\"",
+            "temper": "cruel",
             "react": "\"You're right. I'm sorry. Forget I asked.\" And they mean it — the subject drops, clean."
           }
         ],
@@ -4892,7 +4908,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Are you going to sing?\"",
+            "label": "\"Are you going to sing?\"",
+            "temper": "cruel",
             "react": "\"Absolutely not. This was a fact-finding mission, not a performance.\""
           }
         ],
@@ -4939,7 +4956,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Anger doesn't help.\"",
+            "label": "\"Anger doesn't help.\"",
+            "temper": "cruel",
             "react": "\"Maybe not. But it's honest. I'll take honest.\""
           }
         ],
@@ -4987,7 +5005,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Everyone did.\"",
+            "label": "\"Everyone did.\"",
+            "temper": "cruel",
             "react": "\"Yeah. Everyone did. That's the worst part — it's not special, it's universal.\""
           }
         ],
@@ -5057,7 +5076,8 @@
           },
           {
             "id": "a_deflect",
-            "label": "Deflect — \"Fun feels like another lifetime.\"",
+            "label": "\"Fun feels like another lifetime.\"",
+            "temper": "cruel",
             "react": "\"It was. But lifetimes come back around. They do.\""
           }
         ],

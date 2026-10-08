@@ -2644,6 +2644,9 @@
         for (const a of reactiveDef.answers) {
           choices.push({ id: 'react:' + c.reactiveQ.id + ':' + a.id, label: a.label });
         }
+        // ASK/ANSWER CONTRACT (Phase 2): reactive questions get the honest
+        // opt-out too — every question, no exceptions.
+        choices.push({ id: 'react:' + c.reactiveQ.id + ':honest_pass', label: '"I\'d rather not say."', temper: 'neutral' });
       }
       // GENERIC-Q: a direct question with no bespoke def still deserves
       // answers first (Rule 4). Same narrowing as reactive: pivots wait.
@@ -2653,6 +2656,9 @@
       const gqActive = c.genericQ && !reactiveDef && !c.pendingQ;
       const gqAnswers = gqActive ? this.convoGenericAnswers(vid, c.genericQ) : [];
       for (const a of gqAnswers) choices.push(a);
+      // ASK/ANSWER CONTRACT (Phase 2): generic questions get the honest
+      // opt-out too.
+      if (gqActive) choices.push({ id: 'gq:' + c.genericQ.kind + ':honest_pass', label: '"I\'d rather not say."', temper: 'neutral' });
       if (gqActive) {
         const gr = [['agree', '"You\'re right."'], ['joke', '"Ha — yeah."'], ['silence', '"..."']];
         const pick = gr[Math.floor(Math.random() * gr.length)];
@@ -2871,6 +2877,20 @@
         if (choices.length < MAXC) pushReact();
       } else {
         let topicsAdded = 0;
+        // WHAT'S ALIVE (dialog rethink Phase 2, Principle 8): the topic menu
+        // leads with what's alive between you — open threads, fresh memories,
+        // want-driven questions, world events — not the static pool. The
+        // subject-change menu becomes "things between us."
+        if (!suppressPivot) {
+          try {
+            const alive = (typeof this.convoWhatsAlive === 'function') ? this.convoWhatsAlive(vid) : [];
+            for (const a of alive) {
+              if (choices.length >= MAXC || topicsAdded >= 3) break;
+              if (choices.some(ch => ch && ch.id === a.id)) continue;
+              choices.push(a); topicsAdded++;
+            }
+          } catch (e) {}
+        }
         for (const a of t2fresh) {
           if (a.id === threadAsk || topicsAdded >= freshCap || topicsAdded >= topicCapMood || choices.length >= MAXC) continue;
           choices.push(a); topicsAdded++;
@@ -3222,6 +3242,18 @@
             if (c.askedQs.indexOf(hb.ask.id) === -1) c.askedQs.push(hb.ask.id);
             try { this.noteAskedQ(hb.ask.id); } catch (e) {}
             c.heldAsk = false;
+            // IT'S DIFFERENT NOW (Phase 2, Principle 8): the t2clock "it's
+            // different now" pattern goes universal — re-asked bespoke
+            // questions acknowledge the changed run, never repeat blind.
+            try {
+              c.qsnap = c.qsnap || {};
+              const qclock = (typeof this.t2clock === 'function')
+                ? this.t2clock(vid) : String((this.state.scholar || {}).day || 0);
+              if (c.qsnap[hb.ask.id] && c.qsnap[hb.ask.id] !== qclock) {
+                hb.text = '"You asked me that before. It\'s a different question now." ' + hb.text;
+              }
+              c.qsnap[hb.ask.id] = qclock;
+            } catch (e) {}
           }
           const gl = this.convoGoonLabel(vid);
           c.transcript.push({ who: 'you', text: gl });
@@ -3277,24 +3309,20 @@
         const saidLabel = ad && ad.label ? String(ad.label).replaceAll('{region}', regionNow) : null;
         // HONEST WEIGHT (dialog rethink Phase 1, Steve 2026-10-08): honest
         // words land. Data answers may carry trust/mood; honest-hard and
-        // cruel tempers move the relationship and mark escalation. The
-        // disposition cost multiplier applies to out-of-character picks.
+        // cruel tempers move the relationship and mark escalation.
+        // SCENE (Phase 2): all consequences flow through the resolver — one
+        // place, one set of rules (talk caps, cost mults, mediation).
         const atemper = (ad && ad.temper) || 'neutral';
-        if (atemper === 'cruel' || atemper === 'honest-hard') this.markEscalated(vid);
-        try {
-          const mult = this.dispositionCostMult(vid, atemper);
-          let tdelta = (ad && typeof ad.trust === 'number') ? ad.trust : 0;
-          let mdelta = (ad && typeof ad.mood === 'number') ? ad.mood : 0;
-          // honest-hard defaults: the truth lands, even without data numbers.
-          if (atemper === 'honest-hard' && tdelta === 0 && mdelta === 0) { tdelta = -1; mdelta = -1; }
-          if (tdelta < 0) tdelta *= mult;
-          if (mdelta < 0) mdelta *= mult;
-          if (tdelta) { const tt = this.state.village.trust || {}; tt[vid] = Math.max(0, Math.min(100, (tt[vid] || 10) + tdelta)); }
-          if (mdelta) mshift(mdelta);
-          // Moral trajectory: kind/cruel answers reshape the palette.
-          if (atemper === 'kind') this.shiftDisposition(0.5);
-          else if (atemper === 'cruel') this.shiftDisposition(-0.5);
-        } catch (e) {}
+        let tdelta = (ad && typeof ad.trust === 'number') ? ad.trust : 0;
+        let mdelta = (ad && typeof ad.mood === 'number') ? ad.mood : undefined;
+        // honest-hard defaults: the truth lands, even without data numbers.
+        if (atemper === 'honest-hard' && tdelta === 0 && mdelta === undefined) { tdelta = -1; mdelta = -1; }
+        this.resolveConsequence(vid, {
+          trust: tdelta, mood: mdelta, temper: atemper,
+          disposition: atemper === 'kind' ? 0.5 : atemper === 'cruel' ? -0.5 : 0,
+          escalate: atemper === 'cruel' || atemper === 'honest-hard',
+          name: 'answer:' + qid + ':' + aid,
+        });
         done(this.voiceLine(vid, this.fillTalkLine(react, this.vpOf(vid))), saidLabel);
         this.remember(vid, 'you_said', qid + '=' + aid);
         // FOLLOW-UP BEAT: answering a real question sometimes earns a second
@@ -3311,14 +3339,13 @@
         try { this.noteAskedQ(qid); } catch (e) {}
         // DISPOSITION (Phase 1): dodging is a cruel-temper move. Out-of-
         // character for a kind player — costs more. Marks escalation.
-        const dmult = this.dispositionCostMult(vid, 'cruel');
-        this.markEscalated(vid);
-        this.shiftDisposition(-0.5);
-        const t = this.state.village.trust || {};
-        t[vid] = Math.max(0, (t[vid] || 10) - dmult);
         // MOOD: dodging a direct question cools the room. Fair now that an
         // honest opt-out exists — this is a choice to be rude, not a trap.
-        mshift(-dmult);
+        // SCENE (Phase 2): through the resolver.
+        this.resolveConsequence(vid, {
+          trust: -1, mood: -1, temper: 'cruel', disposition: -0.5,
+          escalate: true, name: 'deflect_q',
+        });
         done('"Okay." Something shutters, just slightly.', '(change the subject)');
       } else if (choiceId.indexOf('react:') === 0) {
         // REACTIVE ANSWER: engaged their direct question. The outcome must
@@ -3329,13 +3356,23 @@
         const ad = rdef && rdef.answers.find(a => a.id === aid);
         if (c.reactiveQ && c.reactiveQ.id === rid) c.reactiveQ = null;
         answeredReactive = true;
-        const t = this.state.village.trust || {};
-        if (ad && ad.action === 'look_treeline') {
+        // SCENE (Phase 2): consequences through the resolver. Warmth follows
+        // the trust delta — kind answers warm, cruel or dismissive ones cool.
+        const rcons = (rdelta, aname) => this.resolveConsequence(vid, {
+          trust: rdelta, temper: 'neutral', name: aname,
+        });
+        if (aid === 'honest_pass') {
+          // ASK/ANSWER CONTRACT (Phase 2): honestly decline a reactive
+          // question. Graceful, no cost — the question resolves.
+          this.resolveConsequence(vid, {
+            memory: { type: 'you_said', note: rid + '=honest_pass' },
+            name: 'react:honest_pass',
+          });
+          done('"Fair enough. I shouldn\'t have pressed."', '"I\'d rather not say."');
+        } else if (ad && ad.action === 'look_treeline') {
           // "Let's go look. Together." — the contextual show, not burdock.
           const spooky = Math.random() < 0.5;
-          t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
-          // MOOD: warmth follows the trust delta — bravery together warms.
-          mshift(Math.sign(ad.trust || 0));
+          rcons(ad.trust || 0, 'react:' + rid + ':' + aid);
           c.thread = 'spooked'; c.depth = 1;
           try { this.convoDeepTick(vid); } catch (e) {}
           done(spooky
@@ -3356,21 +3393,73 @@
           // village-wide note at draw time: the next "ask me something real"
           // draws from what's left, even before this one is revealed.
           try { this.noteAskedQ(qd && qd.id); } catch (e) {}
-          t[vid] = Math.min(100, (t[vid] || 10) + (ad.trust || 0));
-          // MOOD: warmth follows the trust delta.
-          mshift(Math.sign(ad.trust || 0));
+          rcons(ad.trust || 0, 'react:' + rid + ':' + aid);
           c.thread = 'small'; c.depth = 1;
           done(ad.line || '"...Okay. Here it is."', ad.label);
           // ONE-BEAT TURNS (Steve 2026-10-05): the question queues behind
           // "Of course. Ask." — pendingQ/askedQs/qCount land when the
           // continuer reveals it, never before the player has seen it asked.
           if (qd) extraQ = qd;        } else if (ad) {
-          t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + (ad.trust || 0)));
-          // MOOD: warmth follows the trust delta — kind answers warm,
-          // cruel or dismissive ones cool. No separate data needed.
-          mshift(Math.sign(ad.trust || 0));
+          rcons(ad.trust || 0, 'react:' + rid + ':' + aid);
           if (rdef.thread) { c.thread = rdef.thread; c.depth = 1; }
           done(ad.line, ad.label);
+        } else {
+          done('"..."', null);
+        }
+      } else if (choiceId.indexOf('alive:') === 0) {
+        // WHAT'S ALIVE (Phase 2): the player picked up something alive —
+        // an open thread, a fresh memory, a want-driven question, a world
+        // event. Route each to its machinery; never a dead end.
+        const aparts = choiceId.split(':');
+        const akind = aparts[1], akey = aparts.slice(2).join(':');
+        if (akind === 'thread') {
+          // Resume the open thread. It's being addressed — clear it from
+          // the ledger so it doesn't haunt the menu.
+          const open = (typeof this.convoOpenThreads === 'function') ? this.convoOpenThreads(vid) : [];
+          const o = open.find(x => x && x.tid === akey);
+          const label = (o && o.label) || akey;
+          try {
+            const led = this.convoTopicLedger(vid);
+            led.open = (led.open || []).filter(x => !x || x.tid !== akey);
+          } catch (e) {}
+          c.thread = akey; c.depth = 1;
+          this.resolveConsequence(vid, { trust: 1, temper: 'kind', name: 'alive:thread' });
+          const beat = (typeof this.convoThreadBeat === 'function') ? this.convoThreadBeat(vid) : null;
+          done(beat || '"Yeah... where were we with that."', `"About ${label} — we never finished."`);
+        } else if (akind === 'memory') {
+          // Name something you share. The ledger is continuity — they answer
+          // from the specific memory, not a generic line.
+          const MEM_RESP = {
+            deflected: "\u201cYeah. I remember. ...It\u2019s okay. Really.\u201d",
+            gift: "\u201cYou didn\u2019t have to do that. I haven\u2019t forgotten.\u201d",
+            private_gift: "\u201cNobody saw that. I know. Thank you.\u201d",
+            promise_kept: "\u201cYou kept your word. That\u2019s rare out here.\u201d",
+            promise_broken: "\u201c...Yeah. We should talk about that.\u201d",
+            comforted: "\u201cThat night helped. More than I said.\u201d",
+            shared_fear: "\u201cI\u2019m glad I told you. Glad you told me.\u201d",
+            you_threatened: "\u201cI haven\u2019t forgotten what you said. Just... careful.\u201d",
+            confronted: "\u201cYou were wrong, you know. But I hear you.\u201d",
+            shared_goal: "\u201cWe talked about wanting that. Still do.\u201d",
+          };
+          this.resolveConsequence(vid, { trust: 1, temper: 'kind', name: 'alive:memory' });
+          const about = (typeof this.convoMemoryAbout === 'function' && this.convoMemoryAbout(akey)) || 'that';
+          done(MEM_RESP[akey] || '"Yeah. I think about that too."', `"About ${about}..."`);
+        } else if (akind === 'want') {
+          // The want surfaces as a question (Principle 9): engage it.
+          c.thread = 'want'; c.depth = 1;
+          let wline = null;
+          try {
+            const opener = this.convoWantOpener ? this.convoWantOpener(vid, c.want) : null;
+            wline = opener && opener.line;
+            if (c.want) c.want.stage = Math.max(c.want.stage || 0, 1);
+          } catch (e) {}
+          this.resolveConsequence(vid, { trust: 1, temper: 'kind', name: 'alive:want' });
+          done(wline || '"Okay. Here\u2019s the thing \u2014"', '"Is there something you need? Really."');
+        } else if (akind === 'event') {
+          // World events cut the queue — route to the lately topic.
+          this.resolveConsequence(vid, { trust: 1, temper: 'neutral', name: 'alive:event' });
+          const evline = (typeof this.topic2Ask === 'function') ? this.topic2Ask(vid, 'lately') : null;
+          done(evline || '"Yeah. Everyone\u2019s talking about it."', '"What\u2019s going on out there?"');
         } else {
           done('"..."', null);
         }
@@ -3384,30 +3473,41 @@
         const kind = parts[1], aid = parts[2];
         const wasGq = c.genericQ;
         c.genericQ = null; answeredGeneric = true;
-        const t = this.state.village.trust || {};
         let youLine = null, resp = null;
-        if (kind === 'yn') {
+        // SCENE (Phase 2): trust through the resolver (talk caps at 40).
+        let gqTrust = 0;
+        if (aid === 'honest_pass') {
+          // ASK/ANSWER CONTRACT (Phase 2): honestly decline a generic
+          // question. Graceful, no cost — the question resolves.
+          youLine = '"I\'d rather not say."';
+          resp = '"Fair enough \u2014 I shouldn\'t have pressed."';
+          this.resolveConsequence(vid, {
+            memory: { type: 'you_said', note: (wasGq && wasGq.kind || 'gq') + '=honest_pass' },
+            name: 'gq:honest_pass',
+          });
+        } else if (kind === 'yn') {
           youLine = aid === 'yes' ? '"Yes."' : aid === 'no' ? '"No."' : '"I don\'t know."';
           resp = this.convoPick(vid, 'gq:yn:' + aid, GQ_ACK[aid] || GQ_ACK.unsure);
-          if (aid !== 'unsure') t[vid] = Math.min(100, (t[vid] || 10) + 1);
+          if (aid !== 'unsure') gqTrust = 1;
         } else if (kind === 'howru') {
           youLine = aid === 'bad' ? '"Honestly? Not great."' : aid === 'fine' ? '"I\'m fine."' : '"Better when I\'m busy."';
           resp = this.convoPick(vid, 'gq:howru:' + aid, GQ_ACK['howru_' + aid] || GQ_ACK.howru_fine);
-          t[vid] = Math.min(100, (t[vid] || 10) + (aid === 'bad' ? 2 : 1));
+          gqTrust = aid === 'bad' ? 2 : 1;
         } else if (kind === 'greet') {
           youLine = aid === 'notmuch' ? '"Not much. You?"' : '"Surviving."';
           resp = this.convoPick(vid, 'gq:greet:' + aid, GQ_ACK['greet_' + aid] || GQ_ACK.greet_notmuch);
-          t[vid] = Math.min(100, (t[vid] || 10) + 1);
+          gqTrust = 1;
         } else {
           if (aid === 'take') {
             youLine = '"What do you think?"';
             resp = this.convoPick(vid, 'gq:open:take', GQ_TAKES);
-            t[vid] = Math.min(100, (t[vid] || 10) + 1);
+            gqTrust = 1;
           } else {
             youLine = '"I don\'t know yet."';
             resp = this.convoPick(vid, 'gq:open:unsure', GQ_ACK.unsure);
           }
         }
+        if (gqTrust) this.resolveConsequence(vid, { trust: gqTrust, temper: 'neutral', name: 'gq:' + kind + ':' + aid });
         if (wasGq && wasGq.kind === 'howru' && aid === 'bad') {
           try { this.convoDeepTick(vid); } catch (e) {}
         }
@@ -3424,9 +3524,8 @@
         // they want is an act of care. Words only go so far — talk caps at 40.
         // TOPIC PACK (Steve 2026-10-06): you/fears/loved are acts of care too.
         if (topic === 'past' || topic === 'goal' || (this.topic2Deep && this.topic2Deep(topic))) {
-          const t = this.state.village.trust || {};
-          const cur = t[vid] || 10;
-          if (cur < 40) t[vid] = Math.min(40, cur + 2);
+          // SCENE (Phase 2): asking deep is an act of care — through the resolver.
+          this.resolveConsequence(vid, { trust: 2, temper: 'kind', name: 'ask:' + topic });
         }
         // TOPIC PACK (Steve 2026-10-06): generated topics carry their own labels.
         done(this.convoAskTopic(vid, topic), this.topic2AskLabel ? this.topic2AskLabel(vid, topic) : this.convoLabel(vid, topic));
@@ -3477,8 +3576,8 @@
             '"I won\'t forget you said that."',
             '"Okay. Okay — that means something, you know that?"',
           ]) || '"Thank you."';
-          const t = this.state.village.trust || {};
-          t[vid] = Math.min(100, (t[vid] || 10) + 2);
+          // SCENE (Phase 2): through the resolver.
+          this.resolveConsequence(vid, { trust: 2, temper: 'kind', name: 'offer_help' });
           done(l, '"I could help with that."');
         }
       } else if (choiceId === 'trade') {
@@ -3580,8 +3679,8 @@
           this.state.village.taught[vid].push(pid);
           const pname = ((this.data.plants || []).find(p => p.id === pid) || {}).name || pid;
           this.discover('teach');
-          const t = this.state.village.trust || {};
-          t[vid] = Math.min(100, (t[vid] || 10) + 2);
+          // SCENE (Phase 2): teaching is a real act — through the resolver, no talk cap.
+          this.resolveConsequence(vid, { trust: 2, talk: false, temper: 'kind', name: 'teach' });
           try { this.socialTick(vid); } catch (e) {}
           try { this.convoDeepTick(vid); } catch (e) {}
           done(respLine || `You show them ${pname} — where it grows, how to tell it apart. Their eyes widen. "I never knew that."`, youLine);
@@ -3620,9 +3719,12 @@
         const g = this.spreadRumor(rtarget, type, vid);
         c.rumorDone = true; c.thread = null; c.rumorTarget = null; c.rumorTargets = null;
         // Sharing a secret is intimate: a little trust, and they remember.
-        const t = this.state.village.trust || {};
-        t[vid] = Math.min(100, (t[vid] || 10) + 2);
-        this.remember(vid, 'you_told_rumor', `${type} about ${this.displayName(rtarget)}`);
+        // SCENE (Phase 2): through the resolver (words cap; the memory is the act).
+        this.resolveConsequence(vid, {
+          trust: 2, temper: 'cruel',
+          memory: { type: 'you_told_rumor', note: `${type} about ${this.displayName(rtarget)}` },
+          name: 'rumor:spread',
+        });
         try { this.socialTick(vid); } catch (e) {}
         // Reaction in their temperament voice — not a canned pivot.
         const temp = this.npcTemper(vid);
@@ -3653,9 +3755,8 @@
         c.thread = 'theorize'; c.depth = 1;
         const line = this.theorizeWith(vid, topic);
         // Thinking together is intimate — it deepens trust, like past/goal asks.
-        const tt = this.state.village.trust || {};
-        const tcur = tt[vid] || 10;
-        if (tcur < 40) tt[vid] = Math.min(40, tcur + 2);
+        // SCENE (Phase 2): through the resolver.
+        this.resolveConsequence(vid, { trust: 2, temper: 'kind', name: 'theorize' });
         done(line, '"What do you think is actually going on here?"');
       } else if (choiceId === 'compare_maps') {
         // COMPARE MAPS (Steve 2026-10-06): their visited tiles become your
@@ -3680,9 +3781,8 @@
           line = this.convoPick(vid, 'maps:nonenew', spots);
         }
         // Sharing ground is trust-building — practical intimacy.
-        const tt = this.state.village.trust || {};
-        const tcur = tt[vid] || 10;
-        if (tcur < 40) tt[vid] = Math.min(40, tcur + 1);
+        // SCENE (Phase 2): through the resolver.
+        this.resolveConsequence(vid, { trust: 1, temper: 'neutral', name: 'compare_maps' });
         done(line, '"Can we compare maps?"');
       } else if (choiceId === 'agree') {
         // Reactive-aware: "You're right" IS an answer to a direct question.
@@ -3777,8 +3877,8 @@
                       'You draw a circle in the dirt around both your feet. They laugh, surprised.',
                       'You tap your chest, then theirs. Us. They nod, emphatic.'],
         };
-        const t = this.state.village.trust || {};
-        t[vid] = Math.min(40, (t[vid] || 10) + 1);
+        // SCENE (Phase 2): through the resolver.
+        this.resolveConsequence(vid, { trust: 1, temper: 'kind', name: 'nv:' + kind });
         done(this.convoPickCycle(vid, 'nv:' + kind, outs[kind] || ['You gesture.']), '(gesture)');
       } else {
         done('"..."', null);
@@ -4008,14 +4108,14 @@
       c.transcript.push({ who: 'them', text: line });
       while (c.transcript.length > 200) c.transcript.shift(); // HISTORY (Steve 2026-10-05): was 8 — destroyed conversation history and desynced the tap-advance. 200 keeps the whole conversation; memory is trivial.
       // WORDS ONLY GO SO FAR: talk caps at 40. Beyond that, do something real.
-      const t = this.state.village.trust || (this.state.village.trust = {});
-      const cur = t[vid] || 10;
-      t[vid] = cur >= 40 ? cur : Math.min(40, cur + 3);
       // MOOD LINGERS (convo-mood.js): how the conversation felt sticks to
       // the relationship — ending warm earns a little trust, ending tense
       // costs a little. Small, but felt over many conversations.
+      // SCENE (Phase 2): both through the resolver. The talk stipend caps;
+      // the mood residue is felt experience, not words (talk:false).
+      this.resolveConsequence(vid, { trust: 3, temper: 'neutral', name: 'endConvo:talk' });
       const cm = Math.max(-3, Math.min(3, c.mood || 0));
-      if (cm !== 0) t[vid] = Math.max(0, Math.min(100, (t[vid] || 10) + cm));
+      if (cm !== 0) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social'); } catch (e) {}
       this.convoConflictFallout(vid, t[vid]);
@@ -4088,6 +4188,9 @@
   };
 
   Object.assign(Game, methods);
+  // SCENE (dialog rethink Phase 2): expose the reactive defs so
+  // validateAskContract can gate every question path, not just pendingQ.
+  Game.REACTIVE_DEFS = REACTIVE_DEFS;
 })();
 
 // ============ REAL FOREIGN LANGUAGES ============
@@ -4494,7 +4597,6 @@
     nvRespond(vid, kind) {
       const c = this.convoGet(vid);
       const lang = c.nativeLang || this.npcNativeLang(vid);
-      const t = this.state.village.trust || {};
       // SYSTEM MEDIATION (Steve 2026-10-06): under live translate they can
       // TELL you're hearing them through the machine. Once per conversation,
       // voiced by age and temperament — elders may find it rude, the young
@@ -4507,7 +4609,8 @@
         const mtemp = this.npcTemper(vid);
         if (mband === 'elder') {
           mediatedNote = ' They notice your eyes unfocus \u2014 listening to something behind their words. "Talk to ME," they sign, irritated, "not through it."';
-          t[vid] = Math.max(0, (t[vid] || 10) - 1); // rude. lands whole, never halved.
+          // SCENE (Phase 2): rude lands whole, never halved — through the resolver.
+          this.resolveConsequence(vid, { trust: -1, temper: 'neutral', name: 'foreign:mediated-rude' }); // rude.
         } else if (mband === 'young') {
           mediatedNote = ' They catch on fast \u2014 you flinch at the wrong moments, hearing the System\u2019s version under their voice. They grin and ham it up for the audience in your head.';
         } else if (mtemp === 'prickly') {
@@ -4534,7 +4637,8 @@
       const reactKind = { nod: 'agree', smile: 'warm', pointself: 'warm' }[kind] || 'agree';
       const ph = this.foreignLine(vid, reactKind);
       this.langExposureGain(vid, lang, 1);
-      t[vid] = Math.min(40, (t[vid] || 10) + 1);
+      // SCENE (Phase 2): through the resolver.
+      this.resolveConsequence(vid, { trust: 1, temper: 'kind', name: 'foreign:react' });
       const r = this.renderForeign(vid, ph);
       const narr = {
         nod: 'They nod back, slowly.',
