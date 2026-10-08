@@ -5034,26 +5034,12 @@
             this.say('Someone by the fire nods at the counter. "We pool food here. Keep what you need for the road — the rest feeds everyone, once it\'s food."');
           }
         }
-        // TEACHING MOMENT: you show your haul. they gather. someone might know something.
-        // "What's this?" — and if they know, they teach. real foraging knowledge, exchanged.
-        // find a villager who knows something you don't, and trusts you enough to share
-        const v = this.state.village;
-        const candidates = (v.roster || []).filter(rid => {
-          const trust = (v.trust && v.trust[rid]) || 0;
-          return trust > 30 && rid !== this.villagerId;
-        });
-        if (candidates.length && Math.random() < 0.5) {
-          const teacherId = candidates[Math.floor(Math.random() * candidates.length)];
-          const teacherKnows = (v.taught && v.taught[teacherId]) || [];
-          const youKnow = Object.keys(this.state.codex.plants);
-          const toTeach = teacherKnows.filter(pid => !youKnow.includes(pid) && this.data.plants.find(p => p.id === pid));
-          if (toTeach.length) {
-            const pid = toTeach[Math.floor(Math.random() * toTeach.length)];
-            // they teach you (using the teachPlant logic, but as a moment not an action)
-            this.say(`Around the fire, you show your haul.`);
-            this.teachPlant(teacherId, pid);
-          }
-        }
+        // TEACHING MOMENT (Steve 2026-10-05): the haul IS the curriculum.
+        // What you carried home is what gets taught — demonstrations with
+        // the specimen in hand, capped at 2 lessons per return. journal.js
+        // owns the moment; this is the only caller. (slice(-0) === slice(0),
+        // so guard staged>0 — an empty return teaches nothing.)
+        if (staged > 0) this.haulTeachingMoment(this.prepStash().slice(-staged), { maxLessons: 2 });
       }
       if (this.won) {
         this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${entries} Codex entries. The pantry is fuller than when you left.`);
