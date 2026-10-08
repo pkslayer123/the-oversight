@@ -5595,32 +5595,39 @@
       if (Math.random() < 0.3) {
         this.villageLearn(village);
       }
-      // TRAVELERS (Steve 2026-10-07): villages send travelers. A traveler passing
-      // through your haven means you HEAR about their village — even if you've
-      // never been there. Closer villages are heard about sooner (travelers walk).
-      // This is how you find the village 2 tiles north "pretty early" — not by
-      // stumbling into it, but because someone told you.
-      if (!village.rumored && !village.generated) {
-        const hx = 4, hy = 4; // haven at center of 9x9
-        const dist = Math.abs(village.x - hx) + Math.abs(village.y - hy);
-        // Closer = more likely to hear about. 2 tiles: ~5%/day. 8 tiles: ~1%/day.
-        const rumorChance = Math.max(0.01, 0.06 - dist * 0.007);
-        if (Math.random() < rumorChance) {
-          village.rumored = true;
-          village.rumorDay = village.day;
-          // queue the rumor for the player (delivered via gossip or map)
-          const s = this.state.scholar;
-          s.rumors = s.rumors || [];
-          const dir = this.directionTo(hx, hy, village.x, village.y);
-          s.rumors.push({
-            type: 'village',
-            villageId: village.id,
-            text: `A traveler passed through yesterday, talking about a village to the ${dir} called ${village.name}.`,
-            day: this.state.scholar.day,
-          });
-        }
-      }
       village.day++;
+    },
+
+    // maybeVillageRumor: travelers walk. Once per player day, each village
+    // you've never approached can send word to your haven — this is how you
+    // hear about the village 2 tiles north "pretty early", before stumbling
+    // into it. (BUG 2026-10-07, drifter loop: the roll used to live inside
+    // simVillageDay, so a rumor could only ever fire DURING the catch-up sim
+    // triggered by approaching — you heard about them exactly as you arrived.
+    // The design comment always said travelers bring word to YOU first.)
+    // Called from endDay(); never from simVillageDay.
+    maybeVillageRumor(village) {
+      if (!village || village.rumored || village.generated) return false;
+      const hx = 4, hy = 4; // haven at center of 9x9
+      const dist = Math.abs(village.x - hx) + Math.abs(village.y - hy);
+      // Closer = more likely to hear about. 2 tiles: ~5%/day. 8 tiles: ~1%/day.
+      const rumorChance = Math.max(0.01, 0.06 - dist * 0.007);
+      if (Math.random() < rumorChance) {
+        village.rumored = true;
+        village.rumorDay = this.state.scholar.day;
+        // queue the rumor for the player (delivered via gossip or map)
+        const s = this.state.scholar;
+        s.rumors = s.rumors || [];
+        const dir = this.directionTo(hx, hy, village.x, village.y);
+        s.rumors.push({
+          type: 'village',
+          villageId: village.id,
+          text: `A traveler passed through yesterday, talking about a village to the ${dir} called ${village.name}.`,
+          day: this.state.scholar.day,
+        });
+        return true;
+      }
+      return false;
     },
 
     // tickJoinedVillage: the village you joined lives TODAY — but only while
@@ -16595,6 +16602,11 @@
       // SLICE 2: System arrival and timed events.
       this.checkSystemArrival();
       this.checkTimedEvents();
+      // TRAVELERS (Steve 2026-10-07): every day, villages you've never been to
+      // can send a traveler your way. Word arrives BEFORE you walk there.
+      try {
+        for (const ov of (this.state.otherVillages || [])) this.maybeVillageRumor(ov);
+      } catch (e) {}
       // LEADER: morning briefing — village knowledge flows to you post-arrival.
       try { this.villageBriefing(); } catch (e) {}
       // CONTESTS (Steve 2026-10-05): the show runs on a schedule. 2/week max.
