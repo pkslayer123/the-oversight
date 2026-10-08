@@ -12685,7 +12685,10 @@
       // punctuation the opener ran two sentences together ("...treeline
       // Someone at the haven...").
       const unk = mdef.unknown || 'Something moving.';
-      const unkP = /[.!?…]$/.test(unk) ? unk : unk + '.';
+      // PROSE (2026-10-07): unknown descriptors open lowercase ("the thing
+      // with headlights for eyes...") — a sentence opener must be capitalized.
+      const unkC = unk.charAt(0).toUpperCase() + unk.slice(1);
+      const unkP = /[.!?…]$/.test(unkC) ? unkC : unkC + '.';
       this.say(`You don't know what that was. ${unkP} Someone at the haven should hear about this.`);
     },
     // monsterTellActive: you have an encounter the village hasn't heard about.
@@ -18590,8 +18593,14 @@
         if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
         const d = S.combat.roll([10, 16]);
         const who = o.kind === 'player' ? 'you' : o.name;
-        this.say(`The ${m.name} thrashes its antlers at ${who} — getting close has a price. (${d})`);
-        this.tbDamage(o.key, d, m.name + "'s antlers");
+        // PROSE (2026-10-07): m.name carries its own article on unknowns
+        // ("the thing with headlights for eyes, standing too still") — compose
+        // via monsterNoun like the 7040 call site; never "The the ...".
+        let mn = m.name;
+        try { mn = this.monsterNoun(m.monsterId); } catch (e) {}
+        if (/^something\b/i.test(mn)) this.say(`Something thrashes its antlers at ${who} — getting close has a price. (${d})`);
+        else this.say(`The ${mn} thrashes its antlers at ${who} — getting close has a price. (${d})`);
+        this.tbDamage(o.key, d, mn + "'s antlers");
         hit = true;
         if (f.over) return true;
       }
