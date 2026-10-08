@@ -59,9 +59,10 @@ function activateAs(id, target) {
   const s = Game.state.scholar;
   console.log(`seed=${SEED} mode=${FIX ? 'FIXED (current code)' : 'OLD (double-count shim)'}`);
 
-  // 'purify' with no poison: returns null (honest no-op) but the activation
-  // attempt is still logged exactly once + 1 XP.
+  // 'purify' WITH poison: fires — the activation attempt is logged exactly
+  // once + 1 XP (the double-count fix this test was written for).
   grant('purify');
+  s.poisons = [{ id: 'test-poison' }];
   s.abilityUseLog = [];
   const ab = s.abilities.find(a => a.id === 'purify');
   const xp0 = ab.xp || 0;
@@ -70,11 +71,17 @@ function activateAs(id, target) {
   ok('one activation logs exactly ONE synergy attempt', uses === 1, `attempts=${uses}`);
   ok('one activation grants exactly +1 XP', (ab.xp || 0) - xp0 === 1, `xp delta=${(ab.xp || 0) - xp0}`);
 
-  // second activation: still one attempt each, no accumulation weirdness
+  // 'purify' with NO poison: fails honestly ("Not poisoned.") — a fizzled
+  // action is not practice (break-it food run 2026-10-08: failed activations
+  // grant no XP). Reset the per-day gate so we test the no-poison path.
+  s.poisons = [];
+  s.purifyDay = null;
   s.abilityUseLog = [];
+  const xp1 = ab.xp || 0;
   activateAs('purify');
   const uses2 = (s.abilityUseLog || []).filter(u => u.id === 'purify').length;
-  ok('second activation also logs exactly ONE attempt', uses2 === 1, `attempts=${uses2}`);
+  ok('failed activation logs ZERO attempts', uses2 === 0, `attempts=${uses2}`);
+  ok('failed activation grants ZERO XP', (ab.xp || 0) - xp1 === 0, `xp delta=${(ab.xp || 0) - xp1}`);
 
   // synergy discovery bookkeeping sees one attempt per activation, not two:
   // activate a real synergy leg pair (dowsing + rain_dancer in rain) and
