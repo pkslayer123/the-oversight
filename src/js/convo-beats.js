@@ -379,7 +379,8 @@
       const TOPIC_THREADS = ['village', 'past', 'goal', 'plans', 'gossip', 'personal'];
       const onThread = TOPIC_THREADS.indexOf(c.thread) !== -1;
       if (!onThread && c.thread !== 'grief' && c.thread !== 'cheer') {
-        const youKnow = Object.keys(this.state.codex.plants || {});
+        const youKnow = Object.keys(this.state.codex.plants || {})
+            .filter(k => this.plantKnown(k)); // L1+ only: a blind taste isn't teachable knowledge
         const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
         if (youKnow.some(pid => theyKnow.indexOf(pid) === -1)) {
           out.push({ id: 'teach', label: this.convoActionLabel(vid, 'teach') });

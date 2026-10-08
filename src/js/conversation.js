@@ -2839,7 +2839,8 @@
         // verbs — hiding it behind a topic pick would put the conversation
         // on-thread, where teach correctly waits, stranding the intent.
         try {
-          const youKnow = Object.keys(this.state.codex.plants || {});
+          const youKnow = Object.keys(this.state.codex.plants || {})
+            .filter(k => this.plantKnown(k)); // L1+ only: a blind taste isn't teachable knowledge
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
           if (!suppressPivot && youKnow.some(pid => theyKnow.indexOf(pid) === -1) &&
               !sub.some(s => s.id === 'teach')) {
@@ -3027,7 +3028,8 @@
       let teachChoice = null;
       if (!onThread && !suppressPivot) {
         try {
-          const youKnow = Object.keys(this.state.codex.plants || {});
+          const youKnow = Object.keys(this.state.codex.plants || {})
+            .filter(k => this.plantKnown(k)); // L1+ only: a blind taste isn't teachable knowledge
           const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
           if (youKnow.some(pid => theyKnow.indexOf(pid) === -1)) {
             teachChoice = { id: 'teach', label: this.convoActionLabel(vid, 'teach') };
@@ -3690,7 +3692,8 @@
         // being discussed. If the green world came up, teach the plant that
         // came up. Otherwise the teach carries a bridge — "that reminds
         // me" — never a random burdock drop mid-thought.
-        const youKnow = Object.keys(this.state.codex.plants || {});
+        const youKnow = Object.keys(this.state.codex.plants || {})
+            .filter(k => this.plantKnown(k)); // L1+ only: a blind taste isn't teachable knowledge
         const theyKnow = (this.state.village.taught && this.state.village.taught[vid]) || [];
         const teachable = youKnow.filter(pid => theyKnow.indexOf(pid) === -1);
         if (!teachable.length) {

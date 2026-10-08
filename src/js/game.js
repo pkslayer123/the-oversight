@@ -2191,10 +2191,16 @@
         return 'contested';
       }
       // You didn't know better — the wrong lesson lands. The label is wrong;
-      // the plant is still the plant (mechanics key off the real pid).
-      this.state.codex.plants[pid] = { identifiedDay: (this.state.scholar || {}).day || 0, level: 1,
-        harvests: 0, tastings: 0, by: source || 'taught', wrongAs: wname, wrongPid: wrong.wrongPid,
-        taughtBy: vid, taughtByName: tname };
+      // the plant is still the plant (mechanics key off the real pid) — so
+      // the entry is PRESERVED, not replaced. A bad lesson changes what you
+      // call it, never what your hands learned. (break-it 2026-10-08: this
+      // used to wipe harvests/tastings/prepKnown/parts to zero.)
+      const prev = this.state.codex.plants[pid] || {};
+      this.state.codex.plants[pid] = Object.assign({}, prev, {
+        identifiedDay: prev.identifiedDay || ((this.state.scholar || {}).day || 0),
+        level: 1, harvests: prev.harvests || 0, tastings: prev.tastings || 0,
+        by: source || 'taught', wrongAs: wname, wrongPid: wrong.wrongPid,
+        taughtBy: vid, taughtByName: tname });
       this.say(`\u2605 IDENTIFIED (maybe): ${wname}. ${tname} is sure — "${wname}, see the leaves?" — and you have no reason to doubt them. Yet.`);
       try { this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${wname} (${source || 'taught'}).`); } catch (e) {}
       return 'taught-wrong';
@@ -10473,9 +10479,26 @@
       try {
         const wt = this.wrongTeaching(entry.discoveredBy, pid, 'fireside');
         if (wt) {
+          // BAD GOSSIP made real (break-it 2026-10-08): the learners don't
+          // just learn the plant — they learn the WRONG NAME. Record it in
+          // their wrongAbout (never deliberate: they were taught wrong, they
+          // aren't lying) so the false name travels when they teach it on.
+          // The old comment always claimed this; now the engine does it.
+          let wrongPid = null;
+          try { wrongPid = ((this.villagerWrongAbout(entry.discoveredBy) || {})[pid] || {}).wrongPid || null; } catch (e2) {}
           for (const rid of (this.state.village.roster || [])) {
             if (rid === this.villagerId) continue;
-            try { this.villagerLearnsPlant(rid, pid, 'fireside'); } catch (e) {}
+            try {
+              this.villagerLearnsPlant(rid, pid, 'fireside');
+              if (wrongPid) {
+                const lw = this.villagerWrongAbout(rid) || {};
+                lw[pid] = { wrongPid, deliberate: false };
+              }
+            } catch (e) {}
+          }
+          if (present) {
+            const wp = (this.data.plants || []).find(x => x.id === wrongPid) || {};
+            this.say(`${teacher} passes ${pname} around the fire — calling it "${wp.name || 'something else'}" like they've always known. The others nod along, and just like that the wrong name is loose in the village.`);
           }
           return;
         }
@@ -10522,7 +10545,10 @@
     },
 
     // what does this trader know that you don't? Returns plant IDs they can teach.
-    traderKnowledge(vid) {
+    // unfiltered=true returns their FULL pool (for "what do they already know"
+    // checks — the filtered list hides plants you know deeply, which they
+    // still know).
+    traderKnowledge(vid, unfiltered) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         /* unified: getPerson */ || {};
       // traders know 2-3 plants deeply. Generate deterministically from their ID.
@@ -10536,6 +10562,7 @@
         const p = plants[(h + i * 7) % plants.length];
         if (p && !known.includes(p.id)) known.push(p.id);
       }
+      if (unfiltered) return known;
       // filter to things YOU don't know yet (or know shallowly)
       return known.filter(pid => {
         const e = (this.state.codex.plants || {})[pid];
@@ -10553,6 +10580,7 @@
       const trust = (this.state.village.trust || {})[vid] || 10;
       // price: food, or knowledge in return, or just trust
       const price = trust >= 60 ? 'trust' : (trust >= 30 ? 'food' : 'knowledge');
+      let trade = null; // the plant you pay with, when price is knowledge
       if (price === 'food') {
         const cost = 300;
         if ((this.state.scholar.kcal || 0) < cost) {
@@ -10562,17 +10590,25 @@
         this.state.scholar.kcal -= cost;
         this.say(`${first} takes your food, nods. "Okay. ${p.name}. Here's what I know..."`);
       } else if (price === 'knowledge') {
-        // they want something YOU know that they don't
-        const yourPlants = Object.keys(this.state.codex.plants || {});
-        const theirKnown = this.traderKnowledge(vid); // what they'd teach
+        // they want something YOU know that they don't — their full pool
+        // plus everything they've been taught. Only truly-known plants
+        // (L1+) count as currency: a blind taste isn't knowledge.
+        // (break-it 2026-10-08: the payment was narrated but never recorded,
+        // so one plant bought unlimited trades.)
+        const yourPlants = Object.keys(this.state.codex.plants || {}).filter(k => this.plantKnown(k));
+        const theirPool = this.traderKnowledge(vid, true);
+        const theirTaught = ((this.state.village.taught || {})[vid]) || [];
+        const theyKnow = new Set([...theirPool, ...theirTaught]);
         // find something you know that isn't in their teach pool
-        const trade = yourPlants.find(yPid => !theirKnown.includes(yPid) && yPid !== pid);
+        trade = yourPlants.find(yPid => !theyKnow.has(yPid) && yPid !== pid);
         if (!trade) {
           this.say(`${first} wants knowledge in trade, but you have nothing they don't already know. (Learn more plants first.)`);
           return null;
         }
         const tp = (this.data.plants || []).find(x => x.id === trade);
         this.say(`Trade: you teach ${first} about ${tp ? tp.name : trade}. They teach you about ${p.name}. Knowledge for knowledge.`);
+        // the price is actually collected: they learn what you taught them.
+        this.villagerLearnsPlant(vid, trade);
       } else {
         this.say(`${first} trusts you. "Come here. Let me tell you about ${p.name}..." (High trust — free.)`);
       }
@@ -10625,12 +10661,15 @@
       for (const rid of (v.roster || [])) {
         if (rid === this.villagerId) continue;
         if (this.isKnowledgeTrader(rid)) {
-          // traders know everything they teach at L3
+          // traders know everything they teach at L3 — and only what they
+          // actually teach (their pool), not every plant in the world.
+          // (break-it 2026-10-08: credited phantom L2 for any plant, and the
+          // comment claimed L3 while the code wrote 2.)
           const tk = this.traderKnowledge(rid);
-          // if this plant was in their pool, they know it deep
-          // (we check the full pool, not just what they'd teach you now)
-          deepestOther = Math.max(deepestOther, 2);
-          if (!sources.includes('a trader')) sources.push('a trader');
+          if (tk.includes(pid)) {
+            deepestOther = Math.max(deepestOther, 3);
+            if (!sources.includes('a trader')) sources.push('a trader');
+          }
         }
       }
       // other villages you've learned from
@@ -26119,6 +26158,11 @@
         const p = this.data.plants.find(x => x.id === pid);
         const e = this.state.codex.plants[pid];
         if (!p || !e) return null;
+        // K0 HONESTY (break-it 2026-10-08): tasting an unknown plant creates a
+        // level-0 entry (prepKnown/tastings bookkeeping). That entry is NOT
+        // knowledge — the Codex must not list it with its true name and full
+        // text. If you don't know, it doesn't show.
+        if ((e.level || 0) < 1) return null;
         const lvl = e.level || 1;
         // KCAL GATING (Steve 2026-10-05): kcal requires preparation knowledge,
         // not just identification. prepKnown is a separate track from level —

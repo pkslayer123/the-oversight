@@ -15170,6 +15170,7 @@
       ${bar('scattering://codex', entries.length + ' entries')}
       <h1 class="title" style="font-size:22px">${Game.journalName().toUpperCase()}</h1>
       <p class="small"><i>${Game.journalName() === 'Codex' ? 'the village keeps what you write. the System is watching.' : 'field journal — your handwriting. what you learned, so far just yours.'}</i></p>
+      ${(() => { try { const jo = Game.journalOpening ? Game.journalOpening() : null; return jo && jo.line ? `<p class="small" style="opacity:.7"><i>${esc(jo.line)}</i></p>` : ''; } catch (e) { return ''; } })()}
       ${villageMapSection()}
       ${entries.length ? entries.map(e => `
         <div class="card codex"><h3>${e.wrongAs ? esc(e.wrongAs) + ' <span class="small" style="opacity:.6">(as taught)</span>' : e.name} <span class="small">· ${e.kcalKnown ? `${e.kcal} kcal/${e.unit}` : `<i>kcal unknown — learn preparation</i>`}</span> <span class="small" style="opacity:.7">[${LVL[e.level] || 'L1'}]</span></h3>
@@ -15177,6 +15178,10 @@
         ${e.wrongAs ? `<p class="small" style="color:#e8a13c"><b>⚠ Taught wrong:</b> ${esc(e.taughtByName || 'someone')} taught you this as <b>${esc(e.wrongAs)}</b>. You haven't verified it yourself.</p>` : ''}
         <p class="small"><b>Prep:</b> ${e.prepKnown ? (e.prep || '—') : '<i>unknown — eat it or reach L2 to learn</i>'}</p>
         <p class="small"><b>Uses:</b> ${e.uses ? esc(e.uses) : '<i>unknown — harvest and taste to learn</i>'}</p>
+        ${(e.knowledgeGaps || []).length ? `<p class="small" style="opacity:.8">🔍 <i>still to learn:</i> ${esc(e.knowledgeGaps.join(' '))}</p>` : ''}
+        ${(e.journalMarks || []).length ? e.journalMarks.map(m => `<p class="small" style="color:#e8a13c">⚠ ${esc(m.kind)} — day ${m.day}${m.note ? ': ' + esc(m.note) : ''}</p>`).join('') : ''}
+        ${(e.journalEntries || []).length ? `<p class="small"><i>📓 ${esc(e.journalEntries[e.journalEntries.length - 1].text)}</i></p>` : ''}
+        ${(e.marginalia || []).length ? e.marginalia.slice(-2).map(m => `<p class="small" style="opacity:.7"><i>✒ ${esc(m.first || 'a former hand')}${m.register ? ' · ' + esc(m.register) : ''}, day ${m.day}: ${esc(m.text)}</i></p>`).join('') : ''}
         <p class="small"><i>${e.knowledge || ''}</i></p><p>${e.level >= 1 ? e.text : ''}</p></div>`).join('')
         : '<div class="card"><h3>No entries yet.</h3><p>Forage something. Survive it. Write it down.</p></div>'}
       ${skills.length ? '<h1 class="title" style="font-size:18px">SKILLS</h1><p class="small"><i>knowledge about anything — not just plants. your old life, books, strangers, hard lessons.</i></p>' + skills.map(s => `

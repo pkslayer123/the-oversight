@@ -291,6 +291,9 @@
     // occupationLabel: display string for a villager's occupation, or null
     // when unknown. Unsure claims keep their "?" — honest, never "???".
     occupationLabel(vid) {
+      // wired through occupationKnown (break-it 2026-10-08: it had zero
+      // callers and this method duplicated its gate).
+      if (!this.occupationKnown(vid)) return null;
       if (Game.state.systemArrived) {
         const v = (Game.data.villagers || []).find(x => x.id === vid)
           /* unified: hydrated seeds are in villagers */ || {};
@@ -298,7 +301,6 @@
       }
       const p = (Game.state.codex.people || {})[vid];
       const o = p && p.occupation;
-      if (!o || !o.value) return null;
       return o.sure ? o.value : o.value + '?';
     },
 
@@ -340,11 +342,13 @@
     //    (sibling-owned, quality-gated). After any such lesson, call
     //    this.learnFromShowing(pid, vid, {shown:true|false, via:'taught'})
     //    so the PARTS layer and thin-knowledge bookkeeping land too.
-    // 3. app.js :: Codex screen: per-item line via this.codexPlantLine(pid),
-    //    honest gaps via this.knowledgeGaps(pid). null/[] below L1 — "if you
-    //    don't know, it doesn't show."
+    // 3. app.js :: Codex screen plant cards: via the codexEntries() wrap
+    //    (break-it 2026-10-08) — e.journalLine, e.journalEntries,
+    //    e.marginalia, e.journalMarks, e.knowledgeGaps. null/[] below L1 —
+    //    "if you don't know, it doesn't show."
     // 4. app.js :: forage/grid: L2+ coaching via this.forageCue(pid) — known
-    //    parts and uses only, never a hint at unknown parts.
+    //    parts and uses only, never a hint at unknown parts. (UNWIRED as of
+    //    2026-10-08 — no caller yet; kept for the grid pass.)
     //
     // The teaching-quality MODEL lives in examine.js (teachQuality 0-3,
     // sibling-owned): journal.js calls it via Scattering.Examine.teachPlant
@@ -400,12 +404,14 @@
     // learnPart(pid, partKey, how): record that a part's use is known.
     // The first part learned lifts L1 -> L2 — the use IS the part. Fires a
     // say-line so the progression has FEEL, not just a number moving.
+    // Identification is the teacher's job (teachPlant/learnFromShowing), not
+    // this function's: an unknown plant is refused, never auto-identified.
+    // (break-it 2026-10-08: the old fallback identifyPlant(pid,'shown',null)
+    // named plants with no teacher and no wrongTeaching check.)
     learnPart(pid, partKey, how) {
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return false;
-      if (!this.plantKnown(pid)) {
-        if (!this.identifyPlant(pid, 'shown', null)) return false;
-      }
+      if (!this.plantKnown(pid)) return false;
       const e = this.state.codex.plants[pid];
       e.parts = e.parts || {};
       if (e.parts[partKey] && e.parts[partKey].known) return false;
@@ -707,9 +713,13 @@
     // ---- WIRING POINTS (app.js reads this — journal.js edits no other file) ----
     // 5. app.js :: Codex/Journal screen header: this.journalOpening() ->
     //    {line, staleness, lives}. Call this.journalTouch('read') when the
-    //    screen OPENS so neglect is measured against reading too.
+    //    screen OPENS so neglect is measured against reading too. (UNWIRED
+    //    as of 2026-10-08 — the header still uses its own subtitle; the
+    //    function is live and tested, awaiting the header pass.)
     // 6. app.js :: per-plant journal view: this.plantJournalEntry(pid) ->
     //    {name, line, entries, marginalia, marks, gaps} or null at k0.
+    //    WIRED (break-it 2026-10-08) via the codexEntries() wrap — the Codex
+    //    screen's plant cards render entries/marginalia/marks/gaps.
     //    entries = this life's hand; marginalia = dead lives' hands
     //    ({day, first, register, kind, text}).
     // 7. game.js :: playerDeath is WRAPPED here (ledger.js defines it and
@@ -1254,7 +1264,35 @@
     return r;
   };
 
-  // 11. The mantle passes — playerDeath is ledger.js's, which loads AFTER
+  // 11. The Codex read path — codexEntries carries the journal payload.
+  //     plantJournalEntry (this life's entries, dead lives' marginalia,
+  //     marks, gaps, progress line) was write-only: the Codex screen never
+  //     called it. The wrap appends the payload so the screen can render
+  //     what the journal has been recording all along. (break-it 2026-10-08)
+  const origCodexEntries = Game.codexEntries;
+  if (origCodexEntries && !origCodexEntries._journalWired) {
+    const wired = function () {
+      const list = origCodexEntries.call(this);
+      return (list || []).map(e => {
+        if (!e || !e.pid) return e;
+        try {
+          const pj = this.plantJournalEntry ? this.plantJournalEntry(e.pid) : null;
+          if (pj) {
+            e.journalLine = pj.line;
+            e.journalEntries = pj.entries;
+            e.marginalia = pj.marginalia;
+            e.journalMarks = pj.marks;
+            e.knowledgeGaps = pj.gaps;
+          }
+        } catch (err) {}
+        return e;
+      });
+    };
+    wired._journalWired = true;
+    Game.codexEntries = wired;
+  }
+
+  // 12. The mantle passes — playerDeath is ledger.js's, which loads AFTER
   //     journal.js, so the wrap cannot install at load time. It installs on
   //     a deferred macrotask: setTimeout callbacks queue behind the remaining
   //     synchronous <script> tasks, so this runs after every module has
