@@ -494,11 +494,17 @@
 
       if (hasAb('blood_magic')) {
         var bc = this.hasSynergy('crimson_circuit') ? 7 : 10;
+        // BLOOD-PRICE CAP (Steve 2026-10-08, break-it): 2/day part — the body
+        // must knit. See game.js _activateAbilityInner 'blood_magic'.
+        var bpKey = s.day + '-' + this.dayPart;
+        var bpUses = (s.bloodPriceDayPart === bpKey) ? (s.bloodPriceUses || 0) : 0;
+        var bpCapped = bpUses >= 2;
         out.push({
           abilityId: 'blood_magic', actionId: null, id: 'blood_magic',
           target: 'self', name: 'Blood Price',
-          desc: '-' + bc + ' HP → +500 kcal. Your body eats itself.',
-          available: (s.health || 0) > bc, why: 'Too weak — need ' + (bc + 1) + '+ HP.'
+          desc: '-' + bc + ' HP → +500 kcal. Your body eats itself. 2/day part.',
+          available: !bpCapped && (s.health || 0) > bc,
+          why: bpCapped ? 'Used twice this day part.' : 'Too weak — need ' + (bc + 1) + '+ HP.'
         });
       }
       if (hasAb('time_skip')) out.push({
@@ -1070,6 +1076,58 @@
 
     'intimidating_presence.end_it_before': function (game, target) {
       game.say('Your reputation walks in before you do. Most disputes resolve in your favor without a hand raised. Some will resent you for it later. (End It Before It Starts)');
+      return true;
+    },
+
+    // LIGHT FINGERS (wired 2026-10-08, break-it): the data action existed but
+    // had no implementation — the button said "isn't wired up yet". Effect per
+    // data: steal from the pantry, 50% clean (no trust loss), caught = -20 trust.
+    // Theft is allowed; it's socially punished. A lift, not a haul: 2 units max.
+    'thief.steal_pantry': function (game, target) {
+      var s = game.state.scholar, v = game.state.village;
+      if (game.havenStoresAccess && game.havenStoresAccess() === 'none') {
+        game.say('The pantry is in the hall. Your hands are not. (Light Fingers)');
+        return false;
+      }
+      var pantry = v.pantry || [];
+      var idx = -1, best = 0;
+      for (var i = 0; i < pantry.length; i++) {
+        var t = (pantry[i].kcalEach || 0) * (pantry[i].units || 1);
+        if (t > best) { best = t; idx = i; }
+      }
+      if (idx < 0 || best <= 0) {
+        game.say('Nothing worth lifting. (Light Fingers)');
+        return false;
+      }
+      var item = pantry[idx];
+      // weight: a lift still has to fit on your back
+      var inv = s.inventory || [];
+      var carryKg = inv.reduce(function (t, it) { return t + (it.kg || 0) * (it.units || 1); }, 0);
+      try { carryKg += game.waterWeight(); } catch (e) {}
+      var room = game.carryCapacity() - carryKg;
+      var take = 0;
+      var unitKg = item.kg || 0.1;
+      var want = Math.min(item.units || 1, 2);
+      for (var u = 0; u < want; u++) { if (room >= unitKg) { take++; room -= unitKg; } }
+      if (take <= 0) {
+        game.say('Too heavy for even a light lift. (Light Fingers)');
+        return false;
+      }
+      item.units -= take;
+      if (item.units <= 0) pantry.splice(pantry.indexOf(item), 1);
+      var existing = inv.find(function (it) { return it.name === item.name; });
+      if (existing) existing.units += take;
+      else inv.push({ name: item.name, kcalEach: item.kcalEach, units: take, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item' });
+      var caught = Math.random() < 0.5;
+      if (caught) {
+        var vid = s.villagerId;
+        v.trust = v.trust || {};
+        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 20);
+        try { game.observe('caught_you_stealing'); } catch (e) {}
+        game.say('A hand closes on your wrist. "Really?" -20 trust. The pantry remembers. (Light Fingers — caught.)');
+      } else {
+        game.say('The food disappears. Magic. (It\'s not magic. Nobody saw. Light Fingers.)');
+      }
       return true;
     }
   };

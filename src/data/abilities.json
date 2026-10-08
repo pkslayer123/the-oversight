@@ -661,7 +661,7 @@
   {
     "id": "blood_magic",
     "name": "Blood Price",
-    "description": "Spend 10 HP to gain 500 kcal. (Your body eats itself. It's efficient. It's horrifying.)",
+    "description": "Spend 10 HP to gain 500 kcal. Your body eats itself. The body can only take so much: twice per day part.",
     "flavor": "You burn the red! The red becomes... lunch?! We are CONCERNED! (We checked the math twice. The math is as confused as we are.)",
     "pool": "system",
     "tier": "risky",
@@ -672,17 +672,6 @@
     "metabolic": {
       "daily": 100
     },
-    "actions": [
-      {
-        "id": "blood_price",
-        "context": "camp",
-        "name": "Blood Price",
-        "cost": {
-          "hp": 10
-        },
-        "effect": "Spend 10 HP to gain 500 kcal. Your body eats itself. Reduced to 7 HP with crimson_circuit synergy."
-      }
-    ],
     "paths": [
       "survivalist",
       "brawler"
@@ -729,15 +718,6 @@
     "metabolic": {
       "daily": 100
     },
-    "actions": [
-      {
-        "id": "feed_hunger",
-        "context": "camp",
-        "name": "Feed the Red Hunger",
-        "cost": {},
-        "effect": "+1000 kcal from anything (even people). -30 trust, permanently. Only when starving (<500 kcal)."
-      }
-    ],
     "paths": [
       "survivalist",
       "brawler"

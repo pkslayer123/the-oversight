@@ -353,10 +353,10 @@
       const kind = pick(['cache', 'bundle', 'knowledge', 'item']);
       if (kind === 'cache') {
         const kcal = 800 + Math.floor(R() * 1200);
-        try {
-          const v = this.state.village;
-          v.pantryKcal = (v.pantryKcal || 0) + kcal;
-        } catch (e) {}
+        // PHANTOM FIX (break-it 2026-10-08): this used to bump v.pantryKcal
+        // directly — a phantom number wiped by villageEats' end-of-day sync,
+        // so the promised cache evaporated. Real food arrives as a real item.
+        try { this.stockPantry(kcal, 'Buried cache'); } catch (e) {}
         return { kind, line: `"I buried this before the Scattering. Seemed stupid to keep it secret." ${first} digs up a wrapped bundle — food, still good. (+${kcal} kcal to the pantry.)` };
       }
       if (kind === 'bundle') {

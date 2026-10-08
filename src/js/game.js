@@ -3067,8 +3067,11 @@
           this.state.scholar.inventory.push({ name: 'Genesis fruit', kcalEach: kcal, units: 1, spoilDay: this.state.scholar.day + 3, safe: true, kg: 0.5, unit: 'fruit' });
           this.say(`The genesis crop fruits — ${kcal} kcal, strange and sweet. (+1 to your pack)`);
         } else if (atHaven) {
-          const v = this.state.village;
-          v.pantryKcal = (v.pantryKcal || 0) + kcal;
+          // PHANTOM FIX (break-it 2026-10-08): this used to bump the compat
+          // counter v.pantryKcal directly — a phantom number that villageEats'
+          // end-of-day sync re-derives from items, so the 500 kcal evaporated
+          // overnight while the message promised it. Real food, real item.
+          this.stockPantry(kcal, 'Genesis fruit');
           this.say(`The haven genesis crop yielded ${kcal} kcal to the pantry.`);
         }
         if (t.genesis.daysLeft <= 0) {
@@ -14288,7 +14291,7 @@
       const s = this.state.scholar;
       const out = [];
       const has = (id) => this.hasAbility(id);
-      if (has('blood_magic')) { const bc = this.hasSynergy('crimson_circuit') ? 7 : 10; out.push({ id: 'blood_magic', target: 'self', name: 'Blood Price', desc: `-${bc} HP → +500 kcal. Your body eats itself.`, available: (s.health || 0) > bc, why: `Too weak — need ${bc}+ HP.` }); }
+      if (has('blood_magic')) { const bc = this.hasSynergy('crimson_circuit') ? 7 : 10; out.push({ id: 'blood_magic', target: 'self', name: 'Blood Price', desc: `-${bc} HP → +500 kcal. Your body eats itself. 2/day part.`, available: (s.health || 0) > bc, why: `Too weak — need ${bc}+ HP.` }); }
       if (has('time_skip')) out.push({ id: 'time_skip', target: 'none', name: 'Time Skip', desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true });
       if (has('dowsing')) out.push({ id: 'dowsing', target: 'none', name: 'Dowse', desc: 'A forked stick twitches toward water. 70% accurate.', available: true });
       if (has('echo_location')) out.push({ id: 'echo_location', target: 'none', name: 'Echo-locate', desc: 'Clap once: sense the 3x3 around you. 1/day.', available: s.echoDay !== s.day, why: 'Used today.', combat: true });
@@ -14339,7 +14342,19 @@
       if (id === 'blood_magic') {
         const cost = this.hasSynergy('crimson_circuit') ? 7 : 10;
         if ((s.health || 0) <= cost) { this.say('Too weak for the Blood Price.'); return false; }
-        s.health -= cost; s.kcal += 500;
+        // BLOOD-PRICE CAP (Steve 2026-10-08, break-it food run): the body can
+        // only be eaten so much in one day part. Without a cap, blood_magic +
+        // field_medicine printed ~+5,400 kcal/daypart (~21,600/day) — a true
+        // infinite engine, not min-maxing. The 100-kcal heal cost bounds it
+        // per daypart but doesn't kill it. Cap 2/day part; the fiction is the
+        // body needing time to knit back together.
+        const bpKey = `${s.day}-${this.dayPart}`;
+        const bpUses = (s.bloodPriceDayPart === bpKey) ? (s.bloodPriceUses || 0) : 0;
+        if (bpUses >= 2) { this.say('Your body needs time to knit back together — no more Blood Price this day part. (2/day part.)'); return false; }
+        s.bloodPriceDayPart = bpKey; s.bloodPriceUses = bpUses + 1;
+        s.health -= cost;
+        // HONESTY: eating clamps to the bank cap — blood kcal shouldn't bypass it.
+        s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + 500);
         this.say(`BLOOD PRICE: -${cost} HP, +500 kcal. Your body eats itself. Efficient. Horrifying.${cost < 10 ? ' (Crimson Circuit: the circuit closes, the price drops.)' : ''}`);
       } else if (id === 'time_skip') {
         s.ageDebt = (s.ageDebt || 0) + 1;
@@ -14375,8 +14390,9 @@
         if (s.fieldMedDayPart === key) { this.say('Already used field medicine this day part.'); return false; }
         s.fieldMedDayPart = key;
         const heal = 20;
-        // COST: healing burns calories. No free lunch — prevents Blood Magic infinite loop.
-        // (Blood Magic: -10 HP → +500 kcal. Without a heal cost, that's infinite food.)
+        // COST: healing burns calories. No free lunch.
+        // (Blood Magic: -10 HP → +500 kcal. The heal cost alone only BOUNDS the
+        // engine per daypart — the real gate is blood_magic's 2/day-part cap.)
         const healCost = 100;
         if ((s.kcal || 0) < healCost) { this.say(`Too hungry to heal — need ${healCost} kcal.`); return false; }
         s.kcal -= healCost;
