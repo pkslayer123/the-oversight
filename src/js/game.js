@@ -13435,7 +13435,7 @@
       const arr = this.arrivalPoolFor(t.type);
       if (t.type === 'haven') {
         return {
-          type: 'haven', title: arr.title, epithet: 'Haven', text: arr.text, here: ['home'],
+          type: 'haven', title: arr.title, epithet: 'Haven', text: this.arrivalTextFor(t), here: ['home'],
           isRuin: false, isHaven: true, canForage: false, canTreat: false,
         };
       }
