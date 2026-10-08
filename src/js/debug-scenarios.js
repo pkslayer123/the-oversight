@@ -120,14 +120,20 @@
   // not on the haven grounds. Move the player node a couple tiles out from
   // Haven to a wild tile — deterministic, no travel clock, no random
   // encounters. The scenario drops you mid-expedition: you walked out here.
+  // 9x9 world (2026-10-07; break-it travel 2026-10-08): the old code scanned
+  // a stale 7x7 corner measured from (3,3) — Haven sits at (4,4), so tiles
+  // like (4,5) passed the "d>=2" filter while ADJACENT to Haven, and the
+  // rim rows/cols 7-8 were never scanned. Measure from the real Haven tile.
   function toWildNode() {
     try {
       const tiles = Game.map.tiles;
+      const v = (Game.state && Game.state.village) || {};
+      const hx = v.px ?? 4, hy = v.py ?? 4;
       let best = null;
-      for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = tiles[y][x];
         if (!t || t.type === 'haven' || t.type === 'ruin') continue;
-        const d = Math.abs(x - 3) + Math.abs(y - 3);
+        const d = Math.abs(x - hx) + Math.abs(y - hy);
         if (d < 2) continue; // not the doorstep — actually out
         if (!best || d > best.d) best = { x, y, d };
       }
@@ -135,12 +141,14 @@
       Game.map.px = best.x; Game.map.py = best.y;
       const t = tiles[best.y][best.x];
       t.visited = true; t.revealed = true;
+      try { Game.markSeen(best.x, best.y, 'visited'); } catch (e2) {} // you're standing there — the map knows
       const s = Game.state.scholar;
       s.insideHaven = false;
       s.mx = 4; s.my = 4;
       return true;
     } catch (e) { return false; }
   }
+  Game.debugToWildNode = toWildNode; // test hook (break-it travel 2026-10-08)
 
   const SCENARIOS = {
     // 1. Deer encounter — bow in hand, deer adjacent, dawn.

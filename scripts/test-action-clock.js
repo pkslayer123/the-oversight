@@ -77,12 +77,16 @@ function eq(name, got, want) {
   eq('combat suppresses ticks', s.dayTicks, dt);
   Game.tbfight = null;
 
-  // 8. travel = 32 ticks (pick an unblocked target; blocked travel rightly costs nothing)
+  // 8. NODE TRAVEL IS FREE (Steve 2026-10-05): crossing a node boundary costs
+  // no ticks and no kcal — the steps to the edge already cost. (Break-it
+  // travel 2026-10-08: the old "travel = 32 ticks" assertion predates the
+  // free-travel rule; the world-advance on travel is throttled by
+  // travelTimeStep, not by taxing the player's clock.)
   s.dayTicks = 0; s.actionClock = 0;
   const targets = Game.travelTargets().filter(t => !Game.travelBlockage(t.x, t.y));
   if (targets.length) {
     Game.travelTo(targets[0].x, targets[0].y);
-    eq('travel ticked 32', s.dayTicks, 32);
+    eq('travel costs 0 ticks (free by design)', s.dayTicks, 0);
   } else console.log('SKIP travel test: all targets blocked');
 
   console.log(`\n${pass} passed, ${fail} failed`);

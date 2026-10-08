@@ -6515,6 +6515,17 @@
       // CONTINUOUS TRAVEL: remember where you stood on the old node so you can
       // walk onto the new one at the matching spot — not the middle.
       const oldMx = this.state.scholar.mx ?? 4, oldMy = this.state.scholar.my ?? 4;
+      // ANIMAL CONTINUITY (Steve 2026-10-06): animals don't follow you, but
+      // they don't vanish either. Park the live animal on the tile you LEAVE —
+      // captured BEFORE the position update. (Break-it travel 2026-10-08: the
+      // old code parked it AFTER, reading tileAt(this.map.px, this.map.py) at
+      // the ARRIVAL tile — teleporting your stalked animal to the new node
+      // with you, and instantly un-picking any parked animal just collected.)
+      try {
+        const leaveTile = this.tileAt(fromX, fromY);
+        if (this.state.scholar.animal && leaveTile) leaveTile.animal = this.state.scholar.animal;
+      } catch (e) {}
+      this.state.scholar.animal = null;
       this.map.px = x; this.map.py = y;
       this.state.scholar.facing = { x: odx || 0, y: ody || 1 };
       this.reveal(x, y);
@@ -6631,16 +6642,9 @@
           this.say(`You find it — the ${this.monsterNoun(fled.id)} didn't get far. It's still running scared.`);
         }
       } catch (e) {}
-      // ANIMAL CONTINUITY (Steve 2026-10-06): animals don't follow you, but
-      // they don't vanish either. They stay where you left them.
-      try {
-        const oldX = this.map.px, oldY = this.map.py;
-        const oldTile = this.tileAt(oldX, oldY);
-        if (this.state.scholar.animal && oldTile) {
-          oldTile.animal = this.state.scholar.animal;
-        }
-      } catch (e) {}
-      this.state.scholar.animal = null;
+      // (Animal parking happens BEFORE the position update above — the live
+      // animal stays on the tile you left, and any animal parked on the
+      // arrival tile is picked up into a live encounter. Nothing to do here.)
       if (tile.type === 'haven') this.returnToVillage();
       this.checkEncounter();
       this.checkAnimals();
@@ -6707,6 +6711,17 @@
       // NODE TRAVEL IS FREE (Steve 2026-10-05): no tick cost, no energy cost.
       // The boundary is just walking. NPCs still get their batch turn because
       // time passes, but the player isn't taxed for crossing.
+      // ANTI-SPAM (break-it travel 2026-10-08): the batch below is "a portion
+      // of the day passing" — it must be backed by time actually spent. Node
+      // travel costs zero ticks, so without this gate, pacing back and forth
+      // between two adjacent tiles zeroes NPC fear, maxes NPC energy/hunger,
+      // and fast-forwards all gossip for free (infinite calm, rest, and —
+      // via hunger-driven foraging departures — pantry food). The world only
+      // advances when the player's clock has moved since the last step.
+      const s = this.state.scholar;
+      const ticks = s.dayTicks || 0;
+      if (ticks === s._lastTravelStepTicks) return;
+      s._lastTravelStepTicks = ticks;
       try { this.tickNeeds(); } catch (e) {}
       try { this.spreadGossip(); } catch (e) {}
     },
@@ -8702,7 +8717,7 @@
     npcSetNode(vid, nx, ny) {
       const v = this.state.village;
       v.nodePos = v.nodePos || {};
-      nx = Math.max(0, Math.min(6, nx)); ny = Math.max(0, Math.min(6, ny));
+      nx = Math.max(0, Math.min(8, nx)); ny = Math.max(0, Math.min(8, ny)); // 9x9 world (2026-10-07)
       v.nodePos[vid] = { nx, ny };
       if (v.positions) delete v.positions[vid];
     },
@@ -8866,8 +8881,8 @@
           const dx = Math.floor(Math.random() * 3) - 1;
           const dy = Math.floor(Math.random() * 3) - 1;
           if (!dx && !dy) continue;
-          const nx = Math.max(0, Math.min(6, node.nx + dx));
-          const ny = Math.max(0, Math.min(6, node.ny + dy));
+          const nx = Math.max(0, Math.min(8, node.nx + dx)); // 9x9 world (2026-10-07)
+          const ny = Math.max(0, Math.min(8, node.ny + dy));
           if (nx === node.nx && ny === node.ny) continue;
           this.npcSetNode(rid, nx, ny);
           v.away = v.away || {};
