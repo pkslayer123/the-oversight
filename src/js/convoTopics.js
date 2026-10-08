@@ -129,13 +129,14 @@
       if (def.event) return !!this.t2LatelyEvent(vid);
       if (def.system) return !!this.state.systemArrived;
       const trust = this.t2trust(vid);
-      const c = this.convoGet(vid);
-      const count = c.count || 0;
+      // TRUST + TIME, not convo count (dialog rethink Phase 1, Steve
+      // 2026-10-08): the count-bypasses are dead.
+      const days = this.relDays ? this.relDays(vid) : 0;
       const mt = def.minTrust || 0;
       if (mt <= 0) return true;
-      if (mt >= 40) return trust >= 40 || count >= 4;
-      if (mt >= 30) return trust >= 30 || count >= 3;
-      return trust >= mt || count >= 2;
+      if (mt >= 40) return trust >= 40 || days >= 10;
+      if (mt >= 30) return trust >= 30 || days >= 7;
+      return trust >= mt || days >= 4;
     },
 
     // ---------- labels ----------

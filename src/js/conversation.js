@@ -2037,11 +2037,13 @@
     // a menu that never changes. Tier shifts as trust/conversations grow —
     // your voice changing is the point, not a bug.
     convoVoiceTier(vid) {
+      // TRUST + TIME, not convo count (dialog rethink Phase 1, Steve
+      // 2026-10-08): the count-bypasses are dead. You don't become close
+      // by talking a lot on day one — intimacy needs trust AND time.
       const trust = (this.state.village.trust || {})[vid] || 10;
-      const c = this.convoGet(vid);
-      const count = c.count || 0;
-      if (trust >= 55 || count >= 6) return 'close';
-      if (trust >= 30 || count >= 3) return 'warm';
+      const days = this.relDays(vid);
+      if (trust >= 55 || days >= 14) return 'close';
+      if (trust >= 30 || days >= 7) return 'warm';
       return 'new';
     },
 
@@ -2508,7 +2510,22 @@
           out = content.concat(rest);
         }
       } catch (e) {}
-      // 3. Silence on every menu (Principle 10): "..." via the existing
+      // 3. Strangers get small talk (Principle 12): fresh conversations
+      // offer small talk + shared history only. Confrontations and doubt-
+      // probes are trust-tier gated — you don't interrogate a stranger.
+      try {
+        const tier = this.convoVoiceTier ? this.convoVoiceTier(vid) : 'new';
+        if (tier === 'new') {
+          out = out.filter(ch => {
+            const id = ch && ch.id;
+            if (!id) return true;
+            if (id.indexOf('confront:') === 0) return false;
+            if (id === 'dlg:doubt') return false;
+            return true;
+          });
+        }
+      } catch (e) {}
+      // 4. Silence on every menu (Principle 10): "..." via the existing
       // mood-silence machinery — one generic react per mood, never bespoke
       // branches (research: unchosen options are dialogue's priciest content).
       try {
@@ -2696,7 +2713,10 @@
       // DEFLECTORS offer fewer doors: withdrawn/prickly/restless people don't
       // volunteer every topic — you get two, and you earn the rest.
       const trustNow = (this.state.village.trust || {})[vid] || 10;
-      const convoCount = c.count || 0;
+      // INTIMACY GATING (dialog rethink Phase 1, Steve 2026-10-08): the
+      // convo-count bypasses are dead. Deep topics need trust-tier OR
+      // relationship age (time) — never "talked N times today".
+      const relAge = this.relDays(vid);
       // MOOD (convo-mood.js): warmth opens doors, tension closes them.
       // Effective trust for depth gates shifts with the conversation's
       // temperature (±15). A tense villager shuts doors (fewer topics);
@@ -2726,13 +2746,13 @@
       const topicCap = (tempNow === 'withdrawn' || tempNow === 'prickly' || tempNow === 'restless') ? 2 : 5;
       // Tense conversations close down: one fewer door (min 1).
       const topicCapMood = moodBandNow === 'tense' ? Math.max(1, topicCap - 1) : topicCap;
-      const pastOpen = effTrust >= 20 || convoCount >= 2;
-      const goalOpen = effTrust >= 35 || convoCount >= 3;
+      const pastOpen = effTrust >= 20 || relAge >= 5;
+      const goalOpen = effTrust >= 35 || relAge >= 8;
       // GOSSIP ASK: the socialite's core verb. "Heard anything about anyone?"
       // The detective layer is ask-able, not just receive-only. Same intimacy
       // gate as theorize; sits with the other topic asks, never crowding out
       // discovery actions.
-      const gossipOpen = effTrust >= 20 || convoCount >= 2;
+      const gossipOpen = effTrust >= 20 || relAge >= 5;
       const asks = [];
       // PERSONAL: their own words — the talk lines generated from personality.
       // Always available and prioritized; it's who they are, not what they know.
@@ -2877,14 +2897,14 @@
       // monsters are the mystery.
       const theorized = c.theorized || [];
       const sysUp = !!this.state.systemArrived;
-      const theorizeOpen = effTrust >= 25 || convoCount >= 2;
+      const theorizeOpen = effTrust >= 25 || relAge >= 6;
       const topicsLeft = ['system', 'monsters', 'situation'].filter(t =>
         theorized.indexOf(t) === -1 && (t !== 'system' || sysUp));
       if (!onThread && theorizeOpen && topicsLeft.length && choices.length < MAXC && !suppressPivot) choices.push({ id: 'theorize', label: this.convoActionLabel(vid, 'theorize') });
       // COMPARE MAPS (Steve 2026-10-06): "show me where you've been." A
       // pre-System social action — their visited tiles become your shared
       // map knowledge. Practical, not intimate: low gate.
-      if (!onThread && choices.length < MAXC && !suppressPivot && (effTrust >= 15 || convoCount >= 1)) {
+      if (!onThread && choices.length < MAXC && !suppressPivot && (effTrust >= 15 || relAge >= 3)) {
         choices.push({ id: 'compare_maps', label: this.convoActionLabel(vid, 'compare_maps') });
       }
       // WATCH THEM: the detective's tool. Spend time observing — behavior may
@@ -2894,7 +2914,7 @@
       // (Thread coherence: waits for the thread to resolve — one subject-change away.)
       if (!onThread && choices.length < MAXC && typeof this.observePerson === 'function') {
         const hasDoubts = this.getDoubts && this.getDoubts(vid).length > 0;
-        if (convoCount >= 2 || hasDoubts) {
+        if (relAge >= 4 || hasDoubts) {
           choices.push({ id: 'observe', label: hasDoubts ? '"I\'ve been watching you. Keep talking."' : '(watch them for a while)' });
         }
       }
@@ -3036,6 +3056,10 @@
       c.moodGuardUsed = false; c.moodGraceUsed = false; c.moodBeat = null;
       c.genericQ = null; c.floraMentioned = null;
       c.count++; c.lastDay = this.state.scholar.day;
+      // RELATIONSHIP AGE (dialog rethink Phase 1, Steve 2026-10-08): the
+      // count-bypasses are dead; intimacy is trust-tier + time. firstDay
+      // anchors relDays(vid).
+      if (!c.firstDay) c.firstDay = this.state.scholar.day || 1;
       // TALKING COSTS A LITTLE ENERGY — 10 kcal to open a conversation, not
       // per line. Small talk is quick and cheap; going deep costs ticks
       // (see convoDeepTick), not a flat tax. Social play stays viable.

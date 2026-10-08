@@ -253,9 +253,17 @@
       if (seed && WANTS[seed.wantId]) {
         return { id: seed.wantId, def: WANTS[seed.wantId], fromSeed: true, seedNote: seed.note };
       }
+      // STRANGERS GET SMALL TALK (dialog rethink Phase 1, Principle 12,
+      // Steve 2026-10-08): deep wants (favors, comfort, warnings, curiosity)
+      // are trust-tier gated. A stranger's unfinished business is small
+      // talk and news — never a deep want.
+      let tier = 'new';
+      try { tier = this.convoVoiceTier ? this.convoVoiceTier(vid) : 'new'; } catch (e) {}
+      const shallowOnly = tier === 'new';
       // 2. Weight by needs and context.
       let best = null, bestW = -1;
       for (const [id, def] of Object.entries(WANTS)) {
+        if (shallowOnly && ['ask_favor', 'seek_comfort', 'warn_you', 'curious', 'repay'].indexOf(id) !== -1) continue;
         let w = 0;
         try { w = def.pick.call(this, vid); } catch (e) { w = 0; }
         // Small random factor so it's not deterministic.
