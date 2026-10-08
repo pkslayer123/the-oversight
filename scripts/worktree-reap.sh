@@ -63,6 +63,19 @@ for t in data["trees"]:
     except Exception:
         age_h = 9999
 
+    if path is None:
+        # Tree already removed (status tree-removed-branch-kept); branch kept as
+        # a record. Finish the lifecycle: delete the branch if it has since
+        # been merged to master, then drop the entry. Never crash here — a
+        # None path used to abort the entire reaper before any removal ran
+        # (TypeError in os.path.isdir, caught 2026-10-08).
+        if is_merged:
+            sh("git", "branch", "-d", branch)
+            t["status"] = "gone"
+            removed.append(f"branch {branch} (tree already removed) was merged — deleted.")
+        else:
+            t["note"] = f"{t.get('note', '')} [still unmerged; branch kept]".strip()
+        continue
     if not os.path.isdir(path):
         t["status"] = "gone"
         continue
