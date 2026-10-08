@@ -8390,7 +8390,10 @@
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
           const cell = detail[py + dy] && detail[py + dy][px + dx];
-          if (cell === 'campfire' || cell === 'fire') return true;
+          // (break-it camps 2026-10-08: the old check also accepted 'campfire',
+          // but no generator ever emits a 'campfire' CELL — cell_defs only
+          // uses it as a fire size descriptor. Dead branch removed.)
+          if (cell === 'fire') return true;
         }
       }
       return false;
@@ -18705,14 +18708,53 @@
       // etc. are BREAKABLE. Havens are home — they do not break.
       // Note: the haven interior is a separate map. Outdoor 'wall' cells are
       // wild ruins — breakable. The haven's walls are never on the outdoor grid.
-      const unbreakable = ['hall', 'fire', 'bunk', 'door', 'haven', 'sanct', 'base'];
-      if (unbreakable.includes(cellType)) {
+      // FIRE CARVE-OUT (break-it camps 2026-10-08): the old list contained
+      // 'fire', which conflated the haven hearth with player-made campfires —
+      // a bulldozer flattening your campfire was told "The fire holds. Havens
+      // do not break." A player-made fire (tracked in state.fires) is a player
+      // structure: it breaks. Haven/map fires still hold.
+      const unbreakable = ['hall', 'bunk', 'door', 'haven', 'sanct', 'base'];
+      if (cellType === 'fire') {
+        let mine = false;
+        try { mine = this.playerFireAt(cx, cy); } catch (e) {}
+        if (!mine) {
+          this.say(`The ${cellType} holds. Havens do not break.`);
+          return false;
+        }
+        // else: your campfire — breakable. The tracking entry is purged below
+        // so playerFireAt() agrees with the grid (no split-brain).
+      } else if (unbreakable.includes(cellType)) {
         this.say(`The ${cellType} holds. Havens do not break.`);
         return false;
+      }
+      // CAMP INTEGRITY (break-it camps 2026-10-08): capture before clearing —
+      // a smashed player tent kills the camp that stood on it. Without this,
+      // destroyCell left state.camp pointing at bare dirt: atCamp() stayed
+      // true (sort ritual + prep-stash on an empty patch), "Set up camp"
+      // refused ("already have a camp"), and no abandon-camp action exists —
+      // a phantom camp only a storm could clear.
+      let smashedCampTent = false;
+      if (cellType === 'tent') {
+        try {
+          const t = this.tileAt(this.map.px, this.map.py);
+          const sec = t.secrets && t.secrets[cx + ',' + cy];
+          smashedCampTent = !!(sec && sec.yours) &&
+            this.state.camp && this.state.camp.px === this.map.px && this.state.camp.py === this.map.py;
+        } catch (e) {}
       }
       const cellName = cellType || cell;
       // Clear the cell
       detail[cy][cx] = null;
+      // a smashed player fire stops being a tracked live fire
+      if (cellType === 'fire') {
+        try {
+          const fires = this.state.fires || [];
+          for (let i = fires.length - 1; i >= 0; i--) {
+            const f = fires[i];
+            if (f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy) fires.splice(i, 1);
+          }
+        } catch (e) {}
+      }
       // Narrative
       const causes = {
         'bulldozer': `The Bulldozer SMASHES through the ${cellName}! Wood splinters, the ground shakes.`,
@@ -18727,6 +18769,11 @@
       }
       // Mark the map as changed so it saves
       this.map.dirty = true;
+      // the camp's body was the tent: no tent, no camp. breakCamp's own
+      // tent-sweep is idempotent here (the cell is already cleared).
+      if (smashedCampTent) {
+        try { this.breakCamp(cause === 'bulldozer' ? 'a bulldozer flattened it' : 'the world took it'); } catch (e) {}
+      }
       return true;
     },
 
