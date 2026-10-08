@@ -1042,7 +1042,11 @@
     const price = this.caseBribePrice(cs, voterId);
     let pack = 0;
     try { pack = this.playerPackKcal() || 0; } catch (e) {}
-    const pantry = (this.state.village && this.state.village.pantryKcal) || 0;
+    // PANTRY IS REAL (break-it 2026-10-08): the pantryKcal scalar is a phantom
+    // (pantryKcalLive recomputes from pantry items) — read the live total.
+    let pantry = 0;
+    try { pantry = (typeof this.pantryKcalLive === 'function') ? (this.pantryKcalLive(this.state.village) || 0) : 0; } catch (e) {}
+    if (!pantry) pantry = (this.state.village && this.state.village.pantryKcal) || 0; // compat fallback
     return pack + pantry >= price;
   },
   // pay for a player's bribe: carried food first, then the pantry stockpile.
@@ -1054,12 +1058,38 @@
       let spentPack = 0;
       if (fromPack > 0) spentPack = this.playerPackSpend(fromPack);
       const rest = p - spentPack; // actuals, not intentions — whole-unit spends can overshoot
-      if (rest > 0) this.state.village.pantryKcal = Math.max(0, (this.state.village.pantryKcal || 0) - rest);
+      if (rest > 0) {
+        // PANTRY IS REAL (break-it 2026-10-08): the old code decremented the
+        // phantom pantryKcal scalar — pantryKcalLive recomputes from items, so
+        // pantry-funded bribes were FREE (food never left). Remove real items
+        // instead, and record the taking: communal food spent on a secret bribe
+        // feeds the same takes/gives bookkeeping as a pantry withdrawal —
+        // theft allowed, socially punished.
+        let removed = 0;
+        if (typeof this._removePantryKcal === 'function') removed = this._removePantryKcal(rest) || 0;
+        else {
+          this.state.village.pantryKcal = Math.max(0, (this.state.village.pantryKcal || 0) - rest);
+          removed = rest;
+        }
+        if (removed > 0) {
+          // payBribe is the player's bribe path — the taking is theirs.
+          const v = this.state.village || {};
+          v.takes = v.takes || {};
+          v.takes[this.villagerId] = (v.takes[this.villagerId] || 0) + removed;
+        }
+      }
     } catch (e) {}
   },
   bribeVoter(caseId, voterId, byId, amount) {
     const c = this.getCase(caseId); if (!c) return null;
     if (c.accused.includes(voterId)) return null;
+    // IDEMPOTENT (break-it 2026-10-08): one bribe per briber per voter. The UI
+    // never re-offers a bought voter, but the engine must not stack dead
+    // entries (or charge twice) on a repeat call — e.g. a double-tap.
+    if ((c.bribes || []).some(b => b.voter === voterId && b.by === byId)) {
+      if (this.isPlayer(byId)) this.say(`${this.whoTag(voterId)} is already bought. Paying twice doesn't buy them twice.`);
+      return null;
+    }
     const price = this.caseBribePrice(c, voterId);
     if ((amount || 0) < price) { this.say(`That's not enough to buy ${this.whoTag(voterId)}. Insulting, actually.`); return null; }
     c.bribes.push({ voter: voterId, by: byId, amount, day: this.state.scholar.day, trace: true });
@@ -1098,7 +1128,12 @@
       const liarName = (() => { try { return this.displayName(b.by); } catch (e) { return 'The briber'; } })();
       this.drama('social', { type: 'liar', name: liarName });
     } catch (e) {}
-    this.moveBelief(c, b.by === c.accused[0] || c.accused.includes(b.by) ? -30 : 25, 'bribery exposed');
+    // SELF-EXPOSURE BACKFIRES (break-it 2026-10-08): exposing your OWN bribe
+    // used to swing belief +25 toward your side — a double-dip on top of the
+    // bought vote itself. Confessing you bought a vote turns the fire on YOU.
+    const selfExposed = !!(this.isPlayer && this.isPlayer(b.by));
+    this.moveBelief(c, (b.by === c.accused[0] || c.accused.includes(b.by) || selfExposed) ? -30 : 25,
+      selfExposed ? 'exposed their own bribery' : 'bribery exposed');
     this.notePlayerEvidence(c, `Exposed: ${this.displayName(b.by)} bought ${this.displayName(b.voter)} (${b.amount} kcal).`);
     // detonates on the briber too
     const t = this.state.village.trust || {};
@@ -1349,7 +1384,11 @@
       const wergildVerb = (c.accused.length === 1 && this.isPlayer(c.accused[0])) || c.accused.length > 1 ? 'pay' : 'pays';
       this.say(`Food, work, public apology — ${namesCap} ${wergildVerb} it in the open, where everyone can see. The price of staying.`);
       try {
-        v.pantryKcal = (v.pantryKcal || 0) + 3000;
+        // WEREGILD IS REAL (break-it 2026-10-08): the old code bumped the
+        // phantom pantryKcal scalar, wiped by pantryKcalLive's end-of-day sync —
+        // the village never received it. Real food arrives as a real item.
+        if (typeof this.stockPantry === 'function') this.stockPantry(3000, 'Weregild');
+        else v.pantryKcal = (v.pantryKcal || 0) + 3000;
         // the player pays from their own stores — it has to hurt
         if (c.accused.includes(this.villagerId)) {
           const s = this.state.scholar;
@@ -2168,7 +2207,13 @@
     if (how === 'welcome') {
       this.say(`You welcome ${vis.name}. Food shared, stories traded. Word of Haven travels a little further.`);
       bs.strangersHeard = (bs.strangersHeard || 0) + 1;
-      try { v.pantryKcal = Math.max(0, (v.pantryKcal || 0) - 500); } catch (e) {}
+      // SHARED FOOD IS REAL (break-it 2026-10-08): the old code decremented the
+      // phantom pantryKcal scalar — wiped by pantryKcalLive's sync, so the
+      // welcome feast was free. Real food leaves as real items.
+      try {
+        if (typeof this._removePantryKcal === 'function') this._removePantryKcal(500);
+        else v.pantryKcal = Math.max(0, (v.pantryKcal || 0) - 500);
+      } catch (e) {}
     } else if (how === 'trade' && this.tradeSpirit(vis) > 0) {
       // THE TRADER'S CART (Steve 2026-10-06): the old beat said "You trade"
       // but no goods moved. Now the cart opens for real — wares below.
