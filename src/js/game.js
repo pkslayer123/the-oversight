@@ -11339,22 +11339,19 @@
       return act === 'diurnal' ? 3 : act === 'nocturnal' ? 0.15 : 1;
     },
     // MONSTER WAVES: which monsters can spawn right now.
-    // Wave 1: calibration fauna — the System's first draft, always present.
-    // Wave 2: advanced fauna — deployed at System arrival (day 7).
-    // Wave 3: reserved for deep integration (80+) — the System's final draft.
+    // Single source of truth for the wave gate (Steve 2026-10-08, break-it
+    // monsters run): this used to key wave 2 on System arrival (day 7) with
+    // no kill requirement, while unlockedWave() — used by castMonster, the
+    // loot tiers, and the "Wave N released" announcement — requires day 8 +
+    // 4 wave-1 kills. The two spawn paths disagreed: tile-entry and
+    // background spawns were ~58% wave-2 on day 7 with zero kills, while the
+    // System insisted wave 2 hadn't been released. The kill gate is the
+    // deliberate design ("prove you can handle it"), so the pool follows it.
     // Earlier waves never leave the pool; the ecosystem only gets richer.
     monsterWavePool() {
       const all = this.data.monsters || [];
-      const s = this.state.scholar || {};
-      const arrived = !!this.state.systemArrived;
-      const deep = (s.integration || 0) >= 80;
-      return all.filter(m => {
-        const w = m.wave || 1;
-        if (w <= 1) return true;
-        if (w === 2) return arrived;
-        if (w >= 3) return arrived && deep;
-        return true;
-      });
+      const wave = this.unlockedWave();
+      return all.filter(m => (m.wave || 1) <= wave);
     },
     // WORLD MONSTERS (Steve 2026-10-06): the world must live. Monsters exist
     // on tiles independent of the player. state.worldMonsters is the source
@@ -13694,9 +13691,9 @@
       const effChance = Math.min(chance * (1 + 0.25 * misses), 0.6);
       if (Math.random() < effChance && !this.monsterAt(px, py)) {
         scholar.spawnMisses = 0;
-        // MONSTER WAVES: the System escalates. Wave 1 (calibration fauna) is
-        // always in the pool. Wave 2 (advanced fauna) joins after System arrival.
-        // Wave 3+ hook: gate on integration thresholds (see monsterWavePool).
+        // MONSTER WAVES: the System escalates on the kill-gated schedule —
+        // wave 2 joins at day 8 + 4 wave-1 kills (see monsterWavePool, which
+        // follows unlockedWave). Earlier waves never leave the pool.
         const mdefs = this.monsterWavePool();
         // WAVE RATIO (Steve 2026-10-06): tile-entry spawns use the same wave
         // ratios as castMonster (60% newest unlocked wave / 40% older) — the
@@ -19028,12 +19025,10 @@
         if (learned && drKc) cue += ' ' + drKc;
         return cue + learned;
       }
-      // service_mimic + contract_golem: NOT batch-4-routed (guard above).
-      // Their cues are bespoke and already knowledge-gated — the mimic's in
-      // its rush-resolve line + watching beat (Steve 2026-10-06), the golem's
-      // in encDeclareDirect's cueText + knownTail. The camera_swarm and
-      // hype_horn branches here were deleted with the
-      // monsters themselves (Steve 2026-10-06).
+      // Retired monsters (service_mimic, contract_golem, camera_swarm,
+      // hype_horn — Steve 2026-10-06) were never batch-4-routed; their bespoke
+      // cues died with them (removal staged by the break-it monsters run,
+      // Steve 2026-10-08).
       return null;
     },
 
@@ -20649,7 +20644,8 @@
     // the fight. Two mechanical kinds, four fictions:
     //   trample (bulldozer charge lane), crater (bright_idea detonation):
     //     difficult ground — 2 movement per tile instead of 1.
-    //   paper (contract_golem shedding), scorch (sunbasker bask):
+    //   paper (retired contract_golem shedding — no live producer; the type
+    //     stays for the generic engine), scorch (sunbasker bask):
     //     1 damage when you step onto it.
     // The visuals always show — wreckage, paper, craters and scorched earth
     // are physically there. The MECHANICAL effect is learned by touch: first
@@ -20979,10 +20975,10 @@
     smIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'service_mimic')); },
     cgIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'contract_golem')); },
     wcIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'warranty_caller')); },
-    // WAVE-2 ROSTER REDESIGN (Steve 2026-10-06/08): retired monsters have no
-    // data defs, so their id predicates never match. beastIs + its bespoke AI
-    // blocks were deleted in the Phase-1 cleanup (Steve 2026-10-08); the
-    // remaining retired-id predicates are another run's scope.
+    // WAVE-2 ROSTER REDESIGN (Steve 2026-10-06): retired monsters (hype_horn,
+    // camera_swarm, service_mimic, contract_golem, delegate_beast) have no
+    // data defs. Their id predicates + bespoke AI are dead code — removal is
+    // staged by the break-it monsters run (Steve 2026-10-08).
     usIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'understudy')); },
     llIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'landlord')); },
     hkIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'heckler')); },
@@ -24171,10 +24167,15 @@
       if (this.sunbaskerIs(m)) {
         const ff = fifoFoe(); if (ff) foe = ff;
         const t = foe.f;
-        let night = false;
-        try { night = this.isNight(); } catch (e) {}
+        // DUSK HONESTY (Steve 2026-10-08, break-it monsters run): the data
+        // weakness promises "it won't fight in shade or at dusk" and the
+        // block comment above says "Shade or dusk: it flattens" — but
+        // isNight() is dayPart 3 only, so dusk (2) kept fighting. The engine
+        // now matches the promise: dusk's dying light flattens it too.
+        let night = false, dusk = false;
+        try { const dp = this.dayPart; night = dp === 3; dusk = dp === 2; } catch (e) {}
         const inShade = this.tbInShade(m.mx, m.my);
-        if (night || inShade) {
+        if (night || dusk || inShade) {
           // FLATTEN: no sun, no fight. Still killable — it's a lizard.
           if (!m.sbFlat) {
             m.sbFlat = true; m.sbCharge = 0;
@@ -24185,7 +24186,9 @@
             if (useFifo) this.encSetPhase(m, 'flat');
             this.say(night
               ? 'The sun is gone — and so is the fight in it. It flattens, dull brown, trying to disappear into the dirt.'
-              : 'It shuffles into the tree-shade and flattens, dull brown. No sun, no fight.');
+              : dusk
+                ? 'The light is dying and the fight dies with it. It flattens, dull brown, waiting out the dark.'
+                : 'It shuffles into the tree-shade and flattens, dull brown. No sun, no fight.');
             this.audioEvent('baskFlatten');
           }
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
@@ -25379,8 +25382,8 @@
         }
         swarmChased = true;
       }
-      if (!swarmChased && !heronStatue && this.mothIs(m)) approachHandled = this.tbMothApproach(m, foe, blocked);
-      else if (!swarmChased && !heronStatue) for (let i = 0; i < m.speed; i++) {
+      if (!heronStatue && this.mothIs(m)) approachHandled = this.tbMothApproach(m, foe, blocked);
+      else if (!heronStatue) for (let i = 0; i < m.speed; i++) {
         const d = Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my));
         const want = this.encWantRange(m, pat);
         if (d <= want) break;

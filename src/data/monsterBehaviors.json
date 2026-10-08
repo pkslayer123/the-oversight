@@ -51,7 +51,7 @@
       "aggroRange": 6,
       "archetype": "hype",
       "fleeAt": 0.3,
-      "notes": "Renamed from hype_horn; the old hornIs crowd-deflate branch is dead code (flagged).",
+      "notes": "Renamed from hype_horn; the old hornIs crowd-deflate branch was dead code; removed 2026-10-08.",
       "preTurnHooks": [],
       "preferredRange": 3
     },
@@ -139,7 +139,7 @@
       "aggroRange": 8,
       "archetype": "swarmer",
       "fleeAt": 0,
-      "notes": "Renamed from camera_swarm; the old swarmIs fire-scatter branch is dead code (flagged).",
+      "notes": "Renamed from camera_swarm; the old swarmIs fire-scatter branch was dead code; removed 2026-10-08.",
       "preTurnHooks": [],
       "preferredRange": 5
     },
