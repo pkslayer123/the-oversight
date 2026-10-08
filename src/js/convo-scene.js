@@ -126,6 +126,11 @@
             try {
               if (this.mediatedBySystem && this.mediatedBySystem(vid)) gain = Math.ceil(gain / 2);
             } catch (e) {}
+            // PROGRESSIVE TRUST (break-it 2026-10-08): higher trust is harder
+            // to earn — applies here too, before the talk cap.
+            try {
+              if (typeof this.trustGainProgressive === 'function') gain = this.trustGainProgressive(vid, gain);
+            } catch (e) {}
             // WORDS ONLY GO SO FAR: talk caps at 40. Beyond that, do
             // something real. Real acts pass talk:false.
             if (spec.talk !== false) {

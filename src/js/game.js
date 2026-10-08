@@ -3798,7 +3798,7 @@
       n.fear = Math.max(0, (n.fear || 0) - 40);
       n.social = Math.max(0, (n.social || 0) - 20);
       const t = this.state.village.trust || (this.state.village.trust = {});
-      t[vid] = Math.min(100, (t[vid] || 10) + 8);
+      t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 8));
       const lines = [
         `You sit with ${first} for a while. Don't say much. Sometimes that's the whole thing.`,
         `"Hey. You're okay. We're okay." ${first} breathes out, shaky. "Yeah. Yeah, okay."`,
@@ -3835,7 +3835,7 @@
       const r = this.repOf(vid);
       r[w.axis] = Math.min(0, r[w.axis] + 12); // partial — deeds finish the job
       const t = this.state.village.trust || (this.state.village.trust = {});
-      t[vid] = Math.min(100, (t[vid] || 10) + 4);
+      t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 4));
       this.say(`You find ${first}. ${axisLines[w.axis]} They study you for a long moment, then nod once.`);
       this.remember(vid, 'amends', 'apologized for ' + w.axis);
       this.observe('amends', { target: vid });
@@ -3871,7 +3871,7 @@
           this.say(`${first} listens. Doesn't agree to everything, but listens. "${oname} and I... we'll figure it out. Thanks for trying." The air is a little clearer.`);
         }
         const t = v.trust || (v.trust = {});
-        t[vid] = Math.min(100, (t[vid] || 10) + 6); t[other] = Math.min(100, (t[other] || 10) + 6);
+        t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 6)); t[other] = Math.min(100, (t[other] || 10) + this.trustGainProgressive(other, 6));
         this.remember(vid, 'mediated', 'helped ease conflict with ' + other);
         this.observe('mediate', { target: vid });
       } else {
@@ -4066,7 +4066,7 @@
         this.say(`You pull ${first} aside. "I heard what you've been saying." They flush — then, slowly, nod. "Yeah. That wasn't fair. I'm sorry." The story loses its teeth.`);
         this.remember(vid, 'confronted', 'cleared the air about gossip');
         const t = this.state.village.trust || (this.state.village.trust = {});
-        t[vid] = Math.min(100, (t[vid] || 10) + 4);
+        t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 4));
         this.observe('confront', { target: vid, resolved: true });
       } else {
         for (const k of Object.keys(neg.dims || {})) if (neg.dims[k] < 0) neg.dims[k] = Math.round(neg.dims[k] * 1.3);
@@ -4685,8 +4685,9 @@
       // unset defaults to 10, but a real 0 must stay 0 — `|| 10` used to
       // resurrect hated villagers back toward 10 on every bump.
       const cur = v.trust[vid] === undefined ? 10 : v.trust[vid];
-      // trust.gain_mult applies to GAINS only, not losses
-      const adj = n > 0 ? this.trustGainMult(n) : n;
+      // trust.gain_mult applies to GAINS only, not losses. Gains are progressive:
+      // higher trust is harder to earn (Steve 2026-10-07; wired 2026-10-08).
+      const adj = n > 0 ? this.trustGainProgressive(vid, n) : n;
       const neu = Math.max(0, Math.min(100, cur + adj));
       v.trust[vid] = neu;
       // NPC ATTENTION (Steve 2026-10-07, Drama A1): trust crossing a milestone
@@ -8721,7 +8722,7 @@
       const genMult = genLvl >= 1 ? 2 : 1;
       v.trust = v.trust || {}; v.gives = v.gives || {};
       v.gives[vid] = (v.gives[vid] || 0) + kcal;
-      const trustGain = this.trustGainMult(Math.min(10, Math.floor(kcal / 500)) * genMult);
+      const trustGain = this.trustGainProgressive(vid, Math.min(10, Math.floor(kcal / 500)) * genMult);
       v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + trustGain);
       this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${trustGain}. They'll remember this.`);
       this.observe('donate');
@@ -14331,8 +14332,11 @@
       const s = this.state.scholar;
       const v = this.state.village; v.trust = v.trust || {};
       const trustAll = (amt, why) => {
-        const adj = amt > 0 ? this.trustGainMult(amt) : amt;
-        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) + adj);
+        for (const vid of Object.keys(v.trust)) {
+          // gains are progressive per villager; losses land whole (break-it 2026-10-08)
+          const adj = amt > 0 ? this.trustGainProgressive(vid, amt) : amt;
+          v.trust[vid] = Math.max(0, (v.trust[vid] || 15) + adj);
+        }
         this.say(why);
       };
       if (id === 'pact') {
@@ -14869,10 +14873,17 @@
       this.say('\u{1F6B6} A stranger walks into Haven. They\'re thin, scared, and carrying nothing. "Please," they say. "I heard you have food." (Drama: do you share?)');
       // mediator: peace is a skill. You talk the village through it.
       if (this.hasAbility('mediator')) {
-        const bonus = this.trustGainMult(Math.round(this.modTarget('drama.resolve_bonus', 8)));
+        const baseBonus = Math.round(this.modTarget('drama.resolve_bonus', 8));
         const v = this.state.village; v.trust = v.trust || {};
-        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + bonus);
-        this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${bonus})`);
+        // gains are progressive per villager (break-it 2026-10-08); the label
+        // names the honest max applied, not the base
+        let appliedMax = 0;
+        for (const vid of Object.keys(v.trust)) {
+          const g = this.trustGainProgressive(vid, baseBonus);
+          if (g > appliedMax) appliedMax = g;
+          v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + g);
+        }
+        this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${appliedMax})`);
         this.noteAbilityUse('mediator');
       }
     },
@@ -14997,8 +15008,9 @@
       const v = this.state.village;
       if (!v) return;
       v.trust = v.trust || {};
-      const g = n > 0 ? this.trustGainMult(n) : n;
       for (const vid of Object.keys(v.trust)) {
+        // gains are progressive per villager; losses are raw — rudeness is honest (break-it 2026-10-08)
+        const g = n > 0 ? this.trustGainProgressive(vid, n) : n;
         v.trust[vid] = Math.max(0, Math.min(100, (v.trust[vid] || 15) + g));
       }
     },

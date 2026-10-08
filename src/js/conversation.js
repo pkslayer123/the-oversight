@@ -4160,7 +4160,10 @@
       if (cm !== 0) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social'); } catch (e) {}
-      this.convoConflictFallout(vid, t[vid]);
+      // BUGFIX (break-it 2026-10-08): `t` was undefined here — every natural
+      // conversation end threw ReferenceError, skipping the exit line, mood
+      // goodbye, and coherence close-beat. Pass the live trust value.
+      this.convoConflictFallout(vid, ((this.state.village || {}).trust || {})[vid]);
       // COHERENCE (Steve 2026-10-07): close out what got closed. A thread
       // that was hanging and got discussed this conversation earns its
       // closing beat at goodbye; a lapsed thread circled back to gets the
@@ -4344,19 +4347,11 @@
       for (const [w, g] of Object.entries(phrase.kw)) if (!log[w]) log[w] = g;
     },
 
-    // trustGain: rapport flows through the human channel. When live
-    // translate mediates (stage 2, no shared tongue), the System gives you
-    // the words without the work — rapport gains halve. Your extended mind
-    // learns the vocabulary fine; it's the relationship that starves.
-    // Penalties are never softened: embarrassment and consequences land
-    // whole. (Steve 2026-10-06)
-    trustGain(vid, n) {
-      const t = this.state.village.trust || (this.state.village.trust = {});
-      let g = n;
-      try { if (n > 0 && this.mediatedBySystem(vid)) g = Math.ceil(n / 2); } catch (e) {}
-      t[vid] = Math.min(100, Math.max(0, (t[vid] || 10) + g));
-      return g;
-    },
+    // trustGain REMOVED (break-it 2026-10-08): dead method — zero callers.
+    // Its mediation-halving logic lives on in convo-scene.js resolveConsequence
+    // ("kept from trustGain"), which now also applies trustGainProgressive.
+    // Do not re-add a parallel trust conduit; route gains through
+    // trustGainProgressive (game.js) instead.
     // langExposure: words of this tongue you've absorbed. 0..25+.
     langExposure(lang) {
       const e = (this.state.scholar || {}).langExposure || {};

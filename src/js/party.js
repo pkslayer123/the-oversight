@@ -374,7 +374,13 @@
     // Trust is not safety. Betrayal runs on personality + desperation +
     // opportunity. A high-trust backstab is MORE devastating, not less likely.
 
-    betrayalState(vid) {
+    // partyBetrayalState: per-traveler backstab state. RENAMED (break-it
+    // 2026-10-08): the old name `betrayalState(vid)` was shadowed by
+    // betrayal.js's betrayalState() (village plot/case state, no args, loaded
+    // later) — every party call site got the SHARED village object instead of
+    // per-vid state, so intent was global, evaluated never cached, and
+    // betrayalCueCheck crashed on bs.cuesSeen.length (undefined).
+    partyBetrayalState(vid) {
       const v = this.partyState();
       v.betray[vid] = v.betray[vid] || { intent: false, evaluated: false, suspicion: 0, cuesSeen: [] };
       return v.betray[vid];
@@ -382,7 +388,7 @@
 
     // Do they plan to betray you? Evaluated on join, re-evaluated when desperate.
     betrayalIntent(vid, force) {
-      const bs = this.betrayalState(vid);
+      const bs = this.partyBetrayalState(vid);
       if (bs.evaluated && !force) return bs.intent;
       bs.evaluated = true;
       const temp = this.npcTemper(vid);
@@ -419,7 +425,7 @@
       const v = this.state.village;
       const pantryLow = (v.pantryKcal || 99999) < 2000;
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent && pantryLow && Math.random() < 0.15) {
           this.betrayalIntent(vid, true);
         }
@@ -457,7 +463,7 @@
     // Observant/social player intelligences pick these up more often.
     betrayalCueCheck() {
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent || bs.cuesSeen.length >= 3) continue;
         if (Math.random() > 0.18) continue;
         const dname = this.displayName(vid);
@@ -720,7 +726,7 @@
       try { const t = this.playerTile(); atHaven = !!(t && (t.type === 'haven' || t.isHaven)); } catch (e) {}
       if (!atHaven) return;
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent) continue;
         if (Math.random() > 0.2) continue;
         const dname = this.displayName(vid);
@@ -746,7 +752,7 @@
       this.lureCheck();
       // Does anyone strike?
       for (const vid of this.travelingWith()) {
-        const bs = this.betrayalState(vid);
+        const bs = this.partyBetrayalState(vid);
         if (!bs.intent) continue;
         const opp = this.betrayalOpportunity(vid);
         if (opp >= 70 && Math.random() < 0.5) {

@@ -194,8 +194,11 @@
       this.remember(vid, 'gift', `unasked-for food (${amount})`);
     }
 
-    setTrust.call(this, vid, trust + this.trustGainMult(trustGain));
-
+    // PROGRESSIVE TRUST (break-it 2026-10-08): trustGainProgressive was designed
+    // (Steve 2026-10-07) but never wired — every gift paid full rate at any
+    // trust level. It scales by current trust AND applies trustGainMult.
+    const appliedTrust = this.trustGainProgressive(vid, trustGain);
+    setTrust.call(this, vid, trust + appliedTrust);
     // PUBLIC: the village watches. Generosity is visible — and it creates
     // expectation. Feed people publicly and the hungry will come asking.
     if (pub) {
@@ -214,7 +217,7 @@
     this.socialTick(vid);
     this.tickAction(1); // a handoff is quick — the food is the real cost
     this.save();
-    return { ok: true, amount, units: taken, public: pub, trustGain };
+    return { ok: true, amount, units: taken, public: pub, trustGain: appliedTrust };
   };
 
   // ================================================================
