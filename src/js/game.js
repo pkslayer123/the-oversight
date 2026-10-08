@@ -4723,6 +4723,13 @@
         talkIdx: this.state.talkIdx || {}, fireIdx: this.state.fireIdx || 0,
         questGiven: !!this.state.questGiven,
         tbfight: tbSave,
+        // PENDING ENCOUNTER (break-it camps-2 2026-10-08): a save during the
+        // "face it" panel used to silently drop the encounter — reloading
+        // save-scummed a tent breach (the monster never existed). The triple
+        // persists now; load() restores it.
+        pendingEncounter: !!this.pendingEncounter,
+        pendingMonsterId: this.pendingMonsterId || null,
+        pendingInTent: !!this.pendingInTent,
       };
     },
     save() {
@@ -4770,6 +4777,13 @@
       this.departed = r.departed; this.log = r.log || [];
       this.homeRegion = r.homeRegion; this.villagerId = r.villagerId;
       this.encounterDone = r.encounterDone; this.wanderer = r.wanderer || null;
+      // PENDING ENCOUNTER (break-it camps-2 2026-10-08): restore the "face it"
+      // panel across save/load — see syncRun. If the tent is gone, the thing
+      // is no longer "in" it: downgrade to a regular encounter, never a
+      // phantom in-tent panel.
+      this.pendingEncounter = !!r.pendingEncounter;
+      this.pendingMonsterId = r.pendingMonsterId || null;
+      this.pendingInTent = !!(r.pendingInTent && s.scholar && s.scholar.insideTent);
       // re-inject the generated cast: they live in the save, not in the JSON
       const rc = (s.village && s.village.rosterChars) || {};
       this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
@@ -7894,20 +7908,32 @@
     playerFireAt(cx, cy) {
       this.sweepDeadFires();
       const fires = this.state.fires || [];
-      return fires.some(f => f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy && f.till > this._absTick());
+      // (break-it camps-2 2026-10-08): interior tent fires are not grid fires —
+      // their (cx,cy) is the TENT's cell. Matching them here let the outside
+      // feed path feed a tent-interior fire at full burn through the grid.
+      return fires.some(f => !f.inside && f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy && f.till > this._absTick());
     },
     // sweepDeadFires: expired player fires go cold — back to plain dirt.
     // Called lazily at every fire-touching path; only tracked fires are scanned.
     // Also the rain-tax choke point: every fire touch accounts weather burn.
+    // BREAK-IT CAMPS-2 (2026-10-08): interior tent fires have NO grid cell —
+    // their (cx,cy) is the TENT's cell. The old code cleared that cell on
+    // expiry, so a burned-out tent fire ATE THE TENT (validateInsideTent then
+    // dumped you with "wrecked while you were away"). Only grid fires clear
+    // their cell now — and only when the cell is actually a fire cell.
     sweepDeadFires() {
       try { this.taxFires(); } catch (e) {}
       const now = this._absTick();
       const fires = this.state.fires || [];
       for (let i = fires.length - 1; i >= 0; i--) {
         if (fires[i].till > now) continue;
-        const row = this.map.tiles[fires[i].ty];
-        const t = row && row[fires[i].tx];
-        if (t && t.detail && t.detail[fires[i].cy]) t.detail[fires[i].cy][fires[i].cx] = 'dirt';
+        if (!fires[i].inside) {
+          const row = this.map.tiles[fires[i].ty];
+          const t = row && row[fires[i].tx];
+          if (t && t.detail && t.detail[fires[i].cy] && t.detail[fires[i].cy][fires[i].cx] === 'fire') {
+            t.detail[fires[i].cy][fires[i].cx] = 'dirt';
+          }
+        }
         fires.splice(i, 1);
       }
     },
@@ -8090,13 +8116,30 @@
       return false;
     },
     canSetUpCamp() {
-      return this.hasTentNearby() && this.hasCampfireNearby() && !this.state.camp;
+      if (!this.hasTentNearby() || !this.hasCampfireNearby()) return false;
+      const c = this.state.camp;
+      // BREAK-IT CAMPS-2 (2026-10-08): a camp on another tile no longer blocks
+      // a new one — setUpCamp abandons it (one camp at a time, per design).
+      // A camp on THIS tile is already set up.
+      return !c || c.px !== this.map.px || c.py !== this.map.py;
     },
     setUpCamp() {
       if (this.over) return null;
-      if (this.state.camp) { this.say('You already have a camp. Pack it up or let it go before making a new one.'); return null; }
       if (!this.hasTentNearby()) { this.say('You need a pitched tent to make camp.'); return null; }
       if (!this.hasCampfireNearby()) { this.say('You need a campfire to make camp.'); return null; }
+      // ONE CAMP (break-it camps-2 2026-10-08): the design comment always said
+      // "Setting up a new camp abandons the old one", but the engine refused
+      // ("already have a camp... let it go") and no abandon action existed —
+      // "let it go" was a phantom promise. Now the engine matches the design:
+      // a camp on another tile is abandoned (breakCamp) when you set up here.
+      // The tent/fire checks run first so a failed setup never costs the old camp.
+      const old = this.state.camp;
+      if (old && (old.px !== this.map.px || old.py !== this.map.py)) {
+        this.breakCamp('you left it behind');
+      } else if (old) {
+        this.say('This is already your camp.');
+        return null;
+      }
       this.state.camp = {
         px: this.map.px, py: this.map.py,
         condition: 'shitty',
@@ -8110,22 +8153,56 @@
       if (!this.state.camp) return;
       const c = this.state.camp;
       const r = reason || 'the world took it';
+      // Struck, not destroyed: the tent went back in the pack — nothing is
+      // wrecked, and the fire honestly keeps burning till it dies on its own.
+      const struck = (r === 'you packed up the tent');
       // WRECKED TENT (survivalist loop 2026-10-08): the pitched tent does not
       // survive the camp's end — a wrecked tent cell left on the grid would
       // let hasTentNearby/canSetUpCamp resurrect a dead camp. The packTent
       // path clears its own cell and re-packs the tent BEFORE calling here,
       // so this sweep is idempotent for that path (no cell, nothing to do).
+      // BREAK-IT CAMPS-2 (2026-10-08): tents wrecked by this sweep take their
+      // interior fires with them (phantom-fire sibling — see wreckTent).
+      const fires = this.state.fires || [];
       try {
         const detail = this.genDetail(c.px, c.py);
         const t = this.tileAt(c.px, c.py);
         for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           if (detail[y] && detail[y][x] === 'tent') {
             const sec = t.secrets && t.secrets[x + ',' + y];
-            if (sec && sec.yours) { detail[y][x] = 'dirt'; delete t.secrets[x + ',' + y]; }
+            if (sec && sec.yours) {
+              detail[y][x] = 'dirt'; delete t.secrets[x + ',' + y];
+              for (let i = fires.length - 1; i >= 0; i--) {
+                const f = fires[i];
+                if (f.inside && f.tx === c.px && f.ty === c.py && f.cx === x && f.cy === y) fires.splice(i, 1);
+              }
+            }
           }
         }
       } catch (e) {}
-      this.say(`Your camp is gone — ${r}. The tent's wrecked, the fire's cold. That's the deal with camps: they're not havens.`);
+      // FIRE HONESTY (break-it camps-2 2026-10-08): the old message said "the
+      // fire's cold" while camp-tile fires kept burning, feedable — copy vs
+      // engine. A destroyed camp's player fires (grid and interior) go out
+      // with it now; a struck camp's fire honestly keeps burning.
+      if (!struck) {
+        try {
+          const detail = this.genDetail(c.px, c.py);
+          for (let i = fires.length - 1; i >= 0; i--) {
+            const f = fires[i];
+            if (f.tx !== c.px || f.ty !== c.py) continue;
+            if (!f.inside && detail[f.cy] && detail[f.cy][f.cx] === 'fire') detail[f.cy][f.cx] = 'dirt';
+            fires.splice(i, 1);
+          }
+        } catch (e) {}
+      }
+      if (struck) {
+        const fireLeft = fires.some(f => f.tx === c.px && f.ty === c.py);
+        this.say(`Camp struck — the tent's back in your pack.` +
+          (fireLeft ? ` The fire keeps burning; it'll die on its own.` : ``) +
+          ` That's the deal with camps: they're not havens.`);
+      } else {
+        this.say(`Your camp is gone — ${r}. The tent's wrecked, the fire's scattered cold. That's the deal with camps: they're not havens.`);
+      }
       // TENT ROOMS: if you were inside the tent, the wreck dumps you outside.
       try {
         const s = this.state.scholar;
@@ -8194,6 +8271,9 @@
       return null;
     },
     exitTent(forced) {
+      // (break-it camps-2 2026-10-08): forced exits (faceTentIntruder's burst
+      // out) bypass the breach lock — the lock is for calm, voluntary exits.
+      if (!forced && this._breachLock()) return null;
       const s = this.state.scholar;
       if (!s || !s.insideTent) return null;
       s.insideTent = null;
@@ -8205,6 +8285,7 @@
       return null;
     },
     setTentVent(open) {
+      if (this._breachLock()) return null;
       const s = this.state.scholar;
       const ins = s && s.insideTent;
       if (!ins) return null;
@@ -8228,6 +8309,7 @@
     tentFireLit() { return !!this.tentFire(); },
     lightTentFire() {
       if (this.over) return null;
+      if (this._breachLock()) return null;
       const s = this.state.scholar;
       if (!s.insideTent) { this.say('You need to be inside your tent.'); return null; }
       if (this.tentFireLit()) { this.say('The tent fire is already going.'); return null; }
@@ -8247,6 +8329,7 @@
     },
     feedTentFire() {
       if (this.over) return null;
+      if (this._breachLock()) return null;
       const s = this.state.scholar;
       if (!s.insideTent) { this.say('You need to be inside your tent.'); return null; }
       const f = this.tentFire();
@@ -8263,6 +8346,7 @@
     },
     cookInTent() {
       if (this.over) return null;
+      if (this._breachLock()) return null;
       if (!this.tentFireLit()) { this.say('Need the tent fire lit to cook in here.'); return null; }
       // Small fire, slow cooking: honest label, honest cost.
       this.tickAction(24);
@@ -11845,6 +11929,7 @@
       const s = this.state.scholar;
       const T = this.TIME;
       if (this.tbfight) { this.say('Not in the middle of a fight.'); return this.status(); }
+      if (this._breachLock()) return this.status();
       if (this.dayPart === 0 && (s.dayTicks || 0) < T.TICKS_PER_BATCH) {
         this.say('It\'s barely dawn. The day is yours — sleep is for later.');
         return this.status();
@@ -13862,9 +13947,12 @@
       }
       if ((mdef.size || 1) >= 2) {
         const ins = s.insideTent;
-        this.wreckTent(ins.tx, ins.ty, ins.cx, ins.cy);
+        // (break-it camps-2 2026-10-08): clear insideTent BEFORE wreckTent —
+        // wreckTent now breaks the camp, and breakCamp's inside-dump is a
+        // no-op here; this branch's own "thrown clear" message owns the fiction.
         s.insideTent = null;
         s.tentSmoke = 0;
+        this.wreckTent(ins.tx, ins.ty, ins.cx, ins.cy);
         s.health = Math.max(1, Math.round(s.health || 0) - 5);
         this.pendingEncounter = true;
         this.pendingMonsterId = monsterId;
@@ -13885,7 +13973,33 @@
           detail[cy][cx] = 'dirt';
           if (t && t.secrets) delete t.secrets[cx + ',' + cy];
         }
+        // BREAK-IT CAMPS-2 (2026-10-08): the tent's interior fire dies with it.
+        // tentFire() matches by (tx,ty,cx,cy) — a lingering entry would hand a
+        // re-pitched tent on the same cell a phantom lit fire.
+        const fires = this.state.fires || [];
+        for (let i = fires.length - 1; i >= 0; i--) {
+          const f = fires[i];
+          if (f.inside && f.tx === tx && f.ty === ty && f.cx === cx && f.cy === cy) fires.splice(i, 1);
+        }
+        // CAMP INTEGRITY (break-it camps-2 2026-10-08): a wrecked camp-tent
+        // kills the camp — same phantom-camp class as destroyCell (break-it
+        // camps 2026-10-08). Without this, state.camp survived on a wrecked
+        // tent: atCamp() stayed true (sort ritual on dirt), "Set up camp"
+        // refused, and no abandon action existed. Only the camp's own tile.
+        const c = this.state.camp;
+        if (c && c.px === tx && c.py === ty) { try { this.breakCamp('a monster tore it down'); } catch (e) {} }
       } catch (e) {}
+    },
+    // _breachLock (break-it camps-2 2026-10-08): while the thing is IN the tent
+    // with you (pendingInTent), the only move is facing it. No lighting the
+    // fire, no cooking, no sleeping, no slipping out the flap — the tent-room
+    // screen used to offer all of those with a monster inside.
+    _breachLock() {
+      if (this.pendingInTent) {
+        this.say('Not with that thing in here with you. Face it.');
+        return true;
+      }
+      return false;
     },
     // faceTentIntruder: the thing is IN your tent. You burst out through the
     // flap and it comes right out behind you — the fight starts at arm's

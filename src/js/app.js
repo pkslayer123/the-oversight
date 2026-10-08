@@ -775,7 +775,15 @@
     if (label === 'Enter tent') { Game.enterTent(cx, cy); return; }
     if (label === 'Set up camp') {
       // Steve 2026-10-07: confirm before setting up camp — it's a commitment
-      if (confirm('Set up camp here? Your tent and fire become a camp — a shitty, breakable version of a haven. You can only have one camp.')) {
+      // BREAK-IT CAMPS-2 (2026-10-08): setting up on a new tile ABANDONS the
+      // old camp (its tent is wrecked, its fire dies) — the confirm names
+      // that cost honestly, per "expensive buttons name their cost".
+      const old = Game.state.camp;
+      const abandon = old && (old.px !== Game.map.px || old.py !== Game.map.py);
+      const msg = abandon
+        ? 'Set up camp here? Your OLD camp is abandoned — its tent is wrecked, its fire dies. The new camp is a shitty, breakable version of a haven. You can only have one camp.'
+        : 'Set up camp here? Your tent and fire become a camp — a shitty, breakable version of a haven. You can only have one camp.';
+      if (confirm(msg)) {
         Game.setUpCamp();
       }
       return;
@@ -13001,8 +13009,12 @@
     let prev = null;
     try { prev = Game.sleepPreview(); } catch (e) {}
     // TENT BREACH: the encounter panel lives here now — it's IN the tent.
+    // BREAK-IT CAMPS-2 (2026-10-08): while it's in here with you, the breach
+    // card is the ONLY action — the fire/cook/vent/sleep/exit buttons are
+    // suppressed (their Game functions refuse too, via _breachLock).
+    const breached = Game.pendingEncounter && Game.pendingInTent;
     let breachCard = '';
-    if (Game.pendingEncounter && Game.pendingInTent) {
+    if (breached) {
       const pmid = Game.pendingMonsterId || 'bulldozer';
       const praw = (Game.monsterDisplayName ? Game.monsterDisplayName(pmid) : null) || 'something big';
       const pname = String(praw[0]).toUpperCase() + String(praw).slice(1);
@@ -13023,14 +13035,14 @@
         ${smoke > 60 ? '<p class="small" style="color:#e8a33d">💨 Smoke is building — vent the flap or let the fire die down.</p>' : ''}
         ${prev ? `<p class="small" style="opacity:.6">😴 ${esc(prev.name)} · +${prev.heal} health${prev.note ? `<br>${esc(prev.note)}` : ''}${prev.warn ? `<br>⚠️ ${esc(prev.warn)}` : ''}</p>` : ''}
       </div>
-      <div class="actions">
+      ${breached ? '' : `<div class="actions">
         ${!fireLit ? '<button class="btn" id="tr-light">🔥 Light tent fire</button>'
           : hasFuel ? '<button class="btn" id="tr-feed">🪵 Feed the fire</button>' : ''}
         ${fireLit && rawCount ? `<button class="btn" id="tr-cook">🍲 Cook (slow, ${rawCount} raw)</button>` : ''}
         <button class="btn sm ghost" id="tr-vent">${ventOpen ? 'Close vent flap' : 'Open vent flap'}</button>
         <button class="btn sm" id="tr-sleep">😴 Sleep</button>
         <button class="btn sm ghost" id="tr-exit">🚪 Exit tent</button>
-      </div>
+      </div>`}
       <div class="ord-status">${statusBars(st)}</div>
       </div><div class="game-col-side">
         <div class="ord-narration">${narrationBoxHTML(st, null)}</div>
