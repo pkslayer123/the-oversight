@@ -995,7 +995,11 @@
     var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
     var ax = 4, ay = 4, tries = 0;
     do {
-      ax = Math.floor(Math.random() * 9); ay = Math.floor(Math.random() * 9);
+      // INTERIOR SPAWN (Steve 2026-10-08): the grid edge is the flee-by-
+      // barrier — an animal spawning ON it reaches the treeline in one bolt
+      // and the chase never happens. Spawns stay on interior tiles (1..7);
+      // the animal earns the edge by running, it doesn't start there.
+      ax = 1 + Math.floor(Math.random() * 7); ay = 1 + Math.floor(Math.random() * 7);
       tries++;
     } while (tries < 20 && Math.max(Math.abs(ax - px), Math.abs(ay - py)) < 3);
     var cfg = this.encPreyCfg(animal.id);
@@ -2212,7 +2216,13 @@
         try { this.audioEvent('animalBite'); } catch (e) {}
         if (Math.random() < 0.3) {
           this.feedback('You fumble — it wriggles free!');
-          this.animalTurn(); this.animalTurn();
+          // TURN HYGIENE (Steve 2026-10-08): one animalTurn per miss, like
+          // every other miss path (near-miss, clean miss). The old code ran
+          // animalTurn() TWICE here — the animal acted twice for the
+          // player's single strike, the same double-advance class of bug as
+          // the playtest wait/strike lessons. "Wriggles free" buys it one
+          // turn's head start, not two.
+          this.animalTurn();
           return true;
         }
       }

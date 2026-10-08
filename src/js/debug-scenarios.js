@@ -74,6 +74,22 @@
     Game.say(`Movement — ${adef.description || 'something alive'}.`);
   }
 
+  // Spawn an animal at an offset from the player (clamped to interior 1..7 —
+  // the grid edge is the flee-by-barrier, animals don't start on it).
+  function spawnAnimalAt(animalId, dx, dy) {
+    const s = Game.state.scholar;
+    const px = s.mx ?? 4, py = s.my ?? 4;
+    let cfg = { stamina: 3 };
+    try { cfg = Game.encPreyCfg(animalId); } catch (e) {}
+    s.animal = {
+      id: animalId,
+      mx: Math.min(7, Math.max(1, px + dx)), my: Math.min(7, Math.max(1, py + dy)),
+      aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0,
+    };
+    const adef = (Game.data.animals || []).find(a => a.id === animalId) || {};
+    Game.say(`Movement — ${adef.description || 'something alive'}.`);
+  }
+
   function rosterIds() {
     const v = Game.state.village;
     return (v.roster || []).filter(rid => rid !== Game.villagerId);
@@ -363,6 +379,52 @@
       Game.say('');
       Game.say('🐞 SCENARIO: night hunt. Midnight. A gray fox is out there.');
       Game.say('Fire-hardened spear in hand.');
+    },
+
+    // FULL HUNT (Steve 2026-10-08, hunter audit): the whole arc in one tap.
+    // The deer starts FOUR tiles out — not adjacent — so you play the
+    // approach yourself: walk at it and it bolts (prey flees, it doesn't sit
+    // still), Stalk in quiet, or run it down till it's winded. Strike it calm
+    // or winded; clean the carcass fast (spoils in ~2 days). Stone knife in
+    // the pack, crude bow in hand, dawn — the deer is crepuscular.
+    hunt() {
+      freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
+      const s = Game.state.scholar;
+      giveWeapon('crude_bow', 'arrow', 12);
+      const kdef = (Game.data.items || []).find(i => i.id === 'stone_knife') || {};
+      s.inventory.push({ itemId: 'stone_knife', units: 1, kcalEach: 0, kg: 0.3, name: kdef.name || 'Stone knife' });
+      s.insideHaven = false;
+      Game.dayPart = 0; // dawn — deer are crepuscular
+      s.mx = 3; s.my = 4;
+      spawnAnimalAt('white_tailed_deer', 4, 0); // four tiles east, grazing, unaware
+      Game.say('');
+      Game.say('🐞 SCENARIO: the full hunt. Crude bow in hand, 12 arrows, stone knife in the pack.');
+      Game.say('Dawn. A deer, four tiles east, grazing — it has not seen you yet.');
+      Game.say('Walk at it and watch it bolt. Stalk in quiet. Run it down till it\'s winded.');
+      Game.say('Strike it calm or winded — then clean the carcass fast. Meat rots where it lies.');
+    },
+
+    // BUTCHER (Steve 2026-10-08, hunter audit): the carcass, not the chase.
+    // A fresh deer carcass in the pack, NO knife, day 1. The rot clock is
+    // already ticking (spoils in ~2 days): knap a Stone knife (stone + vine,
+    // Craft) or watch it go bad. Teaches the butchering legibility loop.
+    butcher() {
+      freshGame();
+      toWildNode(); // wild encounter: out in the wild, not the haven grounds (Steve 2026-10-04)
+      const s = Game.state.scholar;
+      s.insideHaven = false;
+      Game.dayPart = 1; // midday
+      const adef = (Game.data.animals || []).find(a => a.id === 'white_tailed_deer') || {};
+      try {
+        s.inventory.push(Game.foodCarcass(Object.assign({ name: 'White-tailed Deer' }, adef), 20000, s.day, 'hunted'));
+      } catch (e) {
+        Game.say('🐞 butcher scenario: could not make the carcass: ' + e.message);
+      }
+      Game.say('');
+      Game.say('🐞 SCENARIO: the butcher. A whole deer carcass in your pack — 20,000 kcal on the bone.');
+      Game.say('It spoils in ~2 days. You have NO knife — knap a Stone knife (stone + vine, Craft in your pack),');
+      Game.say('then Clean it. Raw is a gamble; cook it over fire, smoke what you can\'t eat soon.');
     },
 
     // 8. Starving village — pantry nearly empty, trust strained.
@@ -1170,6 +1232,8 @@
       ['day1', '🌊 Day 1 fresh spawn'],
       ['language', '🗣️ Language barrier'],
       ['night', '🌙 Night hunt'],
+      ['hunt', '🏹 Full hunt — stalk, chase, kill, butcher'],
+      ['butcher', '🔪 Butcher — carcass, no knife, rot clock'],
       ['liars', '🤥 Liar\'s den'],
       ['starving', '🔥 Starving village'],
       ['contestPit', '📺 Contest: The Pit'],
@@ -1188,7 +1252,7 @@
     const all = Game.debugScenarioList();
     const byId = Object.fromEntries(all);
     const cats = {
-      '🐾 Animals — Prey': ['deer', 'rabbit', 'squirrel', 'turkey', 'opossum', 'bullfrog', 'boxturtle', 'fox', 'crayfish', 'raccoon', 'snappingturtle', 'chub'],
+      '🐾 Animals — Prey': ['deer', 'rabbit', 'squirrel', 'turkey', 'opossum', 'bullfrog', 'boxturtle', 'fox', 'crayfish', 'raccoon', 'snappingturtle', 'chub', 'hunt', 'butcher'],
       '🦌 Monsters — Wave 1': ['headlight', 'flashbulb', 'choir', 'lockpick', 'hummice', 'glasswing', 'sunbasker', 'bulldozer', 'hushpuppy', 'whitenoise', 'nightlight', 'speedbump', 'ducksinarow', 'nevermore', 'nightcourt'],
       '👹 Monsters — Wave 2': ['static', 'griefcounselor', 'reviewdrone', 'influencer', 'motivationalspeaker', 'customerservice', 'termsconditions', 'middlemanager', 'inspiration', 'nostalgia', 'statickite'],
       '⚖️ Justice & Social': ['ambush', 'mootAccused', 'mootJuror', 'exile', 'uprising', 'liars'],
