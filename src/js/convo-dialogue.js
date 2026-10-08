@@ -1,21 +1,19 @@
 // @ontology
 // system: convo-dialogue
-// description: Dialogue-driven conversation. Every NPC beat generates its own response options — what a person would actually say back to THIS specific thing, not a topic grab-bag.
+// description: Dialogue-driven conversation turn handling. Phase 1 (2026-10-08): the dead menu layers are gone — dialogueBeatKind/dialogueResponses and the convoChoices override were removed; the single menu builder is Game.buildMenu (conversation.js). This module now wraps Game.convoTurn with dlg: handlers and want post-turn processing.
 // provides:
-//   - dialogueBeatKind(vid) -> classifies what the NPC just said/did
-//   - dialogueResponses(vid) -> 3-4 responses TO the current beat
-//   - convoTurn(vid, choiceId) -> advance the dialogue one beat
-//   - convoChoices(vid) -> dialogue-model choices (overrides conversation.js)
+//   - convoTurn(vid, choiceId) -> dlg: beat handlers + want post-turn wrapper (menu building delegated to Game.buildMenu)
 // rules:
-//   - beat_drives_menu: responses derive from the NPC's last utterance, not from state flags (code: dialogueResponses, Steve 2026-10-06)
+//   - beat_drives_menu: responses derive from the NPC's last utterance, not from state flags (code: buildMenu, Steve 2026-10-06; Phase 1 unified 2026-10-08)
 //   - no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
-//   - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: dialogueResponses, Steve 2026-10-06)
-//   - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: dialogueResponses + dlg:more/dlg:react, 2026-10-06)
+//   - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: buildMenu, Steve 2026-10-06)
+//   - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: buildMenu + dlg:more/dlg:react, 2026-10-06)
 //   - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
 // consumes:
 //   - village.villagers
 //   - state.convos
 //   - convoGet(vid)
+//   - buildMenu(vid) / convoChoices(vid) (conversation.js — the single menu pipeline)
 //   - playerVoice()
 // ============ DIALOGUE-DRIVEN CONVERSATION ============
 // Steve 2026-10-06: "Conversations need to feel real. Every NPC beat generates
