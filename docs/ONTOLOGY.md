@@ -244,6 +244,22 @@ Per-conversation emotional state (rapport). Warmth and tension shift as you talk
 
 **Consumes:** state.village.conv (c.mood, per-conversation only), village.trust, village.memory, npcMood, npcTemper
 
+### convo-scene (`convo-scene.js`)
+Dialogue rethink Phase 2 (Steve 2026-10-08) — the Scene pipeline. One scene state unifying want + mood + relationship + beat; one consequence resolver every choice flows through; the Ask/Answer Contract as a validate gate; memory-driven "what's alive" menu data.
+
+**Provides:** getScene(vid), resolveConsequence(vid, spec), validateAskContract(vid), convoWhatsAlive(vid)
+
+**Rules:**
+- scene_unified: want + mood + bond + beat compose into one snapshot; handlers read the Scene for decisions, mutate convo state only (code: convo-scene.js, getScene; Steve 2026-10-08)
+- one_resolver: every trust/mood/disposition/memory consequence in conversation flows through resolveConsequence — no inline t[vid]= writes in turn handlers (code: convo-scene.js, resolveConsequence; Steve 2026-10-08)
+- words_cap: talk-originated trust gains cap at 40 ("words only go so far"); penalties land whole, never softened (code: convo-scene.js, resolveConsequence)
+- mediated_halves: live-translate mediation halves positive rapport gains (code: convo-scene.js, resolveConsequence; kept from trustGain, Steve 2026-10-06)
+- warmth_follows_trust: mood delta defaults to sign(trust delta) when not given — no separate data (code: convo-scene.js, resolveConsequence)
+- contract_gate: every NPC question offers honest answer + boundary + silence; validateAskContract fails the build otherwise (code: convo-scene.js, validateAskContract; Steve 2026-10-08)
+- whats_alive: the topic menu leads with open threads, fresh memories, want questions, world events — not the static pool (code: convo-scene.js, convoWhatsAlive; Steve 2026-10-08)
+
+**Consumes:** convoGet(vid), convoVoiceTier(vid), relDays(vid), playerDisposition(), convoMoodBand(vid), convoMoodShift(vid, d), convoMoodReceptivity(vid), dispositionCostMult(vid, temper), shiftDisposition(d), markEscalated(vid), mediatedBySystem(vid), remember(vid, type, note), village.trust, village.memory, convoSeeds
+
 ### convo-wants (`convo-wants.js`)
 Want-driven conversation architecture. Every conversation has an NPC want that gives it direction; beats acknowledge what the player said; endings plant seeds for next time.
 

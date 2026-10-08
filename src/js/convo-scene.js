@@ -10,7 +10,7 @@
 //   - scene_unified: want + mood + bond + beat compose into one snapshot; handlers read the Scene for decisions, mutate convo state only (code: convo-scene.js, getScene; Steve 2026-10-08)
 //   - one_resolver: every trust/mood/disposition/memory consequence in conversation flows through resolveConsequence — no inline t[vid]= writes in turn handlers (code: convo-scene.js, resolveConsequence; Steve 2026-10-08)
 //   - words_cap: talk-originated trust gains cap at 40 ("words only go so far"); penalties land whole, never softened (code: convo-scene.js, resolveConsequence)
-//   - mediated_halves: live-translate mediation halves positive rapport gains (kept from trustGain, Steve 2026-10-06)
+//   - mediated_halves: live-translate mediation halves positive rapport gains (code: convo-scene.js, resolveConsequence; kept from trustGain, Steve 2026-10-06)
 //   - warmth_follows_trust: mood delta defaults to sign(trust delta) when not given — no separate data (code: convo-scene.js, resolveConsequence)
 //   - contract_gate: every NPC question offers honest answer + boundary + silence; validateAskContract fails the build otherwise (code: convo-scene.js, validateAskContract; Steve 2026-10-08)
 //   - whats_alive: the topic menu leads with open threads, fresh memories, want questions, world events — not the static pool (code: convo-scene.js, convoWhatsAlive; Steve 2026-10-08)
