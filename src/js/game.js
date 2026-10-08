@@ -8777,7 +8777,17 @@
       v.trust = v.trust || {}; v.gives = v.gives || {};
       v.gives[vid] = (v.gives[vid] || 0) + kcal;
       const trustGain = this.trustGainProgressive(vid, Math.min(10, Math.floor(kcal / 500)) * genMult);
-      v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + trustGain);
+      // NOTE (miser loop 2026-10-07): explicit undefined check — the old
+      // `(v.trust[vid] || 15)` resurrected a zero-trust villager to 15+gain
+      // on donate, so trust could never truly bottom out.
+      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + trustGain);
+      // REVOKE LEDGER (miser break-it 2026-10-08): the grant is owed against
+      // the gift. Take back everything you gave and the village withdraws
+      // what the gift earned — otherwise donate/take-back cycles print trust
+      // for free (measured +45 over 5 food-neutral cycles via the bulk path,
+      // +25 via single takes: the old -5 sting was smaller than the grant).
+      v.giveTrust = v.giveTrust || {};
+      v.giveTrust[vid] = (v.giveTrust[vid] || 0) + trustGain;
       this.say(`Donated ${item.name} (+${kcal} kcal). Trust +${trustGain}. They'll remember this.`);
       this.observe('donate');
       if (this.state.scholar.week1) this.state.scholar.week1.donate++;
@@ -8983,6 +8993,26 @@
       // BLATANT THEFT with witnesses present: direct confrontation.
       // Nothing stops your hand — but someone may stop your nerve.
       try { this.theftConfrontation(totalKcal); } catch (e) {}
+      // TAKE-BACK (miser break-it 2026-10-08): the single-take path penalizes
+      // taking back what you gave; the bulk path never did — donate 5000 /
+      // bulk-take 5000 cycled +trust for free at zero food cost (measured
+      // +45 over 5 cycles). One sting per pack, mirroring the single path:
+      // unwind the donation's printed trust, then the -5 slap.
+      const gaveB = v.gives[vid] || 0;
+      if (gaveB > 0 && net <= 0) {
+        v.trust = v.trust || {};
+        v.giveTrust = v.giveTrust || {};
+        const owedB = v.giveTrust[vid] || 0;
+        if (owedB > 0) {
+          const curB0 = v.trust[vid] === undefined ? 15 : v.trust[vid];
+          v.trust[vid] = Math.max(0, curB0 - owedB);
+          v.giveTrust[vid] = 0;
+          this.say(`They take back the trust your gift earned. (Trust -${owedB}.)`);
+        }
+        const curB = v.trust[vid] === undefined ? 15 : v.trust[vid];
+        v.trust[vid] = Math.max(0, curB - 5);
+        this.say('You took back what you gave. They noticed. Trust -5.');
+      }
       this.say(`Packed: ${taken.join(', ')}. (${this.fmtKcal(totalKcal)}, ${totalKg.toFixed(1)} kg)`);
       return null;
     },
@@ -8996,7 +9026,13 @@
       }
       const pantry = this.state.village.pantry || [];
       const item = pantry[idx];
-      if (!item || item.units <= 0) return null;
+      if (!item) return null;
+      // UNIT COERCION (miser break-it 2026-10-08): a unit-less/corrupt pantry
+      // entry went `item.units--` → NaN, survived every take (NaN <= 0 is
+      // false), and minted 1 unit per take FOREVER. Collapse to exactly one
+      // honest unit — same doctrine as the bury/takeFromCache coercions.
+      item.units = Math.max(1, Math.floor(item.units || 1));
+      if (item.units <= 0) return null;
       // weight check (includes water: 1L = 1kg)
       const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight();
       const max = this.carryCapacity();
@@ -9037,7 +9073,21 @@
       // (They remember you gave. They remember you took it back. That's worse.)
       const gave = v.gives[vid] || 0;
       if (gave > 0 && net <= 0) {
-        v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 5);
+        v.trust = v.trust || {};
+        // REVOKE (miser break-it 2026-10-08): unwind the donation's printed
+        // trust first — the gift is gone, so is what it earned. The -5 slap
+        // lands after, on the unwound value. Zero-trust stays zero (the old
+        // `(v.trust[vid] || 15)` resurrected it to 10 here).
+        v.giveTrust = v.giveTrust || {};
+        const owed = v.giveTrust[vid] || 0;
+        if (owed > 0) {
+          const cur0 = v.trust[vid] === undefined ? 15 : v.trust[vid];
+          v.trust[vid] = Math.max(0, cur0 - owed);
+          v.giveTrust[vid] = 0;
+          this.say(`They take back the trust your gift earned. (Trust -${owed}.)`);
+        }
+        const cur = v.trust[vid] === undefined ? 15 : v.trust[vid];
+        v.trust[vid] = Math.max(0, cur - 5);
         this.say('You took back what you gave. They noticed. Trust -5.');
       }
       // add to inventory (merge if same)

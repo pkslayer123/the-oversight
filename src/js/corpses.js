@@ -302,7 +302,12 @@
       this._corpseFirstTouch(c);
       const s = this.state.scholar;
       const inv = s.inventory;
-      const ex = inv.find(x => x.plantId === it.plantId && !x.keepsake && !it.keepsake);
+      // FUNGIBILITY (miser break-it 2026-10-08): the old merge keyed on plantId
+      // alone — raw corpse meat folded into a cooked pack stack at the cooked
+      // kcalEach, minting phantom calories (measured +500 on 2 units). Merge
+      // only into a truly identical stack; otherwise it rides separately.
+      const ex = inv.find(x => x.plantId === it.plantId && !x.keepsake && !it.keepsake &&
+        (!this.stacksMatch || this.stacksMatch(x, it)));
       if (ex && !it.keepsake) ex.units = (ex.units || 1) + units;
       else inv.push(Object.assign({}, it, { units }));
       it.units = 0;
