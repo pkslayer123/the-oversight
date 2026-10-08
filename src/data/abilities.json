@@ -916,8 +916,8 @@
   {
     "id": "time_skip",
     "name": "Time Skip",
-    "description": "Skip to the next day part instantly. (Ages you 1 day. The time has to come from somewhere.)",
-    "flavor": "You JUMP the time! The time JUMPS you back! You are OLDER! But... FASTER?! We took notes! The notes make no sense!",
+    "description": "Skip to the next day part instantly. Time passes \u2014 food spoils forward, calories burn, the world moves without you. 1/day.",
+    "flavor": "You JUMP the time! Hours go missing! Your food is OLDER! Your belly is EMPTIER! The time had to come from SOMEWHERE! We took notes! The notes make SENSE this time!",
     "pool": "system",
     "tier": "overpowered",
     "unlock": {
@@ -927,17 +927,6 @@
     "metabolic": {
       "daily": 250
     },
-    "actions": [
-      {
-        "id": "skip_time",
-        "context": "camp",
-        "name": "Time Skip",
-        "cost": {
-          "age_days": 1
-        },
-        "effect": "Skip to the next day part instantly. Ages you 1 day. The time has to come from somewhere."
-      }
-    ],
     "paths": [
       "drifter",
       "explorer"

@@ -516,11 +516,17 @@
           why: bpCapped ? 'Used twice this day part.' : 'Too weak — need ' + (bc + 1) + '+ HP.'
         });
       }
-      if (hasAb('time_skip')) out.push({
-        abilityId: 'time_skip', actionId: null, id: 'time_skip',
-        target: 'none', name: 'Time Skip',
-        desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true
-      });
+      if (hasAb('time_skip')) {
+        // TIME-SKIP GATE (Steve 2026-10-08, break-it food run): 1/day — the
+        // old "Ages you 1 day" cost was fictional (ageDebt was write-only).
+        var tsUsed = s.timeSkipDay === s.day;
+        out.push({
+          abilityId: 'time_skip', actionId: null, id: 'time_skip',
+          target: 'none', name: 'Time Skip',
+          desc: 'Skip to the next day part instantly. Time passes — food spoils forward, calories burn, the world moves without you. 1/day.',
+          available: !tsUsed, why: 'Used today.'
+        });
+      }
       if (hasAb('dowsing')) out.push({
         abilityId: 'dowsing', actionId: null, id: 'dowsing',
         target: 'none', name: 'Dowse',
@@ -1124,9 +1130,14 @@
       }
       item.units -= take;
       if (item.units <= 0) pantry.splice(pantry.indexOf(item), 1);
-      var existing = inv.find(function (it) { return it.name === item.name; });
+      // FUNGIBILITY (break-it food 2026-10-08): merge only into a truly
+      // identical stack — name-only merging laundered kcalEach upward and
+      // stripped processing state here too.
+      var takenStack = { name: item.name, kcalEach: item.kcalEach, units: take, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item',
+        plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, needsCooking: item.needsCooking, prep: item.prep };
+      var existing = inv.find(function (it) { return game.stacksMatch(it, takenStack); });
       if (existing) existing.units += take;
-      else inv.push({ name: item.name, kcalEach: item.kcalEach, units: take, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item' });
+      else inv.push(takenStack);
       var caught = Math.random() < 0.5;
       if (caught) {
         var vid = s.villagerId;
