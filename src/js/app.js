@@ -9027,6 +9027,522 @@
       b.connect(bf); bf.connect(bg); bg.connect(sfxBus);
       b.start(t + 0.4); b.stop(t + 2.05); br.start(t + 0.4); br.stop(t + 2.05);
     }
+    // ============ ROUND-6 EVENT BEATS (Steve 2026-10-07) ============
+    // The six scheduled-event handlers from 9709eba fired with zero audio,
+    // and truth.js's liar confrontation was the one social scenario with no
+    // voice at all. Each beat is layered and fiction-derived: freaky, not
+    // generic.
+    function fanPackageDrop() {
+      // FAN PACKAGE: a crate thumps down outside your door, trailing
+      // parachute silk and the smell of glitter. Four layers: the descent
+      // whistle (falling too slowly, wobbling — the silk catching air it
+      // shouldn't), the silk flutter (bandpass noise chopped by an uneven
+      // gate), the THUMP (sub drop + cardboard crack), and the glitter —
+      // tiny high pings, two of them beating, like breaking glass. Because
+      // glitter is just glass that gave up. Far away, the fans cheer —
+      // and the feed cuts.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // descent: a whistle falling too slowly, wobbling on the way down
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sine';
+      w.frequency.setValueAtTime(1600, t);
+      w.frequency.exponentialRampToValueAtTime(480, t + 1.1);
+      const wob = ctx.createOscillator(), wobg = ctx.createGain();
+      wob.type = 'sine'; wob.frequency.value = 9; wobg.gain.value = 60;
+      wob.connect(wobg); wobg.connect(w.frequency);
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.14, t + 0.2);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.15);
+      w.connect(wg); wg.connect(sfxBus);
+      w.start(t); w.stop(t + 1.2); wob.start(t); wob.stop(t + 1.2);
+      // silk flutter: bandpass noise chopped by an uneven gate
+      const nz = noise(1.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 2400; nf.Q.value = 1.4;
+        const gt = ctx.createOscillator(), gg = ctx.createGain();
+        gt.type = 'square'; gt.frequency.setValueAtTime(13, t);
+        gt.frequency.exponentialRampToValueAtTime(7, t + 1.1); // the silk settling
+        gg.gain.value = 0.5;
+        gt.connect(gg); gg.connect(ng.gain);
+        ng.gain.setValueAtTime(0.12, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.15);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 1.2); gt.start(t); gt.stop(t + 1.2);
+      }
+      // THUMP at t+1.05: sub drop + cardboard crack
+      const tt = t + 1.05;
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine';
+      th.frequency.setValueAtTime(95, tt);
+      th.frequency.exponentialRampToValueAtTime(32, tt + 0.3);
+      thg.gain.setValueAtTime(0.5, tt);
+      thg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.4);
+      th.connect(thg); thg.connect(sfxBus); th.start(tt); th.stop(tt + 0.45);
+      const cz = noise(0.15), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+      if (cz) {
+        cf.type = 'bandpass'; cf.frequency.value = 750; cf.Q.value = 1.2;
+        cg.gain.setValueAtTime(0.3, tt);
+        cg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.14);
+        cz.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+        cz.start(tt); cz.stop(tt + 0.18);
+      }
+      // glitter: tiny high pings, two of them beating — glass that gave up
+      [[6800, 0], [7215, 0.07], [6831, 0.16], [9150, 0.24], [9188, 0.31]].forEach(([f, off]) => {
+        const dt = tt + 0.1 + off;
+        const p = ctx.createOscillator(), pg = ctx.createGain();
+        p.type = 'sine'; p.frequency.value = f;
+        pg.gain.setValueAtTime(0.0001, dt);
+        pg.gain.exponentialRampToValueAtTime(0.06, dt + 0.015);
+        pg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.22);
+        p.connect(pg); pg.connect(sfxBus); p.start(dt); p.stop(dt + 0.25);
+      });
+      // the fans, far away — then the feed cuts
+      const fz = noise(0.9), ff = ctx.createBiquadFilter(), fg = ctx.createGain();
+      if (fz) {
+        ff.type = 'bandpass'; ff.frequency.value = 1100; ff.Q.value = 0.8;
+        fg.gain.setValueAtTime(0.0001, tt + 0.15);
+        fg.gain.exponentialRampToValueAtTime(0.12, tt + 0.5);
+        fg.gain.setValueAtTime(0.12, tt + 0.78);
+        fg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.8); // cut
+        fz.connect(ff); ff.connect(fg); fg.connect(sfxBus);
+        fz.start(tt + 0.15); fz.stop(tt + 0.85);
+      }
+    }
+    function duckSqueak() {
+      // RUBBER DUCK: "The duck squeaks. Somehow, that helps." The squeak is
+      // almost a word — a fast vibrato bending it toward speech — and half
+      // a beat later a fainter squeak answers a fifth down, from slightly
+      // the wrong side, like the duck heard itself. Underneath, the rubber
+      // creaks; and a soft low hum lingers. The part that helps.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the squeak: bending toward speech, too fast a vibrato to be rubber
+      const q = ctx.createOscillator(), qg = ctx.createGain();
+      q.type = 'triangle';
+      q.frequency.setValueAtTime(850, t);
+      q.frequency.exponentialRampToValueAtTime(1350, t + 0.09);
+      q.frequency.exponentialRampToValueAtTime(700, t + 0.22);
+      const vib = ctx.createOscillator(), vg = ctx.createGain();
+      vib.type = 'sine'; vib.frequency.value = 23; vg.gain.value = 70; // too fast
+      vib.connect(vg); vg.connect(q.frequency);
+      qg.gain.setValueAtTime(0.0001, t);
+      qg.gain.exponentialRampToValueAtTime(0.22, t + 0.05);
+      qg.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+      q.connect(qg); qg.connect(sfxBus);
+      q.start(t); q.stop(t + 0.3); vib.start(t); vib.stop(t + 0.3);
+      // the rubber creaks under it
+      const rz = noise(0.25), rf = ctx.createBiquadFilter(), rg = ctx.createGain();
+      if (rz) {
+        rf.type = 'lowpass'; rf.frequency.setValueAtTime(500, t);
+        rf.frequency.exponentialRampToValueAtTime(180, t + 0.22);
+        rg.gain.setValueAtTime(0.1, t);
+        rg.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+        rz.connect(rf); rf.connect(rg); rg.connect(sfxBus);
+        rz.start(t); rz.stop(t + 0.28);
+      }
+      // the answer: a fifth down, fainter, from slightly the wrong side
+      const at = t + 0.34;
+      const a2 = ctx.createOscillator(), a2g = ctx.createGain();
+      a2.type = 'triangle';
+      a2.frequency.setValueAtTime(560, at);
+      a2.frequency.exponentialRampToValueAtTime(900, at + 0.08);
+      a2.frequency.exponentialRampToValueAtTime(460, at + 0.2);
+      const pan = (ctx.createStereoPanner) ? ctx.createStereoPanner() : null;
+      a2g.gain.setValueAtTime(0.0001, at);
+      a2g.gain.exponentialRampToValueAtTime(0.1, at + 0.04);
+      a2g.gain.exponentialRampToValueAtTime(0.0001, at + 0.24);
+      a2.connect(a2g);
+      if (pan) { pan.pan.value = 0.55; a2g.connect(pan); pan.connect(sfxBus); }
+      else { a2g.connect(sfxBus); }
+      a2.start(at); a2.stop(at + 0.28);
+      // the part that helps: a soft low hum that stays a little too long
+      const h = ctx.createOscillator(), hg = ctx.createGain();
+      h.type = 'sine'; h.frequency.value = 110;
+      hg.gain.setValueAtTime(0.0001, t + 0.1);
+      hg.gain.exponentialRampToValueAtTime(0.08, t + 0.5);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      h.connect(hg); hg.connect(sfxBus); h.start(t + 0.1); h.stop(t + 1.65);
+    }
+    function stormFront() {
+      // STORM FRONT: "The sky to the west has gone the color of a bruise."
+      // The warning beat — the storm hasn't arrived, and that's the dread.
+      // Three layers: thunder that arrives WRONG (a low swell building
+      // toward a crack that never comes — cut, no release), wind tuned in
+      // whole tones stepping down (the wind is in a key, which wind should
+      // never be), and the bruise itself — a high thin beating pair that
+      // doesn't leave.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // thunder, wrong: builds toward a crack that never comes
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine';
+      th.frequency.setValueAtTime(48, t);
+      th.frequency.exponentialRampToValueAtTime(36, t + 1.4);
+      thg.gain.setValueAtTime(0.0001, t);
+      thg.gain.exponentialRampToValueAtTime(0.4, t + 1.3);
+      thg.gain.setValueAtTime(0.4, t + 1.42);
+      thg.gain.exponentialRampToValueAtTime(0.0001, t + 1.45); // cut, no release
+      th.connect(thg); thg.connect(sfxBus); th.start(t); th.stop(t + 1.5);
+      const rz = noise(1.5), rf = ctx.createBiquadFilter(), rg = ctx.createGain();
+      if (rz) {
+        rf.type = 'lowpass'; rf.frequency.value = 160;
+        rg.gain.setValueAtTime(0.0001, t);
+        rg.gain.exponentialRampToValueAtTime(0.22, t + 1.3);
+        rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.45);
+        rz.connect(rf); rf.connect(rg); rg.connect(sfxBus);
+        rz.start(t); rz.stop(t + 1.5);
+      }
+      // wind in a key: whole tones stepping down — wind should never do this
+      const wz = noise(1.8), wf = ctx.createBiquadFilter(), wg = ctx.createGain();
+      if (wz) {
+        wf.type = 'bandpass'; wf.Q.value = 2.2;
+        [800, 712, 634, 565].forEach((f, i) => {
+          wf.frequency.setValueAtTime(f, t + i * 0.42);
+        });
+        wg.gain.setValueAtTime(0.0001, t + 0.2);
+        wg.gain.exponentialRampToValueAtTime(0.16, t + 0.7);
+        wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+        wz.connect(wf); wf.connect(wg); wg.connect(sfxBus);
+        wz.start(t + 0.2); wz.stop(t + 1.95);
+      }
+      // the bruise: a high thin beating pair that doesn't leave
+      [2350, 2383].forEach((f) => {
+        const b = ctx.createOscillator(), bg = ctx.createGain();
+        b.type = 'sine'; b.frequency.value = f;
+        const bv = ctx.createOscillator(), bvg = ctx.createGain();
+        bv.type = 'sine'; bv.frequency.value = 0.7; bvg.gain.value = 18;
+        bv.connect(bvg); bvg.connect(b.frequency);
+        bg.gain.setValueAtTime(0.0001, t + 0.4);
+        bg.gain.exponentialRampToValueAtTime(0.045, t + 1.0);
+        bg.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+        b.connect(bg); bg.connect(sfxBus);
+        b.start(t + 0.4); b.stop(t + 2.25); bv.start(t + 0.4); bv.stop(t + 2.25);
+      });
+    }
+    function systemCooking() {
+      // COOKING LESSON: the System's cooking segment. "We have studied
+      // cooking." Four layers: the pot bubbling (lowpass gurgle chewed by
+      // a slowing gate), the System taking notes — a pencil-scribble
+      // rhythm that STUMBLES (five quick, a pause, two, a longer pause:
+      // it misspelled something) — the System's earnest hum underneath
+      // (a minor-2nd pair, humming along to a song it doesn't know), and
+      // the tasting blip: too high, too fast. "Is the rock food?"
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the pot: gurgle chewed by an irregular, slowing gate
+      const pz = noise(1.6), pf = ctx.createBiquadFilter(), pg = ctx.createGain();
+      if (pz) {
+        pf.type = 'lowpass'; pf.frequency.value = 420;
+        const gl = ctx.createOscillator(), glg = ctx.createGain();
+        gl.type = 'square'; gl.frequency.setValueAtTime(7.3, t);
+        gl.frequency.exponentialRampToValueAtTime(4.1, t + 1.5); // slowing, wrong
+        glg.gain.value = 0.5;
+        gl.connect(glg); glg.connect(pg.gain);
+        pg.gain.setValueAtTime(0.14, t);
+        pg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+        pz.connect(pf); pf.connect(pg); pg.connect(sfxBus);
+        pz.start(t); pz.stop(t + 1.65); gl.start(t); gl.stop(t + 1.65);
+      }
+      // the notes: a scribble that stumbles
+      const scribble = [0, 0.09, 0.18, 0.27, 0.36, 0.62, 0.71, 1.05, 1.14];
+      scribble.forEach((off) => {
+        const dt = t + 0.15 + off;
+        const sz = noise(0.06), sf = ctx.createBiquadFilter(), sg = ctx.createGain();
+        if (sz) {
+          sf.type = 'highpass'; sf.frequency.value = 3800;
+          sg.gain.setValueAtTime(0.11, dt);
+          sg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.055);
+          sz.connect(sf); sf.connect(sg); sg.connect(sfxBus);
+          sz.start(dt); sz.stop(dt + 0.07);
+        }
+      });
+      // the earnest hum: a minor-2nd pair, humming along wrong
+      [220, 233].forEach((f, i) => {
+        const h = ctx.createOscillator(), hg = ctx.createGain();
+        h.type = 'sine'; h.frequency.value = f;
+        hg.gain.setValueAtTime(0.0001, t + 0.3);
+        hg.gain.exponentialRampToValueAtTime(i ? 0.05 : 0.07, t + 0.8);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + 1.7);
+        h.connect(hg); hg.connect(sfxBus); h.start(t + 0.3); h.stop(t + 1.75);
+      });
+      // the tasting blip: too high, too fast
+      const bt = t + 1.5;
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'sine';
+      b.frequency.setValueAtTime(1800, bt);
+      b.frequency.exponentialRampToValueAtTime(2500, bt + 0.08);
+      bg.gain.setValueAtTime(0.09, bt);
+      bg.gain.exponentialRampToValueAtTime(0.0001, bt + 0.12);
+      b.connect(bg); bg.connect(sfxBus); b.start(bt); b.stop(bt + 0.15);
+    }
+    function traderArrive() {
+      // RIVER TRADER: "A trader from the downriver village walks into
+      // Haven, pack heavy, smile practiced." Four layers: the river
+      // itself (two slow lapping swells), river-mud boots (two low
+      // squelches, the second one reluctant), the pack settling (a wooden
+      // creak, lowpassed), and the practiced smile — a two-note laugh
+      // where the second note comes in a semitone flat. You can hear the
+      // practice. That's the point.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the river: two slow laps
+      [0, 0.55].forEach((off) => {
+        const dt = t + off;
+        const rz = noise(0.5), rf = ctx.createBiquadFilter(), rg = ctx.createGain();
+        if (rz) {
+          rf.type = 'bandpass'; rf.frequency.value = 900; rf.Q.value = 0.9;
+          rg.gain.setValueAtTime(0.0001, dt);
+          rg.gain.exponentialRampToValueAtTime(0.1, dt + 0.22);
+          rg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.5);
+          rz.connect(rf); rf.connect(rg); rg.connect(sfxBus);
+          rz.start(dt); rz.stop(dt + 0.55);
+        }
+      });
+      // mud boots: two squelches, the second one reluctant
+      [[0.15, 160, 0.14], [0.52, 140, 0.1]].forEach(([off, f0, vol]) => {
+        const dt = t + off;
+        const bz = noise(0.16), bf = ctx.createBiquadFilter(), bg = ctx.createGain();
+        if (bz) {
+          bf.type = 'lowpass'; bf.frequency.setValueAtTime(600, dt);
+          bf.frequency.exponentialRampToValueAtTime(180, dt + 0.14);
+          bg.gain.setValueAtTime(vol, dt);
+          bg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
+          bz.connect(bf); bf.connect(bg); bg.connect(sfxBus);
+          bz.start(dt); bz.stop(dt + 0.2);
+        }
+        const bs = ctx.createOscillator(), bsg = ctx.createGain();
+        bs.type = 'sine';
+        bs.frequency.setValueAtTime(f0, dt);
+        bs.frequency.exponentialRampToValueAtTime(f0 * 0.55, dt + 0.14);
+        bsg.gain.setValueAtTime(vol * 0.8, dt);
+        bsg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.16);
+        bs.connect(bsg); bsg.connect(sfxBus); bs.start(dt); bs.stop(dt + 0.2);
+      });
+      // the pack settling: a wooden creak
+      const ct = t + 0.75;
+      const c = ctx.createOscillator(), cg = ctx.createGain(), cf = ctx.createBiquadFilter();
+      c.type = 'sawtooth';
+      c.frequency.setValueAtTime(140, ct);
+      c.frequency.exponentialRampToValueAtTime(92, ct + 0.4);
+      cf.type = 'lowpass'; cf.frequency.value = 500;
+      cg.gain.setValueAtTime(0.0001, ct);
+      cg.gain.exponentialRampToValueAtTime(0.09, ct + 0.12);
+      cg.gain.exponentialRampToValueAtTime(0.0001, ct + 0.45);
+      c.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+      c.start(ct); c.stop(ct + 0.5);
+      // the practiced smile: two notes, the second a semitone flat
+      [[660, 1.25, 0.12], [622, 1.42, 0.1]].forEach(([f, off, vol]) => {
+        const dt = t + off;
+        const l = ctx.createOscillator(), lg = ctx.createGain();
+        l.type = 'triangle'; l.frequency.value = f;
+        lg.gain.setValueAtTime(vol, dt);
+        lg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.14);
+        l.connect(lg); lg.connect(sfxBus); l.start(dt); l.stop(dt + 0.18);
+      });
+    }
+    function trialFanfare() {
+      // TRIAL OF THE SYSTEM: "We have designed a trial JUST for you." The
+      // System's fanfare is almost right — three ascending notes with the
+      // middle one a quarter-tone sharp, because the System tunes by math
+      // and math is nearly music. Then the countdown: four ticks, but the
+      // fourth comes too early — it has run the simulations and it is
+      // terrible at keeping secrets. Then the TA-DA: a big chord that
+      // can't hold itself together (two voices beating) and collapses
+      // into a small questioning blip, waiting for applause.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // almost-fanfare: three notes up, the middle one quarter-sharp
+      [[392, 0], [537, 0.22], [659, 0.44]].forEach(([f, off]) => {
+        const dt = t + off;
+        const n = ctx.createOscillator(), ng = ctx.createGain(), nf = ctx.createBiquadFilter();
+        n.type = 'sawtooth'; n.frequency.value = f;
+        nf.type = 'lowpass'; nf.frequency.value = 1800;
+        ng.gain.setValueAtTime(0.0001, dt);
+        ng.gain.exponentialRampToValueAtTime(0.14, dt + 0.05);
+        ng.gain.exponentialRampToValueAtTime(0.0001, dt + 0.3);
+        n.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        n.start(dt); n.stop(dt + 0.35);
+      });
+      // the miscount: tick tick tick — tick (too early)
+      [0.7, 0.85, 1.0, 1.08].forEach((off) => {
+        const dt = t + off;
+        const k = ctx.createOscillator(), kg = ctx.createGain();
+        k.type = 'square'; k.frequency.value = 1200;
+        kg.gain.setValueAtTime(0.08, dt);
+        kg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.05);
+        k.connect(kg); kg.connect(sfxBus); k.start(dt); k.stop(dt + 0.08);
+      });
+      // the TA-DA: a chord that can't hold itself together
+      const ct = t + 1.25;
+      [261, 266, 329].forEach((f) => {
+        const c = ctx.createOscillator(), cg = ctx.createGain();
+        c.type = 'sawtooth'; c.frequency.value = f;
+        cg.gain.setValueAtTime(0.0001, ct);
+        cg.gain.exponentialRampToValueAtTime(0.1, ct + 0.15);
+        cg.gain.exponentialRampToValueAtTime(0.0001, ct + 0.7);
+        c.connect(cg); cg.connect(sfxBus); c.start(ct); c.stop(ct + 0.75);
+      });
+      // ...collapsing into a small questioning blip — up, like a question
+      const qt = t + 1.9;
+      const q = ctx.createOscillator(), qg = ctx.createGain();
+      q.type = 'sine';
+      q.frequency.setValueAtTime(880, qt);
+      q.frequency.exponentialRampToValueAtTime(1400, qt + 0.2);
+      qg.gain.setValueAtTime(0.0001, qt);
+      qg.gain.exponentialRampToValueAtTime(0.1, qt + 0.06);
+      qg.gain.exponentialRampToValueAtTime(0.0001, qt + 0.32);
+      q.connect(qg); qg.connect(sfxBus); q.start(qt); q.stop(qt + 0.35);
+    }
+    function liarConfront(d) {
+      // LIAR CONFRONTED: "You told me X, but [evidence]." truth.js fired
+      // zero audio — the one social scenario with no voice. Two phases:
+      // the tension (the room goes quiet, a breath held too long and
+      // drifting sharp, a thread snapping) and the resolution, which
+      // takes the outcome — confessed (the exhale, a low tone that
+      // actually lands, something small settling), deflected (a sidestep
+      // gliss that dodges the note, twice, never landing, plus a too-quick
+      // throat-clear), attacked (a short hostile flare, cut hard, with
+      // one meaner echo).
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const out = (d && d.outcome) || 'tension';
+      if (out === 'confessed') {
+        // the exhale: the held breath let out all at once
+        const ez = noise(0.9), ef = ctx.createBiquadFilter(), eg = ctx.createGain();
+        if (ez) {
+          ef.type = 'lowpass';
+          ef.frequency.setValueAtTime(1400, t);
+          ef.frequency.exponentialRampToValueAtTime(280, t + 0.8);
+          eg.gain.setValueAtTime(0.0001, t);
+          eg.gain.exponentialRampToValueAtTime(0.2, t + 0.15);
+          eg.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+          ez.connect(ef); ef.connect(eg); eg.connect(sfxBus);
+          ez.start(t); ez.stop(t + 0.95);
+        }
+        // a low tone resolving: two voices, almost together, not quite
+        [147, 155].forEach((f0) => {
+          const r = ctx.createOscillator(), rg = ctx.createGain();
+          r.type = 'sine';
+          r.frequency.setValueAtTime(f0, t + 0.2);
+          r.frequency.exponentialRampToValueAtTime(f0 * 0.88, t + 0.9);
+          rg.gain.setValueAtTime(0.0001, t + 0.2);
+          rg.gain.exponentialRampToValueAtTime(0.1, t + 0.5);
+          rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+          r.connect(rg); rg.connect(sfxBus); r.start(t + 0.2); r.stop(t + 1.25);
+        });
+        // something small settling: a soft knock
+        const kt = t + 0.85;
+        const k = ctx.createOscillator(), kg = ctx.createGain();
+        k.type = 'sine';
+        k.frequency.setValueAtTime(220, kt);
+        k.frequency.exponentialRampToValueAtTime(110, kt + 0.08);
+        kg.gain.setValueAtTime(0.14, kt);
+        kg.gain.exponentialRampToValueAtTime(0.0001, kt + 0.12);
+        k.connect(kg); kg.connect(sfxBus); k.start(kt); k.stop(kt + 0.15);
+        return;
+      }
+      if (out === 'deflected') {
+        // the sidestep: a gliss that dodges the note, twice, never landing
+        [0, 0.45].forEach((off) => {
+          const dt = t + off;
+          const g = ctx.createOscillator(), gg = ctx.createGain();
+          g.type = 'sine';
+          g.frequency.setValueAtTime(600, dt);
+          g.frequency.exponentialRampToValueAtTime(920, dt + 0.14);
+          g.frequency.exponentialRampToValueAtTime(540, dt + 0.3); // dodges
+          const sh = ctx.createOscillator(), shg = ctx.createGain();
+          sh.type = 'sine';
+          sh.frequency.setValueAtTime(720, dt); // a third off, clumsy shadow
+          sh.frequency.exponentialRampToValueAtTime(1080, dt + 0.14);
+          sh.frequency.exponentialRampToValueAtTime(648, dt + 0.3);
+          gg.gain.setValueAtTime(0.0001, dt);
+          gg.gain.exponentialRampToValueAtTime(0.09, dt + 0.06);
+          gg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.36);
+          shg.gain.setValueAtTime(0.0001, dt);
+          shg.gain.exponentialRampToValueAtTime(0.05, dt + 0.06);
+          shg.gain.exponentialRampToValueAtTime(0.0001, dt + 0.36);
+          g.connect(gg); gg.connect(sfxBus); sh.connect(shg); shg.connect(sfxBus);
+          g.start(dt); g.stop(dt + 0.4); sh.start(dt); sh.stop(dt + 0.4);
+        });
+        // the throat-clear: too quick
+        const ct = t + 0.95;
+        const cz = noise(0.12), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+        if (cz) {
+          cf.type = 'bandpass'; cf.frequency.value = 900; cf.Q.value = 1.5;
+          cg.gain.setValueAtTime(0.16, ct);
+          cg.gain.exponentialRampToValueAtTime(0.0001, ct + 0.12);
+          cz.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+          cz.start(ct); cz.stop(ct + 0.15);
+        }
+        return;
+      }
+      if (out === 'attacked') {
+        // the flare: short, hostile, cut hard
+        const fz = noise(0.3), ff = ctx.createBiquadFilter(), fg = ctx.createGain();
+        if (fz) {
+          ff.type = 'highpass'; ff.frequency.value = 2000;
+          fg.gain.setValueAtTime(0.3, t);
+          fg.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+          fz.connect(ff); ff.connect(fg); fg.connect(sfxBus);
+          fz.start(t); fz.stop(t + 0.32);
+        }
+        // the snarl has two throats: a minor-2nd pair rising together
+        [180, 190].forEach((f0) => {
+          const s = ctx.createOscillator(), sg = ctx.createGain(), sf = ctx.createBiquadFilter();
+          s.type = 'sawtooth';
+          s.frequency.setValueAtTime(f0, t + 0.02);
+          s.frequency.exponentialRampToValueAtTime(f0 * 2.39, t + 0.3);
+          sf.type = 'lowpass'; sf.frequency.value = 1400;
+          sg.gain.setValueAtTime(0.0001, t + 0.02);
+          sg.gain.exponentialRampToValueAtTime(0.2, t + 0.1);
+          sg.gain.setValueAtTime(0.2, t + 0.3);
+          sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.32); // cut hard
+          s.connect(sf); sf.connect(sg); sg.connect(sfxBus);
+          s.start(t + 0.02); s.stop(t + 0.36);
+        });
+        // the echo of it: one blip, lower, meaner
+        const et = t + 0.4;
+        const e = ctx.createOscillator(), eg = ctx.createGain();
+        e.type = 'square';
+        e.frequency.setValueAtTime(140, et);
+        e.frequency.exponentialRampToValueAtTime(90, et + 0.1);
+        eg.gain.setValueAtTime(0.12, et);
+        eg.gain.exponentialRampToValueAtTime(0.0001, et + 0.14);
+        e.connect(eg); eg.connect(sfxBus); e.start(et); e.stop(et + 0.18);
+        return;
+      }
+      // TENSION (default): the room goes quiet
+      const hz = noise(0.8), hf = ctx.createBiquadFilter(), hg = ctx.createGain();
+      if (hz) {
+        hf.type = 'highpass'; hf.frequency.value = 3000;
+        hg.gain.setValueAtTime(0.1, t);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + 0.7); // the room going quiet
+        hz.connect(hf); hf.connect(hg); hg.connect(sfxBus);
+        hz.start(t); hz.stop(t + 0.8);
+      }
+      // a breath held too long: swelling, drifting sharp — and someone
+      // else in the room is holding theirs too, slightly out of sync
+      [[440, 452], [447, 459]].forEach(([f0, f1]) => {
+        const br = ctx.createOscillator(), brg = ctx.createGain();
+        br.type = 'sine';
+        br.frequency.setValueAtTime(f0, t + 0.1);
+        br.frequency.linearRampToValueAtTime(f1, t + 0.9); // sharp, held too long
+        brg.gain.setValueAtTime(0.0001, t + 0.1);
+        brg.gain.exponentialRampToValueAtTime(0.07, t + 0.6);
+        brg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        br.connect(brg); brg.connect(sfxBus); br.start(t + 0.1); br.stop(t + 1.05);
+      });
+      // a thread snapping
+      const st = t + 0.95;
+      const sn = ctx.createOscillator(), sng = ctx.createGain();
+      sn.type = 'square';
+      sn.frequency.setValueAtTime(3000, st);
+      sn.frequency.exponentialRampToValueAtTime(1400, st + 0.04);
+      sng.gain.setValueAtTime(0.1, st);
+      sng.gain.exponentialRampToValueAtTime(0.0001, st + 0.07);
+      sn.connect(sng); sng.connect(sfxBus); sn.start(st); sn.stop(st + 0.1);
+    }
     // ============ STATUS SYNTHS (Steve 2026-10-07) ============
     function statusApplied() {
       // STATUS APPLIED: something wrong takes hold — a sickly descending
@@ -9940,6 +10456,16 @@
       glasswingBuzz() { glasswingBuzz(); },       // glasswing aggroAudio (monsters.json) — the air screamed
       sunbaskerShimmer() { sunbaskerShimmer(); }, // sunbasker aggroAudio (monsters.json) — molten gold
       animalPanic() { animalPanic(); },           // CORNER PANIC — encounters.js ENC_AUDIO_FALLBACK contract fulfilled
+      // ROUND-6 EVENT BEATS (Steve 2026-10-07): the six scheduled-event
+      // handlers from 9709eba fired with zero audio, and the truth.js liar
+      // confrontation — the one social scenario with no voice at all.
+      fanPackageDrop() { fanPackageDrop(); }, // the crate thumps down, trailing parachute silk and glitter
+      duckSqueak() { duckSqueak(); },         // the bonded duck squeaks. Somehow, that helps.
+      stormFront() { stormFront(); },         // the bruised-sky warning — thunder that arrives wrong
+      systemCooking() { systemCooking(); },   // the System's cooking segment — bubbles, scribbles, lint
+      traderArrive() { traderArrive(); },     // river-mud boots and a practiced smile
+      trialFanfare() { trialFanfare(); },     // a fanfare that's almost right, from a god that can't keep secrets
+      liarConfront(d) { liarConfront(d); },   // "You told me X, but [evidence]." — tension + three resolutions
       // AMBIENT STING (Steve 2026-10-06): the UI dread-beat's horrorSting was
       // referenced at the top of app.js but never defined. Now it is.
       horrorSting() { horrorSting(); },

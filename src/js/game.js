@@ -14854,6 +14854,7 @@
         unopened: true, prep: 'From the fans. It smells like... glitter?',
       });
       this.say('📦 INCOMING: a crate thumps down outside your door, trailing parachute silk and the smell of glitter. Stenciled on the side, in enormous cheerful letters: FOR LUCK.');
+      try { this.audioEvent('fanPackageDrop'); } catch (e) {}
       this.say('📺 SYSTEM: "A viewer sent this. A FAN. We checked. It is not dinner." A pause. "We checked twice. The fans are very insistent that you open it ON CAMERA."');
       this.say('The package sits in your pack, unopened. Opening it takes a day-part — the fans demand the full unboxing. (Use it from your pack when you have a morning to spend.)');
     },
@@ -14878,6 +14879,7 @@
         prep: 'The village has never seen elastic. The kids are already fighting over them.',
       });
       this.say('🦆 The duck squeaks. Somehow, that helps. (Bonded keepsake — it rides in your pack now. The System is already taking notes on it.)');
+      try { this.audioEvent('duckSqueak'); } catch (e) {}
       // BRANCH: a hungry haven feels the duck differently than a fed one.
       if ((s.kcal || 0) < 600) {
         this.say('The kids are hungry, but the duck makes them laugh anyway — a squeak in the dark, and suddenly the morning is bearable. Hunger hurts less when you\'re laughing.');
@@ -14972,6 +14974,7 @@
       this.say('📺 SYSTEM: "We have already cleared your morning. You are welcome. We require 300 kcal of tubers and your full attention. The fans love a cooking segment."');
       // THE COST: the System does not ask. It clears your schedule and tells
       // you about it. (A day-part, taken by a well-meaning god.)
+      try { this.audioEvent('systemCooking'); } catch (e) {}
       this.tickAction(128);
       const rawKcal = this._evRawPlantKcal();
       const hasFire = (this.nearFire && this.nearFire());
@@ -15031,6 +15034,7 @@
       s.riverTrader = { day: s.day || 1, greeted: false };
       this.say('🐪 A trader from the downriver village walks into Haven, pack heavy, smile practiced. River-mud on their boots, river-gossip on their tongue.');
       this.say('"Heard you people eat REGULARLY now," they say. "Heard the sky talks to you. I have news — some of it might even be true."');
+      try { this.audioEvent('traderArrive'); } catch (e) {}
       this.say('Feed a guest: about 600 kcal from the stores. Trading takes a full day-part. Rudeness is free — but the river remembers. (They\'ll be here till dusk.)');
     },
     // feedRiverTrader: the feast. Pantry first, your own pack second.
@@ -15153,6 +15157,7 @@
       });
       this.say('Each trial takes a FULL day-part and leaves you drained (−250 kcal). Pick one. The System waits — it has already run the simulations, and it is terrible at keeping secrets.');
       try { this.drama('contestAnnounce'); } catch (e) {}
+      try { this.audioEvent('trialFanfare'); } catch (e) {}
     },
     // chooseTrialOption(id): run the chosen trial to completion.
     chooseTrialOption(id) {
@@ -15244,6 +15249,7 @@
       s.stormFront = { day: s.day || 1 };
       const elder = this._evElderName();
       this.say('🌩️ The sky to the west has gone the color of a bruise. ' + elder + ' is already tying things down — rope, tarps, the chicken situation. "Sky like that," ' + elder + ' says, "you don\'t argue with it."');
+      try { this.audioEvent('stormFront'); } catch (e) {}
       this.say('📺 SYSTEM: "We have filed a request for the sky to be less bruised. It is pending. The sky has not responded."');
       this.say('A storm is coming, and it does not care about your plans. Be at Haven by dusk — sheltering costs the dusk foraging window (400–800 kcal you\'ll never see). Getting caught out costs more.');
     },
