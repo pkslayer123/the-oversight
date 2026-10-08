@@ -1831,6 +1831,11 @@
     // Each piece multiplies damage by 0.7. Full set (5): ~17% — hard but fair.
     apBeamHit: function (targetKey, dmg, sourceLabel, opts) {
       var s = this.state.scholar || {};
+      // Engine keys the player fighter as 'p'; 'player' is the module's
+      // display convention. Resolve the fighter with the engine key so beam
+      // damage actually lands — tbFighter('player') is undefined and beams
+      // used to announce then silently whiff (Steve 2026-10-08).
+      var engineKey = (targetKey === 'player') ? 'p' : targetKey;
       var maxHp = s.maxHp || 100;
       var pieces = this.apBeamResistPieces();
       var n = pieces.length;
@@ -1861,7 +1866,7 @@
       newOpts._beamFinal = true; // tbDamage wrap checks this to skip armor
       // We can't easily re-enter tbDamage, so apply directly:
       try {
-        var t = this.tbFighter(targetKey);
+        var t = this.tbFighter(engineKey);
         if (t && t.alive) {
           t.hp = Math.max(0, (t.hp || maxHp) - final);
           var who = targetKey === 'player' ? 'You take' : (t.name || 'They take');

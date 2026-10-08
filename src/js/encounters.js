@@ -2376,20 +2376,8 @@
         return _tbHostileTurnLate ? _tbHostileTurnLate.apply(this, arguments) : undefined;
       };
     }
-    // BEAM KEY ADAPTER (module bug, fixed at the seam): alienPlayers.js
-    // addresses the player fighter as 'player' in apBeamHit, but the combat
-    // engine's key is 'p' — tbFighter('player') is undefined, so beam damage
-    // silently landed on nobody (the beam announced, then whiffed). Translate
-    // here; encounters.js is this worker's surface and the module file is
-    // owned by another worker. Same lazy install for the load-order reason.
-    if (!G.startAlienCombat._beamWrapped) {
-      G.startAlienCombat._beamWrapped = true;
-      var _apBeamHitLate = G.apBeamHit;
-      G.apBeamHit = function (targetKey, dmg, sourceLabel, opts) {
-        if (targetKey === 'player') targetKey = 'p';
-        return _apBeamHitLate ? _apBeamHitLate.apply(this, [targetKey, dmg, sourceLabel, opts]) : undefined;
-      };
-    }
+    // NOTE: the apBeamHit 'player'/'p' key mismatch is fixed at the source
+    // in alienPlayers.js (engineKey normalization) — no adapter needed here.
     try { this.resetPerFightFlags(); } catch (e) {}
     var s = this.state.scholar || {};
     var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);

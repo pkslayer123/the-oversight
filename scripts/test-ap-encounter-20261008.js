@@ -175,6 +175,7 @@ function hostileFighter() {
   const encSrc = read('src/js/encounters.js');
   const gSrc = read('src/js/game.js');
   const dbgSrc = read('src/js/debug-scenarios.js');
+  const apSrc = read('src/js/alienPlayers.js');
   ok('encounters.js wraps checkEncounter with the guarded alien roll',
     /G\.checkEncounter = function[\s\S]{0,1200}this\.apRollEncounter\(\)/.test(encSrc));
   ok('encounters.js guards module-absent (no-op when apRollEncounter missing)',
@@ -186,8 +187,11 @@ function hostileFighter() {
     /_tbMonsterTurn \? _tbMonsterTurn\.apply/.test(encSrc));
   ok('encounters.js intercepts tbHostileTurn lazily in startAlienCombat (party.js load order)',
     /_hostileWrapped[\s\S]{0,600}G\.tbHostileTurn = function[\s\S]{0,400}m\.alienPid/.test(encSrc));
-  ok('encounters.js adapts the beam key lazily (player -> p)',
-    /_beamWrapped[\s\S]{0,600}targetKey === 'player'/.test(encSrc));
+  ok('beam key fixed at the source: no seam adapter in encounters.js',
+    encSrc.indexOf('_beamWrapped') < 0);
+  ok('alienPlayers.js normalizes player->p via engineKey in apBeamHit',
+    /engineKey = \(targetKey === 'player'\) \? 'p' : targetKey/.test(apSrc) &&
+    /this\.tbFighter\(engineKey\)/.test(apSrc));
   ok('encounters.js wraps tbEndCheck so alien hostiles count (chain-safe)',
     /G\.tbEndCheck = function[\s\S]{0,800}alienPid/.test(encSrc) &&
     /_tbEndCheck \? _tbEndCheck\.apply/.test(encSrc));
