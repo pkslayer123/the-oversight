@@ -10493,6 +10493,51 @@
         o.start(t + 0.02); o.stop(t + 0.5);
       });
     }
+    function stasisBlock() {
+      // THE STASIS BLOCK (break-it 2026-10-08): alienPlayers.js fires this
+      // when Rax's stasis field eats the barrier exit — "The air goes still...
+      // You leave when Rax says you leave." The hook was fired with NO
+      // registered voice (silent no-op) since the stasis system landed. The
+      // moment is time itself being grabbed: a hard metallic snap (the field
+      // engaging), then everything collapses into one held, detuned high
+      // tone — the mosquito-whine of frozen time — over a sub-pressure that
+      // ramps up and is CUT, never resolved. One-shot, fully self-
+      // terminating: no sustained nodes, nothing for combatEnd to clean.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // the snap: the field engaging, hard and metallic
+      const c = noise(0.06), cf = ctx.createBiquadFilter(), cg = ctx.createGain();
+      if (c) {
+        cf.type = 'highpass'; cf.frequency.value = 2600;
+        cg.gain.setValueAtTime(0.32, t);
+        cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+        c.connect(cf); cf.connect(cg); cg.connect(sfxBus);
+        c.start(t); c.stop(t + 0.08);
+      }
+      // the freeze: a single held tone, detuned pair beating — time held still
+      [2093, 2096.5].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(fq, t + 0.05);
+        g.gain.setValueAtTime(0.0001, t + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.06, t + 0.35);
+        g.gain.setValueAtTime(0.06, t + 1.15);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.45);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + 0.05); o.stop(t + 1.5);
+      });
+      // the pressure: sub rising under the held tone, then CUT — the held barrier
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'sine';
+      b.frequency.setValueAtTime(48, t + 0.1);
+      b.frequency.exponentialRampToValueAtTime(72, t + 1.0);
+      bg.gain.setValueAtTime(0.0001, t + 0.1);
+      bg.gain.exponentialRampToValueAtTime(0.22, t + 1.0);
+      bg.gain.setValueAtTime(0.22, t + 1.05);
+      bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.08); // cut — held, not released
+      b.connect(bg); bg.connect(sfxBus);
+      b.start(t + 0.1); b.stop(t + 1.15);
+    }
     function wound() {
       // THE WOUND (Steve 2026-10-08, audio-hook sweep): the generic wound
       // voice — the sound of damage that STAYS. Distinct from monsterHurt
@@ -10830,6 +10875,7 @@
       // fired-but-silent hooks in the encounter system.
       alienRetreat() { alienRetreat(); },     // broke persona breaks off — the withdrawal: held tone lets go, a step that never lands, the treeline swallows the air
       meleeHit() { meleeHit(); },             // AP-persona melee strike lands — wet contact, body thump, cut-off exhale, one unresolved wrong note
+      stasisBlock() { stasisBlock(); },       // (break-it 2026-10-08): Rax's stasis field eats the barrier exit — the field snaps shut, time freezes into one held detuned tone over a rising sub that is CUT, never released
       // WAVE-1 CONTRACT HOOKS (Steve 2026-10-06): promised in the HOOK
       // CONTRACT above, never defined until now
       boarNotice() { boarNotice(); },
