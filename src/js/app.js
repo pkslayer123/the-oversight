@@ -1751,6 +1751,7 @@
   //   baskCharge({charge}) — heat shimmer, brighter with charge
   //   baskBreak()    — the charge knocked out: descending zap
   //   baskFlatten()  — flattening into the dirt: soft deflate
+  //   sunbaskerBite() — the molten-gold bite lands: detuned collapse + FM snarl + glassy shear (Steve 2026-10-07)
   //   SYSTEM (Steve 2026-10-06):
   //   round({round})   — combat round tick: the System's metronome, heavier each round
   //   crash({cause})   — a structure is destroyed ('bulldozer' hits heaviest)
@@ -5155,9 +5156,69 @@
       w.start(t + dur * 0.8); w.stop(t + dur + 0.55);
       wl.start(t + dur * 0.8); wl.stop(t + dur + 0.55);
     }
-    // beamBlocked: the beam dies against something real. Fizzle, not bang.
-    function beamBlocked() {
+    function sunbaskerBite() {
+      // THE BITE LANDS (Steve 2026-10-07): the charge is spent — dull brown
+      // again. All that stored sun discharged through the jaws at once, and
+      // it sounds WRONG: not a chomp. First the molten pair — two detuned
+      // triangles beating against each other as they collapse 600->90Hz,
+      // the beating slowing as they converge (the gold cooling in real
+      // time). Under it, an FM snarl: a 70Hz carrier chewed by a 55Hz
+      // modulator, the jaw as a badly-tuned radio. Then the shear: three
+      // glassy cracks, inharmonic and staggered, like cooling metal
+      // splitting — and the after-hiss of heat leaving the scales, sighing
+      // down into a dull thud. The basker is brown again. It is not sorry.
       if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.1;
+      // the molten pair: detuned triangles collapsing, beating slowing
+      [612, 618].forEach(f0 => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(90, t + 0.55);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.16, t + 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + 0.75);
+      });
+      // the snarl: FM jaw — 70Hz carrier, 55Hz modulator through a depth gain
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type = 'sine'; c.frequency.value = 70;
+      const md = ctx.createOscillator(), mg = ctx.createGain();
+      md.type = 'sine'; md.frequency.value = 55; mg.gain.value = 40;
+      md.connect(mg); mg.connect(c.frequency);
+      cg.gain.setValueAtTime(0.0001, t);
+      cg.gain.exponentialRampToValueAtTime(0.2, t + 0.06);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      c.connect(cg); cg.connect(sfxBus);
+      c.start(t); c.stop(t + 0.65); md.start(t); md.stop(t + 0.65);
+      // the shear: three glassy cracks, inharmonic, staggered
+      [0.12, 0.31, 0.47].forEach((dt, i) => {
+        const nz = noise(0.09), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'bandpass'; nf.frequency.value = 2800 + i * 1300; nf.Q.value = 9;
+        ng.gain.setValueAtTime(0.14 - i * 0.03, t + dt);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.08);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + dt); nz.stop(t + dt + 0.1);
+      });
+      // the after-hiss: heat leaving the scales, sighing down
+      const hz = noise(dur), hf = ctx.createBiquadFilter(), hg = ctx.createGain();
+      if (hz) {
+        hf.type = 'lowpass';
+        hf.frequency.setValueAtTime(6000, t + 0.2);
+        hf.frequency.exponentialRampToValueAtTime(400, t + dur);
+        hg.gain.setValueAtTime(0.0001, t + 0.2);
+        hg.gain.exponentialRampToValueAtTime(0.1, t + 0.45);
+        hg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        hz.connect(hf); hf.connect(hg); hg.connect(sfxBus);
+        hz.start(t + 0.2); hz.stop(t + dur + 0.05);
+      }
+      // dull brown again: the thud of spent scales
+      thump(t + 0.5, 0.3);
+    }
+    // beamBlocked: the beam dies against something real. Fizzle, not bang.
+    function beamBlocked() {      if (!ensure()) return;
       stopCharge(); beamSweepStop();
       const t = ctx.currentTime;
       const nz = noise(0.5), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
@@ -10515,6 +10576,7 @@
       baskCharge(d) { baskCharge(d); },
       baskBreak() { baskBreak(); },
       baskFlatten() { baskFlatten(); },
+      sunbaskerBite() { sunbaskerBite(); }, // (Steve 2026-10-07): bite-land hook was a no-op until now
       // AUDIO COMPLETION (Steve 2026-10-05): every fired event now resolves.
       heartbeat() { heartbeat(72); },
       // Animals
