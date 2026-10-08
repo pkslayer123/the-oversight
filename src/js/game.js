@@ -2699,10 +2699,10 @@
     // edibleCount: how many distinct edible stacks are in the pack.
     // Same definition as giveFood: kcalEach > 0, not bonded, not spoiled.
     edibleCount() {
-      const day = this.state.scholar.day;
+      // SPOILAGE BOUNDARY (break-it food 2026-10-08): one boundary everywhere.
       return (this.state.scholar.inventory || []).filter(i =>
         (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
-        !(i.spoilDay !== undefined && i.spoilDay <= day)).length;
+        !(this.isSpoiled && this.isSpoiled(i))).length;
     },
 
     giveFood(vid) {
@@ -2711,10 +2711,10 @@
       // find food in inventory: ANY edible item — foraged plants (plantId),
       // packed food (itemId), cooked meals. Same definition as eating:
       // kcalEach > 0. Not bonded relics, not spoiled.
-      const day = this.state.scholar.day;
+      // SPOILAGE BOUNDARY (break-it food 2026-10-08): one boundary everywhere.
       const food = this.state.scholar.inventory.find(i =>
         (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
-        !(i.spoilDay !== undefined && i.spoilDay <= day));
+        !(this.isSpoiled && this.isSpoiled(i)));
       if (!food) { this.say("You have no food to give."); return null; }
       food.units -= 1;
       if (food.units <= 0) this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
@@ -2796,9 +2796,12 @@
       const addStolen = () => {
         const day = this.state.scholar.day;
         const inv = this.state.scholar.inventory;
-        const stack = inv.find(i => i.stolen && !i.bonded && !(i.spoilDay !== undefined && i.spoilDay <= day));
+        // FUNGIBILITY (break-it food 2026-10-08): thefts on different days
+        // have different clocks — merge only into an identical stack.
+        const tmpl = { name: 'Stolen rations', kcalEach: 150, units, stolen: true, spoilDay: day + 3, desc: 'Someone is going to miss these.' };
+        const stack = inv.find(i => i.stolen && !i.bonded && !(this.isSpoiled && this.isSpoiled(i)) && this.stacksMatch(i, tmpl));
         if (stack) stack.units += units;
-        else inv.push({ name: 'Stolen rations', kcalEach: 150, units, stolen: true, spoilDay: day + 3, desc: 'Someone is going to miss these.' });
+        else inv.push(tmpl);
       };
       if (Math.random() < chance) {
         // CAUGHT. Hands in the pack. No deniability.
@@ -2863,9 +2866,12 @@
         const units = Math.max(1, Math.round(demand / 150));
         const day = this.state.scholar.day;
         const inv = this.state.scholar.inventory;
-        const stack = inv.find(i => i.stolen && !i.bonded && !(i.spoilDay !== undefined && i.spoilDay <= day));
+        // FUNGIBILITY (break-it food 2026-10-08): same rule as theft —
+        // different days, different clocks.
+        const tmpl = { name: 'Taken rations', kcalEach: 150, units, stolen: true, spoilDay: day + 3, desc: 'Taken, not given. You know the difference.' };
+        const stack = inv.find(i => i.stolen && !i.bonded && !(this.isSpoiled && this.isSpoiled(i)) && this.stacksMatch(i, tmpl));
         if (stack) stack.units += units;
-        else inv.push({ name: 'Taken rations', kcalEach: 150, units, stolen: true, spoilDay: day + 3, desc: 'Taken, not given. You know the difference.' });
+        else inv.push(tmpl);
         this.npcNeeds(vid).hunger = Math.min(100, (this.npcNeeds(vid).hunger || 0) + Math.round(demand / 25));
       };
       const markBully = () => {
@@ -2963,10 +2969,10 @@
       const v = this.data.villagers.find(x => x.id === vid)
         /* unified: getPerson */;
       if (!v) return null;
-      const day = this.state.scholar.day;
+      // SPOILAGE BOUNDARY (break-it food 2026-10-08): one boundary everywhere.
       const food = this.state.scholar.inventory.find(i =>
         (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
-        !(i.spoilDay !== undefined && i.spoilDay <= day));
+        !(this.isSpoiled && this.isSpoiled(i)));
       if (!food) { this.say("You have nothing to offer."); return null; }
       const tasks = this.delegateTasks();
       if (!tasks[task]) return null;
@@ -8329,7 +8335,9 @@
       const vid = this.state.scholar.villagerId;
       // add to pantry
       v.pantry = v.pantry || [];
-      const existing = v.pantry.find(p => p.name === item.name);
+      // FUNGIBILITY (break-it food 2026-10-08): merge only into a truly
+      // identical stack — name-only merging destroyed donated value.
+      const existing = v.pantry.find(p => this.stacksMatch(p, item));
       const kcal = (item.kcalEach || 0) * (item.units || 1);
       if (existing) {
         existing.units += (item.units || 1);
@@ -8519,11 +8527,16 @@
         if (item.units <= 0) pantry.splice(pantry.indexOf(item), 1);
         // merge into inventory
         const inv = this.state.scholar.inventory;
-        const existing = inv.find(i => i.name === item.name);
-        if (existing) existing.units += canTake;
-        else inv.push({ name: item.name, kcalEach: item.kcalEach, units: canTake, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking,
+        // FUNGIBILITY (break-it food 2026-10-08): build the taken stack
+        // first, merge only into a truly identical one — name-only merging
+        // laundered kcalEach upward (created calories from nothing),
+        // contaminated spoilDay clocks, and dropped diseaseRisk silently.
+        const takenStack = { name: item.name, kcalEach: item.kcalEach, units: canTake, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking,
           // FOOD REALITY: keep processing state — the haul stays workable.
-          plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, prep: item.prep });
+          plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, prep: item.prep };
+        const existing = inv.find(i => this.stacksMatch(i, takenStack));
+        if (existing) existing.units += canTake;
+        else inv.push(takenStack);
         totalKcal += canTake * item.kcalEach;
         totalKg += canTake * (item.kg || 0);
         totalUnits += canTake;
@@ -8604,13 +8617,18 @@
       }
       // add to inventory (merge if same)
       const inv = this.state.scholar.inventory;
-      const existing = inv.find(i => i.name === item.name);
+      // FUNGIBILITY (break-it food 2026-10-08): merge only into a truly
+      // identical stack — and carry the FULL processing state. The old
+      // subset-push silently stripped foodState/plantId/diseaseRisk, so a
+      // taken-back "cleaned" portion forgot it was cleaned (uncookable,
+      // untestable — a phantom downgrade).
+      const takenStack = { name: item.name, kcalEach: item.kcalEach, units: 1, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking,
+        plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, prep: item.prep };
+      const existing = inv.find(i => this.stacksMatch(i, takenStack));
       if (existing) {
         existing.units++;
-        // backfill cooking fields if the existing stack predates them
-        if (item.rawKcal != null && existing.rawKcal == null) { existing.rawKcal = item.rawKcal; existing.cookedKcal = item.cookedKcal; existing.needsCooking = item.needsCooking; }
       }
-      else inv.push({ name: item.name, kcalEach: item.kcalEach, units: 1, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking });
+      else inv.push(takenStack);
       this.say(`Took ${item.name}.`);
       return null;
     },
@@ -11799,7 +11817,7 @@
           // the dawn sweep normally clears it, but no path may serve it at
           // full value even if one stocks it mid-day.
           const item = v.pantry.find(i => (i.kcalEach || 0) > 0 && (i.units || 1) > 0
-            && !(i.spoilDay !== undefined && i.spoilDay <= ((this.state.scholar || {}).day || 0)));
+            && !(this.isSpoiled && this.isSpoiled(i)));
           if (item) {
             item.units = (item.units || 1) - 1;
             if (item.units <= 0) v.pantry.splice(v.pantry.indexOf(item), 1);
@@ -14083,8 +14101,16 @@
         s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + 500);
         this.say(`BLOOD PRICE: -${cost} HP, +500 kcal. Your body eats itself. Efficient. Horrifying.${cost < 10 ? ' (Crimson Circuit: the circuit closes, the price drops.)' : ''}`);
       } else if (id === 'time_skip') {
-        s.ageDebt = (s.ageDebt || 0) + 1;
-        this.say('TIME SKIP: the light stutters. You are a day older. The time had to come from somewhere.');
+        // TIME-SKIP GATE (Steve 2026-10-08, break-it food run): 1/day, never
+        // in combat. The old version was unlimited with a fictional cost —
+        // "Ages you 1 day" fed ageDebt, a write-only stat nothing reads
+        // (removed). Unlimited skips meant every night, every contest
+        // countdown, and every blood-price day-part cap could be dodged for
+        // free. The real cost is named honestly: time passes.
+        if (s.timeSkipDay === s.day) { this.say('The light won\'t stutter twice in one day. Your body couldn\'t take it. (Time Skip: 1/day.)'); return false; }
+        if (this.inCombat && this.inCombat()) { this.say('Not in the middle of a fight — time won\'t skip for you here.'); return false; }
+        s.timeSkipDay = s.day;
+        this.say('TIME SKIP: the light stutters. Hours go missing. Your food is older, your belly emptier — the time had to come from somewhere.');
         this.endDayPart(); return true;
       } else if (id === 'dowsing') {
         // SYNERGY: stormcaller — dowsing in the rain counts as rain_dancer use too.

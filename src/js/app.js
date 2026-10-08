@@ -11737,10 +11737,9 @@
     // reluctant, THEN food or an appeal to what they want becomes an option.
     // Discovered through doing, not through a menu.
     const hasFood = (() => { try {
-      const day = Game.state.scholar.day;
       return !!(Game.state.scholar.inventory || []).find(i =>
         (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
-        !(i.spoilDay !== undefined && i.spoilDay <= day));
+        !(Game.isSpoiled && Game.isSpoiled(i)));
     } catch (e) { return false; } })();
     const goalKnown = (() => { try { return Game.goalKnown(villagerId); } catch (e) { return false; } })();
     const goalWant = (() => { try { return Game.goalWant(villagerId); } catch (e) { return null; } })();
@@ -12426,8 +12425,9 @@
           try {
             const fm = Game.foodMarker ? Game.foodMarker(i) : '';
             if (fm) foodMark = ` <span class="small" style="opacity:.75">${fm}</span>`;
-            // going bad tomorrow — visible, not silent
-            if (i.spoilDay !== undefined && i.spoilDay !== null && i.spoilDay === st.day + 1 && (i.kcalEach || 0) > 0) {
+            // going bad tomorrow — visible, not silent (bonus-aware boundary)
+            const _gb = (Game.spoilBonusDays ? Game.spoilBonusDays() : 0);
+            if (i.spoilDay !== undefined && i.spoilDay !== null && i.spoilDay + _gb === st.day + 1 && (i.kcalEach || 0) > 0) {
               foodMark += ` <span class="small" style="opacity:.75">going bad</span>`;
             }
             if (i.foodKind === 'nut' && i.foodState === 'in_shell') {
@@ -12474,7 +12474,7 @@
               if (isPlant && !Game.canShow('plant', i.plantId, 'kcal')) return "?";
             }
             return (i.kcalEach || 0) * i.units;
-          } catch (e) { return (i.kcalEach || 0) * i.units; } })()} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${i.spoilDay <= st.day ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
+          } catch (e) { return (i.kcalEach || 0) * i.units; } })()} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${(Game.isSpoiled && Game.isSpoiled(i)) ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">💛 Channel</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${tools.length ? `<h3 style="margin-top:12px">🔧 Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
@@ -12656,8 +12656,9 @@
       let spoilMark = '';
       try {
         if (it.spoilDay !== undefined && it.spoilDay !== null) {
-          if (it.spoilDay <= st.day) spoilMark = ' ⚠ spoiled';
-          else if (it.spoilDay === st.day + 1) spoilMark = ' <span class="small" style="opacity:.75">going bad</span>';
+          const _sb = (Game.spoilBonusDays ? Game.spoilBonusDays() : 0);
+          if (it.spoilDay + _sb <= st.day) spoilMark = ' ⚠ spoiled';
+          else if (it.spoilDay + _sb === st.day + 1) spoilMark = ' <span class="small" style="opacity:.75">going bad</span>';
         }
       } catch (e) {}
       const left = it._left ? ' <span class="small" style="opacity:.6">(left)</span>' : '';
@@ -13408,7 +13409,7 @@
           const dname = Game.itemDisplayName ? Game.itemDisplayName(p) : (p.name || 'something');
           return `<div class="card" style="margin:6px 0;padding:8px 10px">
           <p class="small">${itemSpriteHtml(p)}<b>${dname}</b> \u00D7${p.units} ${unit}s
-          ${p.safe ? '' : ' \u26A0 UNSAFE'}${p.spoilDay <= st.day ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}${(() => { try { const fm = Game.foodMarker ? Game.foodMarker(p) : ''; return fm ? ' \u00B7 ' + fm : ''; } catch (e) { return ''; } })()}<br>
+          ${p.safe ? '' : ' \u26A0 UNSAFE'}${(Game.isSpoiled && Game.isSpoiled(p)) ? ' \u26A0 SPOILED' : ''}${p.needsCooking ? ' \uD83C\uDF73 needs cooking' : ''}${(() => { try { const fm = Game.foodMarker ? Game.foodMarker(p) : ''; return fm ? ' \u00B7 ' + fm : ''; } catch (e) { return ''; } })()}<br>
           <span style="opacity:.7">${(() => { try {
             // KNOWLEDGE GATE (Steve 2026-10-07): pantry shows kcal only if YOU
             // know it's food. Name-known (L1) isn't enough.
