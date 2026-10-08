@@ -264,9 +264,30 @@
   G.encPreyCfg = function (id) {
     var o = { notice: ENC_PREY_DEFAULT.notice, awareRate: ENC_PREY_DEFAULT.awareRate, stamina: ENC_PREY_DEFAULT.stamina };
     var t = (this.ENC_PREY || {})[id] || {};
+    var hasTable = !!(this.ENC_PREY && this.ENC_PREY[id]); // hand-tuned entries always win
     if (t.notice != null) o.notice = t.notice;
     if (t.awareRate != null) o.awareRate = t.awareRate;
     if (t.stamina != null) o.stamina = t.stamina;
+    if (!hasTable) {
+      // FLEEDIFFICULTY (Steve 2026-10-07): animals.json's fleeDifficulty was
+      // dead data — schemas.json validated the enum but nothing read it.
+      // DECISION: wired in, not deleted. For species WITHOUT hand-tuned
+      // ENC_PREY entries (the 2026-10-07 expansion animals), fleeDifficulty
+      // now drives chase tuning: notice range, awareness gain per exposed
+      // step, and bolt turns before winded. dangerous = it can hurt you, so
+      // it notices fast. Table entries keep their hand-tuned values.
+      try {
+        var fdef = this.encAnimalDef(id);
+        var fd = fdef && fdef.fleeDifficulty;
+        // [notice, awareRate, stamina]
+        var FDMAP = {
+          trivial: [2, 0.25, 1], easy: [3, 0.35, 2], medium: [4, 0.50, 3],
+          hard: [4, 0.65, 4], very_hard: [5, 0.80, 5], dangerous: [5, 0.85, 4]
+        };
+        var fm = FDMAP[fd];
+        if (fm) { o.notice = fm[0]; o.awareRate = fm[1]; o.stamina = fm[2]; }
+      } catch (e) {}
+    }
     return o;
   };
   G.encAnimalLabel = function (a) {
@@ -292,11 +313,13 @@
   };
 
   // ================= 6b. BEHAVIOR ENGINE =================
-  // animals.json carries per-species `behavior` (skittish, arboreal, wary,
-  // aquatic, aquatic_ambush, aquatic_defensive, flock, plays_dead, slow,
-  // cunning, curious, aggressive, defensive, unbothered, architect, charger,
-  // quilled, alarmed, territorial, camouflaged, sentinel, stalker) and
-  // `method` (snare, chase, trap, bow, hands, line). The stalk/strike/flee loop was generic — every animal fled
+  // animals.json carries per-species `behavior` (38 as of 2026-10-07: skittish,
+  // arboreal, wary, aquatic, aquatic_ambush, aquatic_defensive, flock,
+  // plays_dead, slow, cunning, curious, aggressive, defensive, unbothered,
+  // architect, charger, quilled, alarmed, territorial, camouflaged, sentinel,
+  // stalker, armored, sentinel_mob, bedding, constrictor, aerial, ambush,
+  // burrowing, cautious, pack, patient, semiaquatic, social, stealthy,
+  // still, unpredictable, wading) and `method` (snare, chase, trap, bow, hands, line). The stalk/strike/flee loop was generic — every animal fled
   // the same way and the data fields sat unused. This engine turns both
   // into play: flee looks different per animal, and the wrong tool is
   // honestly worse. Steve's tool-gated doctrine, translated for the hunt:
@@ -348,7 +371,22 @@
       armored: "It doesn't run — the armor IS the plan. It'll hunch down and dare you. The armor turns a blow; grab the soft underbelly, or trap the grub trail at night.",
       sentinel_mob: "It sees you before you see it, and it tells everyone. Take the shot before the cawing starts — after that, the whole woods knows where you're standing.",
       bedding: "It won't leave its bed — that's the whole trick. Pressed, it darts to the center and waits. Reach down and take it, or fish the bed with a worm.",
-      constrictor: "No rattle, no venom — but your hands don't know that yet. It freezes, hoping you'll walk past. Pin it behind the head; it bites only when grabbed."
+      constrictor: "No rattle, no venom — but your hands don't know that yet. It freezes, hoping you'll walk past. Pin it behind the head; it bites only when grabbed.",
+      // PACK 3 (Steve 2026-10-07): the twelve behaviors that shipped without
+      // knownCue coaching. Same contract as the rest: once you've learned the
+      // animal (3 encounters or a kill), its trick is stated up front.
+      aerial: "It hears you coming mid-wingbeat — in the air, you don't catch it. Hunt it roosting at dawn, or wait for the water it must come down to.",
+      ambush: "It waits for YOU to come close — the stillness is the trap. Spot the shape before you're in reach, and strike first. It only gets one.",
+      burrowing: "Spook it and it's down a hole you never saw. Block the burrow mouth, or hunt it in the open where the hole can't help.",
+      cautious: "It's not scared — it's DECIDING. Two hundred pounds of deciding. Give it the exit, never the corner; noise and bigness buy you the day.",
+      pack: "There's never just one — the one you see is the assessment. The rest are the question. Watch your back trail.",
+      patient: "That log isn't a log. The water erupts when you're close enough. Strike from the bank — or don't go in the water at all.",
+      semiaquatic: "Land or water, it owns both. Cut off the creek and it's fast but catchable; near the water it's gone like spilled ink.",
+      social: "One barks and the whole town dives. Take the sentry's shot before the alarm, or pick your moment between warnings.",
+      stealthy: "The birds going silent is your only warning. If you can see it, it's already too close. Hunt it by sound — or not at all.",
+      still: "It doesn't move — that's the whole defense. Look for the shape that doesn't belong. It'll watch you find it.",
+      unpredictable: "It decides mood by mood. Broadside and pawing means back off — the decision is the danger. Never press an animal this size.",
+      wading: "It unfolds upward — one fast shot as it goes. Stalk the shallows low; it sees movement, not you."
     };
     return CUES[b] || null;
   };
@@ -358,6 +396,14 @@
     var d = this.encAnimalDef(a.id);
     if (d && d.huntText && this.encAnimalKnown(a.id)) return d.huntText;
     return generic || 'It bolts!';
+  };
+  // SLOW MISS VERB (Steve 2026-10-07): the clean-miss text said "bolts" for
+  // slow-behavior animals — while their own huntTexts say they don't flee.
+  // The turtle tucks, unimpressed; the gila holds its ground, mouth wider.
+  // Neither bolts. Neither flinches either — they're animals, not statues.
+  G.encSlowMissVerb = function (a) {
+    if (a && a.id === 'gila_monster') return ' holds its ground — beaded head turning toward you, slowly, mouth open wider. It doesn\'t flee. It never was going to. (-100 kcal)';
+    return ' draws into its shell — the slowest dodge in history, and it worked. It doesn\'t flee; it barely even hurries. (-100 kcal)';
   };
   // MID-CHASE NARRATION (Steve 2026-10-07): no-silent-turns is a hard rule.
   // Every bolt turn gets a line — what the animal does, how it moves, what
@@ -1554,7 +1600,15 @@
         }
       }
     }
-    if (a.pstate === 'winded') return; // spent. your move.
+    if (a.pstate === 'winded') {
+      // NO-SILENT-TURNS (Steve 2026-10-07): winded turns were silent — the
+      // animal just sat there while the player beat passed. The chase is
+      // over; say so, every turn. It's your move — but the animal is still
+      // THERE, and still a creature. (The pant audio already fired on the
+      // transition; don't re-fire it every turn.)
+      this.say(this.encCap(label) + ' stands spent — sides heaving, head low. It\'s not running any more. Your move.');
+      return; // spent. your move.
+    }
     if (a.pstate === 'regroup') {
       // TURKEY REGROUP: landed, gathering itself. One turn of stillness —
       // the window the flutter-rhythm buys you. Then back in the air.
@@ -1876,6 +1930,10 @@
       return false; // stays (never bolts) — animalTurn runs, and likely hunkers
     }
     if (this.encNeverBolt(b)) { a.aware = 1; return false; } // stays. it was never leaving.
+    // SLOW (Steve 2026-10-07): a miss at the turtle/gila never routs it —
+    // the bolt the old code set here contradicted the huntText ("doesn't
+    // flee"). It stays; the miss verb above (encSlowMissVerb) owns the words.
+    if (b === 'slow') { a.aware = 1; return false; }
     a.aware = 1; a.pstate = 'bolt';
     return false;
   };
@@ -2180,7 +2238,12 @@
       // it's one of the animals that doesn't bolt — encMissReact owns that.)
       // (Verb agreement: "your hands hiss" vs "your bow hisses" can't both
       // win, so the weapon isn't the subject. You miss. Clean.)
-      this.feedback('So close — ' + label + ' jinks at the last breath. You miss with your ' + wname + '.');
+      // SLOW (Steve 2026-10-07): a turtle doesn't "jink" — it was never
+      // moving. The shame is the drama.
+      var nmText = (animal.behavior === 'slow')
+        ? 'Not even close — ' + label + ' doesn\'t jink. It doesn\'t move at all. You miss with your ' + wname + ' anyway. A stationary turtle. Feel the shame.'
+        : 'So close — ' + label + ' jinks at the last breath. You miss with your ' + wname + '.';
+      this.feedback(nmText);
       try { this.audioEvent('animalBolt'); } catch (e) {}
       this.encHuntPracticed('strike'); // a near-miss still teaches
       var nmEnded = this.encMissReact(a, animal);
@@ -2190,9 +2253,13 @@
     var mBeh = (animal.behavior || '');
     // the miss feedback is honest about what the animal does next: aquatic
     // animals vanish under the water (they hide, they don't bolt — encMissReact).
+    // SLOW (Steve 2026-10-07): the old text said "bolts" — the huntText says
+    // it doesn't flee. encSlowMissVerb owns the per-animal truth.
     var missVerb = this.encNeverBolt(mBeh) ? ' doesn\'t even flinch. (-100 kcal)'
       : (mBeh === 'aquatic' || mBeh === 'aquatic_ambush' || mBeh === 'aquatic_defensive')
       ? ' vanishes under the water — still in there, not gone. (-100 kcal)'
+      : (mBeh === 'slow')
+      ? this.encSlowMissVerb(a)
       : ' bolts. (-100 kcal)';
     this.feedback('Missed! ' + this.encCap(label) + missVerb);
     try { this.audioEvent('animalBolt'); } catch (e) {}
