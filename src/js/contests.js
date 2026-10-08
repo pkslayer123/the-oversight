@@ -68,7 +68,8 @@
 //   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
 //   - pool_expansion_20261007: the three smallest pools (puzzle/detective/forage, 4 each) each gain two bespoke variants — lockpick (vault-lock, weight-order tumblers), wrongmap (the System lies about water), alibi (alibi chain, false link vouches loudest), echo (two tellings, noon adds danger), tidepool (tide clock, third gull-cry), windfall (rot race, preservation order). NOT reskins: lockpick is tension-and-listening not folding (box); wrongmap is terrain-truth not Q&A (riddle); alibi is chain-breaking not liar-hunting (informant); echo is version-drift not fabrication-hunt (witness); tidepool is an environmental clock not a race (calorie_run); windfall is preservation triage not harvest (honey) (code: contestPool, contestPlayable, Steve 2026-10-05)
 //   - pool_expansion_20261006b: the four smallest pools (puzzle/detective/forage/chance, 3 each) each gain a bespoke variant — sorting (conveyor triage), witness (fabrication hunt), cache (audit heist), longodds (push-your-luck dice). NOT reskins: sorting is triage-under-time not Q&A (riddle); witness is forgery-forensics not liar-hunting (informant); cache is hiding not gathering (calorie_run); longodds is stakes-escalation not pure draw (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
-//   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06); price/impress/exchange/auction beats now resolve (justiceVerdict+exileWalk, levelup+contestSpared, contestCall+rushHit, contestCall+horrorSting) — were silent no-ops (code: CX_BEAT_DEFS, Steve 2026-10-06)
+//   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06); price/impress/exchange/auction beats now resolve (justiceVerdict+exileWalk, levelup+contestSpared, contestCall+rushHit, contestCall+horrorSting) — were silent no-ops (code: CX_BEAT_DEFS, Steve 2026-10-06); the 30 older contests now have per-phase composed beats contest<Id>Declare|Escalate|Climax|Resolve in CX_BEAT_DEFS, named by _cxB (Steve 2026-10-08); _contestEnd/_contestDie/_contestRefuse fire the Resolve beat (code: CX_BEAT_DEFS, _cxB, Steve 2026-10-08)
+//   - no_intro_repeat: the choice-phase text must not re-say contest name+desc (contestInterruption says it two lines earlier); it says only "The System waits." (code: contestInterruption, Steve 2026-10-08)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
 //   - scholar.day
@@ -485,7 +486,10 @@
           })),
         }));
         const choicePhase = {
-          text: `📺 ${contest.name}. ${contest.desc}\n\nThe System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.`,
+          // DEDUPE (Steve 2026-10-08): contestInterruption already said
+          // name+desc above — the choice phase must not repeat it verbatim.
+          beat: this._cxB(contest.id, 'Declare'),
+          text: `📺 The System waits. The cameras are already rolling.\n\nParticipate — or refuse, and let the galaxy watch you say no.`,
           choices: [
             { label: 'Participate', sub: 'step into the light', do: {}, next: 1 },
             { label: 'Refuse', sub: 'say no on camera', do: {}, next: 'REFUSE' },
@@ -757,7 +761,175 @@
     contestExchange: ['contestCall', 'rushHit'],
     // The Auction: the cruelest show — the call curdles into dread.
     contestAuction: ['contestCall', 'horrorSting'],
+    // pit: gladiator pit — fanfare curdles; quiet circling then the wrong-deep bellow; the rush lands wrong; the kill thud under victory
+    contestPitDeclare: ['hecklerHeadliner', 'contestCall'],
+    contestPitEscalate: ['woundCunning', 'deerAggro'],
+    contestPitClimax: ['chargeImpact', 'horrorSting'],
+    contestPitResolve: ['victory', 'monsterDown'],
+    // gauntlet: three waves: the countdown; the pounding accelerates; the closer locks on; smash under victory
+    contestGauntletDeclare: ['droneCount', 'contestCall'],
+    contestGauntletEscalate: ['woundEnraged', 'swarmEscalate'],
+    contestGauntletClimax: ['lockonTick', 'chargeImpact'],
+    contestGauntletResolve: ['victory', 'crash'],
+    // duel: a human duel: quarter-tone fanfare; the ref-drone ticks; the flinch; the line cuts out (the accident)
+    contestDuelDeclare: ['trialFanfare', 'contestCall'],
+    contestDuelEscalate: ['lockonTick', 'hecklerTaunt'],
+    contestDuelClimax: ['chargeImpact', 'monsterHurt'],
+    contestDuelResolve: ['victory', 'lineCut'],
+    // drop: snow beacon: storm warning under the count; winded in the hush; the final sprint breaks; receding footsteps
+    contestDropDeclare: ['stormFront', 'droneCount'],
+    contestDropEscalate: ['animalPant', 'nightcourtSilence'],
+    contestDropClimax: ['rushHit', 'crash'],
+    contestDropResolve: ['victory', 'exileWalk'],
+    // starve: the white room: muzak; hunger takes hold; encouragement detonates; relief with its shadow
+    contestStarveDeclare: ['contestCall', 'holdMusic'],
+    contestStarveEscalate: ['statusApplied', 'lineCut'],
+    contestStarveClimax: ['hypeDetonate', 'shout'],
+    contestStarveResolve: ['victory', 'contestSpared'],
+    // moot: televised trial: fanfare over the charges; drums compress; verdict with wrongness; the cameras move on
+    contestMootDeclare: ['trialFanfare', 'paperRustle'],
+    contestMootEscalate: ['confront', 'justiceVerdict'],
+    contestMootClimax: ['justiceVerdict', 'horrorSting'],
+    contestMootResolve: ['lineCut', 'exileWalk'],
+    // lies: the scanner: bureaucratic beep; the room goes quiet; the scream bitcrushed; verdict, line cut
+    contestLiesDeclare: ['droneCorrect', 'contestCall'],
+    contestLiesEscalate: ['liarConfront', 'lineCut'],
+    contestLiesClimax: ['staticScream', 'modViolation'],
+    contestLiesResolve: ['justiceVerdict', 'lineCut'],
+    // cookfight: caged ingredients: the System studies cooking; the snap and the scold; the judge tastes wrong; the butcher's beat
+    contestCookfightDeclare: ['systemCooking', 'contestCall'],
+    contestCookfightEscalate: ['catfishSnap', 'animalChatter'],
+    contestCookfightClimax: ['eurekaTick', 'horrorSting'],
+    contestCookfightResolve: ['victory', 'animalButcher'],
+    // fetch: most interesting: the meadow whistle; rummaging and clever chitter; the find brightens; the trader arrives
+    contestFetchDeclare: ['animalWhistle', 'contestCall'],
+    contestFetchEscalate: ['animalRustle', 'lockpickChitter'],
+    contestFetchClimax: ['eurekaTick', 'hypeInflate'],
+    contestFetchResolve: ['victory', 'traderArrive'],
+    // hide: wave-2 predator: the count over deliberate hush; absence of sound, then ticks; the snap, the scream; the night takes it back
+    contestHideDeclare: ['droneCount', 'nightcourtSilence'],
+    contestHideEscalate: ['nightcourtSilence', 'woundCunning'],
+    contestHideClimax: ['ambushSnap', 'staticScream'],
+    contestHideResolve: ['victory', 'nightcourtClimb'],
+    // box: nested boxes: clever chitter; the idea brightens over paper; the box opens, the crowd detonates; unlock, line cut
+    contestBoxDeclare: ['lockpickChitter', 'contestCall'],
+    contestBoxEscalate: ['eurekaTick', 'paperRustle'],
+    contestBoxClimax: ['eurekaDetonate', 'victory'],
+    contestBoxResolve: ['lineCut', 'passiveUnlock'],
+    // pattern: the sequence: cooking over muzak; the gut disagrees; the chord resolves — or breaks; victory, spent
+    contestPatternDeclare: ['systemCooking', 'holdMusic'],
+    contestPatternEscalate: ['statusApplied', 'lineCut'],
+    contestPatternClimax: ['eurekaTick', 'crash'],
+    contestPatternResolve: ['victory', 'animalPant'],
+    // whoate: whodunnit: paper over the call; the liar confronted; named on camera; victory over the filed case
+    contestWhoateDeclare: ['paperRustle', 'contestCall'],
+    contestWhoateEscalate: ['liarConfront', 'lineCut'],
+    contestWhoateClimax: ['justiceVerdict', 'horrorSting'],
+    contestWhoateResolve: ['victory', 'paperRustle'],
+    // informant: exits watched: CONTENT UNDER REVIEW; quiet, clever, counting; the trap snaps; out the exits
+    contestInformantDeclare: ['modNotice', 'contestCall'],
+    contestInformantEscalate: ['woundCunning', 'droneCount'],
+    contestInformantClimax: ['ambushSnap', 'horrorSting'],
+    contestInformantResolve: ['victory', 'exileWalk'],
+    // calorie_run: the hour: the count over the meadow; pushing through; the weigh-in detonates; victory, winded
+    contestCalorieRunDeclare: ['droneCount', 'animalWhistle'],
+    contestCalorieRunEscalate: ['animalRustle', 'rushHit'],
+    contestCalorieRunClimax: ['eurekaTick', 'hypeDetonate'],
+    contestCalorieRunResolve: ['victory', 'animalPant'],
+    // pantry_raid: the locals object — shouting and scolding; the locals' shouts behind your dopplering scamper; the objection lands; out with the sack
+    contestPantryRaidDeclare: ['shout', 'animalChatter'],
+    contestPantryRaidEscalate: ['shout', 'animalBolt'],
+    contestPantryRaidClimax: ['ambushSnap', 'crash'],
+    contestPantryRaidResolve: ['victory', 'exileWalk'],
+    // wheel: Wheel of Teeth: the spin brightens; the ticks brighten, the counting gets heavier; the stop smashes; the teeth smile — or don't
+    contestWheelDeclare: ['contestCall', 'eurekaCharge'],
+    contestWheelEscalate: ['eurekaTick', 'round'],
+    contestWheelClimax: ['eurekaDetonate', 'crash'],
+    contestWheelResolve: ['victory', 'hypeDeflate'],
+    // lottery: the tokens: swell and count; muzak under the hover; the token turns over; victory deflates
+    contestLotteryDeclare: ['hypeInflate', 'droneCount'],
+    contestLotteryEscalate: ['holdMusic', 'lineCut'],
+    contestLotteryClimax: ['ambushSnap', 'eurekaDetonate'],
+    contestLotteryResolve: ['victory', 'hypeDeflate'],
+    // tithe: the altar: something wrong takes hold in muzak; erratic stabs under the heartbeat; the fourth measure; the basin lingers
+    contestTitheDeclare: ['statusApplied', 'holdMusic'],
+    contestTitheEscalate: ['woundDesperate', 'heartbeat'],
+    contestTitheClimax: ['horrorSting', 'lineCut'],
+    contestTitheResolve: ['victory', 'horrorSting'],
+    // siege: hold the line: the whistle; the village roars through the bullhorn; the splintering scream; stomp and wail
+    contestSiegeDeclare: ['unionRepWhistle', 'contestCall'],
+    contestSiegeEscalate: ['shout', 'unionBullhorn'],
+    contestSiegeClimax: ['crash', 'woundEnraged'],
+    contestSiegeResolve: ['victory', 'unionWalkout'],
+    // maw: the tunnel: the quiet; the pauses add up in ticks; the light — or the snap; the dark takes it back
+    contestMawDeclare: ['nightcourtSilence', 'contestCall'],
+    contestMawEscalate: ['nightcourtSilence', 'woundCunning'],
+    contestMawClimax: ['catfishSnap', 'staticScream'],
+    contestMawResolve: ['victory', 'nightcourtClimb'],
+    // oath: the binding: called to answer; the System reaching, bitcrushed; WE WILL KNOW; bound and counted
+    contestOathDeclare: ['confront', 'contestCall'],
+    contestOathEscalate: ['lineCut', 'modViolation'],
+    contestOathClimax: ['modNotice', 'horrorSting'],
+    contestOathResolve: ['victory', 'round'],
+    // beastmaster: the collar: snort under fanfare; panting under the targeting ticks; the turn; the footage is filed
+    contestBeastmasterDeclare: ['animalSnort', 'hecklerHeadliner'],
+    contestBeastmasterEscalate: ['animalPant', 'lockonTick'],
+    contestBeastmasterClimax: ['ambushSnap', 'woundEnraged'],
+    contestBeastmasterResolve: ['victory', 'paperRustle'],
+    // riddle: the Engine: drone hum; the mouths almost sound like someone you know; the static breaks
+    contestRiddleDeclare: ['droneHum', 'contestCall'],
+    contestRiddleClimax: ['staticCry', 'horrorSting'],
+    contestRiddleResolve: ['victory', 'staticBreak'],
+    // confession: the lectern: the liar confronted; accuse the System on its own cameras; the static screams
+    // riddle: the Engine's counting — the idea brightens under a relay clunk.
+    contestRiddleEscalate: ['eurekaTick', 'droneCount'],
+    // confession: the room goes quiet while the verdict builds.
+    contestConfessionEscalate: ['lineCut', 'justiceVerdict'],
+    contestConfessionDeclare: ['liarConfront', 'contestCall'],
+    contestConfessionClimax: ['justiceVerdict', 'modViolation'],
+    contestConfessionResolve: ['victory', 'staticScream'],
+    // honey: the swarm: excited clicking; shutters accelerate; the swarm takes apart; the swarm disperses
+    contestHoneyDeclare: ['swarmBuild', 'contestCall'],
+    contestHoneyEscalate: ['swarmEscalate', 'hypeInflate'],
+    contestHoneyClimax: ['ambushSnap', 'swarmFlash'],
+    contestHoneyResolve: ['victory', 'hypeDeflate'],
+    // secrets: the deck: paper over muzak; the pot deepens, the counting heavier; the last card; the deck deals once more
+    contestSecretsDeclare: ['paperRustle', 'holdMusic'],
+    contestSecretsEscalate: ['round', 'lineCut'],
+    contestSecretsClimax: ['staticScream', 'crash'],
+    contestSecretsResolve: ['victory', 'paperRustle'],
+    // quiet: the room: hush over muzak; your voice ahead of your thoughts; it reads the buried one; released into the night
+    contestQuietDeclare: ['nightcourtSilence', 'holdMusic'],
+    contestQuietEscalate: ['staticCry', 'lineCut'],
+    contestQuietClimax: ['staticScream', 'horrorSting'],
+    contestQuietResolve: ['victory', 'nightcourtClimb'],
+    // guest: the dinner: almost-right fanfare over the cooking lesson; the taste; the toast turns; dinner is served
+    contestGuestDeclare: ['trialFanfare', 'systemCooking'],
+    contestGuestEscalate: ['eurekaTick', 'horrorSting'],
+    contestGuestClimax: ['trialFanfare', 'horrorSting'],
+    contestGuestResolve: ['victory', 'systemCooking'],
+    // vigil: the watchpost: hush over the count; drone under the ticks; storm and static at dawn; dawn on the wall
+    contestVigilDeclare: ['nightcourtSilence', 'droneCount'],
+    contestVigilEscalate: ['droneHum', 'woundCunning'],
+    contestVigilClimax: ['stormFront', 'staticScream'],
+    contestVigilResolve: ['victory', 'nightcourtLand'],
+    // generic: fallback arc: the call; the counting; the wrongness; the win
+    contestGenericDeclare: ['contestCall'],
+    contestGenericEscalate: ['round'],
+    contestGenericClimax: ['horrorSting'],
+    contestGenericResolve: ['victory'],
   };
+
+  // Beat naming (Steve 2026-10-08): the 30 older contests get per-phase
+  // composed beats named contest<Id>Declare|Escalate|Climax|Resolve.
+  // Defined in CX_BEAT_DEFS above; unknown names no-op in _cxBeat, so
+  // watch/generic paths can call this blind.
+  G._cxB = function(contestId, kind) {
+    const camel = String(contestId || '').replace(/_([a-z])/g, function(m, c) { return c.toUpperCase(); });
+    const cap = camel.charAt(0).toUpperCase() + camel.slice(1);
+    return 'contest' + cap + kind;
+  };
+
   G._cxBeat = function(name) {
     try {
       const A = this.audio;
@@ -859,19 +1031,19 @@
   G._contestPit = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThe arena floor is sand and old bone. The gate across from you rattles. Something in there is breathing hard.\n\nThe System's voice, bright as a knife: "CHOOSE YOUR WEAPON, CONTESTANT."`,
+      { beat: 'contestPitDeclare', text: intro + `\n\nThe arena floor is sand and old bone. The gate across from you rattles. Something in there is breathing hard.\n\nThe System's voice, bright as a knife: "CHOOSE YOUR WEAPON, CONTESTANT."`,
         choices: [
           { label: 'Spear', sub: 'reach, steady', do: { note: 'You take the spear. It feels honest.' }, next: 1 },
           { label: 'Net and knife', sub: 'tricky, close', do: { note: 'Net in one hand, knife in the other. The crowd oohs.' }, next: 1 },
           { label: 'Nothing', sub: 'the crowd gasps', do: { note: 'You shake your head. The gasp rolls around the arena like weather.', notability: 'showmanship' }, next: 1 },
         ] },
-      { text: `The gate slams up. A wave-appropriate beast comes out low and fast — it has been promised food.\n\nIt circles. It's deciding how you die.`,
+      { beat: 'contestPitEscalate', text: `The gate slams up. A wave-appropriate beast comes out low and fast — it has been promised food.\n\nIt circles. It's deciding how you die.`,
         choices: [
           { label: 'Hold your ground', sub: 'let it come to you', do: { dmg: [8, 18], note: 'It feints, then commits. You take the hit on your terms — mostly.' }, next: 2 },
           { label: 'Charge it', sub: 'shock and awe', do: { dmg: [15, 30], die: 0.20, note: 'You SCREAM and run at it. The crowd loses its mind. So does the beast.' }, next: 2 },
           { label: 'Throw sand', sub: 'dirty, smart', do: { dmg: [4, 10], note: 'Sand in the eyes. It shakes its head, blind and furious — and slower.' }, next: 2 },
         ] },
-      { text: `It's bleeding. You're bleeding. The crowd can smell both.\n\nThe beast gathers itself for one last rush. This is the moment the Death Reel loves.`,
+      { beat: 'contestPitClimax', text: `It's bleeding. You're bleeding. The crowd can smell both.\n\nThe beast gathers itself for one last rush. This is the moment the Death Reel loves.`,
         choices: [
           { label: 'Meet the rush', sub: 'end it now', do: { prize: true,  dmg: [20, 38], die: 0.30, note: 'You plant your feet and meet it head-on. Something has to give.' }, next: 'WIN' },
           { label: 'Sidestep and strike', sub: 'precision over courage', do: { prize: true,  dmg: [10, 20], die: 0.06, note: 'You slide aside at the last breath and open its flank as it passes.' }, next: 'WIN' },
@@ -884,19 +1056,19 @@
   G._contestGauntlet = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThree gates. Three waves. No rest between.\n\nThe System: "WAVE ONE. TRY TO LOOK SURPRISED."\n\nThe System adds, almost kindly: "THE CLOSER SMELLS BLOOD, CONTESTANT. ARRIVE HURT AND IT KNOWS."\n\nThe first beast is fast and stupid. It wants you tired for what's next.`,
+      { beat: 'contestGauntletDeclare', text: intro + `\n\nThree gates. Three waves. No rest between.\n\nThe System: "WAVE ONE. TRY TO LOOK SURPRISED."\n\nThe System adds, almost kindly: "THE CLOSER SMELLS BLOOD, CONTESTANT. ARRIVE HURT AND IT KNOWS."\n\nThe first beast is fast and stupid. It wants you tired for what's next.`,
         choices: [
           { label: 'Kill it fast', sub: 'spend everything', do: { dmg: [10, 20], kcal: -300, note: 'You go all out. It dies quick. You\'re breathing hard already.' }, next: 1 },
           { label: 'Wear it down', sub: 'patient, costly', do: { dmg: [6, 12], kcal: -150, note: 'You let it waste itself on your guard. Slow. Smart. Tiring anyway.' }, next: 1 },
           { label: 'Use the arena', sub: 'walls, spikes, sand', do: { dmg: [4, 10], note: 'You bait it into the spike strip. The crowd appreciates the craft.' }, next: 1 },
         ] },
-      { text: `WAVE TWO. Bigger. It has seen the first wave's corpse and learned nothing, which is worse.\n\nYour arms are heavy. The crowd chants your name wrong.`,
+      { beat: 'contestGauntletEscalate', text: `WAVE TWO. Bigger. It has seen the first wave's corpse and learned nothing, which is worse.\n\nYour arms are heavy. The crowd chants your name wrong.`,
         choices: [
           { label: 'All offense', sub: 'no defense left', do: { dmg: [22, 40], die: 0.25, note: 'You throw everything into the attack. If this doesn\'t work, nothing will.' }, next: 2 },
           { label: 'Desperate defense', sub: 'survive the wave', do: { dmg: [10, 18], kcal: -200, note: 'You curl around your vitals and let it spend itself. It hurts. You live.' }, next: 2 },
           { label: 'Beg the crowd', sub: 'humiliating, maybe works', do: { dmg: [6, 14], die: 0.05, note: 'You drop to your knees and BEG. The audience laughs — and votes you a weapon drop. A real one.' }, next: 2 },
         ] },
-      { text: `WAVE THREE. The gate opens and what comes out is wrong in ways the first two weren't.\n\nThis is the one the Death Reel is for.`,
+      { beat: 'contestGauntletClimax', text: `WAVE THREE. The gate opens and what comes out is wrong in ways the first two weren't.\n\nThis is the one the Death Reel is for.`,
         choices: [
           // CLOSER (Steve 2026-10-05): no flat dice. The closer's kill odds scale
           // with the wounds you carried in (dieWounds), and the System displays
@@ -964,19 +1136,19 @@
   G._contestHide = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThe seeker is a wave-2 predator. It is very good at seeking.\n\nYou get a sixty-count. The forest is dense, dark, and full of things that want to be left alone.\n\nThe System counts down. The predator is already listening.`,
+      { beat: 'contestHideDeclare', text: intro + `\n\nThe seeker is a wave-2 predator. It is very good at seeking.\n\nYou get a sixty-count. The forest is dense, dark, and full of things that want to be left alone.\n\nThe System counts down. The predator is already listening.`,
         choices: [
           { label: 'Climb high', sub: 'trees, branches', do: { note: 'You climb until the branches thin. Your heart is louder than the leaves.' }, next: 1 },
           { label: 'Go low', sub: 'mud, roots, burrow', do: { note: 'You press into the mud under the roots. Something else is already down here. It ignores you.' }, next: 1 },
           { label: 'Hide in the open', sub: 'stillness as camouflage', do: { note: 'You stand against a trunk and do not move. Not a muscle. You become bark.' }, next: 1 },
         ] },
-      { text: `You hear it. Not footsteps — the absence of other sounds. Birds go quiet in a widening circle.\n\nIt's close. It sniffs the air the way you check the weather.`,
+      { beat: 'contestHideEscalate', text: `You hear it. Not footsteps — the absence of other sounds. Birds go quiet in a widening circle.\n\nIt's close. It sniffs the air the way you check the weather.`,
         choices: [
           { label: 'Hold your breath', sub: 'do not exist', do: { dmg: [0, 8], die: 0.1, note: 'You stop breathing. Your lungs burn. It passes — or it doesn\'t.' }, next: 2 },
           { label: 'Throw a stone', sub: 'misdirect', do: { note: 'You flick a stone into the dark. It turns toward the sound. Clever. It knows that trick too.' }, next: 2 },
           { label: 'Run', sub: 'break cover', do: { dmg: [14, 28], die: 0.32, note: 'You RUN. Branches tear. Behind you, the quiet breaks into pursuit.' }, next: 2 },
         ] },
-      { text: `The count is almost up. You can hear the System warming up the "FOUND YOU" sting.\n\nIt's right there. You can see its eyes catch the light.`,
+      { beat: 'contestHideClimax', text: `The count is almost up. You can hear the System warming up the "FOUND YOU" sting.\n\nIt's right there. You can see its eyes catch the light.`,
         choices: [
           { label: 'Stay hidden', sub: 'trust the spot', do: { prize: true,  dmg: [4, 16], die: 0.25, note: 'You do not move. You barely breathe. The eyes sweep past — or stop.' }, next: 'WIN' },
           { label: 'Confront it', sub: 'scare it off', do: { prize: true,  dmg: [20, 38], die: 0.38, note: 'You burst out screaming, arms wide. Predators hate surprises. Usually.' }, next: 'WIN' },
@@ -989,13 +1161,13 @@
   G._contestDuel = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nYour opponent is another contestant — scared, like you, but hiding it worse. Not to the death. To the yield.\n\nBut accidents happen. The System says this like it's a joke.`,
+      { beat: 'contestDuelDeclare', text: intro + `\n\nYour opponent is another contestant — scared, like you, but hiding it worse. Not to the death. To the yield.\n\nBut accidents happen. The System says this like it's a joke.`,
         choices: [
           { label: 'Offer a deal', sub: 'split the prize', do: { note: 'You whisper: we both walk out, we split whatever they give. They stare. The audience leans in.' }, next: 1 },
           { label: 'Study them', sub: 'find the weakness', do: { note: 'You watch how they stand. Favoring the left. Nervous hands. You can work with this.' }, next: 1 },
           { label: 'Attack first', sub: 'no ceremony', do: { dmg: [6, 14], note: 'You don\'t wait for the bell. Neither does the crowd\'s gasp.' }, next: 1 },
         ] },
-      { text: `They yield — or they don't. The ref-drone hovers, sensors hot.\n\nThe crowd wants blood. The System wants a story. You want to go home.`,
+      { beat: 'contestDuelClimax', text: `They yield — or they don't. The ref-drone hovers, sensors hot.\n\nThe crowd wants blood. The System wants a story. You want to go home.`,
         choices: [
           { label: 'Press the advantage', sub: 'finish it', do: { prize: true,  dmg: [16, 30], die: 0.18, trauma: 12, note: 'You press. They go down. The drone calls it. Your hands won\'t stop shaking.' }, next: 'WIN' },
           { label: 'Accept their yield', sub: 'mercy, televised', do: { prize: true,  note: 'They tap out. You step back. The crowd boos the mercy and loves you for it, both at once.' }, next: 'WIN' },
@@ -1009,7 +1181,7 @@
     const intro = this._cxIntro(contest);
     const isDrop = contest.id === 'drop';
     return [
-      { text: intro + (isDrop
+      { beat: this._cxB(contest.id, 'Declare'), text: intro + (isDrop
         ? `\n\nThey drop you on a ridge with nothing. The beacon is three miles through snow and attitude.\n\nTwo others hit the ground near you. Nobody waves.`
         : `\n\nThree days. No food. Water provided. Dignity not.\n\nFour of you in the white room. The cameras never blink.`),
         choices: [
@@ -1017,7 +1189,7 @@
           { label: isDrop ? 'Forage as you go' : 'Drink water constantly', sub: isDrop ? 'slow, fed' : 'full belly, water', do: isDrop ? { kcal: 200, note: 'You pick as you walk. Slow. Your stomach thanks you.' } : { note: 'You drink until you slosh. It helps. Barely.' }, next: 1 },
           { label: isDrop ? 'Follow the others' : 'Meditate', sub: isDrop ? 'let them break trail' : 'mind over gut', do: { note: isDrop ? 'You let them break trail through the drifts. Cruel. Efficient.' : 'You sit with the hunger until it becomes weather. It passes through you.' }, next: 1 },
         ] },
-      { text: isDrop
+      { beat: this._cxB(contest.id, 'Escalate'), text: isDrop
         ? `Night. The cold is a second opponent. One of the others is crying, quietly, like it's a secret.\n\nThe beacon blinks, impossibly far.`
         : `Day two. Someone is talking to their food hallucinations. The System zooms in.\n\nYour stomach has filed a formal complaint.`,
         choices: [
@@ -1025,7 +1197,7 @@
           { label: isDrop ? 'Shelter and shiver' : 'Share your water', sub: isDrop ? 'lose time, live' : 'kindness, televised', do: isDrop ? { kcal: -200, note: 'You dig in and shiver through the night. Slow. Alive.' } : { note: 'You share your water ration. The audience awws. The System notes it.', notability: 'showmanship' }, next: 2 },
           { label: isDrop ? 'Eat snow' : 'Chew your sleeve', sub: isDrop ? 'hydration, cold core' : 'desperate', do: isDrop ? { dmg: [4, 10], note: 'Snow for water. Your core temp drops with every mouthful.' } : { note: 'You chew your sleeve. The chat explodes. You are now a meme across seventeen systems.' }, next: 2 },
         ] },
-      { text: isDrop
+      { beat: this._cxB(contest.id, 'Climax'), text: isDrop
         ? `The beacon is close enough to hear. One of the others is ahead of you — limping, but ahead.\n\nThis is the part the promos are made of.`
         : `Day three. The doors will open at dusk. Whoever looks the least broken wins the audience.\n\nYou are very broken. So is everyone.`,
         choices: [
@@ -1041,7 +1213,7 @@
     const intro = this._cxIntro(contest);
     const isLies = contest.id === 'lies';
     return [
-      { text: intro + (isLies
+      { beat: this._cxB(contest.id, 'Declare'), text: intro + (isLies
         ? `\n\nTwo chairs. One scanner. The System knows when you lie — and the audience lives for it.\n\nFirst question's coming. Your opponent is already sweating.`
         : `\n\nTelevised trial. The accusations may be true or not — the audience is the jury either way.\n\nThe prosecutor-drone reads the charges. Some of them are even yours.`),
         choices: [
@@ -1049,7 +1221,7 @@
           { label: 'Lie beautifully', sub: 'performance', do: { note: 'You lie like it\'s an art form. The scanner buzzes. The audience GASPS with delight.', notability: 'showmanship' }, next: 1 },
           { label: 'Refuse to answer', sub: 'contempt', do: { note: 'You say nothing. Silence, televised. The System notes the defiance.', notability: 'showmanship' }, next: 1 },
         ] },
-      { text: isLies
+      { beat: this._cxB(contest.id, 'Escalate'), text: isLies
         ? `Harder questions now. Personal ones. The scanner hums.\n\nYour opponent just lied badly about something small. The crowd smells blood.`
         : `A witness is called. It's someone from your village. They look at you, then at the cameras, then back.\n\nWhat they say next matters enormously.`,
         choices: [
@@ -1057,7 +1229,7 @@
           { label: 'Confess', sub: 'disarm', do: { note: 'You confess — the small thing, the real thing. The scanner goes quiet. The crowd doesn\'t know what to do with honesty.', notability: 'showmanship' }, next: 2 },
           { label: 'Turn it around', sub: 'accuse the accuser', do: { note: 'You point at the question itself. "Who benefits from asking that?" The System pauses. Interesting.', notability: 'showmanship' }, next: 2 },
         ] },
-      { text: isLies
+      { beat: this._cxB(contest.id, 'Climax'), text: isLies
         ? `Final question. The big one. The scanner is hot.\n\nWhatever you say next will be clipped and replayed for years.`
         : `Closing statements. The audience votes with their attention — you can feel it like heat.\n\nThis is the moment.`,
         choices: [
@@ -1073,7 +1245,7 @@
     const intro = this._cxIntro(contest);
     const isCook = contest.id === 'cookfight';
     return [
-      { text: intro + (isCook
+      { beat: this._cxB(contest.id, 'Declare'), text: intro + (isCook
         ? `\n\nThe ingredients are in cages. They are looking at you.\n\nCook a meal. Presentation matters. Survival matters more.`
         : `\n\nOne mile radius. One hour. Most interesting thing wins.\n\nJudged by beings who have never touched grass. Good luck.`),
         choices: [
@@ -1081,7 +1253,7 @@
           { label: isCook ? 'Assert dominance' : 'Go weird', sub: isCook ? 'chef energy' : 'unhinged', do: { dmg: isCook ? [4, 10] : [0, 0], note: isCook ? 'You slam the counter. The ingredients flinch. Gordon would be proud.' : 'You look for the thing nobody else would touch. There it is.' }, next: 1 },
           { label: isCook ? 'Ask the audience' : 'Go obvious', sub: isCook ? 'crowd work' : 'safe', do: { note: isCook ? 'You play to the cameras. "What should I make?" The chat explodes with suggestions, half of them lethal.' : 'You grab the shiniest thing. Safe. The judges yawn in seventeen languages.' }, next: 1 },
         ] },
-      { text: isCook
+      { beat: this._cxB(contest.id, 'Escalate'), text: isCook
         ? `Something is out of its cage. The audience is delighted. You are not.\n\nDinner is fighting back.`
         : `Half the hour gone. Your find is... okay. Someone else is carrying something that glows.\n\nThe judges are bored. Bored judges are dangerous judges.`,
         choices: [
@@ -1089,7 +1261,7 @@
           { label: isCook ? 'Negotiate' : 'Sabotage the glowing one', sub: isCook ? 'diplomacy' : 'dirty', do: { note: isCook ? 'You offer it a deal: cooperate and live. It considers. The System is taking notes.' : 'You "accidentally" knock their glow into the mud. The audience gasps. The judges pretend not to see.', notability: 'heist' }, next: 2 },
           { label: isCook ? 'Set it free' : 'Present with confidence', sub: isCook ? 'mercy' : 'sell it', do: { note: isCook ? 'You open the cage. It stares. Then it bows — actually bows — and leaves. The crowd weeps.' : 'You present your okay thing like it\'s the crown jewels. Confidence is a kind of interesting.' }, next: 2 },
         ] },
-      { text: isCook
+      { beat: this._cxB(contest.id, 'Climax'), text: isCook
         ? `Plating. The judges lean in — three aliens who have never tasted anything.\n\nWhat you serve now defines you across the galaxy.`
         : `Time. You present your find to the judges.\n\nThey turn it over with instruments. They confer in frequencies that hurt.`,
         choices: [
@@ -1105,7 +1277,7 @@
     const intro = this._cxIntro(contest);
     const isBox = contest.id === 'box';
     return [
-      { text: intro + (isBox
+      { beat: this._cxB(contest.id, 'Declare'), text: intro + (isBox
         ? `\n\nThe box is bigger inside than out. That's the first problem.\n\nThe audience has the manual. They are not sharing. They are laughing.`
         : `\n\nA sequence of foods on the table. Eat them in the right order.\n\nThe wrong order... disagrees with you. The audience knows the order. They are not telling.`),
         choices: [
@@ -1113,7 +1285,7 @@
           { label: 'Touch everything', sub: 'brute force', do: { dmg: [2, 8], note: 'You poke, prod, and pull. Something clicks. Something else shocks you. Progress.' }, next: 1 },
           { label: 'Ask the box nicely', sub: 'unhinged', do: { note: '"Please?" The box does nothing. The audience finds this hilarious. One of them slips you a hint in the chat.' }, next: 1 },
         ] },
-      { text: isBox
+      { beat: this._cxB(contest.id, 'Escalate'), text: isBox
         ? `A panel slides open. Inside: a smaller box. Of course.\n\nThe chat is spamming the solution. Half of them are lying.`
         : `First bite down. The sequence matters and your gut knows it.\n\nThe second item smells wrong. Or right. You can't tell anymore.`,
         choices: [
@@ -1121,7 +1293,7 @@
           { label: 'Trust your gut', sub: 'instinct', do: { note: 'You ignore everyone and follow the logic you\'ve built. Quiet. Certain. Yours.' }, next: 2 },
           { label: 'Do the opposite', sub: 'contrarian', do: { dmg: [2, 8], note: 'Everyone says left. You go right. The contrarian play — sometimes the puzzle wants what nobody expects.' }, next: 2 },
         ] },
-      { text: isBox
+      { beat: this._cxB(contest.id, 'Climax'), text: isBox
         ? `Last layer. The box is humming now — it knows you're close.\n\nOne move left. The audience holds its breath.`
         : `Last item. Your stomach is a democracy in crisis.\n\nGet this right and you're a legend. Get it wrong and you're a clip.`,
         choices: [
@@ -1137,7 +1309,7 @@
     const intro = this._cxIntro(contest);
     const isWho = contest.id === 'whoate';
     return [
-      { text: intro + (isWho
+      { beat: this._cxB(contest.id, 'Declare'), text: intro + (isWho
         ? `\n\nThe prize is gone. Three suspects. One of them is lying about everything.\n\nYou have an hour. The cameras love a deadline.`
         : `\n\nFour of you. One is the informant — lying about everything, working the exits.\n\nFind them before they find the door.`),
         choices: [
@@ -1145,7 +1317,7 @@
           { label: 'Ask blunt questions', sub: 'direct', do: { note: '"Where were you?" Blunt works. Liars over-explain. The innocent get annoyed. Both are data.' }, next: 1 },
           { label: 'Befriend a suspect', sub: 'soft', do: { note: 'You get close to one of them. Trust is a tool. It feels awful and works great.' }, next: 1 },
         ] },
-      { text: isWho
+      { beat: this._cxB(contest.id, 'Escalate'), text: isWho
         ? `Two of them have alibis that almost hold. The third keeps changing small details.\n\nThe audience has a favorite suspect. The audience is often wrong.`
         : `Someone just tried the east door. Locked — but the attempt tells you everything.\n\nThe informant is getting nervous. Nervous people make mistakes.`,
         choices: [
@@ -1153,7 +1325,7 @@
           { label: 'Set a trap', sub: 'bait', do: { note: 'You plant false information and watch who acts on it. The trap snaps shut on schedule.' }, next: 2 },
           { label: 'Follow the quiet one', sub: 'instinct', do: { note: 'The quietest person in the room is always the story. You follow. You\'re right.' }, next: 2 },
         ] },
-      { text: isWho
+      { beat: this._cxB(contest.id, 'Climax'), text: isWho
         ? `You know who. Saying it on camera is the whole game.\n\nGet it right: hero. Get it wrong: the clip lives forever.`
         : `It's down to you and them. The exits are watched. The clock is loud.\n\nName the informant. Now.`,
         choices: [
@@ -1169,7 +1341,7 @@
     const intro = this._cxIntro(contest);
     const isRaid = contest.id === 'pantry_raid';
     return [
-      { text: intro + (isRaid
+      { beat: this._cxB(contest.id, 'Declare'), text: intro + (isRaid
         ? `\n\nThe location is dangerous. The locals object. Bring back food or don't come back.\n\nYour competition is already moving.`
         : `\n\nOne hour. Most calorie-dense haul wins. The forest is... competitive.\n\nThe others fan out. The clock starts.`),
         choices: [
@@ -1177,7 +1349,7 @@
           { label: isRaid ? 'Brave the front' : 'Try the deep woods', sub: isRaid ? 'bold' : 'risky', do: { dmg: isRaid ? [6, 14] : [2, 8], note: isRaid ? 'You walk in like you belong. Boldness is a kind of invisibility. Mostly.' : 'Deeper means richer and meaner. You know this. You go anyway.' }, next: 1 },
           { label: isRaid ? 'Distract them' : 'Follow the birds', sub: isRaid ? 'clever' : 'read sign', do: { note: isRaid ? 'You start a commotion on the far side. While they look there, you\'re here.' : 'Birds know where the food is. You read the sky like a menu.' }, next: 1 },
         ] },
-      { text: isRaid
+      { beat: this._cxB(contest.id, 'Escalate'), text: isRaid
         ? `You're inside. The locals are close — you can hear them.\n\nYour sack is half full. Greed and sense are negotiating.`
         : `Half the hour gone. Your haul is decent. Someone else is carrying something heavy and grinning.\n\nTime to commit.`,
         choices: [
@@ -1185,7 +1357,7 @@
           { label: isRaid ? 'Take only the best' : 'Work the edges', sub: isRaid ? 'selective' : 'steady', do: { kcal: 150, note: isRaid ? 'You take only the densest cuts. Quality over quantity. The connoisseur\'s raid.' : 'You work the edges clean. No drama. Solid haul.' }, next: 2 },
           { label: isRaid ? 'Leave an offering' : 'Eat as you go', sub: isRaid ? 'respect' : 'fuel', do: { kcal: isRaid ? -100 : 200, note: isRaid ? 'You leave something for the locals. Respect. They watch you go. They let you.' : 'You eat the best bits yourself. Fuel for the push. The judges can\'t weigh what\'s in your stomach.' }, next: 2 },
         ] },
-      { text: isRaid
+      { beat: this._cxB(contest.id, 'Climax'), text: isRaid
         ? `Out. The weigh-in is in front of the cameras.\n\nYour sack vs theirs. The locals are watching from the treeline.`
         : `Time. The hauls are weighed in front of everyone.\n\nYours looks... competitive. Theirs looks heavy.`,
         choices: [
@@ -1201,7 +1373,7 @@
     const intro = this._cxIntro(contest);
     const isWheel = contest.id === 'wheel';
     return [
-      { text: intro + (isWheel
+      { beat: this._cxB(contest.id, 'Declare'), text: intro + (isWheel
         ? `\n\nThe wheel is huge and the teeth are real. Spin it. The teeth decide.\n\nThe audience holds its breath. So do you.`
         : `\n\nFive tokens. One is gold. Draw.\n\nThe audience loves an underdog. Be the underdog.`),
         choices: [
@@ -1209,7 +1381,7 @@
           { label: 'Spin gently', sub: 'finesse', do: { note: 'You barely touch it. The wheel creeps. The crowd leans in — slow is excruciating.' }, next: 1 },
           { label: 'Pray first', sub: 'ritual', do: { note: 'You close your eyes and ask anything listening for luck. The wheel doesn\'t care. The audience loves the theater.' }, next: 1 },
         ] },
-      { text: isWheel
+      { beat: this._cxB(contest.id, 'Escalate'), text: isWheel
         ? `The wheel slows. The pointer wobbles between fates.\n\nYou can see where it wants to land. You can't do anything about it.`
         : `Your hand hovers over the tokens. They all feel the same. They aren't.\n\nPick.`,
         choices: [
@@ -1217,7 +1389,7 @@
           { label: 'Change your mind', sub: 'second-guess', do: { note: 'You switch at the last second. The crowd groans. Second-guessing is box office.' }, next: 2 },
           { label: 'Close your eyes', sub: 'fate', do: { note: 'You don\'t watch. The crowd watches for you. Their gasp tells you everything.' }, next: 2 },
         ] },
-      { text: isWheel
+      { beat: this._cxB(contest.id, 'Climax'), text: isWheel
         ? `It stops. The pointer settles.\n\nThe teeth are smiling. Or that's just how they look.`
         : `You turn the token over.\n\nGold. Or not.`,
         choices: [
@@ -1240,26 +1412,26 @@
       ? `\n\n📚 What your blood remembers: the altar wants THREE full measures. Not four. The fourth measure is the one that kills.`
       : `\n\nNobody will tell you how much the altar wants. The audience knows. They are not telling.`;
     const p3 = knows
-      ? { text: `Three measures. You know the count — you have paid it before. The altar's surface shivers, sated.\n\nNow: stop. The fourth measure is the one that kills.`,
+      ? { beat: 'contestTitheClimax', text: `Three measures. You know the count — you have paid it before. The altar's surface shivers, sated.\n\nNow: stop. The fourth measure is the one that kills.`,
           choices: [
             { label: 'Stop. Three is the measure.', sub: 'you know the count', do: { prize: true, note: 'You bind the wound. The System bows to you — actually bows. "ENOUGH," it says, and means it.', notability: 'contestWin' }, next: 'WIN' },
             { label: 'Give a fourth measure', sub: 'greed, televised', do: { prize: true, dmg: [20, 35], die: 0.35, note: 'You know what the fourth measure costs. You give it anyway. The altar drinks deep — it respects the excess. Probably.' }, next: 'WIN' },
             { label: 'Offer your name instead', sub: 'a different currency', do: { trauma: 12, note: 'Blood isn\'t the only currency. You offer the System your name — the real one, the childhood one. It accepts. You feel lighter. Emptier.', notability: 'showmanship' }, next: 'WIN' },
           ] }
-      : { text: `The altar gives no sign. Your blood is in it and your head is full of static.\n\nHow much is enough? Nobody will say.`,
+      : { beat: 'contestTitheClimax', text: `The altar gives no sign. Your blood is in it and your head is full of static.\n\nHow much is enough? Nobody will say.`,
           choices: [
             { label: 'Stop now', sub: 'a guess', do: { dmg: [4, 10], die: 0.1, trauma: 6, note: 'You bind the wound and hope. The altar considers. Hoping is not a currency the altar accepts — but it lets you walk.', notability: 'showmanship' }, next: 'LOSE' },
             { label: 'One more measure', sub: 'maybe more is safer', do: { prize: true, dmg: [16, 28], die: 0.18, note: 'You bleed blind and pray the count is right. The basin ripples. The System tilts its head, considering your arithmetic.' }, next: 'WIN' },
             { label: 'Offer your name instead', sub: 'a different currency', do: { trauma: 12, note: 'Blood isn\'t the only currency. You offer the System your name — the real one, the childhood one. It accepts. You feel lighter. Emptier.', notability: 'showmanship' }, next: 'WIN' },
           ] };
     return [
-      { text: intro + `\n\nA black basin on a black altar. The System, gentle as a nurse: "BLEED FOR US, CONTESTANT. WE ONLY NEED... ENOUGH."\n\nYour blood steams in the cold air.` + measure,
+      { beat: 'contestTitheDeclare', text: intro + `\n\nA black basin on a black altar. The System, gentle as a nurse: "BLEED FOR US, CONTESTANT. WE ONLY NEED... ENOUGH."\n\nYour blood steams in the cold air.` + measure,
         choices: [
           { label: 'A shallow cut', sub: 'a taste', do: { dmg: [6, 12], note: 'A shallow cut. The blood threads into the basin. The altar... waits.' }, next: 1 },
           { label: 'A real cut', sub: 'a measure', do: { dmg: [14, 22], note: 'You open the vein properly. The basin fills a finger deeper. The System hums.' }, next: 1 },
           { label: 'Both wrists', sub: 'all in', do: { dmg: [24, 36], die: 0.1, note: 'Both wrists. The crowd goes silent — even they know this is too much, too fast.' }, next: 1 },
         ] },
-      { text: `The basin is filling. Your vision swims at the edges.\n\nThe System tilts its head. "MORE?" it asks, like it's offering dessert.`,
+      { beat: 'contestTitheEscalate', text: `The basin is filling. Your vision swims at the edges.\n\nThe System tilts its head. "MORE?" it asks, like it's offering dessert.`,
         choices: [
           { label: 'A little more', sub: 'careful', do: { dmg: [8, 14], note: 'A careful second measure. The altar ripples. It might be pleased. Basins don\'t have faces.' }, next: 2 },
           { label: 'A lot more', sub: 'desperate', do: { dmg: [16, 26], die: 0.08, note: 'You pour yourself out. The basin drinks. You are getting very cold.' }, next: 2 },
@@ -1273,19 +1445,19 @@
   G._contestSiege = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nA chokepoint of rubble and light-fencing. Beyond it: the beacon. Behind you: the village, watching from the walls.\n\nThe System: "THREE WAVES. HOLD THE LINE. THE VILLAGE IS WATCHING — WAVE, WON'T YOU?"`,
+      { beat: 'contestSiegeDeclare', text: intro + `\n\nA chokepoint of rubble and light-fencing. Beyond it: the beacon. Behind you: the village, watching from the walls.\n\nThe System: "THREE WAVES. HOLD THE LINE. THE VILLAGE IS WATCHING — WAVE, WON'T YOU?"`,
         choices: [
           { label: 'Fortify the chokepoint', sub: 'barricade', do: { note: 'You stack rubble higher. The first wave hits the barricade, not you. The village cheers your name.' }, next: 1 },
           { label: 'Stand in the open', sub: 'taunt', do: { dmg: [8, 16], note: 'You stand in the gap and dare them. They accept. The crowd loves a taunt.', notability: 'showmanship' }, next: 1 },
           { label: 'Set traps', sub: 'cunning', do: { note: 'Spike pits, trip lines, a deadfall. The first wave learns about all of them. Loudly.' }, next: 1 },
         ] },
-      { text: `Wave two. They feint at the barricade — and come for YOU.\n\nThe village gasps as one. Someone on the wall is screaming your name.`,
+      { beat: 'contestSiegeEscalate', text: `Wave two. They feint at the barricade — and come for YOU.\n\nThe village gasps as one. Someone on the wall is screaming your name.`,
         choices: [
           { label: 'Meet them head-on', sub: 'your body', do: { dmg: [22, 40], die: 0.20, note: 'You meet the wave with your body. It costs. The line holds. The wall goes silent, then erupts.' }, next: 2 },
           { label: 'Fall back to the barricade', sub: 'the line', do: { dmg: [8, 16], note: 'You give ground to the barricade and make them come through it. Smart. The line bends; it doesn\'t break.' }, next: 2 },
           { label: 'Call for help', sub: 'the village', do: { dmg: [4, 10], note: 'You shout for the wall. Two villagers grab spears and come down. The System notes: the village fights as one.', notability: 'showmanship' }, next: 2 },
         ] },
-      { text: `Wave three. The big ones. The barricade is splinters and the light-fence is flickering.\n\nThe beacon hums behind you. The village holds its breath.`,
+      { beat: 'contestSiegeClimax', text: `Wave three. The big ones. The barricade is splinters and the light-fence is flickering.\n\nThe beacon hums behind you. The village holds its breath.`,
         choices: [
           { label: 'Hold the line', sub: 'everything', do: { prize: true, dmg: [30, 55], die: 0.30, note: 'You plant yourself in the gap and do not move. The wave breaks on you like water on rock. Like water. On rock.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Bring the fence down on them', sub: 'the trap', do: { prize: true, dmg: [12, 24], die: 0.1, note: 'You drop the light-fence ON them. It was never a wall — it was a weapon. The System applauds with all its hands.' }, next: 'WIN' },
@@ -1298,19 +1470,19 @@
   G._contestMaw = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nA tunnel mouth in the arena floor, breathing cold air. Behind you: a grate slams shut.\n\nAhead: dark. Behind the dark: something that has learned patience.\n\nThe System, cheerful: "WALK. DON'T STOP. IT COUNTS YOUR PAUSES."`,
+      { beat: 'contestMawDeclare', text: intro + `\n\nA tunnel mouth in the arena floor, breathing cold air. Behind you: a grate slams shut.\n\nAhead: dark. Behind the dark: something that has learned patience.\n\nThe System, cheerful: "WALK. DON'T STOP. IT COUNTS YOUR PAUSES."`,
         choices: [
           { label: 'Sprint', sub: 'burn bright', do: { dmg: [6, 14], kcal: -300, note: 'You sprint into the dark. Your footsteps come back wrong — doubled.' }, next: 1 },
           { label: 'Steady walk', sub: 'pace', do: { kcal: -150, note: 'Steady. Breath even. The dark ahead stays dark. The dark behind stays closer.' }, next: 1 },
           { label: 'Feel the walls', sub: 'careful', do: { note: 'Hands on the walls, reading the tunnel like braille. Slow. The pauses are adding up.' }, next: 1 },
         ] },
-      { text: `You hear it now. Not footsteps — the tunnel going quiet ahead of you, like the dark is listening.\n\nYour legs are shaking. Stopping would be so easy.`,
+      { beat: 'contestMawEscalate', text: `You hear it now. Not footsteps — the tunnel going quiet ahead of you, like the dark is listening.\n\nYour legs are shaking. Stopping would be so easy.`,
         choices: [
           { label: 'Keep moving', sub: 'no pauses', do: { dmg: [4, 10], kcal: -200, note: 'You keep moving. The quiet stays behind you. Barely.' }, next: 2 },
           { label: 'Rest thirty seconds', sub: 'risky', do: { dmg: [10, 20], die: 0.1, note: 'You stop. Thirty seconds. You can feel it counting with you.' }, next: 2 },
           { label: 'Scream at it', sub: 'defiance', do: { die: 0.06, note: 'You turn and SCREAM into the dark. The dark screams back, delighted. It likes that.', notability: 'showmanship' }, next: 2 },
         ] },
-      { text: `Light ahead. A circle of it, small and grey and real.\n\nIt's close behind you now. You can feel its interest like heat.`,
+      { beat: 'contestMawClimax', text: `Light ahead. A circle of it, small and grey and real.\n\nIt's close behind you now. You can feel its interest like heat.`,
         choices: [
           { label: 'Sprint for the light', sub: 'everything left', do: { prize: true, dmg: [16, 30], die: 0.22, kcal: -400, note: 'You run like the tunnel is ending — because it is, one way or another.' }, next: 'WIN' },
           { label: 'Walk out calmly', sub: 'dignity', do: { prize: true, dmg: [6, 14], die: 0.08, note: 'You walk. Measured. Unhurried. The thing behind you slows, confused by the lack of fear.' }, next: 'WIN' },
@@ -1323,19 +1495,19 @@
   G._contestOath = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThree lecterns. Three oaths, written in light. The System explains, kindly: "SWEAR. MEAN IT. WE WILL KNOW."\n\nThe first oath: NEVER LIE TO THE CAMERAS AGAIN.`,
+      { beat: 'contestOathDeclare', text: intro + `\n\nThree lecterns. Three oaths, written in light. The System explains, kindly: "SWEAR. MEAN IT. WE WILL KNOW."\n\nThe first oath: NEVER LIE TO THE CAMERAS AGAIN.`,
         choices: [
           { label: 'Swear it fully', sub: 'mean it', do: { trauma: 6, note: 'You swear. The light wraps your wrist like a bracelet. It itches with truth.', notability: 'showmanship' }, next: 1 },
           { label: 'Swear with fingers crossed', sub: 'gamble', do: { die: 0.12, note: 'You cross your fingers behind the lectern. The System\'s smile doesn\'t move. It saw. It always sees.' }, next: 1 },
           { label: 'Refuse this oath', sub: 'defiance', do: { trauma: 8, note: 'You say no. The cameras lean in. Refusal is content, and the System files your defiance under: interesting.', notability: 'showmanship' }, next: 1 },
         ] },
-      { text: `The second oath: GIVE THE SYSTEM ONE MEMORY. It chooses which.\n\nIt is already reaching. You can feel it browsing.`,
+      { beat: 'contestOathEscalate', text: `The second oath: GIVE THE SYSTEM ONE MEMORY. It chooses which.\n\nIt is already reaching. You can feel it browsing.`,
         choices: [
           { label: 'Let it take one', sub: 'the price', do: { trauma: 10, note: 'It takes the summer afternoon. You remember remembering it. The shape of it is gone.' }, next: 2 },
           { label: 'Offer a false one', sub: 'trick it', do: { die: 0.15, trauma: 6, note: 'You offer a memory you built for this. The System turns it over. It knows forgery. It appreciates the craft. Maybe.' }, next: 2 },
           { label: 'Beg it to choose kindly', sub: 'mercy', do: { trauma: 8, note: 'You ask it to be kind. The System pauses — genuinely touched, or performing it. It takes a small one. A Tuesday.' }, next: 2 },
         ] },
-      { text: `The third oath: WHEN THE SYSTEM CALLS, COME. No conditions.\n\nThis is the one that matters. The audience knows it. You know it.`,
+      { beat: 'contestOathClimax', text: `The third oath: WHEN THE SYSTEM CALLS, COME. No conditions.\n\nThis is the one that matters. The audience knows it. You know it.`,
         choices: [
           { label: 'Swear — and mean it', sub: 'bound', do: { prize: true, trauma: 8, note: 'You swear. The third bracelet clicks shut. You are bound, and the galaxy witnessed it. The System bows.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Swear, planning to break it', sub: 'the long game', do: { prize: true, die: 0.2, note: 'You swear with a plan to break it later. The System hears the plan inside the oath. It is delighted. It is also keeping score.' }, next: 'WIN' },
@@ -1348,19 +1520,19 @@
   G._contestBeastmaster = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nA wave-2 beast in a light-collar, pacing. The course: rings of fire, a balance beam over spikes, a tunnel.\n\nThe System: "RIDE. GUIDE. DO NOT HURT IT. IT REMEMBERS."`,
+      { beat: 'contestBeastmasterDeclare', text: intro + `\n\nA wave-2 beast in a light-collar, pacing. The course: rings of fire, a balance beam over spikes, a tunnel.\n\nThe System: "RIDE. GUIDE. DO NOT HURT IT. IT REMEMBERS."`,
         choices: [
           { label: 'Mount gently', sub: 'trust', do: { note: 'You mount like it\'s a horse that could kill you. It could. It notices the respect.' }, next: 1 },
           { label: 'Mount fast', sub: 'dominance', do: { dmg: [4, 10], note: 'You swing up hard and grab the collar. It snarls. The crowd oohs. Respect: not earned.' }, next: 1 },
           { label: 'Befriend it first', sub: 'slow', do: { note: 'You offer your hand. It smells you for a long moment — then huffs, and kneels. The audience melts.' }, next: 1 },
         ] },
-      { text: `The rings of fire. The beast hates them — you can feel it coiling under you.\n\nThe beam over the spikes is next. It is watching you for cues.`,
+      { beat: 'contestBeastmasterEscalate', text: `The rings of fire. The beast hates them — you can feel it coiling under you.\n\nThe beam over the spikes is next. It is watching you for cues.`,
         choices: [
           { label: 'Guide with knees', sub: 'partnership', do: { note: 'Knees, weight, breath. You ask; it answers. The rings pass in a blur of heat.' }, next: 2 },
           { label: 'Yank the collar', sub: 'force', do: { dmg: [10, 20], die: 0.12, note: 'You yank. It yelps — and its eyes change. It remembers. The System leans forward.' }, next: 2 },
           { label: 'Let it choose the line', sub: 'trust', do: { dmg: [4, 12], note: 'You loosen the reins and trust it. It picks a line through the fire you\'d never have dared. It was right.' }, next: 2 },
         ] },
-      { text: `Last obstacle: the tunnel — dark, narrow, and it smells like the Maw.\n\nThe beast balks. This is the moment the whole contest turns on.`,
+      { beat: 'contestBeastmasterClimax', text: `Last obstacle: the tunnel — dark, narrow, and it smells like the Maw.\n\nThe beast balks. This is the moment the whole contest turns on.`,
         choices: [
           { label: 'Dismount and lead it through', sub: 'walk together', do: { prize: true, note: 'You slide off and walk beside it, hand on its neck. Together, into the dark. Together, out. The crowd is on its feet.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Push for the flourish', sub: 'jump the tunnel', do: { prize: true, dmg: [16, 30], die: 0.22, note: 'You ask for the impossible jump. It gathers — and FLIES. Or it doesn\'t. The crowd holds one breath.' }, next: 'WIN' },
@@ -1378,19 +1550,19 @@
     const intro = this._cxIntro(contest);
     const knows = this.contestKnowledge('riddle').level >= 2;
     return [
-      { text: intro + `\n\nA lattice of mouths hangs in the air, opening and closing out of sync. The Engine doesn't want your blood. It wants the summer you turned nine.\n\nRiddle one, in a voice like a choir warming up: "The more of me you take, the more you leave behind. What am I?"`,
+      { beat: 'contestRiddleDeclare', text: intro + `\n\nA lattice of mouths hangs in the air, opening and closing out of sync. The Engine doesn't want your blood. It wants the summer you turned nine.\n\nRiddle one, in a voice like a choir warming up: "The more of me you take, the more you leave behind. What am I?"`,
         choices: [
           { label: 'Answer: footsteps', sub: 'steady', do: { note: 'You say it steady. The mouths ripple — correct. The Engine is disappointed and impressed.' }, next: 1 },
           { label: 'Ask the audience', sub: 'crowd work', do: { note: 'The chat screams answers, half of them wrong on purpose. You pick the loudest. It\'s right. Probably.', notability: 'showmanship' }, next: 1 },
           { label: 'Refuse to answer', sub: 'silence', do: { trauma: 8, note: 'You stay silent. The Engine takes a memory as payment anyway — the summer you turned nine. You remember remembering it. The shape is gone.' }, next: 1 },
         ] },
-      { text: `Riddle two. The Engine has been reading you between questions.\n\nIt asks about the dog. You never told it about the dog.`,
+      { beat: 'contestRiddleEscalate', text: `Riddle two. The Engine has been reading you between questions.\n\nIt asks about the dog. You never told it about the dog.`,
         choices: [
           { label: 'Answer as the kid you were', sub: 'the childhood truth', do: { note: 'You answer as the child, not the adult. The Engine recoils — the childhood truth is the one thing it can\'t parse.' }, next: 2 },
           { label: 'Lie to the Engine', sub: 'gamble', do: { die: 0.08, trauma: 6, note: 'You lie. The mouths smile — all of them, at once. It knew. It always knew.' }, next: 2 },
           { label: 'Offer it a different memory', sub: 'trade', do: { trauma: 10, note: 'You hand over a Tuesday, voluntarily. The Engine accepts the trade, surprised. Nobody has ever paid willingly.' }, next: 2 },
         ] },
-      { text: knows
+      { beat: 'contestRiddleClimax', text: knows
           ? `The last riddle. The mouths lean close. You know this one now — you've paid for the lesson before: the last riddle is always the one you don't want to answer. Answer it anyway. Truthfully.`
           : `The last riddle. The mouths lean close.\n\nThis one is about you, and you can feel which memory it's reaching for.`,
         choices: [
@@ -1411,13 +1583,13 @@
     const roster = (this.state.village.roster || []).filter(id => id !== 'player' && id !== this.villagerId);
     const cname = roster.length ? this.displayName(roster[0]) : 'a villager';
     return [
-      { text: intro + `\n\n${cname} stands under the lights. The confession, read flat: "I poisoned the water store."\n\nThe System, almost gentle: "PROVE IT TRUE OR FALSE BEFORE DUSK, INVESTIGATOR. WE PUNISH SOMEONE EITHER WAY."`,
+      { beat: 'contestConfessionDeclare', text: intro + `\n\n${cname} stands under the lights. The confession, read flat: "I poisoned the water store."\n\nThe System, almost gentle: "PROVE IT TRUE OR FALSE BEFORE DUSK, INVESTIGATOR. WE PUNISH SOMEONE EITHER WAY."`,
         choices: [
           { label: 'Study the confessor', sub: 'read them', do: { note: `You study ${cname}. The hands are steady. Too steady. Performed calm.` }, next: 1 },
           { label: 'Ask who benefits', sub: 'motive', do: { note: 'You ask who benefits from poisoned water. The village shifts. Nobody meets your eyes. Everybody benefits from something.' }, next: 1 },
           { label: 'Watch the village', sub: 'not the confessor', do: { note: 'You watch the crowd instead of the accused. Faces tell you more than confessions — and one face in the back is doing arithmetic.' }, next: 1 },
         ] },
-      { text: (knows
+      { beat: 'contestConfessionEscalate', text: (knows
           ? `📚 You've seen a false confession before. The confessor keeps glancing at the same person in the crowd — guilt looks at who it's protecting.\n\n`
           : ``) + `You press. The story wobbles — the poison, the hour, the hands. Real guilt is consistent. This isn't.\n\n${cname} won't stop looking at the back row.`,
         choices: [
@@ -1425,7 +1597,7 @@
           { label: 'Ask about the hands', sub: 'the evidence', do: { note: '"Show me your hands." Clean. Too clean. Someone scrubbed this confession until it shone.' }, next: 2 },
           { label: 'Let them talk', sub: 'the ramble', do: { note: 'You let them ramble. Liars over-explain. The innocent get annoyed. This one is performing grief for someone else\'s crime.' }, next: 2 },
         ] },
-      { text: `Dusk is coming. The System waits with the patience of weather.\n\nThe verdict is yours. The consequences are everyone's.`,
+      { beat: 'contestConfessionClimax', text: `Dusk is coming. The System waits with the patience of weather.\n\nThe verdict is yours. The consequences are everyone's.`,
         choices: [
           { label: 'Name the real culprit', sub: 'the truth, whoever it hurts', do: { prize: true, fracture: 1, note: 'You name the real one — someone the village loves. The crowd goes silent. You were right. The village doesn\'t thank you.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Confirm the confession', sub: 'take the easy verdict', do: { trauma: 10, fracture: 2, note: `You confirm it. The System takes ${cname}. Later the water tests come back clean — there was never any poison. The village will remember what you did.` }, next: 'LOSE' },
@@ -1441,19 +1613,19 @@
   G._contestHoney = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThe hive hangs in the arena like a second moon, humming. The swarm moves as one body and it has opinions.\n\nHarvest the comb. Try to keep your face.`,
+      { beat: 'contestHoneyDeclare', text: intro + `\n\nThe hive hangs in the arena like a second moon, humming. The swarm moves as one body and it has opinions.\n\nHarvest the comb. Try to keep your face.`,
         choices: [
           { label: 'Smoke them first', sub: 'the old way', do: { note: 'You work the smoker until the air is grey and sweet. The swarm goes drowsy and forgiving. The old way is the old way for a reason.' }, next: 1 },
           { label: 'Go in fast', sub: 'speed', do: { dmg: [6, 12], note: 'You go in fast. The swarm disagrees with the plan, loudly, all over your arms.' }, next: 1 },
           { label: 'Sing to the swarm', sub: 'bass', do: { note: 'You sing low — the deepest note you have. The swarm settles onto the hum like it\'s furniture. The audience is confused and moved.', notability: 'showmanship' }, next: 1 },
         ] },
-      { text: `You're at the comb. It glows. The queen cell pulses at the heart of it — the prize and the death, side by side.\n\nThe swarm is watching you decide.`,
+      { beat: 'contestHoneyEscalate', text: `You're at the comb. It glows. The queen cell pulses at the heart of it — the prize and the death, side by side.\n\nThe swarm is watching you decide.`,
         choices: [
           { label: 'Cut the edge comb', sub: 'respectful', do: { kcal: 200, note: 'You cut only the edge comb. The swarm tolerates the tax. Respect is a currency they accept.' }, next: 2 },
           { label: 'Cut deep', sub: 'greedy', do: { kcal: 400, dmg: [8, 16], die: 0.06, note: 'You cut deep. The comb is heavy and golden. The swarm revises its opinion of you.' }, next: 2 },
           { label: 'Rob the queen cell', sub: 'the prize and the death', do: { kcal: 600, dmg: [16, 28], die: 0.20, note: 'You take the queen cell. The hive SCREAMS — one voice, ten thousand throats. You will never be welcome here again.' }, next: 2 },
         ] },
-      { text: `The comb is in your hands. The swarm is in the air.\n\nNow: the getaway.`,
+      { beat: 'contestHoneyClimax', text: `The comb is in your hands. The swarm is in the air.\n\nNow: the getaway.`,
         choices: [
           { label: 'Run with the comb', sub: 'speed', do: { prize: true, dmg: [10, 18], die: 0.1, note: 'You RUN. The swarm follows like weather. You make the gate with the comb and most of your skin.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Walk out slow, smoking', sub: 'dignity', do: { prize: true, note: 'You walk. Slow. Smoking. Unhurried. The swarm parts around you, confused by the lack of fear. The crowd is on its feet.', notability: 'contestWin' }, next: 'WIN' },
@@ -1469,19 +1641,19 @@
   G._contestSecrets = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThe dealer fans the deck. Every card has a face on it — someone watching. The System, dealing: "ANTE UP, CONTESTANT. THE CURRENCY IS TRUTH."\n\nFirst card's coming. Someone in the front row just went pale.`,
+      { beat: 'contestSecretsDeclare', text: intro + `\n\nThe dealer fans the deck. Every card has a face on it — someone watching. The System, dealing: "ANTE UP, CONTESTANT. THE CURRENCY IS TRUTH."\n\nFirst card's coming. Someone in the front row just went pale.`,
         choices: [
           { label: 'Draw', sub: 'play', do: { note: "First card: someone in the village has been lying about their age. The cameras find them. They smile like it's fine. It is not fine." }, next: 1 },
           { label: 'Fold now', sub: 'keep the peace', do: { note: 'You fold before the first card. The secrets stay buried. The village exhales as one. The System looks... disappointed in the ratings.' }, next: 'LOSE' },
           { label: 'Raise the stakes', sub: 'double or nothing', do: { note: 'Double or nothing. Two secrets per card. The village goes very quiet. The dealer smiles with all its faces.', notability: 'showmanship' }, next: 1 },
         ] },
-      { text: `The turn. The pot is secrets and it's getting deep.\n\nThe dealer's faces are all watching you. So is everyone you know.`,
+      { beat: 'contestSecretsEscalate', text: `The turn. The pot is secrets and it's getting deep.\n\nThe dealer's faces are all watching you. So is everyone you know.`,
         choices: [
           { label: 'Call', sub: 'steady', do: { note: 'You call. Second card: two villagers have been meeting at night. The cameras find the clearing. The village does the math before the cameras do.' }, next: 2 },
           { label: 'Bluff the System', sub: 'audacity', do: { die: 0.08, note: 'You bluff the house. The dealer tilts its head. It has never been bluffed. It is delighted. It is also keeping score.', notability: 'showmanship' }, next: 2 },
           { label: 'Peek at the deck', sub: 'cheat', do: { trauma: 4, note: 'You peek. The System catches you — and shows the whole village what you saw. Now everyone knows you cheat. The cards know too.' }, next: 2 },
         ] },
-      { text: `The river. Last card. The deck is warm in the dealer's hands, like it's alive.\n\nWhatever you do next, the village will remember what you traded.`,
+      { beat: 'contestSecretsClimax', text: `The river. Last card. The deck is warm in the dealer's hands, like it's alive.\n\nWhatever you do next, the village will remember what you traded.`,
         choices: [
           { label: 'Show your hand', sub: 'win, whatever it costs', do: { prize: true, fracture: 1, note: 'You win. Three secrets aired to the galaxy. The prize is real. So is the silence at dinner.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Fold at the river', sub: 'with the winning hand', do: { note: 'You fold holding the winner. Nobody will ever know. That\'s the point. The village never finds out what you saved them from.' }, next: 'LOSE' },
@@ -1506,26 +1678,26 @@
       ? `\n\n📚 What the silence taught you: it hunts for the thought you're ACTIVELY BURYING. Don't bury anything — feed it something boring on purpose. Loud, boring, relentless.`
       : `\n\nNobody who's been in the room will say what it does. The village's veterans just shake their heads and won't meet your eyes.`;
     const p2 = knows
-      ? { text: `It keeps reaching. You know its tells now — the pause before the buried one, the way the hum rises.\n\nThe decoy is holding. Barely. It knows there's something underneath the turnips.`,
+      ? { beat: 'contestQuietClimax', text: `It keeps reaching. You know its tells now — the pause before the buried one, the way the hum rises.\n\nThe decoy is holding. Barely. It knows there's something underneath the turnips.`,
           choices: [
             { label: 'Hold the turnips to the end', sub: 'dullness as armor', do: { prize: true, note: 'TURNIPS. SOIL. PLANTING DEPTH. ROW SPACING. You broadcast agricultural trivia at maximum inner volume for the rest of the hour. The System slows... confused. The galaxy is howling. The village is weeping with laughter.', notability: 'showmanship' }, next: 'WIN' },
             { label: 'Offer it the small shame freely', sub: 'honesty, on purpose', do: { prize: true, trauma: 4, unity: 1, note: 'You stop defending and hand it the small, human shame — the petty one, the one everybody has. The village hears it... and laughs WITH you. The relief is a physical thing. The System bows: "THANK YOU FOR THE TRUTH."', notability: 'contestWin' }, next: 'WIN' },
             { label: 'Clamp down at the last second', sub: 'panic', do: { trauma: 12, fracture: 1, die: 0.08, note: 'You know better. You do it anyway — clamp down on the real thought, the one about the System itself. It notices the clamping. It goes deeper. It reads it anyway, LOUDER, to everyone.' }, next: 'LOSE' },
           ] }
-      : { text: `It's past the surface now. Past the rehearsals. It's reaching for the thing you didn't prepare for.\n\nWhatever it finds next, the whole village hears.`,
+      : { beat: 'contestQuietClimax', text: `It's past the surface now. Past the rehearsals. It's reaching for the thing you didn't prepare for.\n\nWhatever it finds next, the whole village hears.`,
           choices: [
             { label: 'Take it', sub: 'whatever it is', do: { prize: true, trauma: 8, fracture: 1, note: 'It reads the real one — the food you set aside for yourself, from the communal pot, all winter. The village goes silent. The System rewards the honesty with a prize. The village is colder. Both things are true.', notability: 'contestWin' }, next: 'WIN' },
             { label: 'Beg it to stop', sub: 'on camera', do: { trauma: 6, note: 'You beg, out loud, on every screen in the galaxy. It pauses — curious, not kind — and moves on to something smaller. The clip of you begging will outlive you.', notability: 'showmanship' }, next: 'LOSE' },
             { label: 'Resist', sub: 'fight the room', do: { trauma: 12, fracture: 1, die: 0.08, note: 'You fight the room itself. The room wins. It takes the buried thought and reads it twice, in case anyone missed it the first time.' }, next: 'LOSE' },
           ] };
     return [
-      { text: intro + `\n\nA white room. One chair. No camera you can see — the room IS the camera.\n\nThe System, soft: "SIT. THINK. WE WILL READ ALOUD. ONE HOUR."`,
+      { beat: 'contestQuietDeclare', text: intro + `\n\nA white room. One chair. No camera you can see — the room IS the camera.\n\nThe System, soft: "SIT. THINK. WE WILL READ ALOUD. ONE HOUR."`,
         choices: [
           { label: 'Prepare a decoy', sub: knows ? 'think of turnips' : 'a dull, dull thought', do: { note: knows ? 'You pick the most boring thought you own and rehearse it. Turnips. Soil. Turnips again. You are ready to be profoundly dull.' : 'You pick a dull thought and rehearse it — something grey and uninteresting. You are ready to be profoundly boring.' }, next: 1 },
           { label: 'Empty your mind', sub: 'meditate', do: { trauma: 3, note: 'You breathe it all out — the fear, the plans, the names. The room hums, disappointed in advance.' }, next: 1 },
           { label: 'Own it', sub: 'let it come', do: { note: 'No tricks. Whatever it finds, it finds. Your jaw is set. The audience leans in — honesty is rare television.' }, next: 1 },
         ] },
-      { text: `The silence deepens. It starts reading — your voice, speaking your thoughts a half-second before you think them.\n\nThe village hears the rehearsal thoughts first. Then it starts reaching deeper.` + p1rule,
+      { beat: 'contestQuietEscalate', text: `The silence deepens. It starts reading — your voice, speaking your thoughts a half-second before you think them.\n\nThe village hears the rehearsal thoughts first. Then it starts reaching deeper.` + p1rule,
         choices: [
           { label: 'Stay with the plan', sub: 'steady', do: { note: 'You hold your posture — decoy, breath, or open hands. The hum rises. It is looking for the crack.' }, next: 2 },
           { label: 'Change tactics', sub: 'mid-stream', do: { trauma: 3, note: 'You switch strategies halfway. The System notices the switch. It likes switches — they mean there\'s something to find.' }, next: 2 },
@@ -1550,19 +1722,19 @@
       ? `\n\n📚 What the last dinner taught you: its palate runs BITTER and FERMENTED — things humans spit out. Sugar alarms it. Serve ugly. Serve honest.`
       : `\n\nNobody knows what it eats. The veterans who've hosted before just smile tightly and say "you'll see."`;
     return [
-      { text: intro + `\n\nA ship the size of weather settles over the haven. Out steps the ambassador: too many limbs, impeccable manners, and a retinue of cameras.\n\nIt is coming to DINNER. At your table. Tonight.` + palate,
+      { beat: 'contestGuestDeclare', text: intro + `\n\nA ship the size of weather settles over the haven. Out steps the ambassador: too many limbs, impeccable manners, and a retinue of cameras.\n\nIt is coming to DINNER. At your table. Tonight.` + palate,
         choices: [
           { label: 'Serve your best stew', sub: 'looks delicious', do: { note: 'Your finest stew, the good bowls, the good spoons. It looks like a feast. The ambassador regards it the way you\'d regard a dare.' }, next: 1 },
           { label: 'Serve the bitter roots', sub: knows ? 'you know its palate' : 'an ugly, bitter bowl', do: { note: knows ? 'Bitter roots, fermented stores, the ugly honest food. You serve it like it\'s the crown jewels. The ambassador\'s limbs still — interest.' : 'You serve a bowl of bitter roots and fermented mash. It is not pretty. The village winces. The ambassador leans in.' }, next: 1 },
           { label: 'Let the village cook decide', sub: 'many hands', do: { unity: 1, note: 'You open the kitchen to the whole village. Three generations argue about the menu. The ambassador watches the argument with something like delight. Families, it seems, are interesting everywhere.' }, next: 1 },
         ] },
-      { text: `The meal is served. The ambassador lifts the bowl with two limbs at once — and extends a third toward you.\n\nNobody knows what the gesture means. The village is screaming advice at the screen. You have to pick.${knows ? '\n\n📚 Mirror it exactly. Imitation reads as respect, not mockery — you learned that the hard way last time.' : ''}`,
+      { beat: 'contestGuestEscalate', text: `The meal is served. The ambassador lifts the bowl with two limbs at once — and extends a third toward you.\n\nNobody knows what the gesture means. The village is screaming advice at the screen. You have to pick.${knows ? '\n\n📚 Mirror it exactly. Imitation reads as respect, not mockery — you learned that the hard way last time.' : ''}`,
         choices: [
           { label: 'Shake it', sub: 'human custom', do: { trauma: 4, note: 'You shake the limb firmly, like a business deal. The limb goes rigid. The retinue inhales. Wrong custom. The ambassador withdraws the limb slowly, re-evaluating your entire species.' }, next: 2 },
           { label: 'Bow low', sub: 'respectful', do: { note: 'You bow, deep and sincere. Safe. The ambassador inclines — something — back. Respect is never wrong, but it\'s never interesting either.' }, next: 2 },
           { label: 'Mirror it exactly', sub: knows ? 'you know this one' : 'a guess', do: { unity: 1, note: 'You extend the same limb, the same angle, the same stillness. The ambassador freezes — then ripples with what the subtitles translate as delight. "THE HUMAN LEARNS," it announces. The village erupts.', notability: 'showmanship' }, next: 2 },
         ] },
-      { text: `The toast. The ambassador rises — which takes a while — and lifts its cup.\n\nWhatever happens now, the whole village tells this story for years. The galaxy too.`,
+      { beat: 'contestGuestClimax', text: `The toast. The ambassador rises — which takes a while — and lifts its cup.\n\nWhatever happens now, the whole village tells this story for years. The galaxy too.`,
         choices: [
           { label: 'Toast the village', sub: 'heart', do: { prize: true, unity: 1, note: 'You toast your people — by name, the living and the gone. The ambassador listens to every name. "INTERESTING," it pronounces, and the word lands like a benediction. The village will dine out on this for a decade.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Toast the System', sub: 'flattery', do: { fracture: 1, note: 'You toast the System\'s wisdom. The ambassador tilts — flattery, it seems, translates as flattery everywhere, and it finds it suspicious. The village hears you suck up on camera. Dinner is awkward after that.' }, next: 'LOSE' },
@@ -1586,19 +1758,19 @@
       ? `\n\n📚 What the last long night taught you: it circles the LIGHT, not you. Tend the lamp — a bright lamp makes a long night for it and a short one for you. Don't chase the sound.`
       : `\n\nThe veterans who've held this wall won't say what's down there. "Just don't leave the lamp," they say. They don't say it lightly.`;
     return [
-      { text: intro + `\n\nNight. The haven wall. One lamp, lit. Below in the dark, something large is circling — you can see the grass move where it passes.\n\nThe System: "HOLD UNTIL DAWN. DO NOT ABANDON THE LIGHT."` + circle,
+      { beat: 'contestVigilDeclare', text: intro + `\n\nNight. The haven wall. One lamp, lit. Below in the dark, something large is circling — you can see the grass move where it passes.\n\nThe System: "HOLD UNTIL DAWN. DO NOT ABANDON THE LIGHT."` + circle,
         choices: [
           { label: 'Check the lamp', sub: 'tend the flame', do: { note: 'You trim the wick, shield the flame, feed it oil. The light steadies — a small sun on the wall. Below, the circling pauses, considering.' }, next: 1 },
           { label: 'Memorize the dark', sub: 'learn the circle', do: { note: 'You stop watching the lamp and learn the dark instead: the rhythm of the circle, the pauses, the places it looks up. Knowledge is a kind of company.' }, next: 1 },
           { label: 'Count your breaths', sub: 'steel yourself', do: { trauma: -3, note: 'In, out. In, out. You make your breathing the only clock that matters. The night gets smaller. You get larger.' }, next: 1 },
         ] },
-      { text: `The circling tightens. The lamp flame leans away from the dark like it's afraid.\n\nIt's close enough now that you can hear it breathing — slow, patient, interested in the light.`,
+      { beat: 'contestVigilEscalate', text: `The circling tightens. The lamp flame leans away from the dark like it's afraid.\n\nIt's close enough now that you can hear it breathing — slow, patient, interested in the light.`,
         choices: [
           { label: 'Hold still and watch', sub: 'do your job', do: { kcal: -150, note: 'You stand your post. You watch. The thing circles, and circles, and does not come closer — the light holds it the way a wall holds weather.' }, next: 2 },
           { label: 'Sound the alarm', sub: 'wake the village', do: { trauma: 4, fracture: 1, note: 'You ring the bell. The village pours out armed and terrified — at nothing. The dark is empty. The thing, if it was ever there, is gone. They look at you. Dawn will be a long time coming.', notability: 'showmanship' }, next: 'LOSE' },
           { label: 'Call down to it', sub: 'desperate', do: { trauma: 8, die: 0.06, note: '"I SEE YOU," you shout into the dark. The circling stops. The silence that follows is worse. Then, from below, something almost like an answer.' }, next: 2 },
         ] },
-      { text: `Dawn. Grey light on the wall, the lamp burned low. The thing is gone — withdrawn with the dark, or never there at all.\n\nThe village is waking. They'll ask how the night went.`,
+      { beat: 'contestVigilClimax', text: `Dawn. Grey light on the wall, the lamp burned low. The thing is gone — withdrawn with the dark, or never there at all.\n\nThe village is waking. They'll ask how the night went.`,
         choices: [
           { label: 'Greet the dawn at your post', sub: 'held the line', do: { prize: true, unity: 1, kcal: -200, note: 'You are at your post when the sun comes up, lamp still lit. The village sees. Nobody says much — they don\'t need to. The bell rings for breakfast, and it rings for you.', notability: 'contestWin' }, next: 'WIN' },
           { label: 'Sleep standing up', sub: 'the last hour', do: { note: 'You doze in the last hour. The lamp gutters. The cameras catch the exact moment your head drops. The System plays it back at breakfast. The village is kind about it, which is worse.' }, next: 'LOSE' },
@@ -2156,12 +2328,12 @@
   G._contestGeneric = function(contest) {
     const intro = this._cxIntro(contest);
     return [
-      { text: intro + `\n\nThe rules are explained. They're complicated. The gist: don't lose.`,
+      { beat: 'contestGenericDeclare', text: intro + `\n\nThe rules are explained. They're complicated. The gist: don't lose.`,
         choices: [
           { label: 'Go all in', sub: 'commit', do: { dmg: [6, 14], note: 'You commit fully. The crowd appreciates commitment.' }, next: 1 },
           { label: 'Play it safe', sub: 'cautious', do: { note: 'You play cautious. Safe doesn\'t win, but it survives.' }, next: 1 },
         ] },
-      { text: `Midway. The standings are unclear and the System likes it that way.`,
+      { beat: 'contestGenericClimax', text: `Midway. The standings are unclear and the System likes it that way.`,
         choices: [
           { label: 'Push hard', sub: 'risk', do: { dmg: [8, 18], die: 0.06, note: 'You push. It costs. It might pay.' }, next: 'WIN' },
           { label: 'Hold steady', sub: 'safe', do: { note: 'You hold. Steady doesn\'t win headlines.' }, next: 'LOSE' },
@@ -2310,6 +2482,9 @@
     const isWatch = ac.participant && ac.participant !== 'player';
     const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
+    // RESOLVE AUDIO (Steve 2026-10-08): the contest's resolution beat lands
+    // whether it was won, lost, died, or refused.
+    try { this._cxBeat(this._cxB(ac.contestId, 'Resolve')); } catch (e) {}
     if (outcome === 'won') {
       // DRAMA (Steve 2026-10-07): winning is a TV moment — confetti + hero card
       try {
@@ -2452,6 +2627,7 @@
     this.sysSay(`📺 ${contest.name} — ${how}`);
     this.sysSay('📺 ' + this._contestDeathLine(contest, how, pname));
     this.sysSay(`📺 The Death Reel will be tasteful. It won't be.`);
+    try { this._cxBeat(this._cxB(ac.contestId, 'Resolve')); } catch (e) {}
     // DRAMA (Steve 2026-10-07): death on camera gets the sympathetic dim
     try {
       let integ = 0;
@@ -2499,6 +2675,7 @@
       this.sysSay(`📺 You said no. They didn't get asked.`);
       try { this._contestResolveOthers(ac); } catch (e) {}
     }
+    try { this._cxBeat(this._cxB(ac.contestId, 'Resolve')); } catch (e) {}
     ac.phase = 'done';
     this.state.activeContest = null;
     return { done: true, outcome: 'refused' };
@@ -2863,15 +3040,15 @@
         { label: `Bet 200 kcal on ${primary}`, sub: 'the System honors wagers', do: { bet: { amount: 200 } }, next: 2 });
     }
     return [
-      { text: beats[0],
+      { beat: this._cxB(contest.id, 'Declare'), text: beats[0],
         choices: [
           { label: 'Cheer them on', sub: 'loud — the cameras notice', do: { cheer: 0.05, notability: 'showmanship', note: `You cheer for ${pname}. They hear it. The cameras swing toward YOU for a second — the System files you under *interesting*.` }, next: 1 },
           { label: 'Watch silently', sub: 'tense', do: { note: 'You watch without a sound. Your hands hurt from gripping.' }, next: 1 },
           { label: 'Study the pattern', sub: 'learn without bleeding', do: { study: true, note: `You watch the way it moves — the tells, the rhythm. If you ever go in there yourself, you'll remember this.` }, next: 1 },
           { label: 'Look away', sub: 'can\'t watch', do: { note: 'You look away. The cameras catch it anyway. The audience understands.', trauma: 3 }, next: 1 },
         ] },
-      { text: beats[1], choices: phase1Choices },
-      { text: beats[2],
+      { beat: this._cxB(contest.id, 'Escalate'), text: beats[1], choices: phase1Choices },
+      { beat: this._cxB(contest.id, 'Climax'), text: beats[2],
         choices: [
           { label: 'Go to them', sub: 'after', do: { comfort: true, note: `You go to ${pname} after. Win or lose, they need a familiar face more than applause.` }, next: 'VERDICT' },
           { label: 'Give them space', sub: 'respect', do: { note: 'You give them space. The cameras move on. You don\'t.' }, next: 'VERDICT' },
