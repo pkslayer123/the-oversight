@@ -537,7 +537,8 @@
     "feather": "number?",
     "shell": "number?",
     "tusk": "number?",
-    "quill": "number?"
+    "quill": "number?",
+    "horn": "number?"
    },
    "killText": "string?"
   }

@@ -22286,6 +22286,11 @@
             }
           } else if (this.heronIs(m)) {
             // UNFOLD, second breath: impossibly tall, and the air goes staticky.
+            // TWO-HOOK SPLIT (Steve 2026-10-08): heronUnfold is the AGGRO voice
+            // — it fires at the strike-declare via tbAggroAudio (the unfold IS
+            // the tell); heronStatic is the DECLARE/WINDUP cue (the air going
+            // staticky, notice+declareAudio). Not a leftover — both hooks earn
+            // their keep. Do not "fix" one into the other.
             if (!tg.unfoldNarrated) {
               tg.unfoldNarrated = true;
               this.say('It unfolds further — impossibly tall. The air goes staticky; the creek goes flat. It has decided.');
@@ -23928,11 +23933,19 @@
             if (!stp) break;
             m.mx = stp.x; m.my = stp.y;
           }
-          this.say(this.pickFresh([
+          const ncRoostMsg = this.pickFresh([
             'Two eyes, forward-facing, unblinking. Closer now.',
             'Still no sound. That\'s the worst part.',
             'Its head rotates — too far — tracking you.',
-          ], 'ncRoost'));
+          ], 'ncRoost');
+          this.say(ncRoostMsg);
+          // JUDGMENT (Steve 2026-10-08): 'nightcourtTurn' waited for a roost
+          // moment, not a dive moment — the dive is DELIBERATELY silent ("the
+          // silence IS the telegraph") and firing a head-turn sound at the
+          // dive would break the fiction. The turn belongs to the perch: an
+          // owl rotates its head while ROOSTING, tracking. It fires only on
+          // the head-rotation beat (~1/3 of roost turns). The dive stays silent.
+          if (/head rotates/.test(ncRoostMsg)) this.tbAggroAudio(m);
         }
         this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
       }
@@ -25197,6 +25210,13 @@
         if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) {
           this.say(`${this.encSubject(m)} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
           this.tbDamage(foe.f.key, S.combat.roll(atk.damage), m.name);
+          // JUDGMENT (Steve 2026-10-08): the rush itself stays SILENT — no
+          // warning, just teeth (Steve killed the rush indicator 2026-10-06).
+          // The snarl breaks only AFTER first contact: the teeth are done,
+          // now you hear it. Once per wolf per fight — a pack's first contact
+          // is three snarls, not thirty. tbAggroAudio fires the data-driven
+          // encounter.aggroAudio ('wolfSnarl'); the rush telegraph is silence.
+          if (this.wolfIs(m) && !m.wolfSnarled) { m.wolfSnarled = true; this.tbAggroAudio(m); }
           this.tbLearnPattern(m);
         }
         this.tbEndCheck();
