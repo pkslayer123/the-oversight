@@ -9,6 +9,23 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
+
+// SEEDED HARNESS (2026-10-08): several convo modules draw on Math.random
+// (convoSelectWant adds unseeded noise at startConvo; some modules capture
+// Math.random at load time), which made beat-classification assertions flaky
+// (0–11 fails). Install a resettable PRNG BEFORE eval'ing modules so every
+// draw is deterministic per seed. Override with SEED env var.
+let SEED = process.env.SEED ? Number(process.env.SEED) : 20261008;
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+Math.random = mulberry32(SEED);
+console.log(`seed=${SEED}`);
 ['src/js/engine/state.js', 'src/js/engine/modifiers.js', 'src/js/engine/calories.js',
  'src/js/engine/day.js', 'src/js/engine/forage.js', 'src/js/engine/combat.js',
  'src/js/game.js', 'src/js/encounters.js', 'src/js/food.js', 'src/js/conversation.js',
@@ -57,9 +74,19 @@ function freshGame() {
 
   // === 3. BEAT CLASSIFICATION ===
   // Start a conversation, force different beats, check classification.
+  // NOTE: dialogueBeatKind checks the NPC's want FIRST (want-aware
+  // classification, rethink 2026-10-07) — an active want overrides
+  // thread/transcript cues. The forced beats below test the
+  // thread/transcript axis, so the randomly-selected want is cleared to
+  // isolate it. Want priority is asserted separately in 3b.
   const convo = Game.startConvo(vid);
   ok('convo started', !!convo && !convo.ended);
   const c = Game.convoGet(vid);
+  c.want = null;
+  // Clear question state too — dialogueBeatKind gives pendingQ/reactiveQ/
+  // genericQ top priority by design, and some seeds open with a reactive
+  // question (want_curious). The pendingQ-defer case is tested explicitly below.
+  c.pendingQ = null; c.reactiveQ = null; c.genericQ = null;
 
   // Force a share beat (topic thread).
   c.thread = 'village'; c.depth = 1;
@@ -83,7 +110,24 @@ function freshGame() {
   c.pendingQ = { id: 'q_test', answers: [{ id: 'a1', label: '"Yes."' }] };
   const kindQ = Game.dialogueBeatKind(vid);
   ok('pendingQ → question (defer)', kindQ === 'question', `got ${kindQ}`);
-  c.pendingQ = null;
+  // Question state has TOP priority in classification by design ("Questions
+  // defer to existing machinery") — clear ALL of it (not just pendingQ:
+  // some seeds open with reactiveQ/genericQ) so the remaining assertions
+  // test the thread/transcript beat axis alone.
+  c.pendingQ = null; c.reactiveQ = null; c.genericQ = null;
+
+  // === 3b. WANT PRIORITY (by design) ===
+  // An active mapped want overrides thread/transcript cues; a want with no
+  // mapping (e.g. just_company) falls through to transcript classification.
+  c.thread = 'village'; c.depth = 1;
+  c.transcript.push({ who: 'them', text: '"Honestly? People are holding together."' });
+  c.want = { id: 'ask_favor', def: null, stage: 0, fromSeed: false };
+  ok('want=ask_favor overrides transcript', Game.dialogueBeatKind(vid) === 'want', `got ${Game.dialogueBeatKind(vid)}`);
+  c.want = { id: 'seek_comfort', def: null, stage: 0, fromSeed: false };
+  ok('want=seek_comfort overrides transcript', Game.dialogueBeatKind(vid) === 'feel', `got ${Game.dialogueBeatKind(vid)}`);
+  c.want = { id: 'just_company', def: null, stage: 0, fromSeed: false };
+  ok('want=just_company falls through to transcript', Game.dialogueBeatKind(vid) === 'share', `got ${Game.dialogueBeatKind(vid)}`);
+  c.want = null;
 
   // === 4. RESPONSES ARE TO THE BEAT ===
   c.thread = 'village'; c.depth = 1;
