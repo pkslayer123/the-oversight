@@ -56,7 +56,8 @@ check('injected telegraph <style> block found', styleStart > 0 && styleEnd > sty
 
 const classes = Object.values(clsMap);
 for (const c of classes) {
-  check(`CSS rule exists for .cell.${c}`, styleBlock.includes(`.${c} {`),
+  check(`CSS rule exists for .cell.${c}`,
+    styleBlock.includes(`.${c} {`) || styleBlock.includes(`.${c},`),
     `missing .${c}`);
 }
 check('dead w2aSwarm CSS removed', !styleBlock.includes('w2aSwarm'));
@@ -82,7 +83,9 @@ check('no encircleLane class', !src.includes('encircleLane'));
 
 // ---------- paint parsing + distinctness ----------
 function parsePaint(cls) {
-  const re = new RegExp(`\\.cell\\.(?:beamLane\\.)?${cls} \\{([^}]*)\\}`, 's');
+  // Combined selectors share one rule body (e.g. `.cell.w2bPz, .cell.pzFlash {`)
+  // — match the class followed by `,`, space, or `{`, then the rule body.
+  const re = new RegExp(`\\.cell\\.(?:beamLane\\.)?${cls}[, {][^{]*\\{([^}]*)\\}`, 's');
   const mm = styleBlock.match(re);
   const css = mm ? mm[1] : '';
   const outline = (css.match(/outline:\s*([^;!]+)/) || [])[1] || '';

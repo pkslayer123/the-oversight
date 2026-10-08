@@ -13896,7 +13896,7 @@
     // below. Knowledge-gated like every bucket.
     // No 'rush' bucket (Steve 2026-10-06): rush patterns never declare, so
     // nothing could ever paint it — removed as unreachable dead code.
-    const out = { burst: new Set(), charge: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), beam: new Set(), heronStrike: new Set() };
+    const out = { burst: new Set(), charge: new Set(), biHot: new Set(), sbLock: new Set(), line: new Set(), single: new Set(), direct: new Set(), dozeLane: new Set(), pepBurst: new Set(), swarmHum: new Set(), resonantBurst: new Set(), flashBurst: new Set(), pzFlash: new Set(), ideaHeat: new Set(), beam: new Set(), heronStrike: new Set() };
     // WAVE 2 TELEGRAPH IDENTITY (Steve 2026-10-06/08): per-monster telegraph
     // identity — which monster each telegraph cell belongs to, so the grid
     // can render each monster's attack in its own visual voice. Covers every
@@ -13910,9 +13910,14 @@
     // and the hype_horn/hummice/belltoad/mirrormoth bursts all rendered as
     // the generic yellow lane / orange burst. Route per style to dedicated
     // buckets so each monster's attack reads in its own visual voice.
+    // WAVE 2 STYLE VOICES (Steve 2026-10-08): exposure (paparazzo) and
+    // detonation (bright_idea) now route to dedicated buckets too — the
+    // flash-bulb attack reads as a FLASH (white strobe, not a generic
+    // orange burst) and Eureka's early windup ticks read as heating embers
+    // (biHot white wins the last tick). pzFlash/ideaHeat.
     // Mirrors the W2A_IDS / wave-2-groupC per-id routing above. Unknown
     // styles fall through to the generic bucket (no crash, no silence).
-    const STYLE_BUCKETS = { bulldozer: 'dozeLane', pep: 'pepBurst', swarm: 'swarmHum', resonant: 'resonantBurst', flash: 'flashBurst' };
+    const STYLE_BUCKETS = { bulldozer: 'dozeLane', pep: 'pepBurst', swarm: 'swarmHum', resonant: 'resonantBurst', flash: 'flashBurst', exposure: 'pzFlash', detonation: 'ideaHeat' };
     try {
       const f = Game.tbfight;
       if (!f) return out;
@@ -13946,7 +13951,11 @@
         const _pat = ((m.mdef || {}).attack || {}).pattern || {};
         const _style = ptype === 'charge' ? _pat.chargeStyle : (ptype === 'burst' ? _pat.burstStyle : null);
         const _sb = _style && STYLE_BUCKETS[_style];
-        if (_sb && out[_sb]) {
+        // BIHOT PRECEDENCE (Steve 2026-10-08): the bright idea's last windup
+        // tick goes white-hot (biHot above) — the detonation style voice must
+        // NOT route that tick back into the ember bucket. The white-hot read
+        // wins.
+        if (_sb && out[_sb] && targetSet !== out.biHot) {
           targetSet = out[_sb];
           // DOZE ANGLE (Steve 2026-10-06): the bulldozer's ➤ arrows ride the
           // charge direction — first→last telegraph cell.
@@ -14318,6 +14327,8 @@
           (_tg.swarmHum.has(_k) ? ' swarmHum' : '') +
           (_tg.resonantBurst.has(_k) ? ' resonantBurst' : '') +
           (_tg.flashBurst.has(_k) ? ' flashBurst' : '') +
+          (_tg.pzFlash.has(_k) ? ' pzFlash' : '') +
+          (_tg.ideaHeat.has(_k) ? ' ideaHeat' : '') +
           (_tg.line.has(_k) ? ' lineCells' : '') +
           (_tg.heronStrike.has(_k) ? ' heronStrike' : '') +
           (_tg.single.has(_k) ? ' targetTile' : '') +
@@ -14338,9 +14349,9 @@
         if (_tg.biHot.has(_k)) {
           _w2cStyle = 'outline:3px solid #ffffff;outline-offset:-3px;background-color:rgba(255,255,255,.42);box-shadow:inset 0 0 20px rgba(255,255,255,.95)';
         }
-        // (delegate circle ring retired 2026-10-08 with delegate_beast: the
-        // delegate's circle beat is cue-only now, no grid cells — the
-        // Game.beastCircleKeys() helper no longer exists.)
+        // (delegate circle ring retired 2026-10-08: the delegate's circle beat
+        // is cue-only now, no grid cells — the circle-keys helper no longer
+        // exists.)
         const _mpKeys = (typeof Game.mpBeamKeys === 'function') ? Game.mpBeamKeys() : null;
         if (_mpKeys && _mpKeys.has(_k) && !_w2cStyle) {
           _w2cStyle = 'outline:2px solid #ffca7a;outline-offset:-2px;background-color:rgba(255,190,110,.16);box-shadow:inset 0 0 14px rgba(255,200,120,.45)';
@@ -14492,16 +14503,17 @@
     //    bright electric-violet outline, glowing violet fill (real color
     //    distance from lockOn purple), an expanding ripple ring and a ≋ glyph.
     //    (Boosted Steve 2026-10-08: the old violet-on-purple was invisible
-    //    at mobile size. The retired camera_swarm's w2aSwarm flashbulb class
-    //    was removed with the id; its strobe voice lives on in w2bPz.)
+    //    at mobile size. The paparazzo's flash now carries the strobe voice
+    //    (w2bPz; pzFlash is the exposure-style twin bucket).
     // Group B/C/D (Steve 2026-10-08) — every wave-2 monster with a grid
     // telegraph now renders in its own voice, no more generic sharing:
     //  w2bIdea: EUREKA WARM-UP — the idea heats as it thinks: radial ember
     //    glow on every windup tick except the last, which goes white-hot
     //    (biHot inline style; the class is withheld that tick so the
-    //    white-hot read wins).
+    //    white-hot read wins). ideaHeat is the detonation-style twin bucket.
     //  w2bPz: EXPOSURE — the paparazzo doesn't explode, it FLASHES: near-black
     //    cell, hard white strobe, viewfinder corner brackets (::before/::after).
+    //    pzFlash is the exposure-style twin bucket (STYLE_BUCKETS routing).
     //  w2bKite: THE BROADCAST — electric static discharge, not an explosion:
     //    jagged cyan-white static bands + ↯. (Area static — distinct from
     //    w2aStatic's violet VOICE on a single tile.)
@@ -14534,18 +14546,18 @@
   color: #e9cfff; text-shadow: 0 0 6px rgba(0,0,0,.9); pointer-events: none; }
 @keyframes w2aRipple { from { filter: brightness(1.0); } to { filter: brightness(1.5); } }
 @keyframes w2aRingPulse { from { transform: scale(.55); opacity: .9; } to { transform: scale(1.15); opacity: .15; } }
-.cell.w2bIdea { outline: 2px solid #ffb020 !important; outline-offset: -2px;
+.cell.w2bIdea, .cell.ideaHeat { outline: 2px solid #ffb020 !important; outline-offset: -2px;
   background: radial-gradient(circle at center, rgba(255,220,120,.55) 0, rgba(255,107,53,.30) 55%, rgba(255,107,53,.12) 100%) !important;
   animation: w2bIdeaHeat 1.0s infinite alternate; }
 @keyframes w2bIdeaHeat { from { filter: brightness(1.0); } to { filter: brightness(1.6); } }
-.cell.w2bPz { background-color: rgba(8,8,10,.80) !important;
+.cell.w2bPz, .cell.pzFlash { background-color: rgba(8,8,10,.80) !important;
   outline: 2px solid #ffffff !important; outline-offset: -2px;
   animation: w2bPzFlash 0.5s steps(2) infinite; }
 @keyframes w2bPzFlash { 0%, 49% { filter: brightness(1.0); } 50%, 100% { filter: brightness(2.2); } }
-.cell.w2bPz::before, .cell.w2bPz::after { content: ''; position: absolute;
+.cell.w2bPz::before, .cell.w2bPz::after, .cell.pzFlash::before, .cell.pzFlash::after { content: ''; position: absolute;
   width: 10px; height: 10px; pointer-events: none; }
-.cell.w2bPz::before { top: 3px; left: 3px; border-top: 3px solid #fff; border-left: 3px solid #fff; }
-.cell.w2bPz::after { bottom: 3px; right: 3px; border-bottom: 3px solid #fff; border-right: 3px solid #fff; }
+.cell.w2bPz::before, .cell.pzFlash::before { top: 3px; left: 3px; border-top: 3px solid #fff; border-left: 3px solid #fff; }
+.cell.w2bPz::after, .cell.pzFlash::after { bottom: 3px; right: 3px; border-bottom: 3px solid #fff; border-right: 3px solid #fff; }
 .cell.w2bKite { outline: 2px solid #a5f3fc !important; outline-offset: -2px;
   background: repeating-linear-gradient(115deg, rgba(165,243,252,.34) 0 4px, rgba(30,27,75,.55) 4px 9px) !important;
   animation: w2bKiteCrackle 0.4s steps(3) infinite; }
@@ -14592,7 +14604,7 @@
 @media (prefers-reduced-motion: reduce) {
   .cell.w2aStag, .cell.beamLane.w2aDrone, .cell.w2aStatic, .cell.w2bIdea,
   .cell.w2bPz, .cell.w2bKite, .cell.w2bUnder, .cell.w2bLord, .cell.w2bHeck,
-  .cell.w2bUnion, .cell.w2bMod { animation: none; }
+  .cell.w2bUnion, .cell.w2bMod, .cell.pzFlash, .cell.ideaHeat { animation: none; }
 }
 /* PLAYER-COINCIDENT TELEGRAPH ALERTS (Steve 2026-10-06): a telegraph landing
    on the player's own tile rings the marker itself — the tile fill alone
