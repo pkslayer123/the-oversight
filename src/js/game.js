@@ -136,7 +136,7 @@
       TICKS_PER_BATCH: 32,   // every 32 ticks, NPCs take a batch turn (they act)
       TICKS_PER_PART: 128,   // one day-part = 128 ticks of living
       TICKS_PER_DAY: 512,    // the day's full budget: 4 parts × 128 ticks
-      TRAVEL_TICKS: 32,      // node travel = 32 ticks (a "bigger tick")
+      TRAVEL_TICKS: 32,      // DEPRECATED (drifter break-it 2026-10-08): nothing reads this. Node travel is free (Steve 2026-10-05) — travelTo charges no ticks; kept only so old saves referencing TIME.TRAVEL_TICKS don't crash.
       NPC_BATCH_WANDER: 8,   // base wander squares per NPC per batch (× speed)
       PLAYER_SPEED: 1.0,     // baseline: your speed. NPC speed is relative.
       NPC_BATCH_MOVES: 32,   // deprecated alias — use TICKS_PER_BATCH
@@ -5472,8 +5472,14 @@
       }
       // Fast sim: each day, they forage (depleting the world), eat, maybe grow.
       for (let d = 0; d < daysToSim; d++) {
-        // the land heals overnight, like it does between your days — then they work it
-        try { this.regrowTiles(); } catch (e) {}
+        // the land heals overnight, like it does between your days — then they work it.
+        // DRIFTER BREAK-IT 2026-10-08: this used to call regrowTiles() raw, once per
+        // simmed day, for EVERY village approached. Approach A on day 30 (30 regrows),
+        // then B (30 more): the land healed twice for the same 30 days — free food
+        // from distance. Now it goes through the day-keyed watermark (regrowLand):
+        // the land is one map and heals once per elapsed day, no matter how many
+        // villages catch up over the same days.
+        try { this.regrowLand(village.day); } catch (e) {}
         this.simVillageDay(village);
       }
       village.generated = true;
@@ -12588,6 +12594,18 @@
       return species;
     },
 
+    // regrowLand: one day of the land healing, KEYED TO A DAY INDEX.
+    // DRIFTER BREAK-IT 2026-10-08: catchUpSim used to call regrowTiles() raw once
+    // per simmed day for every village approached — approach A on day 30, then B,
+    // and the land healed 60 days for 30 elapsed: free food from distance. The
+    // land is one map; it heals once per elapsed day no matter how many villages
+    // catch up over the same days. _landRegrowDay counts healed day-indices.
+    regrowLand(dayIdx) {
+      const s = this.state || {};
+      if ((s._landRegrowDay || 0) > dayIdx) return; // already healed for this day
+      this.regrowTiles();
+      s._landRegrowDay = dayIdx + 1;
+    },
     // regrowTiles: one day of the land healing. +1 stock/day up to maxStock;
     // heavily pressured land recovers slower; detail cells come back in 3 days.
     // Called by endDay() and by the distant-village catch-up sim per simulated day.
@@ -17428,8 +17446,10 @@
       } catch (e2) {}
       // regrow: extracted so the distant-village catch-up sim can run it per
       // simulated day too — their turf regrows while they live, not just when
-      // the player's own day turns.
-      this.regrowTiles();
+      // the player's own day turns. Day-keyed (drifter break-it 2026-10-08):
+      // endDay ends scholar.day, so this heals exactly that day — never one
+      // the catch-up sim already covered.
+      this.regrowLand(this.state.scholar.day || 0);
       // SLICE 2: System arrival and timed events.
       this.checkSystemArrival();
       this.checkTimedEvents();

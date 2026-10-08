@@ -688,10 +688,10 @@
     const goAround = `<button class="btn sm ghost" data-act="around">Go around</button>`;
     if (blockType === 'fallen_tree') {
       html = `<div class="card"><p>🪵 A fallen tree blocks the path.</p><div class="actions">
-        <button class="btn sm" data-act="cut">🪓 Cut through (1 part, 60 kcal, +2 wood)</button>${goAround}</div></div>`;
+        <button class="btn sm" data-act="cut">🪓 Cut through (a while, 60 kcal, +2 wood)</button>${goAround}</div></div>`;
     } else if (blockType === 'rubble') {
       html = `<div class="card"><p>🪨 Rubble chokes the path.</p><div class="actions">
-        <button class="btn sm" data-act="clear">🧹 Clear rubble (1 part, 40 kcal)</button>${goAround}</div></div>`;
+        <button class="btn sm" data-act="clear">🧹 Clear rubble (a while, 40 kcal)</button>${goAround}</div></div>`;
     } else if (blockType === 'washed_out' || blockType === 'creek') {
       const label = blockType === 'creek' ? 'The creek runs fast here.' : 'The path is washed out.';
       html = `<div class="card"><p>🌊 ${label}</p><div class="actions">
