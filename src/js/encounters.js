@@ -524,6 +524,18 @@
       constrictor: [ // RAT SNAKE: no hurry, no sound, just gone
         'flows away through the grass — no hurry, no sound, just gone.',
         'slides away through the grass.'
+      ],
+      // STILL/STEALTHY (Steve 2026-10-08): the two fleers that had no chase
+      // lines — owl and panther got the generic fallback. The owl leaves
+      // like it hunted: one beat of stillness too many, then a silent glide.
+      // The panther doesn't run at all. It just stops being there.
+      still: [ // SPOTTED OWL: the beat too long, then the silent drop
+        'holds one beat too long — then drops off its branch and glides, silent, banking away between the trunks.',
+        "drops off its branch and glides silently away."
+      ],
+      stealthy: [ // FLORIDA PANTHER: no run — just gone
+        "doesn't run — it simply stops being there. The grass settles behind nothing.",
+        'melts back into the brush, silent.'
       ]
     };
     // HELD-AT-EDGE LINES (Steve 2026-10-07): the chase turn where the animal
@@ -626,6 +638,17 @@
       constrictor: [ // RAT SNAKE: the old trick, still running
         "freezes at the treeline, hoping you'll walk past — the old trick, still running.",
         'goes still at the treeline.'
+      ],
+      // STILL/STEALTHY HOLD (Steve 2026-10-08): the treeline decision for
+      // the owl (unblinking — is it real?) and the panther (just eyes, then
+      // just dark — it has you measured, not scared).
+      still: [ // SPOTTED OWL: unblinking, deciding if you're real
+        "sits at the treeline, unblinking — it hasn't decided you're real yet.",
+        'sits at the treeline, watching you.'
+      ],
+      stealthy: [ // FLORIDA PANTHER: just eyes, then just dark
+        "hangs at the treeline's edge — just eyes, then just dark. It has you measured.",
+        "hangs at the treeline's edge, half-seen."
       ]
     };
     var pair = (hold ? HOLD : LINES)[beh];
