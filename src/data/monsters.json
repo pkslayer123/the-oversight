@@ -1698,7 +1698,7 @@
     },
     "weaknesses": [
       "kill from the tail forward \u2014 breaking the middle splits it in two",
-      "a split tail half tries to rejoin the head half \u2014 kill it before it does",
+      "a split tail half becomes its own snake \u2014 both halves hunt you",
       "the regroup beat is the window: it doesn't attack while reforming"
     ],
     "parts": [
@@ -2742,7 +2742,7 @@
         10,
         16
       ],
-      "telegraph": "The kite stops dead in the sky. Below it, the ground lights up in a grid \u2014 a square of your life, outlined in scan-light. It's framing the shot.",
+      "telegraph": "The kite stops dead in the sky. It's framing the shot.",
       "pattern": {
         "type": "burst",
         "radius": 1,
@@ -2783,7 +2783,7 @@
         "The kite tilts. On its screen, for a frame: you, from above. It is filming."
       ],
       "warn": [
-        "The screen goes white. Below it, the ground lights up in a grid. It's framing the shot."
+        "The screen goes white. It's framing the shot."
       ],
       "fearful": []
     },
