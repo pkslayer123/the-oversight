@@ -203,31 +203,31 @@ Real back-and-forth dialogue. Player always has response choices.
 ### convo-beats (`convo-beats.js`)
 Beat-tagged conversation. Every NPC line is tagged at generation time with its beat (offer, question, news, feeling, small). Replies are generated from beat + topic, never a generic grab-bag. Topic changes carry explicit bridge lines.
 
-**Provides:** threadBeatTag(thread) -> beat tag for a conversation thread, Game.beatOf(vid) -> current beat {tag, topic, line}, Game.bridgeLine(vid, fromTopic) -> contextual bridge when leaving a topic, dialogueResponses(vid) -> beat+topic aware replies with variation
+**Provides:** threadBeatTag(thread) -> beat tag for a conversation thread, Game.beatOf(vid) -> current beat {tag, topic, line}, Game.bridgeLine(vid, fromTopic) -> contextual bridge when leaving a topic, Game.beatMenuResponses(vid) -> beat+topic aware replies with variation
 
 **Rules:**
 - tag_at_source: every NPC line is tagged when generated, not classified after the fact (code: convo-beats.js wrapOpening/wrapThreadBeat, Steve 2026-10-06)
-- beat_drives_replies: reply options derive from (beat, topic), never from state flags alone (code: dialogueResponses, Steve 2026-10-06)
+- beat_drives_replies: reply options derive from (beat, topic), never from state flags alone (code: beatMenuResponses, Steve 2026-10-06)
 - bridge_on_shift: topic changes speak a bridge line tied to the old topic (code: bridgeLine, Steve 2026-10-06)
-- no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: dialogueResponses, Steve 2026-10-06)
+- no_repeat_replies: reply pools rotate via convoPickCycle — two conversations never show identical menus (code: beatMenuResponses, Steve 2026-10-06)
 - four_rules_kept: transcript_cap, one_beat_turns, tap_advance, history_view untouched (code: conversation.js ontology)
-- probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: dialogueResponses, Steve 2026-10-06)
+- probe_on_news_and_small: the "That doesn't add up" soft probe is offered on news and small beats (wherever the hard confrontation is reachable); withheld on feeling/offer beats (code: beatMenuResponses, Steve 2026-10-06)
 
 **Consumes:** village.villagers, state.convos, convoGet(vid), convoPickCycle(vid, key, pool), playerVoice()
 
 ### convo-dialogue (`convo-dialogue.js`)
-Dialogue-driven conversation. Every NPC beat generates its own response options — what a person would actually say back to THIS specific thing, not a topic grab-bag.
+Dialogue-driven conversation turn handling. Phase 1 (2026-10-08): the dead menu layers are gone — dialogueBeatKind/dialogueResponses and the convoChoices override were removed; the single menu builder is Game.buildMenu (conversation.js). This module now wraps Game.convoTurn with dlg: handlers and want post-turn processing.
 
-**Provides:** dialogueBeatKind(vid) -> classifies what the NPC just said/did, dialogueResponses(vid) -> 3-4 responses TO the current beat, convoTurn(vid, choiceId) -> advance the dialogue one beat, convoChoices(vid) -> dialogue-model choices (overrides conversation.js)
+**Provides:** convoTurn(vid, choiceId) -> dlg: beat handlers + want post-turn wrapper (menu building delegated to Game.buildMenu)
 
 **Rules:**
-- beat_drives_menu: responses derive from the NPC's last utterance, not from state flags (code: dialogueResponses, Steve 2026-10-06)
+- beat_drives_menu: responses derive from the NPC's last utterance, not from state flags (code: buildMenu, Steve 2026-10-06; Phase 1 unified 2026-10-08)
 - no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
-- subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: dialogueResponses, Steve 2026-10-06)
-- thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: dialogueResponses + dlg:more/dlg:react, 2026-10-06)
+- subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: buildMenu, Steve 2026-10-06)
+- thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: buildMenu + dlg:more/dlg:react, 2026-10-06)
 - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
 
-**Consumes:** village.villagers, state.convos, convoGet(vid), playerVoice()
+**Consumes:** village.villagers, state.convos, convoGet(vid), buildMenu(vid) / convoChoices(vid) (conversation.js — the single menu pipeline), playerVoice()
 
 ### convo-mood (`convo-mood.js`)
 Per-conversation emotional state (rapport). Warmth and tension shift as you talk; mood is derived from who they are now, never stored per villager.
