@@ -186,7 +186,10 @@ async function main() {
       const r1 = Game.apContestInterference({ participant: 'villager_x', participants: ['villager_x'] });
       if (r1 && r1.deathSave) watchSaves++;
       const ap2 = Game.apState(); ap2.lastLifelineDay = -999;
-      const r2 = Game.apContestInterference({ participant: 'player', participants: ['player'] });
+      // (break-it 2026-10-08: the player's death-roll call passes
+      // {forPlayer:true} — the verdict-style call without it must NOT fire
+      // the lifeline, even with the player in participants.)
+      const r2 = Game.apContestInterference({ participant: 'player', participants: ['player'] }, { forPlayer: true });
       if (r2 && r2.deathSave) playerSaves++;
     }
     assert(watchSaves === 0, 'lifeline never fires in watch mode over 200 trials (got ' + watchSaves + ')');

@@ -2513,7 +2513,14 @@
             saved = !!itf.deathSave;
           }
         } catch (e) { saved = false; }
-        if (saved) return this._contestEnd(ac, 'lost', false);
+        if (saved) {
+          // HONEST (break-it 2026-10-08): the save used to leave you at 0 HP —
+          // the next endDay's health<=0 check then killed you anyway ("the
+          // night"). A save that doesn't save is a lie. The killing blow
+          // missed: you live, barely.
+          s.health = Math.max(1, Math.round((this.maxHealth ? this.maxHealth() : 100) * 0.1));
+          return this._contestEnd(ac, 'lost', false);
+        }
         return this._contestDie(ac, 'The damage was too much.');
       }
     }
@@ -3343,7 +3350,10 @@
     // law holds: participation is unavoidable, interference never skips it).
     let apInt = null;
     try { if (this.apContestInterference) apInt = this.apContestInterference(ac) || null; } catch (e) { apInt = null; }
-    const apDeathSave = !!(apInt && apInt.deathSave);
+    // (break-it 2026-10-08: the old apDeathSave branch is gone — the
+    // benevolent lifeline fires only at the player's own death roll
+    // (forPlayer:true), so a verdict-path deathSave is always false. A
+    // villager's played death is never converted by a hidden roll.)
     // SADISTIC RIGGING (real 2026-10-08): was -0.12 win odds; now a real
     // performance penalty — the judges are against them.
     const apRig = (apInt && apInt.winMod) || 0;
@@ -3375,11 +3385,8 @@
       } else if (outcomes && outcomes[pid]) {
         const r = outcomes[pid];
         if (r.log) r.log.forEach(t => this.sysSay('📺 ' + t));
-        // ALIEN PLAYERS: benevolent lifeline still converts a death.
-        if (r.outcome === 'died' && apDeathSave) {
-          this._contestEnd(ac, 'lost', false);
-          outcome = 'lost';
-        } else if (r.outcome === 'died') {
+        // (break-it 2026-10-08: no lifeline conversion here — see above.)
+        if (r.outcome === 'died') {
           this._contestDie(ac, r.detail || 'The verdict came down hard.');
           outcome = 'died';
         } else {

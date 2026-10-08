@@ -26497,7 +26497,31 @@
       } else if (result === 'lost') {
         this.audioEvent('defeat');
         this.sysSay('OH. Oh no. ...The gamblers are very quiet.');
-        if (!this.over) { try { this.playerDeath('combat'); } catch (e) { this.over = true; } }
+        // BENEVOLENT LIFELINE (alien players, break-it 2026-10-08): the phase
+        // engine guards contest deaths in contestChoose, but arena deaths
+        // (Blood pit/gauntlet/siege) land here with NO lifeline check — the
+        // bonded ally's promise ("may save you from death") never fired in
+        // the arena, the deadliest contest path. Check before playerDeath.
+        let _arenaSaved = false, _arenaAc = null;
+        try {
+          const _arc = this.state && this.state.arenaContest;
+          _arenaAc = this.state && this.state.activeContest;
+          if (_arc && _arenaAc && typeof this.apContestInterference === 'function') {
+            _arenaSaved = !!((this.apContestInterference(_arenaAc, { forPlayer: true }) || {}).deathSave);
+          }
+        } catch (e) { _arenaSaved = false; }
+        if (_arenaSaved) {
+          // The killing blow misses. You live — barely. The contest ends
+          // 'lost', not 'died': clear the arena routing so _contestArenaAfter
+          // doesn't run its death branch after this.
+          try {
+            const _sS = this.state.scholar || {};
+            const _mh = (typeof this.maxHealth === 'function') ? this.maxHealth() : 100;
+            _sS.health = Math.max(1, Math.round(_mh * 0.1));
+          } catch (e2) {}
+          try { this.state.arenaContest = null; } catch (e3) {}
+          try { this._contestEnd(_arenaAc, 'lost', false); } catch (e4) {}
+        } else if (!this.over) { try { this.playerDeath('combat'); } catch (e5) { this.over = true; } }
       }
       } finally {
         this.tbfight = null;

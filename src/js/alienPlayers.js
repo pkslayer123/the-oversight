@@ -75,7 +75,7 @@
 //   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); benevolent help is deniable and subtle (code: alienPlayers.js)
 //   - (favor) fan favor -100..100; high favor improves care packages and contest lean; low favor makes the crowd bloodthirsty (code: alienPlayers.js)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
-//   - (lifeline_player_only) the benevolent lifeline fires only when the player is taken — the verdict honors deathSave solely for the player, so firing it in watch mode promised a miss it could never deliver (code: apContestInterference, Steve 2026-10-08); break-it 2026-10-08: the verdict-only call site could never satisfy playerIn, so the lifeline was dead in real play — contestChoose now calls apContestInterference(ac, {forPlayer:true}) at the player's own death roll, converting the death into a loss (sequence still runs) (code: contestChoose)
+//   - (lifeline_player_only) the benevolent lifeline fires only at the player's own death roll — apContestInterference(ac, {forPlayer:true}) from contestChoose's killing-blow check and from tbEnd's arena-loss branch (break-it 2026-10-08: arena deaths never checked the lifeline). The save converts death into 'lost' and leaves the player barely alive (break-it 2026-10-08: 0-HP saves died at the next endDay). The verdict call never passes forPlayer, so deathSave is always false there — a villager's played death is never converted by a hidden roll (break-it 2026-10-08: the old playerIn-only gate fired the lifeline at VERDICT, wasting the 7-day cooldown on a non-death and erasing a villager's earned death) (code: apContestInterference, contestChoose, tbEnd)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
 //   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
@@ -258,12 +258,19 @@
         if (!chosen && pool.length) chosen = pool[pool.length - 1].p.id;
       }
 
-      if (chosen) ap.lastHuntDay[chosen] = day;
+      // (break-it 2026-10-08: lastHuntDay is recorded by apStartEncounter on
+      // success — the single source of truth, covering single rolls, group
+      // chains, and debug starts alike.)
       return chosen;
     },
 
     // Ability kits: each combat persona gets 6 abilities that fit their style.
-    // These are real abilities from the game's pool — they fight like players.
+    // HONEST (break-it 2026-10-08): the old comment claimed "these are real
+    // abilities from the game's pool — they fight like players." The kit ids
+    // must be real pool ids (two weren't: pattern_recognition,
+    // forage_identification), but the kit itself is persona flavor data
+    // carried on the fighter — the bespoke tbAlienTurn AI does not consume
+    // ability ids. Don't claim engine use the code doesn't have.
     // DATA-DRIVEN (Steve 2026-10-07): kits live in alienPlayers.json; the
     // hardcoded table below is a fallback for unknown pids only.
     apAbilityKit: function (pid) {
@@ -271,21 +278,21 @@
       if (p && Array.isArray(p.abilityKit)) return p.abilityKit;
       var KITS = {
         // Vex: the hunter — tracking, patience, the perfect shot
-        'vex_marlowe': ['tracker', 'patient_aim', 'soft_step', 'game_sense', 'adrenaline_control', 'pattern_recognition'],
+        'vex_marlowe': ['tracker', 'patient_aim', 'soft_step', 'game_sense', 'adrenaline_control', 'eagle_eye'],
         // Sable: the despair collector — fear, presence, breaking wills
-        'countess_sable': ['adrenaline_control', 'pattern_recognition', 'soft_step', 'game_sense', 'patient_aim', 'diplomat'],
+        'countess_sable': ['adrenaline_control', 'eyes_in_back', 'soft_step', 'game_sense', 'patient_aim', 'diplomat'],
         // Rax: the pain researcher — precision wounding, staying power
-        'rax_dentist': ['triage', 'steady_hands', 'patient_aim', 'adrenaline_control', 'pattern_recognition', 'soft_step'],
+        'rax_dentist': ['triage', 'steady_hands', 'patient_aim', 'adrenaline_control', 'third_eye', 'soft_step'],
         // Pip: the tourist — enthusiastic, random, surprisingly lucky
         'pip_quindle': ['scrounger', 'soft_step', 'game_sense', 'adrenaline_control', 'squirrel_friend', 'rain_dancer'],
         // Sarge: the veteran — solid, honorable, fundamentals
-        'sarge': ['adrenaline_control', 'patient_aim', 'triage', 'steady_hands', 'pattern_recognition', 'game_sense'],
+        'sarge': ['adrenaline_control', 'patient_aim', 'triage', 'steady_hands', 'night_eyes', 'game_sense'],
         // Fenwick: the researcher — observation, analysis, adaptation
-        'dr_fenwick': ['pattern_recognition', 'game_sense', 'patient_aim', 'soft_step', 'adrenaline_control', 'forage_identification'],
+        'dr_fenwick': ['evidence_board', 'game_sense', 'patient_aim', 'soft_step', 'adrenaline_control', 'taste_vision'],
         // Old Tam: the atoner — deliberately holds back (throws fights)
         'old_tam': ['adrenaline_control', 'triage', 'game_sense', 'soft_step', 'patient_aim', 'generous'],
       };
-      return KITS[pid] || ['adrenaline_control', 'game_sense', 'soft_step', 'patient_aim', 'pattern_recognition', 'triage'];
+      return KITS[pid] || ['adrenaline_control', 'game_sense', 'soft_step', 'patient_aim', 'eagle_eye', 'triage'];
     },
 
     // Alien tech: 1-2 pieces per persona that break normal rules.
@@ -425,6 +432,12 @@
           // Fallback: use the standard combat flow
           this.say('(The stranger raises their hands. This is going to hurt.)');
         }
+        // SPORTING RULES (break-it 2026-10-08): a hunt happened — record it.
+        // The roll used to record lastHuntDay before the fight started (and
+        // the group chain never recorded it at all), so chained personas
+        // could be re-rolled by the single pool the very next day. Record on
+        // success only: a refused start is not a hunt.
+        try { this.apState().lastHuntDay[pid] = (this.state.scholar || {}).day || 1; } catch (e2c) {}
         return true;
       } catch (e) {
         return false;
@@ -879,7 +892,7 @@
     // with favor. Deepens the existing "wacky and available, not core" rule.
     apCarePackage: function () {
       var ap = this.apState();
-      var favor = ap.favor || 0;
+      var favor = this.apFavor(); // wired (break-it 2026-10-08): apFavor had no runtime callers
       if (favor < 20) return false; // the crowd doesn't love you enough yet
       var day = (this.state.scholar || {}).day || 1;
       if (day - (ap.lastPackageDay || -999) < 4) return false; // max 1 per 4 days
@@ -958,7 +971,7 @@
       if (Math.random() > 0.4) return false;
 
       ap.lastFeedDay = day;
-      var favor = ap.favor || 0;
+      var favor = this.apFavor(); // wired (break-it 2026-10-08)
       var msgs = [];
 
       // Rival gossip (sadistic pilots you've met talk about you)
@@ -1062,15 +1075,18 @@
 
       // BENEVOLENT LIFELINE: a bonded ally may save you from death.
       // HONEST (Steve 2026-10-08): the note promises "the killing blow
-      // misses", and the verdict honors deathSave ONLY for the player
-      // (pid === 'player' in _contestVerdict). In watch mode the player is
-      // not in the arena, so the promise could never land — the feed lied,
-      // then a villager died on camera. The lifeline fires only when the
-      // player is taken: contestChoose calls with {forPlayer:true} at the
-      // player's own death roll (break-it 2026-10-08 — the verdict-only
-      // call site could never satisfy playerIn).
+      // misses". The lifeline fires ONLY at the player's own death roll —
+      // contestChoose calls with {forPlayer:true} at the killing blow, and
+      // tbEnd's arena-loss branch calls the same way (break-it 2026-10-08).
+      // HONEST (break-it 2026-10-08): the old gate was `playerIn` alone, so
+      // _contestVerdict's call (no forPlayer) fired the lifeline for the
+      // player's own contest reaching VERDICT — consuming the 7-day cooldown
+      // and announcing "the killing blow misses" when the player wasn't
+      // dying (the verdict auto-resolves the player as 'lost'), then
+      // converting a VILLAGER's real played death into 'lost' via a hidden
+      // 40% roll. Contests are played, not RNG: gate on forPlayer.
       var playerIn = ac && (((ac.participants || []).indexOf('player') >= 0) || ac.participant === 'player');
-      if (!result.note && playerIn) {
+      if (forPlayer && !result.note && playerIn) {
         for (var pid2 in ap.met) {
           var per2 = this.apPersona(pid2);
           if (!per2 || per2.disposition !== 'benevolent') continue;
@@ -1090,7 +1106,7 @@
       // Verdict-only: it bends verdict win odds, which don't exist on the
       // playable path (break-it 2026-10-08).
       if (!forPlayer) {
-      var favor = ap.favor || 0;
+      var favor = this.apFavor(); // wired (break-it 2026-10-08)
       if (favor >= 40) {
         result.winMod += 0.08;
         this.sysSay('📺 The crowd is CHANTING your name. The judges can hear it. (+8% — the people love you)');
@@ -2061,6 +2077,10 @@
         if (Math.random() >= chance) return false;
         if (f) f._beamCooldown = 3;
         // FIRE THE BEAM
+        // SINGLE SOURCE OF TRUTH (break-it 2026-10-08): apHasBeam decides
+        // who fields a beam weapon — not a second hardcoded list. The table
+        // below is display names only; the gate above is the truth.
+        if (!this.apHasBeam(pid)) return false;
         var beamNames = {
           'vex_marlowe': 'Vex\'s phase lance',
           'countess_sable': 'Sable\'s dread beam',
@@ -2068,10 +2088,8 @@
           'pip_quindle': 'Pip\'s tourist zapper (it\'s set to "stun"! mostly)',
           'sarge': 'Sarge\'s service beam',
           'dr_fenwick': 'Fenwick\'s specimen beam',
-          'old_tam': null, // Tam doesn't use beams. He fights fair.
         };
-        var beamName = beamNames[pid];
-        if (!beamName) return false; // Tam won't (see apHasBeam)
+        var beamName = beamNames[pid] || (per.name + '\'s beam weapon');
         this.say('🔆 ' + per.name + ' raises ' + beamName + '. The air tastes like copper.');
         // Player is the target (beam weapons are for the player)
         this.apBeamHit('player', 0, beamName, { damageType: 'alien_beam' });

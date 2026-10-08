@@ -67,7 +67,7 @@
       "soft_step",
       "game_sense",
       "adrenaline_control",
-      "pattern_recognition"
+      "eagle_eye"
     ],
     "alienTech": [
       {
@@ -147,7 +147,7 @@
     "experience": "veteran",
     "abilityKit": [
       "adrenaline_control",
-      "pattern_recognition",
+      "eyes_in_back",
       "soft_step",
       "game_sense",
       "patient_aim",
@@ -234,7 +234,7 @@
       "steady_hands",
       "patient_aim",
       "adrenaline_control",
-      "pattern_recognition",
+      "third_eye",
       "soft_step"
     ],
     "alienTech": [
@@ -401,7 +401,7 @@
       "patient_aim",
       "triage",
       "steady_hands",
-      "pattern_recognition",
+      "night_eyes",
       "game_sense"
     ],
     "alienTech": [
@@ -476,12 +476,12 @@
     },
     "experience": "veteran",
     "abilityKit": [
-      "pattern_recognition",
+      "evidence_board",
       "game_sense",
       "patient_aim",
       "soft_step",
       "adrenaline_control",
-      "forage_identification"
+      "taste_vision"
     ],
     "alienTech": [
       {

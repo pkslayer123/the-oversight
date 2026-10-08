@@ -105,7 +105,11 @@ async function main() {
       Math.random = () => 0.0;
       try { pid = Game.apRollEncounter(); } catch (e) {}
       Math.random = real;
-      if (pid) picks.push({ pid: pid, day: 60 + i });
+      // Production always pairs roll -> apStartEncounter (encounters.js,
+      // debug-scenarios.js); the start records lastHuntDay on success
+      // (break-it 2026-10-08: single source of truth, covers group chains).
+      // Model the paired start here so the sporting filter sees the hunt.
+      if (pid) { try { Game.apState().lastHuntDay[pid] = 60 + i; } catch (e2) {} picks.push({ pid: pid, day: 60 + i }); }
     }
     console.log('  picks: ' + picks.map(p => p.pid + '@' + p.day).join(','));
     let violation = null;
