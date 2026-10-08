@@ -1,0 +1,1635 @@
+== SEED 7 ==
+
+==== ACT 0 — pool & gating ====
+   pool: pit, gauntlet, duel, drop, starve, moot, lies, cookfight, fetch, hide, box, pattern, whoate, informant, calorie_run, pantry_raid, wheel, lottery, tithe, siege, maw, oath, beastmaster, riddle, confession, honey, secrets, quiet, guest, vigil, sorting, witness, cache, longodds, price, impress, exchange, auction, lockpick, wrongmap, alibi, echo, tidepool, windfall
+
+==== ACT 1 — static branching analysis (theater vs real choices) ====
+
+   branching table (id | cat | risk | phases | choices | distinct-nexts | effects):
+   pit | blood | high | 3 | 9 | 4 | die,dmg,notability,note,prize
+   gauntlet | blood | extreme | 3 | 9 | 4 | die,dieWounds,dmg,kcal,note,prize
+   duel | blood | high | 2 | 6 | 3 | die,dmg,note,prize,trauma
+   drop | endurance | high | 3 | 9 | 4 | die,dmg,kcal,note,prize
+   starve | endurance | medium | 3 | 9 | 4 | dmg,notability,note,prize
+   moot | moot | medium | 3 | 9 | 4 | dmg,notability,note,prize,trauma
+   lies | moot | low | 3 | 9 | 4 | dmg,notability,note,prize,trauma
+   cookfight | weird | medium | 3 | 9 | 4 | die,dmg,notability,note,prize
+   fetch | weird | low | 3 | 9 | 4 | die,dmg,notability,note,prize
+   hide | weird | extreme | 3 | 9 | 4 | die,dmg,note,prize
+   box | puzzle | medium | 3 | 9 | 4 | die,dmg,notability,note,prize
+   pattern | puzzle | low | 3 | 9 | 4 | die,dmg,notability,note,prize
+   whoate | detective | low | 3 | 9 | 4 | die,dmg,notability,note,prize,trauma
+   informant | detective | medium | 3 | 9 | 4 | die,dmg,notability,note,prize,trauma
+   calorie_run | forage | medium | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize
+   pantry_raid | forage | high | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize
+   wheel | chance | medium | 3 | 9 | 4 | die,dmg,notability,note,prize
+   lottery | chance | low | 3 | 9 | 4 | die,dmg,notability,note,prize
+   tithe | blood | extreme | 3 | 9 | 4 | die,dmg,notability,note,prize,trauma
+   siege | blood | extreme | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize,trauma
+   maw | endurance | extreme | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize
+   oath | moot | high | 3 | 9 | 4 | die,notability,note,prize,trauma
+   beastmaster | weird | high | 3 | 9 | 4 | die,dmg,notability,note,prize
+   riddle | puzzle | high | 3 | 9 | 4 | die,notability,note,prize,trauma
+   confession | detective | high | 3 | 9 | 4 | die,fracture,notability,note,prize,trauma
+   honey | forage | high | 3 | 9 | 3 | die,dmg,kcal,notability,note,prize,unity
+   secrets | chance | medium | 3 | 9 | 4 | die,fracture,notability,note,prize,trauma
+   quiet | moot | high | 3 | 9 | 4 | die,fracture,notability,note,prize,trauma
+   guest | weird | medium | 3 | 10 | 4 | die,fracture,kcal,notability,note,prize,trauma,unity
+   vigil | endurance | high | 3 | 9 | 4 | die,fracture,kcal,notability,note,prize,trauma,unity
+   sorting | puzzle | high | 3 | 12 | 4 | dmg,fracture,kcal,notability,note,prize,trauma,unity
+   witness | detective | high | 3 | 9 | 4 | fracture,notability,note,prize,trauma,unity
+   cache | forage | medium | 3 | 9 | 4 | die,dmg,fracture,kcal,notability,note,prize,unity
+   longodds | chance | medium | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize,trauma
+   price | moot | extreme | 3 | 9 | 4 | die,fracture,notability,note,prize,trauma
+   impress | weird | medium | 3 | 9 | 4 | die,dmg,notability,note,prize,trauma
+   exchange | endurance | high | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize
+   auction | chance | high | 3 | 9 | 4 | die,dmg,notability,note,prize,trauma
+   lockpick | puzzle | high | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize,trauma
+   wrongmap | puzzle | medium | 3 | 9 | 4 | kcal,notability,note,prize,trauma,unity
+   alibi | detective | medium | 3 | 9 | 4 | fracture,notability,note,prize,trauma,unity
+   echo | detective | high | 3 | 9 | 4 | fracture,notability,note,prize,trauma,unity
+   tidepool | forage | high | 3 | 9 | 4 | die,dmg,kcal,notability,note,prize,trauma
+   windfall | forage | medium | 3 | 9 | 4 | kcal,notability,note,prize,trauma,unity
+
+==== ACT 2 — every contest, played TAKEN ====
+
+==== TAKEN — pit (The Pit, blood/high, played brave) ====
+   [p0] 📺 The Pit. Thrown into an arena with a wave-appropriate beast. Kill or be killed. The audience votes on weapons.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The arena floor is sand and old bone. The gate across from you rattles. Something in there is breathi…
+      ? Spear | Net and knife | Nothing  → Net and knife
+   [p1] The gate slams up. A wave-appropriate beast comes out low and fast — it has been promised food.
+
+It circles. It's deciding how you die.
+      ? Hold your ground | Charge it | Throw sand  → Hold your ground
+   [p2] It's bleeding. You're bleeding. The crowd can smell both.
+
+The beast gathers itself for one last rush. This is the moment the Death Reel loves.
+      ? Meet the rush | Sidestep and strike | Play dead  → Sidestep and strike
+   ⇒ outcome=WON phases=3 dmg~29 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — gauntlet (Gauntlet, blood/extreme, played cautious) ====
+   [p0] 📺 Gauntlet. Three waves, no rest. Survive all three and the crowd goes wild. Most don't see wave two.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 Gauntlet. Three waves, no rest. Survive all three and the crowd goes wild. Most don't see wave two.
+
+Almost nobody walks away from this one.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Three gates. Three waves. No rest between.
+
+The System: "WAVE ONE. TRY TO LOOK SURPRISED."
+
+The System adds…
+      ? Kill it fast | Wear it down | Use the arena  → Wear it down
+   [p2] WAVE TWO. Bigger. It has seen the first wave's corpse and learned nothing, which is worse.
+
+Your arms are heavy. The crowd chants your name wrong.
+      ? All offense | Desperate defense | Beg the crowd  → Desperate defense
+   [p3] WAVE THREE. The gate opens and what comes out is wrong in ways the first two weren't.
+
+This is the one the Death Reel is for.
+
+📺 You are nicked and winded. It could be worse. (Damage taken so far: 21.)
+📺 The System helpfully displays your odds. It wants you to know.
+      ? Stand and fight | Run the clock | Offer yourself  → Run the clock
+   ⇒ outcome=WON phases=4 dmg~48 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — duel (Duel, blood/high, played middle) ====
+   [p0] 📺 Duel. You vs another contestant. Not to the death — to the yield. But accidents happen.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Your opponent is another contestant — scared, like you, but hiding it worse. Not to the death. To the yield.
+
+But accidents …
+      ? Offer a deal | Study them | Attack first  → Study them
+   [p1] They yield — or they don't. The ref-drone hovers, sensors hot.
+
+The crowd wants blood. The System wants a story. You want to go home.
+      ? Press the advantage | Accept their yield | Take the dive  → Accept their yield
+   ⇒ outcome=WON phases=2 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — drop (The Drop, endurance/high, played brave) ====
+   [p0] 📺 The Drop. Dropped somewhere with nothing. First back to the beacon eats. The others... walk.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Drop. Dropped somewhere with nothing. First back to the beacon eats. The others... walk.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+They drop you on a ridge with nothing. The beacon is three miles through snow and attitude.
+
+Two others hit the ground …
+      ? Move fast | Forage as you go | Follow the others  → Forage as you go
+   [p2] Night. The cold is a second opponent. One of the others is crying, quietly, like it's a secret.
+
+The beacon blinks, impossibly far.
+      ? Keep moving at night | Shelter and shiver | Eat snow  → Shelter and shiver
+   [p3] The beacon is close enough to hear. One of the others is ahead of you — limping, but ahead.
+
+This is the part the promos are made of.
+      ? Sprint the last mile | Pace it home | Collapse short  → Pace it home
+   ⇒ outcome=WON phases=4 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — starve (Hollow Belly, endurance/medium, played cautious) ====
+   [p0] 📺 Hollow Belly. No food for three days. The System watches who breaks first. Water provided. Dignity not.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Three days. No food. Water provided. Dignity not.
+
+Four of you in the white room. The cameras ne…
+      ? Sleep it off | Drink water constantly | Meditate  → Drink water constantly
+   [p1] Day two. Someone is talking to their food hallucinations. The System zooms in.
+
+Your stomach has filed a formal complaint.
+      ? Steal a sip of broth | Share your water | Chew your sleeve  → Share your water
+   [p2] Day three. The doors will open at dusk. Whoever looks the least broken wins the audience.
+
+You are very broken. So is everyone.
+      ? Walk out smiling | Help another up | Crawl out  → Help another up
+   ⇒ outcome=WON phases=3 dmg~7 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — moot (The Moot, moot/medium, played middle) ====
+   [p0] 📺 The Moot. Televised trial. Defend yourself against accusations (true or not). The audience is the jury.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Moot. Televised trial. Defend yourself against accusations (true or not). The audience is the jury.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Televised trial. The accusations may be true or not — the audience is the jury either way.
+
+The …
+      ? Tell the truth | Lie beautifully | Refuse to answer  → Lie beautifully
+   [p2] A witness is called. It's someone from your village. They look at you, then at the cameras, then back.
+
+What they say next matters enormously.
+      ? Double down | Confess | Turn it around  → Confess
+   [p3] Closing statements. The audience votes with their attention — you can feel it like heat.
+
+This is the moment.
+      ? The whole truth | The perfect lie | Walk out  → The perfect lie
+   ⇒ outcome=WON phases=4 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — lies (Lie Detector, moot/low, played brave) ====
+   [p0] 📺 Lie Detector. Answer questions. The System knows when you lie. The audience loves when you do.
+
+The audience expects entertainment, not blood.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Two chairs. One scanner. The System knows when you lie — and the audience lives for it.
+
+First question's…
+      ? Tell the truth | Lie beautifully | Refuse to answer  → Lie beautifully
+   [p1] Harder questions now. Personal ones. The scanner hums.
+
+Your opponent just lied badly about something small. The crowd smells blood.
+      ? Double down | Confess | Turn it around  → Confess
+   [p2] Final question. The big one. The scanner is hot.
+
+Whatever you say next will be clipped and replayed for years.
+      ? The whole truth | The perfect lie | Walk out  → The perfect lie
+   ⇒ outcome=WON phases=3 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — cookfight (Cooking With Teeth, weird/medium, played cautious) ====
+   [p0] 📺 Cooking With Teeth. Cook a meal. The ingredients fight back. Presentation matters. Survival matters more.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The ingredients are in cages. They are looking at you.
+
+Cook a meal. Presentation matters. Sur…
+      ? Befriend the ingredients | Assert dominance | Ask the audience  → Assert dominance
+   [p1] Something is out of its cage. The audience is delighted. You are not.
+
+Dinner is fighting back.
+      ? Wrestle it | Negotiate | Set it free  → Negotiate
+   [p2] Plating. The judges lean in — three aliens who have never tasted anything.
+
+What you serve now defines you across the galaxy.
+      ? Serve with love | Serve with flair | Serve yourself  → Serve with flair
+   ⇒ outcome=WON phases=3 dmg~11 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — fetch (Bring Us Something Interesting, weird/low, played middle) ====
+   [p0] 📺 Bring Us Something Interesting. One mile radius. One hour. Most interesting thing wins. Judged by beings who have never touched grass.
+
+The audience expects entertainment, not blood.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+One mile radius. One hour. Most interesting thing wins.
+
+Judged b…
+      ? Go far | Go weird | Go obvious  → Go weird
+   [p1] Half the hour gone. Your find is... okay. Someone else is carrying something that glows.
+
+The judges are bored. Bored judges are dangerous judges.
+      ? Double down on weird | Sabotage the glowing one | Present with confidence  → Sabotage the glowing one
+   [p2] Time. You present your find to the judges.
+
+They turn it over with instruments. They confer in frequencies that hurt.
+      ? Tell its story | Let it speak | Apologize  → Let it speak
+   ⇒ outcome=WON phases=3 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — hide (Hide and Seek, weird/extreme, played brave) ====
+   [p0] 📺 Hide and Seek. Hide. The seeker is a wave-2 predator. It's very good at seeking.
+
+Almost nobody walks away from this one.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The seeker is a wave-2 predator. It is very good at seeking.
+
+You get a sixty-count. The forest is dense, dark, and full of th…
+      ? Climb high | Go low | Hide in the open  → Go low
+   [p1] You hear it. Not footsteps — the absence of other sounds. Birds go quiet in a widening circle.
+
+It's close. It sniffs the air the way you check the weather.
+      ? Hold your breath | Throw a stone | Run  → Hold your breath
+   ⇒ outcome=DIED phases=2 dmg~400 trauma=10
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — box (The Box, puzzle/medium, played cautious) ====
+   [p0] 📺 The Box. An alien puzzle box. Solve it or be stuck inside the arena until you do. The audience has the manual.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Box. An alien puzzle box. Solve it or be stuck inside the arena until you do. The audience has the manual.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The box is bigger inside than out. That's the first problem.
+
+The audience has the manual…
+      ? Study it first | Touch everything | Ask the box nicely  → Study it first
+   [p2] A panel slides open. Inside: a smaller box. Of course.
+
+The chat is spamming the solution. Half of them are lying.
+      ? Trust the chat | Trust your gut | Do the opposite  → Trust your gut
+   [p3] Last layer. The box is humming now — it knows you're close.
+
+One move left. The audience holds its breath.
+      ? The elegant solution | The brute solution | Admit defeat  → The brute solution
+   ⇒ outcome=WON phases=4 dmg~19 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — pattern (Pattern Hunger, puzzle/low, played middle) ====
+   [p0] 📺 Pattern Hunger. A sequence of foods. Eat them in the right order. The wrong order... disagrees with you.
+
+The audience expects entertainment, not blood.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A sequence of foods on the table. Eat them in the right order.
+
+The wrong order... disagrees wi…
+      ? Study it first | Touch everything | Ask the box nicely  → Touch everything
+   [p1] First bite down. The sequence matters and your gut knows it.
+
+The second item smells wrong. Or right. You can't tell anymore.
+      ? Trust the chat | Trust your gut | Do the opposite  → Trust your gut
+   [p2] Last item. Your stomach is a democracy in crisis.
+
+Get this right and you're a legend. Get it wrong and you're a clip.
+      ? The elegant solution | The brute solution | Admit defeat  → The brute solution
+   ⇒ outcome=WON phases=3 dmg~27 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — whoate (Who Ate It?, detective/low, played brave) ====
+   [p0] 📺 Who Ate It?. Someone stole the prize. Interrogate the suspects. The thief is among you.
+
+The audience expects entertainment, not blood.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The prize is gone. Three suspects. One of them is lying about everything.
+
+You have an hour. The cameras love a …
+      ? Watch everyone | Ask blunt questions | Befriend a suspect  → Ask blunt questions
+   [p1] Two of them have alibis that almost hold. The third keeps changing small details.
+
+The audience has a favorite suspect. The audience is often wrong.
+      ? Confront the liar | Set a trap | Follow the quiet one  → Confront the liar
+   [p2] You know who. Saying it on camera is the whole game.
+
+Get it right: hero. Get it wrong: the clip lives forever.
+      ? Name them, with proof | Name them, on instinct | Accuse the wrong one  → Name them, on instinct
+   ⇒ outcome=WON phases=3 dmg~6 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — informant (The Informant, detective/medium, played cautious) ====
+   [p0] 📺 The Informant. One of you is lying about everything. Find them before they find the exit.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Informant. One of you is lying about everything. Find them before they find the exit.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Four of you. One is the informant — lying about everything, working the exits.
+
+Find them before they find the…
+      ? Watch everyone | Ask blunt questions | Befriend a suspect  → Watch everyone
+   [p2] Someone just tried the east door. Locked — but the attempt tells you everything.
+
+The informant is getting nervous. Nervous people make mistakes.
+      ? Confront the liar | Set a trap | Follow the quiet one  → Follow the quiet one
+   [p3] It's down to you and them. The exits are watched. The clock is loud.
+
+Name the informant. Now.
+      ? Name them, with proof | Name them, on instinct | Accuse the wrong one  → Name them, on instinct
+   ⇒ outcome=WON phases=4 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — calorie_run (Calorie Run, forage/medium, played middle) ====
+   [p0] 📺 Calorie Run. One hour. Whoever collects the most calorie-dense materials wins. The forest is... competitive.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+One hour. Most calorie-dense haul wins. The forest is... competitive.
+
+The others fan out. …
+      ? Go for known patches | Try the deep woods | Follow the birds  → Try the deep woods
+   [p1] Half the hour gone. Your haul is decent. Someone else is carrying something heavy and grinning.
+
+Time to commit.
+      ? Push deeper | Work the edges | Eat as you go  → Work the edges
+   [p2] Time. The hauls are weighed in front of everyone.
+
+Yours looks... competitive. Theirs looks heavy.
+      ? Present with pride | Share the method | Accept second  → Share the method
+   ⇒ outcome=WON phases=3 dmg~7 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — pantry_raid (Pantry Raid, forage/high, played brave) ====
+   [p0] 📺 Pantry Raid. Gather from a dangerous location. The locals object. Bring back food or don't come back.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 Pantry Raid. Gather from a dangerous location. The locals object. Bring back food or don't come back.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The location is dangerous. The locals object. Bring back food or don't come back.
+
+Your competition is already…
+      ? Sneak in | Brave the front | Distract them  → Brave the front
+   [p2] You're inside. The locals are close — you can hear them.
+
+Your sack is half full. Greed and sense are negotiating.
+      ? Grab and run | Take only the best | Leave an offering  → Take only the best
+   [p3] Out. The weigh-in is in front of the cameras.
+
+Your sack vs theirs. The locals are watching from the treeline.
+      ? Present with pride | Share the method | Accept second  → Share the method
+   ⇒ outcome=WON phases=4 dmg~11 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — wheel (Wheel of Teeth, chance/medium, played cautious) ====
+   [p0] 📺 Wheel of Teeth. Spin the wheel. The teeth decide. The audience holds its breath.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The wheel is huge and the teeth are real. Spin it. The teeth decide.
+
+The audience holds its breath. So do you.
+      ? Spin with conviction | Spin gently | Pray first  → Spin gently
+   [p1] The wheel slows. The pointer wobbles between fates.
+
+You can see where it wants to land. You can't do anything about it.
+      ? Trust the feeling | Change your mind | Close your eyes  → Change your mind
+   [p2] It stops. The pointer settles.
+
+The teeth are smiling. Or that's just how they look.
+      ? Accept the result | Laugh | Demand a recount  → Laugh
+   ⇒ outcome=LOST phases=3 dmg~0 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — lottery (The Lottery, chance/low, played middle) ====
+   [p0] 📺 The Lottery. Pure luck. Draw a token. The audience loves an underdog.
+
+The audience expects entertainment, not blood.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Five tokens. One is gold. Draw.
+
+The audience loves an underdog. Be the underdog.
+      ? Spin with conviction | Spin gently | Pray first  → Spin gently
+   [p1] Your hand hovers over the tokens. They all feel the same. They aren't.
+
+Pick.
+      ? Trust the feeling | Change your mind | Close your eyes  → Change your mind
+   [p2] You turn the token over.
+
+Gold. Or not.
+      ? Accept the result | Laugh | Demand a recount  → Laugh
+   ⇒ outcome=LOST phases=3 dmg~0 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — tithe (The Blood Tithe, blood/extreme, played brave) ====
+   [p0] 📺 The Blood Tithe. Bleed into the System's altar, measure by measure. Too little and it finds you wanting. Too much and it keeps the rest.
+
+Almost nobody walks away from this one.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A black basin on a black altar. The System, gentle as a nurse: "BLEED …
+      ? A shallow cut | A real cut | Both wrists  → Both wrists
+   [p1] The basin is filling. Your vision swims at the edges.
+
+The System tilts its head. "MORE?" it asks, like it's offering dessert.
+      ? A little more | A lot more | Press the wound shut  → A lot more
+   [p2] The altar gives no sign. Your blood is in it and your head is full of static.
+
+How much is enough? Nobody will say.
+      ? Stop now | One more measure | Offer your name instead  → One more measure
+   ⇒ outcome=WON phases=3 dmg~71 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — siege (Siege, blood/extreme, played cautious) ====
+   [p0] 📺 Siege. Hold the chokepoint for three waves while the village watches from the walls. The line holds, or you don't.
+
+Almost nobody walks away from this one.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A chokepoint of rubble and light-fencing. Beyond it: the beacon. Behind you: the village, wa…
+      ? Fortify the chokepoint | Stand in the open | Set traps  → Stand in the open
+   [p1] Wave two. They feint at the barricade — and come for YOU.
+
+The village gasps as one. Someone on the wall is screaming your name.
+      ? Meet them head-on | Fall back to the barricade | Call for help  → Fall back to the barricade
+   [p2] Wave three. The big ones. The barricade is splinters and the light-fence is flickering.
+
+The beacon hums behind you. The village holds its breath.
+      ? Hold the line | Bring the fence down on them | Sound the retreat  → Bring the fence down on them
+   ⇒ outcome=WON phases=3 dmg~49 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — maw (The Maw, endurance/extreme, played middle) ====
+   [p0] 📺 The Maw. A dark tunnel. Something patient behind you. Walk. Don't stop. It counts your pauses.
+
+Almost nobody walks away from this one.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A tunnel mouth in the arena floor, breathing cold air. Behind you: a grate slams shut.
+
+Ahead: dark. Behind the …
+      ? Sprint | Steady walk | Feel the walls  → Steady walk
+   [p1] You hear it now. Not footsteps — the tunnel going quiet ahead of you, like the dark is listening.
+
+Your legs are shaking. Stopping would be so easy.
+      ? Keep moving | Rest thirty seconds | Scream at it  → Rest thirty seconds
+   [p2] Light ahead. A circle of it, small and grey and real.
+
+It's close behind you now. You can feel its interest like heat.
+      ? Sprint for the light | Walk out calmly | Turn and face it  → Walk out calmly
+   ⇒ outcome=WON phases=3 dmg~24 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — oath (The Oath, moot/high, played brave) ====
+   [p0] 📺 The Oath. Swear three binding oaths on camera. Mean every word — the binding hears the difference.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Three lecterns. Three oaths, written in light. The System explains, kindly: "SWEAR. MEAN IT. WE WILL KNOW."
+
+The …
+      ? Swear it fully | Swear with fingers crossed | Refuse this oath  → Swear with fingers crossed
+   [p1] The second oath: GIVE THE SYSTEM ONE MEMORY. It chooses which.
+
+It is already reaching. You can feel it browsing.
+      ? Let it take one | Offer a false one | Beg it to choose kindly  → Offer a false one
+   [p2] The third oath: WHEN THE SYSTEM CALLS, COME. No conditions.
+
+This is the one that matters. The audience knows it. You know it.
+      ? Swear — and mean it | Swear, planning to break it | Break an oath on camera  → Swear, planning to break it
+   ⇒ outcome=WON phases=3 dmg~5 trauma=6
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — beastmaster (Beastmaster, weird/high, played cautious) ====
+   [p0] 📺 Beastmaster. Ride a collared wave-2 beast through the obstacle course. Guide it. Do not hurt it. It remembers.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A wave-2 beast in a light-collar, pacing. The course: rings of fire, a balance beam over spikes, a tu…
+      ? Mount gently | Mount fast | Befriend it first  → Mount fast
+   [p1] The rings of fire. The beast hates them — you can feel it coiling under you.
+
+The beam over the spikes is next. It is watching you for cues.
+      ? Guide with knees | Yank the collar | Let it choose the line  → Yank the collar
+   [p2] Last obstacle: the tunnel — dark, narrow, and it smells like the Maw.
+
+The beast balks. This is the moment the whole contest turns on.
+      ? Dismount and lead it through | Push for the flourish | Force it in  → Push for the flourish
+   ⇒ outcome=WON phases=3 dmg~53 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — riddle (Riddle Me This, puzzle/high, played middle) ====
+   [p0] 📺 Riddle Me This. Three riddles from the Riddle Engine — a floating lattice of mouths. Wrong answers cost memories. It has been reading you.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A lattice of mouths hangs in the air, opening and closing out of sync. Th…
+      ? Answer: footsteps | Ask the audience | Refuse to answer  → Ask the audience
+   [p1] Riddle two. The Engine has been reading you between questions.
+
+It asks about the dog. You never told it about the dog.
+      ? Answer as the kid you were | Lie to the Engine | Offer it a different memory  → Lie to the Engine
+   [p2] The last riddle. The mouths lean close.
+
+This one is about you, and you can feel which memory it's reaching for.
+      ? Answer it truthfully | Ask IT a riddle | Answer wrong on purpose  → Ask IT a riddle
+   ⇒ outcome=WON phases=3 dmg~5 trauma=6
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — confession (The Confession, detective/high, played brave) ====
+   [p0] 📺 The Confession. A villager confesses on camera to poisoning the water store. Prove the confession true or false before dusk — the System punishes someone either way.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Confession. A villager confesses on camera to poisoning the water store. Prove the confession true or false before dusk — the System punishes someone either way.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Bill stands under the lights. The confession, …
+      ? Study the confessor | Ask who benefits | Watch the village  → Ask who benefits
+   [p2] You press. The story wobbles — the poison, the hour, the hands. Real guilt is consistent. This isn't.
+
+Bill won't stop looking at the back row.
+      ? Press the details | Ask about the hands | Let them talk  → Ask about the hands
+   [p3] Dusk is coming. The System waits with the patience of weather.
+
+The verdict is yours. The consequences are everyone's.
+      ? Name the real culprit | Confirm the confession | Accuse the System  → Confirm the confession
+   ⇒ outcome=LOST phases=4 dmg~0 trauma=10
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — honey (Sweet Tooth, forage/high, played cautious) ====
+   [p0] 📺 Sweet Tooth. Harvest honeycomb from a hive the size of a house. The swarm defends. Smoke, speed, or respect — pick one and commit.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 Sweet Tooth. Harvest honeycomb from a hive the size of a house. The swarm defends. Smoke, speed, or respect — pick one and commit.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The hive hangs in the arena like a second moon, humming. The swarm moves as one b…
+      ? Smoke them first | Go in fast | Sing to the swarm  → Go in fast
+   [p2] You're at the comb. It glows. The queen cell pulses at the heart of it — the prize and the death, side by side.
+
+The swarm is watching you decide.
+      ? Cut the edge comb | Cut deep | Rob the queen cell  → Cut deep
+   [p3] The comb is in your hands. The swarm is in the air.
+
+Now: the getaway.
+      ? Run with the comb | Walk out slow, smoking | Leave an offering  → Walk out slow, smoking
+   ⇒ outcome=WON phases=4 dmg~25 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — secrets (The Secret Deck, chance/medium, played middle) ====
+   [p0] 📺 The Secret Deck. Cards against the System's dealer. The deck is made of village secrets — every card drawn reveals something true about someone watching.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The dealer fans the deck. Every card has a fac…
+      ? Draw | Fold now | Raise the stakes  → Fold now
+   ⇒ outcome=LOST phases=1 dmg~0 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — quiet (The Quiet Room, moot/high, played brave) ====
+   [p0] 📺 The Quiet Room. One silent hour in a white room. The System reads your thoughts aloud to the village. You cannot argue with the broadcast — you can only steer what surfaces.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Quiet Room. One silent hour in a white room. The System reads your thoughts aloud to the village. You cannot argue with the broadcast — you can only steer what surfaces.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A white room. One chair. No camera you…
+      ? Prepare a decoy | Empty your mind | Own it  → Empty your mind
+   [p2] The silence deepens. It starts reading — your voice, speaking your thoughts a half-second before you think them.
+
+The village hears the rehearsal thoughts first. Then it starts reaching deeper.
+
+Nobody who's been in the room will say what it does. The village's veterans just shake their heads and won't meet your eyes.
+      ? Stay with the plan | Change tactics | Talk to it  → Change tactics
+   [p3] It's past the surface now. Past the rehearsals. It's reaching for the thing you didn't prepare for.
+
+Whatever it finds next, the whole village hears.
+      ? Take it | Beg it to stop | Resist  → Resist
+   ⇒ outcome=LOST phases=4 dmg~0 trauma=18
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — guest (The Guest, weird/medium, played cautious) ====
+   [p0] 📺 The Guest. An alien ambassador is coming to dinner at your haven. Televised. Serve something it finds interesting, and survive an etiquette you were never taught.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A ship the size of weather settles ov…
+      ? Serve your best stew | Serve the bitter roots | Let the village cook decide  → Serve the bitter roots
+   [p1] The meal is served. The ambassador lifts the bowl with two limbs at once — and extends a third toward you.
+
+Nobody knows what the gesture means. The village is screaming advice at the screen. You have to pick.
+      ? Shake it | Bow low | Mirror it exactly  → Bow low
+   [p2] The toast. The ambassador rises — which takes a while — and lifts its cup.
+
+Whatever happens now, the whole village tells this story for years. The galaxy too.
+      ? Toast the village | Toast the System | Offer it your pack | Insult it back  → Toast the System
+   ⇒ outcome=LOST phases=3 dmg~0 trauma=0
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — vigil (The Vigil, endurance/high, played middle) ====
+   [p0] 📺 The Vigil. One night, alone on the haven wall, the lamp lit. Below in the dark, something large is circling. Hold your post until dawn. Do not abandon the light.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Night. The haven wall. One lamp, lit. Below in the…
+      ? Check the lamp | Memorize the dark | Count your breaths  → Memorize the dark
+   [p1] The circling tightens. The lamp flame leans away from the dark like it's afraid.
+
+It's close enough now that you can hear it breathing — slow, patient, interested in the light.
+      ? Hold still and watch | Sound the alarm | Call down to it  → Sound the alarm
+   ⇒ outcome=LOST phases=2 dmg~0 trauma=4
+   ⇒ audio: contestCall, contestTaken
+
+==== TAKEN — sorting (The Sorting, puzzle/high, played brave) ====
+   [p0] 📺 The Sorting. The System empties your pack and the tithe crate onto a conveyor. Its sorter keeps the shiny and burns the useful. Redirect what matters before it burns.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Sorting. The System empties your pack and the tithe crate onto a conveyor. Its sorter keeps the shiny and burns the useful. Redirect what matters before it burns.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The conveyor runs the length of the arena. Yo…
+      ? Save the dull roots | Save the seed pouch | Save the shiny bauble | Let the machine decide  → Save the seed pouch
+   [p2] The belt speeds up. Here comes the tithe crate — the fever-root bundle, the one that broke Hans's fever last winter. Dull as dirt. The sorter's arm is already moving toward the fire side.
+
+The village is on its feet.
+      ? Throw yourself at the belt | Swap in a decoy | Bribe the sorter-drone | Let it burn  → Swap in a decoy
+   [p3] Last crate. The System's voice, almost gentle: "ONE ITEM MAY BE SPARED FROM THE FIRE. CHOOSE."
+
+The whole village leans forward. Whatever you pick now, the winter remembers.
+      ? Spare the fever-root | Spare your best tool | Spare nothing | Beg for the whole crate  → Spare your best tool
+   ⇒ outcome=WON phases=4 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestSort
+
+==== TAKEN — witness (The Witness, detective/high, played cautious) ====
+   [p0] 📺 The Witness. Three witnesses describe last night's attack on the trap-line. Two are true memories. One the System wrote. Name the fabrication — the village arms for whatever you name.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Last night something hit the…
+      ? Hear them out | Study their faces first | Ask the System what it wants  → Study their faces first
+   [p1] The accounts:
+
+Shanice: "It came low through the treeline, the way the big deer comes — I heard the beam before I saw it. Then the charge."
+
+Reagan: "The hushwolf rushed us, screaming the whole way. I've never heard anything scream like that."
+
+Roman: "It took the bait and the spring-trap both, and left the meat lying. It wasn't hunting. …
+      ? Press Shanice | Press Reagan | Press Roman  → Press Reagan
+   [p2] The village waits. The System waits. The trap-line waits — whatever you name, the village arms against it tonight.
+
+Name the fabrication.
+      ? Name Shanice | Name Reagan | Name Roman  → Name Reagan
+   ⇒ outcome=WON phases=3 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestWitness
+
+==== TAKEN — cache (The Cache, forage/medium, played middle) ====
+   [p0] 📺 The Cache. At dawn the System's surveyors map every hidden food cache in the valley. Tonight you move the winter store — every move the cameras catch is taxed. Move it all. Let them see nothing.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Cache. At dawn the System's surveyors map every hidden food cache in the valley. Tonight you move the winter store — every move the cameras catch is taxed. Move it all. Let them see nothing.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The a…
+      ? Alone, slow, careful | Bring the kids | Split it: many small trips  → Bring the kids
+   [p2] Third trip. A surveyor-drone detaches from the sky-pattern and locks onto a moving shape in the dark — you, with the winter on your back.
+
+The night-vision feed goes tight. The village watches you decide.
+      ? Freeze | Sacrifice a decoy | Run it  → Sacrifice a decoy
+   [p3] Dawn. The surveyors present their map to the cameras — every hidden cache in the valley, mapped.
+
+The village leans in. The winter hangs on what's drawn there.
+      ? Present the empty decoy field | Bribe the surveyor | Take the tax  → Bribe the surveyor
+   ⇒ outcome=WON phases=4 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestCache
+
+==== TAKEN — longodds (The Long Odds, chance/medium, played brave) ====
+   [p0] 📺 The Long Odds. Dice against the house champion — a smug alien who has never lost on camera. The dice are fair. The stakes are the game. Raise, hold, or walk — but the table is unavoidable.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Long Odds. Dice against the house champion — a smug alien who has never lost on camera. The dice are fair. The stakes are the game. Raise, hold, or walk — but the table is unavoidable.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The table i…
+      ? Roll straight | Stake a memory | Stake your pride  → Stake a memory
+   [p2] Vex is up two. The dice sit between you like an accusation.
+
+"RAISE OR FOLD, MAMMAL," says Vex. The crowd has opinions. The crowd is very loud about them.
+      ? Double the stakes | Bluff the house | Play it safe  → Bluff the house
+   [p3] The last roll. Everything staked is in the middle of the table, and the dice are in your hand.
+
+Vex is watching the dice. For the first time tonight, it is not smiling.
+      ? Everything on the table | Take the partial win | Fold with dignity  → Take the partial win
+   ⇒ outcome=WON phases=4 dmg~5 trauma=8
+   ⇒ audio: contestCall, contestTaken, contestDice
+
+==== TAKEN — price (The Price, moot/extreme, played cautious) ====
+   [p0] 📺 The Price. The System names a price: one villager, for the season. The village chooses who. You can volunteer, campaign, or scheme — but someone pays.
+
+Almost nobody walks away from this one.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The System's voice, almost gentle: "ONE OF YOU. FOR THE …
+      ? Volunteer | Stay silent | Deflect  → Stay silent
+   [p1] The debate is vicious and televised. Alliances form and break in real time.
+
+Your name is on the short list. So are two others. The System is taking notes on who argues for whom — it finds loyalty fascinating and doomed.
+      ? Campaign for yourself | Campaign for another | Accept the vote  → Campaign for another
+   [p2] Dusk. The System calls for the name.
+
+The village has voted. The envelope is opened. The cameras push in.
+      ? Take it, if chosen | Refuse, if chosen | Not you — relief  → Refuse, if chosen
+   ⇒ outcome=LOST phases=3 dmg~0 trauma=8
+   ⇒ audio: contestCall, contestTaken, contestPrice
+
+==== TAKEN — impress (Impress Us, weird/medium, played middle) ====
+   [p0] 📺 Impress Us. Make the aliens feel something they have never felt. They have felt everything. Almost. The judges are baffled by you, which is your only edge.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Five aliens. They have catalogued 40,000 emo…
+      ? A memory | A joke | Silence  → A joke
+   [p1] They confer in frequencies that make your teeth ache.
+
+"WE DO NOT UNDERSTAND," the lead judge says. It sounds... frustrated? Curious? The translator gives up on the nuance.
+
+The audience is leaning in. Nobody has ever confused the judges before.
+      ? Explain yourself | Double down | Ask them a question  → Double down
+   [p2] Final offering. The judges are... changed. You can see it — something in the way they hold themselves.
+
+"ONE MORE," they say. "SOMETHING ONLY YOU COULD GIVE."
+      ? Your grief | Your joy | Nothing more  → Your joy
+   ⇒ outcome=WON phases=3 dmg~9 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestImpress
+
+==== TAKEN — exchange (The Exchange, endurance/high, played brave) ====
+   [p0] 📺 The Exchange. Your village versus theirs. A relay through the badlands — three legs, no rules about what runs between the markers. Losers tithe.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 The Exchange. Your village versus theirs. A relay through the badlands — three legs, no rules about what runs between the markers. Losers tithe.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Three legs. Your village against Gray Hollow. Through the badlands …
+      ? Run first leg | Run middle leg | Anchor  → Run middle leg
+   [p2] Mid-race. Gray Hollow is ahead — their runner is fast and fearless and slightly inhuman, which the System insists is legal.
+
+Your village is screaming your name. The other village is screaming theirs.
+      ? Push past pain | Run smart | Take the shortcut  → Push past pain
+   [p3] Final leg. Neck and neck. The finish is a lit gate and both villages are at the barriers, screaming.
+
+This is the part they'll replay for years.
+      ? Sprint it | Outlast them | Fall short  → Outlast them
+   ⇒ outcome=WON phases=4 dmg~43 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestExchange
+
+==== TAKEN — auction (The Auction, chance/high, played cautious) ====
+   [p0] 📺 The Auction. The System auctions alien tech. Bid with memories, years, or body parts. Everyone pays their bid — winner takes the lot, losers take the loss.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The System auctions three lots of alien tech. Currency: …
+      ? Bid a memory | Bid years | Bid small  → Bid years
+   [p1] Bidding war. A Gray Hollow contestant just bid their childhood. Someone else bid a lung (they have two, they point out, which is technically true).
+
+The lots are extraordinary. The prices are obscene. The audience is euphoric.
+      ? Raise | Bluff | Hold  → Bluff
+   [p2] Final lot. The hammer is raised. Everything bid so far is already gone — paid, taken, consumed.
+
+This is the last chance. The tech on the block could change your village's winter.
+      ? Everything | The smart bid | Walk away  → The smart bid
+   ⇒ outcome=WON phases=3 dmg~5 trauma=14
+   ⇒ audio: contestCall, contestTaken, contestAuction
+
+==== TAKEN — lockpick (The Iron Pantry, puzzle/high, played middle) ====
+   [p0] 📺 The Iron Pantry. An alien vault-lock on a full pantry. Five tumblers, one hour of air. Pick it and the village eats. Jam it and the cameras watch you starve politely.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A vault door the size of weather. Behind a gl…
+      ? Press your ear to the door | Try 1-2-3-4-5 | Oil the mechanism  → Try 1-2-3-4-5
+   [p1] Three tumblers set. Two to go. The heavy ones are down — the remaining two feel light as breath, and light is harder.
+
+The hour is half gone. The pantry glows through the glass. The village can smell it, which is the whole point of the glass.
+      ? Trust the weight order | Rush the last two | Back off and re-listen  → Rush the last two
+   [p2] One tumbler left. Or one jam left — it depends on how the last hour went.
+
+The pantry is a painting of food behind glass. The village is very quiet.
+      ? Set the last tumbler | Force the door | Walk away from the lock  → Force the door
+   ⇒ outcome=DIED phases=3 dmg~400 trauma=10
+   ⇒ audio: contestCall, contestTaken, contestLock
+
+==== TAKEN — wrongmap (The Wrong Map, puzzle/medium, played brave) ====
+   [p0] 📺 The Wrong Map. The System hands you a map to buried alien rations. Exactly one thing on it is a lie. Find the lie, find the food.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+A map of the valley, drawn in alien ink that moves when you aren't loo…
+      ? Study the map | Walk the terrain first | Ask what they see  → Walk the terrain first
+   [p1] The contradiction, found: the river is the lie. It's been dry for years — the map drew it wet anyway.
+
+So where's the X? If the river's wrong, the X measured FROM the river is wrong too. The real site is somewhere along the dry bed, offset by the lie.
+      ? Dig where the water isn't | Dig at the X | Split up the dry bed  → Dig at the X
+   ⇒ outcome=LOST phases=2 dmg~0 trauma=4
+   ⇒ audio: contestCall, contestTaken, contestMap
+
+==== TAKEN — alibi (The Alibi Chain, detective/medium, played cautious) ====
+   [p0] 📺 The Alibi Chain. Five villagers, each vouched for by the next, a chain that ends at midnight. One link is false. Break the chain before the chain breaks the village.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The chain, read aloud:
+
+Carolina v…
+      ? Pull the first link: Carolina | Pull the middle link: Erich | Watch who vouches loudest  → Pull the middle link: Erich
+   [p1] Midnight is coming. The chain is under tension now — every link you've touched is stressed, and the village can see the stress.
+
+Carolina is still vouching, louder. Logan has gone quiet. The false link is in here somewhere, holding the whole thing up.
+      ? Press Carolina | Follow the timeline | Offer them an out  → Offer them an out
+   [p2] The false link, found: Carolina. The vouch was a kindness that became a lie that became a chain.
+
+Now: how you name it, on camera, is the whole rest of the contest.
+      ? Name Carolina, gently | Name Carolina, publicly | Let the chain stand  → Name Carolina, publicly
+   ⇒ outcome=WON phases=3 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestAlibi
+
+==== TAKEN — echo (The Echo, detective/high, played middle) ====
+   [p0] 📺 The Echo. One witness, two tellings. The story of last night, told at dawn and told at noon — and the details moved between tellings. Find what the teller added for the cameras.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+Priya saw something last night at …
+      ? Line up the two tellings | Ask about the dawn | Ask about the noon  → Ask about the dawn
+   [p1] The village is splitting. Half believes the noon telling — arms for a monster that charged the traps. Half heard the dawn one and is quietly terrified of something that just... breathed, out there, in the dark.
+
+What you say next decides which village wakes up tomorrow.
+      ? Press the added danger | Give them a way out | Let them perform  → Give them a way out
+   [p2] The verdict, televised: which telling was true.
+
+The village waits. Priya waits. The cameras wait — they love this part most of all.
+      ? Say it plainly: the dawn was true | Bless the noon telling | Say both are true enough  → Bless the noon telling
+   ⇒ outcome=LOST phases=3 dmg~0 trauma=4
+   ⇒ audio: contestCall, contestTaken, contestEcho
+
+==== TAKEN — tidepool (The Tide Clock, forage/high, played brave) ====
+   [p0] 📺 The Tide Clock. The tidal pools are rich and the causeway is drowning. Harvest while the water lets you. The tide doesn't negotiate, and the cameras love a deadline.
+
+People die in this one. Regularly.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The tidal pools at the causeway's end — crab, …
+      ? Work the deep pools | Work the shallow pools | Set baskets, come back  → Work the shallow pools
+   [p1] First gull-cry. Then the second. The causeway is wet stone now, the pools merging into one rising sheet.
+
+Your sack is heavy. The deep pools are still giving. The water is at your knees.
+      ? Push one more pool | Start back now | Throw the heavy basket ahead  → Push one more pool
+   [p2] THIRD GULL-CRY. The causeway is going under — white water over black stone, the pools gone, the whole flat drowning in real time.
+
+You are on it. The far side is a long, wet run.
+      ? Run the causeway | Wade it, slow and sure | Drop the haul and run  → Wade it, slow and sure
+   ⇒ outcome=WON phases=3 dmg~21 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestTide
+
+==== TAKEN — windfall (Windfall, forage/medium, played cautious) ====
+   [p0] 📺 Windfall. A storm dropped a fortune — fruit, game, a stranded fish haul — and every bit of it is rotting on camera. Beat the rot: eat, dry, haul. The clock is spoilage.
+
+The System waits. The cameras are already rolling. Participate — or refuse, and let the galaxy watch you say no.
+      ? Participate | Refuse  → Participate
+   [p1] 📺 Windfall. A storm dropped a fortune — fruit, game, a stranded fish haul — and every bit of it is rotting on camera. Beat the rot: eat, dry, haul. The clock is spoilage.
+
+People have been hurt in this one. Not always.
+
+The lights come up. You can hear the crowd — millions of them, somewhere past the sky.
+
+The storm's leavings, spread ac…
+      ? Eat the berries now | Smoke the meat | Haul everything raw  → Smoke the meat
+   [p2] The sun climbs. The berries are going. The fish pool is warming — the stranded fish won't survive the afternoon, and neither will their freshness.
+
+The meadow smells like a decision.
+      ? Dry the fish | Keep hauling | Share the method  → Keep hauling
+   [p3] Last light. What's saved is saved; what's rotting is compost with an audience.
+
+The System tallies: preserved vs lost. The village watches the numbers.
+      ? Present the preserved haul | Eat the victory | Let the rest rot  → Eat the victory
+   ⇒ outcome=WON phases=4 dmg~5 trauma=0
+   ⇒ audio: contestCall, contestTaken, contestWind
+
+==== ACT 3 — every contest, WATCHED (the watchable show) ====
+
+==== WATCH — pit (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Pit. Thrown into an arena with a wave-appropriate beast. Kill or be killed. The audience votes on weapons." 📺 SYSTEM: "📺 Arena:
+🕳️
+🪨🪨🪨🪨🪨
+🪨⬛⬛⬛🪨
+🪨⬛🦴⬛🪨
+🪨⬛⬛⬛🪨
+🪨🪨🪨…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Lisa hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Pit — the last rush. The beast gathers itself and the whole arena goes silent for it.
+
+This is the …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Lisa after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Pit — over. Lisa survived. The audience is polite." 📺 SYSTEM: "📺 You go to Lisa. They're quiet. They'll talk about it late…
+   ⇒ Lisa survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — gauntlet (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Gauntlet. Three waves, no rest. Survive all three and the crowd goes wild. Most don't see wave two." 📺 SYSTEM: "📺 Arena:
+⚔️
+🔥🔥🔥🔥🔥
+🔥⬛⬛⬛🔥
+🔥⬛⚔️⬛🔥
+🔥⬛⬛⬛🔥
+🔥🔥🔥🔥🔥" 📺 SYS…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Noah hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Gauntlet — wave three. What comes out of the gate is wrong in ways the first two weren't.
+
+The closer s…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Noah after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Gauntlet — NOAH WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Noah is alive. Shaking, grinning, alive. You were there to …
+   ⇒ Noah survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — duel (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Duel. You vs another contestant. Not to the death — to the yield. But accidents happen." 📺 SYSTEM: "📺 Arena:
+🤺
+➖➖➖➖➖
+⬜⬜⚔️⬜⬜
+➖➖➖➖➖
+👥👥👥👥👥" 📺 SYSTEM: "📺 Olivia has been chos…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Olivia hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Duel — the end of it. One of them yields, or the drone calls it.
+
+The crowd is on its feet. Accidents…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Olivia after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Duel — OLIVIA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Olivia is alive. Shaking, grinning, alive. You were there t…
+   ⇒ Olivia survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — drop (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Drop. Dropped somewhere with nothing. First back to the beacon eats. The others... walk." 📺 SYSTEM: "📺 Arena:
+🏔️
+⛰️⛰️⛰️⛰️⛰️
+⛰️❄️❄️❄️⛰️
+⛰️❄️🚩❄️⛰️
+⛰️❄️❄️❄️⛰️
+⛰️⛰️⛰️⛰️⛰️" 📺 S…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Blanca hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Drop — the beacon is close. Close enough to see the steam off the food.
+
+First one back eats. The…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Blanca after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Drop — over. Blanca survived. The audience is polite." 📺 SYSTEM: "📺 You go to Blanca. They're quiet. They'll talk about …
+   ⇒ Blanca survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — starve (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Hollow Belly. No food for three days. The System watches who breaks first. Water provided. Dignity not." 📺 SYSTEM: "📺 Arena:
+🍽️
+⬛⬛⬛⬛⬛
+⬛🍽️⬛🍽️⬛
+⬛⬛⬛⬛⬛
+⬛🍽️⬛🍽️⬛
+⬛⬛⬛⬛⬛" 📺 SYSTEM:…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Gladys hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Hollow Belly — day three. Someone is going to break today. Everyone knows it, including them.
+
+The Sy…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Gladys after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Hollow Belly — over. Gladys survived. The audience is polite." 📺 SYSTEM: "📺 You go to Gladys. They're quiet. They'll talk ab…
+   ⇒ Gladys survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — moot (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Moot. Televised trial. Defend yourself against accusations (true or not). The audience is the jury." 📺 SYSTEM: "📺 Arena:
+⚖️
+👥👥👥👥👥
+⬜⬜🎤⬜⬜
+⬜⬜⬜⬜⬜
+👥👥👥👥👥" 📺 SYSTEM: "📺…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Yesenia hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Moot — closing. The accusations hang in the air like smoke.
+
+The jury votes. Guilty or not, the …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Yesenia after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Moot — YESENIA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Yesenia is alive. Shaking, grinning, alive. You were …
+   ⇒ Yesenia survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — lies (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Lie Detector. Answer questions. The System knows when you lie. The audience loves when you do." 📺 SYSTEM: "📺 Arena:
+🤥
+🔍🔍🔍🔍🔍
+⬜⬜🪑⬜⬜
+⬜⬜⬜⬜⬜
+📺📺📺📺📺" 📺 SYSTEM: "📺 Lily has…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Lily hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Lie Detector — the last question. The big one. The one they didn't tell Lily about.
+
+The detector is ve…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Lily after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Lie Detector — over. Lily survived. The audience is polite." 📺 SYSTEM: "📺 You go to Lily. They're quiet. They'll talk about it…
+   ⇒ Lily survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — cookfight (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Cooking With Teeth. Cook a meal. The ingredients fight back. Presentation matters. Survival matters more." 📺 SYSTEM: "📺 Arena:
+🍳
+🔪🔪🔪🔪🔪
+🍳🦷🦷🦷🍳
+🔪🔪🔪🔪🔪
+👨‍🍳👨‍🍳👨‍🍳…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Hayden hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Cooking With Teeth — plating. Final seconds.
+
+Two plates go up. One of them is still moving. The judg…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Hayden after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Cooking With Teeth — over. Hayden survived. The audience is polite." 📺 SYSTEM: "📺 You go to Hayden. They're quiet. They'll t…
+   ⇒ Hayden survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — fetch (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Bring Us Something Interesting. One mile radius. One hour. Most interesting thing wins. Judged by beings who have never touched grass." 📺 SYSTEM: "📺 Arena:
+🔍
+🌿🌿🌿🌿🌿
+🌿❓🌿❓🌿…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Manuel hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Bring Us Something Interesting — the judging. Final hauls on the table.
+
+The judges deliberate. They …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Manuel after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Bring Us Something Interesting — MANUEL WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Manuel is alive. Shaking, grinnin…
+   ⇒ Manuel survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — hide (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Hide and Seek. Hide. The seeker is a wave-2 predator. It's very good at seeking." 📺 SYSTEM: "📺 Arena:
+👁️
+🌲🌲🌲🌲🌲
+🌲👤🌲👤🌲
+🌲🌲🌲🌲🌲
+🌲👤🌲🐺🌲" 📺 SYSTEM: "📺 Ji has been …
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Ji hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Hide and Seek — it's right there. The eyes catch the light.
+
+The System is warming up the FOUND YOU sting…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Ji after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Hide and Seek — JI WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Ji is alive. Shaking, grinning, alive. You were there to s…
+   ⇒ Ji survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — box (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Box. An alien puzzle box. Solve it or be stuck inside the arena until you do. The audience has the manual." 📺 SYSTEM: "📺 Arena:
+📦
+⬛⬛⬛⬛⬛
+⬛🧩🧩🧩⬛
+⬛🧩📦🧩⬛
+⬛🧩🧩🧩⬛
+⬛⬛⬛⬛⬛" 📺 …
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Easton hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Box — the last panel. One fold left, and it's the one the manual marks in red.
+
+The arena is sile…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Easton after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Box — over. Easton survived. The audience is polite." 📺 SYSTEM: "📺 You go to Easton. They're quiet. They'll talk about i…
+   ⇒ Easton survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — pattern (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Pattern Hunger. A sequence of foods. Eat them in the right order. The wrong order... disagrees with you." 📺 SYSTEM: "📺 Arena:
+🧩
+🍎🍌🍇🍊🍎
+❓❓❓❓❓
+🍽️🍽️🍽️🍽️🍽️" 📺 SYSTEM: "📺 …
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Michael hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Pattern Hunger — the last dish. The pattern is almost visible now. Almost.
+
+One bite left. The right…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Michael after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Pattern Hunger — MICHAEL WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Michael is alive. Shaking, grinning, alive. You…
+   ⇒ Michael survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — whoate (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Who Ate It?. Someone stole the prize. Interrogate the suspects. The thief is among you." 📺 SYSTEM: "📺 Arena:
+🔍
+👤👤👤👤👤
+❓❓❓❓❓
+🍖🍖🍖🍖🍖" 📺 SYSTEM: "📺 Anthony has been chose…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Anthony hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Who Ate It? — the reveal. Anthony points.
+
+The accused face. The cameras push in. If Anthony is righ…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Anthony after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Who Ate It? — over. Anthony survived. The audience is polite." 📺 SYSTEM: "📺 You go to Anthony. They're quiet. They'll talk …
+   ⇒ Anthony survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — informant (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Informant. One of you is lying about everything. Find them before they find the exit." 📺 SYSTEM: "📺 Arena:
+🕵️
+👤🤥👤🤥👤
+🔍🔍🔍🔍🔍
+🚪🚪🚪🚪🚪" 📺 SYSTEM: "📺 Kwame has been…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Kwame hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Informant — the exit is in play. Someone is going to make a run for it.
+
+Kwame has one accusation.…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Kwame after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Informant — KWAME WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Kwame is alive. Shaking, grinning, alive. You were t…
+   ⇒ Kwame survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — calorie_run (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Calorie Run. One hour. Whoever collects the most calorie-dense materials wins. The forest is... competitive." 📺 SYSTEM: "📺 Arena:
+🌿
+🌳🍎🌳🍇🌳
+🌳🌿🌳🌿🌳
+🌳🍒🌳🌰🌳
+🌳🌿🌳🌿🌳" …
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Hilda hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Calorie Run — the weigh-in, in front of the cameras. Sack vs sack vs sack.
+
+The scales don't lie. The …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Hilda after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Calorie Run — HILDA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Hilda is alive. Shaking, grinning, alive. You were the…
+   ⇒ Hilda survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — pantry_raid (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Pantry Raid. Gather from a dangerous location. The locals object. Bring back food or don't come back." 📺 SYSTEM: "📺 Arena:
+🏚️
+⚠️⚠️⚠️⚠️⚠️
+🏚️🍖🏚️🍖🏚️
+⚠️⚠️⚠️⚠️⚠️
+🐺🐺🐺🐺🐺" 📺 …
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Hattie hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Pantry Raid — the run home. The sack is full and the locals are done deciding.
+
+Hattie runs. Behind: …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Hattie after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Pantry Raid — over. Hattie survived. The audience is polite." 📺 SYSTEM: "📺 You go to Hattie. They're quiet. They'll talk abo…
+   ⇒ Hattie survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — wheel (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Wheel of Teeth. Spin the wheel. The teeth decide. The audience holds its breath." 📺 SYSTEM: "📺 Arena:
+🎡
+🦷🦷🦷🦷🦷
+🎡⬛⬛⬛🎡
+🦷🦷🦷🦷🦷" 📺 SYSTEM: "📺 Jose has been chosen. The v…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Jose hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Wheel of Teeth — it stops. The tooth it lands on glints.
+
+The System reads it out. The crowd's reaction…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Jose after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Wheel of Teeth — over. Jose survived. The audience is polite." 📺 SYSTEM: "📺 You go to Jose. They're quiet. They'll talk about …
+   ⇒ Jose survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — lottery (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Lottery. Pure luck. Draw a token. The audience loves an underdog." 📺 SYSTEM: "📺 Arena:
+🎰
+🎫🎫🎫🎫🎫
+🎰⬛⬛⬛🎰
+🎫🎫🎫🎫🎫" 📺 SYSTEM: "📺 Klaus has been chosen. The village hol…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Klaus hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Lottery — the last token. Klaus's hand is in the drum.
+
+The whole galaxy watches a hand pull a pie…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Klaus after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Lottery — over. Klaus survived. The audience is polite." 📺 SYSTEM: "📺 You go to Klaus. They're quiet. They'll talk about …
+   ⇒ Klaus survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — tithe (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Blood Tithe. Bleed into the System's altar, measure by measure. Too little and it finds you wanting. Too much and it keeps the rest." 📺 SYSTEM: "📺 Arena:
+🩸
+⬛⬛⬛⬛⬛
+⬛🩸⬛🩸⬛
+⬛⬛�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Greta hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Blood Tithe — the count. The altar gives no sign, and the basin keeps drinking.
+
+Too little and it…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Greta after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Blood Tithe — GRETA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Greta is alive. Shaking, grinning, alive. You were…
+   ⇒ Greta survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — siege (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Siege. Hold the chokepoint for three waves while the village watches from the walls. The line holds, or you don't." 📺 SYSTEM: "📺 Arena:
+🏰
+🧱🧱🧱🧱🧱
+🧱⚔️🧱⚔️🧱
+🧱🧱🧱🧱🧱
+👥👥👥…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Ryan hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Siege — wave three. The big ones. The barricade is splinters.
+
+Ryan is alone in the gap. The beacon hum…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Ryan after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Siege — over. Ryan survived. The audience is polite." 📺 SYSTEM: "📺 You go to Ryan. They're quiet. They'll talk about it later.…
+   ⇒ Ryan survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — maw (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Maw. A dark tunnel. Something patient behind you. Walk. Don't stop. It counts your pauses." 📺 SYSTEM: "📺 Arena:
+🕳️
+⬛⬛⬛⬛⬛
+🌑🌑🌑🌑🌑
+🌑👤🌑👁️🌑
+🌑🌑🌑🌑🌑
+⬛⬛⬛⬛⬛" 📺 SYSTEM: …
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Elias hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Maw — light ahead. A circle of it, small and grey and real.
+
+It's close behind Elias now. The thin…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Elias after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Maw — over. Elias survived. The audience is polite." 📺 SYSTEM: "📺 You go to Elias. They're quiet. They'll talk about it l…
+   ⇒ Elias survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — oath (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Oath. Swear three binding oaths on camera. Mean every word — the binding hears the difference." 📺 SYSTEM: "📺 Arena:
+🤝
+📜📜📜📜📜
+⬜⬜🎤⬜⬜
+⛓️⛓️⛓️⛓️⛓️
+👥👥👥👥👥" 📺 SYSTEM: "📺…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Gus hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Oath — the third oath. WHEN THE SYSTEM CALLS, COME. No conditions.
+
+This is the one that matters. Th…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Gus after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Oath — over. Gus survived. The audience is polite." 📺 SYSTEM: "📺 You go to Gus. They're quiet. They'll talk about it later.…
+   ⇒ Gus survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — beastmaster (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Beastmaster. Ride a collared wave-2 beast through the obstacle course. Guide it. Do not hurt it. It remembers." 📺 SYSTEM: "📺 Arena:
+🦁
+🔥🔥🔥🔥🔥
+🦁➖➖➖🦁
+🔥🪤🔥🪤🔥
+👥👥👥👥👥" �…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Emily hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Beastmaster — the last obstacle. The tunnel. Dark, narrow, and it smells like the Maw.
+
+The beast balk…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Emily after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Beastmaster — over. Emily survived. The audience is polite." 📺 SYSTEM: "📺 You go to Emily. They're quiet. They'll talk about …
+   ⇒ Emily survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — riddle (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Riddle Me This. Three riddles from the Riddle Engine — a floating lattice of mouths. Wrong answers cost memories. It has been reading you." 📺 SYSTEM: "📺 Arena:
+🌀
+👄👄👄👄👄
+⬛🧠⬛…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Deborah hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Riddle Me This — the last riddle. The mouths lean close.
+
+This one is about Deborah, and you can fee…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Deborah after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Riddle Me This — The verdict came down hard." 📺 SYSTEM: "📺 Deborah answered wrong three times. The Engine kept the memories…
+   ⇒ Deborah DIED ON CAMERA · cheer=true study=false bet=false comfort=true
+
+==== WATCH — confession (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Confession. A villager confesses on camera to poisoning the water store. Prove the confession true or false before dusk — the System punishes someone either way." 📺 SYSTEM: "�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Gerald hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Confession — dusk is coming. The System waits with the patience of weather.
+
+Gerald has one verdi…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Gerald after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Confession — over. Gerald survived. The audience is polite." 📺 SYSTEM: "📺 You go to Gerald. They're quiet. They'll talk …
+   ⇒ Gerald survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — honey (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Sweet Tooth. Harvest honeycomb from a hive the size of a house. The swarm defends. Smoke, speed, or respect — pick one and commit." 📺 SYSTEM: "📺 Arena:
+🍯
+🐝🐝🐝🐝🐝
+⬛🍯⬛🍯⬛
+🐝🐝…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Denise hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Sweet Tooth — the getaway. The comb is in Denise's hands. The swarm is in the air.
+
+Run with the comb…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Denise after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Sweet Tooth — DENISE WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Denise is alive. Shaking, grinning, alive. You were …
+   ⇒ Denise survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — secrets (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Secret Deck. Cards against the System's dealer. The deck is made of village secrets — every card drawn reveals something true about someone watching." 📺 SYSTEM: "📺 Arena:
+🃏
+…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether LaToya hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Secret Deck — the river. Last card. The deck is warm in the dealer's hands, like it's alive.
+
+Wha…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to LaToya after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Secret Deck — LATOYA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 LaToya is alive. Shaking, grinning, alive. You w…
+   ⇒ LaToya survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — quiet (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Quiet Room. One silent hour in a white room. The System reads your thoughts aloud to the village. You cannot argue with the broadcast — you can only steer what surfaces." 📺 SY…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Dante hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Quiet Room — the last minutes. Whatever Dante has been burying all hour, it's reaching for it now.…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Dante after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Quiet Room — over. Dante survived. The audience is polite." 📺 SYSTEM: "📺 You go to Dante. They're quiet. They'll talk abo…
+   ⇒ Dante survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — guest (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Guest. An alien ambassador is coming to dinner at your haven. Televised. Serve something it finds interesting, and survive an etiquette you were never taught." 📺 SYSTEM: "📺 A…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Tanya hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Guest — the toast. The ambassador rises, which takes a while.
+
+Whatever happens now, the whole vil…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Tanya after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Guest — over. Tanya survived. The audience is polite." 📺 SYSTEM: "📺 You go to Tanya. They're quiet. They'll talk about it…
+   ⇒ Tanya survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — vigil (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Vigil. One night, alone on the haven wall, the lamp lit. Below in the dark, something large is circling. Hold your post until dawn. Do not abandon the light." 📺 SYSTEM: "📺 Ar…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Ursula hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Vigil — the last hour before dawn. The hardest one.
+
+The lamp is low. Ursula is swaying. The thin…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Ursula after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Vigil — URSULA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Ursula is alive. Shaking, grinning, alive. You were th…
+   ⇒ Ursula survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — sorting (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Sorting. The System empties your pack and the tithe crate onto a conveyor. Its sorter keeps the shiny and burns the useful. Redirect what matters before it burns." 📺 SYSTEM: "…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Vincent hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Sorting — the last crate. The System's voice, almost gentle: "ONE ITEM MAY BE SPARED FROM THE FI…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Vincent after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Sorting — VINCENT WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Vincent is alive. Shaking, grinning, alive. You we…
+   ⇒ Vincent survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — witness (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Witness. Three witnesses describe last night's attack on the trap-line. Two are true memories. One the System wrote. Name the fabrication — the village arms for whatever you na…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Vy hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Witness — the naming. Vy points.
+
+The village holds its breath — because whatever gets named, the vil…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Vy after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Witness — over. Vy survived. The audience is polite." 📺 SYSTEM: "📺 You go to Vy. They're quiet. They'll talk about it later.…
+   ⇒ Vy survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — cache (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Cache. At dawn the System's surveyors map every hidden food cache in the valley. Tonight you move the winter store — every move the cameras catch is taxed. Move it all. Let the…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Chen hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Cache — dawn. The surveyors present their map to the cameras.
+
+The village leans in. Every hidden c…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Chen after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Cache — CHEN WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Chen is alive. Shaking, grinning, alive. You were there to…
+   ⇒ Chen survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — longodds (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Long Odds. Dice against the house champion — a smug alien who has never lost on camera. The dice are fair. The stakes are the game. Raise, hold, or walk — but the table is unav…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Leo hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Long Odds — the last roll. Everything Leo staked is in the middle of the table, and the dice are in …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Leo after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Long Odds — LEO WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Leo is alive. Shaking, grinning, alive. You were there t…
+   ⇒ Leo survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — price (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Price. The System names a price: one villager, for the season. The village chooses who. You can volunteer, campaign, or scheme — but someone pays." 📺 SYSTEM: "📺 Arena:
+⚖️
+👥�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Otis hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Price — dusk. The System calls for the name.
+
+The envelope is opened. The cameras push in. The whol…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Otis after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Price — over. Otis survived. The audience is polite." 📺 SYSTEM: "📺 You go to Otis. They're quiet. They'll talk about it la…
+   ⇒ Otis survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — impress (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Impress Us. Make the aliens feel something they have never felt. They have felt everything. Almost. The judges are baffled by you, which is your only edge." 📺 SYSTEM: "📺 Arena:
+�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Joshua hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Impress Us — the final offering. The judges are changed; you can see it in the way they hold themselv…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Joshua after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Impress Us — JOSHUA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Joshua is alive. Shaking, grinning, alive. You were t…
+   ⇒ Joshua survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — exchange (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Exchange. Your village versus theirs. A relay through the badlands — three legs, no rules about what runs between the markers. Losers tithe." 📺 SYSTEM: "📺 Arena:
+🏃
+🏁🌲🌲🌲�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Felicia hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Exchange — final leg. Neck and neck. The finish is a lit gate.
+
+This is the part they'll replay …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Felicia after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Exchange — over. Felicia survived. The audience is polite." 📺 SYSTEM: "📺 You go to Felicia. They're quiet. They'll talk…
+   ⇒ Felicia survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — auction (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Auction. The System auctions alien tech. Bid with memories, years, or body parts. Everyone pays their bid — winner takes the lot, losers take the loss." 📺 SYSTEM: "📺 Arena:
+�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Ray hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Auction — final lot. The hammer is raised. Everything bid so far is already gone — paid, taken, cons…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Ray after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Auction — over. Ray survived. The audience is polite." 📺 SYSTEM: "📺 You go to Ray. They're quiet. They'll talk about it lat…
+   ⇒ Ray survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — lockpick (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Iron Pantry. An alien vault-lock on a full pantry. Five tumblers, one hour of air. Pick it and the village eats. Jam it and the cameras watch you starve politely." 📺 SYSTEM: "…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Deirdre hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Iron Pantry — one tumbler left. Or one jam.
+
+The whole village is holding its breath. Dinner is …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Deirdre after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Iron Pantry — The verdict came down hard." 📺 SYSTEM: "📺 Deirdre forced the last tumbler. The lock had one more trick th…
+   ⇒ Deirdre DIED ON CAMERA · cheer=true study=false bet=false comfort=true
+
+==== WATCH — wrongmap (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Wrong Map. The System hands you a map to buried alien rations. Exactly one thing on it is a lie. Find the lie, find the food." 📺 SYSTEM: "📺 Arena:
+🗺️
+🌲🌲🏔️🌲🌲
+🌲❌🌲❌🌲
+🌊…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Avery hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Wrong Map — the digging. Shovels in the dry bed, the whole valley watching.
+
+Somewhere under that …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Avery after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Wrong Map — AVERY WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Avery is alive. Shaking, grinning, alive. You were t…
+   ⇒ Avery survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — alibi (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Alibi Chain. Five villagers, each vouched for by the next, a chain that ends at midnight. One link is false. Break the chain before the chain breaks the village." 📺 SYSTEM: "�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Chris hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Alibi Chain — midnight is coming. The false link is in there, holding the whole thing up.
+
+Chris h…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Chris after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Alibi Chain — CHRIS WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Chris is alive. Shaking, grinning, alive. You were…
+   ⇒ Chris survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — echo (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Echo. One witness, two tellings. The story of last night, told at dawn and told at noon — and the details moved between tellings. Find what the teller added for the cameras." �…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Arnold hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Echo — the verdict. Which telling was true.
+
+The village is splitting down the middle. Half arms …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Arnold after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Echo — ARNOLD WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Arnold is alive. Shaking, grinning, alive. You were the…
+   ⇒ Arnold survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — tidepool (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 The Tide Clock. The tidal pools are rich and the causeway is drowning. Harvest while the water lets you. The tide doesn't negotiate, and the cameras love a deadline." 📺 SYSTEM: "�…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Luz hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 The Tide Clock — THIRD GULL-CRY. The causeway is going under, white water over black stone.
+
+Luz is on i…
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Luz after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 The Tide Clock — LUZ WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Luz is alive. Shaking, grinning, alive. You were there …
+   ⇒ Luz survived · cheer=true study=false bet=false comfort=true
+
+==== WATCH — windfall (a villager is taken; you watch) ====
+   👁️ "Cheer them on" → 📺 SYSTEM: "📺 ═══ CONTEST INTERRUPTION ═══" 📺 SYSTEM: "📺 Windfall. A storm dropped a fortune — fruit, game, a stranded fish haul — and every bit of it is rotting on camera. Beat the rot: eat, dry, haul. The clock is spoilage." 📺 SYSTEM:…
+   👁️ "Shout advice" → 📺 SYSTEM: "📺 You shout something useful. Whether Tanya hears it over the noise is another question." 📺 SYSTEM: "📺 ───" 📺 SYSTEM: "📺 Windfall — last light. What's saved is saved; what's rotting is compost with an audience.
+
+The System …
+   👁️ "Go to them" → 📺 SYSTEM: "📺 You go to Tanya after. Win or lose, they need a familiar face more than applause." 📺 SYSTEM: "📺 Windfall — TANYA WINS. The crowd is a weather system." 📺 SYSTEM: "📺 Tanya is alive. Shaking, grinning, alive. You were there …
+   ⇒ Tanya survived · cheer=true study=false bet=false comfort=true
+
+==== ACT 4 — the grab from every player state ====
+
+==== GRAB MATRIX — sleeping: pending contest fires via endDay (the real countdown path) ====
+
+==== GRAB MATRIX — mid-combat: interruption fires with a live fight on the grid ====
+
+==== GRAB MATRIX — mid-conversation: interruption fires while talking to a villager ====
+   convo UI after the contest: active=true transcript=1
+
+==== GRAB MATRIX — mid-expedition: interruption fires far from haven, mid-day ====
+
+==== ACT 5 — refuse / multi-take / knowledge / hardened ====
+
+==== REFUSE — pit (saying no is a sequence, not a skip) ====
+
+==== REFUSE — auction (saying no is a sequence, not a skip) ====
+
+==== MULTI-TAKE — duel (you + a villager; their fate is their own) ====
+
+==== MULTI-TAKE — auction (you + a villager; their fate is their own) ====
+
+==== KNOWLEDGE — pit played twice, third run should coach ====
+
+==== HARDENED — pit (repeat contest comes back worse) ====
+
+==== VERDICT ====
+
+   audioEvent hooks fired during contests (read-only):
+     · contestCall
+     · contestTaken
+     · contestSort
+     · contestWitness
+     · contestCache
+     · contestDice
+     · contestPrice
+     · contestImpress
+     · contestExchange
+     · contestAuction
+     · contestLock
+     · contestMap
+     · contestAlibi
+     · contestEcho
+     · contestTide
+     · contestWind
+
+   run verdicts:
+     · {"contest":"pit","path":"taken","persona":"brave","outcome":"won","phases":3,"dmgTaken":29,"audio":["contestCall","contestTaken"]}
+     · {"contest":"gauntlet","path":"taken","persona":"cautious","outcome":"won","phases":4,"dmgTaken":48,"audio":["contestCall","contestTaken"]}
+     · {"contest":"duel","path":"taken","persona":"middle","outcome":"won","phases":2,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"drop","path":"taken","persona":"brave","outcome":"won","phases":4,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"starve","path":"taken","persona":"cautious","outcome":"won","phases":3,"dmgTaken":7,"audio":["contestCall","contestTaken"]}
+     · {"contest":"moot","path":"taken","persona":"middle","outcome":"won","phases":4,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"lies","path":"taken","persona":"brave","outcome":"won","phases":3,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"cookfight","path":"taken","persona":"cautious","outcome":"won","phases":3,"dmgTaken":11,"audio":["contestCall","contestTaken"]}
+     · {"contest":"fetch","path":"taken","persona":"middle","outcome":"won","phases":3,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"hide","path":"taken","persona":"brave","outcome":"died","phases":2,"dmgTaken":400,"audio":["contestCall","contestTaken"]}
+     · {"contest":"box","path":"taken","persona":"cautious","outcome":"won","phases":4,"dmgTaken":19,"audio":["contestCall","contestTaken"]}
+     · {"contest":"pattern","path":"taken","persona":"middle","outcome":"won","phases":3,"dmgTaken":27,"audio":["contestCall","contestTaken"]}
+     · {"contest":"whoate","path":"taken","persona":"brave","outcome":"won","phases":3,"dmgTaken":6,"audio":["contestCall","contestTaken"]}
+     · {"contest":"informant","path":"taken","persona":"cautious","outcome":"won","phases":4,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"calorie_run","path":"taken","persona":"middle","outcome":"won","phases":3,"dmgTaken":7,"audio":["contestCall","contestTaken"]}
+     · {"contest":"pantry_raid","path":"taken","persona":"brave","outcome":"won","phases":4,"dmgTaken":11,"audio":["contestCall","contestTaken"]}
+     · {"contest":"wheel","path":"taken","persona":"cautious","outcome":"lost","phases":3,"dmgTaken":0,"audio":["contestCall","contestTaken"]}
+     · {"contest":"lottery","path":"taken","persona":"middle","outcome":"lost","phases":3,"dmgTaken":0,"audio":["contestCall","contestTaken"]}
+     · {"contest":"tithe","path":"taken","persona":"brave","outcome":"won","phases":3,"dmgTaken":71,"audio":["contestCall","contestTaken"]}
+     · {"contest":"siege","path":"taken","persona":"cautious","outcome":"won","phases":3,"dmgTaken":49,"audio":["contestCall","contestTaken"]}
+     · {"contest":"maw","path":"taken","persona":"middle","outcome":"won","phases":3,"dmgTaken":24,"audio":["contestCall","contestTaken"]}
+     · {"contest":"oath","path":"taken","persona":"brave","outcome":"won","phases":3,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"beastmaster","path":"taken","persona":"cautious","outcome":"won","phases":3,"dmgTaken":53,"audio":["contestCall","contestTaken"]}
+     · {"contest":"riddle","path":"taken","persona":"middle","outcome":"won","phases":3,"dmgTaken":5,"audio":["contestCall","contestTaken"]}
+     · {"contest":"confession","path":"taken","persona":"brave","outcome":"lost","phases":4,"dmgTaken":0,"audio":["contestCall","contestTaken"]}
+     · {"contest":"honey","path":"taken","persona":"cautious","outcome":"won","phases":4,"dmgTaken":25,"audio":["contestCall","contestTaken"]}
+     · {"contest":"secrets","path":"taken","persona":"middle","outcome":"lost","phases":1,"dmgTaken":0,"audio":["contestCall","contestTaken"]}
+     · {"contest":"quiet","path":"taken","persona":"brave","outcome":"lost","phases":4,"dmgTaken":0,"audio":["contestCall","contestTaken"]}
+     · {"contest":"guest","path":"taken","persona":"cautious","outcome":"lost","phases":3,"dmgTaken":0,"audio":["contestCall","contestTaken"]}
+     · {"contest":"vigil","path":"taken","persona":"middle","outcome":"lost","phases":2,"dmgTaken":0,"audio":["contestCall","contestTaken"]}
+     · {"contest":"sorting","path":"taken","persona":"brave","outcome":"won","phases":4,"dmgTaken":5,"audio":["contestCall","contestTaken","contestSort"]}
+     · {"contest":"witness","path":"taken","persona":"cautious","outcome":"won","phases":3,"dmgTaken":5,"audio":["contestCall","contestTaken","contestWitness"]}
+     · {"contest":"cache","path":"taken","persona":"middle","outcome":"won","phases":4,"dmgTaken":5,"audio":["contestCall","contestTaken","contestCache"]}
+     · {"contest":"longodds","path":"taken","persona":"brave","outcome":"won","phases":4,"dmgTaken":5,"audio":["contestCall","contestTaken","contestDice"]}
+     · {"contest":"price","path":"taken","persona":"cautious","outcome":"lost","phases":3,"dmgTaken":0,"audio":["contestCall","contestTaken","contestPrice"]}
+     · {"contest":"impress","path":"taken","persona":"middle","outcome":"won","phases":3,"dmgTaken":9,"audio":["contestCall","contestTaken","contestImpress"]}
+     · {"contest":"exchange","path":"taken","persona":"brave","outcome":"won","phases":4,"dmgTaken":43,"audio":["contestCall","contestTaken","contestExchange"]}
+     · {"contest":"auction","path":"taken","persona":"cautious","outcome":"won","phases":3,"dmgTaken":5,"audio":["contestCall","contestTaken","contestAuction"]}
+     · {"contest":"lockpick","path":"taken","persona":"middle","outcome":"died","phases":3,"dmgTaken":400,"audio":["contestCall","contestTaken","contestLock"]}
+     · {"contest":"wrongmap","path":"taken","persona":"brave","outcome":"lost","phases":2,"dmgTaken":0,"audio":["contestCall","contestTaken","contestMap"]}
+     · {"contest":"alibi","path":"taken","persona":"cautious","outcome":"won","phases":3,"dmgTaken":5,"audio":["contestCall","contestTaken","contestAlibi"]}
+     · {"contest":"echo","path":"taken","persona":"middle","outcome":"lost","phases":3,"dmgTaken":0,"audio":["contestCall","contestTaken","contestEcho"]}
+     · {"contest":"tidepool","path":"taken","persona":"brave","outcome":"won","phases":3,"dmgTaken":21,"audio":["contestCall","contestTaken","contestTide"]}
+     · {"contest":"windfall","path":"taken","persona":"cautious","outcome":"won","phases":4,"dmgTaken":5,"audio":["contestCall","contestTaken","contestWind"]}
+     · {"contest":"pit","path":"watch","taken":"Lisa","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"gauntlet","path":"watch","taken":"Noah","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"duel","path":"watch","taken":"Olivia","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"drop","path":"watch","taken":"Blanca","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"starve","path":"watch","taken":"Gladys","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"moot","path":"watch","taken":"Yesenia","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"lies","path":"watch","taken":"Lily","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"cookfight","path":"watch","taken":"Hayden","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"fetch","path":"watch","taken":"Manuel","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"hide","path":"watch","taken":"Ji","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"box","path":"watch","taken":"Easton","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"pattern","path":"watch","taken":"Michael","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"whoate","path":"watch","taken":"Anthony","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"informant","path":"watch","taken":"Kwame","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"calorie_run","path":"watch","taken":"Hilda","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"pantry_raid","path":"watch","taken":"Hattie","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"wheel","path":"watch","taken":"Jose","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"lottery","path":"watch","taken":"Klaus","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"tithe","path":"watch","taken":"Greta","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"siege","path":"watch","taken":"Ryan","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"maw","path":"watch","taken":"Elias","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"oath","path":"watch","taken":"Gus","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"beastmaster","path":"watch","taken":"Emily","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"riddle","path":"watch","taken":"Deborah","diedOnCam":true,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"confession","path":"watch","taken":"Gerald","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"honey","path":"watch","taken":"Denise","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"secrets","path":"watch","taken":"LaToya","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"quiet","path":"watch","taken":"Dante","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"guest","path":"watch","taken":"Tanya","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"vigil","path":"watch","taken":"Ursula","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"sorting","path":"watch","taken":"Vincent","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"witness","path":"watch","taken":"Vy","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"cache","path":"watch","taken":"Chen","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"longodds","path":"watch","taken":"Leo","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"price","path":"watch","taken":"Otis","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"impress","path":"watch","taken":"Joshua","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"exchange","path":"watch","taken":"Felicia","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"auction","path":"watch","taken":"Ray","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"lockpick","path":"watch","taken":"Deirdre","diedOnCam":true,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"wrongmap","path":"watch","taken":"Avery","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"alibi","path":"watch","taken":"Chris","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"echo","path":"watch","taken":"Arnold","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"tidepool","path":"watch","taken":"Luz","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+     · {"contest":"windfall","path":"watch","taken":"Tanya","diedOnCam":false,"cheerSeen":true,"studySeen":false,"betSeen":false,"comfortSeen":true}
+
+   assertions: 1007 pass, 0 fail (of 1007)
+
+   ALL GREEN — contest playtest pass complete.
+EXIT=0
