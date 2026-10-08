@@ -68,7 +68,7 @@
 //   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
 //   - pool_expansion_20261007: the three smallest pools (puzzle/detective/forage, 4 each) each gain two bespoke variants — lockpick (vault-lock, weight-order tumblers), wrongmap (the System lies about water), alibi (alibi chain, false link vouches loudest), echo (two tellings, noon adds danger), tidepool (tide clock, third gull-cry), windfall (rot race, preservation order). NOT reskins: lockpick is tension-and-listening not folding (box); wrongmap is terrain-truth not Q&A (riddle); alibi is chain-breaking not liar-hunting (informant); echo is version-drift not fabrication-hunt (witness); tidepool is an environmental clock not a race (calorie_run); windfall is preservation triage not harvest (honey) (code: contestPool, contestPlayable, Steve 2026-10-05)
 //   - pool_expansion_20261006b: the four smallest pools (puzzle/detective/forage/chance, 3 each) each gain a bespoke variant — sorting (conveyor triage), witness (fabrication hunt), cache (audit heist), longodds (push-your-luck dice). NOT reskins: sorting is triage-under-time not Q&A (riddle); witness is forgery-forensics not liar-hunting (informant); cache is hiding not gathering (calorie_run); longodds is stakes-escalation not pure draw (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
-//   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06); price/impress/exchange/auction beats now resolve (justiceVerdict+exileWalk, levelup+contestSpared, contestCall+rushHit, contestCall+horrorSting) — were silent no-ops (code: CX_BEAT_DEFS, Steve 2026-10-06); the 30 older contests now have per-phase composed beats contest<Id>Declare|Escalate|Climax|Resolve in CX_BEAT_DEFS, named by _cxB (Steve 2026-10-08); _contestEnd/_contestDie/_contestRefuse fire the Resolve beat (code: CX_BEAT_DEFS, _cxB, Steve 2026-10-08)
+//   - beat_audio: every contest beat fires a named audioEvent that resolves — new beats are composed, named dispatches over already-registered Game.audio synths, lazy-registered on first fire (Game.audio doesn't exist until app.js loads, after contests.js); phases declare beat:'name', _contestRenderPhase fires it (code: _cxBeat, _contestRenderPhase, Steve 2026-10-06); price/impress/exchange/auction beats now resolve (justiceVerdict+exileWalk, levelup+contestSpared, contestCall+rushHit, contestCall+horrorSting) — were silent no-ops (code: CX_BEAT_DEFS, Steve 2026-10-06); the 30 older contests now have per-phase composed beats contest<Id>Declare|Escalate|Climax|Resolve in CX_BEAT_DEFS, named by _cxB (Steve 2026-10-08); _contestEnd/_contestDie/_contestRefuse fire the Resolve beat (code: CX_BEAT_DEFS, _cxB, Steve 2026-10-08); the participate/refuse choice screen fires the small shared contestChoice beat (droneCorrect+lineCut), never a contest's Declare beat — firing Declare there double-stings on Participate and plays the bespoke sting on Refuse (code: contestInterruption choicePhase, Steve 2026-10-08)
 //   - no_intro_repeat: the choice-phase text must not re-say contest name+desc (contestInterruption says it two lines earlier); it says only "The System waits." (code: contestInterruption, Steve 2026-10-08)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
 // consumes:
@@ -488,7 +488,11 @@
         const choicePhase = {
           // DEDUPE (Steve 2026-10-08): contestInterruption already said
           // name+desc above — the choice phase must not repeat it verbatim.
-          beat: this._cxB(contest.id, 'Declare'),
+          // The choice screen gets the small contestChoice beat, never the
+          // contest's own Declare beat (Steve 2026-10-08): firing Declare
+          // here double-stings when the player participates, and plays the
+          // bespoke sting even when they refuse.
+          beat: 'contestChoice',
           text: `📺 The System waits. The cameras are already rolling.\n\nParticipate — or refuse, and let the galaxy watch you say no.`,
           choices: [
             { label: 'Participate', sub: 'step into the light', do: {}, next: 1 },
@@ -922,6 +926,12 @@
     contestGenericEscalate: ['round'],
     contestGenericClimax: ['horrorSting'],
     contestGenericResolve: ['victory'],
+    // The choice: participate or refuse — the System waits. Bureaucratic
+    // beep, then the cut. Small on purpose: a contest's own Declare beat
+    // belongs to the contest, never to the choice screen — firing it here
+    // would double-sting on Participate and play the bespoke sting even
+    // when the player refuses (Steve 2026-10-08).
+    contestChoice: ['droneCorrect', 'lineCut'],
   };
 
   // Beat naming (Steve 2026-10-08): the 30 older contests get per-phase
@@ -1171,6 +1181,15 @@
           { label: 'Study them', sub: 'find the weakness', do: { note: 'You watch how they stand. Favoring the left. Nervous hands. You can work with this.' }, next: 1 },
           { label: 'Attack first', sub: 'no ceremony', do: { dmg: [6, 14], note: 'You don\'t wait for the bell. Neither does the crowd\'s gasp.' }, next: 1 },
         ] },
+      // ESCALATE (Steve 2026-10-08): the duel was declare→climax with no
+      // middle — the contestDuelEscalate beat existed but no phase declared
+      // it. The exchange of blows is the fight the crowd paid for.
+      { beat: 'contestDuelEscalate', text: `The bell — a sound like a dropped pan in a cathedral.\n\nYou circle. They circle. The ref-drone ticks off the seconds, loud enough for the cheap seats, while the crowd picks sides and heckles both of you.`,
+        choices: [
+          { label: 'Trade blows', sub: 'honest', do: { dmg: [10, 20], note: 'You trade. Clean hits, both ways. The crowd respects the honesty. Your ribs file a complaint.' }, next: 2 },
+          { label: 'Fight dirty', sub: 'win ugly', do: { dmg: [6, 14], trauma: 4, note: 'Sand, elbows, the ref-drone\'s blind spot. The crowd winces and cheers at the same time. Your opponent won\'t forget this.' }, next: 2 },
+          { label: 'Talk them down', sub: 'mid-fight, unhinged', do: { note: '"Yield and we split it — I mean it this time." They almost laugh. Almost. The ref-drone ticks on, unimpressed.' }, next: 2 },
+        ] },
       { beat: 'contestDuelClimax', text: `They yield — or they don't. The ref-drone hovers, sensors hot.\n\nThe crowd wants blood. The System wants a story. You want to go home.`,
         choices: [
           { label: 'Press the advantage', sub: 'finish it', do: { prize: true,  dmg: [16, 30], die: 0.18, trauma: 12, note: 'You press. They go down. The drone calls it. Your hands won\'t stop shaking.' }, next: 'WIN' },
@@ -1221,24 +1240,24 @@
         ? `\n\nTwo chairs. One scanner. The System knows when you lie — and the audience lives for it.\n\nFirst question's coming. Your opponent is already sweating.`
         : `\n\nTelevised trial. The accusations may be true or not — the audience is the jury either way.\n\nThe prosecutor-drone reads the charges. Some of them are even yours.`),
         choices: [
-          { label: 'Tell the truth', sub: 'radical', do: { note: 'You tell the truth. The scanner stays quiet. The audience is disappointed and impressed.' }, next: 1 },
-          { label: 'Lie beautifully', sub: 'performance', do: { note: 'You lie like it\'s an art form. The scanner buzzes. The audience GASPS with delight.', notability: 'showmanship' }, next: 1 },
-          { label: 'Refuse to answer', sub: 'contempt', do: { note: 'You say nothing. Silence, televised. The System notes the defiance.', notability: 'showmanship' }, next: 1 },
+          { label: 'Tell the truth', sub: 'radical', do: { note: isLies ? 'You tell the truth. The scanner stays quiet. The audience is disappointed and impressed.' : 'You tell the truth. The jury box leans forward as one. The audience is disappointed and impressed.' }, next: 1 },
+          { label: 'Lie beautifully', sub: 'performance', do: { note: isLies ? 'You lie like it\'s an art form. The scanner buzzes. The audience GASPS with delight.' : 'You lie like it\'s an art form. The prosecutor-drone objects. The audience GASPS with delight.', notability: 'showmanship' }, next: 1 },
+          { label: 'Refuse to answer', sub: 'contempt', do: { note: isLies ? 'You say nothing. Silence, televised. The System notes the defiance.' : 'You say nothing. Silence, televised. The jury shifts in its seats. The System notes the defiance.', notability: 'showmanship' }, next: 1 },
         ] },
       { beat: this._cxB(contest.id, 'Escalate'), text: isLies
         ? `Harder questions now. Personal ones. The scanner hums.\n\nYour opponent just lied badly about something small. The crowd smells blood.`
         : `A witness is called. It's someone from your village. They look at you, then at the cameras, then back.\n\nWhat they say next matters enormously.`,
         choices: [
-          { label: 'Double down', sub: 'commit', do: { dmg: [0, 8], trauma: 5, note: 'You commit to the story. The scanner screams. The audience is feral with joy.' }, next: 2 },
-          { label: 'Confess', sub: 'disarm', do: { note: 'You confess — the small thing, the real thing. The scanner goes quiet. The crowd doesn\'t know what to do with honesty.', notability: 'showmanship' }, next: 2 },
-          { label: 'Turn it around', sub: 'accuse the accuser', do: { note: 'You point at the question itself. "Who benefits from asking that?" The System pauses. Interesting.', notability: 'showmanship' }, next: 2 },
+          { label: 'Double down', sub: 'commit', do: { dmg: [0, 8], trauma: 5, note: isLies ? 'You commit to the story. The scanner screams. The audience is feral with joy.' : 'You commit to the story. The prosecutor-drone replays your own words back at you. The audience is feral with joy.' }, next: 2 },
+          { label: 'Confess', sub: 'disarm', do: { note: isLies ? 'You confess — the small thing, the real thing. The scanner goes quiet. The crowd doesn\'t know what to do with honesty.' : 'You confess — the small thing, the real thing. The jury doesn\'t know what to do with honesty. Nobody does.', notability: 'showmanship' }, next: 2 },
+          { label: 'Turn it around', sub: 'accuse the accuser', do: { note: isLies ? 'You point at the question itself. "Who benefits from asking that?" The System pauses. Interesting.' : 'You point at the charges themselves. "Who benefits from asking that?" The prosecutor-drone pauses. Interesting.', notability: 'showmanship' }, next: 2 },
         ] },
       { beat: this._cxB(contest.id, 'Climax'), text: isLies
         ? `Final question. The big one. The scanner is hot.\n\nWhatever you say next will be clipped and replayed for years.`
         : `Closing statements. The audience votes with their attention — you can feel it like heat.\n\nThis is the moment.`,
         choices: [
-          { label: 'The whole truth', sub: 'burn it down', do: { prize: true, trauma: 8, note: 'You tell all of it. Every ugly true thing. The scanner is silent. The audience is silent. Then — applause like weather.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'The perfect lie', sub: 'one for the ages', do: { prize: true, note: 'You deliver a lie so beautiful the scanner hesitates. The crowd erupts. You win the moment, if not the truth.', notability: 'showmanship' }, next: 'WIN' },
+          { label: 'The whole truth', sub: 'burn it down', do: { prize: true, trauma: 8, note: isLies ? 'You tell all of it. Every ugly true thing. The scanner is silent. The audience is silent. Then — applause like weather.' : 'You tell all of it. Every ugly true thing. The jury is silent. Then — applause like weather.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'The perfect lie', sub: 'one for the ages', do: { prize: true, note: isLies ? 'You deliver a lie so beautiful the scanner hesitates. The crowd erupts. You win the moment, if not the truth.' : 'You deliver a lie so beautiful the jury forgets to breathe. The crowd erupts. You win the moment, if not the truth.', notability: 'showmanship' }, next: 'WIN' },
           { label: 'Walk out', sub: 'refuse the game', do: { note: 'You stand and leave. The cameras follow you to the door. The System lets you go — the refusal IS the content.', notability: 'showmanship' }, next: 'LOSE' },
         ] },
     ];
@@ -1285,25 +1304,25 @@
         ? `\n\nThe box is bigger inside than out. That's the first problem.\n\nThe audience has the manual. They are not sharing. They are laughing.`
         : `\n\nA sequence of foods on the table. Eat them in the right order.\n\nThe wrong order... disagrees with you. The audience knows the order. They are not telling.`),
         choices: [
-          { label: 'Study it first', sub: 'patience', do: { note: 'You circle it, learning its logic. The audience gets restless. Restless is good — they start shouting hints.' }, next: 1 },
-          { label: 'Touch everything', sub: 'brute force', do: { dmg: [2, 8], note: 'You poke, prod, and pull. Something clicks. Something else shocks you. Progress.' }, next: 1 },
-          { label: 'Ask the box nicely', sub: 'unhinged', do: { note: '"Please?" The box does nothing. The audience finds this hilarious. One of them slips you a hint in the chat.' }, next: 1 },
+          { label: isBox ? 'Study it first' : 'Smell everything first', sub: isBox ? 'patience' : 'the nose knows', do: { note: isBox ? 'You circle it, learning its logic. The audience gets restless. Restless is good — they start shouting hints.' : 'You work the line with your nose. The second item smells like trouble. Or dessert. The nose is not sure.' }, next: 1 },
+          { label: isBox ? 'Touch everything' : 'Nibble the smallest', sub: isBox ? 'brute force' : 'test', do: { dmg: [2, 8], note: isBox ? 'You poke, prod, and pull. Something clicks. Something else shocks you. Progress.' : 'You nibble the smallest piece first. Your stomach considers it. The audience holds its breath. So do you.' }, next: 1 },
+          { label: isBox ? 'Ask the box nicely' : 'Ask the audience', sub: 'unhinged', do: { note: isBox ? '"Please?" The box does nothing. The audience finds this hilarious. One of them slips you a hint in the chat.' : '"What would YOU eat first?" The chat explodes. Half of them are trying to kill you. The other half are worse.' }, next: 1 },
         ] },
       { beat: this._cxB(contest.id, 'Escalate'), text: isBox
         ? `A panel slides open. Inside: a smaller box. Of course.\n\nThe chat is spamming the solution. Half of them are lying.`
         : `First bite down. The sequence matters and your gut knows it.\n\nThe second item smells wrong. Or right. You can't tell anymore.`,
         choices: [
-          { label: 'Trust the chat', sub: 'crowdsource', do: { dmg: [0, 10], die: 0.04, note: 'You follow the most-upvoted hint. It\'s either genius or sabotage. Fifty-fifty, televised.' }, next: 2 },
-          { label: 'Trust your gut', sub: 'instinct', do: { note: 'You ignore everyone and follow the logic you\'ve built. Quiet. Certain. Yours.' }, next: 2 },
-          { label: 'Do the opposite', sub: 'contrarian', do: { dmg: [2, 8], note: 'Everyone says left. You go right. The contrarian play — sometimes the puzzle wants what nobody expects.' }, next: 2 },
+          { label: 'Trust the chat', sub: 'crowdsource', do: { dmg: [0, 10], die: 0.04, note: isBox ? 'You follow the most-upvoted hint. It\'s either genius or sabotage. Fifty-fifty, televised.' : 'You follow the most-upvoted order. It\'s either genius or sabotage. Fifty-fifty, televised.' }, next: 2 },
+          { label: 'Trust your gut', sub: 'instinct', do: { note: isBox ? 'You ignore everyone and follow the logic you\'ve built. Quiet. Certain. Yours.' : 'You ignore everyone and follow what your stomach says. Quiet. Certain. Yours.' }, next: 2 },
+          { label: isBox ? 'Do the opposite' : 'Eat out of order', sub: 'contrarian', do: { dmg: [2, 8], note: isBox ? 'Everyone says left. You go right. The contrarian play — sometimes the puzzle wants what nobody expects.' : 'Everyone says the berries last. You eat the berries NOW. The contrarian play — sometimes the gut wants what nobody expects.' }, next: 2 },
         ] },
       { beat: this._cxB(contest.id, 'Climax'), text: isBox
         ? `Last layer. The box is humming now — it knows you're close.\n\nOne move left. The audience holds its breath.`
         : `Last item. Your stomach is a democracy in crisis.\n\nGet this right and you're a legend. Get it wrong and you're a clip.`,
         choices: [
-          { label: 'The elegant solution', sub: 'beauty', do: { prize: true, note: 'You see it — the pattern resolves like a chord. You move. The box OPENS. The crowd detonates.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'The brute solution', sub: 'force', do: { prize: true, dmg: [6, 14], note: 'You stop solving and start forcing. The box resists, then — grudgingly — yields. Ugly. Effective.' }, next: 'WIN' },
-          { label: 'Admit defeat', sub: 'graceful', do: { note: 'You bow to the box. "You win." The audience awws. The System files it under: humility, rare.' }, next: 'LOSE' },
+          { label: isBox ? 'The elegant solution' : 'The elegant sequence', sub: 'beauty', do: { prize: true, note: isBox ? 'You see it — the pattern resolves like a chord. You move. The box OPENS. The crowd detonates.' : 'You see it — the order resolves like a chord. You eat. Nothing disagrees. The crowd detonates.', notability: 'contestWin' }, next: 'WIN' },
+          { label: isBox ? 'The brute solution' : 'Eat it all at once', sub: 'force', do: { prize: true, dmg: [6, 14], note: isBox ? 'You stop solving and start forcing. The box resists, then — grudgingly — yields. Ugly. Effective.' : 'You stop sequencing and just EAT. Your stomach objects, then — grudgingly — settles. Ugly. Effective.' }, next: 'WIN' },
+          { label: isBox ? 'Admit defeat' : 'Push the plate away', sub: 'graceful', do: { note: isBox ? 'You bow to the box. "You win." The audience awws. The System files it under: humility, rare.' : 'You push the plate away. "I concede." The audience awws. The System files it under: humility, rare.' }, next: 'LOSE' },
         ] },
     ];
   };
@@ -1381,15 +1400,15 @@
         ? `\n\nThe wheel is huge and the teeth are real. Spin it. The teeth decide.\n\nThe audience holds its breath. So do you.`
         : `\n\nFive tokens. One is gold. Draw.\n\nThe audience loves an underdog. Be the underdog.`),
         choices: [
-          { label: 'Spin with conviction', sub: 'commit', do: { note: 'You spin like you mean it. The wheel screams around. The teeth blur.' }, next: 1 },
-          { label: 'Spin gently', sub: 'finesse', do: { note: 'You barely touch it. The wheel creeps. The crowd leans in — slow is excruciating.' }, next: 1 },
-          { label: 'Pray first', sub: 'ritual', do: { note: 'You close your eyes and ask anything listening for luck. The wheel doesn\'t care. The audience loves the theater.' }, next: 1 },
+          { label: isWheel ? 'Spin with conviction' : 'Draw with conviction', sub: 'commit', do: { note: isWheel ? 'You spin like you mean it. The wheel screams around. The teeth blur.' : 'You reach in like the token owes you money. The drum turns. The audience leans.' }, next: 1 },
+          { label: isWheel ? 'Spin gently' : 'Feel them out', sub: 'finesse', do: { note: isWheel ? 'You barely touch it. The wheel creeps. The crowd leans in — slow is excruciating.' : 'You run your fingers over the tokens, feeling for weight, warmth, anything. They all feel the same. They aren\'t.' }, next: 1 },
+          { label: 'Pray first', sub: 'ritual', do: { note: isWheel ? 'You close your eyes and ask anything listening for luck. The wheel doesn\'t care. The audience loves the theater.' : 'You close your eyes and ask anything listening for luck. The drum doesn\'t care. The audience loves the theater.' }, next: 1 },
         ] },
       { beat: this._cxB(contest.id, 'Escalate'), text: isWheel
         ? `The wheel slows. The pointer wobbles between fates.\n\nYou can see where it wants to land. You can't do anything about it.`
         : `Your hand hovers over the tokens. They all feel the same. They aren't.\n\nPick.`,
         choices: [
-          { label: 'Trust the feeling', sub: 'instinct', do: { dmg: [0, 12], die: 0.06, note: 'You go with the pull. The wheel stops. The teeth are very close to your name.' }, next: 2 },
+          { label: 'Trust the feeling', sub: 'instinct', do: { dmg: [0, 12], die: 0.06, note: isWheel ? 'You go with the pull. The wheel stops. The teeth are very close to your name.' : 'You go with the pull and close your fist around one. The dealer watches. The dealer knows.' }, next: 2 },
           { label: 'Change your mind', sub: 'second-guess', do: { note: 'You switch at the last second. The crowd groans. Second-guessing is box office.' }, next: 2 },
           { label: 'Close your eyes', sub: 'fate', do: { note: 'You don\'t watch. The crowd watches for you. Their gasp tells you everything.' }, next: 2 },
         ] },
@@ -1397,8 +1416,8 @@
         ? `It stops. The pointer settles.\n\nThe teeth are smiling. Or that's just how they look.`
         : `You turn the token over.\n\nGold. Or not.`,
         choices: [
-          { label: 'Accept the result', sub: 'whatever it is', do: { dmg: [0, 20], die: 0.1, prize: true, note: 'Whatever the wheel decided — you take it standing. The crowd respects the spine.', notability: 'contestWin' }, next: 'WIN' },
-          { label: 'Laugh', sub: 'defiance', do: { note: 'You laugh in the teeth\'s face. The audience laughs with you. Losing beautifully is still beautiful.' }, next: 'LOSE' },
+          { label: 'Accept the result', sub: 'whatever it is', do: { dmg: [0, 20], die: 0.1, prize: true, note: isWheel ? 'Whatever the wheel decided — you take it standing. The crowd respects the spine.' : 'Whatever the token says — you take it standing. The crowd respects the spine.', notability: 'contestWin' }, next: 'WIN' },
+          { label: 'Laugh', sub: 'defiance', do: { note: isWheel ? 'You laugh in the teeth\'s face. The audience laughs with you. Losing beautifully is still beautiful.' : 'You laugh at the token. The audience laughs with you. Losing beautifully is still beautiful.' }, next: 'LOSE' },
           { label: 'Demand a recount', sub: 'chaos', do: { dmg: [4, 10], note: 'You demand a recount. There is no recount. There is, however, security. Worth it for the clip.' }, next: 'LOSE' },
         ] },
     ];
