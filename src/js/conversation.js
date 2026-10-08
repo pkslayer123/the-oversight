@@ -136,9 +136,9 @@
         { id: 'yes', label: '"I heard it too."',
           line: '"Okay. Okay, so it\'s real. ...I hate that it\'s real."',
           trust: 2 },
-        { id: 'no', label: '"Just the wind."',
-          line: '"The wind doesn\'t sound like that." A beat. "Don\'t — don\'t lie to me right now."',
-          trust: -1 },
+        { id: 'no', label: '"I didn\'t hear anything."',
+          line: '"Huh. Lucky — or I\'m losing it." They keep watching the trees anyway.',
+          trust: 0 },
         { id: 'what', label: '"What did it sound like?"',
           line: '"Like something big, moving careful. Like it didn\'t want to be heard."',
           trust: 1 },
@@ -204,8 +204,8 @@
           line: '"Fair." A pause. "It\'s personal. But — we\'re past small talk, aren\'t we?"',
           action: 'ask_real', trust: 0 },
         { id: 'later', label: '"Maybe another time."',
-          line: '"...Right. Of course. Sorry." They withdraw a fraction.',
-          trust: -1 },
+          line: '"Of course. No pressure — the offer stands."',
+          trust: 0 },
       ],
       followUp: '"I meant it — can I ask you something? Person to person."',
       lapse: '"Never mind. Forget it."',
@@ -1438,6 +1438,29 @@
       ];
     },
 
+    // convoHonestPassReact: the graceful accept when the player honestly
+    // opts out of a bespoke question ("I'd rather not say."). No guilt,
+    // no chill — wistful at most. Varied per villager AND per question
+    // (unique-person law, Steve 2026-10-06): stable per (villager, qid)
+    // so nobody contradicts themselves, different across people so it
+    // never reads as a fixed cast. (Steve 2026-10-08.)
+    convoHonestPassReact(vid, qid) {
+      const pool = [
+        '"Fair enough." A nod, no pressure. Some things keep.',
+        '"Okay." They don\'t push. "Not everything needs saying out loud."',
+        'An easy shrug. "Your call. I\'m just glad you\'re talking at all."',
+        '"Say no more." And they mean it — the subject closes like a door, gently.',
+        'They accept it without a flicker. "Plenty I don\'t say either."',
+        '"Understood." A quiet beat that isn\'t awkward — just room.',
+        'A small, real nod. "Some questions can wait. I\'m patient."',
+        '"No worries." The conversation breathes, and moves on.',
+      ];
+      let h = 0;
+      const s = String(vid == null ? '' : vid) + '|' + String(qid == null ? '' : qid);
+      for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
+      return pool[h % pool.length];
+    },
+
     // convoNoteFlora: the green world came up in this conversation. Later
     // teaching can connect to it — Rule 2: show/teach relates to what's
     // being discussed. Tracks a specific named plant when one appears.
@@ -2413,7 +2436,16 @@
       if (c.pendingQ) {
         const region = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'far from here';
         for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: String(a.label).replaceAll('{region}', region) });
-        choices.push({ id: 'deflect_q', label: '(avoid the question)' });
+        // HONEST OPT-OUT (Steve 2026-10-08): every bespoke question
+        // guarantees a free, graceful "I'd rather not say." Data authors
+        // can supply a bespoke one flagged honest_opt_out — the engine
+        // never double-adds. No trust cost, no mood cool, ever.
+        const hasHonestOptOut = (c.pendingQ.answers || []).some(a => a && a.honest_opt_out);
+        if (!hasHonestOptOut) choices.push({ id: 'ans:' + c.pendingQ.id + ':honest_pass', label: '"I\'d rather not say."' });
+        // (change the subject) is the genuinely rude option now that an
+        // honest opt-out is free — choosing it is a real choice to dodge,
+        // so the small trust cost is fair and the rudeness is legible.
+        choices.push({ id: 'deflect_q', label: '(change the subject)' });
         choices.push({ id: 'leave', label: '"I should go."' });
         return choices;
       }
@@ -3042,6 +3074,24 @@
       } else if (choiceId.indexOf('ans:') === 0) {
         const parts = choiceId.split(':');
         const qid = parts[1], aid = parts[2];
+        if (aid === 'honest_pass') {
+          // ENGINE-GUARANTEED HONEST OPT-OUT (Steve 2026-10-08): the player
+          // honestly declined to answer. The question resolves, the
+          // conversation continues — NO trust penalty, NO mood cool. The
+          // NPC accepts gracefully (convoHonestPassReact), never guilt-trips.
+          const qd = (cg.questions || []).find(q => q.id === qid);
+          c.answered[qid] = aid;
+          if (c.askedQs.indexOf(qid) === -1) c.askedQs.push(qid);
+          try { this.noteAskedQ(qid); } catch (e) {}
+          c.pendingQ = null;
+          const react = this.convoHonestPassReact(vid, qid);
+          const saidLabel = '"I\'d rather not say."';
+          done(this.voiceLine(vid, this.fillTalkLine(react, this.vpOf(vid))), saidLabel);
+          this.remember(vid, 'you_said', qid + '=honest_pass');
+          if (qd && qd.follow && Math.random() < 0.5) {
+            extraLine = this.voiceLine(vid, this.fillTalkLine(qd.follow, this.vpOf(vid)));
+          }
+        } else {
         const qd = (cg.questions || []).find(q => q.id === qid);
         const ad = qd && qd.answers.find(a => a.id === aid);
         c.answered[qid] = aid;
@@ -3060,6 +3110,7 @@
         if (qd && qd.follow && Math.random() < 0.5) {
           extraLine = this.voiceLine(vid, this.fillTalkLine(qd.follow, this.vpOf(vid)));
         }
+        }
       } else if (choiceId === 'deflect_q') {
         const qid = c.pendingQ && c.pendingQ.id;
         c.pendingQ = null;
@@ -3067,9 +3118,10 @@
         try { this.noteAskedQ(qid); } catch (e) {}
         const t = this.state.village.trust || {};
         t[vid] = Math.max(0, (t[vid] || 10) - 1);
-        // MOOD: dodging a direct question cools the room.
+        // MOOD: dodging a direct question cools the room. Fair now that an
+        // honest opt-out is free — this is a choice to be rude, not a trap.
         mshift(-1);
-        done('"Okay." Something shutters, just slightly.', '(avoid the question)');
+        done('"Okay." Something shutters, just slightly.', '(change the subject)');
       } else if (choiceId.indexOf('react:') === 0) {
         // REACTIVE ANSWER: engaged their direct question. The outcome must
         // read as a RESPONSE to what they asked — never a canned pivot.
