@@ -15,8 +15,11 @@
 //   - feedback(msg)
 //   - feedbackLines()
 //   - feedbackMark()
+//   - startAlienCombat(fighter)
+//   - tbAlienTurn(m)
 // rules:
 //   - knowledge_gated: true (code: encounters.js)
+//   - (alien-wiring) alien-player pool rolls SEPARATE from monsters in checkEncounter (guarded); hostile person-fighters take bespoke tbAlienTurn via tbMonsterTurn+tbHostileTurn intercepts, never the monster/betrayal pipelines; tbEndCheck counts alien hostiles (code: encounters.js)
 // consumes:
 //   - state.encounters
 /* ENCOUNTER FRAMEWORK — src/js/encounters.js
@@ -2292,6 +2295,358 @@
     return true;
   };
   G.huntAnimal._wrapped = true;
+
+  // ================= ALIEN-PLAYER ENCOUNTER WIRING (Steve 2026-10-08) =================
+  // The exclusive alien-player pool (src/js/alienPlayers.js) was dead code:
+  // apRollEncounter/apStartEncounter existed with a "called from the encounter
+  // phase" comment but no call site. This section wires the pool into the live
+  // game WITHOUT touching game.js (chain-safe wraps, same as every other
+  // module). Three pieces:
+  //
+  // 1. checkEncounter wrap — after the monster encounter phase, take the
+  //    alien pool's SEPARATE roll. Skipped when a fight already started, a
+  //    monster holds the tile, an animal encounter is live, or the module
+  //    failed to load (guarded like contests.js _contestVerdict's
+  //    apContestInterference call). Gating (post-System, wave 2+, safe tiles,
+  //    readiness) lives inside the module's apEncounterEligible.
+  // 2. startAlienCombat(fighter) — builds this.tbfight for a PERSON fight:
+  //    player + party villagers + one kind:'hostile' fighter. The combat
+  //    engine already treats 'hostile' as an enemy (targeting, damage).
+  // 3. tbAlienTurn(m) — the hostile fighter's bespoke turn: intercepted in
+  //    tbMonsterTurn (browser async path) and lazily in tbHostileTurn inside
+  //    startAlienCombat (node/sync path via party.js's tbAdvance, which
+  //    would otherwise run the betrayal AI on an alien). Chain-safe. The
+  //    monster pipeline (needs m.mdef) and the betrayal pipeline
+  //    (begging/yielding villagers) never see a person. Windup → heavy
+  //    burst → recovery, with grid-highlighted telegraphs, audio cues, and
+  //    knowledge-safe lines.
+  //
+  // 4. BEAM KEY ADAPTER — alienPlayers.js addresses the player fighter as
+  //    'player' in apBeamHit, but the engine's key is 'p' (tbFighter('player')
+  //    is undefined, so the beam announced and silently whiffed). Translated
+  //    lazily in startAlienCombat, same load-order reason as (3).
+  //
+  // KNOWLEDGE (Steve 2026-10-07): pre-reveal the fighter is a "Stranger".
+  // Nothing here names the alien truth — fighter.name is already gated by
+  // the module, and the flavor lines below describe behavior, never species.
+
+  var _checkEncounter = G.checkEncounter;
+  G.checkEncounter = function () {
+    var r = _checkEncounter ? _checkEncounter.apply(this, arguments) : undefined;
+    try {
+      // GUARDED (contests.js _contestVerdict pattern): module absent = no-op.
+      if (typeof this.apRollEncounter !== 'function') return r;
+      // The monster phase already claimed this crossing — separate pools,
+      // separate beats. No doubling up on one tile entry.
+      if (this.inCombat && this.inCombat()) return r;
+      var s = this.state.scholar || {};
+      if (s.animal) return r;
+      var px = this.map.px, py = this.map.py;
+      if (this.monsterAt && this.monsterAt(px, py)) return r;
+      var pid = this.apRollEncounter();
+      if (pid && typeof this.apStartEncounter === 'function') {
+        this.apStartEncounter(pid);
+      }
+    } catch (e) {}
+    return r;
+  };
+  G.checkEncounter._wrapped = true;
+
+  // Start turn-based combat against an alien-player fighter. apStartEncounter
+  // calls this when the module is loaded; the module's fallback (a line of
+  // text, no fight) covers a missing definition.
+  G.startAlienCombat = function (fighter) {
+    if (!fighter) return null;
+    if (this.inCombat && this.inCombat()) return null;
+    // LATE CHAIN (load order): party.js Object.assigns tbHostileTurn AFTER
+    // encounters.js loads, so a load-time wrap would be silently replaced.
+    // Install the intercept here instead — no fight can start before every
+    // module has loaded. Idempotent. Without it, node/sync combat would run
+    // the betrayal AI (begging/yielding villagers) on an alien fighter.
+    if (!G.startAlienCombat._hostileWrapped) {
+      G.startAlienCombat._hostileWrapped = true;
+      var _tbHostileTurnLate = G.tbHostileTurn;
+      G.tbHostileTurn = function (m) {
+        try {
+          if (m && m.alienPid && typeof this.tbAlienTurn === 'function') {
+            this.tbAlienTurn(m);
+            return;
+          }
+        } catch (e) {}
+        return _tbHostileTurnLate ? _tbHostileTurnLate.apply(this, arguments) : undefined;
+      };
+    }
+    // BEAM KEY ADAPTER (module bug, fixed at the seam): alienPlayers.js
+    // addresses the player fighter as 'player' in apBeamHit, but the combat
+    // engine's key is 'p' — tbFighter('player') is undefined, so beam damage
+    // silently landed on nobody (the beam announced, then whiffed). Translate
+    // here; encounters.js is this worker's surface and the module file is
+    // owned by another worker. Same lazy install for the load-order reason.
+    if (!G.startAlienCombat._beamWrapped) {
+      G.startAlienCombat._beamWrapped = true;
+      var _apBeamHitLate = G.apBeamHit;
+      G.apBeamHit = function (targetKey, dmg, sourceLabel, opts) {
+        if (targetKey === 'player') targetKey = 'p';
+        return _apBeamHitLate ? _apBeamHitLate.apply(this, [targetKey, dmg, sourceLabel, opts]) : undefined;
+      };
+    }
+    try { this.resetPerFightFlags(); } catch (e) {}
+    var s = this.state.scholar || {};
+    var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
+    var fighters = [];
+    fighters.push({
+      key: 'p', kind: 'player', name: 'You', emoji: '🧑',
+      hp: s.health, maxHp: (this.maxHealth ? this.maxHealth() : 100),
+      speed: this.playerSpeed(), mx: px, my: py,
+      alive: true, fled: false, moveLeft: 0, acted: false, aimed: false,
+    });
+    // party: villagers within 4 squares join (nearest 4 — no zerg).
+    // Same shape as a monster fight; villagers fight people too.
+    try {
+      var vpos = (this.state.village && this.state.village.positions) || {};
+      var roster = (this.state.village && this.state.village.roster) || [];
+      var cands = [];
+      for (var i = 0; i < roster.length; i++) {
+        var pos = vpos[roster[i]];
+        if (!pos) continue;
+        var d = Math.max(Math.abs(pos.mx - px), Math.abs(pos.my - py));
+        if (d > 4) continue;
+        cands.push({ rid: roster[i], pos: pos, d: d });
+      }
+      cands.sort(function (a, b) { return a.d - b.d; });
+      for (var k = 0; k < Math.min(4, cands.length); k++) {
+        var rid = cands[k].rid, vp = cands[k].pos;
+        var vdef = null;
+        try {
+          var vl = this.data.villagers || [];
+          for (var vi = 0; vi < vl.length; vi++) if (vl[vi].id === rid) { vdef = vl[vi]; break; }
+        } catch (e2) {}
+        var temp = (vdef && vdef.personality && vdef.personality.temperament) || 'steady';
+        var ai = temp === 'bold' ? 'brave' : temp === 'cautious' ? 'cautious' : 'helpful';
+        fighters.push({
+          key: 'v_' + rid, kind: 'villager', villagerId: rid,
+          name: this.displayName ? this.displayName(rid) : rid, emoji: '🧍',
+          hp: 30, maxHp: 30, speed: 3, mx: vp.mx, my: vp.my,
+          alive: true, fled: false, ai: ai, helped: false,
+        });
+      }
+    } catch (e) {}
+    // Normalize the person-fighter for the combat engine.
+    fighter.telegraph = null;
+    fighter.moveLeft = 0; fighter.acted = false;
+    fighter.apTurns = 0; fighter.apSpent = 0;
+    fighters.push(fighter);
+    this.tbfight = {
+      id: 'f' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e9).toString(36),
+      fighters: fighters,
+      order: S.combat.turnOrder(fighters),
+      turnIdx: -1, round: 1,
+      over: false, result: null,
+      terraform: {},
+      alienFight: true,
+    };
+    var partyNames = fighters.filter(function (x) { return x.kind === 'villager'; }).map(function (x) { return x.name; });
+    var dispName = fighter.name || 'The stranger';
+    // FACE TO FACE (Steve 2026-10-04 rule, person edition): the ambiguity
+    // does NOT end. Descriptor and dread, not a name — pre-reveal.
+    this.say('⚔ ' + dispName.toUpperCase() + '! ' +
+      (partyNames.length ? partyNames.join(', ') + (partyNames.length > 1 ? ' join' : ' joins') + ' you!' : "You're on your own."));
+    this.say('Turn-based now. Tap a tile to move — speed is squares. Then act.');
+    try { this.audioEvent('combatStart'); } catch (e) {}
+    try { this.combatWitnessReact('start'); } catch (e) {}
+    try { this.observe('fight'); } catch (e) {}
+    this.pendingEncounter = false;
+    // OPENING TURNS: same as a monster fight — fastest fighter opens, run AI
+    // turns until the player's turn lands (no "Not your turn" soft-lock).
+    this.tbfight.turnIdx = -1;
+    try { this.tbBeginTurn(); } catch (e) {}
+    try { if (!this.tbIsPlayerTurn()) this.tbAdvance(); } catch (e) {}
+    return this.tbfight;
+  };
+
+  // The alien fighter's turn. People don't telegraph like beasts — they
+  // fight like players: close in, strike, and every third turn plant their
+  // feet for a heavy burst (windup → action → recovery, all legible).
+  G.tbAlienTurn = function (m) {
+    var f = this.tbfight;
+    if (!f || f.over || !m || !m.alive || m.fled) return;
+    var pid = m.alienPid;
+    var mName = m.name || 'The stranger';
+    var self = this;
+    function endTurn() { try { self.tbEndCheck(); } catch (e) {} }
+
+    // 1. RETREAT STANCE (Steve 2026-10-07): broke personas can't afford
+    // another body — at critical HP they break off instead of dying.
+    try {
+      var stance = (typeof this.apWealthStance === 'function') ? this.apWealthStance(pid, m) : 'normal';
+      if (m._wantsRetreat || stance === 'retreating') {
+        m.fled = true;
+        this.say(mName + ' breaks off — backing away, hands raised, then GONE into the treeline.');
+        try { this.audioEvent('alienRetreat'); } catch (e) {}
+        endTurn();
+        return;
+      }
+    } catch (e) {}
+
+    // 2. PENDING HEAVY resolves: burst radius 1 around the declared tile.
+    // The grid highlight was the warning; being elsewhere was the answer.
+    if (m.telegraph && m.telegraph.kind === 'apHeavy') {
+      var tg = m.telegraph;
+      m.telegraph = null;
+      var cx = (tg.aim && tg.aim.x != null) ? tg.aim.x : m.mx;
+      var cy = (tg.aim && tg.aim.y != null) ? tg.aim.y : m.my;
+      var hit = [];
+      for (var i = 0; i < f.fighters.length; i++) {
+        var o = f.fighters[i];
+        if (!o.alive || o.fled || o.key === m.key) continue;
+        var foe = false;
+        try { foe = S.combat.isFoe(m, o); } catch (e) {}
+        if (!foe) continue;
+        if (Math.max(Math.abs(o.mx - cx), Math.abs(o.my - cy)) <= 1) hit.push(o);
+      }
+      if (!hit.length) {
+        this.say(mName + "'s heavy strike lands on empty ground — dirt fountains where you stood.");
+      } else {
+        this.say(mName + ' brings the heavy strike DOWN — the ground erupts.');
+      }
+      var dmg = tg.dmg || 18;
+      for (var h = 0; h < hit.length; h++) {
+        this.tbDamage(hit[h].key, dmg, mName + "'s heavy strike");
+      }
+      try { this.drama('alienHeavyHit', cx, cy); } catch (e) {}
+      m.apSpent = 1; // recovery: the strike took it out of them
+      try { this.tbRefreshTelegraphUI(); } catch (e) {}
+      endTurn();
+      return;
+    }
+
+    // 3. RECOVERY: still moves (half), doesn't attack. The window is real.
+    // (apSpent decrements at the END of the recovery turn, so the gates
+    // below actually see it.)
+    if (m.apSpent > 0) {
+      try {
+        this.saySituationOnce(m, 'apRecovery', mName + ' circles, breathing hard — the heavy strike took it out of them. (recovery — punish now)');
+      } catch (e) { this.say(mName + ' circles, breathing hard. (recovery)'); }
+    }
+
+    // 4. Target: nearest enemy (player or villager ally).
+    var tgt = null;
+    try { tgt = S.combat.nearestEnemy(f.fighters, m); } catch (e) {}
+    if (!tgt || !tgt.f) { endTurn(); return; }
+    var t = tgt.f;
+
+    // 5. Close in (half speed while recovering).
+    var budget = (m.apSpent > 0) ? Math.max(1, Math.ceil((m.speed || 4) / 2)) : (m.speed || 4);
+    try {
+      var blocked = (function (mm) {
+        return function (x, y) { return self.tbBlocked(x, y) && !(x === mm.mx && y === mm.my); };
+      })(m);
+      for (var sn = 0; sn < budget; sn++) {
+        if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) break;
+        var st = this.tbStepToward(m, t.mx, t.my, blocked);
+        if (!st || !st.moved) break;
+      }
+    } catch (e) {}
+    var dist = Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my));
+
+    // 6. HEAVY STRIKE declare (every 3rd turn, in range): windup 1, burst 1.
+    // The grid IS the telegraph — highlighted cells, audio cue, legible.
+    m.apTurns = (m.apTurns || 0) + 1;
+    if (m.apTurns % 3 === 0 && dist <= 3 && !(m.apSpent > 0)) {
+      var cells = [];
+      for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) {
+        var gx = t.mx + dx, gy = t.my + dy;
+        if (gx >= 0 && gx <= 8 && gy >= 0 && gy <= 8) cells.push({ cx: gx, cy: gy });
+      }
+      var heavy = Math.round((m.heavyDmg || 18) * (m._enraged ? 1.5 : 1));
+      m.telegraph = { kind: 'apHeavy', cells: cells, dmg: heavy, aim: { x: t.mx, y: t.my }, attackName: 'heavy strike', turnsLeft: 1 };
+      this.say('⚠ ' + mName + ' plants their feet — HEAVY STRIKE winding up. The marked ground is about to erupt. MOVE.');
+      try {
+        this.warnCells(cells, 1);
+        this.audioEvent('telegraph', { urgency: 1, pattern: 'burst' });
+        this.tbRefreshTelegraphUI();
+      } catch (e) {}
+      endTurn();
+      return;
+    }
+
+    // 7. Melee strike when adjacent. Persona-flavored but knowledge-safe:
+    // behavior, never species — pre-reveal this is just a strange person.
+    if (dist <= 1 && !(m.apSpent > 0)) {
+      var base = 8 + Math.floor(Math.random() * 7);
+      try { base += (typeof this.apProgressLevel === 'function') ? this.apProgressLevel(pid) : 0; } catch (e) {}
+      if (m._enraged) base = Math.round(base * 1.5);
+      var disp = 'neutral';
+      try {
+        var per = (typeof this.apPersona === 'function') ? this.apPersona(pid) : null;
+        if (per && per.disposition) disp = per.disposition;
+      } catch (e) {}
+      var verb = disp === 'sadistic'
+        ? 'They smile while they strike — like this is the fun part.'
+        : disp === 'benevolent'
+        ? 'They pull the blow at the last instant — holding back, even now.'
+        : 'Efficient. Practiced. No wasted motion.';
+      this.say('🗡 ' + mName + ' strikes. ' + verb);
+      this.tbDamage(t.key, base, mName + "'s strike");
+      try { this.audioEvent('meleeHit'); } catch (e) {}
+    } else if (dist > 1) {
+      this.say(mName + ' closes in, patient and unhurried.');
+    }
+    if (m.apSpent > 0) m.apSpent -= 1; // recovery spent at end of the turn
+    endTurn();
+  };
+
+  // Intercept: hostile person-fighters take the bespoke turn.
+  // tbMonsterTurn covers the browser's stepped tbAdvanceAsync, which calls it
+  // directly for every non-player fighter. (The monster pipeline needs
+  // m.mdef — a person has none, so it must never reach the generic turn.)
+  // The node/sync path (party.js's tbAdvance) routes kind:'hostile' to
+  // tbHostileTurn instead — that intercept is installed LAZILY inside
+  // startAlienCombat below, because party.js Object.assigns tbHostileTurn
+  // AFTER encounters.js loads and would silently replace a load-time wrap.
+  var _tbMonsterTurn = G.tbMonsterTurn;
+  G.tbMonsterTurn = function (m) {
+    try {
+      if (m && m.kind === 'hostile' && m.alienPid && typeof this.tbAlienTurn === 'function') {
+        this.tbAlienTurn(m);
+        return;
+      }
+    } catch (e) {}
+    return _tbMonsterTurn ? _tbMonsterTurn.apply(this, arguments) : undefined;
+  };
+
+  // tbEndCheck ends combat when no MONSTERS fight — an alien-only fight
+  // would end instantly as a phantom win. Wrap it (chain-safe; party.js's
+  // betrayal wrap chains after this one): alien hostiles are the enemy.
+  var _tbEndCheck = G.tbEndCheck;
+  G.tbEndCheck = function () {
+    try {
+      var f = this.tbfight;
+      if (f && !f.over && !f.betrayal) {
+        var hostiles = (f.fighters || []).filter(function (x) { return x.kind === 'hostile' && x.alienPid; });
+        if (hostiles.length) {
+          var alive = hostiles.filter(function (x) { return x.alive && !x.fled; });
+          var p = this.tbFighter ? this.tbFighter('p') : null;
+          if (!alive.length) { this.tbEnd('won'); return true; }
+          if (p && (!p.alive || p.fled)) {
+            if (!p.alive) {
+              this.state.scholar.health = Math.max(0, p.hp);
+              if (this.maybeCheatDeath && this.maybeCheatDeath()) {
+                p.hp = this.state.scholar.health;
+                if (p.hp > 0) { p.alive = true; this.say('You refuse to stay down. The fight goes on.'); return false; }
+              }
+              this.tbEnd('lost');
+            } else {
+              this.tbEnd('fled');
+            }
+            return true;
+          }
+          return false;
+        }
+      }
+    } catch (e) {}
+    return _tbEndCheck ? _tbEndCheck.apply(this, arguments) : false;
+  };
 
   // ================= REGISTRATION CHECKLIST (see header) =================
   G.encChecklist = function () {

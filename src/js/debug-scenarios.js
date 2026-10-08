@@ -1059,6 +1059,38 @@
         Game.say(`🐞 Eligible: ${eligible.length} (${eligible.map(e => e.name).join(', ')})`);
       } catch (e) { Game.say('🐞 eligibility check failed: ' + e.message); }
     },
+
+    // ALIEN PLAYERS (Steve 2026-10-08): the exclusive pool, wired live.
+    // Day 30, wave 2, System integrated, two allies at your side — the
+    // readiness gate passes and the encounter fires through the REAL roll
+    // path (not a forced spawn). Out in the wild, two taps, in-fiction.
+    alienEncounter() {
+      freshGame();
+      toWildNode();
+      const s = Game.state.scholar;
+      s.day = 30;
+      Game.state.systemArrived = true;
+      Game.state.systemIntegration = 1; // apReadinessCheck: seasoned world
+      Game.state.waveKills = { 1: 4 };  // unlockedWave() >= 2
+      giveWeapon('fire_hardened_spear');
+      s.health = 120;
+      const placed = placeVillagers([[3, 3], [5, 5]]);
+      Game.state.party = placed.slice(0, 2); // readiness: 2 allies
+      Game.say('🐞 SCENARIO: alien player encounter. Day 30, wave 2, the System watching.');
+      Game.say('You walk the wilds with two allies. Something out there is wrong in a way you can\'t name.');
+      // Fire through the REAL path: spin the exclusive-pool roll until it
+      // lands, then start it. The roll is 8%/crossing — this loop is the
+      // "walking the wilds" part, fast-forwarded.
+      try {
+        let pid = null, tries = 0;
+        while (!pid && tries++ < 500) pid = Game.apRollEncounter();
+        if (pid && Game.apStartEncounter(pid)) {
+          Game.say('🐞 The exclusive pool fired. This is a PERSON — kind: hostile, not monster. Fight like it.');
+        } else {
+          Game.say('🐞 alien encounter failed to fire — the pool is wired but the roll never landed.');
+        }
+      } catch (e) { Game.say('🐞 alien encounter failed: ' + e.message); }
+    },
   };
 
   // RETIRED: scenarios we're confident are solid. Never deleted — saved for
@@ -1146,6 +1178,7 @@
       ['contestWatch', '📺 Contest: WATCH MODE (villager taken)'],
       ['showWhyEat', '📺 Show: WHY DO THEY EAT?'],
       ['contestEligible', '📺 Contest eligibility check'],
+      ['alienEncounter', '👤 Alien player encounter'],
     ];
   };
 
@@ -1161,6 +1194,7 @@
       '⚖️ Justice & Social': ['ambush', 'mootAccused', 'mootJuror', 'exile', 'uprising', 'liars'],
       '📖 Story': ['mantle', 'day7', 'day1', 'night', 'language', 'starving'],
       '📺 Contests & Shows': ['contestPit', 'contestHide', 'contestForage', 'contestWatch', 'showWhyEat', 'contestEligible'],
+      '👤 Alien Players': ['alienEncounter'],
       '💍 Items': ['keepsake'],
     };
     // Only include categories that have at least one existing scenario
