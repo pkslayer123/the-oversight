@@ -13542,8 +13542,12 @@
       const sel = slot.querySelector('#bury-what').value; // "material:branch" | "food:3"
       const qty = Math.max(1, +slot.querySelector('#bury-qty').value || 1);
       const [kind, key] = sel.split(':');
-      Game.buryCache(kind, kind === 'food' ? +key : key, qty);
-      inlineView = { kind: 'caches', result: 'Buried.', mapKey: inlineMapKey() };
+      // HONESTY (miser break-it 2026-10-08): only confirm when the engine
+      // actually buried something — a refused bury explains itself, and the
+      // old code stamped "Buried." even on refusals (mirrors takeFromCache
+      // wiring above, which already gates its confirmation on res).
+      const res = Game.buryCache(kind, kind === 'food' ? +key : key, qty);
+      inlineView = { kind: 'caches', result: res ? 'Buried.' : null, mapKey: inlineMapKey() };
       refresh();
     };
   }

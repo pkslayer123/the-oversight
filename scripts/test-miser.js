@@ -65,11 +65,14 @@ const ME = () => Game.state.scholar.villagerId;
   Game.takeMaterial('branch', 20);
   Game.spendMaterial('branch', 99);
   const v = Game.state.village;
-  const net = (v.stashGives[ME()] || 0) - (v.stashTakes[ME()] || 0);
-  ok('takes accumulate in the ledger', (v.stashTakes[ME()] || 0) === 35);
+  // LEDGER SHAPE (miser break-it 2026-10-08): stashGives/stashTakes are now
+  // per-material objects ({branch: n}); sum for totals, _stashTotalNet for net.
+  const takesSum = Object.values(v.stashTakes[ME()] || {}).reduce((t, x) => t + (x || 0), 0);
+  const net = Game._stashTotalNet(ME());
+  ok('takes accumulate in the ledger', takesSum === 35);
   ok('net goes negative past -20', net < -20);
   ok('heavy taking costs trust', ((v.trust || {})[ME()] || 0) < tMid);
-  console.log(`  stash drain: gives=10 takes=${v.stashTakes[ME()] || 0} net=${net}, trust ${tMid} → ${(v.trust || {})[ME()]}`);
+  console.log(`  stash drain: gives=10 takes=${takesSum} net=${net}, trust ${tMid} → ${(v.trust || {})[ME()]}`);
 
   const lt = Game.stashLedgerText(5);
   ok('ledger text lists gives and takes', /left/.test(lt) && /took/.test(lt));
@@ -165,7 +168,7 @@ const ME = () => Game.state.scholar.villagerId;
   Game.stashState().materials.branch = 100;
   Game.takeMaterial('branch', 60); // weight-capped; takes what fits
   const v2 = Game.state.village;
-  const took = v2.stashTakes[ME()] || 0;
+  const took = Object.values((v2.stashTakes || {})[ME()] || {}).reduce((t, x) => t + (x || 0), 0);
   const heat2 = Game.justiceHeat();
   console.log(`  stash-only drain: took=${took}, justice heat=${heat2} (pickpocket theft heat was >=15)`);
   ok('stash ledger tracks the drain', took > 0);

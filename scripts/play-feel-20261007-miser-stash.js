@@ -129,9 +129,9 @@ function freshGame() {
     const after = Game.state.village.trust[ME()];
     if (after < before) trustDrops++;
     if (said.some(t => /Someone watches you take/.test(t))) watched++;
-    if ((Game.state.village.stashTakes[ME()] || 0) - (Game.state.village.stashGives[ME()] || 0) > 20) break;
+    if (Game._stashTotalNet(ME()) < -20) break;
   }
-  const net = (Game.state.village.stashGives[ME()] || 0) - (Game.state.village.stashTakes[ME()] || 0);
+  const net = Game._stashTotalNet(ME());
   console.log(`drain: ${takes} takes of 5, net=${net}, trust-costing takes=${trustDrops}, "watched" messages=${watched}`);
   check('takes past net -20 cost trust', trustDrops > 0, `trustDrops=${trustDrops}`);
   check('the watched message fires while draining', watched > 0, `watched=${watched}`);

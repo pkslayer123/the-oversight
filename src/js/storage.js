@@ -22,14 +22,17 @@
 //   - stashHtml()
 //   - stashLog()
 //   - stashLedgerText()
+//   - _stashLedgers(vid)
+//   - _stashToolLedgers(vid)
+//   - _stashTotalNet(vid)
 //   - buryCache()
 //   - digUpCache()
 //   - takeFromCache(cacheId, itemIdx, qty)
 //   - playerCaches()
 //   - cachesHtml()
 //   - cacheTheftChance()
-//   - pickCacheRobber()
-//   - plantCacheTheftSuspicion()
+//   - pickCacheRobber(village?)
+//   - plantCacheTheftSuspicion(vid, c, village?)
 //   - villageTrustLevel()
 // rules:
 //   - (none documented)
@@ -234,6 +237,36 @@
       st.ledger.unshift({ day: day(), vid: vid === undefined ? this.state.scholar.villagerId : vid, kind, what, qty });
       if (st.ledger.length > 30) st.ledger.length = 30;
     },
+    // _stashLedgers(vid): {gives, takes} — per-material unit counts for one
+    // villager's stash traffic. Legacy saves stored a flat number per
+    // villager; migrated to __legacy so old totals still count for the
+    // hoarding rule while new traffic tracks per material.
+    _stashLedgers(vid) {
+      const v = this.state.village;
+      v.stashGives = v.stashGives || {}; v.stashTakes = v.stashTakes || {};
+      for (const key of ['stashGives', 'stashTakes']) {
+        const cur = v[key][vid];
+        if (typeof cur === 'number') v[key][vid] = { __legacy: cur };
+        else if (!cur || typeof cur !== 'object') v[key][vid] = {};
+      }
+      return { gives: v.stashGives[vid], takes: v.stashTakes[vid] };
+    },
+    // _stashToolLedgers(vid): same, per tool itemId. Legacy numbers → __legacy.
+    _stashToolLedgers(vid) {
+      const v = this.state.village;
+      v.stashToolGives = v.stashToolGives || {}; v.stashToolTakes = v.stashToolTakes || {};
+      for (const key of ['stashToolGives', 'stashToolTakes']) {
+        const cur = v[key][vid];
+        if (typeof cur === 'number') v[key][vid] = { __legacy: cur };
+        else if (!cur || typeof cur !== 'object') v[key][vid] = {};
+      }
+      return { gives: v.stashToolGives[vid], takes: v.stashToolTakes[vid] };
+    },
+    _stashTotalNet(vid) {
+      const led = this._stashLedgers(vid);
+      const sum = (o) => Object.values(o).reduce((t, x) => t + (x || 0), 0);
+      return sum(led.gives) - sum(led.takes);
+    },
     // villageTrustLevel: open (nobody worries), wary, closed (hoard and hide).
     villageTrustLevel() {
       const v = this.state.village;
@@ -257,13 +290,20 @@
       this.stashLog('give', def.name, n);
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
-      // TRUST SCALES WITH THE HAUL (miser loop 2026-10-08): the old flat +1
-      // per call farmed infinite trust via donate-one/take-one-back cycles.
-      // Pantry precedent: token donations don't count; real hauls do.
-      const tGain = Math.min(5, Math.floor(n / 10));
+      // TRUST FOLLOWS NET CONTRIBUTION (miser break-it 2026-10-08): the old
+      // gross-haul grant (+1 per 10 units donated) farmed infinite trust via
+      // donate-10/take-9 cycles — the take-back sting only fired at net<=0,
+      // so parking net at +1 printed +1 trust per cycle forever (measured
+      // +20 trust over 20 cycles). Grants now happen on 10-unit NET bands
+      // per material: crossing a band upward grants, and takeMaterial
+      // revokes band-for-band on the way back down. The farm nets zero.
+      // Token donations still count — bands accumulate across small gifts.
+      const led = this._stashLedgers(vid);
+      const netBefore = (led.gives[mat] || 0) - (led.takes[mat] || 0);
+      led.gives[mat] = (led.gives[mat] || 0) + n;
+      const netAfter = netBefore + n;
+      const tGain = Math.max(0, Math.floor(netAfter / 10) - Math.floor(netBefore / 10));
       if (tGain > 0) v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + tGain);
-      v.stashGives = v.stashGives || {};
-      v.stashGives[vid] = (v.stashGives[vid] || 0) + n;
       this.observe('donate');
       this.say(`Set ${n} ${matName(mat, n)} in the village stash. The pile grows.`);
       return this.tickAction(2) || this.status();
@@ -291,10 +331,29 @@
       this.stashLog('take', def.name, n);
       // SOCIAL: the ledger remembers. Takers who never give are noticed.
       const v = this.state.village, vid = this.state.scholar.villagerId;
-      v.stashGives = v.stashGives || {}; v.stashTakes = v.stashTakes || {};
-      v.stashTakes[vid] = (v.stashTakes[vid] || 0) + n;
-      const net = (v.stashGives[vid] || 0) - (v.stashTakes[vid] || 0);
-      if (net < -20) {
+      const led = this._stashLedgers(vid);
+      const netBefore = (led.gives[mat] || 0) - (led.takes[mat] || 0);
+      led.takes[mat] = (led.takes[mat] || 0) + n;
+      const netAfter = netBefore - n;
+      // TAKE-BACK STING (miser break-it 2026-10-08): fires only for the SAME
+      // material you gave. Donating branch and taking stone is normal
+      // communal use — the old flat-net check accused you of "taking back
+      // what you gave" falsely. When the sting fires it is the WHOLE
+      // take-back consequence (-5, mirroring the pantry rule): the band
+      // revoke below is skipped, so taking back everything you gave costs
+      // exactly the noticed -5, not revoke AND sting.
+      const isTakeBack = (led.gives[mat] || 0) > 0 && netAfter <= 0;
+      // BAND REVOKE (miser break-it 2026-10-08): withdrawing donated stock
+      // unwinds the trust the donation earned, band for band. This is what
+      // kills the donate-10/take-9 farm — every cycle nets zero trust.
+      // (Skipped when the sting fires — see above.)
+      const revoke = isTakeBack ? 0 : Math.max(0, Math.floor(netBefore / 10) - Math.floor(netAfter / 10));
+      if (revoke > 0) {
+        v.trust = v.trust || {};
+        v.trust[vid] = Math.max(0, (v.trust[vid] === undefined ? 15 : v.trust[vid]) - revoke);
+      }
+      const totalNet = this._stashTotalNet(vid);
+      if (totalNet < -20) {
         v.trust = v.trust || {};
         // NOTE (miser loop 2026-10-07): explicit undefined check — the old
         // `(v.trust[vid] || 15)` reset trust to 13 the take after hitting 0
@@ -303,10 +362,8 @@
         this.observe('hoard');
         if (Math.random() < 0.4) this.say('Someone watches you take from the stash. They say nothing. The ledger says everything.');
       }
-      // EXPLOIT: donate-then-take-back (miser loop 2026-10-08). Mirrors the
-      // pantry rule in takeFromPantry: they remember you gave, they remember
-      // you took it back. That's worse.
-      if ((v.stashGives[vid] || 0) > 0 && net <= 0) {
+      if (isTakeBack) {
+        v.trust = v.trust || {};
         v.trust[vid] = Math.max(0, (v.trust[vid] === undefined ? 15 : v.trust[vid]) - 5);
         this.say('You took back what you gave. They noticed. Trust -5.');
       }
@@ -331,10 +388,12 @@
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
       v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
-      // TAKE-BACK TRACKING (miser loop 2026-10-08): donating then re-taking
-      // the same tool farmed +2 trust per cycle. Tracked like materials.
-      v.stashToolGives = v.stashToolGives || {};
-      v.stashToolGives[vid] = (v.stashToolGives[vid] || 0) + 1;
+      // TAKE-BACK TRACKING (miser loop 2026-10-08; per-tool miser break-it
+      // 2026-10-08): donating then re-taking the same tool farmed +2 trust
+      // per cycle. The old flat counter ALSO accused you of taking back YOUR
+      // tool when you borrowed a different one — tracked per itemId now.
+      const tg = this._stashToolLedgers(vid);
+      tg.gives[id] = (tg.gives[id] || 0) + 1;
       this.say(`Left your ${item.name || def.name} in the stash. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },
@@ -351,13 +410,17 @@
       const inv = this.state.scholar.inventory || [];
       inv.push({ itemId, name: tool.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
       this.stashLog('take', tool.name, 1);
-      // TAKE-BACK (miser loop 2026-10-08): taking back a tool you donated is
-      // noticed, same as the pantry rule. Kills the donate/take +2 farm.
+      // TAKE-BACK (miser break-it 2026-10-08): only when you take a tool YOU
+      // left and haven't re-taken. Borrowing a DIFFERENT tool is normal
+      // communal use — the old flat net accused you falsely ("You took back
+      // the tool you left" when you took the saw, gave the axe). Kills the
+      // donate/take +2 farm the same as before: re-taking your own gift is
+      // noticed, -5.
       const v2 = this.state.village, vid2 = this.state.scholar.villagerId;
-      v2.stashToolGives = v2.stashToolGives || {}; v2.stashToolTakes = v2.stashToolTakes || {};
-      v2.stashToolTakes[vid2] = (v2.stashToolTakes[vid2] || 0) + 1;
-      const tNet = (v2.stashToolGives[vid2] || 0) - (v2.stashToolTakes[vid2] || 0);
-      if ((v2.stashToolGives[vid2] || 0) > 0 && tNet <= 0) {
+      const tg2 = this._stashToolLedgers(vid2);
+      const gaveThis = (tg2.gives[itemId] || 0) - (tg2.takes[itemId] || 0);
+      tg2.takes[itemId] = (tg2.takes[itemId] || 0) + 1;
+      if (gaveThis > 0) {
         v2.trust = v2.trust || {};
         v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 5);
         this.say('You took back the tool you left. They noticed. Trust -5.');
@@ -429,19 +492,29 @@
     dailyCacheCheck() {
       try {
         const spots = [];
-        if (this.state.village) spots.push({ x: this.state.village.px ?? 4, y: this.state.village.py ?? 4 });
-        for (const ov of (this.state.otherVillages || [])) spots.push(ov);
+        // MISER BREAK-IT 2026-10-08: past villages (fork/join archives) stay
+        // in the world with their hungry mouths. The old code rolled only
+        // against the CURRENT village — bury near old Haven, fork, and your
+        // caches became unrobbable: measured at the wrong (far) distance AND
+        // the robber pool was the new founder-only roster (→ null robber, no
+        // trace ever). Spots carry their village so the NEAREST village's
+        // roster supplies the culprit at the honest distance.
+        if (this.state.village) spots.push({ x: this.state.village.px ?? 4, y: this.state.village.py ?? 4, v: this.state.village });
+        for (const ov of (this.state.otherVillages || [])) spots.push({ x: ov.x, y: ov.y, v: ov });
+        for (const pv of (this.state.pastVillages || [])) {
+          if (pv) spots.push({ x: pv.px ?? 4, y: pv.py ?? 4, v: pv });
+        }
         for (const c of this.playerCaches()) {
           if (c.found) continue;
           const cn = c.node || {};
-          let nearest = Infinity;
+          let nearest = Infinity, nearV = null;
           for (const s of spots) {
             const d = Math.abs((s.x || 0) - (cn.x || 0)) + Math.abs((s.y || 0) - (cn.y || 0));
-            if (d < nearest) nearest = d;
+            if (d < nearest) { nearest = d; nearV = s.v || null; }
           }
           if (!isFinite(nearest)) nearest = 5;
           const p = this.cacheTheftChance(nearest);
-          if (Math.random() < p) this.resolveCacheRobbery(c);
+          if (Math.random() < p) this.resolveCacheRobbery(c, nearV);
         }
       } catch (e) {}
     },
@@ -604,6 +677,12 @@
       }
       const it = c.items[itemIdx];
       if (!it) return null;
+      // UNIT COERCION (miser break-it 2026-10-08): a cache item with missing
+      // or NaN units went `it.units -= qty` → NaN, survived every take, and
+      // yielded 1 unit per take FOREVER (measured 3 takes → 3 units from a
+      // unit-less item). Coerce once: corrupt entries collapse to exactly
+      // one honest unit, never an infinite.
+      it.units = Math.max(1, Math.floor(it.units || 1));
       qty = Math.min(Math.floor(qty || 0), it.units || 1);
       if (qty <= 0) { this.say('Take how many?'); return null; }
       // SPOILAGE UNDERGROUND: same rule as digUpCache — the rotted portion
@@ -635,11 +714,13 @@
       this.say(`Took ${qty}× ${it.name} from the cache${left > 0 ? `. ${left}× stays buried.` : '.'}`);
       return this.tickAction(8) || this.status();
     },
-    // pickCacheRobber: the culprit is a real villager, weighted by appetite.
-    // Selfish sharers and low-trust villagers are likelier; a villager whose
-    // goal is survival is hungrier than most. Never the player.
-    pickCacheRobber() {
-      const v = this.state.village || {};
+    // pickCacheRobber(village): the culprit is a real villager, weighted by
+    // appetite. Selfish sharers and low-trust villagers are likelier; a
+    // villager whose goal is survival is hungrier than most. Never the
+    // player. Optional village override: after a fork/join, a cache near an
+    // OLD village is robbed by one of ITS people, not the new haven's.
+    pickCacheRobber(village) {
+      const v = village || this.state.village || {};
       const roster = (v.roster || []).filter(id => id !== this.state.scholar.villagerId);
       if (!roster.length) return null;
       const weights = roster.map(id => {
@@ -663,8 +744,8 @@
     // plantCacheTheftSuspicion: a witness saw the robber out by the cache.
     // Plants an 'observation' doubt on the TRUE robber with a theft marker —
     // the detective loop (confrontDoubt) can work it from there.
-    plantCacheTheftSuspicion(vid, c) {
-      const v = this.state.village || {};
+    plantCacheTheftSuspicion(vid, c, village) {
+      const v = village || this.state.village || {};
       const others = (v.roster || []).filter(id => id !== vid && id !== this.state.scholar.villagerId);
       if (!others.length) return null;
       const witness = others[Math.floor(Math.random() * others.length)];
@@ -857,17 +938,20 @@
     return r;
   };
 
-  // resolveCacheRobbery(c): the theft itself. Attached to Game directly (next
-  // to the wrap that calls it) so tests can drive it without the per-batch
-  // gate; the gate (Math.random() < p) stays in npcBatchTurn.
-  Game.resolveCacheRobbery = function (c) {
+  // resolveCacheRobbery(c, village): the theft itself. Attached to Game
+  // directly (next to the wrap that calls it) so tests can drive it without
+  // the per-batch gate; the gate (Math.random() < p) stays in npcBatchTurn.
+  // village: the nearest village to the cache (dailyCacheCheck) — after a
+  // fork/join that's an archived village, and the robber comes from ITS
+  // roster. Defaults to the current village for direct callers.
+  Game.resolveCacheRobbery = function (c, village) {
     c.found = true;
     c.items = [];
     // THE ROBBER IS REAL: someone in the village did this. Selfish
     // mouths and low-trust villagers are likelier; anyone can be hungry.
     // (Steve: theft allowed, socially punished — the punishment needs a
     // name to land on, so the crime keeps its culprit.)
-    const robber = this.pickCacheRobber();
+    const robber = this.pickCacheRobber(village);
     if (robber) c.robbedBy = robber;
     // DISCOVERY, NOT ANNOUNCEMENT (Steve 2026-10-06): the player learns at
     // the hole (digUpCache) or through gossip (the trace below plants a real
@@ -879,7 +963,7 @@
     // culprit, delivered as gossip, which is how information travels.
     // Not always: sometimes nobody saw anything and the earth keeps it.
     if (robber && Math.random() < 0.5) {
-      try { this.plantCacheTheftSuspicion(robber, c); } catch (e) {}
+      try { this.plantCacheTheftSuspicion(robber, c, village); } catch (e) {}
     }
   };
 

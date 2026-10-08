@@ -91,23 +91,33 @@ function giveTool() {
   ok('take-back costs trust (-5)', trustMe() === tDon - 5, trustMe());
   ok('take-back says so', said.some(t => /took back what you gave/i.test(t)), said.join(' | ').slice(0, 120));
 
-  // ---- 2. legitimate partial take: no penalty ----
+  // ---- 2. legitimate partial take: unwinds the band it crossed ----
+  // DESIGN CHANGE (miser break-it 2026-10-08): trust now follows NET
+  // contribution per material in 10-unit bands. Withdrawing part of a
+  // donation unwinds the trust that band earned (+3 for 30, take 5 back
+  // across the 30→25 boundary = -1). The old "partial takes cost nothing"
+  // assertion enshrined the donate-30/take-25 farm vector; bands telescope,
+  // so no cycling can beat the straight-donation rate.
   freshGame();
   Game.addMaterial('branch', 40);
   Game.donateMaterial('branch', 30);
   const t2 = trustMe();
   Game.takeMaterial('branch', 5);
-  ok('partial take (net still positive) costs nothing', trustMe() === t2, `${t2}->${trustMe()}`);
+  ok('partial take unwinds one band', trustMe() === t2 - 1, `${t2}->${trustMe()}`);
 
-  // ---- 3. token donations don't move trust (1-by-1 farm dead) ----
+  // ---- 3. token donations accumulate into bands (1-by-1 farm still dead) ----
+  // DESIGN CHANGE (miser break-it 2026-10-08): ten 1-branch gifts = 10 real
+  // branch = one 10-unit band = +1. The old "tokens buy zero" rule was
+  // written for per-call gross grants; with net bands the rate is identical
+  // to a bulk gift, so there is nothing to farm — the village keeps the wood.
   freshGame();
   Game.addMaterial('branch', 20);
   const t3 = trustMe();
   for (let i = 0; i < 10; i++) Game.donateMaterial('branch', 1);
-  ok('ten 1-branch donations buy zero trust', trustMe() === t3, `${t3}->${trustMe()}`);
+  ok('ten 1-branch donations buy one band (+1)', trustMe() === t3 + 1, `${t3}->${trustMe()}`);
   said = [];
   Game.takeMaterial('branch', 10);
-  ok('taking the tokens back still stings (-5, gave>0 net<=0)', trustMe() === t3 - 5, trustMe());
+  ok('taking the tokens back still stings (-5, gave>0 net<=0)', trustMe() === t3 + 1 - 5, trustMe());
 
   // ---- 4. tool take-back guard ----
   freshGame();

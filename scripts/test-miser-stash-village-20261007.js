@@ -134,7 +134,7 @@ function runBatches(n) {
     Game.spendMaterial('wood', 99); // the miser hauls it away
     takes++;
   }
-  const took = (v4.stashTakes || {})[ME()] || 0;
+  const took = Object.values((v4.stashTakes || {})[ME()] || {}).reduce((t, x) => t + (x || 0), 0);
   const trustEnd = (v4.trust || {})[ME()];
   console.log(`  player skim: took=${took} wood, trust ${trustStart} → ${trustEnd}`);
   ok('heavy player taking costs trust', trustEnd < trustStart, `${trustStart}→${trustEnd}`);

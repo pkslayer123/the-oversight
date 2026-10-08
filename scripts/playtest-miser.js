@@ -33,7 +33,8 @@ const pantryKcal = () => (Game.state.village.pantry || []).reduce((t, i) => t + 
 const trustOf = (vid) => Math.round(((Game.state.village.trust || {})[vid || ME()]) || 0);
 const takesGives = () => {
   const v = Game.state.village;
-  return `takes=${Math.round((v.takes || {})[ME()] || 0)} gives=${Math.round((v.gives || {})[ME()] || 0)} stashTakes=${(v.stashTakes || {})[ME()] || 0}`;
+  const stashTakes = Object.values((v.stashTakes || {})[ME()] || {}).reduce((t, x) => t + (x || 0), 0);
+  return `takes=${Math.round((v.takes || {})[ME()] || 0)} gives=${Math.round((v.gives || {})[ME()] || 0)} stashTakes=${stashTakes}`;
 };
 const snap = () => `kcal=${Math.round(s().kcal)} pack=${packKcal()}kcal pantry=${pantryKcal()}kcal caches=${Game.playerCaches().length}(${cacheKcal()}kcal) trust=${trustOf()} heat=${Game.justiceHeat()} stage=${Game.justiceState().stage}`;
 const HAVEN = () => ({ x: Game.state.village.px ?? 3, y: Game.state.village.py ?? 3 });

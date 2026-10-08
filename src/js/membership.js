@@ -636,12 +636,20 @@
   };
 
   // Pantry draws are a membership benefit. The exiled are cut off — legibly.
-  function _blockIfExiled(G, fnName) {
+  // MISER BREAK-IT 2026-10-08: the stash wasn't in the block list. Exile
+  // doesn't move you — an exiled player could walk back into the old hall
+  // (enterBuilding has no membership check) and loot the village stash
+  // freely while the pantry stayed closed (measured: 5 wood taken, no
+  // refusal). Stash takes are membership benefits too. DONATIONS stay
+  // allowed: gifts toward amends are how the exiled earn trust back, and
+  // the justice loop's "convince the village" path needs a verb.
+  function _blockIfExiled(G, fnName, place) {
     var _fn = G[fnName];
     if (!_fn) return;
+    var what = place || 'pantry';
     G[fnName] = function () {
       if (this.state.scholar && this.state.scholar.exiled) {
-        this.say('The pantry is not yours anymore. Exile means exile — membership had no check-ins, but it had exactly one way to lose it.');
+        this.say('The ' + what + ' is not yours anymore. Exile means exile — membership had no check-ins, but it had exactly one way to lose it.');
         return null;
       }
       return _fn.apply(this, arguments);
@@ -650,6 +658,8 @@
   _blockIfExiled(G, 'takeFromPantry');
   _blockIfExiled(G, 'takeFromPantryBulk');
   _blockIfExiled(G, 'villageMeal');
+  _blockIfExiled(G, 'takeMaterial', 'stash');
+  _blockIfExiled(G, 'takeTool', 'stash');
 
   // exilePlayer: the severing, complete and legible.
   var _exilePlayer = G.exilePlayer;
