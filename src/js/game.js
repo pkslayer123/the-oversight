@@ -4340,16 +4340,24 @@
         this.say(`🔭 ${first} scouts the land: mapped ${revealed} new area${revealed === 1 ? '' : 's'}.${find}`);
         this.bumpTrust(vid, 2);
       } else if (a.task === 'patrol') {
-        this.resolvePatrol(vid, first, eff, temp, R);
+        this.resolvePatrol(vid, first);
       }
       // assigned villagers don't also do random villageLives actions this part
       // (they were busy — mark it)
       this.remember(vid, 'task', a.task + ' (assigned)');
     },
 
-    // patrol: deal with monster threats. Simplified auto-resolve.
-    // The leader sends fighters instead of fighting. Stakes are real.
-    resolvePatrol(vid, first, eff, temp, R) {
+    // patrol: deal with monster threats. REAL FIGHTS (Steve 2026-10-08 law,
+    // break-it 2026-10-09): the old flat outcome table (fightPower+R vs
+    // mHp*1.2) resolved villager-vs-monster as RNG — the exact class Steve
+    // rejected twice ("it should be a fight. A hard one"). Patrols now fight
+    // through fieldFight: real stats, the monster's real attack data, real
+    // wounds, wounds persist on the world entity. The old table also granted
+    // flat R(200,600) "Game meat" — phantom calories that bypassed the whole
+    // carcass/clean/cook/weirdness pipeline (no monster-meat weirdness roll
+    // ever fired on patrol meat). A patrol kill now leaves the same carcass
+    // your kill leaves: lootable, rottable, weirdness and all.
+    resolvePatrol(vid, first) {
       const s = this.state.scholar;
       // WORLD MONSTERS (Steve 2026-10-06): patrols hunt the nearest roaming
       // threat to Haven, not a single player-tethered monster.
@@ -4372,37 +4380,60 @@
       // KNOWLEDGE-GATED: the patrol report names what the village calls it —
       // descriptor until named, never the System's true name for free.
       const mName = this.monsterNoun(mdef.id);
-      // fight power: competence × trust × boldness vs monster hp
-      const mHp = (mdef.hp && mdef.hp[0]) || 20;
-      const fightPower = eff * (temp === 'bold' ? 1.3 : 1.0) * 25;
-      const roll = fightPower + R(0, 20);
-      if (roll >= mHp * 1.2) {
-        // killed it
+      const rec = this.fieldFight(vid, mdef, m, {});
+      const summary = this.fieldFightSummary ? this.fieldFightSummary(rec, first, mName) : `${first} fought the ${mName}`;
+      const killCorpse = () => {
+        // the carcass stays where it died — same as your kills, same as the
+        // villager field-fight router. Loot it, clean it, cook it, or lose it
+        // to rot. (registerDeath node override: the tile, not your position.)
+        try {
+          const corpse = this.registerDeath({
+            kind: 'monster', monsterId: m.id, monsterName: mdef.name,
+            name: this.monsterDisplayName ? this.monsterDisplayName(m.id) : (mdef.name || 'the beast'),
+            descriptor: this.monsterDisplayName ? this.monsterDisplayName(m.id) : null,
+            node: { x: m.tx, y: m.ty }, mx: m.mx, my: m.my,
+            cause: 'patrol combat', killerId: vid, witnesses: [vid],
+          });
+          const meat = this.monsterMeatEntry(mdef);
+          if (corpse && meat) corpse.items.push(meat);
+        } catch (e) {}
+      };
+      if (rec.outcome === 'alreadyDead') {
+        // BREAK-IT combat 2026-10-09: no rewards for a corpse.
         this.removeWorldMonster(m);
-        const lootKcal = R(200, 600);
-        this.stockPantry(lootKcal, 'Game meat');
-        this.say(`⚔️ ${first} KILLED the ${mName}! Drags it home: +${lootKcal} kcal. The village cheers.`);
+        this.say(`⚔️ ${summary}`);
+      } else if (rec.outcome === 'vKill') {
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
+        try { this.recordWaveKill(m.id); } catch (e) {}
+        killCorpse();
+        this.removeWorldMonster(m);
+        this.say(`⚔️ ${summary} The carcass is out there — haul it home before it rots.`);
         this.villageEvent('victory');
         this.bumpTrust(vid, 5);
         this.remember(vid, 'hero', 'killed ' + mName);
         if (this.state.systemArrived) this.sysSay(`"OH! ${first.toUpperCase()} DID THE FIGHTING! Delegated violence! The audience is CHEERING! Style points!"`);
-      } else if (roll >= mHp * 0.7) {
-        // drove it off
-        this.removeWorldMonster(m);
-        const dmg = R(5, 20);
-        this.hurtVillager(vid, dmg, 'patrol');
-        this.say(`⚔️ ${first} drove the ${mName} off! (-${dmg} health.) It won't come back soon.`);
-        this.bumpTrust(vid, 3);
-      } else {
-        // mauled
-        const dmg = R(20, 45);
-        this.hurtVillager(vid, dmg, 'patrol');
-        if ((this.state.village.health || {})[vid] <= 0) {
-          this.say(`⚔️ ${first} faced the ${mName}... and didn't come back. The village mourns. (Leadership has stakes.)`);
-          this.villageEvent('death');
-        } else {
-          this.say(`⚔️ ${first} was mauled by the ${mName} (-${dmg} health) and barely escaped. It's still out there.`);
+      } else if (rec.outcome === 'mFlee') {
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
+        const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].sort(() => Math.random() - 0.5);
+        for (const d of dirs) {
+          const nx = m.tx + d[0], ny = m.ty + d[1];
+          if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || this.isSafeTile(nx, ny)) continue;
+          const ox = m.tx, oy = m.ty;
+          m.tx = nx; m.ty = ny;
+          this.touchTileScene(ox, oy); this.touchTileScene(nx, ny);
+          break;
         }
+        this.say(`⚔️ ${summary} It's still out there, somewhere.`);
+        this.bumpTrust(vid, 3);
+      } else if (rec.outcome === 'vFlee') {
+        try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
+        this.say(`⚔️ ${summary} — barely escaped. It's still out there.`);
+        this.bumpTrust(vid, -2);
+      } else if (rec.outcome === 'vDie') {
+        // lethal through the real death pipeline (hurtVillager routes it)
+        try { this.hurtVillager(vid, 500, 'monster'); } catch (e) {}
+        this.say(`⚔️ ${first} faced the ${mName}... and didn't come back. The village mourns. (Leadership has stakes.)`);
+        this.villageEvent('death');
         this.bumpTrust(vid, -2);
       }
     },
@@ -13033,6 +13064,24 @@
         // kill minimums ("village-wide, not just player") — a villager's real
         // kill proves the village can handle it, same as yours.
         try { this.recordWaveKill(m.id); } catch (e) {}
+        // CORPSE PERSISTS (break-it 2026-10-09): a villager's kill is a real
+        // death — the carcass stays on the tile (lootable, rottable), the
+        // same carcass your kill leaves. The old path evaporated the body:
+        // a 3200-kcal bulldozer died with no meat and no corpse, while your
+        // identical kill left both. Registered at the monster's tile, not
+        // the player's (registerDeath node override) — the world is honest
+        // about where things died.
+        try {
+          const vcorpse = this.registerDeath({
+            kind: 'monster', monsterId: m.id, monsterName: mdef.name,
+            name: this.monsterDisplayName ? this.monsterDisplayName(m.id) : (mdef.name || 'the beast'),
+            descriptor: this.monsterDisplayName ? this.monsterDisplayName(m.id) : null,
+            node: { x: m.tx, y: m.ty }, mx: m.mx, my: m.my,
+            cause: 'villager combat', killerId: vid, witnesses: [vid],
+          });
+          const vmeat = this.monsterMeatEntry(mdef);
+          if (vcorpse && vmeat) vcorpse.items.push(vmeat);
+        } catch (e) {}
         this.removeWorldMonster(m);
         tell(`\u2694\uFE0F ${summary} The village cheers.`);
         try { this.bumpTrust(vid, 4); } catch (e) {}
@@ -28378,7 +28427,12 @@
           // from the world at fight start (removeWorldMonster) and never
           // restored — "they're still out there, if you want them" was a
           // lie. They melt back into the wilds, like every other flee.
-          this.say('You walk clear of them. Nothing follows. The fight ends — they melt back into the wilds.');
+          // HONEST (break-it 2026-10-09): the old copy said "You walk clear"
+          // — but the separation isn't always yours. A drifter (mirrormoth)
+          // can jitter out of its own striking range on turn 1; the player
+          // never walked anywhere. The line now says what happened, not who
+          // moved.
+          this.say('It comes apart — no one in reach, no one chasing. The fight ends; they melt back into the wilds.');
           return this.tbEndCheck();
         }
       }
@@ -28467,6 +28521,35 @@
       }
       return true;
     },
+    // monsterMeatEntry(mdef): the carcass item for a monster kill (break-it
+    // 2026-10-09: factored out of tbEnd so villager field-fight kills leave
+    // the same carcass — a kill is a carcass, not lunch, whoever swung).
+    // Returns null when the monster yields no meat (zero-calorie "do not eat").
+    monsterMeatEntry(mdef) {
+      if (!mdef || !mdef.edible) return null;
+      // ZERO-CALORIE FIX (Steve 2026-10-05): explicit nullish check — a
+      // 0-calorie "do not eat" monster yields NO meat, not 1000 kcal of
+      // phantom lunch. (mdef.edible.calories || 1000) turned inedible
+      // robots into dinner. 0 stays 0.
+      const kcal = (mdef.edible.calories == null) ? 1000 : mdef.edible.calories;
+      if (!(kcal > 0)) return null;
+      // MONSTER FOOD SAFETY (Steve 2026-10-05): a kill is a carcass, not
+      // lunch. plantId 'meat_<mid>' matches the cautious-test and
+      // clean-meat reveal paths; edibility and calories stay hidden
+      // until learned (tested / villager word / Codex). The name is the
+      // gated display name — descriptor until the village names it.
+      // Killing it does NOT teach the true name.
+      // LOOT-AS-ACTION (Steve 2026-10-06): the carcass stays on the
+      // corpse. Search the body to take it — and it rots there if you
+      // don't. (spoilDay runs on corpse inventories via sweepSpoiled.)
+      return {
+        plantId: 'meat_' + mdef.id, foodKind: 'meat', foodState: 'carcass',
+        edible: false, units: 1, kcalEach: 0, hiddenKcal: kcal,
+        spoilDay: (this.state.scholar.day || 0) + 3, name: this.monsterDisplayName(mdef.id) + ' (carcass)',
+        unit: 'carcass', kg: Math.max(0.5, kcal / 1000),
+        prep: 'A carcass. Clean it with a knife — quickly. Spoils fast.'
+      };
+    },
     // LOOT-AS-ACTION (Steve 2026-10-06): kills don't auto-loot. Drops go on
     // the corpse; the player opens the pack deliberately via the Loot action.
     // Finds the corpse registered when this monster died in tbDamage; falls
@@ -28526,7 +28609,16 @@
       // Check for wave unlock (System escalation)
       const waveAfter = this.unlockedWave();
       if (waveAfter > waveBefore) {
-        this.sysSay(`📺 RATINGS ARE UP! The producers are pleased. New casting directives incoming — Wave ${waveAfter} talent has been released into your sector.`);
+        // HONESTY (break-it 2026-10-09): "talent released" is only true when
+        // the new wave actually has monsters. Wave 3 unlocks (day 25 + 8
+        // wave-2 kills) with an empty monster roster — the old line promised
+        // beasts that never came. The escalation wave 3 DOES bring (contest
+        // formats, hotter variants) is said instead; when wave-3 monsters
+        // ship, the talent line becomes true on its own.
+        const hasTalent = (this.data.monsters || []).some(m => (m.wave || 1) === waveAfter);
+        this.sysSay(hasTalent
+          ? `📺 RATINGS ARE UP! The producers are pleased. New casting directives incoming — Wave ${waveAfter} talent has been released into your sector.`
+          : `📺 RATINGS ARE UP! The producers are pleased. Wave ${waveAfter} protocols active — the challenges escalate, the stakes sharpen. The woods feel... expectant.`);
         this.audioEvent('waveUnlock');
       }
       // AUDIO HYGIENE (Steve): killing the deer left the beam's hum playing.
@@ -28570,28 +28662,8 @@
         const cur = this.state.codex.monsters[mdef.id] || {};
         this.state.codex.monsters[mdef.id] = Object.assign(cur, { stage: 'slain' });
         if (mdef.edible) {
-          // ZERO-CALORIE FIX (Steve 2026-10-05): explicit nullish check — a
-          // 0-calorie "do not eat" monster yields NO meat, not 1000 kcal of
-          // phantom lunch. (mdef.edible.calories || 1000) turned inedible
-          // robots into dinner. 0 stays 0.
-          const kcal = (mdef.edible.calories == null) ? 1000 : mdef.edible.calories;
-          if (kcal > 0) {
-            // MONSTER FOOD SAFETY (Steve 2026-10-05): a kill is a carcass, not
-            // lunch. plantId 'meat_<mid>' matches the cautious-test and
-            // clean-meat reveal paths; edibility and calories stay hidden
-            // until learned (tested / villager word / Codex). The name is the
-            // gated display name — descriptor until the village names it.
-            // Killing it does NOT teach the true name.
-            // LOOT-AS-ACTION (Steve 2026-10-06): the carcass stays on the
-            // corpse. Search the body to take it — and it rots there if you
-            // don't. (spoilDay runs on corpse inventories via sweepSpoiled.)
-            const meatEntry = {
-              plantId: 'meat_' + mdef.id, foodKind: 'meat', foodState: 'carcass',
-              edible: false, units: 1, kcalEach: 0, hiddenKcal: kcal,
-              spoilDay: s.day + 3, name: this.monsterDisplayName(mdef.id) + ' (carcass)',
-              unit: 'carcass', kg: Math.max(0.5, kcal / 1000),
-              prep: 'A carcass. Clean it with a knife — quickly. Spoils fast.'
-            };
+          const meatEntry = this.monsterMeatEntry(mdef);
+          if (meatEntry) {
             const meatCorpse = this.corpseForKill(mdef, _km);
             if (meatCorpse) meatCorpse.items.push(meatEntry);
             else s.inventory.push(meatEntry); // fallback: never lose the kill
@@ -29064,7 +29136,12 @@
           const id = (it.plantId || '').replace(/^meat_/, '');
           if (id === mid && !it.edible) {
             const gross = it.hiddenKcal || 0;
-            const per = Math.round(gross * 0.40 / 4); // standard yield
+            // HONESTY (break-it 2026-10-09): the reveal must not depend on
+            // test order. Cleaned meat already paid the butcher's cut — the
+            // standard 40% yield distributes over its ACTUAL portions, not a
+            // guessed 4 (test-after-clean lost ~25% vs test-before-clean).
+            const rUnits = it.foodState === 'cleaned' ? Math.max(1, it.units || 1) : 4;
+            const per = Math.round(gross * 0.40 / rUnits); // standard yield
             it.edible = true;
             it.kcalEach = per;
             it.prep = '⚠️ Risky: raw meat. Cook it, or preserve it. Spoils in ~2 days.';
