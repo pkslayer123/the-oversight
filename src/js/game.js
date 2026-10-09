@@ -15052,8 +15052,17 @@
         // HONESTY: no kcal source bypasses the bank cap (same rule as blood_magic).
         s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + 1000);
         const v = this.state.village; v.trust = v.trust || {};
-        for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 30);
-        this.say('RED HUNGER: you eat what you should not. +1000 kcal. Everyone saw. Trust -30, permanently.');
+        // HONESTY (break-it food r4): the old copy said "Trust -30,
+        // permanently" — but the trust NUMBER is repairable (gifts, and the
+        // live giveFood is progressive, not the dead flat +12). What is
+        // actually permanent is the memory: every witness remembers what
+        // they saw, and the memory system never forgets. The copy now says
+        // exactly that — the permanent part is their memory, not the number.
+        for (const vid of Object.keys(v.trust)) {
+          v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 30);
+          try { this.remember(vid, 'saw_cannibalism', 'watched you feed the Red Hunger'); } catch (e) {}
+        }
+        this.say('RED HUNGER: you eat what you should not. +1000 kcal. Everyone saw. Trust -30 — and they will not forget what they saw.');
       } else if (this.hasAbility && this.hasAbility(id)) {
         // Real ability, no bespoke branch (e.g. a data-driven ability invoked
         // by plain id): practicing the discipline still counts as a use.
@@ -16625,6 +16634,13 @@
         // fuel burns hottest — even mixed into the war chest.
         if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
         if (it.plantId) tasted[it.plantId] = (tasted[it.plantId] || 0) + 1;
+        // L3 BENEFIT (break-it food r4): eatOne() grants +5 health per bite at
+        // plant level>=3 — the level-up message below promises "+5 health when
+        // eaten". The bulk path silently skipped it. Same promise, same grant.
+        if (it.plantId) {
+          const eBite = (this.state.codex.plants || {})[it.plantId];
+          if (eBite && eBite.level >= 3) this.addHealth(5);
+        }
         it.units -= 1;
         if (it.units <= 0) scholar.inventory.splice(foodIdx, 1);
       }
@@ -16657,6 +16673,11 @@
             this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['3']} (+5 health when eaten). All uses known: ${this.plantUsesText(pid) || '—'}.`);
             // level 3 benefit: eating gives health
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
+            // L3 BENEFIT (break-it food r4): the level-up bite itself grants
+            // the promised +5 — eatOne() does this because its level>=3 check
+            // runs after the transition in the same bite. Bulk aggregates, so
+            // the transition grants it once, explicitly.
+            this.addHealth(5);
           }
         }
       }

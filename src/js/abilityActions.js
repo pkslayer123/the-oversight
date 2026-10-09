@@ -614,7 +614,7 @@
       if (hasAb('cannibal_frenzy')) out.push({
         abilityId: 'cannibal_frenzy', actionId: null, id: 'cannibal_frenzy',
         target: 'self', name: 'Feed the Red Hunger',
-        desc: '+1000 kcal. -30 trust, permanently. Only when starving.',
+        desc: '+1000 kcal. -30 trust, and they will remember. Only when starving.',
         available: (s.kcal || 0) < 500, why: 'Only when starving (<500 kcal).'
       });
       return out;

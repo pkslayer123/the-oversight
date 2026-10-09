@@ -1803,10 +1803,14 @@
         const units = it.units || 1;
         const cookKcal = Math.round((this.knowsTechnique('cook') ? total : Math.round(total * 0.85)) / units);
         const smokeKcal = Math.round(cookKcal * (this.knowsTechnique('preserve') ? 0.95 : 0.80));
+        // HONESTY (break-it food r4): the spoil countdown is bonus-aware —
+        // stashClock and isSpoiled both add spoilBonusDays()
+        // (preservation_instinct). The raw spoilDay understated shelf life.
+        const spoilLeft = (it.spoilDay ?? day) + this.spoilBonusDays() - day;
         opts.push({
           id: 'raw',
           label: 'Eat raw now',
-          detail: `fast, no time · risky (35% sick) · ${it.kcalEach}/portion · spoils in ${(it.spoilDay ?? day) - day}d`,
+          detail: `fast, no time · risky (35% sick) · ${it.kcalEach}/portion · spoils in ${spoilLeft}d`,
         });
         opts.push({
           id: 'cook',
