@@ -487,7 +487,7 @@
         "name": "Refuse",
         "cost": {},
         "automatic": true,
-        "effect": "Once per day, when you would die: you don't. Drop to 1 HP, gain 500 kcal from sheer spite. Automatic trigger."
+        "effect": "Once per day, when you would die: you don't. Drop to 1 HP, brought up to at least 500 kcal from sheer spite. Automatic trigger."
       }
     ],
     "name": "Second Wind",
@@ -861,7 +861,7 @@
         "cost": {
           "time_min": 10
         },
-        "effect": "Make your point without raising a hand. +intimidation in this conversation, -trust afterward."
+        "effect": "Make your point without raising a hand. They'll remember the look on your face — and not fondly. (No mechanical edge yet — the weight is social.)"
       }
     ],
     "name": "Dread",
@@ -1444,14 +1444,14 @@
         "cost": {
           "turn": true
         },
-        "effect": "Read the fight before it starts. +2 speed for the rest of the fight (turn order re-sorts from next round).",
+        "effect": "Read the fight as it moves. +2 speed for the rest of the fight (turn order re-sorts from next round).",
         "id": "read_fight",
         "name": "Read the Fight"
       }
     ],
     "name": "Brawler's Instinct",
     "pool": "combat",
-    "description": "You read a fight before it starts. The body tells you what the mouth won't.",
+    "description": "You read a fight as it moves. The body tells you what the mouth won't.",
     "modifiers": [],
     "unlock": {
       "type": "granted"

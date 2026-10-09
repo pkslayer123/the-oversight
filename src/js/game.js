@@ -5116,6 +5116,18 @@
             // mdef reattaches by id on load; only id+count persist.
             pendingPack: this._pendingPack && this._pendingPack.count > 0
               ? { id: this._pendingPack.id, count: this._pendingPack.count } : null,
+            // BETRAYAL FIGHTS (break-it combat r7 2026-10-09): a person-fight
+            // is not a monster-fight — the fight-level flags must survive the
+            // reload. Without them load() restored a betrayal fight as a
+            // monster fight: the hostile was dropped as a "phantom fighter"
+            // (no mdef to reattach), tbEndCheck saw no monsters and called
+            // tbEnd('won') — a free win with no aftermath for a fight you
+            // never finished. Autosave fires every 30s mid-combat, so this
+            // hit real players, not just save-scummers.
+            betrayal: !!f.betrayal,
+            betrayer: f.betrayer || null,
+            aggressor: f.aggressor || null,
+            playerFled: !!f.playerFled,
           };
         }
       } catch (e) {}
@@ -5306,9 +5318,29 @@
             // Drop monster fighters that can't reattach a def — but never the
             // player: a save without its bearer is rejected by the scholar
             // guard above, so this only ever drops monsters.
-            if ((ft.kind === 'monster' || ft.kind === 'hostile') && !ft.mdef && fs.key !== 'p') {
+            if (ft.kind === 'monster' && !ft.mdef && fs.key !== 'p') {
               droppedGhosts++;
               continue;
+            }
+            // HOSTILE fighters are people, not monsters — they carry no mdef,
+            // so the def-drop above must not touch them (break-it combat r7
+            // 2026-10-09: it erased betrayers/uprisers/alien players on every
+            // mid-fight reload, and the fight then "won" itself). Reattach by
+            // identity instead: villagers by roster, alien players by persona.
+            // A hostile whose person is gone from the world IS a ghost.
+            if (ft.kind === 'hostile' && fs.key !== 'p') {
+              let personGone = false;
+              try {
+                if (ft.alienPid) {
+                  personGone = (typeof this.apPersona === 'function') ? !this.apPersona(ft.alienPid) : false;
+                } else if (ft.villagerId) {
+                  const roster = (this.state.village && this.state.village.roster) || [];
+                  personGone = !roster.includes(ft.villagerId);
+                } else {
+                  personGone = true; // hostile with no identity at all
+                }
+              } catch (e) { personGone = false; }
+              if (personGone) { droppedGhosts++; continue; }
             }
             fighters.push(ft);
           }
@@ -5346,7 +5378,31 @@
             round: tbS.round || 1,
             over: false, result: null,
             terraform: tbS.terraform || {},
+            // BETRAYAL RESTORE (break-it combat r7 2026-10-09): person-fight
+            // flags persisted in syncRun. Without them the party.js tbEndCheck
+            // wrapper can't recognize the fight and it resolves as a monster
+            // fight (free 'won').
+            betrayal: !!tbS.betrayal,
+            betrayer: tbS.betrayer || null,
+            aggressor: tbS.aggressor || null,
+            playerFled: !!tbS.playerFled,
           };
+          // BETRAYAL AFTERMATH CONTEXT (break-it combat r7 2026-10-09):
+          // _lastBetrayal is session state, not save data — rebuild it from
+          // the restored fight so betrayalAftermath still resolves (gossip,
+          // trust, unsolved murders) instead of silently no-op'ing.
+          if (tbS.betrayal) {
+            try {
+              const _bf = fighters.find(x => x.kind === 'hostile');
+              this._lastBetrayal = {
+                betrayer: tbS.betrayer || (_bf && _bf.villagerId) || null,
+                aggressor: tbS.aggressor || 'npc',
+                witnesses: fighters.filter(x => x.kind === 'villager' && x.alive && x.villagerId).map(x => x.villagerId),
+                betrayerDead: !!(_bf && !_bf.alive),
+                playerFled: !!tbS.playerFled,
+              };
+            } catch (e) {}
+          }
           // BELLTOAD CHORUS (break-it r3): restore the delayed pack — a save
           // mid-chorus must not evaporate the reinforcements (see syncRun).
           if (tbS.pendingPack && tbS.pendingPack.count > 0) {
@@ -24395,9 +24451,13 @@
         const t = this.tbFighter(a.target);
         if (t && t.alive && !v.helped) {
           v.helped = true;
+          // HONESTY (break-it combat r7 2026-10-09): state what actually
+          // landed, not the pre-cap number — a nearly-full target doesn't
+          // gain 12.
+          const healed = Math.max(0, Math.min(12, (t.maxHp || 0) - (t.hp || 0)));
           t.hp = Math.min(t.maxHp, t.hp + 12);
           if (t.kind === 'player') this.state.scholar.health = Math.max(0, t.hp);
-          this.say(`${v.name} patches you up (+12 HP). "Hold still!"`);
+          this.say(`${v.name} patches you up (+${healed} HP). "Hold still!"`);
         }
       } else if (a.type === 'flee') {
         v.fled = true;

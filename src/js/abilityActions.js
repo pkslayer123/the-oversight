@@ -1020,7 +1020,11 @@
       var failChance = Math.min(0.95, 0.6 / morale);
       for (var i = 0; i < f.fighters.length; i++) {
         var m = f.fighters[i];
-        if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+        // HONESTY (break-it combat r7 2026-10-09): the copy says "ALL enemies"
+        // — the old filter skipped kind 'hostile', so in a betrayal fight the
+        // bellow hit nobody and ate the turn. Hostiles take their turns via
+        // tbMonsterTurn, which consumes stun/loomHesitate like monsters.
+        if ((m.kind !== 'monster' && m.kind !== 'hostile') || !m.alive || m.fled) continue;
         // Courage check: 60% fail (worse for them when morale is broken).
         // Skittish/curious beasts may bolt outright.
         if (Math.random() < failChance) {
@@ -1123,7 +1127,12 @@
     },
 
     'fear_aura.menace': function (game, target) {
-      game.say('You don\'t raise a hand. You don\'t need to. Your point lands — +intimidation in this conversation. They\'ll remember this, and not fondly. (-trust afterward.) (Menace)');
+      // HONESTY (break-it combat r7 2026-10-09): the old copy promised
+      // "+intimidation in this conversation, -trust afterward" — neither was
+      // wired (no convo read, no trust hit anywhere). The copy now says what
+      // the action does; real menace wiring (convo intimidation checks,
+      // trust cost on a target) is content-run work, not a break-it fix.
+      game.say('You don\'t raise a hand. You don\'t need to. Your point lands — they\'ll remember the look on your face, and not fondly. (Menace)');
       return true;
     },
 
