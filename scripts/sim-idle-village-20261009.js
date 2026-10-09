@@ -18,25 +18,12 @@
 // Harness: mulberry32 seeded BEFORE eval, full src/js list in index.html order
 // minus DOM-only files + drama.js, window stubbed for eval then deleted.
 // Read docs/CANON.md before touching this area.
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
-function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// MIGRATED 2026-10-09 to scripts/sim-harness.js (sim telemetry layer).
+// Setup/boilerplate now shared; modes, metrics, and day loop unchanged.
+const { loadGame, setupGame } = require('./sim-harness');
 const SEED = parseInt(process.env.SEED || '20261009', 10);
 const MODE = process.env.MODE || 'mvc';
-Math.random = mulberry32(SEED);
-const ROOT = path.join(__dirname, '..');
-global.fetch = (f) => Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))) });
-const order = execSync("grep -o 'src/js/[^\"'\"'\"']*\\.js' index.html | head -80", { cwd: ROOT }).toString().split('\n')
-  .filter(s => s && !/app\.js|sprites\.js|tile-scenes\.js|move-anim\.js|drama\.js/.test(s));
-global.window = global;
-order.forEach(f => { try { eval(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch (e) { console.log(`LOAD FAIL ${f}: ${e.message}`); } });
-delete global.window;
-const Game = globalThis.Scattering.Game;
-Game.say = function () {};
-Game.sysSay = function () {};
-Game.audioEvent = function () {};
-if (Game.drama === undefined) Game.drama = function () {};
+let Game; // set inside main() from the harness
 
 const M = {
   seed: SEED, mode: MODE,
@@ -65,14 +52,14 @@ function classifyStockSource() {
 }
 
 (async () => {
-  await Game.init();
+  const loaded = await loadGame({ seed: SEED, mode: MODE });
+  Game = loaded.Game;
+  M.manifest = loaded.manifest;
   // COMPETENT ROSTER (grit): re-roll the whole setup until the final 12-person
   // village roster has >=4 food-skilled people and >=1 healerish. Tests Steve's
   // hypothesis: a competent group with weeks + learning should feed itself.
   async function setupOnce() {
-    Game.genRoster('Columbus, Ohio');
-    Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
-    Game.depart();
+    await setupGame(Game);
   }
   if (process.env.COMPETENT === '1') {
     for (let r = 0; r < 60; r++) {

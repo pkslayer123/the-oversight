@@ -183,6 +183,13 @@
           this.audioEvent('statusApplied', { id: effectId });
         } catch (e) {}
       }
+      // SIM TELEMETRY (2026-10-09): disease contractions are analysis-grade —
+      // pool matters (mundane vs alien min-max building blocks).
+      try {
+        if (this.tele && def && (def.pool === 'mundane' || def.pool === 'alien')) {
+          this.tele('disease', { id: effectId, pool: def.pool, target: target, source: (opts && opts.source) || '?' });
+        }
+      } catch (e) {}
       return true;
     },
 
@@ -315,6 +322,13 @@
         try {
           this.say(this.seFill((def && def.cureText) || '{name} {verb} recovering.', target, { source: source || 'treatment' }));
           this.audioEvent('statusCured', { id: effectId });
+        } catch (e) {}
+        // SIM TELEMETRY (2026-10-09): cures pair with contractions for
+        // disease-economy analysis (which pool, what cured it).
+        try {
+          if (this.tele && def && (def.pool === 'mundane' || def.pool === 'alien')) {
+            this.tele('cured', { id: effectId, pool: def.pool, target: target, source: source || '?' });
+          }
         } catch (e) {}
       }
       return removed;

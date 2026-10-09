@@ -541,6 +541,7 @@
     // good — it's just what the aliens like to see.
     const cast = this.showCastPull();
     const who = cast.who; // 'player' | villagerId | 'together'
+    try { this.tele('show_aired', { id: (show && show.id) || '?', who: who, why: cast.why || '?' }); } catch (e) {}
     let phases = null;
     if (who === 'player') {
       if (cast.why === 'debut') {
@@ -1190,6 +1191,7 @@
   G.fireContest = function(contest) {
     const { eligible } = this.contestEligible();
     if (!eligible.length) return;
+    try { this.tele('contest_fired', { id: (contest && contest.id) || '?' }); } catch (e) {}
 
     // MULTI-TAKE (Steve 2026-10-06): the contest's participant count is
     // real — the System takes that many people, not one. Four contestants
@@ -3608,6 +3610,7 @@
   };
 
   G._contestEnd = function(ac, outcome, prize) {
+    try { this.tele('contest_end', { id: (ac && ac.contestId) || '?', outcome: outcome || '?' }); } catch (e) {}
     const contest = this._cxScaledContest(ac);
     const s = this.state.scholar;
     const isWatch = ac.participant && ac.participant !== 'player';

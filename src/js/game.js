@@ -4952,7 +4952,7 @@
       }
     },
 
-    bumpTrust(vid, n) {
+    bumpTrust(vid, n, reason) {
       const v = this.state.village;
       v.trust = v.trust || {};
       // unset defaults to 10, but a real 0 must stay 0 — `|| 10` used to
@@ -4963,6 +4963,9 @@
       const adj = n > 0 ? this.trustGainProgressive(vid, n) : n;
       const neu = Math.max(0, Math.min(100, cur + adj));
       v.trust[vid] = neu;
+      // SIM TELEMETRY (2026-10-09): trust changes are analysis-grade — delta
+      // plus reason. reason is optional (existing callers don't pass one).
+      try { if (neu !== cur) this.tele('trust', { who: vid, delta: +(neu - cur).toFixed(2), reason: reason || '?' }); } catch (e) {}
       // NPC ATTENTION (Steve 2026-10-07, Drama A1): trust crossing a milestone
       // is a visible moment — ❤️ when friendship deepens (up through 50/75),
       // 💔 when it cracks (down through 50/25). Only when you're there to see
@@ -21978,6 +21981,7 @@
       // the fight must spawn it right.
       const mid = monsterId || this.pendingMonsterId || 'bulldozer';
       const mdef = this.data.monsters.find(m => m.id === mid);
+      try { this.tele('combat_start', { vs: mid, wave: (mdef || {}).wave || null }); } catch (e) {}
       // NO SILENT FALLBACK (Steve 2026-10-06): an explicit unknown id used to
       // silently spawn monsters[0] (bulldozer) with the wrong intro text —
       // that's how deleted wave-2 ids hid in debug scenarios for a full wave.
@@ -30034,6 +30038,7 @@
     tbEnd(result) {
       const f = this.tbfight;
       if (!f || f.over) return;
+      try { this.tele('combat_end', { result: result }); } catch (e) {}
       f.over = true; f.result = result;
       // COMBAT CLEANUP GUARANTEE (Steve 2026-10-06): the victory/defeat
       // narration below is long and calls many subsystems. If ANY of it
@@ -30983,6 +30988,11 @@
     },
 
     // --- telemetry: every meaningful event, with state deltas. for diagnosing playtests. ---
+    // teleFull(): sims opt into the FULL stream via TELEMETRY_FULL=1 (node only).
+    // Production (browser) keeps the 300-event ring cap — memory.
+    teleFull() {
+      try { return typeof process !== 'undefined' && process.env && process.env.TELEMETRY_FULL === '1'; } catch (e) { return false; }
+    },
     tele(type, data) {
       this.state.telemetry = this.state.telemetry || [];
       const s = this.state.scholar || {};
@@ -30992,7 +31002,7 @@
         packKcal: (this.state.scholar ? this.state.scholar.inventory.reduce((t, i) => t + (i.units || 0) * (i.kcalEach || 0), 0) : 0),
         pantry: Math.round(this.state.village ? this.state.village.pantryKcal : 0),
       }, data || {}));
-      if (this.state.telemetry.length > 300) this.state.telemetry.splice(0, this.state.telemetry.length - 300);
+      if (!this.teleFull() && this.state.telemetry.length > 300) this.state.telemetry.splice(0, this.state.telemetry.length - 300);
     },
 
     // fmtKcal: human-readable calories. <1000 → "850 kcal", ≥1000 → "2.4 Mcal".

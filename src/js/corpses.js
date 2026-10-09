@@ -144,6 +144,16 @@
     //        name, mx, my, cause, killerId?, items?}
     registerDeath(opts) {
       opts = opts || {};
+      // SIM TELEMETRY (2026-10-09): THE death hook — cause-of-death analysis
+      // across world runs. kind covers person/monster/animal; wave for monsters.
+      try {
+        let wave = null;
+        if (opts.monsterId && this.data && this.data.monsters) {
+          const md = this.data.monsters.find(m => m.id === opts.monsterId);
+          if (md) wave = md.wave || null;
+        }
+        this.tele('death', { kind: opts.kind || '?', who: opts.villagerId || opts.monsterId || opts.name || '?', cause: opts.cause || '?', wave: wave });
+      } catch (e) {}
       const s = this.state.scholar;
       const corpse = {
         id: 'corpse_' + (s.day || 0) + '_' + Math.random().toString(36).slice(2, 8),
