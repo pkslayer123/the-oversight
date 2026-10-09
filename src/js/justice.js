@@ -669,7 +669,27 @@
       const attackers = lb.uprisingAttackers || [];
       const dead = attackers.filter(id => !(v.roster || []).includes(id));
       const alive = attackers.filter(id => (v.roster || []).includes(id));
-      if (result === 'betrayal_won' || result === 'betrayal_routed') {
+      if (result === 'lost') {
+        // THEY GOT WHO THEY CAME FOR (brawler loop 2026-10-08): the uprising
+        // killed the bearer. The village's justice is complete — the crimes
+        // died with the criminal. There is no one left to rise against, so
+        // the uprising dissolves. The new bearer is a different person: the
+        // formal docket (stage, exile, crimes, heat flags) resets — the
+        // successor must not inherit the dead bearer's exile. The village
+        // remembers socially (gossip, the fallen roll, the lineage already
+        // recorded by playerDeath); the machinery stands down.
+        const fallen = (v.fallen || [])[ (v.fallen || []).length - 1 ] || {};
+        const oldName = (fallen.villagerId && this.displayName) ? (() => { try { return this.displayName(fallen.villagerId); } catch (e) { return 'the bearer'; } })() : 'the bearer';
+        const newName = (() => { try { return this.displayName(this.villagerId).split(' ')[0]; } catch (e) { return 'Someone'; } })();
+        this.say(`It's over. ${oldName} is dead — the village got who it came for. Nobody cheers.`);
+        this.say(`The torches go out one by one. There is nothing left to rise against. ${newName} picks up the Codex with shaking hands, and the village lets them — this one hasn't done anything. Yet.`);
+        try { if (this.journalNote) this.journalNote('village', 'uprising', `They killed ${oldName}. The uprising died with them. I'm someone else now — the docket is empty, but the village remembers.`); } catch (e) {}
+        const j = this.justiceState();
+        j.stage = 0; j.exiled = false; j.exileDay = null; j.crimes = [];
+        j.confrontedBy = null; j.confrontRefused = false; j.pendingConfront = false;
+        j.mootDemanded = false; j.silenceRefused = false; j.amendsCredit = 0; j.warned = false;
+        try { this.state.scholar.exiled = false; } catch (e) {}
+      } else if (result === 'betrayal_won' || result === 'betrayal_routed') {
         // You survived the village's justice. Nothing is the same.
         this.say('It\'s over. The clearing is quiet in a way it has never been.');
         if (dead.length) {
