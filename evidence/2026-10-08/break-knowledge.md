@@ -180,3 +180,97 @@ slow (0.35/part, one learner).
 - Output-layer quirk: tool output renders the file's "bearer of the" as
   "Bearer <redacted>" (`od -c` confirms the file is correct). Don't "fix"
   the phantom.
+
+---
+
+# THIRD PASS — same target, same day (evening run)
+
+A third hostile pass, deliberately avoiding the morning/afternoon attack
+surfaces. Found **4 new breaks** (2 softlocks, 1 exploit, 2 honesty — the
+honesty fix spans engine + conversation handler). 4 new proof suites, each
+RED on unfixed code, GREEN after. All 13 prior knowledge suites re-run
+green (no regressions).
+
+## BREAK 11 — the monster-naming debate could never converge (SOFTLOCK)
+**Files:** `src/js/game.js` — `endDay()` naming driver (~18595).
+`kickMonsterNaming` seeds 3–4 proposals; `endDay` adds late proposers (50%/day
+each) and runs `monsterNamingCheck` (majority = floor(roster/2)+1). But **no
+villager ever SWITCHED a vote** — each proposed once and kept it. With a
+healthy roster (majority 7 of 12), random draws across ~9 name pools almost
+never concentrate: **3/5 seeds still had no village name after 60 days**,
+`monsterNamingActive()` true forever, the 'namebeast' topic and fire gossip
+dangling on an argument that could never end. The morning pass only tested
+FORCED convergence (7 votes injected by hand) — the natural path was never
+driven. The code comment even promises "campaign through gossip, and
+converge" — the campaigning was never implemented.
+**Fix:** campaigning in the daily driver. The plurality name (player's backed
+name double-counted, as in the tally) travels around the fire; each day
+villagers may switch to it — bold hold out (8%), cautious 22%, others 32%.
+**Proof:** `scripts/test-knowledge3-naming-softlock-20261008.js` drives the
+real `endDay()` 60 days with no player intervention: pre-fix 3/5 seeds
+stalled; post-fix 5/5 converge in 2–6 days with full rosters.
+
+## BREAK 12 — small-village naming kick could never fire (SOFTLOCK, sibling)
+Same bug class (a knowledge state with no way out): `monsterNewsCheck`
+required a flat 3 knowers. After heavy deaths (roster of 2), knowers can
+never reach 3 — the report dangles forever, `monsterTellActive()` stuck,
+naming never kicks.
+**Fix:** threshold is `min(3, rosterSize)` — the word is out when everyone
+left alive has heard it. Full villages behave exactly as before.
+
+## BREAK 13 — tradeKnowledge repeat farm: 300 kcal → +3 trust, forever (EXPLOIT)
+**File:** `src/js/game.js` — `tradeKnowledge` (~10928). Traders teach to L3,
+but nothing stopped trading for the SAME plant twice: the price was charged
+again, the "📚 TRADED KNOWLEDGE" line re-printed, `combineKnowledge` re-ran,
+and `bumpTrust(+3)` fired per repeat. Proven in-harness: three consecutive
+trades for one plant — trust 40→43→46→49, 900 kcal, zero knowledge exchanged
+after L3. A one-shot lesson must be one-shot.
+**Fix:** early honest refusal when the player already knows the plant at L3+
+("nothing to trade there") — no charge, no phantom lesson, no trust.
+**Proof:** `scripts/test-knowledge3-trade-repeat-20261008.js` — pre-fix 5/5
+seeds farmed trust; post-fix 5/5 refuse honestly (5/5 ran via a pinned
+trader; natural traders appear in only ~1/5 fresh rosters).
+
+## BREAK 14 — trade refusals all lied about the reason (HONESTY)
+**Files:** `src/js/game.js` `tradeKnowledge`, `src/js/conversation.js`
+`trade_yes` handler. `tradeKnowledge` returned `null` for success AND every
+refusal; the handler answered every non-upgrade with "...Come back when you
+can pay." — wrong when the real reason was "you already know it" (new) or
+"you have nothing I don't know" (knowledge-price path). The follow-up line
+contradicted the refusal line the engine just spoke.
+**Fix:** explicit outcome tokens (`ok`/`known`/`nothing`/`poor`/
+`taught-wrong`/`contested`); the handler names each refusal's real reason.
+**Proof:** `scripts/test-knowledge3-trade-honesty-20261008.js` drives the real
+`convoTurn(vid,'trade_yes')` with staged pendingTrades: pre-fix 3/3 seeds
+lied on both refusal types; post-fix all honest. Morning
+`test-break-knowledge-tradeecon-20261008.js` still green.
+
+## BREAK 15 — flowVillageKnowledge narrated lessons that never landed (HONESTY)
+**File:** `src/js/game.js` — `flowVillageKnowledge`. The "📚 Village
+knowledge: X taught everyone about <name>" line fired even when
+`grantKnowledge` returned false (unknown pid) — naming a plant the player
+never learned, and printing a raw pid when the data def was missing.
+**Fix:** skip unknown pids; narrate only on a successful grant.
+
+## HELD (attacked, survived — documented, not fixed)
+- **Exploit probes:** `discover()` one-shot per kind (no teach-XP farm);
+  conversation-teach trust (+2, `talk:false`) is uncapped by design — a real
+  act, one-shot per (plant, villager) pair, budget-limited; `combineKnowledge`
+  level-capped with one-shot jackpot; `identifyPlant`/`learnSkill`/`readBook`
+  (consumed) all one-shot; `backMonsterName` one vote (overwrites).
+- **Dead-code:** reverse UI→engine sweep — every knowledge method the app.js
+  surfaces call (`codexDeeds`, `whoKnowsLump`, `knowsTechnique`,
+  `encAnimalKnown`, …) resolves to a real definition; zero-caller sweep over
+  journal.js exports finds nothing dead (`forageCue` remains intentionally
+  unwired, flagged in its wiring comment — the grid pass owns it).
+- **Gating re-verified:** forage button is a generic cell action (no target
+  naming); `treeName`/`plantDisplayName`/`monsterDisplayName` all gated;
+  recipes gated at L3 in the pack UI; meat items carry the gated display name
+  at creation (kills identify animals via `encIdentifyAnimal` on every path:
+  hunted/trapped/netted/fished).
+
+## Proof-test result counts (this pass)
+- test-knowledge3-naming-softlock-20261008.js: 5/5 seeds (RED pre: 3/5 stalled)
+- test-knowledge3-trade-repeat-20261008.js: 5/5 seeds (RED pre: 5/5 farmed)
+- test-knowledge3-trade-honesty-20261008.js: 3/3 seeds (RED pre: 3/3 lied)
+- Prior 13 knowledge suites: all green, no regressions.

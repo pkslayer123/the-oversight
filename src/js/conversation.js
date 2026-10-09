@@ -3651,9 +3651,24 @@
         c.pendingTrade = null; c.thread = null;
         if (pt) {
           const before = ((this.state.codex.plants || {})[pt.pid] || {}).level || 0;
-          this.tradeKnowledge(vid, pt.pid);
+          // HONEST FOLLOW-UP (break-it knowledge 2026-10-08): tradeKnowledge
+          // returns an explicit outcome token. The old after>before check
+          // answered every refusal with "come back when you can pay" — wrong
+          // when the refusal was "you already know it" or "you have nothing
+          // I don't know". Each refusal names its real reason.
+          const res = this.tradeKnowledge(vid, pt.pid);
           const after = ((this.state.codex.plants || {})[pt.pid] || {}).level || 0;
-          done(after > before ? '"Pleasure doing business."' : '"...Come back when you can pay."', '"Deal."');
+          if (res === 'ok' || res === 'taught-wrong' || after > before) {
+            done('"Pleasure doing business."', '"Deal."');
+          } else if (res === 'known') {
+            done('"Already know it cold, huh? Then we\'re even on that one."', '"Deal."');
+          } else if (res === 'nothing') {
+            done('"Bring me something I haven\'t seen and we\'ll talk."', '"Deal."');
+          } else if (res === 'contested') {
+            done('"Hm. We\'ll see about that."', '"Deal."');
+          } else {
+            done('"...Come back when you can pay."', '"Deal."');
+          }
         } else {
           done('"..."', '"Deal."');
         }

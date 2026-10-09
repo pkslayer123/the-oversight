@@ -4390,11 +4390,16 @@
       for (const [pid, entry] of Object.entries(shared)) {
         if ((this.state.codex.plants || {})[pid]) continue;
         const plant = (this.data.plants || []).find(p => p.id === pid);
-        if (this.grantKnowledge('plant', pid, 1, { type: 'shared', by: 'village' })) flowed++;
+        // HONEST NARRATION (break-it knowledge 2026-10-08): the old code
+        // announced the lesson even when the grant failed (unknown pid) —
+        // naming a plant you never learned. Only narrate what landed.
+        if (!plant) continue;
+        if (!this.grantKnowledge('plant', pid, 1, { type: 'shared', by: 'village' })) continue;
+        flowed++;
         const dVill = (this.data.villagers || []).find(x => x.id === entry.discoveredBy)
           /* unified: getPerson */ || {};
         const discoverer = entry.discoveredBy ? (dVill.name || 'someone').split(' ')[0] : 'someone';
-        this.say(`📚 Village knowledge: ${discoverer} taught everyone about ${plant ? plant.name : pid}. The Codex grows without you lifting a finger.`);
+        this.say(`📚 Village knowledge: ${discoverer} taught everyone about ${plant.name}. The Codex grows without you lifting a finger.`);
       }
       if (flowed > 0 && this.state.systemArrived && !v.hiveNoticed) {
         v.hiveNoticed = true;
@@ -10930,9 +10935,22 @@
     tradeKnowledge(vid, pid) {
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         /* unified: getPerson */ || {};
+      // Outcomes are explicit tokens — the conversation handler names the
+      // follow-up honestly ('known' is not 'too poor to pay').
       const first = this.displayName(vid);
       const p = (this.data.plants || []).find(x => x.id === pid);
-      if (!p) return null;
+      if (!p) return 'none';
+      // ONE-SHOT LESSON (break-it knowledge 2026-10-08): a trade that teaches
+      // nothing is not a trade. Traders teach to L3; if you already know the
+      // plant that deep, there's nothing to buy — the old code charged the
+      // price again, re-printed the "TRADED KNOWLEDGE" line, and farmed +3
+      // trust per repeat (300 kcal -> +3 trust, forever). Honest refusal:
+      // no charge, no phantom lesson, no trust.
+      const already = (this.state.codex.plants || {})[pid];
+      if (already && (already.level || 0) >= 3) {
+        this.say(`${first} shakes their head. "You already know ${p.name} as well as I do — nothing to trade there."`);
+        return 'known';
+      }
       const trust = (this.state.village.trust || {})[vid] || 10;
       // price: food, or knowledge in return, or just trust
       const price = trust >= 60 ? 'trust' : (trust >= 30 ? 'food' : 'knowledge');
@@ -10941,7 +10959,7 @@
         const cost = 300;
         if ((this.state.scholar.kcal || 0) < cost) {
           this.say(`${first} wants ${cost} kcal of food for the secret of ${p.name}. You don't have it.`);
-          return null;
+          return 'poor';
         }
         this.state.scholar.kcal -= cost;
         this.say(`${first} takes your food, nods. "Okay. ${p.name}. Here's what I know..."`);
@@ -10959,7 +10977,7 @@
         trade = yourPlants.find(yPid => !theyKnow.has(yPid) && yPid !== pid);
         if (!trade) {
           this.say(`${first} wants knowledge in trade, but you have nothing they don't already know. (Learn more plants first.)`);
-          return null;
+          return 'nothing';
         }
         const tp = (this.data.plants || []).find(x => x.id === trade);
         this.say(`Trade: you teach ${first} about ${tp ? tp.name : trade}. They teach you about ${p.name}. Knowledge for knowledge.`);
@@ -10989,7 +11007,7 @@
       // combination: their depth + your experience might unlock more
       this.combineKnowledge(pid);
       this.discover('trade');
-      return null;
+      return 'ok';
     },
 
     // combineKnowledge: when multiple people know different things about the same
@@ -13151,7 +13169,13 @@
       const e = (this.state.codex.monsters || {})[mid];
       if (!e || e.namingKicked || !e.reported) return;
       const knowers = new Set(e.knowers || []);
-      if (knowers.size >= 3) {
+      // SMALL-VILLAGE HONESTY (break-it knowledge 2026-10-08): the old flat
+      // threshold of 3 knowers could never be reached after heavy deaths —
+      // the report dangled forever and naming never kicked. The word is out
+      // when everyone left alive has heard it.
+      const rosterN = ((this.state.village || {}).roster || []).length;
+      const need = Math.max(1, Math.min(3, rosterN));
+      if (knowers.size >= need) {
         this.say('Word gets around the haven. Whatever that thing was — everyone\'s talking about it now.');
         this.kickMonsterNaming(mid);
       }
@@ -18597,6 +18621,32 @@
           for (const vid of roster) {
             if (!e.proposals[vid] && Math.random() < 0.5) e.proposals[vid] = this.generateMonsterName(mid, vid);
           }
+          // CAMPAIGNING (break-it knowledge 2026-10-08): the argument CONVERGES.
+          // Late proposers alone can never reach a majority — nobody switched
+          // votes, so full-roster debates stalled forever (3/5 seeds stuck at
+          // 60 days). Now the plurality name travels around the fire and some
+          // villagers switch: gossip does the work the design always claimed.
+          // Bold villagers hold out longer; the player's backed name attracts
+          // (it already counts double in the tally — here too).
+          try {
+            const me = ((this.state.scholar || {}).villagerId || 'player');
+            const wtally = {};
+            for (const [pvid, pname] of Object.entries(e.proposals || {})) {
+              wtally[pname] = (wtally[pname] || 0) + ((pvid === me || pvid === 'player') ? 2 : 1);
+            }
+            const top = Object.entries(wtally).sort((a, b) => b[1] - a[1])[0];
+            if (top && top[0]) {
+              for (const vid of roster) {
+                const cur = e.proposals[vid];
+                if (!cur || cur === top[0]) continue;
+                let temp = 'steady';
+                try { temp = this.npcTemper ? this.npcTemper(vid) : 'steady'; } catch (e3) {}
+                // bold hold their ground; the persuadable come around
+                const sw = temp === 'bold' ? 0.08 : temp === 'cautious' ? 0.22 : 0.32;
+                if (Math.random() < sw) e.proposals[vid] = top[0];
+              }
+            }
+          } catch (e3) {}
           this.monsterNamingCheck(mid);
         }
       } catch (e2) {}
