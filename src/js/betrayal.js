@@ -1640,7 +1640,8 @@
     const r = R();
     if (r < 0.22) {
       const gain = 400 + Math.round(R() * 600);
-      s.kcal = Math.min((s.kcal || 0) + gain, 3000);
+      // BANK CAP (break-it food r3 2026-10-08): kcalCap() is the one number.
+      s.kcal = Math.min((s.kcal || 0) + gain, this.kcalCap ? this.kcalCap() : 3000);
       this.say(`Drifting: a lucky stretch — roots, grubs, a bird too slow. +${gain} kcal. The wild provides, today.`);
     } else if (r < 0.38) {
       const loss = 200 + Math.round(R() * 300);
@@ -3891,7 +3892,8 @@
         if (ov && atJv && (onProb || (ov.trust || 0) < 15)) {
           const meal = Math.min(1000, Math.round(ov.pantryKcal || 0));
           ov.pantryKcal = Math.max(0, (ov.pantryKcal || 0) - meal);
-          s.kcal = Math.min((s.kcal || 0) + meal, 3000);
+          // BANK CAP (break-it food r3 2026-10-08): kcalCap() is the one number.
+          s.kcal = Math.min((s.kcal || 0) + meal, this.kcalCap ? this.kcalCap() : 3000);
           this.say(`Village meal at ${ov.name}: +${meal} kcal. ` +
             (onProb ? `Probation portions — half shares until they vote you in (${Math.max(0, s.probation.daysLeft)} days left).`
                     : `New mouths eat last — earn their trust for full shares. (Trust ${Math.round(ov.trust || 0)}/15.)`));

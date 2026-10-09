@@ -7893,19 +7893,10 @@
       this.tickAction(1);
       return null;
     },
-    // fillWaterFromVillage: at Haven, draw from the village supply into your pack.
-    // The village well is the reason Haven is where it is.
-    fillWaterFromVillage() {
-      const v = this.state.village;
-      if (!v || !v.water || v.water.clean < 1) { this.say('The well is dry. Find water out there.'); return null; }
-      // WATER HAS MASS here too: don't drain the cistern for a liter you can't carry.
-      if (!this.canCarry(1)) { this.say('Your pack is full — water is heavy (1L = 1kg). Drink some or drop weight.'); return null; }
-      v.water.clean -= 1;
-      this.addWater(1, 'clean', 'Haven well');
-      this.say('You fill 1L from the Haven well. Clean.');
-      this.tickAction(1); // ACTION CLOCK: filling a bottle = 1 tick.
-      return null;
-    },
+    // fillWaterFromVillage: DELETED (break-it food r3 2026-10-08) — dead code
+    // with zero callers anywhere (the live path is fillWater(), hardened by
+    // the survivalist loop). Worse, it skipped fillWater's 10-kcal hauling
+    // cost — if anyone ever wired it, it would have been a cheap-water hole.
     addWater(liters, quality, source) {
       const s = this.state.scholar;
       s.water = s.water || [];
@@ -14907,6 +14898,12 @@
       if (id === 'blood_magic') {
         const cost = this.hasSynergy('crimson_circuit') ? 7 : 10;
         if ((s.health || 0) <= cost) { this.say('Too weak for the Blood Price.'); return false; }
+        // COMBAT REFUSAL (break-it food r3 2026-10-08): the Price writes
+        // s.health directly, but mid-fight the fighter's hp is the live value
+        // and tbEnd overwrites s.health with p.hp — a mid-fight Price kept the
+        // +500 kcal AND the open wound while the -10 HP cost was silently
+        // erased. The cut needs a steady hand anyway: not in a fight.
+        if (this.inCombat && this.inCombat()) { this.say('Not in the middle of a fight — the Price needs a steady hand, and a cut opened now would never close right.'); return false; }
         // BLOOD-PRICE CAP (Steve 2026-10-08, break-it food run): the body can
         // only be eaten so much in one day part. Without a cap, blood_magic +
         // field_medicine printed ~+5,400 kcal/daypart (~21,600/day) — a true
@@ -17834,7 +17831,9 @@
         // other villages use pantryKcal (abstract). Convert to meal.
         const meal = Math.min(2000, jv.pantryKcal || 0);
         jv.pantryKcal = Math.max(0, (jv.pantryKcal || 0) - meal);
-        scholar.kcal = Math.min((scholar.kcal || 0) + meal, 3000);
+        // BANK CAP (break-it food r3 2026-10-08): the meal is a kcal source
+        // like any other — kcalCap() is the one number, not a 3000 literal.
+        scholar.kcal = Math.min((scholar.kcal || 0) + meal, this.kcalCap());
         this.say(`Village meal at ${jv.name}: +${Math.round(meal)} kcal.`);
         return;
       }
@@ -17859,8 +17858,11 @@
       const pantry = v.pantry || [];
       const trust = v.trust && v.trust[scholar.villagerId] !== undefined ? v.trust[scholar.villagerId] : 10;
       const share = trust < 30 ? 1000 : trust < 60 ? 2000 : 2200;
-      // don't take more than you can hold — food doesn't vanish into the cap
-      const room = Math.max(0, 3000 - (scholar.kcal || 0));
+      // don't take more than you can hold — food doesn't vanish into the cap.
+      // BANK CAP (break-it food r3 2026-10-08): kcalCap() is the one number —
+      // the old 3000 literal let the meal overfill a 2400-cap bank.
+      const bankCap = this.kcalCap();
+      const room = Math.max(0, bankCap - (scholar.kcal || 0));
       const want = Math.min(share, room);
       if (want <= 0) { this.say('You\'re full. The pantry keeps its food.'); v.lastPlayerMeal = 0; return; }
       // take from pantry: BEST-FIT (Steve 2026-10-08). Smallest pieces first —
@@ -17873,7 +17875,7 @@
       // BEST-FIT draw, shared with the village's own meals (see pantryDraw):
       // smallest pieces first, spoiled skipped, never a slab for a small need.
       const taken = this.pantryDraw(v, want, {}).taken;
-      scholar.kcal = Math.min((scholar.kcal || 0) + taken, 3000);
+      scholar.kcal = Math.min((scholar.kcal || 0) + taken, bankCap);
       // HONEST BURN (2026-10-08): the player's meal burns the pantry but the
       // player is not in villageEats' collective loop (parity) — record the
       // draw so the pantry clock counts it.
@@ -18169,7 +18171,7 @@
           this.say(`${first} went to sleep hungry. Nobody says anything.`);
         }
       }
-      return { ate, gave };
+      return { ate, gave, drawn: pile.taken };
     },
 
     // logSitting(v, vid, part): one sitting at the fire. Company isn't
@@ -18252,7 +18254,7 @@
       if (!v || !v.roster) return;
       v.mealLog = []; // today's co-eating record — company is organic, not scheduled
       const cookId = this.villageCookId(v);
-      let totalEat = 0, totalGive = 0;
+      let totalEat = 0, totalGive = 0, totalDrawn = 0;
       const providers = [];
       let anyStarving = false;
       for (const id of (v.roster || [])) {
@@ -18265,14 +18267,18 @@
         const person = this.getPerson(id);
         if (!person) continue;
         const r = this.villagerMealDay(id, person, v, { cookId });
-        totalEat += r.ate; totalGive += r.gave;
+        totalEat += r.ate; totalGive += r.gave; totalDrawn += r.drawn || 0;
         if (r.gave > 0) providers.push(person);
         if (r.ate < (person.kcalPerDay || 2000) * 0.6) anyStarving = true;
       }
-      // HONEST BURN (2026-10-08): the player's trust-scaled meal (villageMeal)
-      // burns the pantry but the player is not in this loop (parity) — count
-      // it so the pantry clock stays honest. Rolling 7 days.
-      const honestNet = Math.max(0, totalEat - totalGive) + (v.lastPlayerMeal || 0);
+      // HONEST BURN (2026-10-08, refined r3): the player's trust-scaled meal
+      // (villageMeal) burns the pantry but the player is not in this loop
+      // (parity) — count it so the pantry clock stays honest. Rolling 7 days.
+      // r3: burn what the pantry actually lost. The old totalEat counted
+      // ownEat — self-caught food that never touched the pantry — inflating
+      // the burn and shortening the "about N days" estimate. totalDrawn is
+      // the pantry's real outflow (best-fit draws + away rations).
+      const honestNet = Math.max(0, totalDrawn - totalGive) + (v.lastPlayerMeal || 0);
       v.lastEat = totalEat; v.lastGive = totalGive;
       v.lastProviders = providers.map(p => String(p.name || '').split(' ')[0]);
       v.burnHistory = (v.burnHistory || []).concat([honestNet]).slice(-7);

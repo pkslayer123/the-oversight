@@ -926,7 +926,7 @@
         } catch (e) {}
       }
       this.say('Plus ' + kcal + ' kcal of fan-approved snacks.');
-      try { this.state.scholar.kcal = (this.state.scholar.kcal || 0) + kcal; } catch (e) {}
+      try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + kcal); } catch (e) {}
       return true;
     },
 
@@ -958,7 +958,7 @@
       this.say('🎁 You find a small bundle tucked where you\'ll find it. No one saw it left there.');
       this.say(line);
       this.say('(' + kcal + ' kcal of dried meat and clean water. Nothing traceable.)');
-      try { this.state.scholar.kcal = (this.state.scholar.kcal || 0) + kcal; } catch (e) {}
+      try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + kcal); } catch (e) {}
       return true;
     },
 
@@ -1166,13 +1166,13 @@
         var kcal = 400 + Math.floor(Math.random() * 300);
         this.say('📦 A plain package, no card. Inside: real food, clean bandages, and a note in handwriting you almost recognize:');
         this.say('"Eat. Rest. They\'re watching the skies, not the ground. — a friend"');
-        try { this.state.scholar.kcal = (this.state.scholar.kcal || 0) + kcal; } catch (e) {}
+        try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + kcal); } catch (e) {}
         return true;
       } else {
         // NEUTRAL: weird, enthusiastic, mostly harmless
         this.say('📦 A package covered in stickers. The card: "' + per.name + '!! Hope you\'re doing great! Here\'s some stuff from home!"');
         this.say('Inside: snacks that taste like purple, a tiny flag, and a photo of ' + per.name + ' giving a thumbs-up.');
-        try { this.state.scholar.kcal = (this.state.scholar.kcal || 0) + 200; } catch (e) {}
+        try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + 200); } catch (e) {}
         return true;
       }
     },

@@ -2533,7 +2533,10 @@
       log.push(`+${d.heal} hp`);
     }
     if (d.kcal) {
-      s.kcal = Math.max(0, (s.kcal || 0) + d.kcal);
+      // BANK CAP (break-it food r3 2026-10-08): contest prizes are a kcal
+      // source like any other — no bypassing the cap (same class as
+      // blood_magic's fix). Negative deltas still floor at 0.
+      s.kcal = Math.min(this.kcalCap(), Math.max(0, (s.kcal || 0) + d.kcal));
       log.push(`${d.kcal > 0 ? '+' : ''}${d.kcal} kcal`);
     }
     if (d.trauma) {
@@ -3412,7 +3415,9 @@
       if (i === 0 && ac.bet) {
         const amt = ac.bet.amount;
         if (outcome === 'won') {
-          s.kcal = (s.kcal || 0) + amt * 2;
+          // BANK CAP (break-it food r3 2026-10-08): the payout is a kcal
+          // grant — it respects the cap like every other source.
+          s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + amt * 2);
           this.sysSay(`📺 Your bet pays out: +${amt * 2} kcal. The System honors wagers.`);
         } else {
           this.sysSay(`📺 Your ${amt} kcal is gone. The house always eats.`);

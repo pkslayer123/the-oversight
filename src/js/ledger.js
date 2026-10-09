@@ -750,6 +750,12 @@
       s.villagerId = newId;
       // the mantle passes: the PROGRESSION is the village's (slots, arc,
       // integration, ledger, Codex). The body is new.
+      // BLOOD-PRICE WOUND (break-it food r3 2026-10-08): the wound is the old
+      // body's missing mass — a new body has no Price cuts. Without this the
+      // successor inherited the dead bearer's open wound (reduced maxHealth
+      // and an immediate "more scar than skin" refusal on a body that never
+      // bled), contradicting "new body, no old afflictions" just below.
+      s.bloodPriceWound = 0; s.bloodPriceDayPart = null; s.bloodPriceUses = 0;
       s.kcal = 1500;
       try { s.health = this.maxHealth(); } catch (e) { s.health = 100; }
       s.trauma = 10; // the shock of stepping up

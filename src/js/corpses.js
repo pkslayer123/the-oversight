@@ -405,8 +405,14 @@
         const kg = (it.kg || 0.3) * 1;
         if (this.canCarry && !this.canCarry(kg)) { this.say('Too heavy — your pack can\'t take it.'); return false; }
         const inv = s.inventory;
-        const ex = inv.find(x => x.plantId === it.plantId && !x.keepsake);
-        if (ex && !it.keepsake) ex.units = (ex.units || 1) + 1;
+        // FUNGIBILITY GATE (break-it food r3 2026-10-08): the old merge keyed
+        // on plantId alone — looted low-quality meat folded into a
+        // high-quality pack stack kept the pack's kcalEach (value laundering,
+        // same class as round 2's F1). Only truly identical stacks merge.
+        const ex = (!it.keepsake && this.stacksMatch)
+          ? inv.find(x => x.plantId === it.plantId && !x.keepsake && this.stacksMatch(x, it))
+          : null;
+        if (ex) ex.units = (ex.units || 1) + 1;
         else inv.push(Object.assign({}, it, { units: 1 }));
         it.units -= 1;
         took.push(it);
@@ -426,8 +432,10 @@
       this.addTrauma(trauma);
 
       // DISEASE: handling rot risks illness. Fresh is safer physically.
+      // addHealth routing (break-it food r3 2026-10-08): the old direct write
+      // bypassed the combat fighter — mid-fight damage was erased at tbEnd.
       if (Math.random() < st.diseaseP) {
-        s.health = Math.max(0, (s.health || 100) - st.diseaseDmg);
+        this.addHealth(-st.diseaseDmg);
         this.say(`Handling the ${st.id} remains was a mistake. Fever by nightfall. (-${st.diseaseDmg} health)`);
       }
 

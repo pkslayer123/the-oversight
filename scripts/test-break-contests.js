@@ -381,8 +381,10 @@ sec('HONESTY 2 — bet copy vs engine');
 {
   const src = fs.readFileSync(path.join(ROOT, 'src/js/contests.js'), 'utf8');
   ok('bet label names the 200 kcal stake', src.includes('Bet 200 kcal on'));
-  // engine: stake deducted once, payout exactly 2x on first-taken win
-  ok('engine pays exactly 2x stake', /s\.kcal = \(s\.kcal \|\| 0\) \+ amt \* 2/.test(src));
+  // engine: stake deducted once, payout exactly 2x on first-taken win.
+  // BANK CAP (break-it food r3 2026-10-08): the payout is a kcal grant — it
+  // now respects kcalCap() like every other source (was unclamped).
+  ok('engine pays 2x stake (bank-capped)', /s\.kcal = Math\.min\(this\.kcalCap\(\), \(s\.kcal \|\| 0\) \+ amt \* 2\)/.test(src));
   ok('bet rides on first taken (label names ids[0])', src.includes("if (i === 0 && ac.bet)"));
 }
 

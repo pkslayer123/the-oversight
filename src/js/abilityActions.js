@@ -770,7 +770,10 @@
       try { mult = game.modTarget('hunt.meat_yield', 100) / 100; } catch (e) {}
       var multTxt = mult > 1.001 ? ' (Field Dressing ×' + (Math.round(mult * 100) / 100) + ' — your skill kept more of the carcass.)' : '';
       inv.splice(idx, 1);
-      s.kcal = (s.kcal || 0) + yield_;
+      // BANK CAP (break-it food r3 2026-10-08): no kcal source bypasses the
+      // cap — dressed meat is no exception (same class as blood_magic's fix).
+      var _cap = game.kcalCap ? game.kcalCap() : 2400;
+      s.kcal = Math.min(_cap, (s.kcal || 0) + yield_);
       game.say('You work fast and clean — hide, sinew, bone, all usable. +' + yield_ + ' kcal of meat, plus parts.' + multTxt + ' (Field Dress)');
       return true;
     },
