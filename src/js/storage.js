@@ -559,7 +559,25 @@
         it.units = Math.max(1, Math.floor(it.units || 1));
         qty = Math.min(qty, it.units || 1);
         const kcal = (it.kcalEach || 0) * qty;
-        items.push({ name: it.name, kcalEach: it.kcalEach, units: qty, spoilDay: it.spoilDay, safe: it.safe, kg: it.kg, unit: it.unit });
+        // FULL PROCESSING STATE (miser break-it 2026-10-09): the old
+        // subset-push silently stripped diseaseRisk/poisonRisk/needsCooking/
+        // foodState — burying raw risky meat and digging it up came back
+        // CLEAN: a free disease bypass (measured 0.35 sick chance -> 0) and
+        // toxin laundering (poisoned meat feedable risk-free). Same field
+        // contract as pantryAdd/takenStack — what goes into the earth comes
+        // back out of it, unchanged. Risk objects are copied: a partial bury
+        // leaves a pack stack behind, and the two must not alias.
+        const riskCopy = (r) => (r ? Object.assign({}, r) : r);
+        items.push({
+          name: it.name, kcalEach: it.kcalEach, units: qty,
+          spoilDay: it.spoilDay, safe: it.safe, kg: it.kg, unit: it.unit,
+          plantId: it.plantId, foodKind: it.foodKind, foodState: it.foodState,
+          edible: it.edible, hiddenKcal: it.hiddenKcal, rawKcal: it.rawKcal,
+          cookedKcal: it.cookedKcal, diseaseRisk: riskCopy(it.diseaseRisk),
+          poisonRisk: riskCopy(it.poisonRisk), needsCooking: it.needsCooking,
+          wellMade: it.wellMade, burnt: it.burnt, prep: it.prep,
+          bonded: it.bonded, keepsake: it.keepsake, stolen: it.stolen,
+        });
         it.units -= qty;
         if (it.units <= 0) inv.splice(inv.indexOf(it), 1);
         label = `${qty}× ${it.name} (${this.fmtKcal ? this.fmtKcal(kcal) : kcal + ' kcal'})`;
