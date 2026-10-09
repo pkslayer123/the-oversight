@@ -602,12 +602,18 @@
         alive: true, fled: false, moveLeft: 0, acted: false, aimed: false,
       });
       // The betrayer: hostile. Fights like a person — brave if bold, cautious if scared.
+      // WOUND TRUTH (break-it combat r6 2026-10-09): a betrayer you wounded
+      // and fled from is still bleeding — the village record carries their
+      // remaining HP from the last fight (stashed in the tbEnd wrapper).
+      // The old flat 40 erased your damage at no cost.
       const temp = this.npcTemper(vid);
       const bspot = freeSpotNear(px + 2, py);
+      const _bw = (((this.state || {}).village || {}).betrayalWounds || {})[vid];
+      const _bhp = (_bw > 0) ? Math.min(40, Math.round(_bw)) : 40;
       fighters.push({
         key: 'h_' + vid, kind: 'hostile', villagerId: vid,
         name: this.displayName(vid), emoji: '🔪',
-        hp: 40, maxHp: 40, speed: 3, mx: bspot.x, my: bspot.y,
+        hp: _bhp, maxHp: 40, speed: 3, mx: bspot.x, my: bspot.y,
         alive: true, fled: false, moveLeft: 0, acted: false,
         ai: temp === 'bold' ? 'brave' : temp === 'cautious' ? 'cautious' : 'brave',
         betrayal: true,
@@ -1143,6 +1149,25 @@
   Game.tbEnd = function (result) {
     const f = this.tbfight;
     const wasBetrayalFight = !!(f && f.betrayal);
+    // WOUND TRUTH (break-it combat r6 2026-10-09): the player's wounds persist
+    // across a fled betrayal fight (s.health syncs from the fighter) but the
+    // hostile always respawned at a flat 40 HP — beat them to 1, flee, heal,
+    // come back to a fresh 40. Your damage was erased at no cost (same class
+    // as the door-flee monster reset, fixed 2026-10-08). Stash the hostile's
+    // remaining HP on the village record; the next startBetrayalCombat honors
+    // it. Cleared when they die.
+    if (wasBetrayalFight && f) {
+      try {
+        const v = this.state.village || {};
+        v.betrayalWounds = v.betrayalWounds || {};
+        for (const h of (f.fighters || [])) {
+          if (h.kind === 'hostile' && h.villagerId) {
+            if (h.alive) v.betrayalWounds[h.villagerId] = Math.max(1, Math.round(h.hp));
+            else delete v.betrayalWounds[h.villagerId];
+          }
+        }
+      } catch (e) {}
+    }
     // FLEE TRUTH (brawler loop 2026-10-08): carry who-fled into the aftermath
     // before the fight object is cleared.
     if (wasBetrayalFight && result === 'fled' && this._lastBetrayal) {

@@ -912,7 +912,15 @@
       // One perfect shot: 3x, ignores armor, can't move.
       var s = game.state.scholar;
       s.deadAimShot = { mult: 3.0, ignoreArmor: true };
+      // HONESTY (break-it combat r6 2026-10-09): "you cannot move this turn"
+      // never touched moveLeft — plant the feet for real, then re-evaluate
+      // the turn end (the gravity-well pattern: the turn may be over now).
+      try {
+        var pf = game.tbFighter && game.tbFighter('p');
+        if (pf && game.tbfight && !game.tbfight.over) pf.moveLeft = 0;
+      } catch (e) {}
       game.say('One breath. One shot. 3x damage, and armor won\'t save them. You plant your feet — you\'re not moving this turn. (Dead Aim — the shot is ready, strike to fire it.)');
+      try { if (game.tbAfterPlayerAction) game.tbAfterPlayerAction(); } catch (e) {}
       return true;
     },
 
@@ -1060,8 +1068,11 @@
       // HONESTY (2026-10-07): the old frenzy:true flag and "nearest thing,
       // friend or foe / cannot retreat" text promised targeting and
       // retreat-lock mechanics that don't exist. What it does: +100% x3.
+      // HONESTY (break-it combat r6 2026-10-09): the engine counts STRIKES,
+      // not rounds (decremented in _applyAbilityActionMods per strike) —
+      // "for 3 rounds" was wrong when a round passed without a strike.
       s.rageActive = { rounds: 3, dmgMult: 2.0 };
-      game.say('The red comes down. +100% damage for 3 rounds. (Unleash Rage — hold on.)');
+      game.say('The red comes down. Your next 3 strikes deal +100% damage. (Unleash Rage — hold on.)');
       return true;
     },
 
@@ -1120,15 +1131,16 @@
       var s = game.state.scholar;
       // SPEED, NOT INITIATIVE (Steve 2026-10-07): turn order is speed-based
       // (engine/combat.js turnOrder), so the old "+2 initiative" was dead.
-      // Grant +2 speed: mid-fight it re-sorts from next round (orderDirty);
-      // out of combat it's banked and consumed at the next fight start.
+      // Grant +2 speed: mid-fight it re-sorts from next round (orderDirty).
+      // DEAD BRANCH (break-it combat r6 2026-10-09): the old else banked
+      // s.fightRead for "the NEXT fight when used out of combat" — but this
+      // action's context is combat-only, so useAbility can never reach that
+      // branch. The flag was write-only. Removed.
       var pf = null;
       try { pf = (game.tbfight && !game.tbfight.over) ? game.tbFighter('p') : null; } catch (e) {}
       if (pf) {
         pf.speed = (pf.speed || 3) + 2;
         try { game.tbfight.orderDirty = true; } catch (e) {}
-      } else {
-        s.fightRead = { speedBonus: 2 };
       }
       var m = game.tbFighter(target);
       if (m) {

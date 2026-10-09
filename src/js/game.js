@@ -19676,12 +19676,15 @@
     // flags set by brawler/hunter abilities must not leak into the NEXT
     // fight. Monster fights go through startCombat(); the uprising and
     // party-betrayal fights build this.tbfight directly (justice.js,
-    // party.js) — all three call this reset. (fightRead is intentionally
-    // NOT cleared — read_fight banks +2 speed for the NEXT fight when used
-    // out of combat. layWaitActive is intentionally NOT cleared — it holds
-    // for the next animal encounter, consumed by checkAnimals, not by
-    // fights. cleanShotReady IS cleared — a lined-up hunting shot doesn't
-    // survive a monster fight.)
+    // party.js) — all three call this reset. (layWaitActive is intentionally
+    // NOT cleared — it holds for the next animal encounter, consumed by
+    // checkAnimals, not by fights. cleanShotReady IS cleared — a lined-up
+    // hunting shot doesn't survive a monster fight.)
+    // READ THE FIGHT (break-it combat r6 2026-10-09): the old comment
+    // claimed an out-of-combat use "banks +2 speed for the NEXT fight" in
+    // s.fightRead — but the action's context is combat-only, so that branch
+    // was unreachable and the flag was write-only. Removed; the in-combat
+    // +2 (re-sorts from next round) is the whole ability.
     resetPerFightFlags() {
       const s = this.state.scholar;
       // BELLTOAD CHORUS (Steve 2026-10-08, break-it round 2): the delayed
@@ -19712,7 +19715,6 @@
       delete s.deadAimShot;
       delete s.ambushReady;
       delete s.ignoreArmorNext;
-      delete s.noDodgeNext;
       delete s.cleanShotReady;
     },
 
@@ -20187,6 +20189,13 @@
       const c = this.tbCurrent();
       if (!c) return;
       if (c.kind === 'player') {
+        // TAKE AIM EXPOSURE (break-it combat r6 2026-10-09): "enemies hit
+        // easier until your next turn" — the exposure ticks down as the new
+        // turn begins. The 2.5x aim itself persists until the shot is taken.
+        try {
+          const _ab2 = (this.state.scholar || {}).aimBonus;
+          if (_ab2 && (_ab2.exposeTurns || 0) > 0) _ab2.exposeTurns -= 1;
+        } catch (e) {}
         // STUNNED (mirror-stag gaze, belltoad croak): the stun is set during a
         // monster's turn, so it must be consumed HERE — tbBeginTurn otherwise
         // wipes moveLeft/acted and the freeze silently never happens.
@@ -22307,6 +22316,18 @@
           const bt = (globalThis.Scattering.calories || {}).burdenTier;
           if (bt) dodgeCh -= bt(this.packWeight(), this.packCapacity()).dodgePen;
         } catch (e) {}
+        // TAKE AIM EXPOSURE (break-it combat r6 2026-10-09): the data promises
+        // "enemies get +hit" while you're lined up — exposeTurns was
+        // write-only, the tradeoff never fired. An exposed player is planted
+        // for the shot: no slipping aside. Ticks down in tbBeginTurn
+        // ("until your next turn").
+        try {
+          const _ab = (this.state.scholar || {}).aimBonus;
+          if (_ab && (_ab.exposeTurns || 0) > 0 && dodgeCh > 0) {
+            dodgeCh = 0;
+            if (!_ab.exposedTold) { _ab.exposedTold = true; this.say('Exposed — lined up for the shot, nowhere to slip to. (Take Aim)'); }
+          }
+        } catch (e) {}
         if (dodgeCh > 0 && Math.random() < dodgeCh) {
           this.say('You slip aside — it misses clean. (footwork)');
           this.practice('agi', 1); // dodging is agility practice
@@ -22386,13 +22407,20 @@
       }
       if (t.kind === 'player' && typeof this.armorBonus === 'function') {
         const prot = this.armorBonus();
-        if (prot > 0) { final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(dmg, prot)}.`); }
+        // HONESTY (break-it combat r6 2026-10-09): the old line stated
+        // Math.min(dmg, prot) — the RAW incoming number — but union-rep
+        // solidarity (+3) and pack-leader (+2) inflate final before armor.
+        // State what the armor actually absorbed.
+        if (prot > 0) { const _pre = final; final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(_pre, prot)}.`); }
       }
       // EQUIPMENT (Steve 2026-10-06): villagers' worn armor absorbs too.
+      // HONESTY (break-it combat r6 2026-10-09): same class as the player
+      // block — state the post-modifier absorbed number, not the raw input.
       if (t.kind === 'villager' && (t.varmor || 0) > 0) {
         const prot = t.varmor;
+        const _vpre = final;
         final = Math.max(0, final - prot);
-        this.say(`${t.name}'s gear absorbs ${Math.min(dmg, prot)}.`);
+        this.say(`${t.name}'s gear absorbs ${Math.min(_vpre, prot)}.`);
       }
       // PHASE BLADE (alien loot): ignores armor — the sealed shell might as
       // well not be there. Checked the same way as the torch-vs-golem rule.
@@ -24147,17 +24175,6 @@
     },
 
     // nearest fire cell within range (chebyshev) of (x,y) — the swarm's bane.
-    tbNearestFire(x, y, range) {
-      const detail = this.genDetail(this.map.px, this.map.py);
-      let best = null, bestD = 99;
-      for (let cy = 0; cy < 9; cy++) for (let cx = 0; cx < 9; cx++) {
-        if (!detail[cy] || detail[cy][cx] !== 'fire') continue;
-        const d = Math.max(Math.abs(cx - x), Math.abs(cy - y));
-        if (d <= range && d < bestD) { bestD = d; best = { x: cx, y: cy }; }
-      }
-      return best;
-    },
-
     // the drone grades your dodging in real time. It opens at 41% — BELOW TARGET.
     droneEff(m) { return (m.dodgeEff == null) ? 41 : m.dodgeEff; },
     droneScore(m, dodged) {

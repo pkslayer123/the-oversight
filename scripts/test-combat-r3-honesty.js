@@ -132,10 +132,15 @@ function lastSay(Game, n) {
       Game.state.scholar.kcal = 9000;
       Game.state.scholar.health = 100; Game.tbFighter('p').hp = 100;
       const p = Game.tbFighter('p');
+      const round0 = Game.tbfight ? Game.tbfight.round : 0;
       let ret;
       try { ret = Game.useAbility(abId, actId); } catch (e) { ret = 'threw:' + e.message.split('\n')[0]; }
       const said = lastSay(Game, 4);
-      if (ret === true && !p.acted) free.push(abId + '.' + actId);
+      // SPENT = acted, or the action ended the whole turn (round advanced —
+      // e.g. dead_aim plants the feet: moveLeft 0 + acted auto-advances per
+      // the no-end-turn-ceremony design. Break-it combat r6 2026-10-09.)
+      const spent = p.acted || (Game.tbfight && Game.tbfight.round > round0);
+      if (ret === true && !spent) free.push(abId + '.' + actId);
       // Fail-fast unwired must not spend either (round-1 invariant).
       if (ret === false && /isn't wired up yet/.test(said) && p.acted) free.push(abId + '.' + actId + ' (failfast spent!)');
     }
