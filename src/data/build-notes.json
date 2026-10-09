@@ -1,0 +1,68 @@
+[
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Boiling water now honestly costs time and energy — bulk purification was free on the action clock.",
+      "Storms wrecking your camp wake you with a start — no more sleeping through the destruction in tent-quality comfort.",
+      "Rain and storm water now respect your carry limit."
+    ],
+    "version": "d3d1494c-20261009-162902"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Fixed the pantry quietly generating ~1,000 free calories a day.",
+      "The dead no longer eat: fallen villagers stop consuming and producing food.",
+      "Food sharing and meal draws are now honestly tracked."
+    ],
+    "version": "46432553-20261009-162330"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Your gear is yours: villagers keep their own belongings. The village stash only holds what someone deliberately deposits.",
+      "New armory (weapons) and pharmacy (medicine) sections in the village stash.",
+      "The dead carry their real belongings — open their packs and loot.",
+      "13 craftable weapons and armor (spears, bows, bark armor, hide armor…) through the normal crafting menu."
+    ],
+    "version": "a208a9e-20261009-161955"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Closed trust-farming exploits around interpreter gestures and food gifts.",
+      "Settled promises no longer block you from making new ones."
+    ],
+    "version": "7447b64-20261009-160512"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Fixed villagers fighting unarmed — they now actually equip the weapons they carry.",
+      "Villagers gear up and get patched up by the healer before heading into danger."
+    ],
+    "version": "94fa7f7-20261009-154608"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Closed mid-fight examine and interact exploits."
+    ],
+    "version": "975b5f8-20261009-151628"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Combat honesty pass: war cries, threats, and calls for help now say what they mean.",
+      "Fixed betrayal fights breaking across save/load."
+    ],
+    "version": "df2d54c-20261009-150701"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
+      "Fixed pemmican showing the wrong calories."
+    ],
+    "version": "43cbee3-20261009-144413"
+  }
+]

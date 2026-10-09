@@ -391,6 +391,20 @@
     }
   }
 
+  // BUILD NOTES (Steve 2026-10-09): expandable "What's new" on the title
+  // screen. src/data/build-notes.json is append-only (newest first); the
+  // render caps at 12 entries. Player-facing summaries, no dev jargon.
+  function buildNotesHtml() {
+    const notes = (Game.data.buildNotes || []).slice(0, 12);
+    if (!notes.length) return '<p class="small" style="opacity:.6">No notes yet.</p>';
+    return notes.map(e => {
+      const v = String(e.version || '').split('-')[0];
+      const items = (e.notes || []).map(n => `<li class="small">${esc(n)}</li>`).join('');
+      return `<div style="margin:8px 0;padding:8px 10px;background:#141a22;border-radius:6px;text-align:left">` +
+        `<p class="small" style="opacity:.55;margin:0 0 4px">${esc(v)} · ${esc(e.date || '')}</p>` +
+        `<ul style="margin:0;padding-left:18px">${items}</ul></div>`;
+    }).join('');
+  }
   function title() {
     screen.innerHTML = `
       ${bar('scattering://village', 'day 0')}
@@ -412,7 +426,9 @@
       </div>
       <p class="small" id="install-hint" style="display:none;opacity:.7"></p>
       <p class="small" style="margin-top:20px">slice 1: open expeditions. forage · eat · drink · bring it home.</p>
-      <p class="small" style="opacity:.45;margin-top:14px"><span id="build-tag" style="cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</span> <span id="b-debug" style="cursor:pointer;opacity:.35;font-size:11px" title="toggle debug tools">🐞</span> <span id="b-sound" style="cursor:pointer;opacity:.5;font-size:11px" title="toggle sound">🔊</span></p>`;
+      <p class="small" style="opacity:.45;margin-top:14px"><span id="build-tag" style="cursor:pointer" title="tap to check for updates">build ${esc(window.BUILD_VERSION || 'dev')}</span> <span id="b-debug" style="cursor:pointer;opacity:.35;font-size:11px" title="toggle debug tools">🐞</span> <span id="b-sound" style="cursor:pointer;opacity:.5;font-size:11px" title="toggle sound">🔊</span></p>
+      <p class="small" style="margin-top:6px"><span id="b-notes" style="cursor:pointer;opacity:.7" title="recent changes">📰 What's new ▸</span></p>
+      <div id="build-notes" style="display:none;max-width:340px;margin:0 auto"></div>`;
     document.getElementById('b-new').onclick = () => obColdOpen();
     const savesDiv = document.getElementById('saves');
     if (savesDiv) renderSaves(savesDiv);
@@ -467,6 +483,16 @@
       // nothing to show right now.
     })();
     // Build tag: tap to force an update check (diagnostic + escape hatch).
+    // What's-new: expandable recent-changes list (collapsed by default).
+    const bnotes = document.getElementById('b-notes');
+    if (bnotes) bnotes.onclick = () => {
+      const d = document.getElementById('build-notes');
+      if (!d) return;
+      const open = d.style.display !== 'none';
+      d.style.display = open ? 'none' : '';
+      bnotes.textContent = open ? "📰 What's new ▸" : "📰 What's new ▾";
+      if (!open && !d.dataset.filled) { d.dataset.filled = '1'; d.innerHTML = buildNotesHtml(); }
+    };
     // Uses the version.json flow — works with or without service workers.
     const btag = document.getElementById('build-tag');
     if (btag) {
