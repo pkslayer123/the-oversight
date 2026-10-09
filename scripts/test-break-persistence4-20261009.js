@@ -202,9 +202,16 @@ function buildRich() {
   // (villageLost=true across Continue) is covered by pass-5 R1.
   Game.villageLost = false;
   // mid-fight: player + monster, mid-round, terraformed ground, chorus inbound
+  // Canonical fight shape (pass-6 note): every real fight constructor sets
+  // these keys, and load()'s tbSave restore re-keys them onto the fight —
+  // a hand-built fight missing them diffs against the normalized restore.
   Game.tbfight = {
     id: 'fB4midfight', turnIdx: 1, round: 3, over: false, result: null,
     order: ['m1', 'p'],
+    betrayal: false, betrayer: null, aggressor: null, playerFled: false,
+    uprising: false, _beamCooldown: 0, humStacks: 0, humMice: null,
+    humRiseRound: 0, humDecayRound: -1, shouts: 0, chorusBrokenUntil: 0,
+    terraformScorched: false, orderDirty: false,
     fighters: [
       { key: 'p', kind: 'player', name: 'You', hp: 61, maxHp: 100, mx: 3, my: 4,
         alive: true, fled: false, acted: true, moveLeft: 0, isPlayer: true, stunned: 0 },
