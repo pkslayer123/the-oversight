@@ -68,11 +68,13 @@
 //   - apKnowsAlien(pid)
 //   - apRevealAlien(pid, how)
 //   - apCarePackage()
+//   - apGrantItem(itemId)
+//   - apDousePlayerFire()
 // rules:
 //   - (separation) alien players are HUMANS, not monsters. Exclusive pool, separate spawn logic. Monsters stay monsters. (Steve 2026-10-07) (code: alienPlayers.js)
 //   - (gating) alien encounters only post-System arrival, wave 2+, separate roll from monster encounters (code: alienPlayers.js)
-//   - (knowledge) alien identity hidden until earned: reveal, System feed slip, or 3rd encounter with same persona (code: alienPlayers.js)
-//   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); benevolent help is deniable and subtle (code: alienPlayers.js)
+//   - (knowledge) alien identity hidden until earned: reveal, System feed slip, 3rd encounter with same persona, or spotting Wren at a dead drop (break-it 2026-10-08 r4: Wren never fights, so she had no reveal path) (code: alienPlayers.js)
+//   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); group encounters max 1 per 14 days, cooldown recorded on successful start only (break-it 2026-10-08 r4); benevolent help is deniable and subtle (code: alienPlayers.js)
 //   - (favor) fan favor -100..100; high favor improves care packages and contest lean; low favor makes the crowd bloodthirsty (code: alienPlayers.js)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
 //   - (lifeline_player_only) the benevolent lifeline fires only at the player's own death roll — apContestInterference(ac, {forPlayer:true}) from contestChoose's killing-blow check and from tbEnd's arena-loss branch (break-it 2026-10-08: arena deaths never checked the lifeline). The save converts death into 'lost' and leaves the player barely alive (break-it 2026-10-08: 0-HP saves died at the next endDay). The verdict call never passes forPlayer, so deathSave is always false there — a villager's played death is never converted by a hidden roll (break-it 2026-10-08: the old playerIn-only gate fired the lifeline at VERDICT, wasting the 7-day cooldown on a non-death and erasing a villager's earned death) (code: apContestInterference, contestChoose, tbEnd)
@@ -309,7 +311,7 @@
         ],
         'countess_sable': [
           { id: 'dread_projector', name: 'Dread Projector', desc: 'Projects your worst memory on loop. Her strikes leave you Afraid \u2014 and fear makes her hit harder.' },
-          { id: 'crystal_lattice', name: 'Crystal Lattice', desc: 'Stores your fear as damage. The more scared you are, the harder she hits.' },
+          { id: 'crystal_lattice', name: 'Crystal Lattice', desc: 'A crystal lattice that drinks in dread. Her strikes land harder on an Afraid target \u2014 fear in, damage out.' },
         ],
         'rax_dentist': [
           { id: 'nerve_mapper', name: 'Nerve Mapper', desc: 'Maps your nerves in real time. Rax always knows exactly where it hurts \u2014 and likes to prolong it.' },
@@ -322,7 +324,7 @@
           { id: 'veteran_plate', name: 'Veteran Plate', desc: 'Military-grade armor. Reduces all damage by 2. Sarge earned this.' },
         ],
         'dr_fenwick': [
-          { id: 'specimen_scanner', name: 'Specimen Scanner', desc: 'Analyzes your fighting style mid-combat. Fenwick adapts \u2014 the longer you fight one way, the better he reads you.' },
+          { id: 'specimen_scanner', name: 'Specimen Scanner', desc: 'A specimen scanner, always humming. Fenwick catalogues everything \u2014 wingspan, stride, the way you favor your left. For the collection, he says. Probably.' },
         ],
         'old_tam': [
           // Old Tam deliberately uses NO alien tech — he's trying to fight fair.
@@ -1022,7 +1024,12 @@
       for (var pid in ap.met) {
         var per = this.apPersona(pid);
         if (per && per.disposition === 'sadistic' && ap.met[pid].encounters > 0) {
-          msgs.push('"' + per.name.toUpperCase() + ' was overheard saying the human is "still interesting. For now." The odds on your next fight just shifted."');
+          // HONEST (break-it 2026-10-08 r4): the old line promised "the odds on
+          // your next fight just shifted" — there are no odds on the played
+          // path (contest-engine pass 7ef1946 reworded the sibling lines to
+          // performance language but missed this one). The room turns; no
+          // phantom odds shift is claimed.
+          msgs.push('"' + per.name.toUpperCase() + ' was overheard saying the human is "still interesting. For now." Your people just felt the room turn against them."');
           // KNOWLEDGE SLIP: the feed can reveal a pilot's identity
           if (!ap.known[pid] && Math.random() < 0.3) {
             this.apRevealAlien(pid, 'the System feed named them');
@@ -1438,7 +1445,10 @@
       var per = this.apPersona(chosen);
       if (per && this.state.systemArrived) {
         // They don't announce themselves — you hear about it
-        this.sysSay('◈ The System feed flickers: "' + per.name + ' has entered the game. The odds just got interesting."');
+        // HONEST (break-it 2026-10-08 r4): "the odds just got interesting"
+        // was the same stale odds register (see apFeedMessage fix above) —
+        // broadcast color, not a mechanical claim.
+        this.sysSay('◈ The System feed flickers: "' + per.name + ' has entered the game. The feed just got a lot more interesting."');
       }
       return chosen;
     },
