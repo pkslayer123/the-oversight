@@ -407,10 +407,12 @@ The scalability core. Every computed value resolves base -> collect modifiers ->
 ### game-state (`engine/state.js`)
 State factories, versioned save/load. Village / scholars / Codex / run are independent so one can reset cleanly.
 
-**Provides:** SAVE_VERSION (code: state.js), newVillage(), newScholar(villagerId), newCodex(), newState(), saveKey(state), save(state), listSaves(), load(key), wipe(key), wipeAll()
+**Provides:** SAVE_VERSION (code: state.js), newVillage(), newScholar(villagerId), newCodex(), newState(), saveKey(state), save(state) -> true/false: honest save status; false on quota/blocked/unserializable (break-it 2026-10-09), listSaves(opts): opts.includeStale surfaces version-mismatched saves flagged {stale:true} (break-it 2026-10-09), load(key), wipe(key), wipeAll()
 
 **Rules:**
-- (none documented)
+- save_honest_status: save() returns false on any failure; callers (autosave) surface it, never mistake silence for success (code: save, break-it 2026-10-09)
+- corrupt_quarantined: unparseable save data moves to a capped dated quarantine key before pruning — never destroyed on sight (code: quarantineKey, break-it 2026-10-09)
+- stale_version_visible: version-mismatched saves are kept and surfaced flagged, never silently hidden (code: listSaves, break-it 2026-10-09)
 
 **Consumes:** (none documented)
 

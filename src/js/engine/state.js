@@ -8,13 +8,15 @@
 //   - newCodex()
 //   - newState()
 //   - saveKey(state)
-//   - save(state)
-//   - listSaves()
+//   - save(state) -> true/false: honest save status; false on quota/blocked/unserializable (break-it 2026-10-09)
+//   - listSaves(opts): opts.includeStale surfaces version-mismatched saves flagged {stale:true} (break-it 2026-10-09)
 //   - load(key)
 //   - wipe(key)
 //   - wipeAll()
 // rules:
-//   - (none documented)
+//   - save_honest_status: save() returns false on any failure; callers (autosave) surface it, never mistake silence for success (code: save, break-it 2026-10-09)
+//   - corrupt_quarantined: unparseable save data moves to a capped dated quarantine key before pruning — never destroyed on sight (code: quarantineKey, break-it 2026-10-09)
+//   - stale_version_visible: version-mismatched saves are kept and surfaced flagged, never silently hidden (code: listSaves, break-it 2026-10-09)
 // consumes:
 //   - (none documented)
 /* Game state: factory, save/load (versioned), sub-objects separable.
@@ -78,14 +80,20 @@
     return `scattering-save-v1-${vid}-${started}`;
   }
   function save(state) {
+    // SAVE STATUS (break-it persistence 2026-10-09): returns true when the
+    // save (and index) actually persisted, false on ANY failure (quota,
+    // blocked storage, unserializable state). Callers must not mistake a
+    // silent no-op for success — the autosave surfaces false to the player.
     try {
       if (!state.startedAt) state.startedAt = Date.now();
       // pin the key on first save so it can't drift mid-run (mantle transfer)
       if (!state.runKey) state.runKey = saveKey(state);
       const key = saveKey(state);
       localStorage.setItem(key, JSON.stringify(state));
-      // upsert the index every save: name, day, last-played stay fresh
-      const idx = listSaves().filter(i => i.key !== key);
+      // upsert the index every save: name, day, last-played stay fresh.
+      // includeStale: rebuilding from the default list would silently drop
+      // version-mismatched entries from the index (break-it 2026-10-09).
+      const idx = listSaves({ includeStale: true }).filter(i => i.key !== key);
       const rc = (state.village && state.village.rosterChars) || {};
       // HONEST INDEX (break-it persistence 2026-10-08): the entry must name the
       // CURRENT bearer, not whoever started the run — state.villagerId is synced
@@ -104,38 +112,82 @@
       });
       idx.sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0));
       localStorage.setItem('scattering-saves-index', JSON.stringify(idx));
-    } catch (e) { /* storage full/blocked */ }
+      return true;
+    } catch (e) { /* storage full/blocked/unserializable */ return false; }
   }
-  function listSaves() {
+  // Quarantine: preserve corrupt save data under a capped, dated key instead
+  // of destroying it. A future migrator (or a human) can still recover it.
+  function quarantineKey(key) {
+    try {
+      const d = localStorage.getItem(key);
+      if (!d) return;
+      const stamp = Date.now().toString(36);
+      localStorage.setItem('scattering-save-quarantine-' + key + '-' + stamp, d);
+      localStorage.removeItem(key);
+      // cap: keep the 3 most recent quarantine snapshots per key
+      const qk = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf('scattering-save-quarantine-' + key + '-') === 0) qk.push(k);
+        }
+      } catch (e2) {}
+      qk.sort();
+      while (qk.length > 3) { try { localStorage.removeItem(qk.shift()); } catch (e3) {} }
+    } catch (e) {}
+  }
+  function listSaves(opts) {
+    opts = opts || {};
     try {
       const raw = localStorage.getItem('scattering-saves-index');
       const idx = raw ? JSON.parse(raw) : [];
       // prune orphans: dead/finished runs are wiped, their index entries shouldn't linger.
       // CORRUPT-SAVE HONESTY (break-it persistence 2026-10-08): an entry whose data
       // is unparseable or version-mismatched can never load — offering Continue for
-      // it is a lie that silently does nothing. Prune it from the list. Corrupt
-      // (unparseable) data is deleted outright; version-mismatched data is KEPT
-      // (a future migrator could recover it) but hidden from the list.
+      // it is a lie that silently does nothing. Prune it from the list.
+      // STALE-VERSION HONESTY (break-it persistence 2026-10-09): a parseable
+      // save whose version doesn't match is NOT corrupt — its data is KEPT
+      // untouched, and with {includeStale:true} it is surfaced flagged
+      // {stale:true} so the title screen can say "older version" instead of
+      // pretending the expedition never existed.
+      // QUARANTINE (break-it persistence 2026-10-09): unparseable data is
+      // moved to a capped dated quarantine key before pruning — never
+      // destroyed on sight (Steve 2026-10-05's corrupt-save recovery, restored
+      // in minimal form; the full migration subsystem stays retired).
+      const stale = [];
+      const prunedKeys = new Set();
       const live = idx.filter(i => {
         try {
           const d = localStorage.getItem(i.key);
-          if (!d) return false;
+          if (!d) { prunedKeys.add(i.key); return false; } // orphan: wiped elsewhere
           const s = JSON.parse(d);
-          return !!(s && s.version === SAVE_VERSION);
-        } catch (e) { return false; }
+          if (s && s.version === SAVE_VERSION) return true;
+          if (s && typeof s.version !== 'undefined') {
+            // version-mismatched: STAYS in the index (so includeStale can
+            // surface it later), just not in the default loadable list.
+            stale.push(Object.assign({}, i, { stale: true, staleVersion: s.version }));
+          }
+          return false;
+        } catch (e) { return false; } // unparseable: quarantined below
       });
       const liveSet = new Set(live);
+      const staleKeys = new Set(stale.map(i => i.key));
       for (const i of idx) {
         if (liveSet.has(i)) continue;
+        if (staleKeys.has(i.key)) continue; // version-mismatched: data kept as-is
+        if (prunedKeys.has(i.key)) continue; // orphan: nothing to quarantine
         try {
           const d = localStorage.getItem(i.key);
-          if (d) { try { JSON.parse(d); } catch (e) { localStorage.removeItem(i.key); } }
-          else localStorage.removeItem(i.key);
+          if (d) { try { JSON.parse(d); } catch (e) { quarantineKey(i.key); prunedKeys.add(i.key); } }
         } catch (e) {}
       }
-      if (live.length !== idx.length) {
-        try { localStorage.setItem('scattering-saves-index', JSON.stringify(live)); } catch (e) {}
+      if (prunedKeys.size > 0) {
+        try {
+          localStorage.setItem('scattering-saves-index',
+            JSON.stringify(idx.filter(i => !prunedKeys.has(i.key))));
+        } catch (e) {}
       }
+      if (opts.includeStale) return live.concat(stale);
       return live;
     } catch (e) { return []; }
   }
@@ -152,15 +204,17 @@
   function wipe(key) {
     try {
       localStorage.removeItem(key || SAVE_KEY);
-      // remove from index
+      // remove from index (preserve stale entries — see save())
       if (key) {
-        const idx = listSaves().filter(i => i.key !== key);
+        const idx = listSaves({ includeStale: true }).filter(i => i.key !== key);
         localStorage.setItem('scattering-saves-index', JSON.stringify(idx));
       }
     } catch (e) {}
   }
   function wipeAll() { try {
-    for (const i of listSaves()) localStorage.removeItem(i.key);
+    // includeStale: "wipe ALL saves" means all of them, including
+    // version-mismatched ones the default list hides (break-it 2026-10-09).
+    for (const i of listSaves({ includeStale: true })) localStorage.removeItem(i.key);
     localStorage.removeItem('scattering-saves-index');
     localStorage.removeItem(SAVE_KEY);
   } catch (e) {} }

@@ -5027,7 +5027,10 @@
           this.state.saveLocationName = this.saveLocationLabel();
         }
       } catch (e) {}
-      S.state.save(this.state);
+      // SAVE STATUS (break-it persistence 2026-10-09): S.state.save returns
+      // true/false — a quota-full or stringify failure must be an honest
+      // signal, not a silent no-op the autosave mistakes for success.
+      return S.state.save(this.state);
     },
     // Where the save-list entry says you are. Haven by name; anywhere else is
     // honestly "the wild" — we don't name tiles the codex hasn't earned.
@@ -5042,8 +5045,8 @@
     hasSave() {
       try { return S.state.listSaves().length > 0; } catch (e) { return false; }
     },
-    listSaves() {
-      try { return S.state.listSaves(); } catch (e) { return []; }
+    listSaves(opts) {
+      try { return S.state.listSaves(opts); } catch (e) { return []; }
     },
     load(key) {
       const s = S.state.load(key);
@@ -5111,18 +5114,33 @@
       try {
         const tbS = r.tbfight;
         this._pendingPack = null;
+        // STALE FIGHT (break-it persistence 2026-10-09): the restore below
+        // only assigns tbfight when the save HAS a fight. Loading a peaceful
+        // save in a session that already restored a mid-fight save left the
+        // OLD fight live — a phantom fight from another save. Clear first.
+        this.tbfight = null;
         if (tbS && tbS.fighters && tbS.fighters.length) {
-          let droppedGhosts = 0;
+          let droppedGhosts = 0, droppedCorrupt = 0;
           const fighters = [];
           for (const fs of tbS.fighters) {
-            const ft = Object.assign({}, fs);
-            delete ft.mdef; // reattached below by monsterId
-            // Reattach monster definition
-            if (fs.monsterId) {
-              ft.monsterId = fs.monsterId;
-              const mdef = (this.data.monsters || []).find(m => m.id === fs.monsterId);
-              if (mdef) ft.mdef = mdef;
-            }
+            // CORRUPT FIGHTER (break-it persistence 2026-10-09): one hostile
+            // entry (null, wrong shape) must not nuke the whole fight — the
+            // old code let a single bad fighter throw out of the loop, which
+            // the outer catch turned into a silent peaceful load (free escape
+            // from a losing fight via a tampered save). Drop the bad entry
+            // with an honest line and keep the rest.
+            let ft = null;
+            try {
+              if (!fs || typeof fs !== 'object') throw new Error('bad fighter');
+              ft = Object.assign({}, fs);
+              delete ft.mdef; // reattached below by monsterId
+              // Reattach monster definition
+              if (fs.monsterId) {
+                ft.monsterId = fs.monsterId;
+                const mdef = (this.data.monsters || []).find(m => m.id === fs.monsterId);
+                if (mdef) ft.mdef = mdef;
+              }
+            } catch (e2) { droppedCorrupt++; continue; }
             // Player fighter needs special fields
             if (fs.key === 'p') {
               ft.isPlayer = true;
@@ -5136,13 +5154,21 @@
             }
             fighters.push(ft);
           }
-          if (droppedGhosts > 0) {
-            this.say(`Something that was in the fight is gone — the world moved on without it. (${droppedGhosts} phantom fighter${droppedGhosts === 1 ? '' : 's'} dropped on load.)`);
+          if (droppedGhosts > 0 || droppedCorrupt > 0) {
+            const parts = [];
+            if (droppedGhosts > 0) parts.push(`${droppedGhosts} phantom fighter${droppedGhosts === 1 ? '' : 's'}`);
+            if (droppedCorrupt > 0) parts.push(`${droppedCorrupt} corrupted fighter${droppedCorrupt === 1 ? '' : 's'}`);
+            this.say(`Something that was in the fight is gone — the world moved on without it. (${parts.join(', ')} dropped on load.)`);
           }
+          if (!fighters.length) {
+            // Every fighter was a ghost or corrupt: there is no fight to
+            // resume. Say so honestly instead of loading an empty arena.
+            this.say('The fight you left is gone — only trampled ground remains. (No restorable fighters in the saved fight.)');
+          } else {
           const fkeys = new Set(fighters.map(f => f.key));
           let order = Array.isArray(tbS.order) ? tbS.order.filter(k => fkeys.has(k)) : [];
-          if (droppedGhosts > 0 || !order.length) {
-            // ghosts dropped or pre-order save: rebuild. turnIdx restarts the
+          if (droppedGhosts > 0 || droppedCorrupt > 0 || !order.length) {
+            // ghosts/corrupt dropped or pre-order save: rebuild. turnIdx restarts the
             // round rather than pointing into a reshuffled deck.
             order = (typeof S !== 'undefined' && S.combat && S.combat.turnOrder)
               ? S.combat.turnOrder(fighters) : fighters.map(f => f.key);
@@ -5152,7 +5178,7 @@
           for (const ft of fighters) {
             if (!order.includes(ft.key) && ft.alive !== false && !ft.fled) order.push(ft.key);
           }
-          let turnIdx = (droppedGhosts > 0 || !Array.isArray(tbS.order)) ? 0 : (tbS.turnIdx || 0);
+          let turnIdx = (droppedGhosts > 0 || droppedCorrupt > 0 || !Array.isArray(tbS.order)) ? 0 : (tbS.turnIdx || 0);
           if (turnIdx >= order.length) turnIdx = 0;
           this.tbfight = {
             id: tbS.id || ('f' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e9).toString(36)),
@@ -5169,6 +5195,7 @@
             const pmdef = (this.data.monsters || []).find(m => m.id === tbS.pendingPack.id);
             if (pmdef) this._pendingPack = { id: pmdef.id, count: tbS.pendingPack.count, mdef: pmdef };
           }
+          } // end else: fighters.length > 0
         }
       } catch (e) {}
       return true;

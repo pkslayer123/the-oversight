@@ -315,9 +315,20 @@
   }
   // Save list: name, character, day, location, last played. Load or delete (two-tap confirm).
   function renderSaves(el) {
-    const saves = Game.listSaves();
+    // STALE-VERSION HONESTY (break-it persistence 2026-10-09): saves from an
+    // older version can't load, but hiding them pretends the expedition never
+    // existed. Render them greyed with an honest line instead — Delete only.
+    const saves = Game.listSaves({ includeStale: true });
     if (!saves.length) { el.innerHTML = ''; return; }
     el.innerHTML = `<p class="small" style="margin:18px 0 6px;opacity:.7">SAVED EXPEDITIONS</p>` + saves.map(sv => {
+      if (sv.stale) {
+        const name = sv.runName || `Expedition · ${sv.villagerName || 'unknown'}`;
+        return `<div class="card" style="text-align:left;opacity:.55">
+        <h3 style="margin:0 0 4px">${esc(name)}</h3>
+        <p class="small" style="margin:0 0 8px">from an older version of the game — it can't be loaded. Delete it to clear the slot.</p>
+        <button class="btn sm ghost" data-del="${esc(sv.key)}">Delete</button>
+      </div>`;
+      }
       const name = sv.runName || `Expedition · ${sv.villagerName || 'unknown'}`;
       const sub = [sv.villagerName, 'Day ' + (sv.day || 1), sv.location].filter(Boolean).join(' · ');
       return `<div class="card" style="text-align:left">
@@ -12001,7 +12012,22 @@
     window.__deferredInstallPrompt = e;
   });
   // Also save every 30 seconds (in case the above don't fire).
-  setInterval(() => { try { Game.save(); } catch (e) {} }, 30000);
+  // SAVE HONESTY (break-it persistence 2026-10-09): Game.save() returns false
+  // when the save didn't persist (quota, blocked storage, unserializable
+  // state). A silent no-op here means the player believes they're saved and
+  // they're not — say so once, then stay quiet until a save succeeds again.
+  let __saveFailToasted = false;
+  setInterval(() => {
+    try {
+      const r = Game.save();
+      if (r === false && !__saveFailToasted) {
+        __saveFailToasted = true;
+        toast('Could not save — storage may be full. Progress since your last save is at risk.');
+      } else if (r === true) {
+        __saveFailToasted = false;
+      }
+    } catch (e) {}
+  }, 30000);
 
   // invSheet: what are you carrying? always accessible, not hidden.
   // Crafting lives here too — supplies to feed yourself.
