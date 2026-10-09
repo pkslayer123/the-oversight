@@ -433,6 +433,11 @@
         } else {
           // Fallback: use the standard combat flow
           this.say('(The stranger raises their hands. This is going to hurt.)');
+          // HONEST (break-it 2026-10-09): no fight started on this path —
+          // leaving state.alienEncounter set would let a LATER unrelated
+          // tbEnd read it as this fight's persona and record a phantom
+          // encounter (favor, met-count, armor). Clear it.
+          try { delete this.state.alienEncounter; } catch (e2d) {}
         }
         // SPORTING RULES (break-it 2026-10-08): a hunt happened — record it.
         // The roll used to record lastHuntDay before the fight started (and
@@ -765,7 +770,19 @@
         this.say('🎭 ' + names[1] + ': "Wouldn\'t dream of it. Probably."');
       }
 
-      this.say('(⚠ MULTIPLE alien players. This is a major event. The System is watching closely.)');
+      // KNOWLEDGE GATE (break-it 2026-10-09): the banter above uses cover
+      // names (safe pre-reveal), but "MULTIPLE alien players" names the
+      // alien truth outright. Pre-reveal it's a coordinated hostile team —
+      // the truth waits for an earned reveal.
+      var _allKnown = true;
+      for (var _gi = 0; _gi < pids.length; _gi++) {
+        try { if (!this.apKnowsAlien(pids[_gi])) { _allKnown = false; break; } } catch (e) { _allKnown = false; break; }
+      }
+      if (_allKnown) {
+        this.say('(⚠ MULTIPLE alien players. This is a major event. The System is watching closely.)');
+      } else {
+        this.say('(⚠ Multiple hostiles — and they\'re coordinating. This is a major event. The System is watching closely.)');
+      }
       try { this.apAdjustFavor(5, 'survived a group encounter setup — the crowd loves a spectacle'); } catch (e) {}
     },
 
@@ -843,14 +860,15 @@
               if (allItems[di].id === dropId) { dropDef = allItems[di]; break; }
             }
             if (dropDef) {
-              try {
-                if (this.giveItem) this.giveItem(dropId, 1);
-                else {
-                  var inv3 = this.state.scholar.inventory = this.state.scholar.inventory || [];
-                  inv3.push({ itemId: dropId, id: dropId });
-                }
-                this.say('◈ You strip ' + dropDef.name.toLowerCase() + ' from their body. It\'s warm. It\'s still humming. This will stop beam weapons.');
-              } catch (e) {}
+              // HONEST (break-it 2026-10-09): this.grantItem never existed —
+              // the old `if (this.giveItem)` branch was dead and every
+              // salvage fell into the else, pushing a bare {itemId,id}
+              // brick (no name, no units): the exact brick class r4 fixed
+              // in apCarePackage/apPersonaPackage via apGrantItem, missed
+              // here. The armor transition's core reward — kill them, strip
+              // their armor, survive beams — never actually worked.
+              try { this.apGrantItem(dropId); } catch (e) {}
+              this.say('◈ You strip ' + dropDef.name.toLowerCase() + ' from their body. It\'s warm. It\'s still humming. This will stop beam weapons.');
             }
           } else if (available.length === 0) {
             this.say('◈ They were wearing standard gear — nothing you don\'t already have.');
@@ -1334,10 +1352,14 @@
       var day = (this.state.scholar || {}).day || 1;
       if (day - (ap.lastGossipDay || -999) < 2) return false; // LIMIT
       if (Math.random() > 0.4) return false;
-      ap.lastGossipDay = day;
 
       var roster = (this.state.village && this.state.village.roster) || [];
       if (!roster.length) return false;
+      // HONEST (break-it 2026-10-09): the cooldown used to burn before the
+      // roster check — an empty village ate the 2-day slot with no gossip
+      // (same class as the apEventFeed r4 fix). Record only when gossip
+      // actually goes out.
+      ap.lastGossipDay = day;
       var vid = roster[Math.floor(Math.random() * roster.length)];
       var vname = 'Someone';
       try { vname = this.displayName(vid) || 'Someone'; } catch (e) {}
@@ -1375,8 +1397,15 @@
       if (Math.random() > 0.3) return null;
 
       var roster = (this.state.village && this.state.village.roster) || [];
-      if (roster.length < 3) return null;
-      var vid = roster[Math.floor(Math.random() * roster.length)];
+      // HONEST (break-it 2026-10-09): the roster keeps the dead (corpses.js
+      // never removes them) — the old pick could establish a corpse as your
+      // contact, and dead contacts kept whispering dream warnings. Only
+      // the living get contacted.
+      var living = roster.filter(function (rid) {
+        try { return !(this.vpOf(rid) || {}).dead; } catch (e) { return true; }
+      }, this);
+      if (living.length < 3) return null;
+      var vid = living[Math.floor(Math.random() * living.length)];
       ap.contactedVid = vid;
 
       var vname = 'Someone';
@@ -1390,6 +1419,12 @@
     apContactWarning: function () {
       var ap = this.apState();
       if (!ap.contactedVid) return false;
+      // HONEST (break-it 2026-10-09): a contact who died since establishment
+      // is released, not kept whispering from the grave.
+      try {
+        var cvp = this.vpOf ? this.vpOf(ap.contactedVid) : null;
+        if (cvp && cvp.dead) { delete ap.contactedVid; return false; }
+      } catch (e) {}
       var day = (this.state.scholar || {}).day || 1;
       if (day - (ap.lastContactWarningDay || -999) < 4) return false;
       if (Math.random() > 0.4) return false;
@@ -2058,9 +2093,11 @@
         score += Math.min(threat, 100);
         if (threat >= 60) reasons.push('threat rating ' + threat + ' (solid)');
         else reasons.push('threat rating ' + threat + ' (need 60+)');
-        // Day: no aliens before day 30 (they're late-game)
+        // Day: day 30+ is a bonus, not a gate (break-it 2026-10-09: the old
+        // comment claimed "no aliens before day 30" but the formula never
+        // enforced it — a strong early player scores 100+ without it).
         if (day >= 30) { score += 25; reasons.push('day ' + day + ' (seasoned)'); }
-        else reasons.push('day ' + day + ' (need 30+)');
+        else reasons.push('day ' + day + ' (young — needs allies and threat to compensate)');
         // System integration: must have arrived (already gated, but count it)
         var sysInt = this.state.systemIntegration || 0;
         if (sysInt >= 1) { score += 25; }
@@ -2135,13 +2172,16 @@
       } catch (e) {}
       // SENTIMENTAL BOND (Steve 2026-10-07): surviving a beam hit while wearing
       // bonded sentimental armor is a meaningful moment — the bond deepens.
+      // HONEST (break-it 2026-10-09): this.bumpBond never existed — the
+      // guarded call was dead and the bond never moved. Bump inline, on the
+      // actual equipped piece (same +3 the victory path uses in game.js).
       try {
         if (targetKey === 'player' && n > 0) {
           var eq2 = (this.state.scholar || {}).equipped || {};
           for (var bi = 0; bi < pieces.length; bi++) {
-            if (pieces[bi].source === 'bonded' && typeof this.bumpBond === 'function') {
-              this.bumpBond(pieces[bi].itemId, 3, 'it caught the beam for you');
-            }
+            if (pieces[bi].source !== 'bonded') continue;
+            var bitem = eq2[pieces[bi].slot];
+            if (bitem) bitem.bond = (bitem.bond || 0) + 3;
           }
         }
       } catch (e) {}
