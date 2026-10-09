@@ -420,9 +420,17 @@
       const st = this.stashState();
       const i = st.tools.findIndex(t => t.itemId === itemId);
       if (i < 0) { this.say("It's not there anymore."); return null; }
-      const [tool] = st.tools.splice(i, 1);
       const def = (this.data.items || []).find(x => x.id === itemId) || {};
+      // WEIGHT (miser break-it 2026-10-09): every other take path
+      // (takeMaterial, takeFromPantry, digUpCache, takeFromCache) refuses an
+      // over-capacity take — takeTool didn't, so borrowing at a full pack
+      // silently overfilled it (measured 22.2kg carried vs 20kg max).
+      // Checked BEFORE the splice: a refused take leaves the stash untouched.
       const inv = this.state.scholar.inventory || [];
+      const carry = inv.reduce((t2, it) => t2 + (it.kg || 0) * (it.units || 1), 0) + (this.waterWeight ? this.waterWeight() : 0);
+      const max = this.carryCapacity ? this.carryCapacity() : 20;
+      if (carry + (def.kg || 0.8) > max) { this.say(`Too heavy for the ${st.tools[i].name}. Lighten your pack first.`); return null; }
+      const [tool] = st.tools.splice(i, 1);
       inv.push({ itemId, name: tool.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
       this.stashLog('take', tool.name, 1);
       // TAKE-BACK (miser break-it 2026-10-08): only when you take a tool YOU
