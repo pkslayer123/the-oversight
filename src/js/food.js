@@ -22,6 +22,7 @@
 // rules:
 //   - raw_penalty: true (code: food.js)
 //   - processing_required: true (code: food.js)
+//   - no_creation: true (code: food.js — processing never nets kcal; specialist preserve capped at 1.00x)
 // consumes:
 //   - scholar.inventory
 //   - state.codex.plants
@@ -988,7 +989,11 @@
         it.wellMade = true; // a specialist made this — it burns hotter as fuel
         this.say(`${spec.name} (${spec.occupation}) takes it to the fire. It comes back transformed — better than you could do.`);
       } else if (task === 'preserver') {
-        it.kcalEach = Math.round(it.kcalEach * (0.95 + 0.02 * spec.skill));
+        // NO-CREATION CAP (forager break-it 2026-10-09): the drying loss
+        // shrinks with skill (a master wastes nothing) but smoking must never
+        // PRINT calories — 0.95+0.02*skill hit 1.01 at skill 3. Energy is
+        // never created (PRESERVATION.md).
+        it.kcalEach = Math.round(it.kcalEach * Math.min(1.0, 0.95 + 0.02 * spec.skill));
         it.foodState = 'preserved'; it.diseaseRisk = null; it.safe = true;
         it.spoilDay = day + 30 + 5 * spec.skill;
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
