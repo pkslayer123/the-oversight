@@ -18,7 +18,8 @@
 //   - payRespects(cid)
 //   - codexDeathSync()
 // rules:
-//   - (none documented)
+//   - sapient_dead_carry_their_gear: villager corpses hold the dead person's actual carried + stashed gear as the lootable death pack — nothing auto-transfers (code: generatePossessions, Steve 2026-10-09)
+//   - sentimentals_die_with_them: sentimental items are buried with the body, never lootable, and grant no bond to non-owners (code: generatePossessions, Steve 2026-10-09)
 // consumes:
 //   - state.corpses
 /* CORPSE SYSTEM
@@ -226,9 +227,54 @@
         return items;
       }
       if (opts.kind === 'animal') {
-        return [{ plantId: 'animal_hide', name: 'Hide', units: 1, kg: 1.0, kcalEach: 0, spoilDay: 9999, prep: 'Cure it or lose it.' }];
+        // HIDE (Steve 2026-10-09): the hide_armor recipe's honest source.
+        // The hide is a crafting material (craft() matches item.material).
+        return [{ plantId: 'animal_hide', material: 'hide', name: 'Hide', units: 1, kg: 1.0, kcalEach: 0, spoilDay: 9999, prep: 'Cure it or lose it.' }];
       }
       // people carry practical things
+      // SAPIENT DEAD CARRY THEIR OWN GEAR (Steve 2026-10-09): a villager's
+      // corpse holds what they actually owned — carried + stashed — as the
+      // lootable death pack. Nothing auto-transfers: you open the pack and
+      // take, leave, or use per item (loot-as-action). SENTIMENTAL ITEMS DIE
+      // WITH THEM: keepsakes are buried with the body, never lootable, and
+      // grant no bond to anyone they didn't spawn with. Animals/monsters keep
+      // the generic pools above — this is just for sapient dead.
+      if (opts.villagerId) {
+        try {
+          const rec = ((this.data.villagers || []).find(x => x.id === opts.villagerId))
+            || ((this.data.background_survivors || []).find(x => x.id === opts.villagerId))
+            || ((((this.state || {}).village || {}).rosterChars || {})[opts.villagerId]);
+          if (rec) {
+            const defs = {}; (this.data.items || []).forEach(i => { defs[i.id] = i; });
+            const seen = new Set();
+            const gearIds = [];
+            for (const src of [rec.items, rec.stashed]) {
+              for (const it of (src || [])) {
+                const gid = (it && (it.itemId || it.id)) || it;
+                if (!gid || seen.has(gid)) continue;
+                seen.add(gid);
+                const def = defs[gid] || {};
+                if (def.class === 'sentimental') continue; // dies with them
+                gearIds.push(gid);
+              }
+            }
+            if (gearIds.length) {
+              for (const gid of gearIds) {
+                const def = defs[gid] || {};
+                const personal = (rec.itemPersonal || {})[gid];
+                items.push({
+                  itemId: gid,
+                  name: personal ? personal.name : (def.name || gid),
+                  units: 1, kg: def.kg != null ? def.kg : 0.3, kcalEach: 0,
+                  spoilDay: 9999,
+                  prep: 'Theirs. Take it, leave it, or use it — the village watches.',
+                });
+              }
+              return items;
+            }
+          }
+        } catch (e) {}
+      }
       const practical = [
         { name: 'Worn knife', kg: 0.4, note: 'Still sharp.' },
         { name: 'Lighter', kg: 0.1, note: 'Half full.' },
@@ -314,6 +360,9 @@
       if (ex && !it.keepsake) ex.units = (ex.units || 1) + units;
       else inv.push(Object.assign({}, it, { units }));
       it.units = 0;
+      // GEAR DISCOVERY (Steve 2026-10-09): looting a gear item teaches its
+      // recipe L1 — you've held one. (Sapient dead carry their real gear.)
+      try { if (it.itemId) this.noteGearHandled(it.itemId); } catch (e) {}
       const nm = this.itemDisplayName ? this.itemDisplayName(it) : (it.name || 'it');
       this.say(`Taken: ${nm} x${units}.`);
       if (!c.items.some(i => (i.units == null ? 1 : i.units) > 0)) {

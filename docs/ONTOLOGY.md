@@ -320,7 +320,8 @@ Corpse system. Dead bodies persist, can be butchered, buried, or left.
 **Provides:** buryCorpse(cid), corpseAt(x, y), corpseDesc(c), examineCorpse(cid), lootCorpse(cid), corpseTakeItem(cid, idx), corpseUseItem(cid, idx), corpseEatItem(cid, idx), registerDeath(vid, cause), corpseStage(c), corpseGlyph(c), knowsDeath(vid), generatePossessions(vid), payRespects(cid), codexDeathSync()
 
 **Rules:**
-- (none documented)
+- sapient_dead_carry_their_gear: villager corpses hold the dead person's actual carried + stashed gear as the lootable death pack — nothing auto-transfers (code: generatePossessions, Steve 2026-10-09)
+- sentimentals_die_with_them: sentimental items are buried with the body, never lootable, and grant no bond to non-owners (code: generatePossessions, Steve 2026-10-09)
 
 **Consumes:** state.corpses
 
@@ -693,7 +694,7 @@ Data-driven status effect engine. Statuses (poison, disease, bleed, stun, fear, 
 ### tools-stashes (`storage.js`)
 Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/load lives in engine/state.js.)
 
-**Provides:** MAT_DEFS (code: storage.js), hasToolItem(itemId), woodcutTier(), canFell(), canPrune(), cutInfo(), pruneBranches(), gatherFallen(), addMaterial(mat, n), spendMaterial(mat, n), takeMaterial(mat, n), materialCount(mat), donateMaterial(mat, n), donateTool(itemId), takeTool(itemId), isStashableTool(item), stashState(), stashHtml(), stashLog(), stashLedgerText(), _stashLedgers(vid), _stashToolLedgers(vid), _stashTotalNet(vid), buryCache(), digUpCache(), takeFromCache(cacheId, itemIdx, qty), playerCaches(), cachesHtml(), cacheTheftChance(), pickCacheRobber(village?), plantCacheTheftSuspicion(vid, c, village?), villageTrustLevel()
+**Provides:** MAT_DEFS (code: storage.js), hasToolItem(itemId), woodcutTier(), canFell(), canPrune(), cutInfo(), pruneBranches(), gatherFallen(), addMaterial(mat, n), spendMaterial(mat, n), takeMaterial(mat, n), materialCount(mat), donateMaterial(mat, n), donateTool(itemId), takeTool(itemId), donateWeapon(idx) / takeWeapon(itemId) (armory section, Steve 2026-10-09), donateMedicine(idx) / takeMedicine(itemId) (pharmacy section, Steve 2026-10-09), isStashableWeapon(item), isMedicine(item) (section filters), isStashableTool(item), stashState(), stashHtml(), stashLog(), stashLedgerText(), _stashLedgers(vid), _stashToolLedgers(vid), _stashTotalNet(vid), buryCache(), digUpCache(), takeFromCache(cacheId, itemIdx, qty), playerCaches(), cachesHtml(), cacheTheftChance(), pickCacheRobber(village?), plantCacheTheftSuspicion(vid, c, village?), villageTrustLevel()
 
 **Rules:**
 - (none documented)

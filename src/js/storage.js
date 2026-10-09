@@ -17,6 +17,9 @@
 //   - donateMaterial(mat, n)
 //   - donateTool(itemId)
 //   - takeTool(itemId)
+//   - donateWeapon(idx) / takeWeapon(itemId) (armory section, Steve 2026-10-09)
+//   - donateMedicine(idx) / takeMedicine(itemId) (pharmacy section, Steve 2026-10-09)
+//   - isStashableWeapon(item), isMedicine(item) (section filters)
 //   - isStashableTool(item)
 //   - stashState()
 //   - stashHtml()
@@ -78,6 +81,11 @@
     // (game.js). They need defs or donateMaterial/stash silently no-op.
     stick:  { name: 'Stick',       plural: 'Sticks',     kg: 0.2 },
     vine:   { name: 'Vine',        plural: 'Vines',      kg: 0.1 },
+    // GEAR CRAFTING (Steve 2026-10-09): bark strips when gathering branches;
+    // hide comes from butchered animals (corpse loot). Both feed the armor
+    // recipes (bark_armor, hide_armor) through the one recipe system.
+    bark:   { name: 'Bark strip',  plural: 'Bark strips', kg: 0.3 },
+    hide:   { name: 'Rawhide',     plural: 'Rawhides',   kg: 1.0 },
   };
   const MAT_IDS = Object.keys(MAT_DEFS);
   // matName: 'branch' vs 'branches' — never 'branchs'.
@@ -221,10 +229,16 @@
     // ---------- village stash ----------
     stashState() {
       const v = this.state.village;
-      v.stash = v.stash || { materials: { wood: 0, branch: 0, stone: 0, fiber: 0 }, tools: [], ledger: [] };
+      v.stash = v.stash || { materials: { wood: 0, branch: 0, stone: 0, fiber: 0 }, tools: [], weapons: [], medicine: [], ledger: [] };
       v.stash.materials = v.stash.materials || {};
       for (const m of MAT_IDS) if (v.stash.materials[m] === undefined) v.stash.materials[m] = 0;
       v.stash.tools = v.stash.tools || [];
+      // ARMORY + PHARMACY (Steve 2026-10-09): the stash is sectioned by
+      // filter. Weapons open armory, medicine opens pharmacy. Deposit-gated:
+      // items become communal ONLY on deliberate deposit, never automatically.
+      // Once deposited, any villager may take (including NPCs gearing up).
+      v.stash.weapons = v.stash.weapons || [];
+      v.stash.medicine = v.stash.medicine || [];
       v.stash.ledger = v.stash.ledger || [];
       return v.stash;
     },
@@ -457,6 +471,72 @@
       }
       return this.tickAction(2) || this.status();
     },
+    // isStashableWeapon / isMedicine: section filters for the stash.
+    // Armory = weapons, pharmacy = medicine. Same deposit-gated rules as tools.
+    isStashableWeapon(item) {
+      if (!item || item.bonded) return false;
+      const id = item.itemId || item.id;
+      const def = (this.data.items || []).find(i => i.id === id);
+      return !!(def && def.class === 'weapon');
+    },
+    isMedicine(item) {
+      if (!item) return false;
+      const id = item.itemId || item.id || '';
+      const def = (this.data.items || []).find(i => i.id === id) || {};
+      return !!(def.healAmount || /bandage|poultice|medfoam|salve|antibiotic|remedy|tonic/i.test(id + ' ' + (def.name || '')));
+    },
+    // _depositStashedItem(idx, section, kindLabel): shared spine for weapon /
+    // medicine deposits. Mirrors donateTool's gates: physical stores, bonded,
+    // ledger, trust. Deposit is the consent that makes an item communal.
+    _depositStashedItem(idx, section, kindLabel) {
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The stash is in the hall. Your hands are not.');
+        return null;
+      }
+      const inv = this.state.scholar.inventory || [];
+      const item = inv[idx];
+      if (!item) return null;
+      if (item.bonded || (this.isKeepsake && this.isKeepsake(item))) {
+        this.say("That's yours. Not the village's.");
+        return null;
+      }
+      inv.splice(idx, 1);
+      const id = item.itemId || item.id;
+      const def = (this.data.items || []).find(i => i.id === id) || {};
+      const st = this.stashState();
+      st[section].push({ itemId: id, name: item.name || def.name || id, kg: item.kg != null ? item.kg : (def.kg || 0.3) });
+      this.stashLog('give', item.name || def.name || id, 1);
+      const v = this.state.village, vid = this.state.scholar.villagerId;
+      v.trust = v.trust || {};
+      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
+      this.say(`Left your ${item.name || def.name} in the ${kindLabel}. Anyone who needs it can take it.`);
+      return this.tickAction(2) || this.status();
+    },
+    donateWeapon(idx) { return this._depositStashedItem(idx, 'weapons', 'armory'); },
+    donateMedicine(idx) { return this._depositStashedItem(idx, 'medicine', 'pharmacy'); },
+    // _takeStashedItem(section, itemId, kindLabel): shared spine for takes.
+    _takeStashedItem(section, itemId, kindLabel) {
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The stash is in the hall. Your hands are not.');
+        return null;
+      }
+      const st = this.stashState();
+      const pile = st[section] || [];
+      const i = pile.findIndex(t => t.itemId === itemId);
+      if (i < 0) { this.say("It's not there anymore."); return null; }
+      const def = (this.data.items || []).find(x => x.id === itemId) || {};
+      const inv = this.state.scholar.inventory || [];
+      const carry = inv.reduce((t2, it) => t2 + (it.kg || 0) * (it.units || 1), 0) + (this.waterWeight ? this.waterWeight() : 0);
+      const max = this.carryCapacity ? this.carryCapacity() : 20;
+      if (carry + (def.kg || 0.5) > max) { this.say(`Too heavy for the ${pile[i].name}. Lighten your pack first.`); return null; }
+      const [entry] = pile.splice(i, 1);
+      inv.push({ itemId, name: entry.name, units: 1, kcalEach: 0, kg: def.kg || entry.kg || 0.5 });
+      this.stashLog('take', entry.name, 1);
+      this.say(`Took the ${entry.name} from the ${kindLabel}.`);
+      return this.tickAction(2) || this.status();
+    },
+    takeWeapon(itemId) { return this._takeStashedItem('weapons', itemId, 'armory'); },
+    takeMedicine(itemId) { return this._takeStashedItem('medicine', itemId, 'pharmacy'); },
     stashLedgerText(n) {
       const st = this.stashState();
       const rows = (st.ledger || []).slice(0, n || 5);
@@ -489,9 +569,20 @@
       const tools = (st.tools || []).map(t =>
         `<span class="small">🔧 ${t.name} <button class="btn ghost sm" data-stash-tool="${t.itemId}">Take</button></span>`
       ).join(' · ') || '<span class="small" style="opacity:.6">no spare tools</span>';
+      // ARMORY + PHARMACY (Steve 2026-10-09): section filters on the same
+      // stash. Weapons open armory, medicine opens pharmacy — deposit-gated,
+      // takeable by any villager once deposited.
+      const weapons = (st.weapons || []).map(t =>
+        `<span class="small">⚔️ ${t.name} <button class="btn ghost sm" data-stash-weapon="${t.itemId}">Take</button></span>`
+      ).join(' · ') || '<span class="small" style="opacity:.6">no weapons</span>';
+      const medicine = (st.medicine || []).map(t =>
+        `<span class="small">💊 ${t.name} <button class="btn ghost sm" data-stash-med="${t.itemId}">Take</button></span>`
+      ).join(' · ') || '<span class="small" style="opacity:.6">no medicine</span>';
       return `<p class="small" style="margin-top:8px"><b>📦 Village stash</b> <span style="opacity:.6">(${lvlNote})</span></p>` +
         rows +
         `<p class="small">🔧 Spare tools: ${tools}</p>` +
+        `<p class="small">⚔️ Armory: ${weapons}</p>` +
+        `<p class="small">💊 Pharmacy: ${medicine}</p>` +
         `<p class="small" style="opacity:.6;white-space:pre-line">${this.stashLedgerText(3)}</p>`;
     },
 

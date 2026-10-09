@@ -435,5 +435,199 @@
     "2": "Materials: 1 stick + 2 vine. Set the loops upright on the log where it crosses a trail, tied to a bent sapling that lifts the catch clear.",
     "3": "You can set one. Find a log squirrels already run — bark worn smooth, droppings on top. Raccoons use the same highways at night, which is a bonus until it is a fight. Check at dawn and reset by noon."
   }
+},
+{
+  "id": "sharpened_stick",
+  "name": "Sharpened stick",
+  "description": "a stick whittled to a point. Better than bare hands — barely, but barely counts.",
+  "materials": {
+    "stick": 1
+  },
+  "durable": true,
+  "kg": 0.3,
+  "knowledgeLevels": {
+    "1": "You have seen the shape: a stick, one end shaved to a point.",
+    "2": "Materials: stick. Shave one end to a point with a knife or a sharp stone edge. The point wants to be centered, not hooked.",
+    "3": "You can whittle one in minutes. The oldest spear there is — and still better than fists."
+  }
+},
+{
+  "id": "hunting_spear",
+  "name": "Hunting spear",
+  "description": "long, balanced, stone-tipped. Reach is the difference between hunting and being hunted.",
+  "materials": {
+    "branch": 1,
+    "stone": 1,
+    "vine": 1
+  },
+  "durable": true,
+  "kg": 1.2,
+  "knowledgeLevels": {
+    "1": "You have seen a hunting spear. Longer than a man, stone at the killing end.",
+    "2": "Materials: branch + stone + vine. Knap the stone to a point, notch the branch end, lash the head tight with vine. The lashing is the weapon — a loose head is a stick.",
+    "3": "You can make one. Straight branch, seasoned if you can wait. The head seats deep and the vine wraps wet so it shrinks tight. Thrust, don't throw — the throw is a different weapon."
+  }
+},
+{
+  "id": "fire_hardened_spear",
+  "name": "Fire-hardened spear",
+  "description": "a branch with the tip blackened and hard as iron. Fire did half the work.",
+  "materials": {
+    "branch": 1,
+    "wood": 1
+  },
+  "durable": true,
+  "kg": 1.0,
+  "knowledgeLevels": {
+    "1": "You have seen a fire-hardened spear. The tip is black, polished, hard.",
+    "2": "Materials: branch + wood (for the fire). Shave the tip, then bake it in coals — not flame — turning slow. The heat drives the sap out and the wood goes iron-hard.",
+    "3": "You can make one. Coals, not flame: flame chars it weak, coals temper it. Scrape, heat, scrape, heat, until the point rings when you tap it."
+  }
+},
+{
+  "id": "crude_bow",
+  "name": "Crude bow",
+  "description": "bent stick, twisted cord. The arrows are straighter than the bow, which is fine.",
+  "materials": {
+    "branch": 1,
+    "vine": 1
+  },
+  "durable": true,
+  "kg": 0.6,
+  "knowledgeLevels": {
+    "1": "You have seen a crude bow. A bent branch and a cord — simple enough to copy, hard enough to shoot.",
+    "2": "Materials: branch + vine. A green branch that bends without snapping, a cord twisted from vine fiber. The string wants to be shorter than the bow by a hand's width.",
+    "3": "You can make one. Tillering is the art: shave the belly until both limbs bend even. An uneven bow throws sideways and teaches you humility."
+  }
+},
+{
+  "id": "bow",
+  "name": "Bow",
+  "description": "seasoned wood and twisted sinew. The arrow knows where it is going.",
+  "materials": {
+    "wood": 1,
+    "vine": 2
+  },
+  "durable": true,
+  "kg": 0.8,
+  "knowledgeLevels": {
+    "1": "You have seen a real bow. Not a bent stick — a weapon, shaped with patience.",
+    "2": "Materials: wood + 2 vine. A seasoned stave, a cord braided tight from vine fiber, and days of shaving. The grip stays thick; the limbs taper.",
+    "3": "You can make one. Season the wood or it follows the string and dies. Brace it low at first and watch the limbs — they tell you where they want wood removed."
+  }
+},
+{
+  "id": "crossbow",
+  "name": "Crossbow",
+  "description": "crank, lock, loose. Less art than the bow, more certainty.",
+  "materials": {
+    "wood": 2,
+    "vine": 1,
+    "fiber": 1
+  },
+  "durable": true,
+  "kg": 2.5,
+  "knowledgeLevels": {
+    "1": "You have seen a crossbow. A bow on a stock, held at full draw by a catch.",
+    "2": "Materials: 2 wood + vine + fiber. A stout stock, a short strong bow, a cord, and a trigger notch. The catch is the whole weapon — everything else is carpentry.",
+    "3": "You can make one. The stock carries the draw so your arms don't have to. Cut the nut from hardwood and test the catch a hundred times before you trust it near your face."
+  }
+},
+{
+  "id": "sling",
+  "name": "Sling",
+  "description": "two cords and a pouch. David's technology, still working.",
+  "materials": {
+    "fiber": 2
+  },
+  "durable": true,
+  "kg": 0.1,
+  "knowledgeLevels": {
+    "1": "You have seen a sling. Two cords, a pouch, a stone — and range that embarrasses bows.",
+    "2": "Materials: 2 fiber. Braid two cords, weave a pouch between them. One cord has a loop for the finger; the other just a knot to let go.",
+    "3": "You can make one. The release is everything: one smooth circle overhead, let the knot cord slip at the top. Stones are everywhere; accuracy is not, at first."
+  }
+},
+{
+  "id": "arrow",
+  "name": "Arrow",
+  "description": "straight, fletched, meant for something living. Made five at a time — arrows are ammunition, not heirlooms.",
+  "materials": {
+    "stick": 2,
+    "stone": 1,
+    "fiber": 1
+  },
+  "durable": true,
+  "kg": 0.1,
+  "makesUnits": 5,
+  "knowledgeLevels": {
+    "1": "You have seen arrows. Straight shafts, stone points, feathered tails.",
+    "2": "Materials: 2 stick + stone + fiber. Straighten shafts over heat, knap small points, bind them on, fletch with whatever feathers or fiber you have. Five at a time — one arrow is a wish.",
+    "3": "You can make them. Spine matters: too stiff and they fishtail, too soft and they wobble. Match the shaft to the bow and they fly like they mean it."
+  }
+},
+{
+  "id": "bolt",
+  "name": "Crossbow bolt",
+  "description": "short, thick, brutal. Built for penetration, not grace. Made five at a time.",
+  "materials": {
+    "stick": 2,
+    "stone": 1
+  },
+  "durable": true,
+  "kg": 0.15,
+  "makesUnits": 5,
+  "knowledgeLevels": {
+    "1": "You have seen crossbow bolts. Short, heavy, all business.",
+    "2": "Materials: 2 stick + stone. Short stout shafts, heavy knapped heads. No fletching needed at this range — mass does the work.",
+    "3": "You can make them. Keep them short and heavy; the crossbow's power forgives ugly. Five at a time, always — a crossbow with one bolt is a club."
+  }
+},
+{
+  "id": "bark_armor",
+  "name": "Bark armor",
+  "description": "bark lashed with vine. Better than skin.",
+  "materials": {
+    "bark": 3,
+    "vine": 2
+  },
+  "durable": true,
+  "kg": 2.0,
+  "knowledgeLevels": {
+    "1": "You have seen bark armor. Plates of bark laced together, worn like a shell.",
+    "2": "Materials: 3 bark + 2 vine. Wide bark strips, dried flat under weight, laced overlapping like shingles with vine. Overlap downward — blows slide off.",
+    "3": "You can make it. Soak the bark to shape it, dry it flat, lace it snug but not tight — it should move when you move. Won't stop a spear. Will stop the second claw."
+  }
+},
+{
+  "id": "padded_cloth",
+  "name": "Padded cloth wraps",
+  "description": "layers of cloth tied tight. Better than skin. Barely.",
+  "materials": {
+    "cloth": 2
+  },
+  "durable": true,
+  "kg": 1.0,
+  "knowledgeLevels": {
+    "1": "You have seen padded wraps. Cloth layered thick around arms and torso.",
+    "2": "Materials: 2 cloth. Fold and quilt the cloth into thick pads, tie them where bites land — forearms, shoulders, thighs. Layers spread the force.",
+    "3": "You can make them. Quilt, don't just stack: stitch or tie the layers so they can't slide apart on impact. Light, quiet, and better than nothing by a real margin."
+  }
+},
+{
+  "id": "hide_armor",
+  "name": "Hide armor",
+  "description": "cured hide, laced with sinew. Smells like work.",
+  "materials": {
+    "hide": 2,
+    "vine": 1
+  },
+  "durable": true,
+  "kg": 3.0,
+  "knowledgeLevels": {
+    "1": "You have seen hide armor. Tough cured skin, cut and laced into a cuirass.",
+    "2": "Materials: 2 hide + vine. Cure the hides (scrape, dry, work them soft), cut panels, lace with vine or sinew. The curing is the armor — raw hide rots, cured hide stops teeth.",
+    "3": "You can make it. Work the hide until it's supple or it cracks at the first bend. Double the chest, single the limbs. Heavy, hot, and worth every ounce when something big decides you're food."
+  }
 }
 ]

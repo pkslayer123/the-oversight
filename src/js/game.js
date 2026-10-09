@@ -742,7 +742,7 @@
         // keepsakes are THAT person's — named from their own culture.
         char.items = this.genItemCandidates(occ, char);
         // CHOOSE 5 (Steve 2026-10-09): fallback path too — villagers choose
-        // their own 5; the rest seeds the village armory. (The lifeseed
+        // their own 5; the rest stays theirs as ch.stashed. (The lifeseed
         // wrapper overrides with the personal pool when the seed is rich.)
         try { this.choosePersonalFive(char, char.items); } catch (e) {}
         try { char.providesPerDay = this.villagerFoodBase(char); } catch (e) { char.providesPerDay = 1200; }
@@ -1186,11 +1186,16 @@
     // item pool, like the player's opening gamble. Personality-driven scoring:
     // equip utility (weapons/tools/armor by bonus) + sentimental keep-bias
     // (keepsakes are theirs — nobody leaves their keepsakes behind) + a
-    // flicker of idiosyncrasy. The unchosen go to ch.villageShare, deposited
-    // into the village armory at founding — communal gear, usable by anyone.
+    // flicker of idiosyncrasy.
+    // INDIVIDUAL OWNERSHIP (Steve 2026-10-09): the 3 unchosen are still THEIRS
+    // — ch.stashed, personal belongings kept at their space in haven. Not a
+    // communal pool. Nobody else's hands touch them: no village armory, no
+    // borrowing. Transfer paths: the owner equips from their own stash, they
+    // give/trade it deliberately, they discard it, or they die with it (then
+    // it's corpse-lootable — except sentimental items, which die with them).
     // SENTIMENTAL OWNER-LOCK: kept keepsakes are tagged with their owner;
-    // bond accrual checks the tag (see accrueRelicBond). Normal items are
-    // communal; sentimental items only work for the person they spawned with.
+    // bond accrual checks the tag (see accrueRelicBond). Sentimental items
+    // only work for the person they spawned with.
     choosePersonalFive(ch, pool) {
       const byId = {};
       (this.data.items || []).forEach(i => { byId[i.id] = i; });
@@ -1209,7 +1214,7 @@
       });
       scored.sort((a, b) => b.s - a.s);
       ch.items = scored.slice(0, 5).map(x => x.id);
-      ch.villageShare = scored.slice(5).map(x => x.id);
+      ch.stashed = scored.slice(5).map(x => x.id); // theirs, at their space
       ch.keepsakeOwner = ch.keepsakeOwner || {};
       for (const x of scored.slice(0, 5)) {
         const def = byId[x.id] || {};
@@ -1613,24 +1618,10 @@
       }
       this.state.village.roster = [this.villagerId].concat(otherGen, bg);
       this.state.village.villagers = [this.villagerId].concat(otherGen); // generated have dialogue; background have one-liners
-      // VILLAGE ARMORY (Steve 2026-10-09): the choose-5 overflow — gear the
-      // founders didn't carry becomes the village's communal stock. Anyone
-      // unarmed draws from it before ranging out (see villagerGearUp).
-      try {
-        this.state.village.armory = this.state.village.armory || [];
-        const seen = new Set(this.state.village.armory.map(i => i.itemId || i.id || i));
-        for (const id of this.state.village.roster) {
-          const person = (this.data.villagers || []).find(v => v.id === id)
-            || (this.state.village.rosterChars || {})[id];
-          for (const gid of ((person && person.villageShare) || [])) {
-            if (!seen.has(gid)) {
-              seen.add(gid);
-              this.state.village.armory.push({ itemId: gid, from: id });
-            }
-          }
-          if (person) person.villageShare = []; // deposited
-        }
-      } catch (e) {}
+      // INDIVIDUAL OWNERSHIP (Steve 2026-10-09): no village armory. The
+      // choose-5 overflow stays with its owner as ch.stashed — personal
+      // belongings, not communal stock. (Replaces the armory seeded here
+      // in the first gear build; Steve corrected: it's their gear.)
       // UNIFIED PERSON SYSTEM (Steve 2026-10-06): hydrate the drawn background
       // survivors into full person objects and add them to the villagers array.
       // One registry, one lookup — no more villagers-vs-background_survivors split.
@@ -1848,20 +1839,14 @@
       scholar.englishLevel = plv.english != null ? plv.english : 2;
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
       // CHOOSE 5 SYNC (Steve 2026-10-09): the player's real picks replace the
-      // NPC's provisional choice — the 3 they didn't take go to the armory,
-      // not the 3 the NPC would have left. (Armory was seeded at roster time.)
+      // NPC's provisional choice. The 3 they didn't take stay THEIRS —
+      // villager.stashed (personal belongings), not a communal pool.
       try {
         const full = villager.fullPool || [];
         const unpicked = full.filter(id => !gear.includes(id));
-        villager.villageShare = unpicked;
-        const v = this.state.village || {};
-        v.armory = (v.armory || []).filter(a => (a.from || a.villagerId) !== this.villagerId);
-        const seen = new Set(v.armory.map(a => a.itemId || a.id));
-        for (const gid of unpicked) {
-          if (!seen.has(gid)) { seen.add(gid); v.armory.push({ itemId: gid, from: this.villagerId }); }
-        }
+        villager.stashed = unpicked;
         villager.keepsakeOwner = villager.keepsakeOwner || {};
-        for (const gid of gear) {
+        for (const gid of gear.concat(unpicked)) {
           const def = (this.data.items || []).find(i => i.id === gid) || {};
           if (def.class === 'sentimental') villager.keepsakeOwner[gid] = this.villagerId;
         }
@@ -2562,10 +2547,21 @@
         // producesMaterial (water-filter chain 2026-10-06): woven cloth and
         // wooden cups are materials for other recipes — the item carries its
         // material key so craft()'s material matching can consume it.
-        const made = { name: recipe.name, units: 1, kg: recipe.kg || 0.2, desc: recipe.description };
+        const made = { name: recipe.name, units: recipe.makesUnits || 1, kg: recipe.kg || 0.2, desc: recipe.description };
         if (recipe.producesMaterial) made.material = recipe.producesMaterial;
+        // GEAR (Steve 2026-10-09): a recipe whose id matches a real item def
+        // makes the REAL item (itemId) — a crafted spear is a spear, not a
+        // named rock. Without this the 13 gear recipes craft decorative
+        // nothings (itemIdOf finds no id; the equipment system never sees
+        // them). One system: the same craft(), the same gates, real items.
+        const realDef = (this.data.items || []).find(i => i.id === recipe.id);
+        if (realDef) { made.itemId = realDef.id; made.name = realDef.name; }
         this.state.scholar.inventory.push(made);
         this.say(`You make a ${recipe.name}. ${recipe.description}`);
+        // PRACTICE (Steve 2026-10-09): a successful blind (L1) craft teaches
+        // L2 — your hands learn what your eyes only guessed at. The 35% was
+        // the tuition; the success is the lesson.
+        try { if (blind && this.grantKnowledge) this.grantKnowledge('recipe', recipeId, 2, { type: 'discovery' }); } catch (e) {}
       } else {
         this.state.scholar.tools = this.state.scholar.tools || [];
         this.state.scholar.tools.push({ recipeId, uses: recipe.uses, name: recipe.name });
@@ -2581,6 +2577,20 @@
       // Delegates to the unified grant engine (Steve 2026-10-07).
       // Preserves behavior; now records learnedFrom/learnedDay metadata.
       return this.grantKnowledge('recipe', recipeId, level, { type: 'discovery' });
+    },
+
+    // GEAR RECIPE DISCOVERY (Steve 2026-10-09): handling a gear item with a
+    // recipe (equipping it, looting it from a corpse) teaches L1 — you've
+    // SEEN one up close. Same gates as every recipe: L1 is a blind 35%
+    // attempt with materials at risk; a successful blind craft teaches L2
+    // (your hands learn). One system, no parallel track.
+    noteGearHandled(itemId) {
+      try {
+        if (!itemId) return;
+        const recipe = (this.data.recipes || []).find(r => r.id === itemId);
+        if (!recipe || !recipe.durable) return; // gear only, not traps
+        if (this.grantKnowledge) this.grantKnowledge('recipe', itemId, 1, { type: 'discovery' });
+      } catch (e) {}
     },
 
     // SET TRAP: place a snare/deadfall. Check it later.
@@ -4530,11 +4540,18 @@
     // Root cause of the unarmed village: autoEquip ran once at spawn (and,
     // until the 2026-10-09 namespace bridge, not even then). This re-runs it
     // whenever it matters, and gives unarmed villagers honest acquisition
-    // paths: the village armory first, then whittling a sharpened stick from
-    // the woodpile. Deterministic (autoEquip has no RNG) — safe to call at
-    // fight time, including seeded contest fights.
+    // paths from THEIR OWN property: their personal stash, then whittling a
+    // sharpened stick from the shared woodpile. Deterministic (autoEquip has
+    // no RNG) — safe to call at fight time, including seeded contest fights.
+    // INDIVIDUAL OWNERSHIP (Steve 2026-10-09): no communal armory. A villager
+    // equips their own gear, fetches from their own stash, or makes their own
+    // weapon. Nobody else's gear is touched — capacity to share, not
+    // obligation. (Sharing happens deliberately: gifts, trades, discards,
+    // and corpse loot — never automatic redistribution.)
     //   acquire=false: re-equip only (fight-time; never crafts mid-fight).
     //   acquire=true:  full acquisition (departure-time).
+    // Acquisition order: own carried -> own stashed -> communal armory
+    // (DEPOSITED items only — deposit is consent) -> whittle from woodpile.
     villagerGearUp(vid, acquire) {
       const S = (typeof globalThis !== 'undefined' ? globalThis.Scattering : null) || {};
       let person = null;
@@ -4545,23 +4562,48 @@
       try { wb = S.equipment.weaponBonusOf(person, this.data.items) || 0; } catch (e) {}
       if (wb > 0 || !acquire) return;
       const v = this.state.village || {};
-      // ARMORY: the village's communal gear (seeded by the choose-5 overflow
-      // at founding; villagers deposit spares). Best weapon goes to whoever
-      // needs it most — right now, that's you.
+      // OWN STASH (Steve 2026-10-09): their personal belongings at their
+      // space. They grab the best weapon they own. Nobody else's stash —
+      // or gear — is touched.
       try {
-        v.armory = v.armory || [];
+        const stash = person.stashed || [];
         let best = null, bestB = -1, bestIdx = -1;
-        for (let i = 0; i < v.armory.length; i++) {
-          const it = v.armory[i];
-          const def = (this.data.items || []).find(d => d.id === (it.itemId || it.id || it));
+        for (let i = 0; i < stash.length; i++) {
+          const gid = (stash[i] && (stash[i].itemId || stash[i].id)) || stash[i];
+          const def = (this.data.items || []).find(d => d.id === gid);
           if (def && def.class === 'weapon' && def.weapon && (def.weapon.bonus || 0) > bestB) {
-            bestB = def.weapon.bonus; best = it; bestIdx = i;
+            bestB = def.weapon.bonus; best = gid; bestIdx = i;
           }
         }
         if (best) {
-          v.armory.splice(bestIdx, 1);
+          stash.splice(bestIdx, 1);
           person.items = person.items || [];
-          person.items.push(best.itemId || best.id || best);
+          person.items.push(best);
+          S.equipment.autoEquip(person, this.data.items);
+          wb = S.equipment.weaponBonusOf(person, this.data.items) || 0;
+          if (wb > 0) return;
+        }
+      } catch (e) {}
+      // COMMUNAL ARMORY (Steve 2026-10-09): deposited weapons only — the
+      // storage.js stash weapons section. Deposit is the consent; nobody's
+      // personal gear is ever taken. The borrower takes the best deposited
+      // weapon; the ledger remembers the giver.
+      try {
+        const st = (this.stashState) ? this.stashState() : null;
+        const pile = (st && st.weapons) || [];
+        let best = null, bestB = -1, bestIdx = -1;
+        for (let i = 0; i < pile.length; i++) {
+          const gid = pile[i].itemId || pile[i].id;
+          const def = (this.data.items || []).find(d => d.id === gid);
+          if (def && def.class === 'weapon' && def.weapon && (def.weapon.bonus || 0) > bestB) {
+            bestB = def.weapon.bonus; best = gid; bestIdx = i;
+          }
+        }
+        if (best) {
+          pile.splice(bestIdx, 1);
+          try { if (this.stashLog) this.stashLog('take', best, 1, vid); } catch (e2) {}
+          person.items = person.items || [];
+          person.items.push(best);
           S.equipment.autoEquip(person, this.data.items);
           wb = S.equipment.weaponBonusOf(person, this.data.items) || 0;
           if (wb > 0) return;
@@ -8314,6 +8356,8 @@
       // remove from inventory (it's worn, not carried)
       this.state.scholar.inventory.splice(itemIdx, 1);
       this.say(`Equipped ${def.name} (${slot}).`);
+      // GEAR DISCOVERY (Steve 2026-10-09): wielding it teaches the recipe L1.
+      try { this.noteGearHandled(def.id); } catch (e) {}
       // EQUIPMENT (Steve 2026-10-06): the set-vs-pieces crossover moment.
       // When your fitted pieces start beating the full set, you feel it.
       try {
@@ -10458,6 +10502,8 @@
       this.say(`You leave the ${nm} for the woods. The woods don't mind.`);
       return null;
     },
+
+    // carryCapacity: base 20kg. Abilities, items, and strength boost it.
 
     // carryCapacity: base 20kg. Abilities, items, and strength boost it.
     carryCapacity() {
@@ -18102,6 +18148,9 @@
             const sticks = 1 + (Math.random() < 0.5 ? 1 : 0);
             scholar.inventory.push({ material: 'branch', units: sticks, name: 'Branch', kcalEach: 0, spoilDay: 9999, kg: 0.5 });
             woodSticks += sticks;
+            // BARK (Steve 2026-10-09): branches come with bark strips — the
+            // bark_armor recipe's honest source. One system, no phantom mats.
+            scholar.inventory.push({ material: 'bark', units: sticks, name: 'Bark strip', kcalEach: 0, spoilDay: 9999, kg: 0.3 });
             if (Math.random() < 0.25) {
               scholar.inventory.push({ material: 'fiber', units: 1, name: 'Plant fiber', kcalEach: 0, spoilDay: 9999, kg: 0.1 });
               woodFiber++;

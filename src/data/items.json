@@ -491,7 +491,6 @@
    "range": 1,
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "stick": 1
   },
@@ -509,7 +508,6 @@
    "range": 1,
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "stone": 1,
    "vine": 1
@@ -531,7 +529,6 @@
    "range": 2,
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "stick": 1,
    "stone": 1,
@@ -564,7 +561,6 @@
   "armor": {
    "protection": 10
   },
-  "craftable": true,
   "materials": {
    "bark": 2,
    "vine": 2
@@ -620,7 +616,6 @@
    "ammo": "stone",
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "vine": 1,
    "stone": 2
@@ -651,7 +646,6 @@
    "range": 2,
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "stick": 1
   },
@@ -738,7 +732,6 @@
    "ammo": "arrow",
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "stick": 1,
    "vine": 2
@@ -765,7 +758,6 @@
   "armor": {
    "protection": 5
   },
-  "craftable": true,
   "materials": {
    "vine": 1
   },
@@ -781,7 +773,6 @@
   "armor": {
    "protection": 20
   },
-  "craftable": true,
   "materials": {
    "vine": 2
   },
@@ -1231,7 +1222,6 @@
   "name": "Arrow",
   "class": "ammo",
   "flavor": "straight, fletched, meant for something living",
-  "craftable": true,
   "materials": {
    "stick": 1
   },
@@ -1851,7 +1841,6 @@
    "ammo": "arrow",
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "stick": 2,
    "vine": 1,
@@ -1883,7 +1872,6 @@
    "ammo": "bolt",
    "damageType": "physical"
   },
-  "craftable": true,
   "materials": {
    "stick": 3,
    "vine": 2,
@@ -1966,7 +1954,6 @@
   "kg": 0.08,
   "material": "bolt",
   "units": 1,
-  "craftable": true,
   "materials": {
    "stick": 1,
    "stone": 1
