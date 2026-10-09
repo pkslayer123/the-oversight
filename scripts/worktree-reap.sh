@@ -57,6 +57,7 @@ if rc == 0:
 removed, loud = [], []
 for t in data["trees"]:
     slug, path, branch, status = t["slug"], t["path"], t["branch"], t.get("status", "active")
+    is_merged = branch in merged
     hb = t.get("heartbeat_at", t.get("created_at", ""))
     try:
         age_h = (now - datetime.datetime.fromisoformat(hb)).total_seconds() / 3600
@@ -83,7 +84,6 @@ for t in data["trees"]:
     is_clean = (rc == 0 and dirty == "")
     released = status in ("done-merged", "done-abandoned", "gone")
     stale = (status == "active" and age_h > stale_h)
-    is_merged = branch in merged
 
     if not is_clean:
         loud.append(f"LOUD: {slug} has UNCOMMITTED changes — never auto-removing. Owner ({t.get('owner')}) must commit or release.")
