@@ -8,4 +8,4 @@
 // consumes: (none)
 /* Build version — stamped by scripts/bump-sw-version.sh on every player-facing commit.
    Displayed in the title-screen footer so we always know which build is running. */
-window.BUILD_VERSION = '77c232d-20261009-111302';
+window.BUILD_VERSION = 'ea5d0b8-20261009-112301';
