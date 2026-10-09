@@ -195,3 +195,14 @@ verified kept via their paths), 10 deflected. Proof P1-P5.
 - src/js/journal.js: journal only real promises (r.ok), not deflections
 - scripts/test-social-r7-trustbleed.js, scripts/test-social-r7-promises.js: new
 - scripts/test-sibling-sweep.js: roleBonus/clearRole to DEAD list
+
+## Coordinator landing note
+- Worker base was b316d603; master moved +7 commits during the run (corruption
+  system c69c1beb — new src/js/corruption.js touching betrayal.js/game.js, the
+  same files this run fixed; vercel.json ignore; hunter break-it; combat feel;
+  wave-2 hardening; armor rebalance 04a8570d). Branch rebased cleanly onto
+  04a8570d (no textual conflicts) and re-verified: trustbleed 17/17 x3 seeds,
+  promises 15/15 x3 seeds, validate-ontology 51/51 (was 50/50 — corruption
+  system added a system). Merged --ff-only to master. Merged locally only —
+  per 2026-10-09 build-cost control, push/bump/ship is the oversight-ship-loop's
+  lane (pending ship).
