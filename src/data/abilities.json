@@ -707,8 +707,8 @@
   {
     "id": "cannibal_frenzy",
     "name": "Red Hunger",
-    "description": "When starving, you can eat anything (even people). +1000 kcal, but -30 trust permanently.",
-    "flavor": "The hunger is LOUD! It says 'eat the... oh! OH! We didn't mean THEM! But... you did!'",
+    "description": "Red Hunger: near a person-corpse, butcher and feed on the spot \u2014 through the real pipeline. Trauma, corruption, witnesses, prions: all the usual costs apply.",
+    "flavor": "The hunger is LOUD! It doesn't conjure food anymore \u2014 it just knows what the dead are for, and it isn't patient about it.",
     "pool": "system",
     "tier": "risky",
     "unlock": {

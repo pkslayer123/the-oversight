@@ -11609,6 +11609,10 @@
         intimidation: { honest: -15, generous: -8, brave: 3, competent: 0 },
         bully: { honest: -12, generous: -10, brave: 2, competent: 0 },
         honor_dead: { honest: 4, generous: 3, brave: 0, competent: 0 },
+        // CORRUPTION SYSTEM (Steve 2026-10-09): witnessed atrocities.
+        // butcher_person: desecrating the dead for meat. cannibalism: the act.
+        butcher_person: { honest: -35, generous: -20, brave: -8, competent: 0 },
+        cannibalism: { honest: -45, generous: -30, brave: -10, competent: 0 },
         // LASH OUT: an involuntary strike at a friend (gristlefit). The village
         // reads it as dangerous, not evil — but it reads it.
         lash_out: { honest: -8, generous: -6, brave: 0, competent: -2 },
@@ -16859,7 +16863,14 @@
         const food = (s.inventory || []).find(i => (i.kcalEach || 0) > 0);
         out.push({ id: 'compost_king', target: 'none', name: 'Bury Food', desc: 'Bury food as fertilizer: +10% forage on this tile.', available: !!food, why: 'No food to bury.' });
       }
-      if (has('cannibal_frenzy')) out.push({ id: 'cannibal_frenzy', target: 'self', name: 'Feed the Red Hunger', desc: '+1000 kcal. -30 trust, permanently. Only when starving.', available: (s.kcal || 0) < 500, why: 'Only when starving (<500 kcal).' });
+      // RED HUNGER (Steve 2026-10-09): reworked from a free-calorie button into
+      // a pipeline shortcut. Near a person-corpse, butcher and feed on the
+      // spot — through the real cannibalism pipeline. All the usual costs
+      // (trauma, corruption, witnesses, prions) apply. No free lunch.
+      if (has('cannibal_frenzy')) {
+        const dc = this.nearButcherableCorpse ? this.nearButcherableCorpse() : null;
+        out.push({ id: 'cannibal_frenzy', target: 'self', name: 'Feed the Red Hunger', desc: 'Butcher the dead nearby and feed on the spot — all the usual costs apply.', available: !!dc, why: dc ? null : 'No butcherable dead within reach.' });
+      }
       return out;
     },
 
@@ -17010,21 +17021,16 @@
         this.playerTile().compost = true;
         this.say(`You bury ${it.name}. The tile will remember. (+10% forage here. compost_king)`);
       } else if (id === 'cannibal_frenzy') {
-        if ((s.kcal || 0) >= 500) { this.say('The Red Hunger sleeps. You are not starving enough.'); return false; }
-        // HONESTY: no kcal source bypasses the bank cap (same rule as blood_magic).
-        s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + 1000);
-        const v = this.state.village; v.trust = v.trust || {};
-        // HONESTY (break-it food r4): the old copy said "Trust -30,
-        // permanently" — but the trust NUMBER is repairable (gifts, and the
-        // live giveFood is progressive, not the dead flat +12). What is
-        // actually permanent is the memory: every witness remembers what
-        // they saw, and the memory system never forgets. The copy now says
-        // exactly that — the permanent part is their memory, not the number.
-        for (const vid of Object.keys(v.trust)) {
-          v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 30);
-          try { this.remember(vid, 'saw_cannibalism', 'watched you feed the Red Hunger'); } catch (e) {}
-        }
-        this.say('RED HUNGER: you eat what you should not. +1000 kcal. Everyone saw. Trust -30 — and they will not forget what they saw.');
+        // RED HUNGER (Steve 2026-10-09): no longer conjures calories — it runs
+        // the real pipeline. Butcher the nearby dead, then eat, with every
+        // cost the pipeline charges (trauma, corruption, witnesses, prions).
+        const dc = this.nearButcherableCorpse ? this.nearButcherableCorpse() : null;
+        if (!dc) { this.say('The Red Hunger paces. No dead within reach.'); return false; }
+        const meat = this.corpseButcher(dc.id);
+        if (!meat) return false;
+        const idx = (s.inventory || []).findIndex(i => i && i.plantId === 'meat_human' && (i.units || 0) > 0);
+        if (idx < 0) { this.say('The hunger falters at the last step.'); return false; }
+        this.eatCannibal(idx);
       } else if (this.hasAbility && this.hasAbility(id)) {
         // Real ability, no bespoke branch (e.g. a data-driven ability invoked
         // by plain id): practicing the discipline still counts as a use.

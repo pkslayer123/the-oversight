@@ -611,12 +611,16 @@
           available: !!food, why: 'No food to bury.'
         });
       }
-      if (hasAb('cannibal_frenzy')) out.push({
-        abilityId: 'cannibal_frenzy', actionId: null, id: 'cannibal_frenzy',
-        target: 'self', name: 'Feed the Red Hunger',
-        desc: '+1000 kcal. -30 trust, and they will remember. Only when starving.',
-        available: (s.kcal || 0) < 500, why: 'Only when starving (<500 kcal).'
-      });
+      // RED HUNGER (Steve 2026-10-09): pipeline shortcut, not a free lunch.
+      if (hasAb('cannibal_frenzy')) {
+        var dc2 = (typeof Game !== 'undefined' && Game.nearButcherableCorpse) ? Game.nearButcherableCorpse() : null;
+        out.push({
+          abilityId: 'cannibal_frenzy', actionId: null, id: 'cannibal_frenzy',
+          target: 'self', name: 'Feed the Red Hunger',
+          desc: 'Butcher the dead nearby and feed on the spot — all the usual costs apply.',
+          available: !!dc2, why: dc2 ? null : 'No butcherable dead within reach.'
+        });
+      }
       return out;
     }
   };

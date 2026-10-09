@@ -325,6 +325,23 @@ Corpse system. Dead bodies persist, can be butchered, buried, or left.
 
 **Consumes:** state.corpses
 
+### corruption (`corruption.js`)
+Corruption system — the dark mirror of trust. Per-character 0-100, never shown as a number; felt through tells, unease, and witnessed acts. Slippery-slope cannibalism pipeline (butcher a person-corpse -> human meat -> eat), contextual consequences (exile in healthy villages, horror-without-exile when starving, power move when corrupted), fear as a social currency distinct from trust, bottom-up village corruption, NPC corruption arcs + temptation, psycho player spawns, and show framing for dark runs.
+
+**Provides:** corruptionOf(who), addCorruption(n, reason), addNpcCorruption(vid, n, reason), villageCorruption(), cannibalNorm(), starvingVillage(), corpseButcher(cid), eatCannibal(idx), humanMeatItem(), fearOf(vid, target), addFear(vid, target, n), avgFearOf(target), fearWeakness(target), psychoIntro(char), mantleWatch(), corruptionTick() (per-part: cravings, fear decay, NPC drift, events), npcCannibalTick(), temptTick(), darkShowBeat(kind)
+
+**Rules:**
+- corruption_hidden: the number never renders in UI; it surfaces through behavior tells, unease lines, and witnessed acts (code: corruptionOf, Steve 2026-10-09)
+- foil_drag: high player corruption drags trust gains — the two systems push against each other (code: trustGainProgressive wrap, Steve 2026-10-09)
+- slope: the first cannibal meal costs the most trauma; repeats desensitize while corruption gains accelerate and cravings grow (code: eatCannibal, Steve 2026-10-09)
+- contextual_norms: discovered cannibalism means exile in a healthy village, horror-without-exile when starving, a power move when corrupted (code: cannibalNorm, Steve 2026-10-09)
+- fear_not_love: fear compels obedience but never loyalty; it collapses when the feared show weakness (code: addFear/fearWeakness, Steve 2026-10-09)
+- bottom_up: village corruption emerges from its members' corruption, not a flag (code: villageCorruption, Steve 2026-10-09)
+- televised_evil: evil is a legitimate path to power and the show notices dark runs (code: darkShowBeat, Steve 2026-10-09)
+- terrible_bargain: real power at a real price — cravings, brittleness, exile risk, prion death (code: cravingTick, Steve 2026-10-09)
+
+**Consumes:** state.scholar.corruption, state.village.corruption{}, state.village.dread{}, recordCrime/justiceHeat (wrapped), observe/witnesses, addTrauma, contractDisease
+
 ### debug (`debug-scenarios.js`)
 One-tap preloaded scenarios for the debug panel. Testing only.
 

@@ -10,6 +10,7 @@ twice in one day (2026-10-09).
 
 | Doc | Covers | Read it when touching |
 |-----|--------|----------------------|
+| docs/CORRUPTION.md | corruption, cannibalism slope, fear, psycho spawns | any corruption, cannibalism, fear, dark player content |
 | docs/VISION.md | the game's thesis and tone | anything foundational |
 | docs/DESIGN.md | systems design | new systems |
 | docs/DIRECTIVES.md | Steve's standing orders (append-only) | always — it wins over inference |

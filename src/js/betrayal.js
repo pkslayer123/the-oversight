@@ -1386,7 +1386,7 @@
     // old belief-only ladder exiled nobody.)
     const avg = this.avgBelief(c);
     const charge = c.charge || 'theft';
-    const sev = { murder: 4, ambush: 3, assault: 3, theft: 2, intimidation: 1 }[charge] || 1;
+    const sev = { cannibalism: 5, murder: 4, ambush: 3, assault: 3, theft: 2, intimidation: 1 }[charge] || 1;
     // the flipped weakest bought leniency with testimony — the village honors
     // the deal, and the accomplices face the heavy sentence
     if (c.flipped) return this.resolveCase(c.id, 'exile');
@@ -3411,6 +3411,7 @@
       intimidation: 'Threats — putting fear in people on purpose',
       assault: 'Raising hands against one of us',
       murder: 'Murder. There — said plain',
+      cannibalism: 'Cannibalism. Eating one of us',
     }[charge] || 'Crimes against the village';
   },
   // Unified pipeline: is the formal track currently holding the player?
@@ -3439,7 +3440,7 @@
       j.mootDemanded = false; j.confrontRefused = false; j.stage = 1;
       return null;
     }
-    const rank = { murder: 4, attack: 3, theft: 2, intimidation: 1 };
+    const rank = { cannibalism: 5, murder: 4, attack: 3, theft: 2, intimidation: 1 };
     // the formal track charges what it can prove: unwitnessed crimes stay
     // unsolved (detective path), they are not moot ammunition.
     const provable = crimes.filter(c => rank[c.type] && c.witnessed !== false);
@@ -3461,7 +3462,7 @@
         : (this.strongestMotiveVsPlayer() || {}).id;
     if (!accuser) return null;
     const charge = serious
-      ? ({ theft: 'theft', intimidation: 'intimidation', attack: 'assault', murder: 'murder' }[serious.type])
+      ? ({ theft: 'theft', intimidation: 'intimidation', attack: 'assault', murder: 'murder', cannibalism: 'cannibalism' }[serious.type])
       : 'theft';
     return this.openPlayerCase(accuser, charge, serious ? [serious] : [], false);
   },
@@ -3487,7 +3488,7 @@
     let crimes = [];
     try { crimes = (this.justiceState().crimes || []).filter(c => !c.caseId); } catch (e) {}
     const heat = (() => { try { return this.justiceHeat(); } catch (e) { return 0; } })();
-    const rank = { murder: 4, attack: 3, theft: 2, intimidation: 1 };
+    const rank = { cannibalism: 5, murder: 4, attack: 3, theft: 2, intimidation: 1 };
     const serious = crimes.filter(c => rank[c.type]).sort((a, b) => (rank[b.type] || 0) - (rank[a.type] || 0))[0];
     let accuser = null, charge = null, used = [], fabricated = false;
     if (serious) {

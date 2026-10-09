@@ -1217,6 +1217,7 @@
           if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
           if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
           if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+          if (dc.kind === 'person' && !dc.buried && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
         }
       }
     } else if (isMon) {
@@ -1272,6 +1273,7 @@
           if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
           if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
           if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+          if (dc.kind === 'person' && !dc.buried && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
         } else {
           desc += ' (Too far.)';
           actions.push(walkCloser(cx, cy));

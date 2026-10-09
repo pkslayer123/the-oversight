@@ -18,7 +18,7 @@ or diagnosis code. (Established 2026-10-06, reworked 2026-10-09, corrected 2026-
   `contractDisease()` refuses alien; the alien pool contracts through its own
   vectors only. See the `two_pools` ontology rule in `src/js/statusEffects.js`.
 
-## Mundane pool (5) — real diseases
+## Mundane pool (6) — real diseases
 
 | id | Name | Real analogue | Vector |
 |----|------|---------------|--------|
@@ -27,6 +27,7 @@ or diagnosis code. (Established 2026-10-06, reworked 2026-10-09, corrected 2026-
 | disease | Fever | generic fever | mild: bad food/water/luck; ambient mosquito bites (1.5%); ambient tick bites (escalating) |
 | lockjaw | Lockjaw | tetanus | dirty wounds, rust (spasms; lethal untreated) |
 | wound_fever | Wound Fever | infected wound | open cuts left dirty; botched tick removal |
+| trembles | Trembles | kuru (prion) | human meat — 15% per meal; cooking does NOT kill it |
 
 Diseases never announce their names — only symptoms. Diagnosis (triage /
 field_medicine / herbal_remedy, herb lore, stethoscope, or a medical villager)
@@ -81,6 +82,8 @@ Min-maxing is welcome: some players will avoid these at all costs, others
 will seek infection to boost their build.
 
 ## Change log
+
+- 2026-10-09: Trembles added to the mundane pool (kuru/prion analogue, Steve's corruption system). Vector: human meat, 15% per meal. Cooking does not kill prions — nothing does. No cure exists at any tier; slow (40 day-parts) and certain. The terrible bargain made biological.
 
 - 2026-10-09: Eurika + East Nile moved back to the alien pool (they were
   misclassified as mundane mosquito viruses by the disease-rework worker, which
