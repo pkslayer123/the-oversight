@@ -8679,7 +8679,10 @@
       t.secrets[cx + ',' + cy] = { condition: 'good', known: true, yours: true };
       s.kcal = Math.max(0, (s.kcal || 0) - 50);
       this.tickAction(48);
-      this.say('Canvas up, poles set, guy-lines taut. Shelter — yours, wherever you are. (Sleep quality: tent. Pack it up to move it.)');
+      // COST HONESTY (survivalist loop 2026-10-09): 48 ticks + 50 kcal is real
+      // work — name it the way rest/boil name theirs. (packTent's 16 ticks
+      // ride the visible clock; the kcal is what the player budgets.)
+      this.say('Canvas up, poles set, guy-lines taut. Shelter — yours, wherever you are. (48 ticks of work, -50 kcal. Sleep quality: tent. Pack it up to move it.)');
       return null;
     },
     // CAMP (Steve 2026-10-07): a pitched tent + campfire can become a camp —
@@ -12820,16 +12823,24 @@
       this._sleeping = { quality: prev.quality };
       this.say(`You settle into ${prev.name}. Sleep takes you.`);
       let woke = false, guard = 0;
+      // CONTEST GRAB (survivalist loop 2026-10-09): the dawn briefing inside
+      // endDay can resolve a pending contest MID-SLEEP — contestInterruption
+      // sets state.activeContest, a modal the old checks didn't watch for.
+      // The loop then fell through to the dawn wrap-up: full heal + "Dawn.
+      // You wake deeply rested" printed AFTER the grab, healing applied under
+      // the cameras. The System's interruption interrupts — wake with a
+      // start, no dawn accounting, same as a fight or an encounter.
+      const grabbed = () => !!(this.state && this.state.activeContest);
       while (s.day === startDay && !this.over && guard++ < 64) {
         const remaining = T.TICKS_PER_DAY - (s.dayTicks || 0);
         if (remaining <= 0) break;
         // batch-sized chunks: part transitions, NPC nights, and endDay all fire
         // naturally — and we check for danger between chunks.
         this.tickAction(Math.min(T.TICKS_PER_BATCH, remaining));
-        if (this.tbfight || this.pendingEncounter || this.over) { woke = true; break; }
+        if (this.tbfight || this.pendingEncounter || this.over || grabbed()) { woke = true; break; }
       }
       this._sleeping = null;
-      if (woke || this.tbfight || this.pendingEncounter || this.over) {
+      if (woke || this.tbfight || this.pendingEncounter || this.over || grabbed()) {
         if (!this.over) this.say('You wake with a start — something is wrong.');
         return this.status();
       }
