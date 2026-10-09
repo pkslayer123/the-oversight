@@ -18520,16 +18520,21 @@
       try { this.ambientSocial(present); } catch (e) {}
       // LIVING WORLD: knowledge moves human-to-human, by the fire.
       try { this.firesideTeaching(present); } catch (e) {}
-      const bg = v.roster.filter(id => !this.data.villagers.find(m => m.id === id));
-      if (!bg.length) return;
+      // UNIFIED PERSON SYSTEM (idle-village sim 2026-10-09): the old filter
+      // (!data.villagers.find) matched NOBODY after hydration moved every
+      // roster member into data.villagers — the home village silently stopped
+      // sending anyone out and the pantry starved with zero autonomous
+      // income. Any unassigned roster member (not the player) lives their day.
+      const people = (v.roster || []).filter(id => id !== this.villagerId);
+      if (!people.length) return;
       // LEADER: assigned villagers are out working — they don't do random things.
       const asg = v.assignments || {};
-      const free = bg.filter(id => !asg[id]);
+      const free = people.filter(id => !asg[id]);
       if (!free.length) return;
       const n = 1 + (Math.random() < 0.4 ? 1 : 0);
       for (let i = 0; i < n; i++) {
         const id = free[Math.floor(Math.random() * free.length)];
-        const person = this.data.background_survivors.find(p => p.id === id);
+        const person = this.getPerson(id);
         if (!person) continue;
         const first = person.name.split(' ')[0];
         const r = Math.random();
