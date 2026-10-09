@@ -11,7 +11,7 @@
 //   - spendCombatAction(kind)
 //   - tbFighter(id)
 //   - fighterSize(f), fighterTiles(f) (multi-tile occupancy)
-//   - tbCanOccupy(f, nx, ny), tbMoveFighter(f, nx, ny) (validated movement)
+//   - tbCanOccupy(f, nx, ny) (validated movement: whole-footprint occupancy)
 //   - tbAdvance()
 //   - tbRoundWrap(f) (shared round wrap: order re-sort, ROUND call, belltoad chorus arrivals — sync + stepped-async)
 //   - tbAfterPlayerAction()
@@ -12083,7 +12083,13 @@
       try { mdef = (this.data.monsters || []).find(x => x.id === m.id) || {}; } catch (e) {}
       const rec = this.fieldFight(vid, mdef, m, {});
       const summary = this.fieldFightSummary(rec, name, mName);
-      if (rec.outcome === 'vKill') {
+      if (rec.outcome === 'alreadyDead') {
+        // BREAK-IT combat 2026-10-09: the world kept a 0-hp monster (vFlee
+        // coinciding with the lead falling). It's a corpse, not a fight —
+        // clear it with no cheer, no trust, no deed.
+        this.removeWorldMonster(m);
+        tell(`⚔️ ${summary}`);
+      } else if (rec.outcome === 'vKill') {
         // real wounds from the real fight — the win cost blood too.
         // (2026-10-08: these were silently dropped; villagers fought for
         // free and the gossip lied about wounds that never landed.)
@@ -19421,6 +19427,13 @@
     },
 
     startCombat(monsterId) {
+      // NO SILENT CLOBBER (break-it combat 2026-10-09): re-entering a live
+      // fight rebuilt the fighters from stale scholar.health — a free heal
+      // (or wound) and erased monster wounds. Fail loudly, keep the fight.
+      if (this.tbfight && !this.tbfight.over) {
+        this.say('Already in a fight — finish this one first. (startCombat refused: a fight is live.)');
+        return;
+      }
       this.resetPerFightFlags();
       const s = this.state.scholar;
       this.syncMonsterAlias();
@@ -20197,8 +20210,11 @@
         else { verb = 'the beam rakes across'; }
         const dmg = Math.round(S.combat.roll(tg.dmg) * mult);
         const who = o.kind === 'player' ? 'you' : o.name;
-        this.say(`🔥 ${verb} ${who}! (${dmg})`);
-        this.tbDamage(o.key, dmg, this.encDamageSource(m, tg.attackName));
+        // HONESTY (break-it combat 2026-10-09, sibling sweep): tbDamage
+        // applies dodge/armor/brace after this line was composed. Resolve
+        // first, state what landed.
+        const beamLanded = this.tbDamage(o.key, dmg, this.encDamageSource(m, tg.attackName));
+        this.say(`🔥 ${verb} ${who}! (${beamLanded})`);
         if (f.over) return;
       }
       // TEACH THE TRADE: move and it chases (less burn); stand still and it parks.
@@ -20400,8 +20416,11 @@
         if (Math.random() < hitChance) {
           const dmg = Math.round(S.combat.roll([5, 12]) * (1 - dist * 0.2));
           const targetName = o.kind === 'player' ? 'you' : o.name;
-          this.say(`A splinter catches ${targetName} for ${dmg}! (dist ${dist})`);
-          this.tbDamage(o.key, dmg, 'shrapnel', null, { quiet: true });
+          // HONESTY (break-it combat 2026-10-09, sibling sweep): tbDamage
+          // applies armor/dodge AFTER this line was composed. State what
+          // landed; a 0 means dodged/absorbed, which tbDamage already said.
+          const landed = this.tbDamage(o.key, dmg, 'shrapnel', null, { quiet: true });
+          if (landed > 0) this.say(`A splinter catches ${targetName} for ${landed}! (dist ${dist})`);
           if (f.over) break;
         } else if (dist <= 2) {
           // Only narrate misses that were close
@@ -21226,23 +21245,27 @@
           }
         }
       } catch (e) {}
-      this.tbDamage(t.key, d, 'you', null, { quiet: true });
-      // HONESTY (Steve 2026-10-08, break-it): stated AFTER all reductions —
-      // the number shown is the number tbDamage just applied.
+      const dealt = this.tbDamage(t.key, d, 'you', null, { quiet: true });
+      // HONESTY (break-it combat 2026-10-09): tbDamage applies monster-state
+      // modifiers AFTER this line was composed (turtle bunker x0.15, boar
+      // winded x1.5, voice-mimic reveal x1.5, flyer grounded x1.5). The line
+      // states what LANDED, not what was swung.
+      const shown = (typeof dealt === 'number') ? dealt : d;
       if (!isHuman) {
         const wtxt2 = w.unarmed ? '' : ` (${w.name})`;
-        this.say(`You STRIKE the ${this.encShortLabel(t) || this.encTheName(t)} for ${d}${wtxt2}.`);
+        this.say(`You STRIKE the ${this.encShortLabel(t) || this.encTheName(t)} for ${shown}${wtxt2}.`);
         this.tbStyle(5, 'solid hit');
       }
       // DRAMA (Steve 2026-10-07, B1): the strike LANDS — starburst on the monster.
       // Crits (DEAD AIM) get the full spectacle: CRIT! + damage number + shake.
       try {
-        if (wasCrit) this.drama('critHit', t.mx, t.my, d);
+        if (wasCrit) this.drama('critHit', t.mx, t.my, shown);
         else if (!isHuman) this.drama('hit', t.mx, t.my, { color: '#ffd54a' });
       } catch (e) {}
       // UNDERSTUDY (Steve 2026-10-06): it watches you fight and learns. Record
       // the weapon + damage for any watching understudy in this fight.
-      // (Records SHAMED damage — the heckler's words affect the copy too.)
+      // (Records what LANDED — the heckler's words and the shell affect the
+      // copy too. HONESTY 2026-10-09: was recording the pre-tbDamage swing.)
       try {
         const f2 = this.tbfight;
         if (f2) for (const um of f2.fighters) {
@@ -21250,7 +21273,7 @@
             um.usSeen = um.usSeen || {};
             const wname = (w && w.name) || 'strike';
             const rec = um.usSeen[wname] || { count: 0, dmg: 0 };
-            rec.count++; rec.dmg = Math.max(rec.dmg, d);
+            rec.count++; rec.dmg = Math.max(rec.dmg, shown);
             um.usSeen[wname] = rec;
           }
         }
@@ -21861,8 +21884,10 @@
         if (!seg.alive) continue;
         if (seg.mx === p.mx && seg.my === p.my) continue;
         const amount = dmg[0] + Math.floor(Math.random() * (dmg[1] - dmg[0]));
-        this.say('🦆 The train drives over you — duck ' + (s + 1) + ' bites as it passes! (' + amount + ')');
-        this.tbDamage('p', amount, 'duck bite (train)', seg.key, { quiet: true });
+        // HONESTY (break-it combat 2026-10-09, sibling sweep): armor/dodge
+        // apply in tbDamage. State what landed.
+        const trainLanded = this.tbDamage('p', amount, 'duck bite (train)', seg.key, { quiet: true });
+        this.say('🦆 The train drives over you — duck ' + (s + 1) + ' bites as it passes! (' + trainLanded + ')');
         if (!p.alive) break;
       }
     }
@@ -21953,8 +21978,9 @@
     for (const seg of touching) {
       const dmg = seg.mdef.snake.contactDamage;
       const amount = dmg[0] + Math.floor(Math.random() * (dmg[1] - dmg[0]));
-      this.say(`🦆 The duck bites! (${amount} damage)`);
-      this.tbDamage('p', amount, 'duck bite', seg.key, { quiet: true });
+      // HONESTY (break-it combat 2026-10-09, sibling sweep): state what landed.
+      const biteLanded = this.tbDamage('p', amount, 'duck bite', seg.key, { quiet: true });
+      this.say(`🦆 The duck bites! (${biteLanded} damage)`);
       if (!p.alive) break;
     }
     },
@@ -21962,7 +21988,12 @@
 
     tbDamage(targetKey, dmg, sourceLabel, sourceKey, opts) {
       const t = this.tbFighter(targetKey);
-      if (!t || !t.alive) return;
+      // HONESTY (break-it combat 2026-10-09): returns the ACTUAL damage
+      // applied, so callers state the number that landed — not the number
+      // they asked for. Monster-state modifiers (turtle bunker x0.15, boar
+      // winded x1.5, voice-mimic reveal x1.5, flyer grounded x1.5) apply
+      // here, AFTER tbPlayerStrike composed its "You STRIKE for D" line.
+      if (!t || !t.alive) return 0;
       const quiet = !!(opts && opts.quiet);
       // FOOTWORK (passive): agility lets you dodge. Not a guarantee — a chance.
       // Only vs direct attacks, not beams/AoE (you can't dodge a flood).
@@ -21991,7 +22022,7 @@
           this.practice('agi', 1); // dodging is agility practice
           // DRAMA (Steve 2026-10-07, B1): the dodge READS — MISS + ghost.
           try { this.drama('dodgeMiss', t.mx, t.my); } catch (e) {}
-          return;
+          return 0;
         }
       }
       let final = Math.max(0, Math.round(dmg));
@@ -22352,6 +22383,7 @@
           }
         }
       }
+      return final; // HONESTY (break-it combat 2026-10-09): the number that landed.
     },
 
     tbVillagerFalls(t) {
@@ -22425,19 +22457,21 @@
       f.terraformFelt || (f.terraformFelt = {});
       const first = !f.terraformFelt[t];
       f.terraformFelt[t] = true;
+      // HONESTY (break-it combat 2026-10-09, sibling sweep): armor/dodge can
+      // reduce these. Resolve first, state what landed.
       if (t === 'paper') {
-        this.say(first ? 'Paper cuts! The fine print bites. (1)' : 'Paper cuts. (1)');
-        this.tbDamage('p', 1, 'paper cuts', null, { quiet: true });
+        const landed = this.tbDamage('p', 1, 'paper cuts', null, { quiet: true });
+        this.say(first ? `Paper cuts! The fine print bites. (${landed})` : `Paper cuts. (${landed})`);
       } else if (t === 'claimed') {
-        this.say(first ? 'The ground is LEASED — it rejects you. (1) The signs mean it.' : 'Leased ground. (1)');
-        this.tbDamage('p', 1, 'leased ground', null, { quiet: true });
+        const landed = this.tbDamage('p', 1, 'leased ground', null, { quiet: true });
+        this.say(first ? `The ground is LEASED — it rejects you. (${landed}) The signs mean it.` : `Leased ground. (${landed})`);
       } else if (t === 'shadowed') {
         // THE MODERATOR (Steve 2026-10-06): shadowban field rejects you.
-        this.say(first ? 'The shadowbanned ground rejects you. (2) The black field is the tell — get out of it.' : 'Shadowbanned ground. (2)');
-        this.tbDamage('p', 2, 'shadowbanned ground', null, { quiet: true });
+        const landed = this.tbDamage('p', 2, 'shadowbanned ground', null, { quiet: true });
+        this.say(first ? `The shadowbanned ground rejects you. (${landed}) The black field is the tell — get out of it.` : `Shadowbanned ground. (${landed})`);
       } else {
-        this.say(first ? 'The scorched earth burns your feet. (1)' : 'Scorched ground. (1)');
-        this.tbDamage('p', 1, 'scorched earth', null, { quiet: true });
+        const landed = this.tbDamage('p', 1, 'scorched earth', null, { quiet: true });
+        this.say(first ? `The scorched earth burns your feet. (${landed})` : `Scorched ground. (${landed})`);
       }
       return 1;
     },
@@ -22512,14 +22546,9 @@
       }
       return false;
     },
-    // Validated move: returns true if moved, false if any tile blocked.
-    // Multi-tile monsters MUST use this — never assign mx/my directly.
-    tbMoveFighter(f, nx, ny) {
-      if (!this.tbCanOccupy(f, nx, ny)) return false;
-      f.mx = nx; f.my = ny;
-      return true;
-    },
-
+    // Validated movement is enforced at the step callbacks (tbCanOccupy) —
+    // multi-tile movers validate their whole footprint there. (tbMoveFighter
+    // removed 2026-10-09: zero callers, contract now lives in the callbacks.)
     tbVillagerTurn(v) {
       const f = this.tbfight;
       // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks (bleed/burn), expiry.
@@ -22533,7 +22562,10 @@
         return;
       }
       const danger = this.tbDangerCells(); // instinct, not knowledge
-      const blocked = (x, y) => this.tbBlocked(x, y) && !(x === v.mx && y === v.my);
+      // FOOTPRINT (break-it combat 2026-10-09): validate the mover's whole
+      // body, not just the top-left tile — a 2x2 stepping E/S/SE used to be
+      // "blocked" by its own body, paralyzing those directions.
+      const blocked = (x, y) => !this.tbCanOccupy(v, x, y);
       const dec = S.combat.villagerDecide(v, f.fighters, blocked, danger);
       for (const [nx, ny] of dec.moves) { v.mx = nx; v.my = ny; }
       if (dec.moves.length) this.tbVillagerSyncPos(v);
@@ -23261,7 +23293,10 @@
         return false; // generic attack engine
       }
       const foe = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
-      const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
+      // FOOTPRINT (break-it combat 2026-10-09): whole-body occupancy —
+      // the old top-left-only self-exclusion paralyzed 2x2 monsters moving
+      // E/S/SE (their own body "blocked" the step).
+      const blocked = (x, y) => !this.tbCanOccupy(m, x, y);
       const stepTo = (tx, ty) => {
         const st = this.tbStepToward(m, tx, ty, blocked);
         if (st) { m.mx = st.x; m.my = st.y; return true; }
@@ -24452,7 +24487,9 @@
           }
           if ((m.mdef.attack.pattern || {}).type === 'charge') {
             const last = tg.cells[tg.cells.length - 1];
-            if (last && !this.tbBlocked(last.cx, last.cy)) { m.mx = last.cx; m.my = last.cy; }
+            // FOOTPRINT (break-it combat 2026-10-09, sibling sweep): validate
+            // the whole body at the lane's end, not just the top-left tile.
+            if (last && this.tbCanOccupy(m, last.cx, last.cy)) { m.mx = last.cx; m.my = last.cy; }
           }
           // BULLDOZER: a missed charge ends winded — flanks soft, head elsewhere.
           // Next turn it tramples whatever is close. You dodged the lane; respect the aftermath.
@@ -24727,7 +24764,10 @@
       // circle synth (delegateCircle aliases managerCircle). Removed in
       // Phase-1; the helper itself was deleted 2026-10-08 with the retired
       // delegate_beast (zero call sites).
-      const blocked = (x, y) => this.tbBlocked(x, y) && !(x === m.mx && y === m.my);
+      // FOOTPRINT (break-it combat 2026-10-09): whole-body occupancy —
+      // the old top-left-only self-exclusion paralyzed 2x2 monsters moving
+      // E/S/SE (their own body "blocked" the step).
+      const blocked = (x, y) => !this.tbCanOccupy(m, x, y);
       const danger = this.tbDangerCells(m.key);
       const atk = m.mdef.attack;
       // ============ BATCH 3 (the uncanny): bespoke encounters ============
@@ -24848,8 +24888,9 @@
             for (const o of nipFoes) {
               const nd = S.combat.roll(nipDmg);
               const nwho = o.kind === 'player' ? 'you' : o.name;
-              this.say(`🦆 The line NIPS ${nwho} as it passes — beaks everywhere. (${nd})`);
-              this.tbDamage(o.key, nd, (this.encShortLabel(m) || 'ducks in a row') + "'s " + nipName, dhead.key, { quiet: true });
+              // HONESTY (break-it combat 2026-10-09, sibling sweep): state landed.
+              const nipLanded = this.tbDamage(o.key, nd, (this.encShortLabel(m) || 'ducks in a row') + "'s " + nipName, dhead.key, { quiet: true });
+              this.say(`🦆 The line NIPS ${nwho} as it passes — beaks everywhere. (${nipLanded})`);
               if (df.over) break;
             }
           } else {
@@ -26127,9 +26168,11 @@
         // each Addendum. This is the anti-turtle clock.
         if (p && p.alive && !p.fled && this.tbTerrainAt(p.mx, p.my) === 'claimed') {
           const rent = 1 + (m.llAddenda || 0);
-          this.say(known ? `"RENT'S DUE." The leased ground takes its cut. (${rent})`
-            : `The ground under your feet feels owned. It takes its cut. (${rent})`);
-          this.tbDamage('p', rent, 'rent collection', null, { quiet: true, undodgeable: true });
+          // HONESTY (break-it combat 2026-10-09, sibling sweep): armor can
+          // absorb rent. Resolve first, state what landed.
+          const rentLanded = this.tbDamage('p', rent, 'rent collection', null, { quiet: true, undodgeable: true });
+          this.say(known ? `"RENT'S DUE." The leased ground takes its cut. (${rentLanded})`
+            : `The ground under your feet feels owned. It takes its cut. (${rentLanded})`);
           if (!p.alive || (this.tbfight || {}).over) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
         }
         // EVICTION (anti-turtle): if you haven't moved since its last turn,

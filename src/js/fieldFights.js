@@ -10,6 +10,7 @@
 //   - hard: an average villager vs a real monster usually gets hurt, driven off, or killed. (code: fieldFight)
 //   - record: every fight returns rounds, wounds both ways, and outcome — feeds deeds, gossip, scars. (code: fieldFight)
 //   - cheap: round cap 15, no grid, no UI. (code: fieldFight)
+//   - alreadyDead: a world-monster entity with hp<=0 is a corpse, not a fight — early exit, no rewards. (code: fieldFight)
 //   - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
 //   - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
 // consumes:
@@ -135,6 +136,19 @@
       var vName = 'Someone';
       try { vName = this.displayName ? this.displayName(vid).split(' ')[0] : 'Someone'; } catch (e) {}
 
+      // ALREADY DEAD (break-it combat 2026-10-09): a world-monster entity
+      // with hp<=0 is a corpse, not a fight. Reachable: a vFlee round can
+      // coincide with the lead falling, so the world keeps a 0-hp monster.
+      // Without this, the next encounter "killed" it again — full cheer,
+      // +trust, and a hero deed for beating a body. No rewards for a corpse.
+      if (m && m.hp !== undefined && m.hp !== null && m.hp <= 0) {
+        rec.outcome = 'alreadyDead';
+        rec.rounds = 0; rec.vTaken = 0; rec.mDealt = 0;
+        rec.vHpLeft = vHp; rec.mHpLeft = 0;
+        rec.log.push(vName + ' finds the ' + mName + ' already dead — nothing to fight.');
+        return rec;
+      }
+
       // ---- awareness: contact check, not outcome ----
       // REAL inputs, not a flat roll: the villager's tracking XP (paying
       // attention) vs the monster's stealth profile (behavior, speed,
@@ -229,6 +243,8 @@
     // fieldFightSummary(rec, vName, mName) -> one honest sentence for gossip/news
     fieldFightSummary: function (rec, vName, mName) {
       var r = rec.rounds;
+      if (rec.outcome === 'alreadyDead')
+        return 'The ' + mName + ' was already dead when ' + vName + ' found it — old news, not a kill.';
       if (rec.outcome === 'vKill')
         return vName + ' killed the ' + mName + ' alone — ' + r + ' rounds, ' + rec.vTaken + ' taken. Word travels fast.';
       if (rec.outcome === 'mFlee')

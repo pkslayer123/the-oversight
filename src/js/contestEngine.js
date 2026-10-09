@@ -245,7 +245,7 @@
         log.push(`Wave ${w}: ${rec.log[rec.log.length - 1] || rec.outcome} (${rec.rounds} rounds, ${rec.vTaken} taken)`);
         if (rec.vTaken > 0) { try { this.hurtVillager(pid, rec.vTaken, 'contest'); } catch (e) {} }
         if (rec.outcome === 'vDie') return { outcome: 'died', detail: `killed on wave ${w} by ${beast.id}`, log };
-        if (rec.outcome === 'vFlee' || rec.outcome === 'standoff') {
+        if (rec.outcome === 'vFlee') {
           // Gauntlet: fleeing a wave is losing. Pit: driven off = lost.
           return { outcome: 'lost', detail: `driven off on wave ${w}`, log };
         }

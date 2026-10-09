@@ -39,6 +39,9 @@ const sayIdx = []; // {audio} -> index into says at fire time
 const says = [];
 function setupFight(monsterId, px, py, mx, my) {
   audio.length = 0; says.length = 0; sayIdx.length = 0;
+  // BREAK-IT combat 2026-10-09: startCombat now REFUSES mid-fight (no more
+  // silent clobber). Close any live fight honestly before starting the next.
+  if (Game.tbfight && !Game.tbfight.over) { try { Game.tbEnd('fled'); } catch (e) { Game.tbfight = null; } }
   Game.genRoster('Columbus, Ohio');
   Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
   Game.depart();
