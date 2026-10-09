@@ -2780,6 +2780,10 @@
     // RESOLVE AUDIO (Steve 2026-10-08): the contest's resolution beat lands
     // whether it was won, lost, died, or refused.
     try { this._cxBeat(this._cxB(ac.contestId, 'Resolve')); } catch (e) {}
+    // AUDIO HYGIENE (break-it audio r4, Steve 2026-10-09): contest beats can
+    // start sustained audio (contestTitheEscalate fires 'heartbeat') — no
+    // contest-end path stopped it, so it thumped forever after the show.
+    try { this.audioEvent('heartbeatStop'); } catch (e) {}
     if (outcome === 'won') {
       // DRAMA (Steve 2026-10-07): winning is a TV moment — confetti + hero card
       try {
@@ -2981,6 +2985,9 @@
     this.sysSay('📺 ' + this._contestDeathLine(contest, how, pname));
     this.sysSay(`📺 The Death Reel will be tasteful. It won't be.`);
     try { this._cxBeat(this._cxB(ac.contestId, 'Resolve')); } catch (e) {}
+    // AUDIO HYGIENE (break-it audio r4, Steve 2026-10-09): see _contestEnd —
+    // sustained beat audio (tithe's heartbeat) must die with the contest.
+    try { this.audioEvent('heartbeatStop'); } catch (e) {}
     // DRAMA (Steve 2026-10-07): death on camera gets the sympathetic dim
     try {
       let integ = 0;
@@ -3039,6 +3046,9 @@
       try { this._contestResolveOthers(ac); } catch (e) {}
     }
     try { this._cxBeat(this._cxB(ac.contestId, 'Resolve')); } catch (e) {}
+    // AUDIO HYGIENE (break-it audio r4, Steve 2026-10-09): see _contestEnd —
+    // sustained beat audio (tithe's heartbeat) must die with the contest.
+    try { this.audioEvent('heartbeatStop'); } catch (e) {}
     ac.phase = 'done';
     this.state.activeContest = null;
     return { done: true, outcome: 'refused' };

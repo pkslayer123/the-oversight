@@ -6477,6 +6477,110 @@
       sd.connect(sdg); sdg.connect(sfxBus);
       sd.start(t); sd.stop(t + 0.55);
     }
+    // WAVE-2 VECTORS (Steve 2026-10-09, 6d31d75): the giant mosquito and the
+    // alien tick arrived as real monster fights with audioEvent hooks but no
+    // registry voices — their moments played silent (break-it audio r4). Six
+    // one-shot voices, called plainly by their earthly names: the shock is
+    // that it's just a mosquito. Just a tick.
+    function mosquitoWhine() {
+      // CIRCLE: a whine, high then higher — too loud for anything that small.
+      // A thin sine with a slow wobble, climbing a third and holding wrong.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(2400, t);
+      o.frequency.exponentialRampToValueAtTime(3000, t + 0.9); // climbs, never lands
+      const wob = ctx.createOscillator(), wobG = ctx.createGain();
+      wob.type = 'sine'; wob.frequency.value = 5.5; wobG.gain.value = 90; // wingbeat wobble
+      wob.connect(wobG); wobG.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.09, t + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); wob.start(t); o.stop(t + 1.15); wob.stop(t + 1.15);
+    }
+    function mosquitoDive() {
+      // DIVE LINEUP: the whine climbs an octave and steadies — it's lining up.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(1400, t);
+      o.frequency.exponentialRampToValueAtTime(2800, t + 0.35); // the octave climb
+      o.frequency.setValueAtTime(2800, t + 0.35); // ...and steadies. Locked.
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 3200;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.85);
+    }
+    function mosquitoDrink() {
+      // THE DRINK: the proboscis slides in — low wet pulses, slow, drawing.
+      if (!ensure()) return;
+      const t = ctx.currentTime, dur = 1.0;
+      const nz = noise(dur), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (!nz) return;
+      nf.type = 'lowpass'; nf.frequency.value = 700; nf.Q.value = 2;
+      const suck = ctx.createOscillator(), sg = ctx.createGain(); // the draw: ~3Hz pulses
+      suck.type = 'sine'; suck.frequency.value = 3.1; sg.gain.value = 0.5;
+      suck.connect(sg); sg.connect(ng.gain);
+      ng.gain.setValueAtTime(0.22, t);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+      nz.start(t); nz.stop(t + dur); suck.start(t); suck.stop(t + dur);
+    }
+    function tickClick() {
+      // QUESTING: legs waving in the grass — dry irregular clicks, fishing.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.16, 0.29, 0.52, 0.61, 0.88].forEach((dt, i) => {
+        const nz = noise(0.05), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'highpass'; nf.frequency.value = 3800;
+        const v = i === 3 ? 0.16 : 0.09; // one leg clicks harder — it's found something
+        ng.gain.setValueAtTime(0.0001, t + dt);
+        ng.gain.exponentialRampToValueAtTime(v, t + dt + 0.008);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.05);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + dt); nz.stop(t + dt + 0.08);
+      });
+    }
+    function tickLatch() {
+      // THE LATCH: mouthparts in before you can move — a soft puncture.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const th = ctx.createOscillator(), tg = ctx.createGain(); // the puncture: low thud
+      th.type = 'sine';
+      th.frequency.setValueAtTime(160, t);
+      th.frequency.exponentialRampToValueAtTime(60, t + 0.18);
+      tg.gain.setValueAtTime(0.3, t);
+      tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+      th.connect(tg); tg.connect(sfxBus);
+      th.start(t); th.stop(t + 0.3);
+      const sn = ctx.createOscillator(), sg = ctx.createGain(); // the tiny high snap of the barbs
+      sn.type = 'square'; sn.frequency.setValueAtTime(3400, t + 0.05);
+      sg.gain.setValueAtTime(0.0001, t + 0.05);
+      sg.gain.exponentialRampToValueAtTime(0.05, t + 0.07);
+      sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      sn.connect(sg); sg.connect(sfxBus);
+      sn.start(t + 0.05); sn.stop(t + 0.2);
+    }
+    function tickRelease() {
+      // THE RELEASE: it lets go with a pop — a quick pitch-down blip, done.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(900, t);
+      o.frequency.exponentialRampToValueAtTime(220, t + 0.12); // the pop falling away
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.2, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.25);
+    }
     function snakeSplit() {
       // THE SPLIT: wet tearing — one becomes two. Deeply wrong.
       if (!ensure()) return;
@@ -10683,6 +10787,13 @@
       sunbaskerBite() { sunbaskerBite(); }, // (Steve 2026-10-07): bite-land hook was a no-op until now
       // AUDIO COMPLETION (Steve 2026-10-05): every fired event now resolves.
       heartbeat() { heartbeat(72); },
+      // HEARTBEAT KILL SWITCH (break-it audio r4, Steve 2026-10-09): the
+      // heartbeat is a sustained setInterval — combatEnd kills it, but two
+      // non-combat paths start it with no ending: the glasswing trap's miss
+      // branch (game.js gwTrapTick) and the tithe contest's escalate beat
+      // (contests.js CX_BEAT_DEFS). Both now fire heartbeatStop; combatEnd
+      // stays the full kill switch (heartbeat + charge + sweep + hum).
+      heartbeatStop() { stopHeartbeat(); },
       // Animals
       animalBite() { animalBite(); },
       animalBolt() { animalBolt(); },
@@ -10718,6 +10829,14 @@
       mothFlash() { mothFlash(); },
       mothFlutter() { mothFlutter(); },
       snakeSplit() { snakeSplit(); },
+      // WAVE-2 VECTORS (Steve 2026-10-09, 6d31d75 — break-it audio r4):
+      // the giant mosquito + alien tick fired these with no registry voices.
+      mosquitoWhine() { mosquitoWhine(); }, // circle — too loud for anything that small
+      mosquitoDive() { mosquitoDive(); },   // dive lineup — the whine climbs an octave and steadies
+      mosquitoDrink() { mosquitoDrink(); }, // the drink — proboscis in
+      tickClick() { tickClick(); },         // questing — legs waving, fishing
+      tickLatch() { tickLatch(); },         // the latch — mouthparts in
+      tickRelease() { tickRelease(); },     // the release — lets go with a pop
       // Ducks in a row: the formation's voice (Steve 2026-10-06)
       ducksQuack() { ducksQuack(); },
       ducksQuackCut() { ducksQuackCut(); },

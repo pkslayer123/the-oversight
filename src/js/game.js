@@ -14764,6 +14764,12 @@
           this.say('A shadow detaches from the clouds — and hits empty dirt where you were. Wings scream, climbing back into the sun.');
           this.audioEvent('glasswingDive');
           this.audioEvent('glasswingClimb');
+          // AUDIO HYGIENE (break-it audio r4, Steve 2026-10-09): the trap
+          // trigger started the combat heartbeat (dread while the shadow
+          // closed) — the miss path never stopped it, so it thumped forever
+          // outside combat. The hit path is fine (startCombat re-heartbeats;
+          // tbEnd's combatEnd kills it).
+          this.audioEvent('heartbeatStop');
           s.gwTrap = null;
         }
       } else {
