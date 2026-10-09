@@ -217,20 +217,27 @@ function giveMats(s, mats) {
       `away rabbits after 1 forced day: ${away.wildlife.cottontail_rabbit}`);
     ok('E4 mechanism: camped tile stays honestly empty (absence gate)', (home.wildlife.cottontail_rabbit || 0) === 0,
       `home rabbits after 1 forced day: ${home.wildlife.cottontail_rabbit || 0}`);
-    // --- rate: 60 days seeded — the away tile recovers meaningful wildlife ---
-    away.wildlife = {}; // re-zero the probe
-    const r4 = mulberry32(SEED + 4);
+    // --- rate: 60 days, EVERY roll forced to hit (deterministic, zero RNG) ---
+    // With Math.random()=()=>0.0, every recolonization/breeding/migration
+    // roll fires. The absence gate must hold airtight: the camped tile gets
+    // NOTHING from recolonization, while away tiles re-seed. (Proved
+    // 2026-10-09: the old seeded aggregate was flaky by construction — on
+    // some seeds natural migration wanders a rabbit onto the camped tile,
+    // which is honest wildlife movement, not the recolonization gate
+    // failing. Per the proof-test RNG-stability lesson, the mechanism is
+    // proved deterministically here; migration trickle is design, not a lie.)
+    away.wildlife = {}; home.wildlife = {}; // re-zero both probes
     const realR = Math.random;
-    Math.random = () => r4();
+    Math.random = () => 0.0;
     for (let d = 0; d < 60; d++) { s.day++; Game.simEcology(); }
     Math.random = realR;
     const awaySpecies = Object.keys(away.wildlife).filter(k => away.wildlife[k] > 0).length;
-    const backHome = (home.wildlife || {}).cottontail_rabbit || 0;
-    ok('E4 away tile recovers real wildlife within 60 days', awaySpecies >= 5,
+    const homeSpecies = Object.keys(home.wildlife || {}).filter(k => (home.wildlife || {})[k] > 0).length;
+    ok('E4 away tile recovers real wildlife within 60 forced days', awaySpecies >= 5,
       `species present on away tile after 60d: ${awaySpecies} (want >= 5)`);
-    ok('E4 camped tile stays honestly empty over 60 days', backHome === 0,
-      `cottontail_rabbit on camped tile after 60d: ${backHome} (recolonizing under your nose would lie about "hunted out")`);
-    note(`E4: species zeroed map-wide — away tile recovered ${awaySpecies} species in 60d; camped tile rabbits=${backHome}`);
+    ok('E4 absence gate holds airtight over 60 forced days', homeSpecies === 0,
+      `species on camped tile after 60d of every-roll-hits: ${homeSpecies} (recolonization under your nose would lie about "hunted out")`);
+    note(`E4: 60 forced days — away tile recovered ${awaySpecies} species; camped tile species=${homeSpecies} (absence gate airtight)`);
     logText();
   }
 

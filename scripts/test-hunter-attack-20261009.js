@@ -141,9 +141,12 @@ function check(name, cond, detail) {
   tickLog.length = 0;
   Game.makePemmican();
   const bars = inv.filter(i => i.itemId === 'pemmican').reduce((a, i) => a + (i.units || 1), 0);
-  const outKcal = bars * 600;
+  // HONEST MEASURE (hunter loop 2026-10-09): small sets pay honest small
+  // bars (kcalEach scaled per set) — measuring bars*600 overstated output
+  // and hid the fix behind a +-300 tolerance. Sum the real calories.
+  const outKcal = inv.filter(i => i.itemId === 'pemmican').reduce((a, i) => a + (i.units || 1) * (i.kcalEach || 0), 0);
   console.log(`  input ${inKcal} kcal -> ${bars} bars = ${outKcal} kcal (canon retention ~97% -> ~${Math.round(inKcal * 0.97)})`);
-  check('pemmican: no calorie creation (output ~= 97% of input, half-bar granularity)', Math.abs(outKcal - inKcal * 0.97) <= 300, `${outKcal} vs ~${Math.round(inKcal * 0.97)}`);
+  check('pemmican: no calorie creation (output ~= 97% of input)', Math.abs(outKcal - inKcal * 0.97) <= Math.max(60, inKcal * 0.05), `${outKcal} vs ~${Math.round(inKcal * 0.97)}`);
   check('pemmican: costs 20 ticks', tickLog.includes(20), tickLog.join(','));
 
   console.log('== B2. PEMMICAN CANON CASE (full inputs -> 3 bars) ==');

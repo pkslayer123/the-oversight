@@ -4,6 +4,7 @@
 // provides:
 //   - foodMarker()
 //   - cleanCarcass()
+//   - carcassToMeat()
 //   - cookFood()
 //   - renderFat()
 //   - pemmicanSets()
@@ -377,6 +378,116 @@
       return null;
     },
 
+    // CARCASS CONVERSION (shared pipeline): one carcass -> cleaned meat +
+    // byproducts. cleanCarcass AND Field Dress (ability) share this — one
+    // set of yields, one set of risks. The ability skips the knife check
+    // (that is its value); everything else — spoilage refusal upstream,
+    // yield fractions, portion law, disease, trichinosis, fat, parts — is
+    // identical. Returns the butchering-yields list for the caller's say.
+    // (hunter break-it 2026-10-09: dress_game used to convert carcasses to
+    // instant safe kcal — no knife, no cooking, no trichinosis, rot accepted.
+    // The card promised "usable meat plus hide, sinew, bone"; the engine
+    // delivered neither meat nor parts. Now the card is the engine.)
+    carcassToMeat(inv, i, knows) {
+      const it = inv[i];
+      const gross = it.hiddenKcal || 0;
+      const got = [];
+      // yield: known 40%, blind-messy 30%.
+      // PORTION LAW (Steve 2026-10-09, bear rework): no 30k-kcal slabs.
+      // Portions cap at ~500 kcal — a 2000-kcal day takes four 500s. Big
+      // game becomes many honest pieces, not one lump. (Engine-wide: deer,
+      // elk, moose, bison all chunk the same way.)
+      const yfrac = knows ? 0.40 : 0.30;
+      const net = Math.round(gross * yfrac);
+      const units = Math.max(1, Math.round(net / 500));
+      const per = Math.round(net / units);
+      // MONSTER MEAT (Steve 2026-10-05): if you don't know it's safe, it doesn't show.
+      // Weight is honest (kg always visible). Edibility and calories stay hidden
+      // until you've learned this creature is food — via cautious testing,
+      // a villager's word, or the Codex. No free knowledge from the UI.
+      const meatId = (it.plantId || '').replace(/^meat_/, '');
+      const isMonsterMeat = (this.data.monsters || []).some(m => m.id === meatId);
+      const foodSafe = !isMonsterMeat || this.monsterFoodSafe(meatId);
+      it.foodKind = 'meat'; it.foodState = 'cleaned';
+      it.edible = foodSafe;
+      it.units = units; it.unit = 'portion';
+      // Calories hidden until known-safe. The gross is remembered for when you learn.
+      it.kcalEach = foodSafe ? per : 0;
+      it.hiddenKcal = gross; // full gross remembered for cooking
+      if (!foodSafe) {
+        it.prep = '⚠️ Unknown flesh. You have no idea if this is food or poison. Test it cautiously, or ask someone who knows.';
+      }
+      it.diseaseRisk = Object.assign({}, RISK.rawMeat);
+      // TRICHINOSIS (disease rework 2026-10-09): bear and boar carry it.
+      // Only cooking through (foodState 'cooked') kills it — smoking won't.
+      if (['black_bear', 'wild_boar', 'javelina'].includes(meatId)) {
+        it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25 };
+      }
+      // TICKS (Steve 2026-10-09): deer carry them — but these are the tiny
+      // ambient kind, not the alien monster. One may latch on (the attached-
+      // tick system: narrated, removable, mild fever at worst). Lemons is
+      // alien now — the alien tick MONSTER's bite only. Never from a deer.
+      if (meatId === 'white_tailed_deer' && Math.random() < 0.15 &&
+          !this.hasStatus('scholar', 'tick_attached')) {
+        this.say('Something tiny and dark was in the hide \u2014 a tick, buried in. It\u2019s on you now, latched at the wrist.');
+        this.applyStatus('scholar', 'tick_attached', { source: 'the deer hide' });
+      }
+      it.spoilDay = this.state.scholar.day + 2;
+      it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
+      // unknown flesh keeps its warning — the generic risky-raw prep would
+      // bury the honest "you don't know if this is food" state.
+      if (foodSafe) it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it. Spoils in ~2 days.';
+      it.kg = Math.max(0.2, gross * yfrac / 1000);
+      // BUTCHERING YIELDS (Steve 2026-10-05): hide, bones, feathers, antlers,
+      // shell — the parts the knowledge text promises. Charred remains give
+      // nothing but the meat (the beam unmade the rest).
+      if (!it.charred) {
+        const aid = (it.plantId || '').replace(/^meat_/, '');
+        const adef = (this.data.animals || []).find(x => x.id === aid) || {};
+        const by = adef.butcher || {};
+        const matName = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell', quill: 'Quill', tusk: 'Tusk' };
+        const matKg = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0, quill: 0.02, tusk: 0.3 };
+        // FAT (Steve 2026-10-09, bear rework): fat is food, not a material.
+        // Raw slabs — rich calories, but inedible until rendered over fire.
+        // ~20% of the gross lives in the fat. Knowledge-gated: the prep is
+        // honest-blind until you know rendering.
+        if ((by.fat || 0) > 0) {
+          const fatUnits = by.fat;
+          const fatKcal = Math.max(1, Math.round(gross * 0.20 / fatUnits));
+          const knowRender = this.knowsTechnique('render');
+          inv.push({
+            plantId: 'fat_' + aid, foodKind: 'fat', foodState: 'raw',
+            edible: false, units: fatUnits, unit: 'slab',
+            kcalEach: 0, hiddenKcal: fatKcal,
+            spoilDay: this.state.scholar.day + 3,
+            kg: Math.max(0.2, fatKcal * fatUnits / 900),
+            name: (adef.name || 'Animal') + ' fat (raw)',
+            prep: knowRender
+              ? 'Thick white slabs. Render low and slow over fire — liquid gold, and it keeps.'
+              : 'Thick white slabs of fat. Rich calories locked inside — if you knew how to render it.',
+          });
+          got.push(fatUnits + ' slabs of raw fat');
+        }
+        for (const mk of Object.keys(by)) {
+          if (mk === 'fat') continue; // handled above — fat is food
+          const n2 = by[mk] || 0;
+          if (n2 <= 0) continue;
+          // ROUTING (hunter break-it 2026-10-09): the hide/bones go where
+          // the carcass came from (inv), not silently into the cleaner's
+          // pack. Cleaning the village stash's carcass used to teleport
+          // its hide into your pockets — theft should be a deliberate take,
+          // not a side effect of labor.
+          inv.push({
+            material: mk, units: n2, name: (matName[mk] || mk) + (n2 > 1 ? 's' : ''),
+            kcalEach: 0, spoilDay: 9999, kg: (matKg[mk] || 0.3) * n2,
+          });
+          got.push(n2 + ' ' + (matName[mk] || mk).toLowerCase() + (n2 > 1 ? 's' : ''));
+        }
+        if (got.length) this.say('Butchering yields: ' + got.join(', ') + '.');
+      }
+      return got;
+    },
+
     // CLEAN: gutting. Needs a knife + knowing how. Blind attempts are messy but teach.
     cleanCarcass(idx, container) {
       const inv = container || this.state.scholar.inventory;
@@ -416,103 +527,9 @@
       const knows = this.knowsTechnique('clean');
       let n = 0;
       for (const i of targets) {
-        const it = inv[i];
-        const gross = it.hiddenKcal || 0;
-        // yield: known 40%, blind-messy 30%.
-        // PORTION LAW (Steve 2026-10-09, bear rework): no 30k-kcal slabs.
-        // Portions cap at ~500 kcal — a 2000-kcal day takes four 500s. Big
-        // game becomes many honest pieces, not one lump. (Engine-wide: deer,
-        // elk, moose, bison all chunk the same way.)
-        const yfrac = knows ? 0.40 : 0.30;
-        const net = Math.round(gross * yfrac);
-        const units = Math.max(1, Math.round(net / 500));
-        const per = Math.round(net / units);
-        // MONSTER MEAT (Steve 2026-10-05): if you don't know it's safe, it doesn't show.
-        // Weight is honest (kg always visible). Edibility and calories stay hidden
-        // until you've learned this creature is food — via cautious testing,
-        // a villager's word, or the Codex. No free knowledge from the UI.
-        const meatId = (it.plantId || '').replace(/^meat_/, '');
-        const isMonsterMeat = (this.data.monsters || []).some(m => m.id === meatId);
-        const foodSafe = !isMonsterMeat || this.monsterFoodSafe(meatId);
-        it.foodKind = 'meat'; it.foodState = 'cleaned';
-        it.edible = foodSafe;
-        it.units = units; it.unit = 'portion';
-        // Calories hidden until known-safe. The gross is remembered for when you learn.
-        it.kcalEach = foodSafe ? per : 0;
-        it.hiddenKcal = gross; // full gross remembered for cooking
-        if (!foodSafe) {
-          it.prep = '⚠️ Unknown flesh. You have no idea if this is food or poison. Test it cautiously, or ask someone who knows.';
-        }
-        it.diseaseRisk = Object.assign({}, RISK.rawMeat);
-        // TRICHINOSIS (disease rework 2026-10-09): bear and boar carry it.
-        // Only cooking through (foodState 'cooked') kills it — smoking won't.
-        if (['black_bear', 'wild_boar', 'javelina'].includes(meatId)) {
-          it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25 };
-        }
-        // TICKS (Steve 2026-10-09): deer carry them — but these are the tiny
-        // ambient kind, not the alien monster. One may latch on (the attached-
-        // tick system: narrated, removable, mild fever at worst). Lemons is
-        // alien now — the alien tick MONSTER's bite only. Never from a deer.
-        if (meatId === 'white_tailed_deer' && Math.random() < 0.15 &&
-            !this.hasStatus('scholar', 'tick_attached')) {
-          this.say('Something tiny and dark was in the hide \u2014 a tick, buried in. It\u2019s on you now, latched at the wrist.');
-          this.applyStatus('scholar', 'tick_attached', { source: 'the deer hide' });
-        }
-        it.spoilDay = this.state.scholar.day + 2;
-        it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
-        // unknown flesh keeps its warning — the generic risky-raw prep would
-        // bury the honest "you don't know if this is food" state.
-        if (foodSafe) it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it. Spoils in ~2 days.';
-        it.kg = Math.max(0.2, gross * yfrac / 1000);
-        // BUTCHERING YIELDS (Steve 2026-10-05): hide, bones, feathers, antlers,
-        // shell — the parts the knowledge text promises. Charred remains give
-        // nothing but the meat (the beam unmade the rest).
-        if (!it.charred) {
-          const aid = (it.plantId || '').replace(/^meat_/, '');
-          const adef = (this.data.animals || []).find(x => x.id === aid) || {};
-          const by = adef.butcher || {};
-          const matName = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell', quill: 'Quill', tusk: 'Tusk' };
-          const matKg = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0, quill: 0.02, tusk: 0.3 };
-          const got = [];
-          // FAT (Steve 2026-10-09, bear rework): fat is food, not a material.
-          // Raw slabs — rich calories, but inedible until rendered over fire.
-          // ~20% of the gross lives in the fat. Knowledge-gated: the prep is
-          // honest-blind until you know rendering.
-          if ((by.fat || 0) > 0) {
-            const fatUnits = by.fat;
-            const fatKcal = Math.max(1, Math.round(gross * 0.20 / fatUnits));
-            const knowRender = this.knowsTechnique('render');
-            inv.push({
-              plantId: 'fat_' + aid, foodKind: 'fat', foodState: 'raw',
-              edible: false, units: fatUnits, unit: 'slab',
-              kcalEach: 0, hiddenKcal: fatKcal,
-              spoilDay: this.state.scholar.day + 3,
-              kg: Math.max(0.2, fatKcal * fatUnits / 900),
-              name: (adef.name || 'Animal') + ' fat (raw)',
-              prep: knowRender
-                ? 'Thick white slabs. Render low and slow over fire — liquid gold, and it keeps.'
-                : 'Thick white slabs of fat. Rich calories locked inside — if you knew how to render it.',
-            });
-            got.push(fatUnits + ' slabs of raw fat');
-          }
-          for (const mk of Object.keys(by)) {
-            if (mk === 'fat') continue; // handled above — fat is food
-            const n2 = by[mk] || 0;
-            if (n2 <= 0) continue;
-            // ROUTING (hunter break-it 2026-10-09): the hide/bones go where
-            // the carcass came from (inv), not silently into the cleaner's
-            // pack. Cleaning the village stash's carcass used to teleport
-            // its hide into your pockets — theft should be a deliberate take,
-            // not a side effect of labor.
-            inv.push({
-              material: mk, units: n2, name: (matName[mk] || mk) + (n2 > 1 ? 's' : ''),
-              kcalEach: 0, spoilDay: 9999, kg: (matKg[mk] || 0.3) * n2,
-            });
-            got.push(n2 + ' ' + (matName[mk] || mk).toLowerCase() + (n2 > 1 ? 's' : ''));
-          }
-          if (got.length) this.say('Butchering yields: ' + got.join(', ') + '.');
-        }
+        this.carcassToMeat(inv, i, knows);
         n++;
+        const it = inv[i];
         if (!knows) {
           it._messyCleans = (it._messyCleans || 0) + 1;
           if (it._messyCleans >= 1) this.learnTechnique('clean', 'trial');

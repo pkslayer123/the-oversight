@@ -669,11 +669,19 @@
       // Field Dress with no carcass in the pack used to pay the 30-min /
       // 40-kcal cost and then fizzle. The no-carcass check runs here, before
       // payment, like the per-fight refusals above.
+      // ROT (hunter break-it 2026-10-09): a turned carcass is refused here too —
+      // dressing rot into dinner was the old impl's worst lie. The rot stays
+      // for the pack's Clean path to discard; no cost is paid for a refusal.
       var inv = (game.state.scholar && game.state.scholar.inventory) || [];
+      var rotten = false;
       for (var i = inv.length - 1; i >= 0; i--) {
         var it = inv[i];
-        if (it && it.foodKind === 'meat' && it.foodState === 'carcass' && !it.charred) return { ok: true };
+        if (it && it.foodKind === 'meat' && it.foodState === 'carcass' && !it.charred) {
+          if (game.isSpoiled(it)) { rotten = true; continue; }
+          return { ok: true };
+        }
       }
+      if (rotten) return { ok: false, why: 'That carcass has turned — maggots, smell, the whole sad story. Dressing rot doesn\'t make dinner. Beyond dressing.' };
       return { ok: false, why: 'No game to dress. Hunt or trap something first, then break it down clean.' };
     },
   };
@@ -786,6 +794,14 @@
         return false;
       }
       var c = inv[idx];
+      // ROT (hunter break-it 2026-10-09): belt-and-braces — the precheck
+      // refuses rot before payment, but a carcass that turned mid-tap is
+      // discarded honestly, never dressed.
+      if (game.isSpoiled(c)) {
+        game.say('The ' + c.name + ' went bad — maggots, smell, the whole sad story. Beyond dressing. You leave it for the flies. (Field Dress)');
+        inv.splice(idx, 1);
+        return false;
+      }
       // NO DOUBLE-DIP (hunter loop 2026-10-07): the hunt.meat_yield modifier
       // is baked into hiddenKcal when the carcass is created — at the strike
       // kill AND at the trap catch (game.js checkTraps). Your skill earned the
@@ -794,13 +810,18 @@
       // (hunter break-it 2026-10-08b: the old "(Field Dressing ×1.3)" line
       // implied the dress action applied the bonus — for trapped game it had
       // never applied at all).
-      var yield_ = Math.round(c.hiddenKcal || 100);
-      inv.splice(idx, 1);
-      // BANK CAP (break-it food r3 2026-10-08): no kcal source bypasses the
-      // cap — dressed meat is no exception (same class as blood_magic's fix).
-      var _cap = game.kcalCap ? game.kcalCap() : 2400;
-      s.kcal = Math.min(_cap, (s.kcal || 0) + yield_);
-      game.say('You work fast and clean — hide, sinew, bone, all usable. +' + yield_ + ' kcal of meat, plus parts. (Field Dress)');
+      // SHARED PIPELINE (hunter break-it 2026-10-09): dress_game used to
+      // convert the carcass to instant safe kcal on the scholar's bar — no
+      // knife, no cooking, no trichinosis, rot accepted — while the card
+      // promised "usable meat plus hide, sinew, bone" and delivered neither
+      // meat nor parts. Now it runs the same carcassToMeat conversion as
+      // cleanCarcass: honest portions, raw disease risk, trichinosis on
+      // bear/boar/javelina, fat slabs, hide/bone parts. The ability's value
+      // is the missing knife — a System edge, not a pipeline bypass. The
+      // 30-min / 40-kcal action cost is paid by useAbility before dispatch.
+      game.carcassToMeat(inv, idx, game.knowsTechnique('clean'));
+      game.say('You work fast and clean — the carcass becomes honest portions, hide and bone and sinew kept. It\'s still raw: cook it, or preserve it. Spoils fast. (Field Dress)');
+      try { game.audioEvent('animalButcher'); } catch (e) {}
       return true;
     },
 
