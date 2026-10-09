@@ -150,6 +150,9 @@ function makeLink(asSub) {
   // (may pass or fail on standing; just assert it returns null when weak OR handles)
   Game.state.systemArrived = true; Game.state.village.pantryKcal = 20000;
   link.trust = 65;
+  // THE TABLE IS A WEEKLY VERB (break-it regional 2026-10-09): the bid above
+  // consumed this week's hard conversation — advance a week for the next one.
+  Game.state.scholar.day += 7;
   var res = Game.bidForPrimacy(link.id);
   ok('primacy bid flips at high trust', res === 'flipped');
   ok('haven is primary now', link.primary === 'haven' && link.subordinate === 'vtest');

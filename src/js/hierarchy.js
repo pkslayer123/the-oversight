@@ -28,6 +28,9 @@
 //   - regional_dawn: Haven's first-ever link stages a played beat, not a threshold flip — the System overlay grows into coordination (networkLive) and the player chooses Haven's first gesture (gift/visit/cold), each with real costs. (code: hierarchy.js)
 //   - speaker_is_named: theirSpeaker is a named person from the sim's roster; when the sim kills them, theirLeaderDied fires the mirror succession beat. (code: hierarchy.js)
 //   - rumors_are_delivered: queued village rumors are spoken one per day at the day boundary — "heard of them" is reachable. (code: hierarchy.js)
+//   - tribute_partials_dont_double_count: weekly tribute payments accumulate (tributePaidKcal); linkTick charges the true shortfall once — paying half is strictly better than paying nothing. (code: hierarchy.js)
+//   - demand_honor_is_proportional: honoring a tribute demand with a thin pantry grants proportional trust and honest copy, never a free +8 on empty hands; an already-loaned representative extends instead of being clobbered. (code: hierarchy.js)
+//   - the_table_is_weekly: renegotiateLink/bidForPrimacy are one hard conversation per week (lastTableWeek) — the climb is paced in weeks, not ground out in an afternoon. (code: hierarchy.js)
 //   - diplomacy_is_knowledge_gated: proposeLink/proposeAlliance refuse villages the player never heard of or visited (knowsVillage). (code: hierarchy.js)
 // consumes:
 //   - state.otherVillages
@@ -385,13 +388,24 @@
         try { rep = this.representative(); } catch (e) {}
         var rnm = 'Someone';
         try { rnm = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
-        link.trust = Math.min(100, link.trust + 8);
-        this._linkNote(link, 'accord', 'First gesture: ' + rnm + ' sits at their fire.');
         if (rep && rep.id !== this.villagerId) {
           var m = this.mshipState();
-          m.loaned = { vid: rep.id, untilDay: ((this.state.scholar || {}).day || 0) + 3, to: other };
-          this.say(`🚶 ${rnm} walks out to sit at ${onm}'s fire for three days — Haven's face, their time. Still ours; membership needs no presence. (Trust +8.)`);
+          var day0 = (this.state.scholar || {}).day || 0;
+          if (m.loaned && day0 < (m.loaned.untilDay || 0)) {
+            // LOANS DON'T CLOBBER (break-it regional 2026-10-09): the gesture
+            // becomes a message instead of erasing an in-flight loan.
+            link.trust = Math.min(100, link.trust + 4);
+            this._linkNote(link, 'accord', 'First gesture: word sent — the speaker was already abroad.');
+            this.say(`🚶 ${rnm} is already abroad at another fire — Haven's first gesture is a runner with word instead of a seat at the table. It lands softer. (Trust +4.)`);
+          } else {
+            m.loaned = { vid: rep.id, untilDay: day0 + 3, to: other };
+            link.trust = Math.min(100, link.trust + 8);
+            this._linkNote(link, 'accord', 'First gesture: ' + rnm + ' sits at their fire.');
+            this.say(`🚶 ${rnm} walks out to sit at ${onm}'s fire for three days — Haven's face, their time. Still ours; membership needs no presence. (Trust +8.)`);
+          }
         } else {
+          link.trust = Math.min(100, link.trust + 8);
+          this._linkNote(link, 'accord', 'First gesture: the player sits at their fire.');
           this.say(`🚶 You go yourself — days of your life at a stranger's fire. That's the price of being the face Haven earned. (Trust +8.)`);
         }
         return true;
@@ -436,16 +450,20 @@
       var owed = link.tributeKcalPerWeek;
       var paid = this._removePantryKcal(kcal == null ? owed : kcal);
       var week = this._week();
-      if (paid >= owed) {
+      // PARTIALS DON'T DOUBLE-COUNT (break-it regional 2026-10-09): the
+      // week's payments accumulate in tributePaidKcal; linkTick charges the
+      // true shortfall ONCE. The old code added (owed - paid) here AND the
+      // full owed in linkTick — paying half was worse than paying nothing.
+      if (link.tributeWeek !== week) { link.tributeWeek = week; link.tributePaidKcal = 0; }
+      link.tributePaidKcal = (link.tributePaidKcal || 0) + paid;
+      if (link.tributePaidKcal >= owed) {
         link.tributePaidWeek = week; link.arrears = 0;
         link.trust = Math.min(100, link.trust + 3);
-        this._linkNote(link, 'tribute', 'Paid ' + paid.toLocaleString() + ' kcal. Current.');
-        this.say(`Tribute paid: ${paid.toLocaleString()} kcal walks out of the pantry toward ${this._ovName(link.primary)}. The relationship holds.`);
+        this._linkNote(link, 'tribute', 'Paid ' + link.tributePaidKcal.toLocaleString() + ' kcal. Current.');
+        this.say(`Tribute paid: ${link.tributePaidKcal.toLocaleString()} kcal walks out of the pantry toward ${this._ovName(link.primary)}. The relationship holds.`);
       } else {
-        link.arrears += (owed - paid);
-        link.trust = Math.max(0, link.trust - 2);
-        this._linkNote(link, 'tribute', 'Short: ' + paid.toLocaleString() + '/' + owed.toLocaleString() + ' kcal. Arrears ' + link.arrears.toLocaleString() + '.');
-        this.say(`Tribute short — ${paid.toLocaleString()} of ${owed.toLocaleString()} kcal. They'll count it. Arrears grow teeth.`);
+        this._linkNote(link, 'tribute', 'Short: ' + link.tributePaidKcal.toLocaleString() + '/' + owed.toLocaleString() + ' kcal this week. Arrears settle at the week\'s end.');
+        this.say(`Tribute short — ${link.tributePaidKcal.toLocaleString()} of ${owed.toLocaleString()} kcal so far this week. They'll count it. Arrears grow teeth.`);
       }
       return paid;
     },
@@ -489,10 +507,17 @@
             try {
               if (link.status !== 'active') return;
               if (link.subordinate === HOME) {
-                if ((link.tributePaidWeek || -1) < week) {
-                  link.arrears += link.tributeKcalPerWeek;
+                // THE TRUE SHORTFALL, CHARGED ONCE (break-it regional
+                // 2026-10-09): payTribute accumulates the week's payments in
+                // tributePaidKcal; here the unpaid remainder becomes arrears
+                // a single time. A week settled at payment time stays settled.
+                var settled = (link.tributePaidWeek || -1) >= week;
+                var paidK = (!settled && link.tributeWeek === week) ? (link.tributePaidKcal || 0) : 0;
+                var short = settled ? 0 : Math.max(0, link.tributeKcalPerWeek - paidK);
+                if (short > 0) {
+                  link.arrears += short;
                   link.trust = Math.max(0, link.trust - 6);
-                  self._linkNote(link, 'arrears', 'Tribute unpaid. Arrears ' + link.arrears.toLocaleString() + ' kcal.');
+                  self._linkNote(link, 'arrears', 'Tribute short ' + paidK.toLocaleString() + '/' + link.tributeKcalPerWeek.toLocaleString() + ' kcal. Arrears ' + link.arrears.toLocaleString() + ' kcal.');
                   if (R() < 0.4) self.say(`⚠️ ${self._ovName(link.primary)} notices the missing tribute. Arrears: ${link.arrears.toLocaleString()} kcal. The air changes.`);
                 } else {
                   link.trust = Math.min(100, link.trust + 1);
@@ -572,24 +597,59 @@
       if (!link || !link.pendingDemand) return null;
       var d = link.pendingDemand;
       link.pendingDemand = null;
+      var tGain = 8;
       if (accept) {
         if (d.kind === 'tribute') {
-          var paid = this._removePantryKcal(d.costKcal || 0);
-          this.say(`You send ${paid.toLocaleString()} kcal. It hurts. That's rather the point of tribute.`);
+          // HONOR IS PROPORTIONAL (break-it regional 2026-10-09): the old
+          // code granted the full +8 trust even when the pantry was empty
+          // and 0 kcal moved — free trust, and "It hurts" said over an
+          // empty-handed gesture. Now the trust follows the food.
+          var want = d.costKcal || 0;
+          var paid = this._removePantryKcal(want);
+          var frac = want > 0 ? Math.min(1, paid / want) : 1;
+          tGain = Math.round(8 * frac);
+          if (frac >= 1) {
+            this.say(`You send ${paid.toLocaleString()} kcal. It hurts. That's rather the point of tribute.`);
+          } else {
+            link.arrears = (link.arrears || 0) + Math.round(want - paid);
+            this.say(`You send ${paid.toLocaleString()} of ${want.toLocaleString()} kcal — all the pantry holds. They count the gap; the arrears grow teeth.`);
+            try { if (this._nudgeOpinion) this._nudgeOpinion(link.primary, -2); } catch (e) {}
+          }
         } else if (d.kind === 'aid') {
           var rep = this.representative();
+          var m = this.mshipState();
+          var day0 = (this.state.scholar || {}).day || 0;
           if (rep) {
-            var m = this.mshipState();
-            m.loaned = { vid: rep.id, untilDay: ((this.state.scholar || {}).day || 0) + 3, to: link.primary };
-            var rn = 'Someone';
-            try { rn = String(this.displayName(rep.id)).split(' ')[0]; } catch (e) {}
-            this.say(`${rn} walks out to serve ${this._ovName(link.primary)} for three days. Still ours — membership needs no presence.`);
+            if (m.loaned && day0 < (m.loaned.untilDay || 0)) {
+              // LOANS DON'T CLOBBER (break-it regional 2026-10-09): the old
+              // code overwrote m.loaned silently — a representative already
+              // abroad had their record erased. Extend or send word instead.
+              var ln = 'Someone';
+              try { ln = String(this.displayName(m.loaned.vid)).split(' ')[0]; } catch (e) {}
+              if (m.loaned.to === link.primary) {
+                m.loaned.untilDay = (m.loaned.untilDay || day0) + 3;
+                tGain = 4;
+                this.say(`${ln} is already at ${this._ovName(link.primary)}'s fire — you send word they stay on three more days. It counts, barely.`);
+              } else {
+                tGain = 3;
+                this.say(`${ln} is already serving at ${this._ovName(m.loaned.to)}'s fire — you can't send them twice. You send word and promises instead. They note the difference.`);
+              }
+            } else {
+              m.loaned = { vid: rep.id, untilDay: day0 + 3, to: link.primary };
+              var rn = 'Someone';
+              try { rn = String(this.displayName(rep.id)).split(' ')[0]; } catch (e) {}
+              this.say(`${rn} walks out to serve ${this._ovName(link.primary)} for three days. Still ours — membership needs no presence.`);
+            }
+          } else {
+            // nobody to send — honoring anyway used to grant the full +8.
+            tGain = 3;
+            this.say(`There's no one to send — Haven's bench is empty. You send word and promises instead. They note the difference.`);
           }
         } else {
           this.say('You give them your honest read. Counsel is cheap; honesty isn\'t.');
         }
-        link.trust = Math.min(100, link.trust + 8);
-        this._linkNote(link, 'demand', 'Honored the call (' + d.kind + ').');
+        link.trust = Math.min(100, link.trust + tGain);
+        this._linkNote(link, 'demand', 'Honored the call (' + d.kind + ', trust +' + tGain + ').');
         this.say(`The obligation is honored. Trust with ${this._ovName(link.primary)}: ${link.trust}.`);
       } else {
         link.trust = Math.max(0, link.trust - 15);
@@ -653,6 +713,16 @@
       var link = null;
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active' || link.subordinate !== HOME) return null;
+      // THE TABLE IS A WEEKLY VERB (break-it regional 2026-10-09): the old
+      // code let a player grind renegotiate/bid round after round in one
+      // sitting — tribute to the 500 floor in an afternoon, trust bought
+      // back with deeds. The climb is paced in weeks, like the tribute.
+      var wk = this._week();
+      if (link.lastTableWeek === wk) {
+        this.say('They\'re still chewing on the last round — the table is a weekly verb. Give it a week.');
+        return false;
+      }
+      link.lastTableWeek = wk;
       var rep = this.representative();
       var score = 50 + (rep ? rep.standing / 2 : 0) + link.trust / 4 + R() * 20 - 10;
       if (score >= 55) {
@@ -680,6 +750,14 @@
         this.say(`Not yet. Haven's standing (${ourS}) against theirs (${theirS}) — they'd laugh. Grow first: deeds, tribute paid, trust.`);
         return null;
       }
+      // THE TABLE IS A WEEKLY VERB (break-it regional 2026-10-09) — shared
+      // with renegotiateLink: one hard conversation per week.
+      var bwk = this._week();
+      if (link.lastTableWeek === bwk) {
+        this.say('They\'re still chewing on the last round — the table is a weekly verb. Give it a week.');
+        return null;
+      }
+      link.lastTableWeek = bwk;
       if (link.trust >= 60) {
         // THE TABLE TURNS
         var old = link.primary;

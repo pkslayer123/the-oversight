@@ -32,6 +32,7 @@
 //   - membership_needs_no_presence: on the roster, alive, not severed = member, wherever they are; exile is the one severing. (code: membership.js)
 //   - alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once a day, real food from their pantry. (code: membership.js)
 //   - the_loaned_come_home: m.loaned is surfaced in awayMembers and the return is said aloud by loanedReturnTick. (code: membership.js)
+//   - guest_meal_wastes_nothing: a full player is not served — the ally's pantry is never charged for zero gain. (code: membership.js)
 // consumes:
 //   - village.members
 /* VILLAGE MEMBERSHIP — src/js/membership.js
@@ -615,8 +616,10 @@
 
     // memberReputationAbroad: the village's name travels with its people.
     // Returns a standing modifier other villages' judgments can apply.
-    // (Used mechanically in judgeApplication for village-to-village moves;
-    // exposed as the hook for petition/trial judgments abroad.)
+    // WIRED (break-it regional 2026-10-09): the petition judgment in
+    // betrayal.js — "We've heard about Haven" is the reputation-abroad
+    // moment. (The old comment claimed judgeApplication used it; it never
+    // did — the hook was dead.)
     memberReputationAbroad(vid) {
       if (!this.isMember(vid)) return -10; // the severed carry the cut with them
       var st = this.regionalStanding();
@@ -689,17 +692,27 @@
         this.say('They already fed you today. Guests, not locusts.');
         return null;
       }
-      if ((ov.pantryKcal || 0) < 1500) {
-        this.say(`Their pot is nearly empty too — ${nm} shares the embarrassment, not the meal. (Their pantry: ${Math.round(ov.pantryKcal || 0).toLocaleString()} kcal.)`);
-        return null;
-      }
-      ov.pantryKcal -= 1500;
       var s = this.state.scholar || {};
       var cap = 3000;
       try { cap = this.kcalCap ? this.kcalCap() : 3000; } catch (e) {}
       var before = s.kcal || 0;
-      s.kcal = Math.min(cap, before + 1500);
-      var gained = Math.round(s.kcal - before);
+      // A FULL PLAYER ISN'T SERVED (break-it regional 2026-10-09): the old
+      // code charged their pantry 1,500 and served whatever fit under the
+      // cap — a full belly burned 1,500 of the ally's food for +0. Guests,
+      // not locusts: come back hungry.
+      var room = cap - before;
+      var serve = Math.min(1500, Math.max(0, room));
+      if (serve <= 0 || (ov.pantryKcal || 0) < serve) {
+        if ((ov.pantryKcal || 0) < 1500) {
+          this.say(`Their pot is nearly empty too — ${nm} shares the embarrassment, not the meal. (Their pantry: ${Math.round(ov.pantryKcal || 0).toLocaleString()} kcal.)`);
+        } else {
+          this.say(`You're full — and ${nm}'s pot isn't bottomless. Don't waste their food; come back hungry.`);
+        }
+        return null;
+      }
+      ov.pantryKcal -= serve;
+      s.kcal = before + serve;
+      var gained = serve;
       m.lastGuestMeal[villageId] = day;
       if (this._nudgeOpinion) this._nudgeOpinion(villageId, 2);
       this.say(`🍲 ${nm} feeds you from their pot — a guest's meal, +${gained.toLocaleString()} kcal. "Eat. You're one of the understood." Their pantry feels it; so does their regard.`);

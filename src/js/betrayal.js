@@ -1616,6 +1616,10 @@
         String(g.action || '').indexOf('exile_') !== 0)).length;
       judgment -= Math.min(16, bad * 4);
     } catch (e) {}
+    // THE VILLAGE'S NAME TRAVELS (membership.js memberReputationAbroad —
+    // break-it regional 2026-10-09): a Haven member in good standing is
+    // vouched for by the name; the severed carry the cut with them.
+    try { if (this.memberReputationAbroad) judgment += this.memberReputationAbroad(this.villagerId); } catch (e) {}
     // GIFTS: food offered from your pack speaks louder than words.
     // You can only give what you carry.
     let giftGiven = 0;

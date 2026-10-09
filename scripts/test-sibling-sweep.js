@@ -53,7 +53,10 @@ const DEAD = [
   ['ledger.js', 'abduct'], ['ledger.js', 'declineChallenge'], ['ledger.js', 'bringCompanion'],
   ['ledger.js', 'shareFood'], ['ledger.js', 'hoardFood'], ['ledger.js', 'hearGossipAboutSelf'], ['ledger.js', 'legendSurface'],
   ['game.js', 'drinkWild'], ['game.js', 'earnedEnding'],
-  ['membership.js', 'formAlliance'], ['membership.js', 'memberBenefits'],
+  // formAlliance was REMOVED from the dead list (regional audit 2026-10-09):
+  // proposeAlliance wires it intentionally (opinion-gated, feast-priced),
+  // with UI (data-ally-propose) and proof tests. Wired, not dead.
+  ['membership.js', 'memberBenefits'],
   ['hierarchy.js', 'bidForPrimacy'], ['hierarchy.js', 'renegotiateLink'],
   ['party-formal.js', 'disbandParty'],
   // BREAK-IT (social r7 2026-10-09): roleBonus (trivial PARTY_ROLES accessor)

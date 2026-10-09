@@ -297,7 +297,9 @@ const saidHas = (re) => SAID.some((t) => re.test(t));
     const cap = Game.kcalCap ? Game.kcalCap() : 3000;
     const gained = Game.guestMeal('v1');
     ok('V4f. guest meal feeds (capped honestly)', gained === Math.min(1500, cap - 1000) && Game.state.scholar.kcal === Math.min(cap, 2500), `gained=${gained} kcal=${Game.state.scholar.kcal} cap=${cap}`);
-    ok('V4g. their pantry feels it', v.pantryKcal === 18500, 'theirs=' + v.pantryKcal);
+    // (break-it regional 2026-10-09: the pantry is now charged exactly the
+    // serving — the old 18500 encoded charging 1,500 while serving 1,400.)
+    ok('V4g. their pantry feels it (charged the serving, not 1500 flat)', v.pantryKcal === 20000 - Math.min(1500, cap - 1000), 'theirs=' + v.pantryKcal);
     const r2 = Game.guestMeal('v1');
     ok('V4h. once a day — guests, not locusts', r2 === null && saidHas(/Guests, not locusts/i));
     v.pantryKcal = 100;
