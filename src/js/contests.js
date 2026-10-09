@@ -98,6 +98,7 @@
 //   - fan_favor_contests: televised wins move the fan club (+4 player, +2 villager); a player win can shake loose a fan care package (code: _contestEnd, Steve 2026-10-08)
 //   - fan_favor_lanes: televised wins move the club that watched them — blood→fight, endurance→survival, moot→social, everything else→showbiz (code: _cxFanLane, _contestEnd, audit-shows 2026-10-09)
 //   - show_playable: shows are PLAYED beats, not announcements — the pull can land on the player (showPhases), a villager (showWatchPhases + deterministic showResolveVillager), or the village together (showTogetherPhases); every pool show has an authored beat in SHOW_BEATS, with _showGenericBeat as fallback (code: fireShow, SHOW_BEATS, audit-shows 2026-10-09)
+//   - show_casting: notability-first — the pull goes to the notable (weight 1 + notes×2, SAME as contest ratings_casting); zero notability notes = never pulled across any number of seeds; together episodes fire on triggers (no notables, viewership milestone +5), never a die roll; 10% whim announced and constrained to notables; exact ties share the top band (code: showCastPull, showEligible, Steve 2026-10-09)
 //   - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
@@ -405,6 +406,75 @@
     ];
   };
 
+  // SHOW ELIGIBLE (Steve 2026-10-09): who CAN be pulled for TV. Same gates
+  // as contestEligible (alive, member in good standing, age, gravely-wounded
+  // floor) — a corpse can't be pulled for TV either — minus the grid-position
+  // requirement: a TV pull takes you away, it doesn't need you standing
+  // somewhere. Returns [{id, name, notability[]}]; id 'player' = the scholar.
+  G.showEligible = function() {
+    const eligible = [];
+    const s = this.state.scholar || {};
+    if (!this.state.over && (s.health || 0) > 0 && !s.exiled) {
+      eligible.push({ id: 'player', name: 'You', notability: this.notability('player') });
+    }
+    const roster = (this.state.village.roster || []);
+    for (const rid of roster) {
+      if (rid === this.villagerId) continue; // player handled above
+      if (!this.isMember(rid)) continue;     // dead or severed: not pulled
+      const vp = this.vpOf(rid);
+      const age = (vp && typeof vp.age === 'number') ? vp.age : 30;
+      if (age < 15 || age > 72) continue;    // children and the very old stay
+      const vhp = ((this.state.village.health || {})[rid] !== undefined)
+        ? this.state.village.health[rid] : 100;
+      if (vhp <= 20) continue;               // gravely wounded: not a star
+      eligible.push({ id: rid, name: this.displayName(rid), notability: this.notability(rid) });
+    }
+    return eligible;
+  };
+
+  // SHOW CAST PULL (Steve 2026-10-09): notability-first casting. The aliens
+  // want their stars. Rules, in order:
+  // 1. THE FLOOR: zero notability notes → never pulled, across any number
+  //    of seeds. The aliens don't point cameras at the unwatched.
+  // 2. TOGETHER TRIGGERS (never a die roll): no notables at all, or a
+  //    viewership milestone (new all-time high by a real margin — the
+  //    village gathers to watch itself be watched).
+  // 3. WHIM: 10%, uniform among NOTABLES only, announced — same shape as
+  //    the contest whim (alien whimsy), but unpopular people are never
+  //    randomly chosen, period.
+  // 4. THE RULE: highest weight wins — 1 + notes×2, the SAME weight as
+  //    contest ratings_casting. Exact ties share the top band: tiny RNG
+  //    among equals only ("the cameras couldn't decide").
+  // Fame's price: more notability → more pulls → more embarrassment risk.
+  // Obscurity is safety — a legitimate player tradeoff, not an exploit.
+  // Returns {who: 'player'|vid|'together', why, note}.
+  G.showCastPull = function() {
+    const cands = this.showEligible();
+    const v = this.state.village || {};
+    const notable = cands.filter(c => (c.notability || []).length > 0);
+    // Milestone: new all-time viewership high by a real margin (+5, not +1
+    // noise). The bar ratchets — peak updates whenever exceeded.
+    let now = 0;
+    try { now = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0); } catch (e) {}
+    if (v._peakViewership == null) v._peakViewership = now;
+    const milestone = now >= v._peakViewership + 5;
+    if (now > v._peakViewership) v._peakViewership = now;
+    if (!notable.length || milestone) {
+      return { who: 'together', why: !notable.length ? 'no-stars' : 'milestone', note: null };
+    }
+    const weighted = notable.map(c => ({ c, w: 1 + c.notability.length * 2 }));
+    if (Math.random() < 0.10) {
+      const pick = weighted[Math.floor(Math.random() * weighted.length)];
+      return { who: pick.c.id, why: 'whim', note: (pick.c.notability || [])[0] || null };
+    }
+    let maxW = -1;
+    for (const x of weighted) if (x.w > maxW) maxW = x.w;
+    const band = weighted.filter(x => x.w === maxW);
+    const pick = band[Math.floor(Math.random() * band.length)];
+    return { who: pick.c.id, why: band.length > 1 ? 'tie' : 'star',
+             note: (pick.c.notability || [])[0] || null, band: band.length };
+  };
+
   G.pickShow = function() {
     const pool = this.showPool();
     return pool[Math.floor(Math.random() * pool.length)];
@@ -422,35 +492,35 @@
   G.fireShow = function(show) {
     const s = (show && show.id) ? show : this.pickShow();
     this.sysSay(`📺 TONIGHT: ${s.name}. ${s.desc}`);
-    // Who gets pulled. The player is a villager too — the cameras don't
-    // care whose turn it is to be embarrassed.
-    // SIBLING (Steve 2026-10-06): same dead/severed exclusion as
-    // contestEligible — a corpse can't be pulled for TV either.
-    const roster = (this.state.village.roster || []).filter(id =>
-      id !== this.villagerId && this.isMember(id));
-    const s0 = this.state.scholar || {};
-    const playerOk = !this.state.over && (s0.health || 0) > 0 && !s0.exiled;
-    const r = Math.random();
-    let who = 'together';
-    if (playerOk && roster.length) {
-      if (r < 0.30) who = 'player';
-      else if (r < 0.70) who = roster[Math.floor(Math.random() * roster.length)];
-    } else if (playerOk) {
-      who = (r < 0.5) ? 'player' : 'together';
-    } else if (roster.length) {
-      who = (r < 0.6) ? roster[Math.floor(Math.random() * roster.length)] : 'together';
-    }
+    // Who gets pulled — NOTABILITY-FIRST (Steve 2026-10-09; code:
+    // showCastPull). The flat 30/40/30 die roll is gone: the aliens want
+    // their stars, the pull is exposure not a prize, and popular isn't
+    // good — it's just what the aliens like to see.
+    const cast = this.showCastPull();
+    const who = cast.who; // 'player' | villagerId | 'together'
     let phases = null;
     if (who === 'player') {
-      this.sysSay(`📺 The cameras want YOU. No reason. You're going on television.`);
+      if (cast.why === 'whim') this.sysSay(`📺 The System's whim: you are *interesting*.`);
+      else if (cast.why === 'tie') this.sysSay(`📺 The cameras couldn't decide — they chose you.`);
+      this.sysSay(`📺 The cameras want YOU — ${cast.note || 'the galaxy knows your name'}.`);
+      this.sysSay(`📺 That's not an honor. It's just what the aliens like to see. You're going on television.`);
       try { this.audioEvent('contestTaken'); } catch (e) {}
       phases = this.showPhases(s, 'player');
     } else if (who === 'together') {
-      this.sysSay(`📺 No pull tonight — the village watches together. Someone brings snacks. It helps.`);
+      if (cast.why === 'milestone') {
+        this.sysSay(`📺 Biggest audience yet — the whole galaxy is watching tonight. The village gathers to watch itself be watched. Someone brings snacks. It helps.`);
+      } else {
+        this.sysSay(`📺 No stars tonight — nobody the galaxy knows by name. The village watches together. Someone brings snacks. It helps.`);
+      }
       phases = this.showTogetherPhases(s);
     } else {
       const pname = this.displayName(who);
-      this.sysSay(`📺 The cameras want ${pname}. No reason. ${pname} is going on television.`);
+      if (cast.why === 'whim') {
+        this.sysSay(`📺 The System's whim: ${pname} is *interesting*.`);
+      } else if (cast.why === 'tie') {
+        this.sysSay(`📺 The cameras couldn't decide — they chose ${pname}.`);
+      }
+      this.sysSay(`📺 The cameras want ${pname} — ${cast.note || 'the galaxy knows their name'}. Not an honor. Just what the aliens like to see.`);
       this.sysSay(`📺 ${pname} will be back by morning. Probably. The village will talk about this for days.`);
       try { this.audioEvent('contestTaken'); } catch (e) {}
       phases = this.showWatchPhases(s, who);

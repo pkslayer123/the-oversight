@@ -1106,6 +1106,9 @@
       s.day = 16;
       Game.state.systemArrived = true;
       placeVillagers([[2,2],[6,6]]);
+      // Notability-first casting (Steve 2026-10-09): the scenario's scholar
+      // is notable, so the pull lands on them — the played beat, not together.
+      Game.addNotability('player', 'wave2Kill');
       Game.say('🐞 SCENARIO: TV show — WHY DO THEY EAT?');
       Game.say('The aliens are horrified by cooking. The audience is delighted.');
       try {

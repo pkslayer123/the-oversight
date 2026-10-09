@@ -117,8 +117,9 @@ sec('R1 — fireShow creates a PLAYED modal (was: 3 announcement lines, no modal
 {
   freshGame(16);
   const show = Game.showPool().find(s => s.id === 'why_eat');
-  // force player pull: r < 0.30
-  withRandom(0.1, () => Game.fireShow(show));
+  // notability-first casting (Steve 2026-10-09): the notable scholar is pulled
+  Game.addNotability('player', 'contestWin');
+  withRandom(0.5, () => Game.fireShow(show)); // 0.5: no whim, single notable = deterministic
   const ac = Game.state.activeContest;
   ok('fireShow sets activeContest modal', !!ac && ac.kind === 'show');
   ok('modal has playable phases', !!ac && ac.phases && ac.phases.length > 0 && ac.phases[0].choices && ac.phases[0].choices.length === 3);
@@ -130,16 +131,19 @@ sec('R2 — fireShow villager pull gives a WATCH beat (was: announcement only)')
   const roster = (Game.state.village.roster || []).filter(id => id !== Game.villagerId && Game.isMember(id));
   ok('roster has villagers for pull', roster.length > 0);
   const show = Game.showPool().find(s => s.id === 'ask_human');
-  withRandom(0.5, () => Game.fireShow(show)); // 0.30 <= r < 0.70 -> villager
+  const star = roster[0];
+  Game.addNotability(star, 'contestWin'); // the notable villager is pulled, not a die roll
+  withRandom(0.5, () => Game.fireShow(show)); // 0.5: no whim, single notable = deterministic
   const ac = Game.state.activeContest;
   ok('villager pull sets watch modal', !!ac && ac.kind === 'show' && ac.participant && ac.participant !== 'player' && ac.participant !== 'together');
+  ok('pulled the notable villager', !!ac && ac.participant === star, 'got ' + (ac && ac.participant));
   ok('watch beat has cheer/heckle/comfort choices', !!ac && ac.phases[0].choices.length === 3);
 }
 sec('R3 — fireShow village-together is a communal beat');
 {
   freshGame(16);
   const show = Game.showPool().find(s => s.id === 'nap_wars');
-  withRandom(0.9, () => Game.fireShow(show)); // r >= 0.70 -> together
+  withRandom(0.9, () => Game.fireShow(show)); // no notables in a fresh game -> together trigger
   const ac = Game.state.activeContest;
   ok('together sets communal modal', !!ac && ac.kind === 'show' && ac.participant === 'together');
 }
@@ -165,7 +169,9 @@ sec('R4b — the 75%-contest share when dipping actually works (was dead code)')
 {
   function contestShare(dipping) {
     let contest = 0, show = 0;
-    for (let i = 0; i < 400; i++) {
+    // 1600 iters (~240 events): seed 7 read 0.75 at 400 iters (2.4σ noise —
+    // true mean probed at 0.601). More samples, not a wider band.
+    for (let i = 0; i < 1600; i++) {
       rng.reset(SEED + i * 7);
       Game.state.showBudget = { week: 2, used: 0 };
       Game.state.pendingContest = null; Game.state.activeContest = null;
@@ -500,14 +506,15 @@ sec('D2 — fireShow never leaves a stuck modal (fallback path)');
   const real = Game.SHOW_BEATS;
   Game.SHOW_BEATS = {};
   const show = Game.showPool().find(s => s.id === 'why_eat');
-  withRandom(0.1, () => Game.fireShow(show)); // player pull
+  Game.addNotability('player', 'contestWin');
+  withRandom(0.5, () => Game.fireShow(show)); // notable player pull
   const ac = Game.state.activeContest;
   ok('missing beat -> generic fallback modal, not stuck', !!ac && ac.phases && ac.phases.length > 0);
   Game.SHOW_BEATS = real;
 }
 sec('D3 — new functions exist and are ontology-listed');
 {
-  for (const fn of ['showPhases', 'showWatchPhases', 'showTogetherPhases', 'showResolveVillager', '_showVillagerEnd', '_showEnd', '_showGossip', '_showGenericBeat', 'fireRatingsSummons', 'ratingsSummonsPhases', '_cxFanLane', 'apFanLane', 'apTopLane', 'apClubName', 'apClubBoon', 'apPackageClubLine']) {
+  for (const fn of ['showPhases', 'showWatchPhases', 'showTogetherPhases', 'showResolveVillager', '_showVillagerEnd', '_showEnd', '_showGossip', '_showGenericBeat', 'fireRatingsSummons', 'ratingsSummonsPhases', '_cxFanLane', 'apFanLane', 'apTopLane', 'apClubName', 'apClubBoon', 'apPackageClubLine', 'showEligible', 'showCastPull']) {
     if (typeof Game[fn] !== 'function') { ok('Game.' + fn + ' defined', false); }
   }
   ok('all new Game functions defined', true);
