@@ -219,7 +219,7 @@ Real back-and-forth dialogue. Player always has response choices.
 - drift_visible: when a drift channel crosses >=2 since the last note, the next conversation opens with one short stage-direction beat showing the change — at most once per day per villager, always matching the actual drift state (code: convoDriftNote, Steve 2026-10-07)
 - thread_lifecycle: open threads older than 14 days lapse into a remembered lapsed list (never silently deleted); resuming a lapsed topic gets an honest nod, and a hanging thread that gets discussed earns its closing beat at goodbye (code: convoTopicLedger/convoCloseLine/convoLapseLine, Steve 2026-10-07)
 - resume_honest_time: the resume opener names how long the thread hung (a 12-day-old thread is not "last time") and nods at other hanging threads so none feel orphaned (code: convoResumeOpener, Steve 2026-10-07)
-- goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the mood residue only lingers after 3+ exchanges (code: endConvo, break-it 2026-10-08)
+- goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the uncapped mood residue lingers only after 3+ exchanges in a SUBSTANTIVE conversation (c.substantive set by the convoTurn wrapper — agree-spam must not smuggle trust past the 40 talk cap) (code: endConvo, break-it 2026-10-08)
 
 **Consumes:** village.villagers, state.convos, village.topicLog, village.saidFacts, village.memory, npcNeeds(rid)
 
@@ -263,7 +263,7 @@ Per-conversation emotional state (rapport). Warmth and tension shift as you talk
 - warmth_from_trust: answer warmth derives from the sign of its trust delta — no separate data (code: conversation.js react: branches)
 - band_beats: crossing a band boundary queues one stage-direction beat in c.heldBeats; the continuer reveals it after the turn's line (code: convo-mood.js, convoMoodShift/convoMoodFlush; Steve 2026-10-05 one-beat turns)
 - receptivity: recent lived events (memory) decide guard/grace — guarded people absorb the first warming move, shown kindness absorbs the first cooling one (code: convo-mood.js, convoMoodReceptivity)
-- mood_lingers: ending warm/tense nudges trust by the final mood value (code: conversation.js, endConvo)
+- mood_lingers: ending warm/tense nudges trust by the final mood value — but ONLY on a substantive conversation (c.substantive: at least one non-acknowledgment choice); agree-spam ("yeah" x3 + warm goodbye) earns the capped stipend, never the uncapped residue (code: conversation.js, endConvo; flag: convo-dialogue.js convoTurn wrapper; socialite break-it 2026-10-08)
 
 **Consumes:** state.village.conv (c.mood, per-conversation only), village.trust, village.memory, npcMood, npcTemper
 

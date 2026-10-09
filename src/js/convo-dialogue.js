@@ -93,6 +93,19 @@
   Game.convoTurn = function (vid, choiceId) {
     const c = this.convoGet(vid);
 
+    // SUBSTANCE (socialite break-it 2026-10-08): the uncapped mood residue
+    // in endConvo must only linger on a REAL conversation — agree-spam
+    // ("yeah", "tell me more", continuer taps) must not smuggle uncapped
+    // trust past the 40 talk cap. This wrapper is the choke point: every
+    // choice id passes through here (dlg: handled below, the rest
+    // delegated). Anything but the light acknowledgments marks the
+    // conversation substantive.
+    if (c && c.active && typeof choiceId === 'string' &&
+        choiceId !== 'goon' && choiceId !== 'leave' && choiceId !== 'recap' &&
+        choiceId !== 'dlg:react' && choiceId !== 'dlg:more') {
+      c.substantive = true;
+    }
+
     // Dialogue responses — handle here, then delegate.
     if (choiceId && choiceId.indexOf('dlg:') === 0) {
       const dlg = choiceId.slice(4);

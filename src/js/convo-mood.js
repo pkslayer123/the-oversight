@@ -17,7 +17,7 @@
 //   - warmth_from_trust: answer warmth derives from the sign of its trust delta — no separate data (code: conversation.js react: branches)
 //   - band_beats: crossing a band boundary queues one stage-direction beat in c.heldBeats; the continuer reveals it after the turn's line (code: convo-mood.js, convoMoodShift/convoMoodFlush; Steve 2026-10-05 one-beat turns)
 //   - receptivity: recent lived events (memory) decide guard/grace — guarded people absorb the first warming move, shown kindness absorbs the first cooling one (code: convo-mood.js, convoMoodReceptivity)
-//   - mood_lingers: ending warm/tense nudges trust by the final mood value (code: conversation.js, endConvo)
+//   - mood_lingers: ending warm/tense nudges trust by the final mood value — but ONLY on a substantive conversation (c.substantive: at least one non-acknowledgment choice); agree-spam ("yeah" x3 + warm goodbye) earns the capped stipend, never the uncapped residue (code: conversation.js, endConvo; flag: convo-dialogue.js convoTurn wrapper; socialite break-it 2026-10-08)
 // consumes:
 //   - state.village.conv (c.mood, per-conversation only)
 //   - village.trust, village.memory

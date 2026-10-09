@@ -51,7 +51,7 @@
 //   - drift_visible: when a drift channel crosses >=2 since the last note, the next conversation opens with one short stage-direction beat showing the change — at most once per day per villager, always matching the actual drift state (code: convoDriftNote, Steve 2026-10-07)
 //   - thread_lifecycle: open threads older than 14 days lapse into a remembered lapsed list (never silently deleted); resuming a lapsed topic gets an honest nod, and a hanging thread that gets discussed earns its closing beat at goodbye (code: convoTopicLedger/convoCloseLine/convoLapseLine, Steve 2026-10-07)
 //   - resume_honest_time: the resume opener names how long the thread hung (a 12-day-old thread is not "last time") and nods at other hanging threads so none feel orphaned (code: convoResumeOpener, Steve 2026-10-07)
-//   - goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the mood residue only lingers after 3+ exchanges (code: endConvo, break-it 2026-10-08)
+//   - goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the uncapped mood residue lingers only after 3+ exchanges in a SUBSTANTIVE conversation (c.substantive set by the convoTurn wrapper — agree-spam must not smuggle trust past the 40 talk cap) (code: endConvo, break-it 2026-10-08)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -3093,6 +3093,11 @@
       c.teachSkill = null; c.learnedOnce = false; c.learnedWhat = null;
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
       c.qCount = 0; c.theorized = [];
+      // SUBSTANCE (socialite break-it 2026-10-08): per-conversation flag —
+      // set by the convoTurn wrapper (convo-dialogue.js) when the player
+      // makes any non-acknowledgment choice. The uncapped mood residue in
+      // endConvo only lingers on a substantive conversation.
+      c.substantive = false;
       // RUMOR (fix 2026-10-07): the drama verb is per-conversation, not
       // per-lifetime — rumorDone must reset here like teachSkill/offeredHelp,
       // or the second rumor with the same person dangles at the prompt with
@@ -4181,10 +4186,17 @@
       // trust: the stipend scales with actual exchanges. And the mood
       // residue (talk:false, uncapped) only lingers on a REAL conversation —
       // agree-spam + goodbye must not smuggle uncapped trust past the cap.
+      // SUBSTANCE GATE (socialite break-it 2026-10-08): the old guard was
+      // exchanges >= 3, which agree-spam trivially satisfies ("yeah" x3,
+      // warm goodbye, +3 uncapped — measured 18->61 over 25 convos). The
+      // residue now requires c.substantive: at least one choice that isn't
+      // a bare acknowledgment (set by the convoTurn wrapper). Listening
+      // still earns the capped stipend; felt warmth beyond words has to be
+      // earned by actually engaging.
       const stipend = c.exchanges >= 3 ? 3 : (c.exchanges >= 1 ? 1 : 0);
       if (stipend > 0) this.resolveConsequence(vid, { trust: stipend, temper: 'neutral', name: 'endConvo:talk' });
       const cm = Math.max(-3, Math.min(3, c.mood || 0));
-      if (cm !== 0 && c.exchanges >= 3) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
+      if (cm !== 0 && c.exchanges >= 3 && c.substantive) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social', vid); } catch (e) {}
       // BUGFIX (break-it 2026-10-08): `t` was undefined here — every natural
