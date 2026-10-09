@@ -292,7 +292,7 @@
     "modifiers": [
       {
         "op": "multiply",
-        "target": "travel.kcal",
+        "target": "travel.cost_mult",
         "value": 0.8
       }
     ],
@@ -783,7 +783,7 @@
     "modifiers": [
       {
         "op": "multiply",
-        "target": "travel.kcal",
+        "target": "travel.cost_mult",
         "value": 0.75
       }
     ],
@@ -1060,7 +1060,7 @@
       },
       {
         "op": "multiply",
-        "target": "travel.kcal",
+        "target": "travel.cost_mult",
         "value": 0.85
       }
     ],

@@ -362,10 +362,13 @@
       pg.trial = null; pg.trialCd = (s.day || 0) + 7;
       this.integrate(15, 'audience trial');
       // the gift: a System ability, if there's room
+      // (break-it abilities 2026-10-09: the old filter was `a.system` — a
+      // schema flag that exists on ZERO abilities, so the promised gift was
+      // dead from birth. System abilities are unlock.type === 'system_offer'.)
       let gift = null;
       try {
         const owned = new Set((s.abilities || []).map(a => a.id));
-        const cands = (this.data.abilities || []).filter(a => !owned.has(a.id) && a.system);
+        const cands = (this.data.abilities || []).filter(a => !owned.has(a.id) && a.unlock && a.unlock.type === 'system_offer');
         if (cands.length && (s.abilities || []).length < this.abilitySlots()) {
           const def = pick(cands);
           s.abilities.push({ id: def.id, name: def.name, desc: def.description || '', level: 1, xp: 0 });
