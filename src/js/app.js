@@ -707,6 +707,12 @@
     info.querySelectorAll('button').forEach(b => {
       b.onclick = () => {
         const act = b.dataset.act;
+        // MID-FIGHT (break-it travel r4 2026-10-09): the card can sit open
+        // when a fight starts. Clearing/bridging mid-fight would spend kcal
+        // and remove the blockage with NO time cost (tickAction no-ops in
+        // combat) — and the swim would charge 20 kcal and then refuse the
+        // crossing. The engine guards too; the barrier is the way out.
+        if (Game.inCombat()) { Game.say('Not mid-fight — the barrier is the way out.'); refresh(); return; }
         if (act === 'cut' || act === 'clear') { Game.clearBlockage(x, y); }
         else if (act === 'bridge') { if (!Game.buildBridge(x, y)) { refresh(); return; } }
         else if (act === 'swim') { Game.state.scholar.kcal = Math.max(0, Game.state.scholar.kcal - 20); Game.say('You swim across, cold and grinning.'); Game.travelTo(x, y, true); refresh(); return; }
@@ -1317,9 +1323,13 @@
         } else if (!isMe) {
           // Farther walkable cell: offer the walk (costs kcal, not free).
           // Pathfind first — if no path, say so instead of offering.
+          // HONESTY (break-it travel r4 2026-10-09): the label quotes
+          // Game.walkCost — the SAME formula beginPathWalk charges, with
+          // travel.cost_mult applied. The raw path.length*10 lied to
+          // Wanderer/Second Skin holders.
           const path = Game.findPath(px, py, cx, cy);
           if (path && path.length) {
-            const cost = path.length * 10;
+            const cost = (typeof Game.walkCost === 'function') ? Game.walkCost(path.length) : path.length * 10;
             actions.push([`Walk here (${cost} kcal)`, () => walkPathAnimated(cx, cy)]);
           } else {
             desc += ' (No path there.)';
@@ -14796,10 +14806,17 @@
       for (let x = 0; x < 9; x++) {
         // FOG OF WAR (Steve 2026-10-06): only tiles you've WALKED IN reveal.
         // Check seenTiles for visited status. No hardcoded visibility.
+        // FOG DEPTH (break-it travel r4 2026-10-09): 'shared' tiles render
+        // as BIOME COLOR ONLY in the block below (Steve 2026-10-07) — never
+        // full TileScenes/emoji detail. The old check treated ANY seenTiles
+        // entry as fully-seen, so a scout's report rendered full scene
+        // detail. Only 'visited' earns the detail path here; 'shared' falls
+        // through to the biome-color branch.
         let _seenSimple = false;
         try {
           const _st = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
-          if (_st[x + ',' + y]) _seenSimple = true;
+          const _e = _st[x + ',' + y];
+          if (_e && _e.k === 'v') _seenSimple = true;
         } catch (e) {}
         if (_seenSimple) {
           // Get tile type
@@ -14879,7 +14896,9 @@
         } catch (e) {}
         const isW = st.wanderer && x === st.wanderer.x && y === st.wanderer.y && seen;
         const isT = tset.has(x + ',' + y);
-        const depCls = Game.depletionClass ? Game.depletionClass(tl) : (((tl.maxStock - (tl.stock || 0) > 0) && seen) ? ' spent' : '');
+        // depletionClass gates fog internally (break-it travel r4 2026-10-09):
+        // only seen tiles show picked-clean/barren.
+        const depCls = Game.depletionClass ? Game.depletionClass(tl, x, y) : ((((tl.maxStock - (tl.stock || 0) > 0)) && seen) ? ' spent' : '');
         const pathCls = (tl.wornPath && seen) ? 'worn-path' : '';
         const shrCls = seen === 'shared' ? ' shared' : '';
         const cls = 'tile' + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '') + shrCls;
@@ -15062,12 +15081,13 @@
   // knowledge surface; your personal map may know less.
   function villageMapSection() {
     try {
-      const seen = {};
-      const mark = (k) => { seen[k] = 1; };
-      const st = Game.state.scholar || {};
-      for (const k of Object.keys(st.seenTiles || {})) mark(k);
-      const all = (Game.data.villagers || []).concat(Game.data.background_survivors || []);
-      for (const vp of all) for (const k of (vp.visitedTiles || [])) mark(k);
+      // FOG (break-it travel r4 2026-10-09): the old code unioned every
+      // villager's seeded visitedTiles directly — ground nobody ever shared
+      // with you rendered NAMED in your codex, bypassing the compareMaps
+      // conversation gate (maps_are_social). villageMapKnown() applies the
+      // gate: your seen tiles + villagers who actually shared.
+      const known = (typeof Game.villageMapKnown === 'function') ? Game.villageMapKnown() : {};
+      const seen = known;
       const n = Object.keys(seen).length;
       if (!n) return '';
       let cells = '';
@@ -15076,7 +15096,6 @@
         for (let x = 0; x < 9; x++) {
           const k = x + ',' + y;
           const tl = Game.tileAt(x, y);
-          const mine = st.seenTiles && st.seenTiles[k];
           cells += `<div class="tile${seen[k] ? '' : ' fog'}" title="${seen[k] ? esc((S.TILE_NAME || {})[tl.type] || tl.type) : 'unknown'}">${seen[k] ? (S.TILE_GLYPH[tl.type] || '·') : ''}</div>`;
         }
         cells += '</div>';

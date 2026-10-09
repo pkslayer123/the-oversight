@@ -47,7 +47,9 @@
 //   - maintainWorldMonsters(), wanderWorldMonsters(), villagerMonsterTick(), worldTick() (living-world step on tile entry)
 //   - villageSicknessTick() (villager disease: same vectors as the player — wounds, dirty water, ticks)
 //   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
-//   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge)
+//   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge; records the sharing for the codex MAPS gate)
+//   - villageMapKnown() -> {"x,y":1} (codex MAPS: your seen tiles + visited tiles of villagers who actually shared via compareMaps; unshared seed tiles are never shown)
+//   - walkCost(n) -> kcal (the one honest price of a committed n-square walk: quoted by the "Walk here" button AND charged by beginPathWalk; applies travel.cost_mult)
 // rules:
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
@@ -59,6 +61,10 @@
 //   - multitile_occupancy: size 2 = 2x2 block, mx,my is top-left (code: fighterTiles)
 //   - multitile_validation: all tiles walkable before each move (code: tbCanOccupy)
 //   - map_is_seen_only: world map displays only visited + map-shared tiles; unvisited renders blank (code: mapSeen, Steve 2026-10-06)
+//   - map_shared_detail: 'shared' tiles render as biome color only, never full TileScenes/emoji detail (code: renderMap, Steve 2026-10-07; re-broken + restored break-it travel r4 2026-10-09)
+//   - map_depletion_fog: tile depletion styling requires seen (visited or shared); a fogged tile never renders picked-clean/barren (code: renderMap, break-it travel r4 2026-10-09)
+//   - codex_maps_are_shared: the codex MAPS section shows only shared ground — your seen tiles plus villagers who actually compared maps with you (code: villageMapKnown, break-it travel r4 2026-10-09)
+//   - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
@@ -4369,8 +4375,15 @@
     },
 
     // CSS class for the minimap. The land shows what you've taken.
-    depletionClass(t) {
+    // FOG (break-it travel r4 2026-10-09): t.revealed is the TRAVEL flag,
+    // not the fog flag — a fogged tile revealed for travel rendered visibly
+    // picked-clean/barren. Depletion is earned knowledge: gate on seenTiles
+    // (mapSeen), not on revealed.
+    depletionClass(t, x, y) {
       if (!t || !t.revealed) return '';
+      if (x !== undefined && y !== undefined) {
+        try { if (!this.mapSeen(x, y)) return ''; } catch (e) { return ''; }
+      }
       const lvl = this.depletionLevel(t);
       if (lvl === 'picked') return 'depleted-picked';
       if (lvl === 'barren') return 'depleted-barren';
@@ -6450,8 +6463,38 @@
           if (!mine[k]) { mine[k] = { k: 's', by: vid }; added++; }
         }
         this.state.scholar.seenTiles = mine;
+        // MAP-SHARING RECORD (break-it travel r4 2026-10-09): the codex MAPS
+        // section pools the village's walked ground — but ONLY ground that
+        // was actually shared. Without this record the codex rendered every
+        // villager's seeded visitedTiles on sight, bypassing this
+        // conversation gate entirely (maps_are_social).
+        const s = this.state.scholar;
+        s.mapsSharedBy = s.mapsSharedBy || {};
+        s.mapsSharedBy[vid] = true;
       } catch (e) {}
       return { newCount: added };
+    },
+
+    // villageMapKnown(): the VILLAGE's cumulative map for the codex MAPS
+    // section — your seen tiles plus every villager's visited tiles, but ONLY
+    // for villagers who actually shared their maps with you (compareMaps) or
+    // whose reports arrived through earned channels (scout markSeen
+    // 'shared', which already lands in your seenTiles). Unshared seed tiles
+    // are life experience, not village knowledge — "if you don't know, it
+    // doesn't show."
+    villageMapKnown() {
+      const known = {};
+      try {
+        const s = this.state.scholar || {};
+        for (const k of Object.keys(s.seenTiles || {})) known[k] = 1;
+        const sharedBy = s.mapsSharedBy || {};
+        const all = (this.data.villagers || []).concat(this.data.background_survivors || []);
+        for (const vp of all) {
+          if (!vp || !vp.id || !sharedBy[vp.id]) continue;
+          for (const k of (vp.visitedTiles || [])) known[k] = 1;
+        }
+      } catch (e) {}
+      return known;
     },
 
     // HAVEN STORES ACCESS (Steve 2026-10-04): the pantry, caches, and village
@@ -6602,6 +6645,11 @@
     // clear a blockage by work. fallen_tree -> cut (yields wood!), rubble -> clear.
     // costs a day-part. the path stays clear.
     clearBlockage(x, y) {
+      // MID-FIGHT (break-it travel r4 2026-10-09): clearing is work with a
+      // real time cost (tickAction no-ops in combat). Without this guard a
+      // stale blockage card could clear a path mid-fight — kcal spent, no
+      // time spent, then travelTo refuses anyway. The barrier is the way out.
+      if (this.inCombat()) { this.say('Not mid-fight — the barrier is the way out.'); return false; }
       const dest = this.tileAt(x, y);
       const bf = dest.blockFrom;
       if (!bf) {
@@ -6646,6 +6694,9 @@
     // build a bridge: 4 wood, permanent. for washed-out paths and hard creeks.
     // CONSTRUCTION (future): walls/palisades will use the same pattern — spend wood, tile.structures[].
     buildBridge(x, y) {
+      // MID-FIGHT (break-it travel r4 2026-10-09): same class as
+      // clearBlockage — construction is work, fights are not workshops.
+      if (this.inCombat()) { this.say('Not mid-fight — the barrier is the way out.'); return false; }
       const dest = this.tileAt(x, y);
       if (this.woodCount() < 4) { this.say('Need 4 wood to build a bridge.'); return false; }
       this.spendWood(4);
@@ -7768,34 +7819,22 @@
       return null; // no path
     },
 
-    // movePath: walk a path. Cost = 10 kcal per square. Not free, not a decision.
-    movePath(tx, ty) {
-      const s = this.state.scholar;
-      const sx = s.mx ?? 4, sy = s.my ?? 4;
-      const path = this.findPath(sx, sy, tx, ty);
-      if (!path) { this.say('No path there.'); return false; }
-      const cost = path.length * 10;
-      if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return false; }
-      s.kcal -= cost;
-      if (path.length >= 2) {
-        const [lx, ly] = path[path.length - 1];
-        const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [s.mx, s.my];
-        s.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
-      } else if (path.length === 1) {
-        s.facing = { x: Math.sign(tx - s.mx) || 0, y: Math.sign(ty - s.my) || 1 };
-      }
-      s.mx = tx; s.my = ty;
-      this.say(`Walked ${path.length} squares (${cost} kcal).`);
-      this.ensureVillagerPositions();
-      // Committed walks cross monster territory too — it notices per square.
-      for (let i = 0; i < path.length && !this.tbfight; i++) { this.monsterTurn(); this.animalTurn(); }
-      // ACTION CLOCK: committed walk = 1 tick per square (+10 kcal/square effort, above).
-      this.tickAction(path.length);
-      return true;
+    // walkCost(n): the honest price of a committed n-square walk — quoted by
+    // the "Walk here" button AND charged by beginPathWalk. One formula, both
+    // surfaces (break-it travel r4 2026-10-09: the label ignored
+    // travel.cost_mult, so Wanderer/Second Skin paid less than quoted —
+    // a label is a promise).
+    walkCost(n) {
+      let cost = n * 10;
+      try {
+        const mult = this.modTarget('travel.cost_mult', 1);
+        if (mult !== 1) cost = Math.max(n, Math.round(cost * mult));
+      } catch (e) {}
+      return cost;
     },
 
-    // beginPathWalk: validate + charge a committed walk UP FRONT (same costs
-    // as movePath: 10 kcal/square), then hand the path to the UI to animate
+    // beginPathWalk: validate + charge a committed walk UP FRONT (10 kcal/
+    // square via walkCost — the same number the "Walk here" button quotes),
     // step-by-step via pathStep. Returns the path ([[x,y],...]) or null.
     // The UI animates the FULL path — tap-to-move never teleports.
     beginPathWalk(tx, ty) {
@@ -7809,13 +7848,9 @@
       if (!path) { this.say('No path there.'); return null; }
       // WANDERER / SECOND SKIN (break-it travel 2026-10-08): travel.cost_mult
       // applies here too — the promise is "-10% travel cost", and committed
-      // walks are the most expensive travel in the game. The announced cost
-      // below uses this number, so the label stays honest.
-      let cost = path.length * 10;
-      try {
-        const mult = this.modTarget('travel.cost_mult', 1);
-        if (mult !== 1) cost = Math.max(path.length, Math.round(cost * mult));
-      } catch (e) {}
+      // walks are the most expensive travel in the game. walkCost() is the
+      // single formula the button label quotes, so the label stays honest.
+      const cost = this.walkCost(path.length);
       if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return null; }
       s.kcal -= cost;
       const [lx, ly] = path[path.length - 1];
@@ -20721,7 +20756,27 @@
       // positions on the node you never left. Attempt the crossing FIRST;
       // only celebrate (or end the fight) when it actually lands.
       let crossed = null;
+      // MANTLE WATCH (break-it travel r4 2026-10-09): travelTo can kill you
+      // on the way in (your own pit trap). playerDeath passes the mantle —
+      // over stays false, but the fighter in this tbfight is a corpse.
+      const _bearerBefore = this.villagerId;
       try { crossed = this.travelTo(nx, ny, false, true); } catch (e) {} // combatExit: the barrier is the legitimate mid-fight crossing
+      // DEATH MID-CROSSING: the old code kept going — ending the fight as a
+      // 'flee' for a corpse (flee-reputation for a dead body, and "You
+      // escape" in the log next to the death) or, on the failed roll,
+      // continuing the fight and letting tbEnd overwrite the NEW bearer's
+      // health with the old fighter's HP. A dead body attempts nothing:
+      // dissolve the fight silently. The death narration already fired; the
+      // monsters melt back into the wilds like any other fight that ends
+      // without a victor.
+      if (this.over || this.villagerId !== _bearerBefore) {
+        try {
+          if (this.tbfight && !this.tbfight.over) {
+            this.tbfight.over = true; this.tbfight.result = 'dissolved'; this.tbfight = null;
+          }
+        } catch (e) {}
+        return true;
+      }
       if (crossed && crossed.kind === 'blockage') {
         // travelTo already named the blockage. The push is spent; the fight
         // is not — you hit a wall, not an exit.
