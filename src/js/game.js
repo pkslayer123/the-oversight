@@ -2756,8 +2756,12 @@
         this.grantKnowledge('recipe', rid, 3, { type: 'read', by: book.name });
       }
       // animals (via grantKnowledge engine — Steve 2026-10-07)
+      // LEVEL HONESTY (break-it 2026-10-09): books promise depth via
+      // unlocks.level (Tallow & Keeping: bear L4) — the old hardcoded 1
+      // squashed it, the same class as the 2026-10-08 plant grant squash.
       for (const aid of (unlocks.animals || [])) {
-        this.grantKnowledge('animal', aid, 1, { type: 'read', by: book.name });
+        const level = unlocks.level || 1;
+        this.grantKnowledge('animal', aid, level, { type: 'read', by: book.name });
       }
       this.integrate(5, 'book');
       // KNOWLEDGE TAXONOMY: books can unlock skills too, not just plants.
@@ -11747,21 +11751,28 @@
       return true;
     },
 
-    // _grantAnimal: animal knowledge via the unified path.
-    // Unifies direct writes, book unlocks, and villager sync.
-    _grantAnimal(aid, level, src) {
+    // _noteAnimalDepth: record animal knowledge depth WITHOUT narrating —
+    // the caller owns the learning beat. Shared by _grantAnimal and the
+    // eating-deepening track so the bear-rework engine hooks (vectorLevel
+    // gate, masterTechnique) fire no matter which path taught you.
+    // (break-it 2026-10-09: the deepening track narrated knowledgeLevels[4]
+    // — trichinosis, rendering, pemmican — while codex.animals stayed L1,
+    // so the engine never honored what the copy promised.)
+    _noteAnimalDepth(aid, level, src) {
+      src = src || {};
       const animal = (this.data.animals || []).find(a => a.id === aid);
       if (!animal) return false;
       this.state.codex.animals = this.state.codex.animals || {};
-      const cur = this.state.codex.animals[aid];
-      const curLevel = cur ? (cur.level || 0) : 0;
-      if (level <= curLevel) return false;
-      this.state.codex.animals[aid] = {
+      const cur = this.state.codex.animals[aid] || {};
+      const curLevel = cur.level || 0;
+      if (level <= curLevel) return false; // no downgrade, no repeat
+      const day = (src.day != null) ? src.day : ((this.state.scholar || {}).day || 0);
+      this.state.codex.animals[aid] = Object.assign({}, cur, {
         level: level,
-        learnedDay: src.day,
-        learnedFrom: src.by || null,
-        via: src.type,
-      };
+        learnedDay: day,
+        learnedFrom: (src.by != null) ? src.by : (cur.learnedFrom || null),
+        via: src.type || (cur.via || null),
+      });
       // MASTER TECHNIQUE (Steve 2026-10-09, bear rework): reaching L4 on an
       // animal whose def carries masterTechnique teaches the craft itself
       // (bear L4 -> rendering fat). Deep knowledge, earned — never dumped.
@@ -11770,6 +11781,15 @@
           this.grantKnowledge('technique', animal.masterTechnique, 1, { type: 'mastery', by: animal.name });
         }
       } catch (e) {}
+      return true;
+    },
+
+    // _grantAnimal: animal knowledge via the unified path.
+    // Unifies direct writes, book unlocks, and villager sync.
+    _grantAnimal(aid, level, src) {
+      const animal = (this.data.animals || []).find(a => a.id === aid);
+      if (!animal) return false;
+      if (!this._noteAnimalDepth(aid, level, src)) return false;
       this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
       this.state.codex.animalEncounters[aid] = Math.max(this.state.codex.animalEncounters[aid] || 0, 99);
       this.say(`\uD83D\uDC3E Learned: ${animal.name} (Level ${level}).`);
@@ -17465,10 +17485,18 @@
           // eating gifted meat of a stranger teaches your tongue, not the
           // name. (The old L2 line said the true name unconditionally: leak.)
           const aKnownDeep = adef && this.encAnimalKnown && this.encAnimalKnown(meatAid);
+          // DEPTH RECORD (break-it 2026-10-09): each deepening beat narrates
+          // knowledgeLevels[N] — the engine must record level N in
+          // codex.animals too, or the bear-rework gates (vectorLevel,
+          // masterTechnique) never fire for knowledge the copy already
+          // promised. Narration only teaches what the codex doesn't already
+          // hold (no re-teaching L2 text after a L4 book).
+          const curAnimalLvl = ((this.state.codex.animals || {})[meatAid] || {}).level || 0;
           if (aKnownDeep && mentry.tastings >= 3 && !mentry.deepKnown) {
             mentry.deepKnown = true;
             const kl2 = (adef.knowledgeLevels || {})['2'];
-            if (kl2) this.say(`Deeper knowledge: ${adef.name}. ${kl2}`);
+            if (kl2 && curAnimalLvl < 2) this.say(`Deeper knowledge: ${adef.name}. ${kl2}`);
+            this._noteAnimalDepth(meatAid, 2, { type: 'tasted' });
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
           // L3 — USES (Steve 2026-10-06): six tastings and you know what the
@@ -17477,7 +17505,8 @@
           if (aKnownDeep && mentry.tastings >= 6 && !mentry.usesKnown) {
             mentry.usesKnown = true;
             const kl3 = (adef.knowledgeLevels || {})['3'];
-            if (kl3) this.say(`Deeper knowledge: ${adef.name}. ${kl3}`);
+            if (kl3 && curAnimalLvl < 3) this.say(`Deeper knowledge: ${adef.name}. ${kl3}`);
+            this._noteAnimalDepth(meatAid, 3, { type: 'tasted' });
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
           // L4 — MASTERY (Steve 2026-10-06): ten tastings. You've eaten this
@@ -17486,7 +17515,8 @@
           if (aKnownDeep && mentry.tastings >= 10 && !mentry.masterKnown) {
             mentry.masterKnown = true;
             const kl4 = (adef.knowledgeLevels || {})['4'];
-            if (kl4) this.say(`📚 MASTERY: ${adef.name}. ${kl4}`);
+            if (kl4 && curAnimalLvl < 4) this.say(`📚 MASTERY: ${adef.name}. ${kl4}`);
+            this._noteAnimalDepth(meatAid, 4, { type: 'tasted' });
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
           if (mentry.deepKnown) {

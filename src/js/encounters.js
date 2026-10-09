@@ -120,6 +120,14 @@
       this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
       this.state.codex.animalEncounters[id] = Math.max(this.state.codex.animalEncounters[id] || 0, 3);
     } catch (e) {}
+    // KNOWLEDGE RECORD (break-it 2026-10-09): holding the body teaches the
+    // species (L1) — the fiction this function's comment always promised.
+    // The bear rework's vectorLevel gate reads codex.animals[].level, and
+    // nothing else wrote it on a kill, so the gate defaulted every hunted
+    // animal to 0 and the disease-vector line went silent on kills
+    // ("default: shown at L1 like before" was false for 34 animals).
+    // Quiet: the kill line already says the name; no downgrade, no repeat.
+    try { if (this._noteAnimalDepth) this._noteAnimalDepth(id, 1, { type: 'kill' }); } catch (e) {}
   };
   // Monsters: reuse the existing progressive-disclosure naming (village-agreed
   // name wins; true name only post-System; strange descriptor otherwise).
