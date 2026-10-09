@@ -43,7 +43,7 @@
 //   - _contestVigil(contest) -> phases (night watchpost; stillness discipline; alarm ends the vigil)
 // rules:
 //   - unlock_day: 14 (code: contestTick, contestEligible)
-//   - eligible_villagers: alive + member in good standing + fighting age 15-72, player alive/health>0/not exiled (code: contestEligible, Steve 2026-10-06)
+//   - eligible_villagers: alive + member in good standing + fighting age 15-72 + health > 20 (gravely wounded out per docs/CONTESTS.md; break-it 2026-10-09); player alive/health>0/not exiled (code: contestEligible, Steve 2026-10-06)
 //   - weekly_budget: 2 combined contests+shows (code: contestTick)
 //   - daily_chance: 0.3 (code: contestTick)
 //   - contest_vs_show_ratio: 0.6 (code: contestTick)
@@ -137,6 +137,13 @@
       const vp = this.vpOf(rid);
       const age = (vp && typeof vp.age === 'number') ? vp.age : 30;
       if (age < 15 || age > 72) continue;    // children and the very old stay
+      // GRAVELY WOUNDED (break-it 2026-10-09 r4; docs/CONTESTS.md): canon
+      // says the gravely wounded are ineligible. 20 HP is the engine's own
+      // survival floor (drop/starve reserve) — at or below it you're not a
+      // contestant, you're a casualty waiting for a timeslot.
+      const vhp = ((this.state.village.health || {})[rid] !== undefined)
+        ? this.state.village.health[rid] : 100;
+      if (vhp <= 20) continue;
       const nota = this.notability(rid);
       eligible.push({ id: rid, name: this.displayName(rid), notability: nota, notes: [] });
     }
@@ -2906,7 +2913,8 @@
     }
     // Clear after a beat — the village processes what happened
     this.state.activeContest = null;
-    this.state.lastContestDay = s.day;
+    // (break-it 2026-10-09 r4: the old state.lastContestDay write was dead
+    // code — written here and in _contestVerdict, read nowhere. Removed.)
     return { done: true, outcome };
   };
 
@@ -3538,7 +3546,8 @@
     ac.participant = pids[0];
     ac._suppressLearn = false;
     this.state.activeContest = null;
-    this.state.lastContestDay = s.day;
+    // (break-it 2026-10-09 r4: the old state.lastContestDay write was dead
+    // code — read nowhere. Removed.)
     // Single contestant: preserve the old outcome contract ('died'/'won'/
     // 'lost'). Multi: report every fate.
     if (fates.length === 1) return { done: true, outcome: fates[0].outcome };
@@ -3596,6 +3605,10 @@
       ? `📺 While you stood your ground and said no, they fought theirs.`
       : `📺 While you fought your fight, they fought theirs.`);
     for (const pid of others) {
+      // LIVENESS (break-it 2026-10-09 r4): an earlier fate in this same
+      // loop can kill a later contestant (duel partner casting). The dead
+      // don't fight — their fate was already announced on camera.
+      if (!this.isMember(pid)) continue;
       const pname = this.displayName(pid);
       // PLAYED NOT RNG (Steve 2026-10-08): their arena ran the real engine
       // too — fights fought, cases argued, ordeals endured. No tables.

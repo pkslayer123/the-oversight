@@ -143,7 +143,7 @@ Real off-screen contest resolution for villager contestants. Every category reso
 **Provides:** contestResolveVillager(pid, contest, opts) -> {outcome, detail, log[]}, contestResolveGroup(pids, contest, opts) -> {pid: {outcome, detail, log[]}}, duelFight(a, b, opts) -> villager-vs-villager rounds, contestBeastFor(wave, targetHp)
 
 **Rules:**
-- blood: pit/gauntlet/siege via fieldFight (real rounds, real stats); duel via duelFight (to the yield — death only on massive overkill); tithe via bleeding measures (demand vs health pool, temperament decides the rest). (code: bloodResolve)
+- duel: head-to-head via duelFight (to the yield — death only on massive overkill); a LONE duel contestant gets a System-cast sparring partner from the living roster (seeded stream, real duelFight) — never a canned loss; no partner -> honest 'no partner — forfeit' said aloud. (code: _cxDuelSingle, _cxDuelPartner; break-it 2026-10-09)
 - moot: caseScore = notability*2 + trust/10 + bravery/10 + temperament; p1 vs risk demand, p2 head-to-head with trust/notability tiebreaks. (code: mootResolve)
 - endurance: ordeals with honest costs — starve (health/day), drop (legs/speed/stamina), maw (nerve vs demand), vigil (bravery vs fear), exchange (team relay). (code: enduranceResolve)
 - other: stat-driven structured resolution, documented per category; chance is rigged theater (ratings-driven, deterministic). (code: otherResolve)
@@ -159,7 +159,7 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 
 **Rules:**
 - unlock_day: 14 (code: contestTick, contestEligible)
-- eligible_villagers: alive + member in good standing + fighting age 15-72, player alive/health>0/not exiled (code: contestEligible, Steve 2026-10-06)
+- eligible_villagers: alive + member in good standing + fighting age 15-72 + health > 20 (gravely wounded out per docs/CONTESTS.md; break-it 2026-10-09); player alive/health>0/not exiled (code: contestEligible, Steve 2026-10-06)
 - weekly_budget: 2 combined contests+shows (code: contestTick)
 - daily_chance: 0.3 (code: contestTick)
 - contest_vs_show_ratio: 0.6 (code: contestTick)

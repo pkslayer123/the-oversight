@@ -397,7 +397,9 @@ sec('SOFTLOCK S4 — watch-mode multi-take verdict resolves everyone, clears sta
   }
   ok('verdict reached', !!(verdict && (verdict.done || verdict.outcome)), JSON.stringify(verdict && verdict.outcome));
   ok('activeContest cleared after verdict', !Game.state.activeContest);
-  ok('lastContestDay stamped', Game.state.lastContestDay === Game.state.scholar.day);
+  // (break-it contest r4 2026-10-09: the lastContestDay write was dead code —
+  // written here, read nowhere. Removed; this assertion now pins the removal.)
+  ok('lastContestDay write removed (dead code)', Game.state.lastContestDay === undefined);
 }
 
 sec('SOFTLOCK S5 — choice input during arena suspension applies nothing');

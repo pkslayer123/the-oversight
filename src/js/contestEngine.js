@@ -7,7 +7,7 @@
 //   - duelFight(a, b, opts) -> villager-vs-villager rounds
 //   - contestBeastFor(wave, targetHp)
 // rules:
-//   - blood: pit/gauntlet/siege via fieldFight (real rounds, real stats); duel via duelFight (to the yield — death only on massive overkill); tithe via bleeding measures (demand vs health pool, temperament decides the rest). (code: bloodResolve)
+//   - duel: head-to-head via duelFight (to the yield — death only on massive overkill); a LONE duel contestant gets a System-cast sparring partner from the living roster (seeded stream, real duelFight) — never a canned loss; no partner -> honest 'no partner — forfeit' said aloud. (code: _cxDuelSingle, _cxDuelPartner; break-it 2026-10-09)
 //   - moot: caseScore = notability*2 + trust/10 + bravery/10 + temperament; p1 vs risk demand, p2 head-to-head with trust/notability tiebreaks. (code: mootResolve)
 //   - endurance: ordeals with honest costs — starve (health/day), drop (legs/speed/stamina), maw (nerve vs demand), vigil (bravery vs fear), exchange (team relay). (code: enduranceResolve)
 //   - other: stat-driven structured resolution, documented per category; chance is rigged theater (ratings-driven, deterministic). (code: otherResolve)
@@ -198,6 +198,70 @@
       const out = (ha / sa.maxHp) >= (hb / sb.maxHp) ? 'aWon' : 'bWon';
       return Object.assign(rec, { outcome: out, log: rec.log.concat(['Fifteen rounds, no yield — the judges give it to the less-bloodied.']) });
       });
+    },
+
+    // ---- DUEL: single contestant gets a System-cast partner ----
+    // (break-it 2026-10-09 r4): the old canned {outcome:'lost',
+    // detail:'duel needs a partner'} was a hidden outcome table sitting
+    // behind a "their arena ran the real engine too" comment — exactly the
+    // RNG-as-outcome-resolution Steve banned (2026-10-08). A duel with one
+    // contestant now casts a sparring partner from the living roster and
+    // runs the REAL duelFight. Partner selection draws from R() under
+    // _cxWithSeed (the seeded stream) — never Math.random — so the
+    // determinism contract holds: same state, same partner, same fate.
+    _cxDuelPartner: function(pid) {
+      var cands = [];
+      try {
+        const roster = (this.state.village || {}).roster || [];
+        for (const id of roster) {
+          if (id === pid || id === this.villagerId) continue; // never self, never the player
+          if (!this.isMember(id)) continue;                   // dead or severed: out
+          const vp = this.vpOf ? this.vpOf(id) : null;
+          const age = (vp && typeof vp.age === 'number') ? vp.age : 30;
+          if (age < 15 || age > 72) continue;                 // fighting age, like eligibility
+          cands.push(id);
+        }
+      } catch (e) {}
+      if (!cands.length) return null;
+      cands.sort(); // stable order before the seeded pick
+      return cands[Math.floor(R() * cands.length)];
+    },
+
+    // Run a single-contestant duel as a real fight. Returns the standard
+    // {outcome, detail, log[]} from pid's perspective. Wounds land on BOTH
+    // duelists via the real hurt pipeline; a dead partner is removed from
+    // the roster and gossiped about — nothing silent. No partner on the
+    // roster: honest forfeit, said aloud, never a silent auto-loss.
+    _cxDuelSingle: function(pid, contest, opts) {
+      opts = opts || {};
+      // (break-it 2026-10-09 r4): cheerBonus arrives from watch paths as
+      // cheerBonus; duelFight reads braveryBonus. Map it — the old
+      // pass-through silently dropped the cheer (the comment claimed the
+      // wiring was fixed; it wasn't).
+      const braveryBonus = opts.braveryBonus || opts.cheerBonus || 0;
+      const partner = this._cxDuelPartner(pid);
+      const pst = this._cxStats(pid);
+      if (!partner) {
+        const line = `${pst.name} has no one to face. The System shrugs — a duel with no partner is a forfeit.`;
+        return { outcome: 'lost', detail: 'no partner — forfeit', log: [line] };
+      }
+      const rec = this.duelFight(pid, partner, { braveryBonus });
+      const pnm = this._cxStats(partner).name;
+      // Wounds are real for both — same rule as the group path (break-it r3).
+      try { if (rec.aTaken > 0) this.hurtVillager(pid, rec.aTaken, 'contest'); } catch (e) {}
+      try { if (rec.bTaken > 0) this.hurtVillager(partner, rec.bTaken, 'contest'); } catch (e2) {}
+      const L = rec.log.slice();
+      const map = {
+        aWon: ['won', 'won the duel'], bWon: ['lost', 'yielded'],
+        aDied: ['died', 'terrible blow — an accident'], bDied: ['won', 'won — a terrible accident'],
+        doubleYield: ['lost', 'double yield'],
+      }[rec.outcome] || ['lost', 'the judges decide'];
+      if (rec.outcome === 'bDied') {
+        // The partner died on camera: real removal, real news.
+        try { if (typeof this._cxKillContestant === 'function') this._cxKillContestant(partner); } catch (e) {}
+        try { if (typeof this._cxGossip === 'function') this._cxGossip('died', partner, (contest || {}).name); } catch (e2) {}
+      }
+      return { outcome: map[0], detail: `dueled ${pnm}: ${map[1]}`, log: L };
     },
 
     // ---- BLOOD ----
@@ -567,8 +631,10 @@
       try {
         const cat = (contest || {}).cat;
         if (cat === 'blood') {
-          // duel is head-to-head — needs the group; handled by resolveGroup.
-          if (contest.id === 'duel') return { outcome: 'lost', detail: 'duel needs a partner', log: [] };
+          // duel is head-to-head: a lone contestant gets a System-cast
+          // partner and a real fight (break-it 2026-10-09 r4 — the old
+          // canned 'duel needs a partner' loss is gone).
+          if (contest.id === 'duel') return this._cxDuelSingle(pid, contest, opts);
           return this._cxBlood(pid, contest, opts);
         }
         if (cat === 'moot') {
@@ -601,8 +667,10 @@
           if (pids.length >= 2) {
             // opts carry the watcher's cheer / alien rigging (braveryBonus)
             // — duels are blood, and blood gets the cheer (break-it 2026-10-08:
-            // cheer previously never reached duelFight).
-            const rec = this.duelFight(pids[0], pids[1], opts);
+            // cheer previously never reached duelFight; break-it 2026-10-09 r4:
+            // the old pass-through STILL dropped it — duelFight reads
+            // braveryBonus, watch paths send cheerBonus. Mapped now.)
+            const rec = this.duelFight(pids[0], pids[1], { braveryBonus: opts.braveryBonus || opts.cheerBonus || 0 });
             const results = {};
             const apply = (pid, took) => { if (took > 0) { try { this.hurtVillager(pid, took, 'contest'); } catch (e) {} } };
             // Wounds are real in EVERY duel ending (break-it 2026-10-08:
@@ -616,9 +684,11 @@
             else { results[pids[0]] = { outcome: 'lost', detail: 'double yield', log: rec.log }; results[pids[1]] = { outcome: 'lost', detail: 'double yield', log: [] }; }
             return results;
           }
-          // A duel needs a partner — matches the single-participant path.
+          // One contestant: System-cast partner, real fight — same as the
+          // single-participant path (break-it 2026-10-09 r4: the old canned
+          // 'duel needs a partner' loss is gone from both paths).
           const r = {};
-          for (const pid of pids) r[pid] = { outcome: 'lost', detail: 'duel needs a partner', log: [] };
+          for (const pid of pids) r[pid] = this._cxDuelSingle(pid, contest, opts);
           return r;
         }
         // (break-it 2026-10-08: group blood contests previously fell through
