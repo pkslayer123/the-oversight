@@ -117,8 +117,86 @@ moveLeft itself, which is why the original flip test never hit this.
 - The counter-honesty + telegraph-lies sweep (belltoad shout vs chorus,
   projector sidestep, hushwolf fire, landlord rent, union-rep kill-first,
   nevermore landing window, hushwolf silence telegraph, multi-turn windups)
-  is running in worktree break-monsters4b as the second worker; its findings
-  and any src/ patches it proposes will land as a follow-up commit.
+  ran in worktree break-monsters4b as the second worker (52/52 green, 3
+  seeds, committed 75a348e there). Its 3 proposed patches were independently
+  verified against the code and APPLIED in this worktree — see follow-up
+  below. HELD per its report: projector sidestep/watch-phase, landlord rent,
+  nevermore landing window, all telegraphs (hushwolf silence, bulldozer
+  charge, bright-idea detonation), belltoad shout's direct effects.
 - The 8 orphaned audio functions (swarmFilm/swarmBuild/swarmFlash/
   swarmShutters/swarmScatter/swarmEscalate/hypeDeflate/hypeEncourage/
   hypeInflate) are still unreferenced — audio run's call, not monsters'.
+
+## Follow-up: counter-honesty fixes (same run, ~01:00 CDT)
+
+The sibling sweep's three catches were verified claim-by-claim against the
+code before patching (no blind applies).
+
+### CATCH 3 — "SHOUT breaks the chorus for a round" was never implemented (HONESTY) — FIXED
+
+**The break:** The tbRoundWrap comment always promised it, and the codex
+weakness ("loud noises scatter the pack") implies it — but `tbPlayerShout`
+set no state that `tbRoundWrap` reads. The `_pendingPack` 40%/round arrival
+roll fired regardless of the bellow. Proven by the sweep's B1.5/B1.6;
+re-verified here.
+
+**The fix (src/js/game.js):** shout sets `f.chorusBrokenUntil = f.round + 1`;
+the round wrap skips `_pendingPack` arrivals while
+`(f.chorusBrokenUntil || 0) >= f.round`, with a narrated line ("no throat
+answers the call this round"). The pack is suppressed, not consumed — the
+chorus resumes the next round. The 2/fight shout cap bounds the exploit.
+
+**Proof:** `scripts/test-break-monsters4-counters-fix-20261008.js` §F1 —
+control (no shout) arrivals fire; shouted round suppresses even with a
+forced-hitting roll; pack count preserved; narration present; round 3
+resumes. 14/14 × 3 seeds.
+
+### CATCH 4 — Union rep: "the picket line dissolves" was half-true + dead buff fields (HONESTY + DEAD-CODE) — FIXED
+
+**The break:** On rep death the tbDamage solidarity aura (+3 organizing / +8
+walkout) dropped — live and honest — but silently, and the per-ally
+`urDmgBonus`/`urBuffed` fields were write-only (zero readers in any damage
+path; grep-verified). The summoned line itself never broke.
+
+**The fix (src/js/game.js):** (1) purged the dead writes (solidarity loop +
+summon literal); (2) rep death now actually dissolves the line — summoned
+picketers (`m_ur_*` keys) flee with narration ("drops its tiny sign and
+scatters — without the rep, the picket line dissolves"), pre-existing allies
+stay on uncoordinated, plus a "clipboard drops" line so the aura loss isn't
+silent. Design call (figure-it-out-yourself): the codex promise is now
+mechanically real, and killing the rep first is the rewarded counter.
+
+**Proof:** §F2 — rep killed: picketer fled, bystander stayed, narration
+fired; static check confirms zero live-code references to the purged fields.
+14/14 × 3 seeds.
+
+### CATCH 5 — Hushwolf "fire (they remember being dogs)" overpromised (HONESTY) — FIXED
+
+**The break:** The fire counter exists in exactly one place —
+`investigateQuietWoods` (carry a flame while tracking → the pack gives
+ground, no encounter). In combat, fire does nothing: the fear stimulus needs
+`fear === 'fire'` but the data says `fear: 'numbers'`, and the rush block is
+fire-free. A player carrying a torch into a wolf fight on the codex's advice
+was lied to. An engine-side in-combat fire response would collide with the
+NO SELF-PRESERVATION rule — Steve's design call, not this run's.
+
+**The fix (src/data/monsters.json, byte-surgical):** weakness rescoped to the
+surface where it's true: "fire (they remember being dogs — carry a flame
+when you track the quiet woods)". Copy-only, no engine risk.
+
+**Proof:** §F3 — static assertions on the weakness string. 14/14 × 3 seeds.
+
+### Follow-up regressions
+- New: counters-fix 14/14 × 3 seeds (20261008, 7, 4242); flip test still 18/18
+- `validate-ontology.js`: 50/50, release permitted
+- Pre-existing failures noted, NOT caused by this run: `test-choir-toad-call.js`
+  / `test-choir-toad-spawnkeys.js` crash (`seMoveMod is not a function` — their
+  eval lists omit statusEffects.js; stale harness); `test-audio-census-20261008.js`
+  2 fails (the documented swarm/hype orphans + mirrormothFlash expectation —
+  untouched by this diff, verified via `git diff`).
+
+### Files changed (follow-up)
+- src/js/game.js (chorus-break state + wrap gate; union-rep dead-field purge + rep-death dissolve)
+- src/data/monsters.json (1 string: hushwolf weakness rescoped, byte-surgical)
+- scripts/test-break-monsters4-counters-fix-20261008.js (new, 14/14 ×3 seeds)
+- evidence/2026-10-08/break-monsters4-flip.md (this file, updated)

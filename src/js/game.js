@@ -21378,10 +21378,16 @@
       // original is dead. The croak carries for miles.
       // The resonance builds: 1 toad = base, 2 = +50%, 3 = +100%, 4 = +150%.
       // SHOUT breaks the chorus for a round. Killing drops the harmony.
+      // (Break-it 2026-10-08: the shout now sets f.chorusBrokenUntil — before,
+      // nothing read it and the pack arrived regardless of the bellow.)
+      const chorusBroken = (f.chorusBrokenUntil || 0) >= f.round;
+      if (chorusBroken && this._pendingPack && this._pendingPack.count > 0) {
+        this.say('Your bellow still hangs in the air — no throat answers the call this round. (The chorus is broken.)');
+      }
       // CHORUS CALL (Steve 2026-10-05): each alive toad, each round, has a
       // 25% chance to call another. More toads = more croaking = higher chance.
       // 1 toad: 25%/round, 2 toads: 44%/round. Up to 3 max. The chorus builds.
-      if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
+      if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0 && !chorusBroken) {
         // Each PENDING toad rolls: 40% chance to answer the call (Steve 2026-10-05: bump up to reduce dead air).
         // The chorus continues even if all alive toads are dead.
         const pendingCount = this._pendingPack.count;
@@ -22121,6 +22127,24 @@
               }
             }
             this.audioEvent('wolfBreak');
+          }
+          // THE REP FALLS (union_rep, break-it 2026-10-08): without the rep
+          // the picket line dissolves. The coordination aura (tbDamage
+          // solidarity, +3 organizing / +8 walkout) drops with it — and the
+          // summoned picketers lose heart and scatter. (Was: the aura dropped
+          // silently and the per-ally urDmgBonus fields were write-only dead
+          // code; the line itself never broke.)
+          if (this.urIs(t) && this.tbfight) {
+            this.say('The clipboard drops. The chanting falters, then stops.');
+            for (const o of this.tbfight.fighters) {
+              if (o.kind !== 'monster' || !o.alive || o.fled || o.key === t.key) continue;
+              // Only the summoned picket line scatters — monsters that were
+              // already in the fight stay, uncoordinated.
+              if (String(o.key || '').indexOf('m_ur_') === 0) {
+                o.fled = true;
+                this.say(`${o.name} drops its tiny sign and scatters — without the rep, the picket line dissolves.`);
+              }
+            }
           }
           // DEATH THROES: a sweeping-beam monster cut down before its first
           // Discharge fires anyway — the light was already in its eyes. The
@@ -23350,6 +23374,11 @@
       f.shouts = (f.shouts || 0) + 1;
       if (f.shouts > 2) { this.say('Your throat is raw. No shout left in this fight.'); return false; }
       p.acted = true;
+      // CHORUS-BREAK (break-it 2026-10-08): the tbRoundWrap comment always
+      // promised "SHOUT breaks the chorus for a round" but no state was ever
+      // set — the pending pack arrived regardless. A bellow in round N now
+      // silences the round-N+1 call. (The 2/fight cap bounds it.)
+      f.chorusBrokenUntil = f.round + 1;
       this.say('You cup your hands and BELLOW — raw noise, no words, all lungs.');
       this.audioEvent('shout');
       let n = 0;
@@ -26249,10 +26278,11 @@
             : 'It is holding a meeting. About you.');
         }
         const allies = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && x.key !== m.key);
-        // SOLIDARITY: buff allies
-        for (const a of allies) {
-          if (!a.urBuffed) { a.urBuffed = true; a.urDmgBonus = (a.urDmgBonus || 0) + 3; }
-        }
+        // SOLIDARITY: the line hits harder while the rep organizes — +3
+        // organizing, +8 walkout — implemented as the tbDamage solidarity aura,
+        // which drops the moment the rep dies. (Break-it 2026-10-08: the old
+        // per-ally urDmgBonus/urBuffed fields were write-only — never read by
+        // any damage path — and are gone.)
         if (allies.length && !m.urSolidaritySaid) {
           m.urSolidaritySaid = true;
           this.say(known ? '"STAND TOGETHER!" The other monsters stand straighter. (+3 damage to allies — kill the rep first.)'
@@ -26263,7 +26293,6 @@
         if (!m.urLineBroken && m.hp <= m.maxHp / 2 && m.beamPhase !== 'walkout') {
           this.encSetPhase(m, 'walkout');
           m.urWalkout = true;
-          for (const a of allies) a.urDmgBonus = (a.urDmgBonus || 0) + 5;
           this.say('"WALKOUT! WALKOUT!" It climbs onto the bullhorn and stops fighting entirely — full-time coordination. (Allies +8 damage. The rep is UNTARGETABLE while coordinating.)');
           try { this.audioEvent('unionWalkout', {}); } catch (e) {}
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
@@ -26307,7 +26336,7 @@
             name: this.monsterDisplayName(pick.id) + ' (picket)', emoji: pick.emoji || '👹',
             hp, maxHp: hp, speed: pick.speed || 3, mx: spot.x, my: spot.y,
             alive: true, fled: false, telegraph: null, mdef: pick,
-            hesitate: 0, blind: 0, stunned: 0, threatQueue: [], urBuffed: true, urDmgBonus: 3,
+            hesitate: 0, blind: 0, stunned: 0, threatQueue: [],
           });
           f.order = S.combat.turnOrder(f.fighters);
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
