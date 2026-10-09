@@ -8012,10 +8012,17 @@
     },
     consumeItem(itemId, n) {
       const inv = this.state.scholar.inventory || [];
-      const it = inv.find(i => (i.itemId || i.id) === itemId && (i.units || 1) > 0);
-      if (!it) return false;
+      const idx = inv.findIndex(i => (i.itemId || i.id) === itemId && (i.units || 1) > 0);
+      if (idx < 0) return false;
+      const it = inv[idx];
       it.units = (it.units || 1) - (n || 1);
-      if (it.units <= 0) this.state.scholar.inventory = inv.filter(x => x !== it);
+      // IN-PLACE (hunter break-it 2026-10-09): the old code REPLACED the
+      // inventory array (inv.filter) when the last unit went — orphaning any
+      // live reference. A captured `inv` kept the consumed item AND missed
+      // later pushes (a trap catch's carcass landed in the new array while
+      // the old one still showed the spent snare wire). Splice keeps the
+      // array identity; behavior is identical for fresh readers.
+      if (it.units <= 0) inv.splice(idx, 1);
       return true;
     },
 

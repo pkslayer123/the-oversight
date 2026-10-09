@@ -44,3 +44,7 @@ must earn meaningful rewards — that's the whole point of the ladder.
 
 - 2026-10-09: canon created. Smoking restored 8 → 16 ticks per Steve's final
   pacing call.
+- 2026-10-09 (hunter break-it): pemmican bars now scale with input kcal at
+  ~97% retention (half-bar granularity) instead of a fixed 3 bars/set — small
+  inputs (smoked fish + javelina fat, ~1058 kcal) were printing 1800. Full-size
+  sets still pay 3 bars. Recipe and retention unchanged.

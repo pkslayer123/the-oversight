@@ -1329,9 +1329,12 @@
           if (rawFat.length) actions.push([`Render ${rawFat.length} fat`, () => { Game.renderFat(); refresh(); }]);
           // PEMMICAN (Steve 2026-10-09, bear rework): the old way — dried
           // meat + rendered fat + berries. The top preservation tier, earned.
-          if (Game.knowsTechnique && Game.knowsTechnique('render') && Game.pemmicanSets) {
-            const sets = Game.pemmicanSets();
-            if (sets > 0) actions.push([`Make pemmican (${sets * 3} bars)`, () => { Game.makePemmican(); refresh(); }]);
+          if (Game.knowsTechnique && Game.knowsTechnique('render') && Game.pemmicanPreview) {
+            const prev = Game.pemmicanPreview();
+            // PEMMICAN LABEL (hunter break-it 2026-10-09): bars scale with
+            // input kcal (~97% retention), so the label shows the honest
+            // preview, not the old fixed sets*3 promise.
+            if (prev.sets > 0) actions.push([`Make pemmican (${prev.bars} bar${prev.bars === 1 ? '' : 's'})`, () => { Game.makePemmican(); refresh(); }]);
           }
           // Boil risky water -> clean (kills bacteria, not chemicals).
           const risky = (Game.state.scholar.water || []).filter(b => b.quality === 'risky').length;

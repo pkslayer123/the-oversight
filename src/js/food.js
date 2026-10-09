@@ -7,6 +7,8 @@
 //   - cookFood()
 //   - renderFat()
 //   - pemmicanSets()
+//   - pemmicanPlan()     (per-set picks + honest bar counts, no consumption)
+//   - pemmicanPreview()  (honest {sets, bars} for the UI label)
 //   - makePemmican()
 //   - cookTransform()
 //   - cookClassFor()
@@ -633,6 +635,49 @@
       return Math.min(Math.floor(meatU / 2), fatU, Math.floor(berryU / 2));
     },
 
+    // PEMMICAN PLAN: the concrete per-set picks + honest bar counts, no
+    // consumption. One set = 2 preserved meat + 1 rendered fat + 2 berries.
+    // PROPORTIONAL BARS (hunter break-it 2026-10-09): the old fixed 3
+    // bars/set let small inputs print money — 2 smoked fish portions +
+    // javelina fat (~1058 kcal in) paid a fixed 1800 out. Bars now track
+    // input kcal at ~97% retention (canon), half-bar granularity; full-size
+    // sets still pay 3 bars. Units are picked back-to-front like the old
+    // takeUnits, so partial stacks split the same way.
+    pemmicanPlan(container) {
+      const inv = container || this.state.scholar.inventory;
+      const MEAT = i => i.foodKind === 'meat' && i.foodState === 'preserved';
+      const FAT = i => i.foodKind === 'fat' && i.foodState === 'rendered';
+      const BERRY = i => i.foodKind === 'plant' && /berr/i.test(String(i.plantId || '')) && i.edible !== false;
+      const sets = this.pemmicanSets(inv);
+      const plan = [];
+      const rem = inv.map(it => it ? (it.units || 1) : 0); // shadow units
+      const pick = (pred, need) => {
+        let left = need; const picks = [];
+        for (let i = inv.length - 1; i >= 0 && left > 0; i--) {
+          const it = inv[i];
+          if (!it || !pred(it) || this.isSpoiled(it) || rem[i] <= 0) continue;
+          const take = Math.min(rem[i], left);
+          picks.push({ i, take, kcal: (it.kcalEach || 0) * take });
+          rem[i] -= take; left -= take;
+        }
+        return left > 0 ? null : picks;
+      };
+      for (let sN = 0; sN < sets; sN++) {
+        const mp = pick(MEAT, 2), fp = pick(FAT, 1), bp = pick(BERRY, 2);
+        if (!mp || !fp || !bp) break;
+        const inKcal = mp.concat(fp, bp).reduce((a, p) => a + p.kcal, 0);
+        plan.push({ picks: mp.concat(fp, bp), bars: Math.max(1, Math.round(inKcal * 0.97 / 600)) });
+      }
+      return plan;
+    },
+
+    // PEMMICAN PREVIEW: honest {sets, bars} for the UI label — same math as
+    // the make, no consumption.
+    pemmicanPreview(container) {
+      const plan = this.pemmicanPlan(container);
+      return { sets: plan.length, bars: plan.reduce((a, p) => a + p.bars, 0) };
+    },
+
     // PEMMICAN (Steve 2026-10-09, bear rework): the top preservation tier.
     // Dried/smoked meat + rendered fat + berries -> pemmican bars.
     // Gated on knowing rendering — the old way is earned, never dumped.
@@ -645,37 +690,28 @@
       }
       const inv = container || this.state.scholar.inventory;
       const day = this.state.scholar.day;
-      const sets = this.pemmicanSets(inv);
-      if (!sets) { this.say('Pemmican needs three things: dried meat (2), rendered fat, and berries (2).'); return null; }
-      const takeUnits = (pred, need) => {
-        let left = need;
-        for (let i = inv.length - 1; i >= 0 && left > 0; i--) {
-          const it = inv[i];
-          if (!it || !pred(it) || this.isSpoiled(it)) continue;
-          const u = it.units || 1;
-          const take = Math.min(u, left);
-          it.units = u - take; left -= take;
-          if (it.units <= 0) inv.splice(i, 1);
+      const plan = this.pemmicanPlan(inv);
+      if (!plan.length) { this.say('Pemmican needs three things: dried meat (2), rendered fat, and berries (2).'); return null; }
+      let totalBars = 0;
+      for (const set of plan) {
+        // consume back-to-front so indices stay valid
+        const byI = set.picks.slice().sort((a, b) => b.i - a.i);
+        for (const p of byI) {
+          const it = inv[p.i];
+          it.units = (it.units || 1) - p.take;
+          if (it.units <= 0) inv.splice(p.i, 1);
         }
-        return need - left;
-      };
-      const meatGot = takeUnits(i => i.foodKind === 'meat' && i.foodState === 'preserved', sets * 2);
-      const fatGot = takeUnits(i => i.foodKind === 'fat' && i.foodState === 'rendered', sets);
-      const berryGot = takeUnits(i => i.foodKind === 'plant' && /berr/i.test(String(i.plantId || '')) && i.edible !== false, sets * 2);
-      if (meatGot < sets * 2 || fatGot < sets || berryGot < sets * 2) {
-        this.say('The ingredients slipped away mid-making — not enough of everything.');
-        return null;
+        totalBars += set.bars;
       }
-      const bars = sets * 3;
       inv.push({
         itemId: 'pemmican', plantId: null, foodKind: 'meat', foodState: 'pemmican',
-        edible: true, units: bars, unit: 'bar', kcalEach: 600,
-        spoilDay: day + 120, kg: 0.3 * bars, safe: true,
+        edible: true, units: totalBars, unit: 'bar', kcalEach: 600,
+        spoilDay: day + 120, kg: 0.3 * totalBars, safe: true,
         name: 'Pemmican',
         prep: 'Dried meat pounded with rendered fat and berries. The original energy bar. Nearly indestructible.',
       });
       this.tickAction(20);
-      this.say(`You pound, mix, and pack — ${bars} bars of pemmican. This will keep till spring and beyond. (20 ticks)`);
+      this.say(`You pound, mix, and pack — ${totalBars} bars of pemmican. This will keep till spring and beyond. (20 ticks)`);
       try { this.audioEvent('animalButcher'); } catch (e) {}
       return null;
     },
@@ -821,8 +857,12 @@
         it.kcalEach = foodSafe ? per : 0; it.hiddenKcal = gross;
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
         // TRICHINOSIS (disease rework 2026-10-09): bear and boar carry it.
-        if (['black_bear', 'wild_boar', 'javelina'].includes(aid2)) {
-          it.parasiteRisk = { id: 'trichinosis', p: aid2 === 'black_bear' ? 0.35 : 0.25 };
+        // HUNTER BREAK-IT 2026-10-09: this used `aid2` — declared LATER and
+        // block-scoped inside `if (!it.charred)` — so every specialist
+        // butcher threw ReferenceError mid-action (half-cleaned item, no
+        // yields, no trichinosis). `meatId` (same value) is already in scope.
+        if (['black_bear', 'wild_boar', 'javelina'].includes(meatId)) {
+          it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25 };
         }
         it.spoilDay = day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
@@ -2035,7 +2075,7 @@
         opts.push({
           id: 'smoke',
           label: this.knowsTechnique('preserve') ? 'Smoke it' : 'Smoke it (you\'re learning)',
-          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}8 ticks · safe · ~${smokeKcal}/portion · keeps ~${this.knowsTechnique('preserve') ? 30 : 15}d`,
+          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}16 ticks · safe · ~${smokeKcal}/portion · keeps ~${this.knowsTechnique('preserve') ? 30 : 15}d`,
           blocked: !this.nearFire() ? 'needs fire' : null,
         });
       } else if (it.needsCooking) {
