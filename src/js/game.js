@@ -7999,7 +7999,16 @@
     // contractDisease(effectId, opts): the single contraction path for real
     // diseases. Symptom-only narration comes from the def's applyText.
     // Handles east_nile severe escalation.
+    // TWO POOLS: mundane only. Alien diseases contract through the
+    // monster-meat table (cooking.monsterDiseases) — never here.
     contractDisease(effectId, opts) {
+      try {
+        const d = this.seDef(effectId);
+        if (!d || d.pool !== 'mundane') {
+          this.say('That is not a sickness of this earth — no earthly contraction applies.');
+          return false;
+        }
+      } catch (e) {}
       opts = opts || {};
       const ok = this.applyStatus('scholar', effectId, opts);
       if (!ok) return false;
@@ -8364,7 +8373,9 @@
           const dl = this.diseaseLabel('scholar', e);
           out.push({ id: e.id, icon: dl.icon, label: dl.label,
                      diagnosed: this.isDiagnosed('scholar', e.id),
-                     severe: !!e.severe, stacks: e.stacks || 1 });
+                     severe: !!e.severe, stacks: e.stacks || 1,
+                     pool: def.pool || 'mundane',
+                     transformation: (def.pool === 'alien' && def.transformation) ? def.transformation : null });
         }
         return out;
       } catch (e) { return []; }

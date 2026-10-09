@@ -25,6 +25,7 @@
 //   - never_silent: application, ticks, expiry, and cures all narrate via say() (code: applyStatus)
 //   - symptom_only: disease apply/tick/expire text never names the disease; the legacy s.diseases mirror stores the symptom label, not the true name (code: applyStatus)
 //   - diagnosis_gated: the true name unlocks only via diagnoseDisease — medical ability, herb lore, or stethoscope (code: diagnoseDisease)
+//   - two_pools: EVERY disease def carries pool 'mundane' (earthly vectors: water/food/wounds/ticks/mosquitoes) or 'alien' (monster bites, monster meat). The pools NEVER mix — seIsDisease admits mundane only; contractDisease refuses alien; alien diseases keep their own effects, cures (usually none), and transformations. Mundane medicine never touches alien biology (code: seIsDisease, contractDisease)
 //   - bridge: stun-family writes legacy stunned/stunFull fields; poison/disease mirror s.poisons/s.diseases (code: applyStatus)
 //   - legacy_countdown: stun-family turn countdown stays with existing consumption sites; engine tracks parallel turnsLeft (code: seTickFighter)
 //   - resistible: resistMod is read via modTarget as an apply-chance multiplier (code: applyStatus)
@@ -372,7 +373,10 @@
     // Is this status id a disease (symptom-presented, diagnosis-gated)?
     seIsDisease: function (id) {
       var def = this.seDef(id);
-      return !!(def && def.symptomLabel);
+      // TWO POOLS (Steve 2026-10-09): mundane only. Alien diseases (monster
+      // bites, monster meat) are a separate pool with alien effects — they
+      // are never diagnosed, eased, or cured by the mundane machinery.
+      return !!(def && def.pool === 'mundane' && def.symptomLabel);
     },
 
     // Has this disease been diagnosed on this target?
