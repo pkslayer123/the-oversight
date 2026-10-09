@@ -11010,11 +11010,19 @@
           if (act === 'teach') {
             const pid = untaught[0];
             const plant = (this.data.plants || []).find(p => p.id === pid);
-            this.say(`${first} presses something into your hand. "${plant ? plant.name : 'This'} — for what you did. Look for the ${plant ? (plant.leaf || 'leaves') : 'sign'}. You'll know it."`);
-            this.identifyPlant(pid, first);
-            // NPC ATTENTION (Steve 2026-10-07, Drama A1): they just taught
-            // you something real — 💬 marks new knowledge worth following up on.
-            try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'dialogue'); } catch (e2) {}
+            // BAD KNOWLEDGE (break-it knowledge 2026-10-08): gratitude doesn't
+            // make them right. A teacher who is wrong about the plant teaches
+            // it wrong — the wrongTeaching beat runs here like every other
+            // player-facing teaching path (teachPlant, fireside, traded).
+            let wt = null;
+            try { wt = this.wrongTeaching(rid, pid, 'gratitude'); } catch (e) {}
+            if (!wt) {
+              this.say(`${first} presses something into your hand. "${plant ? plant.name : 'This'} — for what you did. Look for the ${plant ? (plant.leaf || 'leaves') : 'sign'}. You'll know it."`);
+              this.identifyPlant(pid, first);
+              // NPC ATTENTION (Steve 2026-10-07, Drama A1): they just taught
+              // you something real — 💬 marks new knowledge worth following up on.
+              try { const p = v.positions[rid]; if (p) this.drama('npcAlert', p.mx, p.my, 'dialogue'); } catch (e2) {}
+            }
           } else if (act === 'encourage') {
             this.state.scholar.energy = Math.min(100, (this.state.scholar.energy || 0) + 15);
             this.say(`${first} claps your shoulder. "You're doing better than you think." (+15 energy — morale is real.)`);
@@ -11237,16 +11245,24 @@
         // they want something YOU know that they don't — their full pool
         // plus everything they've been taught. Only truly-known plants
         // (L1+) count as currency: a blind taste isn't knowledge.
-        // (break-it 2026-10-08: the payment was narrated but never recorded,
-        // so one plant bought unlimited trades.)
-        const yourPlants = Object.keys(this.state.codex.plants || {}).filter(k => this.plantKnown(k));
+        // COUNTERFEIT CURRENCY (break-it knowledge 2026-10-08): a plant you
+        // know only WRONGLY (wrongAs) isn't knowledge either — the old code
+        // let it pay, printed its TRUE name in the trade line (a name you
+        // never learned), and laundered your false lesson into the trader's
+        // correct knowledge. Wrongly-known plants can't be spent.
+        const cxp = this.state.codex.plants || {};
+        const yourPlants = Object.keys(cxp).filter(k => this.plantKnown(k) && !(cxp[k] || {}).wrongAs);
         const theirPool = this.traderKnowledge(vid, true);
         const theirTaught = ((this.state.village.taught || {})[vid]) || [];
         const theyKnow = new Set([...theirPool, ...theirTaught]);
         // find something you know that isn't in their teach pool
         trade = yourPlants.find(yPid => !theyKnow.has(yPid) && yPid !== pid);
         if (!trade) {
-          this.say(`${first} wants knowledge in trade, but you have nothing they don't already know. (Learn more plants first.)`);
+          // HONEST REFUSAL (break-it knowledge 2026-10-08): name the real
+          // reason — counterfeit currency (wrongly-known plants) doesn't buy.
+          const wrongOnly = Object.keys(cxp).some(k => (cxp[k] || {}).wrongAs && this.plantKnown(k));
+          if (wrongOnly) this.say(`${first} wants knowledge in trade — real knowledge, things you're sure of. What you carry, you carry under the wrong names, and they can smell the doubt. (Sort the wrong ones out first.)`);
+          else this.say(`${first} wants knowledge in trade, but you have nothing they don't already know. (Learn more plants first.)`);
           return 'nothing';
         }
         const tp = (this.data.plants || []).find(x => x.id === trade);
@@ -26572,7 +26588,11 @@
           this.encSetPhase(m, 'picketing');
           const w1 = (this.data.monsters || []).filter(x => (x.wave || 1) === 1 && x.id !== 'bulldozer' && x.id !== 'gallowdeer');
           const pick = w1[Math.floor(Math.random() * w1.length)];
-          this.say(`"PICKET LINE!" A ${pick.name} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
+          // NAME-GATED (break-it knowledge 2026-10-08): pick.name is the
+          // System's true name — the fighter two lines down is named through
+          // the gated monsterDisplayName, and this line must agree. The
+          // village name, or the descriptor — never the true name for free.
+          this.say(`"PICKET LINE!" A ${this.monsterNoun(pick.id)} lumbers in, holding a tiny sign. (The rep called backup — from the OLD wave.)`);
           try { this.audioEvent('unionPicket', {}); } catch (e) {}
           // Spawn adjacent to rep
           const spot = { x: Math.min(8, m.mx + 1), y: m.my };

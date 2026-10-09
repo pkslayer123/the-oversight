@@ -114,11 +114,35 @@
       }
       if (p.lookalikeNote) {
         // caution, not identification: something to watch for.
-        // Scrub the species name — the note must never leak it.
+        // SPECIES-NAME SCRUB (examine_never_names; break-it knowledge
+        // 2026-10-08): the old scrub only replaced the examined plant's full
+        // name. Notes also leak the plant's own FIRST name-word ("Shagbark
+        // hickory is the sweet one", "Thorns + tendrils = greenbrier") and
+        // OTHER species' names or first words ("young hickory sprouts" =
+        // Hickory Nuts) — true names the player hasn't earned. Scrub the
+        // examined plant's full name and first name-word (>=6 chars) with
+        // 'it', and any other UNKNOWN species' full name / first name-word
+        // with 'a lookalike'. Species the player KNOWS keep their names —
+        // earned knowledge isn't censored.
+        const escRe = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const firstWord = n => String(n || '').split(/[\s-]+/)[0] || '';
         let note = String(p.lookalikeNote).split('.')[0];
+        note = note.replace(new RegExp(escRe(p.name), 'gi'), 'it');
+        if (firstWord(p.name).length >= 6) {
+          note = note.replace(new RegExp('\\b' + escRe(firstWord(p.name)) + '\\b', 'gi'), 'it');
+        }
+        try {
+          for (const o of (g.data.plants || [])) {
+            if (!o || o.id === pid || !o.name) continue;
+            if (g.plantKnown && g.plantKnown(o.id)) continue;
+            note = note.replace(new RegExp('\\b' + escRe(o.name) + '\\b', 'gi'), 'a lookalike');
+            if (firstWord(o.name).length >= 6) {
+              note = note.replace(new RegExp('\\b' + escRe(firstWord(o.name)) + '\\b', 'gi'), 'a lookalike');
+            }
+          }
+        } catch (e2) {}
         const nm = p.name.toLowerCase();
         // replace name mentions with "it" (case-insensitive)
-        note = note.replace(new RegExp(p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 'it');
         if (note.toLowerCase().indexOf(nm) === -1 && note.trim()) {
           out += ` Caution: ${note.charAt(0).toLowerCase() + note.slice(1)}.`;
         }
