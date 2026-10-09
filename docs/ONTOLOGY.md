@@ -703,10 +703,11 @@ Formal party mechanics. Roles, formations.
 ### party (`party.js`)
 Party system. Companions travel and fight with you.
 
-**Provides:** inviteToParty(vid), dismissFromParty(vid), partyState(), partyMembers(), inParty(vid), partyCap(), partyFull(), partyTrustFloor(), travelingWith(), placePartyAtPlayer()
+**Provides:** inviteToParty(vid), dismissFromParty(vid), partyState(), partyMembers(), inParty(vid), partyCap(), partyFull(), partyTrustFloor(), travelingWith(), placePartyAtPlayer(), partyHud(), togglePartyPanel(), isPartyPanelOpen(), partyMemberStatus(vid), partyPanelHTML(), allyStripHTML()
 
 **Rules:**
-- (none documented)
+- party_panel_truth: member status via displayName (knowledge-gated); HP from v.health (persistent, default/cap 100) or the live fighter in combat; conditions from real tracked state only (v.sick; hp-derived hurt/critical<=20) (code: partyMemberStatus, partyPanelHTML, Steve 2026-10-09)
+- ally_strip: in-combat ally strip uses the enemy line's visual language; downed allies greyed with X, never silently dropped (code: allyStripHTML, Steve 2026-10-09)
 
 **Consumes:** state.party
 

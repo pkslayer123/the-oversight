@@ -13251,6 +13251,22 @@
   // be re-rendered mid-hold — the stop must not depend on the button living.)
   window.addEventListener('pointerup', () => { MoveAnim.clearHold(); MoveAnim.purgeHold(); });
   window.addEventListener('pointercancel', () => { MoveAnim.clearHold(); MoveAnim.purgeHold(); });
+  // PARTY PANEL (Steve 2026-10-09): the 👥 HUD chip toggles the member-status
+  // popover. Delegated — installed once, survives every re-render (the chip
+  // HTML is re-created by setHTMLCached, so per-element onclick would die).
+  // Guarded: wireDpad runs on every full render; the listener must not stack
+  // (two stacked toggles would cancel each other out).
+  if (!window._partyChipWired) {
+    window._partyChipWired = true;
+    window.addEventListener('click', (e) => {
+      try {
+        const t = e.target && e.target.closest ? e.target.closest('[data-partychip]') : null;
+        if (!t) return;
+        if (Game && typeof Game.togglePartyPanel === 'function') Game.togglePartyPanel();
+        refresh();
+      } catch (err) {}
+    });
+  }
   // COMBAT CADENCE (Steve 2026-10-06): highlight the acting monster during
   // async stepped turns. Each monster gets a visible beat — no more
   // instantaneous grid jumps.
@@ -14199,7 +14215,14 @@
       const _mspr2 = monsterSpriteHtml(m.id || m.monsterId, true);
       return `${_mspr2 || m.emoji} ${esc(name)}${count} <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>`;
     }).join(' · ');
+    // PARTY PANEL (Steve 2026-10-09): allied fighters read in the same visual
+    // language as the enemy line — name + HP bar, live fighter HP. Downed
+    // allies stay visible (greyed ✖), never silently dropped. This is
+    // life-and-death info — the phoenix beats need you to SEE who's hurt.
+    // Rendered only when allies are actually in the fight.
+    const _allyStrip = (Game.allyStripHTML ? Game.allyStripHTML() : '') || '';
     return `<div class="combat-enemies" style="font-size:12px;opacity:.85;margin:0 6px 4px">${enemyLine} <span style="opacity:.6">· ${p.moveLeft || 0} move · ${p.acted ? 0 : 1} act</span></div>` +
+    (_allyStrip ? `<div class="combat-allies" style="font-size:12px;opacity:.9;margin:0 6px 4px">${_allyStrip}</div>` : '') +
     `<div class="selfbar">
       <button class="self-btn" id="c-strike" title="${esc(wname)} — range ${wrange}" ${(!adj.length || p.acted) ? 'disabled' : ''}>⚔ Strike${adj.length > 1 ? '…' : ''}</button>
       <button class="self-btn" id="c-study" ${p.acted ? 'disabled' : ''}>👁 Study</button>

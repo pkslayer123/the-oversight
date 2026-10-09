@@ -12,8 +12,15 @@
 //   - partyTrustFloor()
 //   - travelingWith()
 //   - placePartyAtPlayer()
+//   - partyHud()
+//   - togglePartyPanel()
+//   - isPartyPanelOpen()
+//   - partyMemberStatus(vid)
+//   - partyPanelHTML()
+//   - allyStripHTML()
 // rules:
-//   - (none documented)
+//   - party_panel_truth: member status via displayName (knowledge-gated); HP from v.health (persistent, default/cap 100) or the live fighter in combat; conditions from real tracked state only (v.sick; hp-derived hurt/critical<=20) (code: partyMemberStatus, partyPanelHTML, Steve 2026-10-09)
+//   - ally_strip: in-combat ally strip uses the enemy line's visual language; downed allies greyed with X, never silently dropped (code: allyStripHTML, Steve 2026-10-09)
 // consumes:
 //   - state.party
 // ============ PARTY SYSTEM ============
@@ -34,6 +41,10 @@
 (function () {
   const Game = (globalThis.Scattering || {}).Game;
   if (!Game) return;
+
+  // PARTY PANEL (Steve 2026-10-09): the 👥 HUD chip toggles a compact
+  // member-status popover. UI-only state — lives here, not in the save.
+  let partyPanelOpen = false;
 
   const methods = {
 
@@ -819,7 +830,89 @@
       if (!this.partyUnlocked()) return '';
       const n = this.partyMembers().length;
       const names = this.partyMembers().map(id => this.displayName(id).split(' ')[0]).join(', ');
-      return `<span class="small" style="opacity:.8" title="${names ? 'With you: ' + names : 'No companions'}">👥 ${n}/${this.partyCap()}</span>`;
+      // PARTY PANEL (Steve 2026-10-09): the chip is a toggle — tap to expand
+      // the member-status popover. Wired via a delegated [data-partychip]
+      // listener in app.js (survives re-renders).
+      const chip = `<span class="small" data-partychip="1" style="opacity:.8;cursor:pointer" title="${names ? 'With you: ' + names + ' — tap for status' : 'No companions'}">👥 ${n}/${this.partyCap()}</span>`;
+      return `<span style="position:relative;display:inline-block">${chip}${this.partyPanelHTML()}</span>`;
+    },
+
+    togglePartyPanel() {
+      partyPanelOpen = !partyPanelOpen;
+      return partyPanelOpen;
+    },
+
+    isPartyPanelOpen() { return partyPanelOpen; },
+
+    // partyMemberStatus: the truth about one member, for the panel.
+    // Out of combat: persistent villager state (v.health default 100, cap
+    // 100 — heal caps there, hurtVillager floors at 0). In combat: the live
+    // fighter's HP — that's what's real while steel is out.
+    partyMemberStatus(vid) {
+      const v = (this.state || {}).village || {};
+      let hp = (v.health || {})[vid];
+      let maxHp = 100;
+      try {
+        const tf = this.tbfight;
+        if (tf && tf.fighters) {
+          const f = tf.fighters.find(x => x.villagerId === vid && (x.kind === 'villager' || x.kind === 'player'));
+          if (f && f.hp != null) { hp = f.hp; maxHp = f.maxHp || 100; }
+        }
+      } catch (e) {}
+      if (hp == null || hp === undefined) hp = 100;
+      hp = Math.max(0, Math.round(hp));
+      const sick = ((v.sick || {})[vid]) || null;
+      const cond = hp <= 20 ? 'critical' : hp < 50 ? 'hurt' : 'ok';
+      return { vid, name: this.displayName(vid), hp, maxHp, sick, cond };
+    },
+
+    _pesc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); },
+
+    // partyPanelHTML: the popover. Compact rows — name (displayName, so
+    // knowledge-gating holds), honest HP bar + number, condition icons from
+    // REAL tracked state only (v.sick; hp-derived hurt/critical). No invented
+    // conditions. Empty when the toggle is off.
+    partyPanelHTML() {
+      if (!partyPanelOpen || !this.partyUnlocked()) return '';
+      const members = this.partyMembers();
+      if (!members.length) {
+        return `<div class="party-pop"><div class="pp-title">👥 Party <span class="pp-x" data-partychip="1" title="close">✕</span></div>` +
+          `<div class="pp-empty">No companions. Invite someone from their person card.</div></div>`;
+      }
+      const rows = members.map(id => {
+        const m = this.partyMemberStatus(id);
+        const frac = Math.max(0, Math.min(1, m.hp / (m.maxHp || 1)));
+        const icons = [];
+        if (m.sick) icons.push(`<span title="${this._pesc(m.sick.name || 'sick')}">🤒</span>`);
+        if (m.cond === 'critical') icons.push(`<span title="critical — ${m.hp} HP">🆘</span>`);
+        else if (m.cond === 'hurt') icons.push(`<span title="hurt">🩸</span>`);
+        const sickLine = m.sick ? `<div class="pp-sick">🤒 ${this._pesc(m.sick.name || 'sick')}</div>` : '';
+        return `<div class="pp-row${m.cond === 'critical' ? ' pp-crit' : ''}">` +
+          `<span class="pp-name">${this._pesc(m.name)}</span>` +
+          `<span class="pp-hpbar${m.cond !== 'ok' ? ' low' : ''}"><span style="width:${Math.round(frac * 100)}%"></span></span>` +
+          `<span class="pp-hp">${m.hp}</span>` +
+          `<span class="pp-cond">${icons.join('')}</span></div>${sickLine}`;
+      }).join('');
+      return `<div class="party-pop"><div class="pp-title">👥 Party <span class="pp-x" data-partychip="1" title="close">✕</span></div>${rows}</div>`;
+    },
+
+    // allyStripHTML: in-combat ally awareness, called from the combat UI.
+    // Same visual language as the enemy line (name + cc-hpbar). Downed allies
+    // read clearly — greyed with ✖, never silently dropped.
+    allyStripHTML() {
+      const tf = this.tbfight;
+      if (!tf || !tf.fighters) return '';
+      const allies = tf.fighters.filter(f => f.kind === 'villager' && f.villagerId);
+      if (!allies.length) return '';
+      const rows = allies.map(f => {
+        const frac = Math.max(0, Math.min(1, (f.hp || 0) / (f.maxHp || 1)));
+        const down = !f.alive || (f.hp || 0) <= 0;
+        // Wounded/dying must read clearly: down > critical(<=25%) > hurt(<50%).
+        const mark = down ? ' ✖' : (frac <= 0.25 ? ' 🆘' : (frac < 0.5 ? ' 🩸' : ''));
+        return `<span class="cs-ally${down ? ' down' : ''}">${this._pesc(f.emoji || '🧍')} ${this._pesc(f.name || 'ally')}` +
+          ` <span class="cc-hpbar"><span style="width:${Math.round(frac * 100)}%"></span></span>${mark}</span>`;
+      }).join(' · ');
+      return `🛡 ${rows}`;
     },
 
     // ---------- HOSTILE TURN ----------
