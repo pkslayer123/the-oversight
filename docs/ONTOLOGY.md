@@ -410,12 +410,13 @@ The scalability core. Every computed value resolves base -> collect modifiers ->
 ### game-state (`engine/state.js`)
 State factories, versioned save/load. Village / scholars / Codex / run are independent so one can reset cleanly.
 
-**Provides:** SAVE_VERSION (code: state.js), newVillage(), newScholar(villagerId), newCodex(), newState(), saveKey(state), save(state) -> true/false: honest save status; false on quota/blocked/unserializable (break-it 2026-10-09), listSaves(opts): opts.includeStale surfaces version-mismatched saves flagged {stale:true} (break-it 2026-10-09), load(key), wipe(key), wipeAll()
+**Provides:** SAVE_VERSION (code: state.js), newVillage(), newScholar(villagerId), newCodex(), newState(), saveKey(state), save(state) -> true | 'tombstoned' | false: honest save status; false on quota/blocked/unserializable, 'tombstoned' when the run's key was wiped (break-it 2026-10-09 r5), listSaves(opts): opts.includeStale surfaces version-mismatched saves flagged {stale:true} (break-it 2026-10-09), load(key), wipe(key, reason?): leaves a per-key tombstone so a wiped run stays dead (break-it 2026-10-09 r5), wipeAll(), quarantineKey(key): move corrupt save data to a capped dated quarantine key (break-it 2026-10-09 r5)
 
 **Rules:**
 - save_honest_status: save() returns false on any failure; callers (autosave) surface it, never mistake silence for success (code: save, break-it 2026-10-09)
 - corrupt_quarantined: unparseable save data moves to a capped dated quarantine key before pruning — never destroyed on sight (code: quarantineKey, break-it 2026-10-09)
 - stale_version_visible: version-mismatched saves are kept and surfaced flagged, never silently hidden (code: listSaves, break-it 2026-10-09)
+- dead_runs_stay_dead: wipe() leaves a per-key tombstone; save() refuses tombstoned keys with a distinct 'tombstoned' signal (never the quota-false), so a stale tab's autosave can't resurrect a wiped run (code: save/wipe, break-it 2026-10-09 r5)
 
 **Consumes:** (none documented)
 
@@ -506,6 +507,7 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
 - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
+- load_resets_session_death: load() clears villageLost (session state of a dead run, not save data) — a Continued living run always has a home (code: load, break-it persistence r5 2026-10-09)
 - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
 - day_parts: 4 nested (code: TIME)
 - ticks_per_day: defined in TIME (code: tickAction)
