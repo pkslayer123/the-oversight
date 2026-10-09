@@ -6075,11 +6075,9 @@
       // if you haven't been there, you don't see it. Revealed on visit.
       // BLOCKED ROADS: some paths in are obstructed. Always multiple solutions:
       // cut (fallen tree), clear (rubble), bridge (washed out / hard creek), swim, or go around.
-      // CONSTRUCTION (future): tile.structures[] holds anything built here — walls, palisades, etc.
       const DIRS = [[0,-1],[1,0],[0,1],[-1,0]]; // n,e,s,w
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = tiles[y][x];
-        t.structures = []; // future: walls, palisades, shelters
         // blockages: ~12% of wild tiles have one obstructed approach.
         // never block haven, never block the ruin approach (scavengers need in).
         if (t.type !== 'haven' && t.type !== 'ruin' && R() < 0.12) {
@@ -6688,8 +6686,6 @@
     },
 
     // --- WOOD: the building material. Terraforming yields it, construction spends it. ---
-    // CONSTRUCTION (future): walls, palisades, shelters hook in here.
-    // tile.structures[] is the foundation — anything built on a tile lives there.
     woodCount() {
       const inv = this.state.scholar.inventory || [];
       const w = inv.find(i => i.itemId === 'wood' || i.id === 'wood');
@@ -6868,22 +6864,74 @@
       return this.tickAction(32) || this.status();
     },
     // build a bridge: 4 wood, permanent. for washed-out paths and hard creeks.
-    // CONSTRUCTION (future): walls/palisades will use the same pattern — spend wood, tile.structures[].
     buildBridge(x, y) {
       // MID-FIGHT (break-it travel r4 2026-10-09): same class as
       // clearBlockage — construction is work, fights are not workshops.
       if (this.inCombat()) { this.say('Not mid-fight — the barrier is the way out.'); return false; }
       const dest = this.tileAt(x, y);
+      // ALREADY BRIDGED (break-it camps-6 2026-10-09): a stale double-call
+      // (the blockage card can sit open; the engine is the last line) used
+      // to spend 4 MORE wood and push a duplicate bridge entry onto the same
+      // tile. Refuse honestly — no spend, no second bridge.
+      if (dest.bridged) { this.say('There\'s already a bridge here — lashed and holding.'); return false; }
+      // NO NEED (break-it camps-6 2026-10-09): a direct call on dry land —
+      // no creek, no washed-out path — used to spend 4 wood for a lie ("A
+      // rough bridge spans the gap" spanning nothing). Refuse honestly.
+      const needsBridge = (dest.type === 'creek' && dest.needsBridge) ||
+                          (dest.blockFrom && dest.blockFrom.type === 'washed_out');
+      if (!needsBridge) { this.say('No gap to span here — save your wood.'); return false; }
       if (this.woodCount() < 4) { this.say('Need 4 wood to build a bridge.'); return false; }
       this.spendWood(4);
       dest.bridged = true;
-      if (dest.blockFrom && dest.blockFrom.type === 'washed_out') delete dest.blockFrom;
-      dest.structures = dest.structures || [];
-      dest.structures.push({ type: 'bridge', builtDay: this.state.scholar.day });
-      this.say('You lash logs together. A rough bridge spans the gap. It\'ll hold.');
+      // record what the bridge replaced, so a destroyed bridge returns the
+      // crossing to its honest pre-bridge state (break-it camps-6). creek
+      // tiles keep needsBridge, so they need nothing stored.
+      if (dest.blockFrom && dest.blockFrom.type === 'washed_out') {
+        dest.bridgeFrom = { dx: dest.blockFrom.dx, dy: dest.blockFrom.dy, type: 'washed_out' };
+        delete dest.blockFrom;
+      } else {
+        delete dest.bridgeFrom;
+      }
+      this.say('You lash logs together. A rough bridge spans the gap. Rough wood, though — a bad storm could take it.');
       // ACTION CLOCK: building = 3 chunks (96 ticks) + 60 kcal effort. Construction is work.
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 60);
       return this.tickAction(96) || this.status();
+    },
+    // smashBridge(x, y, cause): the destruction path for player bridges.
+    // Steve's law: havens are the ONLY unbreakable human structures. A bridge
+    // is wood and rope — storms take wood and rope (break-it camps-6
+    // 2026-10-09: tile-level bridges had no destruction path at all). Never
+    // strands: a creek crossing returns to its honest pre-bridge state —
+    // needsBridge persists, so the blockage card comes back with bridge /
+    // swim / go-around intact; a washed-out path gets its blockage back from
+    // bridgeFrom. Quiet no-op on bridgeless tiles.
+    smashBridge(x, y, cause) {
+      const t = this.tileAt(x, y);
+      if (!t || !t.bridged) return false;
+      delete t.bridged;
+      if (t.bridgeFrom) {
+        t.blockFrom = { dx: t.bridgeFrom.dx, dy: t.bridgeFrom.dy, type: 'washed_out' };
+        delete t.bridgeFrom;
+      }
+      let where = '';
+      try {
+        const hv = this.state.village || {};
+        const dx = x - (hv.px != null ? hv.px : 4), dy = y - (hv.py != null ? hv.py : 4);
+        const d = Math.abs(dx) + Math.abs(dy);
+        const name = this.nodeEpithet ? this.nodeEpithet(x, y) : 'the crossing';
+        where = d > 0 ? ` at ${name}, ${d} tile${d === 1 ? '' : 's'} ` +
+          (dy < 0 ? 'north' : dy > 0 ? 'south' : '') +
+          (dx > 0 ? 'east' : dx < 0 ? 'west' : '') + ' of Haven' : ` at ${name}`;
+      } catch (e) {}
+      const how = cause === 'storm'
+        ? `The storm swells the creek${where} — your bridge washes out in logs and spray.`
+        : `The bridge${where} splinters and gives way — wood cracking, rope parting.`;
+      // honest options: a creek crossing offers bridge/swim/go-around; a
+      // restored washed-out path offers bridge/go-around (swim is a lie there).
+      this.say(how + (t.blockFrom
+        ? ' The washed-out gap is back — bridge it again or go around.'
+        : ' The gap is back: bridge it again, swim it, or go around.'));
+      return true;
     },
     // HAVEN DOORS: the building has an inside and an outside. Doors are real.
     // Step through and you're on the Haven grounds — tents, fire pit, the world beyond.
@@ -16467,6 +16515,9 @@
         // Haven; the camp rode it out alone. Telegraphed at dawn, avoidable
         // all day (pack the tent: 16 ticks). The pitched tent is wrecked.
         if (this.state.camp) this.breakCamp('the storm tore through it');
+        // BRIDGES (break-it camps-6 2026-10-09): the storm is global — creek
+        // bridges wash out whether you sheltered or not. See stormSmashBridges.
+        this.stormSmashBridges();
       } else {
         this.say('🌪️ The sky OPENS. Not rain — a wall of it, sideways, with the wind behind it like something personally offended. You\'re caught out in it.');
         s.kcal = Math.max(0, (s.kcal || 0) - 300);
@@ -16489,8 +16540,26 @@
         // CAMP (survivalist loop 2026-10-08): caught out AT the camp is still
         // caught out — a tent is not a haven. The storm takes the camp too.
         if (this.state.camp) this.breakCamp('the storm tore through it');
+        this.stormSmashBridges();
       }
       return true;
+    },
+    // stormSmashBridges(): every storm washes out the player's CREEK bridges.
+    // Steve's law: havens are the ONLY unbreakable human structures — a creek
+    // bridge is wood lashed over running water, and a storm flood takes it.
+    // Dry-land washed-out-path bridges stand (nothing to flood). smashBridge
+    // restores each crossing honestly, so travel never strands: creek keeps
+    // needsBridge (bridge again / swim / go around), washed-out gets its
+    // blockage back. The build copy foreshadows this ("a bad storm could
+    // take it"), so it never reads as a surprise tax.
+    stormSmashBridges() {
+      try {
+        const tiles = (this.map && this.map.tiles) || [];
+        for (let yy = 0; yy < tiles.length; yy++) for (let xx = 0; xx < (tiles[yy] || []).length; xx++) {
+          const bt = tiles[yy][xx];
+          if (bt && bt.bridged && bt.type === 'creek') this.smashBridge(xx, yy, 'storm');
+        }
+      } catch (e) {}
     },
 
     // CODEX NETWORKING: codexes talk within friendly organizations.
