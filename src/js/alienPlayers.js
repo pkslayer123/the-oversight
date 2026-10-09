@@ -1645,6 +1645,11 @@
           if (this.registerDeath) {
             this.registerDeath({ kind: 'person', villagerId: victim, name: vname, cause: 'alien', killerId: 'ap_' + pid });
           }
+          // PHANTOM EATER (break-it food 2026-10-09): the old code marked
+          // dead but left them in the roster — villageEats kept feeding the
+          // corpse (they ate AND produced). Every other death path pairs
+          // registerDeath with removeVillager; this one does too.
+          if (this.removeVillager) this.removeVillager(victim, 'killed');
         } catch (e) {}
 
         ap.lastVillagerKillDay = day;

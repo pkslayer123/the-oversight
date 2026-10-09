@@ -12214,7 +12214,17 @@
       html += stashActionsHtml(it, idx);
       html += `</p>`;
     }
-    html += `<p class="small"><button class="btn ghost sm" data-stash-stage>Stage unprocessed</button> <button class="btn ghost sm" data-stash-putaway>Put away finished food</button></p>`;
+    html += `<p class="small"><button class="btn ghost sm" data-stash-stage>Stage unprocessed</button> <button class="btn ghost sm" data-stash-putaway>Put away finished food</button>`;
+    // PEMMICAN (break-it food 2026-10-09): the known PRESERVATION.md gap —
+    // render/pemmican were never wired for the counter path. The engine
+    // takes a container; the UI just never passed the stash. Now it does.
+    try {
+      if (Game.knowsTechnique && Game.knowsTechnique('render') && Game.pemmicanPreview) {
+        const prev = Game.pemmicanPreview(stash);
+        if (prev.sets > 0) html += ` <button class="btn ghost sm" data-stash-pemmican>Make pemmican (${prev.bars} bar${prev.bars === 1 ? '' : 's'})</button>`;
+      }
+    } catch (e) {}
+    html += `</p>`;
     return html;
   }
 
@@ -12276,6 +12286,12 @@
           }
         }
       } catch (e) {}
+    }
+    // RENDER FAT (break-it food 2026-10-09): the PRESERVATION.md gap — raw
+    // fat on the counter had no render path (engine took a container, UI
+    // never passed the stash). Needs fire; the engine refuses honestly.
+    if (it.foodKind === 'fat' && it.foodState === 'raw') {
+      html += ` <button class="btn ghost sm" data-stash-render="${idx}">Render</button> <span class="small" style="opacity:.6">12 ticks · keeps ~3 months</span>`;
     }
     return html;
   }
@@ -12680,6 +12696,10 @@
     slot.querySelectorAll('[data-stash-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.stashCook, stashOf()), 'Cooked.'));
     slot.querySelectorAll('[data-stash-askcook]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAskcook, stashOf(), 'cook'), 'A specialist handles it.'));
     slot.querySelectorAll('[data-stash-smoke]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.stashSmoke, stashOf()), 'Smoked.'));
+    // RENDER + PEMMICAN on the counter (break-it food 2026-10-09): the
+    // PRESERVATION.md gap — engine took a container, UI never passed it.
+    slot.querySelectorAll('[data-stash-render]').forEach(b => b.onclick = rewire(() => Game.renderFat(+b.dataset.stashRender, stashOf()), 'Rendered.'));
+    slot.querySelectorAll('[data-stash-pemmican]').forEach(b => b.onclick = rewire(() => Game.makePemmican(stashOf()), 'Pemmican made.'));
     slot.querySelectorAll('[data-stash-asksmoke]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.stashAsksmoke, stashOf(), 'preserver'), 'A specialist handles it.'));
     slot.querySelectorAll('[data-equip-w]').forEach(b => b.onclick = rewire(() => {
       // GEAR SLOTS (Steve 2026-10-07): route to melee or ranged by item type.
@@ -13978,7 +13998,9 @@
         if (!rows.length) return '';
         const band = r => {
           if (!r.expected) return '—';
-          const e = r.produced / r.expected;
+          // produced + today's haven-role credit (ledger recognition) vs
+          // their own capacity — haven work counts, like the freeloader pipe
+          const e = (r.produced + (r.haven || 0)) / r.expected;
           return e >= 0.9 ? '💪' : e >= 0.5 ? '👍' : e >= 0.2 ? '😟' : '⚠️';
         };
         return `<p class="small" style="margin-top:4px"><b>Who's pulling weight</b> <span style="opacity:.6">(today vs their own capacity)</span><br>` +

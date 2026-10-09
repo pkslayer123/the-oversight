@@ -4467,10 +4467,15 @@
         // credit lands in v.gives so the ledger — and the freeloader pipeline
         // — sees it. A villager who never leaves haven but keeps the home
         // fires burning is pulling weight.
+        // (break-it food 2026-10-09: this is the SINGLE count — the old
+        // villagerMealDay fold-in is gone. havenToday tracks today's share
+        // for the "who's pulling weight" panel; reset daily in villageEats.)
         const credit = this.havenRoleCredit(vid, this.state.village) || 400;
         const vv2 = this.state.village;
         vv2.gives = vv2.gives || {};
         vv2.gives[vid] = (vv2.gives[vid] || 0) + credit;
+        vv2.havenToday = vv2.havenToday || {};
+        vv2.havenToday[vid] = (vv2.havenToday[vid] || 0) + credit;
         const roleLine = {
           cook: `🍲 ${first} cooked for the haven — meals stretched, nothing wasted.`,
           tend: `🕯️ ${first} tended the fire and the sick — the haven held together.`,
@@ -19902,6 +19907,14 @@
       // HONEST BURN (2026-10-08): the player's meal burns the pantry but the
       // player is not in villageEats' collective loop (parity) — record the
       // draw so the pantry clock counts it.
+      // FREELOADER LEDGER (break-it food 2026-10-09): the communal meal is a
+      // commons take like any other — without this, a player eating free
+      // village meals forever never tripped the draining check (only
+      // takeFromPantry recorded takes).
+      if (taken > 0) {
+        v.takes = v.takes || {};
+        v.takes[this.villagerId] = (v.takes[this.villagerId] || 0) + Math.round(taken);
+      }
       v.lastPlayerMeal = taken;
       // WATER with the meal (from village storage).
       // HONEST (survivalist loop 2026-10-07): the old message said "+1L water"
@@ -20275,10 +20288,18 @@
         const totE = hist.reduce((t, h) => t + h.expected, 0);
         const effort = totE > 0 ? totA / totE : 1;
         const takes = (vv.takes || {})[vid] || 0;
+        const netDrain = takes - gave;
         // freeloading = not trying (under half of own capacity) AND draining
         // the commons meaningfully. Low capacity is not a crime — low EFFORT is.
-        const draining = takes - gave > 1500;
-        if (effort < 0.5 && draining) {
+        const draining = netDrain > 1500;
+        // REACHABILITY (break-it food 2026-10-09): the pure production-ratio
+        // gate (effort < 0.5) can never fire for villagers — produced is
+        // expected × grit by construction and grit ≥ 0.5 always. The live
+        // signal for villagers is sustained net drain vs OWN capacity: a
+        // healthy villager living off the pantry is a freeloader; an old
+        // woman's modest shortfall is not (per-person, never a flat bar).
+        const drainBeyondCapacity = netDrain > Math.max(1500, totE * 3);
+        if ((effort < 0.5 && draining) || drainBeyondCapacity) {
           fl.days++;
           if (fl.days === 3 && fl.stage < 1) { fl.stage = 1; this.freeloadGossip(vid); }
           else if (fl.days === 7 && fl.stage < 2) { fl.stage = 2; this.freeloadWarning(vid); }
@@ -20429,9 +20450,13 @@
       const trust = (v.trust && v.trust[vid] !== undefined) ? v.trust[vid] : 10;
       const trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
       // VILLAGER GRIT (Steve 2026-10-09): production from identity — no flat
-      // percentages. Haven-role work credits on top (see havenRoleCredit).
-      const havenCredit = this.havenRoleCredit(vid, v);
-      const produced = this.villagerDayProduction(person, vid, v) + havenCredit;
+      // percentages.
+      // HAVEN CREDIT (break-it food 2026-10-09): haven-role work is LEDGER
+      // recognition (v.gives, written by resolveOneAssignment when the work
+      // actually resolves) — NOT production. Folding it into produced
+      // double-counted it against gives in the freeloader's actual, AND
+      // conjured real pantry food via the surplus path below.
+      const produced = this.villagerDayProduction(person, vid, v);
       // CONTRIBUTION LEDGER (grit): what they actually brought today, and what
       // was expected of them. The freeloader pipeline reads the rolling window.
       v.contribLog = v.contribLog || {};
@@ -20500,6 +20525,15 @@
         gave = (produced - need) * trustFactor;
         if (gave > 0) this.stockSurplus(v, gave);
       }
+      // CONTRIBUTION FLOWS (break-it food 2026-10-09): the freeloader
+      // pipeline judges takes vs gives — but villager takes were never
+      // recorded (only the player's takeFromPantry wrote v.takes), so no
+      // villager could ever trip the draining check and the whole exile
+      // pipeline was dead for its intended population. Record the day's
+      // real flows: pantry/pack draws as takes, shared surplus as gives.
+      v.takes = v.takes || {}; v.gives = v.gives || {};
+      v.takes[vid] = (v.takes[vid] || 0) + Math.round(pile.taken);
+      v.gives[vid] = (v.gives[vid] || 0) + Math.round(gave);
       // starvation is slow, and it has a face: the unfed fade
       if (ate < need * 0.6) {
         v.health[vid] = Math.max(0, health - 8);
@@ -20610,6 +20644,11 @@
         if (id === this.villagerId) continue;
         const person = this.getPerson(id);
         if (!person) continue;
+        // DEAD DON'T EAT (break-it food 2026-10-09): alien-player kills mark
+        // dead without roster removal — the unfed loop fed corpses (they ate
+        // AND produced). freeloaderTick/mentorTick already skip dead; the
+        // meal loop is the same class.
+        if (person.dead) continue;
         const r = this.villagerMealDay(id, person, v, { cookId });
         totalEat += r.ate; totalGive += r.gave; totalDrawn += r.drawn || 0;
         if (r.gave > 0) providers.push(person);
@@ -20634,11 +20673,17 @@
           return {
             name: String(pp.name || '?').split(' ')[0],
             produced: lg ? lg.produced : 0,
+            // today's haven-role credit (ledger recognition, not production)
+            // so the panel's band sees haven work too
+            haven: Math.round((v.havenToday || {})[rid] || 0),
             expected: lg ? lg.expected : Math.round(this.villagerExpectedDaily(pp, rid, v)),
             me: rid === this.villagerId,
           };
         }).filter(Boolean);
       } catch (e) { v.lastContrib = []; }
+      // havenToday was read above for the panel — reset for tomorrow. (The
+      // credits accrue per part during the day via resolveOneAssignment.)
+      v.havenToday = {};
       v.burnHistory = (v.burnHistory || []).concat([honestNet]).slice(-7);
       // keep pantryKcal in sync (derived, not source of truth)
       v.pantryKcal = (v.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
