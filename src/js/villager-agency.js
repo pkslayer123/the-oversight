@@ -215,6 +215,17 @@
     startExpedition(vid, hx, hy, announce) {
       var a = this.agencyOf(vid);
       var st = this.agencyState();
+      // GEAR-UP + HEAL CHECK (Steve 2026-10-09): expeditions arm up from the
+      // village's gear and don't walk out hurt when help is at hand. A hurt
+      // villager with no healer sits this cycle out (rest, try tomorrow).
+      try { if (this.villagerGearUp) this.villagerGearUp(vid, true); } catch (e) {}
+      try {
+        if (this.villagerHealCheck) {
+          var nm0 = 'Someone';
+          try { nm0 = this.displayName(vid).split(' ')[0]; } catch (e2) {}
+          if (this.villagerHealCheck(vid, nm0)) return;
+        }
+      } catch (e) {}
       var maxD = this.npcMaxDist(vid);
       if (maxD < 1) return;
       // target: a node out there, at real distance
@@ -319,10 +330,21 @@
         // WAVE GATE (break-it 2026-10-09): village-wide kill minimums —
         // see resolveWildMonsterEncounter. The expedition's kill counts too.
         try { this.recordWaveKill(m.id); } catch (e) {}
+        // KILL LOOT (Steve 2026-10-09): the killer loots the body — the
+        // System's gift goes in their pack and they re-equip on the spot.
+        var lootNote = '';
+        try {
+          var dropId = this.villagerKillLoot ? this.villagerKillLoot(vid, m) : null;
+          if (dropId) {
+            var ldef = (this.data.items || []).find(function (d) { return d.id === dropId; }) || {};
+            lootNote = ' Took ' + (ldef.name || 'something strange') + ' off the body.';
+            if (this.villagerGearUp) this.villagerGearUp(vid, false);
+          }
+        } catch (e) {}
         a.know[vid].monsters++;
         a.xp[vid].bravery += 3 * (st.potential[vid] ? 2 : 1);
         a.stats[vid].monsterKills++;
-        st.exped[vid].encounters.push('killed ' + (m.id || 'it') + ' (' + fightNote + ')');
+        st.exped[vid].encounters.push('killed ' + (m.id || 'it') + ' (' + fightNote + ')' + (lootNote ? ' —' + lootNote : ''));
         this.recordDeed(vid, 'monster_kill', `${nm} killed ${mName} out past the ridge — alone — and walked home. ${fightNote}.`, 10);
         return;
       }

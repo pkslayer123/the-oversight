@@ -23,6 +23,7 @@
 //   - headKind(def) -> pot|cap|helmet|other render hint
 //   - isAccessory(def) -> boolean (fits no main slot)
 // rules:
+//   - namespace_bridge: published to window.S AND global.Scattering (code: bridge below, 2026-10-09 — game.js consumes Scattering; window.S-only publish silently disabled autoEquip everywhere).
 //   - explicit_slots: melee, ranged, head, torso, legs, hands, shoes (1 each) + acc1-4 (non-exclusive). Every equipable item has exactly one assigned slot (code: slotForItem, Steve 2026-10-07)
 //   - weapon_split: range > 1 or bow/sling -> ranged slot; everything else -> melee (code: isRangedWeapon, slotForItem, Steve 2026-10-07)
 //   - full_body_blocks: full-body sets (def.fullBody or FULL_SETS) equip to torso and block head/legs/shoes only — hands and accessories stay usable. Blocked slots grey out in UI (code: blockedSlots, Steve 2026-10-07)
@@ -474,4 +475,17 @@
     threatLevel, threatLabel, gearDescription,
     migrateEquipment,
   };
+
+  // NAMESPACE BRIDGE (2026-10-09): equipment.js published only to window.S,
+  // but game.js and most systems consume global.Scattering — so
+  // Scattering.equipment was undefined and every `if (S.equipment)` guard in
+  // game.js silently skipped: autoEquip NEVER ran, and every villager fought
+  // unarmed with a weapon in their pack. Publish to the canonical namespace
+  // too. window.S keeps working for its existing consumers (app.js UI,
+  // fieldFights).
+  try {
+    var _g2 = (typeof globalThis !== 'undefined') ? globalThis : window;
+    _g2.Scattering = _g2.Scattering || {};
+    _g2.Scattering.equipment = S.equipment;
+  } catch (e) {}
 })();

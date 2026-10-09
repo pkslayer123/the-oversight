@@ -427,6 +427,7 @@ Explicit gear slot system. Weapons: melee (1), ranged (1). Body: head, torso, le
 **Provides:** autoEquip(v, itemDefs) -> equip best gear (set-vs-pieces decision + personality), slotForItem(def) -> main slot for an item, or null, isFullSet(itemId, def) -> boolean, blockedSlots(equipped) -> slots blocked by full-body gear (for UI grey-out), slotLabel(slot) -> display name, equipScore(itemId, slot, personality, itemDefs) -> numeric score, armorOf(v, itemDefs) -> total protection (pieces + coordination, or set), coordinationBonus(v) -> +2 per fitted piece beyond the first, compareSetVsPieces(v, itemDefs) -> { setTotal, piecesTotal, winner } for UI, weaponBonusOf(v, itemDefs, slot) -> weapon bonus from equipped melee/ranged, meleeWeaponOf(v, itemDefs) / rangedWeaponOf(v, itemDefs) -> equipped weapon entries, threatLevel(v, itemDefs) -> 0-3: unarmed, carrying, armored, dangerous, threatLabel(level) -> readable label, gearDescription(v) -> prose for examine/person card, migrateEquipment(person) -> old-save migration (armor->torso, weapon->melee, feet->shoes, misc->acc), weaponKind(def) -> spear|blade|axe|bow|blunt|other render hint, isRangedWeapon(def) -> boolean (range > 1 or bow/sling), armorTier(protection) -> light|medium|heavy render hint, headKind(def) -> pot|cap|helmet|other render hint, isAccessory(def) -> boolean (fits no main slot)
 
 **Rules:**
+- namespace_bridge: published to window.S AND global.Scattering (code: bridge below, 2026-10-09 — game.js consumes Scattering; window.S-only publish silently disabled autoEquip everywhere).
 - explicit_slots: melee, ranged, head, torso, legs, hands, shoes (1 each) + acc1-4 (non-exclusive). Every equipable item has exactly one assigned slot (code: slotForItem, Steve 2026-10-07)
 - weapon_split: range > 1 or bow/sling -> ranged slot; everything else -> melee (code: isRangedWeapon, slotForItem, Steve 2026-10-07)
 - full_body_blocks: full-body sets (def.fullBody or FULL_SETS) equip to torso and block head/legs/shoes only — hands and accessories stay usable. Blocked slots grey out in UI (code: blockedSlots, Steve 2026-10-07)
@@ -469,6 +470,7 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 - alreadyDead: a world-monster entity with hp<=0 is a corpse, not a fight — early exit, no rewards. (code: fieldFight)
 - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
 - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
+- gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs flat per hit, mirroring the tactical engine (final = max(0, final - prot)). (code: fieldFight, 2026-10-09)
 
 **Consumes:** Scattering.combat.roll, village health, agency xp, equipment, monsters data
 

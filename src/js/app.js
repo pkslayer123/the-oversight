@@ -590,7 +590,10 @@
   }
   function obItems() {
     const v = Game.data.villagers.find(x => x.id === ob.villager);
-    const items = v.items.map(id => Game.data.items.find(i => i.id === id)).filter(Boolean);
+    // OPENING GAMBLE (Steve 2026-10-09): the player picks 5 from the full 8 —
+    // fullPool preserves the pre-choice pool (choosePersonalFive keeps 5).
+    const poolIds = v.fullPool || v.items;
+    const items = poolIds.map(id => Game.data.items.find(i => i.id === id)).filter(Boolean);
     // THE OPENING GAMBLE (Steve 2026-10-05, revised): ONE pool, no type labels.
     // No "useful now" vs "keepsake" sections, no badges. The only signal is the
     // item's own description. A pocket knife reads like a pocket knife; a

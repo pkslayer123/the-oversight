@@ -741,6 +741,10 @@
         // ITEMS (Steve 2026-10-05): generated with full char context so kin
         // keepsakes are THAT person's — named from their own culture.
         char.items = this.genItemCandidates(occ, char);
+        // CHOOSE 5 (Steve 2026-10-09): fallback path too — villagers choose
+        // their own 5; the rest seeds the village armory. (The lifeseed
+        // wrapper overrides with the personal pool when the seed is rich.)
+        try { this.choosePersonalFive(char, char.items); } catch (e) {}
         try { char.providesPerDay = this.villagerFoodBase(char); } catch (e) { char.providesPerDay = 1200; }
         // EQUIPMENT (Steve 2026-10-06): villagers wear what they have.
         try { if (S.equipment) S.equipment.autoEquip(char, this.data.items); } catch (e) {}
@@ -960,6 +964,8 @@
         fromSeed: true, // marks unified-system seeds vs generated
       };
       char.items = this.genItemCandidates(occ, char);
+      // CHOOSE 5 (Steve 2026-10-09): hydrated seeds choose their own 5 too.
+      try { this.choosePersonalFive(char, char.items); } catch (e) {}
       // EQUIPMENT (Steve 2026-10-06): villagers wear what they have.
       try { if (S.equipment) S.equipment.autoEquip(char, this.data.items); } catch (e) {}
       // VILLAGER GRIT: identity-based base; the seed's hand-written value wins.
@@ -1174,6 +1180,42 @@
         }
       }
       return result;
+    },
+
+    // CHOOSE 5 (Steve 2026-10-09): villagers choose their own 5 from their
+    // item pool, like the player's opening gamble. Personality-driven scoring:
+    // equip utility (weapons/tools/armor by bonus) + sentimental keep-bias
+    // (keepsakes are theirs — nobody leaves their keepsakes behind) + a
+    // flicker of idiosyncrasy. The unchosen go to ch.villageShare, deposited
+    // into the village armory at founding — communal gear, usable by anyone.
+    // SENTIMENTAL OWNER-LOCK: kept keepsakes are tagged with their owner;
+    // bond accrual checks the tag (see accrueRelicBond). Normal items are
+    // communal; sentimental items only work for the person they spawned with.
+    choosePersonalFive(ch, pool) {
+      const byId = {};
+      (this.data.items || []).forEach(i => { byId[i.id] = i; });
+      const ids = (pool || []).map(i => (i && (i.itemId || i.id)) || i).filter(Boolean);
+      // fullPool: the opening gamble shows all 8; the NPC's own choice is the 5.
+      ch.fullPool = ids.slice();
+      const scored = ids.map(id => {
+        const def = byId[id] || {};
+        let s = 0;
+        if (def.class === 'sentimental') s += 1000; // keepsakes stay
+        if (def.weapon) s += (def.weapon.bonus || 0) * 10;
+        if (def.tool) s += 50;
+        if (def.armor) s += (def.armor.protection || 0) * 5;
+        s += Math.random() * 10; // people are idiosyncratic
+        return { id, s };
+      });
+      scored.sort((a, b) => b.s - a.s);
+      ch.items = scored.slice(0, 5).map(x => x.id);
+      ch.villageShare = scored.slice(5).map(x => x.id);
+      ch.keepsakeOwner = ch.keepsakeOwner || {};
+      for (const x of scored.slice(0, 5)) {
+        const def = byId[x.id] || {};
+        if (def.class === 'sentimental') ch.keepsakeOwner[x.id] = ch.id;
+      }
+      return ch.items;
     },
 
     // genConflicts: deep, old wounds between peoples — NOT petty rivalries.
@@ -1571,6 +1613,24 @@
       }
       this.state.village.roster = [this.villagerId].concat(otherGen, bg);
       this.state.village.villagers = [this.villagerId].concat(otherGen); // generated have dialogue; background have one-liners
+      // VILLAGE ARMORY (Steve 2026-10-09): the choose-5 overflow — gear the
+      // founders didn't carry becomes the village's communal stock. Anyone
+      // unarmed draws from it before ranging out (see villagerGearUp).
+      try {
+        this.state.village.armory = this.state.village.armory || [];
+        const seen = new Set(this.state.village.armory.map(i => i.itemId || i.id || i));
+        for (const id of this.state.village.roster) {
+          const person = (this.data.villagers || []).find(v => v.id === id)
+            || (this.state.village.rosterChars || {})[id];
+          for (const gid of ((person && person.villageShare) || [])) {
+            if (!seen.has(gid)) {
+              seen.add(gid);
+              this.state.village.armory.push({ itemId: gid, from: id });
+            }
+          }
+          if (person) person.villageShare = []; // deposited
+        }
+      } catch (e) {}
       // UNIFIED PERSON SYSTEM (Steve 2026-10-06): hydrate the drawn background
       // survivors into full person objects and add them to the villagers array.
       // One registry, one lookup — no more villagers-vs-background_survivors split.
@@ -1787,15 +1847,36 @@
       scholar.languages = plv;
       scholar.englishLevel = plv.english != null ? plv.english : 2;
       const gear = (pickedItems && pickedItems.length === 5) ? pickedItems : villager.items.slice(0, 5);
+      // CHOOSE 5 SYNC (Steve 2026-10-09): the player's real picks replace the
+      // NPC's provisional choice — the 3 they didn't take go to the armory,
+      // not the 3 the NPC would have left. (Armory was seeded at roster time.)
+      try {
+        const full = villager.fullPool || [];
+        const unpicked = full.filter(id => !gear.includes(id));
+        villager.villageShare = unpicked;
+        const v = this.state.village || {};
+        v.armory = (v.armory || []).filter(a => (a.from || a.villagerId) !== this.villagerId);
+        const seen = new Set(v.armory.map(a => a.itemId || a.id));
+        for (const gid of unpicked) {
+          if (!seen.has(gid)) { seen.add(gid); v.armory.push({ itemId: gid, from: this.villagerId }); }
+        }
+        villager.keepsakeOwner = villager.keepsakeOwner || {};
+        for (const gid of gear) {
+          const def = (this.data.items || []).find(i => i.id === gid) || {};
+          if (def.class === 'sentimental') villager.keepsakeOwner[gid] = this.villagerId;
+        }
+      } catch (e) {}
       // RELIC BOND: your five are bonded relics. Grown, not found.
       // Bond accrues through use; the System offers enhancements at 10/25/50.
       // Bond is non-transferable — a bonded relic in a stranger's hands is just stuff.
+      // SENTIMENTAL OWNER-LOCK (Steve 2026-10-09): keepsakes only work for the
+      // person they spawned with — the instance carries its owner.
       scholar.inventory = gear.map(id => {
         const def = this.data.items.find(i => i.id === id) || {};
         // PERSONAL KEEPSAKES: the bonded relic carries its person's name.
         const personal = (villager.itemPersonal || {})[id];
         return { itemId: id, units: 1, kcalEach: 0, kg: def.kg != null ? def.kg : 0.2, name: personal ? personal.name : (def.name || id),
-          flavor: personal ? personal.flavor : def.flavor,
+          flavor: personal ? personal.flavor : def.flavor, owner: this.villagerId,
           bonded: true, bond: 0, bondOffered: [], enhancements: [] };
       });
       scholar.relicUse = {}; // per-day record of meaningful relic use
@@ -4419,6 +4500,108 @@
       this.remember(vid, 'task', a.task + ' (assigned)');
     },
 
+    // VILLAGER GEAR-UP (Steve 2026-10-09): villagers find and equip gear.
+    // Root cause of the unarmed village: autoEquip ran once at spawn (and,
+    // until the 2026-10-09 namespace bridge, not even then). This re-runs it
+    // whenever it matters, and gives unarmed villagers honest acquisition
+    // paths: the village armory first, then whittling a sharpened stick from
+    // the woodpile. Deterministic (autoEquip has no RNG) — safe to call at
+    // fight time, including seeded contest fights.
+    //   acquire=false: re-equip only (fight-time; never crafts mid-fight).
+    //   acquire=true:  full acquisition (departure-time).
+    villagerGearUp(vid, acquire) {
+      const S = (typeof globalThis !== 'undefined' ? globalThis.Scattering : null) || {};
+      let person = null;
+      try { person = this.getPerson ? this.getPerson(vid) : null; } catch (e) {}
+      if (!person || !S.equipment) return;
+      try { S.equipment.autoEquip(person, this.data.items); } catch (e) {}
+      let wb = 0;
+      try { wb = S.equipment.weaponBonusOf(person, this.data.items) || 0; } catch (e) {}
+      if (wb > 0 || !acquire) return;
+      const v = this.state.village || {};
+      // ARMORY: the village's communal gear (seeded by the choose-5 overflow
+      // at founding; villagers deposit spares). Best weapon goes to whoever
+      // needs it most — right now, that's you.
+      try {
+        v.armory = v.armory || [];
+        let best = null, bestB = -1, bestIdx = -1;
+        for (let i = 0; i < v.armory.length; i++) {
+          const it = v.armory[i];
+          const def = (this.data.items || []).find(d => d.id === (it.itemId || it.id || it));
+          if (def && def.class === 'weapon' && def.weapon && (def.weapon.bonus || 0) > bestB) {
+            bestB = def.weapon.bonus; best = it; bestIdx = i;
+          }
+        }
+        if (best) {
+          v.armory.splice(bestIdx, 1);
+          person.items = person.items || [];
+          person.items.push(best.itemId || best.id || best);
+          S.equipment.autoEquip(person, this.data.items);
+          wb = S.equipment.weaponBonusOf(person, this.data.items) || 0;
+          if (wb > 0) return;
+        }
+      } catch (e) {}
+      // WHITTLE: a sharpened stick is stick + time. The woodpile feeds the
+      // hearth first — only whittle from buffer (keep 3+ logs for the fire).
+      try {
+        if ((v.wood || 0) > 3) {
+          v.wood -= 1;
+          person.items = person.items || [];
+          if (!person.items.some(i => (i.itemId || i.id || i) === 'sharpened_stick')) {
+            person.items.push('sharpened_stick');
+          }
+          S.equipment.autoEquip(person, this.data.items);
+        }
+      } catch (e) {}
+    },
+
+    // VILLAGER KILL LOOT (Steve 2026-10-09): "they need a chance for upgraded
+    // weapons and gear from wave 1 enemies." A villager's real kill rolls the
+    // same alien loot table as yours — the System's gift goes into the
+    // killer's pack (they looted the body; the deed narrates it). Meat stays
+    // on the carcass per loot-as-action. Returns the item id or null.
+    villagerKillLoot(vid, mdef) {
+      let dropId = null;
+      try { dropId = this.rollAlienLoot(mdef, { id: vid }); } catch (e) {}
+      if (!dropId) return null;
+      try {
+        const person = this.getPerson ? this.getPerson(vid) : null;
+        if (person) {
+          person.items = person.items || [];
+          person.items.push(dropId);
+        }
+      } catch (e) {}
+      return dropId;
+    },
+
+    // HEAL CHECK (Steve 2026-10-09): "do they heal themselves before going out
+    // if they can?" Hurt villagers (<70% HP) don't range out hurt when help
+    // is at hand: the camp healer patches them up (+25, narrated). No healer —
+    // they rest instead of departing (the +2/day passive still applies) and
+    // try again tomorrow. Returns true when the villager sits this one out.
+    villagerHealCheck(vid, first) {
+      const v = this.state.village || {};
+      v.health = v.health || {};
+      const cur = (v.health[vid] !== undefined) ? v.health[vid] : 100;
+      if (cur >= 70) return false;
+      const nm = first || 'Someone';
+      let healer = null;
+      try { healer = this.campHealerName ? this.campHealerName() : null; } catch (e) {}
+      if (healer) {
+        v.health[vid] = Math.min(100, cur + 25);
+        try {
+          const who = healer === 'You' ? 'You patch them up' : `${healer} patches them up`;
+          this.say(`🩹 ${nm} is hurting (${cur} HP) — ${who} before they head out. (${cur} → ${v.health[vid]} HP)`);
+        } catch (e) {}
+        return false;
+      }
+      try {
+        this.say(`🩹 ${nm} is still hurting (${cur} HP) — no healer at haven. They rest today instead of ranging out.`);
+      } catch (e) {}
+      try { if (this.remember) this.remember(vid, 'rest', 'sat out hurt, no healer'); } catch (e) {}
+      return true;
+    },
+
     // patrol: deal with monster threats. REAL FIGHTS (Steve 2026-10-08 law,
     // break-it 2026-10-09): the old flat outcome table (fightPower+R vs
     // mHp*1.2) resolved villager-vs-monster as RNG — the exact class Steve
@@ -4431,6 +4614,10 @@
     // your kill leaves: lootable, rottable, weirdness and all.
     resolvePatrol(vid, first) {
       const s = this.state.scholar;
+      // GEAR-UP + HEAL CHECK (Steve 2026-10-09): patrols arm up and don't
+      // walk out hurt when help is at hand. Same rule as expeditions.
+      try { this.villagerGearUp(vid, true); } catch (e) {}
+      try { if (this.villagerHealCheck(vid, first)) return; } catch (e) {}
       // WORLD MONSTERS (Steve 2026-10-06): patrols hunt the nearest roaming
       // threat to Haven, not a single player-tethered monster.
       const hx = (this.state.village || {}).px ?? 4, hy = (this.state.village || {}).py ?? 4;
@@ -4477,9 +4664,19 @@
       } else if (rec.outcome === 'vKill') {
         try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
         try { this.recordWaveKill(m.id); } catch (e) {}
+        // KILL LOOT (Steve 2026-10-09): the patroller loots the body.
+        let lootNote = '';
+        try {
+          const dropId = this.villagerKillLoot ? this.villagerKillLoot(vid, mdef) : null;
+          if (dropId) {
+            const ldef = (this.data.items || []).find(d => d.id === dropId) || {};
+            lootNote = ` Took ${ldef.name || 'something strange'} off the body.`;
+            if (this.villagerGearUp) this.villagerGearUp(vid, false);
+          }
+        } catch (e) {}
         killCorpse();
         this.removeWorldMonster(m);
-        this.say(`⚔️ ${summary} The carcass is out there — haul it home before it rots.`);
+        this.say(`⚔️ ${summary}${lootNote} The carcass is out there — haul it home before it rots.`);
         this.villageEvent('victory');
         this.bumpTrust(vid, 5);
         this.remember(vid, 'hero', 'killed ' + mName);
@@ -13316,7 +13513,18 @@
           if (vcorpse && vmeat) vcorpse.items.push(vmeat);
         } catch (e) {}
         this.removeWorldMonster(m);
-        tell(`\u2694\uFE0F ${summary} The village cheers.`);
+        // KILL LOOT (Steve 2026-10-09): the killer loots the body — same
+        // table as your kills. Re-equips on the spot.
+        let wloot = '';
+        try {
+          const dropId = this.villagerKillLoot ? this.villagerKillLoot(vid, mdef) : null;
+          if (dropId) {
+            const ldef = (this.data.items || []).find(d => d.id === dropId) || {};
+            wloot = ` Took ${ldef.name || 'something strange'} off the body.`;
+            if (this.villagerGearUp) this.villagerGearUp(vid, false);
+          }
+        } catch (e) {}
+        tell(`\u2694\uFE0F ${summary}${wloot} The village cheers.`);
         try { this.bumpTrust(vid, 4); } catch (e) {}
         try { if (this.remember) this.remember(vid, 'hero', 'killed ' + mName); } catch (e) {}
       } else if (rec.outcome === 'mFlee') {
@@ -16200,6 +16408,13 @@
       const used = s.relicUse || {};
       for (const r of this.relicItems()) {
         const id = r.itemId || r.id;
+        // SENTIMENTAL OWNER-LOCK (Steve 2026-10-09): keepsakes only work for
+        // the person they spawned with. A stranger's keepsake in your hands
+        // is just stuff — no bond, no thresholds, no evolution.
+        try {
+          const owner = r.owner || (((this.getPerson && this.getPerson(this.villagerId)) || {}).keepsakeOwner || {})[id];
+          if (owner && owner !== this.villagerId) continue;
+        } catch (e) {}
         const def = this.data.items.find(i => i.id === id);
         const cls = def && def.class;
         let gain = 0;

@@ -242,7 +242,14 @@ function cannedRec(outcome, vTaken) {
     try {
       const rec = (Game.data.villagers || []).find(x => x.id === vid) ||
                   (Game.data.background_survivors || []).find(x => x.id === vid);
-      if (rec) rec.equipped = { melee: { itemId: 'hunting_spear' } };
+      // HONEST PATH (2026-10-09): equipped derives from items via autoEquip
+      // (fieldFight re-equips at entry). Poke the inventory, not the slot.
+      if (rec) {
+        rec.items = rec.items || [];
+        if (!rec.items.includes('hunting_spear')) rec.items.push('hunting_spear');
+        const SC2 = (typeof globalThis !== 'undefined' ? globalThis.Scattering : null) || {};
+        if (SC2.equipment) SC2.equipment.autoEquip(rec, Game.data.items);
+      }
     } catch (e) {}
     const mdef = byId['bulldozer'];
     let wins = 0, freeWins = 0, trials = 200;

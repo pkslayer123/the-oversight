@@ -354,7 +354,14 @@
         const ordered = [...favored, ...rest];
         for (let k = 0; k < n && ordered.length; k++) push(ordered.shift(), false);
       };
-      take('tool', 1); take('weapon', 1); take('clothing', 1);
+      // STARTER WEAPONS (Steve 2026-10-06): no high-tier loot at spawn — the
+      // same gate genItemCandidates applies. A godslayer_spear in a day-1
+      // personal pool breaks the whole gear curve before it starts.
+      take('tool', 1);
+      { const wpool = items.filter(i => i.class === 'weapon' && !pool.includes(i.id) && (i.lootTier || 1) <= 2 && i.origin !== 'alien').map(i => i.id);
+        const wshuf = shuffle(wpool.slice());
+        if (wshuf.length) push(wshuf[0], false); }
+      take('clothing', 1);
 
       return { pool, semantic: semCount.n };
     },
@@ -431,11 +438,25 @@
         // PERSONAL POOL (Steve 2026-10-05): one pool per character, majority
         // semantic, drawn from the lifeseed. Replaces the generic class-based
         // candidates — the player still picks 5 from 8.
+        // CHOOSE 5 (Steve 2026-10-09): villagers choose their own 5 too.
+        // Personality-driven: equip utility (weapons/tools score by bonus) +
+        // sentimental keep-bias (keepsakes are theirs — nobody leaves their
+        // keepsakes behind). The unchosen go to ch.villageShare, deposited
+        // into the village armory at founding — communal gear, usable by
+        // anyone. Normal items are communal; sentimental items are not.
         try {
           const pp = this.genPersonalPool(ch);
           if (pp && pp.pool && pp.pool.length >= 5) {
-            ch.items = pp.pool;
+            if (this.choosePersonalFive) this.choosePersonalFive(ch, pp.pool);
+            else { ch.items = pp.pool; }
             ch.personalPoolSemantic = pp.semantic;
+            // RE-EQUIP (2026-10-09): items just changed — equipped still
+            // references the pre-pool set. Without this, villagers wear gear
+            // they don't carry and armorOf lies until the first fight.
+            try {
+              const SC2 = (typeof globalThis !== 'undefined' ? globalThis.Scattering : null) || {};
+              if (SC2.equipment) SC2.equipment.autoEquip(ch, this.data.items);
+            } catch (e2) {}
           }
         } catch (e) { /* generic pool stands if the seed is thin */ }
       } catch (e) { /* a thin seed is better than a crashed roster */ }

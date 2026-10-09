@@ -13,6 +13,7 @@
 //   - alreadyDead: a world-monster entity with hp<=0 is a corpse, not a fight — early exit, no rewards. (code: fieldFight)
 //   - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
 //   - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
+//   - gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs flat per hit, mirroring the tactical engine (final = max(0, final - prot)). (code: fieldFight, 2026-10-09)
 // consumes:
 //   - Scattering.combat.roll
 //   - village health, agency xp, equipment, monsters data
@@ -38,10 +39,11 @@
  *   coordination breaks (their documented weakness).
  *
  * Deliberate scope boundaries (documented, not oversights):
- * - No armor modeling: the tactical engine's own villager strikes apply
- *   raw rolls; this matches.
  * - No grid/telegraphs: off-screen fights have no squares to dodge on.
  *   Pattern type flavors the record text, not the math.
+ * (2026-10-09: the old "no armor modeling" boundary is gone — villagers
+ * wear armor now, and the fight respects it with the tactical engine's
+ * own flat reduction.)
  * - Pack members beyond the lead are ephemeral: the world-monster entity
  *   persists the lead's wounds; the pack scatters or dies with it.
  *
@@ -92,6 +94,10 @@
         outcome: null, rounds: 0, vTaken: 0, mDealt: 0,
         vHpLeft: 0, mHpLeft: 0, packCount: 1, log: [],
       };
+      // GEAR-UP (Steve 2026-10-09): re-equip only, never acquisition — a
+      // fighter doesn't whittle a spear mid-fight. Deterministic (autoEquip
+      // has no RNG), so seeded contest fights stay deterministic.
+      try { if (this.villagerGearUp) this.villagerGearUp(vid, false); } catch (e) {}
       var atk = mdef.attack || {};
       var dmgRange = (atk.damage && atk.damage.length === 2) ? atk.damage : [6, 10];
       var atkName = atk.name || 'attack';
@@ -104,7 +110,7 @@
       var vHpMax = 100;
       var vHp = (vv.health && vv.health[vid] !== undefined) ? vv.health[vid] : 100;
       if (vHp > vHpMax) vHpMax = vHp;
-      var bravery = 0, temper = 'steady', potential = false, wb = 0;
+      var bravery = 0, temper = 'steady', potential = false, wb = 0, varmor = 0;
       try { bravery = (((this.agencyOf(vid) || {}).xp || {})[vid] || {}).bravery || 0; } catch (e) {}
       // CONTESTS (Steve 2026-10-08): the crowd's roar steadies the arm —
       // watcher's cheer arrives as real bravery, not win-odds.
@@ -115,8 +121,17 @@
         var S = _g.S || ((_g.Scattering || {}).S) || {};
         var vp = ((this.data.villagers || []).find(function (x) { return x.id === vid; }) ||
                   (this.data.background_survivors || []).find(function (x) { return x.id === vid; })) || {};
+        // RANGED COUNTS (2026-10-09): off-screen fights have no grid, so
+        // range is meaningless — a spear is a spear. Melee + ranged both
+        // contribute, same as threatLevel sums them.
         if (S.equipment && S.equipment.weaponBonusOf)
-          wb = Math.round((S.equipment.weaponBonusOf(vp, this.data.items) || 0) / 2);
+          wb = Math.round(((S.equipment.weaponBonusOf(vp, this.data.items, 'melee') || 0) +
+                           (S.equipment.weaponBonusOf(vp, this.data.items, 'ranged') || 0)) / 2);
+        // ARMOR (Steve 2026-10-09): equipped armor absorbs, mirroring the
+        // tactical engine's flat reduction (final = max(0, final - prot)).
+        // Villagers wear armor now — the fight must respect it.
+        if (S.equipment && S.equipment.armorOf)
+          varmor = S.equipment.armorOf(vp, this.data.items) || 0;
       } catch (e) {}
 
       // ---- monster stats (real) ----
@@ -195,6 +210,13 @@
               var thrash = 0;
               if (mdef.id === 'gallowdeer') thrash = lroll([10, 16]);
               var total = d + thrash;
+              // ARMOR: flat reduction, same as the tactical engine. The log
+              // states what the armor actually absorbed (honesty).
+              if (varmor > 0 && total > 0) {
+                var absorbed = Math.min(total, varmor);
+                total = Math.max(0, total - varmor);
+                rec.log.push(vName + "'s gear absorbs " + absorbed + '.');
+              }
               vHp -= total; rec.vTaken += total;
               rec.log.push('R' + round + ': ' + atkName + ' hits ' + vName + ' for ' + total + ' (' + Math.max(0, vHp) + ' left)');
             }
