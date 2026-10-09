@@ -14,6 +14,7 @@
 //   - contestKnowledge(contestId) -> {seen,wins,level}
 //   - contestLearn(contestId, outcome)
 //   - _contestScaled(base, variant) -> contest (wave + hardened, both ends of fire->resolve)
+//   - _cxScaledContest(ac) -> contest (scaled copy for end paths: variant + wave scaling re-applied from ac.variant, so announced == resolved)
 //   - _cxStorePhase(ac, idx, rendered) -> rendered (choice box renders ac.phases directly)
 //   - _contestDeathLine(contest, how, pname)
 //   - _contestRenderPhase(ac, phase, idx)
@@ -71,6 +72,8 @@
 //   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08; moot 'Walk out'->MOOT_JUDGE win fixed break-it 2026-10-09) (code: contestPlayable, contestChoose, Steve 2026-10-06)
 //   - arena_reentry_guard: while the contest modal is suspended for a real arena fight, contestChoose drops all input ({arena:true}) and _contestArena refuses a second start — a double-tap race used to re-fire startCombat (clobbering state.arenaContest mid-fight) and re-grant grantWeapon choices (code: contestChoose, _contestArena, break-it 2026-10-09)
 //   - winner_share_pantryadd: a villager's watched win puts the winner's share through pantryAdd — the pantry cap is real, pantryKcal stays in sync; a full pantry gets the honest "eaten on the spot" line, never a silent overfill (code: _contestEnd, break-it 2026-10-09)
+//   - hardened_real: the hardened variant is mechanically real, not a paper tiger. What was announced ("It's worse now") is what's played AND resolved: the scaled contest (not the pool base) is used at every end path (_cxScaledContest), so hardened risk reaches the engine in watched verdicts and the name resolves as "Hardened X"; phase damage is x1.25 at the contestChoose choke point; arena beasts run one wave hotter; hardened prize rolls are hotter (code: _cxScaledContest, contestChoose, _contestArena, _contestEnd, break-it 2026-10-09)
+//   - prize_table: a player win rolls a real contest prize table, not a guaranteed drop — 60% chance of alien loot (75% hardened), loot tier capped at 3, tier 4 only at a low rate (25%) for extreme-risk wins at wave 4. The old {chance:1, tier:wave} mapped monster wave straight onto loot tier (the forbidden wave->tier conflation) and handed a guaranteed apex item per wave-4 win vs 12% off an actual apex kill (code: _contestEnd, break-it 2026-10-09)
 //   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 16 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil, then sorting/witness/cache/longodds (code: _contestWatchBeat, Steve 2026-10-06)
 //   - risk_rebalance_20261006: HIGH RISK rebalance — brave choices now usually kill (~50% death across full aggressive runs), smart choices live but cost heavily. Pit aggressive: 0.08/0.12 -> 0.20/0.30. Hide: 0.20/0.18/0.25 -> 0.32/0.25/0.38. Siege/hold: 0.20 -> 0.30. Rewards NOT nerfed — high risk justifies high reward (code: contestChoose die odds, Steve 2026-10-06)
 //   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
@@ -2503,6 +2506,11 @@
     if (d.note) { this.sysSay('📺 ' + d.note); log.push(d.note); }
     if (d.dmg) {
       let amt = d.dmg[0] + Math.floor(Math.random() * (d.dmg[1] - d.dmg[0] + 1));
+      // HARDENED (break-it contest 2026-10-09): the variant is announced as
+      // worse ("It's worse now") — but no phase builder reads variant, so
+      // the paper tiger gets teeth here, at the one choke point every
+      // phase's damage flows through. Moot demand already scales via risk.
+      if (ac.variant === 'hardened') amt = Math.ceil(amt * 1.25);
       // VETERAN (contest knowledge level 3): you read the hits coming.
       try {
         const ck = this.contestKnowledge(ac.contestId);
@@ -2657,6 +2665,21 @@
     return { phase: rendered, log };
   };
 
+  // SCALED-AT-RESOLVE (break-it contest 2026-10-09): every end-path refetches
+  // the contest from the pool — but the pool copy is the BASE. The hardened
+  // variant (announced aloud as "worse") and wave scaling live only in the
+  // scaled copy. Re-resolve from ac.variant so what was announced is what's
+  // played AND what's resolved: hardened risk reaches the engine in the
+  // watched paths, and the name reads "Hardened Pit" at the death line and
+  // the winner's call — never a quiet downgrade to "Pit".
+  G._cxScaledContest = function(ac) {
+    try {
+      const base = this.contestPool().find(c => c.id === ac.contestId);
+      if (base) return this._contestScaled(base, ac.variant || null);
+    } catch (e) {}
+    return { name: ac.contestId, id: ac.contestId, risk: 'medium' };
+  };
+
   // ARENA FIGHTS (Steve 2026-10-08): "contests are to be played, not as RNG."
   // A Blood contest's fight is a REAL tactical fight. The contest modal
   // suspends (arenaSuspended — app.js won't render it), the grid becomes the
@@ -2674,8 +2697,11 @@
     try {
       const pool = this.monsterWavePool ? this.monsterWavePool() : (this.data.monsters || []);
       for (let i = 0; i < n; i++) {
-        // Escalate: later waves run hotter.
-        const cands = pool.filter(m => (m.wave || 1) <= wave + (i > 0 ? 1 : 0));
+        // Escalate: later waves run hotter. HARDENED (break-it contest
+        // 2026-10-09): the announced variant runs one wave hotter — "worse"
+        // is real in the arena too.
+        const hot = (i > 0 ? 1 : 0) + (ac.variant === 'hardened' ? 1 : 0);
+        const cands = pool.filter(m => (m.wave || 1) <= wave + hot);
         const src = cands.length ? cands : pool;
         beasts.push(src[Math.floor(Math.random() * src.length)].id);
       }
@@ -2707,7 +2733,7 @@
     const ac = this.state.activeContest;
     if (!ac) return;
     ac.arenaSuspended = false;
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { name: ac.contestId };
+    const contest = this._cxScaledContest(ac);
     if (result === 'won') {
       arc.waveIdx++;
       if (arc.waveIdx < arc.waves.length) {
@@ -2746,7 +2772,7 @@
   };
 
   G._contestEnd = function(ac, outcome, prize) {
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { name: ac.contestId };
+    const contest = this._cxScaledContest(ac);
     const s = this.state.scholar;
     const isWatch = ac.participant && ac.participant !== 'player';
     const pname = isWatch ? this.displayName(ac.participant) : 'You';
@@ -2814,7 +2840,21 @@
         try { if (this.apCarePackage) this.apCarePackage(); } catch (e) {}
         if (prize) {
           try {
-            const loot = this.rollAlienLoot({ wave: this.unlockedWave(), loot: { chance: 1, tier: this.unlockedWave() } });
+            // CONTEST PRIZE TABLE (break-it contest 2026-10-09): high risk /
+            // high reward, but tier 4 stays gated. The old call mapped
+            // monster wave straight onto loot tier ({chance:1, tier:wave}) —
+            // the forbidden wave->tier conflation — and handed a GUARANTEED
+            // apex-tier item on every wave-4 win (monsters give 12% off an
+            // actual apex kill). Now: 60% chance of alien loot, tier capped
+            // at 3, and tier 4 only at a low rate for extreme-risk wins at
+            // wave 4 — hardest challenges, on their own terms. Hardened
+            // wins roll hotter (the audience demanded it).
+            const wave = this.unlockedWave();
+            const isExtreme = contest.risk === 'extreme';
+            let prizeTier = Math.min(3, wave);
+            let prizeChance = ac.variant === 'hardened' ? 0.75 : 0.6;
+            if (isExtreme && wave >= 4 && Math.random() < 0.25) prizeTier = 4;
+            const loot = this.rollAlienLoot({ wave, loot: { chance: prizeChance, tier: prizeTier } });
             if (loot) {
               // KNOWLEDGE-GATED (Steve 2026-10-06): the prize goes through the
               // SAME reveal path as monster-kill loot (alienLootGrant). Diegetic
@@ -2827,6 +2867,11 @@
               } else {
                 this.sysSay('📺 Prize: the System\'s favor (and a story).');
               }
+            } else {
+              // HONEST (break-it contest 2026-10-09): the prize table can
+              // whiff — a win with prize:true must still SAY what happened,
+              // never silently pocket the prize.
+              this.sysSay('📺 Prize: the System\'s favor (and a story). The vault was feeling shy tonight.');
             }
           } catch (e) { this.sysSay('📺 Prize: the System\'s favor (and a story).'); }
         }
@@ -2928,7 +2973,7 @@
   };
 
   G._contestDie = function(ac, how) {
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { name: ac.contestId, id: ac.contestId };
+    const contest = this._cxScaledContest(ac);
     const isWatch = ac.participant && ac.participant !== 'player';
     const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
@@ -2978,7 +3023,7 @@
 
   G._contestRefuse = function(ac) {
     // Refusal is a sequence, not a skip (Steve 2026-10-05)
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { name: ac.contestId };
+    const contest = this._cxScaledContest(ac);
     this.sysSay(`📺 You refuse ${contest.name}.`);
     this.sysSay(`📺 The System pauses. Refusal is... content. The cameras stay on.`);
     this.sysSay(`📺 "NOTED," says the System. "THE AUDIENCE WILL REMEMBER THE COWARDICE. OR THE PRINCIPLE. WE HAVEN'T DECIDED."`);
@@ -3384,7 +3429,7 @@
       try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
       this.drama('contest', { type: 'judging', integration: integ });
     } catch (e) {}
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { risk: 'medium', name: ac.contestId };
+    const contest = this._cxScaledContest(ac);
     // WATCHER AGENCY (Steve 2026-10-06, real 2026-10-08): cheering moves
     // your people — as real performance, not odds. Steadies the arm in
     // blood, lifts the case in moot. Capped — love is real but not rigged.
@@ -3532,7 +3577,7 @@
   G._contestResolveOthers = function(ac) {
     const others = (ac.others || []).filter(id => id !== 'player');
     if (!others.length) return;
-    const contest = this.contestPool().find(c => c.id === ac.contestId) || { risk: 'medium', name: ac.contestId, id: ac.contestId };
+    const contest = this._cxScaledContest(ac);
     const s = this.state.scholar;
     this.sysSay(`📺 ───`);
     // REFUSAL-HONEST (Steve 2026-10-06): if the player refused, they fought
