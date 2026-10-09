@@ -83,7 +83,7 @@ function nearestVillage() {
       const p = Game.data.villagers.find(x => x.id === Game.villagerId) ||
                 Game.data.background_survivors.find(x => x.id === Game.villagerId);
       if (p) p.providesPerDay = 20000; // loud labor: any double-dip is obvious
-      Game.joinVillage(v.id);
+      Game.joinVillageReal(v.id);
       const snap = JSON.stringify(Game.state.village);
       reseed(s * 7919 + 11);
       const p0 = Game.state.village.pantryKcal || 0;
@@ -106,7 +106,7 @@ function nearestVillage() {
       const sc = await freshGame(s);
       const v = nearestVillage();
       walkTo(v.x, v.y);
-      Game.joinVillage(v.id);
+      Game.joinVillageReal(v.id);
       walkTo(3, 3); // home, WITHOUT leaving: still "joined", but at Haven
       ok(sc.joinedVillage === v.id, `seed ${s}: still joined after walking home`);
       reseed(s * 104729 + 3);
@@ -134,7 +134,7 @@ function nearestVillage() {
       const sc = await freshGame(s);
       const v = nearestVillage();
       walkTo(v.x, v.y);
-      Game.joinVillage(v.id);
+      Game.joinVillageReal(v.id);
       const day0 = v.day;
       // give them a healthy turf so their foraging has something to eat
       for (let ty = 0; ty < 7; ty++) for (let tx = 0; tx < 7; tx++) {

@@ -73,7 +73,9 @@ const ok = (name, cond, extra) => {
     joinLines.some(l => /what the years did/i.test(l)) && joinLines.some(l => /Test Elder died of hunger/.test(l)),
     joinLines.slice(0, 3).map(l => l.slice(0, 60)).join(' | '));
   says.length = 0;
-  Game.leaveVillage();
+  // (2026-10-09 gap sweep: Game.leaveVillage removed — dead. Rejoin goes
+  // straight through joinVillageReal; the courtship wrap guards via
+  // _joinOpinionGiven so rejoin cannot double-dip.)
   Game.joinVillageReal(ov.id); // rejoin: no farming
   says.splice(0);
   ok('rejoin does not double-dip opinion', (ov.opinion || 0) === op0 + 5, `opinion=${ov.opinion}`);

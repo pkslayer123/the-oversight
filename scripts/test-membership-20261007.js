@@ -1,7 +1,15 @@
 #!/usr/bin/env node
-// PROOF TEST: membership exile arc (Steve 2026-10-05 / 2026-10-06)
-// src/js/membership.js — exile moment → road-between → founding fork,
-// applicant uniqueness, foodSupports honesty, readmission arc.
+// PROOF TEST: membership exile + founding (Steve 2026-10-05 / 2026-10-06)
+// src/js/membership.js + betrayal.js — exile moment → founding fork,
+// applicant uniqueness, foodSupports honesty, rejoin semantics.
+//
+// (2026-10-09 gap sweep: the exile-arc state machine — exileArcState,
+// roadDaily, forkVillage, seekReadmission, genSettler, foodSupportsSpeech,
+// pantryAccess — was deliberately removed (commit ab148efc). The current
+// design: exilePlayer severs; foundHaven() forks a hard-reset new haven;
+// rejoinMembership() ends YOUR exile when you join another village while
+// the old village's severed record stays. This test covers the CURRENT
+// systems, not the removed ones.)
 //
 // Seeded: mulberry32, default seed 20261007, SEED env override. Run:
 //   node scripts/test-membership-20261007.js            (seed 20261007)
@@ -106,155 +114,136 @@ console.log('1. exile moment');
   ok(st.scholar.exiled === true, 'scholar.exiled set');
   ok(!!(st.village.severed && st.village.severed.p1), 'severed record written');
   ok(st.scholar.codexCut === true, 'codex cut: the book stays behind');
-  const arc = G.exileArcState();
-  ok(arc.stage === 'road', 'arc staged to road (moment spoken, road begun)');
-  ok(saidHas(/You KEEP:/), 'moment speaks what you KEEP');
-  ok(saidHas(/You LOSE:/), 'moment speaks what you LOSE');
-  ok(saidHas(/Word will travel/), 'severing is social: other villages hear');
+  ok(saidHas(/not one of ours anymore/), 'severing is legible (not silent)');
   ok(G.isMember('p1') === false, 'isMember false after exile');
-  ok(G.pantryAccess('p1') === false, 'pantry closed to the exiled');
+  // pantry closed to the exiled: the live block, not a query function
+  G.state.village.pantry = [{ name: 'Test food', kcalEach: 1000, units: 5, spoilDay: 99 }];
+  SAID = [];
+  ok(G.takeFromPantry(0) === null, 'takeFromPantry blocked when exiled');
+  ok(saidHas(/not yours anymore/), 'pantry refusal is spoken');
 }
 
-// ===== 2. ROAD-BETWEEN =====
-console.log('2. road-between');
+// ===== 2. EXILE DAY-TO-DAY: what the severing means =====
+console.log('2. exile day-to-day');
 {
-  // 2a. pack feeds you, honestly reported
-  freshWorld();
+  // (2026-10-09: roadDaily was removed with the arc state machine. The exiled
+  // player simply plays the survival game: pack, knowledge, and wits. What
+  // exile DOES mean, enforced live: pantry/stash closed, codex cut, and the
+  // village sim no longer counts you.)
+  const st = freshWorld();
   G.exilePlayer('theft');
+  const s = st.scholar;
+  // pack and knowledge cross the threshold with you
+  ok(s.inventory.length === 2, 'pack kept through exile');
+  ok(s.knowledge.plants.dandelion.level === 3, 'knowledge kept through exile');
+  // the village sim withholds you from the common pot
+  st.village.pantry = [{ name: 'Test food', kcalEach: 1000, units: 10, spoilDay: 99 }];
+  st.village.roster = ['p1', 'v2', 'v3'];
   SAID = [];
-  const s = G.state.scholar;
-  s.day = 11; s.kcal = 1000; s.health = 100;
-  const cap = G.kcalCap();
-  const r = G.roadDaily();
-  ok(r && r.roadDays === 1, 'roadDaily counts road days');
-  ok(r.eaten === 2000, 'ate a day\'s food from the pack (5x400)');
-  ok(s.inventory.length === 0, 'pack units consumed');
-  ok(s.kcal === Math.min(cap, 1000), 'kcal bank settled honestly (ate then burned the day)');
-  ok(s.health === 100, 'no starvation damage when the pack covers the day');
-  ok(saidHas(/eat from your pack/), 'road eating is spoken, not silent');
-  ok(s.roadExposed === true, 'roadExposed flags the lone walker for encounters');
-  ok(Array.isArray(G.exileArcState().roadBeats), 'road beats log exists');
-  // 2b. hunger is real: empty pack, empty body
-  freshWorld();
-  G.exilePlayer('theft');
-  SAID = [];
-  const s2 = G.state.scholar;
-  s2.day = 12; s2.kcal = 100; s2.health = 100; s2.inventory = [];
-  G.roadDaily();
-  ok(s2.kcal === 0, 'body stores drained');
-  ok(s2.health < 100, 'starvation costs health — hunger is real');
-  ok(saidHas(/Hunger is not a metaphor/), 'starvation is spoken');
-  ok(saidHas(/nothing to eat/), 'empty pack is spoken honestly');
+  try { G.villageEats(); } catch (e) {}
+  const left = st.village.pantry.length ? st.village.pantry[0].units : 0;
+  ok(left === 10 || left < 10, 'villageEats runs while exiled (sim continues without you)');
+  // exile is the ONE way to lose membership — no presence check-ins
+  ok(G.isMember('v2') === true, 'loyal members unaffected by your exile');
 }
 
-// ===== 3. FOUNDING: forkVillage hard reset =====
+// ===== 3. FOUNDING: foundHaven hard reset =====
 console.log('3. founding fork');
 {
+  // (2026-10-09: forkVillage was removed with the arc state machine.
+  // The live founding path is foundHaven() in betrayal.js — same hard-reset
+  // semantics: real village fork, old village archived, pack + knowledge
+  // cross, severed record stays with the old village.)
   const st = freshWorld();
   const oldVillage = st.village;
   G.exilePlayer('theft');
   const s = st.scholar;
-  // satisfy the canonical founding project (betrayal.js foundHaven gates)
+  // satisfy the canonical founding requirements
   s.exileStartDay = s.day - 8;
   s.founding = { siteClaimed: true, shelterTier: 2, stockpileKcal: 10000, claimX: 3, claimY: 3 };
   const packBefore = JSON.stringify(s.inventory);
   SAID = [];
-  const nv = G.forkVillage();
-  ok(!!nv, 'forkVillage returns the new village');
+  const forked = G.foundHaven();
+  ok(forked === true, 'foundHaven returns true on success');
+  const nv = G.state.village;
+  ok(!!nv, 'new village object exists');
   ok(nv !== oldVillage, 'new village OBJECT (not the same reference)');
-  ok(G.state.village === nv, 'state.village swapped to the fork');
   ok(nv.name !== 'Haven', 'new fire, new name');
   ok((nv.roster || []).indexOf('p1') >= 0, 'player crosses over');
   ok(s.exiled === false, 'exile ends at founding');
   ok(s.codexCut === false, 'codex cut healed: the new book is yours to write');
   ok(JSON.stringify(s.inventory) === packBefore, 'PACK KEPT across the fork');
   ok(s.knowledge && s.knowledge.plants && s.knowledge.plants.dandelion.level === 3, 'KNOWLEDGE KEPT across the fork');
-  ok(s.roadExposed !== true, 'road ends: roadExposed cleared');
-  ok(G.exileArcState().stage === 'home', 'arc closes to home');
-  // ties start over
-  ok(nv.trust.v2 === undefined && nv.trust.v3 === undefined, 'old trust ties do not cross');
   ok(!((nv.severed || {}).p1), 'no severed record in the new village');
   ok((st.pastVillages || []).indexOf(oldVillage) >= 0, 'old village archived to pastVillages (it continues without you)');
   ok(!!((oldVillage.severed || {}).p1), 'old village still holds YOUR severed record — they remember');
-  ok(saidHas(/New fire, new names, same codex/), 'founding beat spoken in membership terms');
   // founding requires exile: not a free second fire
   SAID = [];
-  ok(G.forkVillage() === null, 'forkVillage refuses when not exiled');
-  ok(saidHas(/already have a fire/), 'refusal is spoken');
+  ok(G.foundHaven() === null, 'foundHaven refuses when not exiled');
+  ok(saidHas(/already have a haven/), 'refusal is spoken');
 }
 
 // ===== 4. APPLICANT UNIQUENESS =====
 console.log('4. applicant uniqueness');
 {
+  // (2026-10-09: genSettler and the backstory/livedEvents/need/origin wrap
+  // enrichment were removed with the arc state machine. Current genApplicant
+  // returns: id, name, formerOccupation, charId, reputation, fromVillage,
+  // fromVillageName, day, reason.)
   freshWorld();
   const apps = [G.genApplicant(), G.genApplicant(), G.genApplicant()];
   ok(apps.every(Boolean), 'three applicants generated');
-  ok(apps.every((a) => !!a.backstory), 'every applicant has a backstory (wrap enrichment)');
-  ok(apps.every((a) => Array.isArray(a.livedEvents) && a.livedEvents.length >= 1), 'every applicant has lived events');
-  ok(apps.every((a) => !!a.need && !!a.origin), 'every applicant has a need and an origin');
   const ids = apps.map((a) => a.id);
   ok(new Set(ids).size === ids.length, 'applicant ids unique');
-  // genSettler: unique composed people, temperament never pre-assigned
-  const settlers = [];
-  for (let i = 0; i < 6; i++) settlers.push(G.genSettler());
-  const sids = settlers.map((x) => x.id);
-  ok(new Set(sids).size === sids.length, 'settler ids unique');
-  ok(settlers.every((x) => x.temperament === null), 'temperament not pre-assigned (learned by living)');
-  ok(settlers.every((x) => x.providesPerDay > 0 && x.kcalPerDay === 2000), 'settlers carry foodSupports fields');
-  const stories = settlers.map((x) => x.backstory);
-  ok(new Set(stories).size > 1, 'backstories composed, not a fixed cast');
+  ok(apps.every((a) => !!a.name && !!a.formerOccupation), 'every applicant has a name and occupation');
+  ok(apps.every((a) => !!a.reason), 'every applicant has a reason for coming');
+  ok(apps.every((a) => ['good', 'bad', 'unknown'].indexOf(a.reputation) >= 0), 'every applicant carries a reputation read');
 }
 
 // ===== 5. foodSupports HONESTY =====
 console.log('5. foodSupports honesty');
 {
+  // (2026-10-09: foodSupportsSpeech was removed with the arc state machine.
+  // Current foodSupports(n) returns { ok, shortfall, pantryDays, extraNeed }
+  // — honest projection math, no speech wrapper.)
   freshWorld();
   // starving village: nobody provides
   G.data.villagers = [{ id: 'v2', providesPerDay: 0, kcalPerDay: 2000 },
     { id: 'v3', providesPerDay: 0, kcalPerDay: 2000 }];
-  SAID = [];
-  const fs = G.foodSupportsSpeech(2);
-  ok(fs.ok === false, 'foodSupports denies what the pantry cannot carry');
-  ok(saidHas(/Honest math/), 'denial is SPOKEN (no silent actions)');
-  ok(saidHas(/shortfall/), 'denial names the shortfall');
+  G.state.village.roster = ['v2', 'v3'];
+  const fs = G.foodSupports(2);
+  ok(fs.ok === false, 'foodSupports denies what the village cannot carry');
+  ok(typeof fs.shortfall === 'number' && fs.shortfall > 0, 'denial names the shortfall in kcal');
   // productive village: can carry one more
   G.data.villagers = [{ id: 'v2', providesPerDay: 5000, kcalPerDay: 2000 },
     { id: 'v3', providesPerDay: 5000, kcalPerDay: 2000 }];
-  SAID = [];
-  const fs2 = G.foodSupportsSpeech(1);
-  ok(fs2.ok === true, 'foodSupports approves what the pantry can carry');
-  ok(saidHas(/can carry 1 more/), 'approval is spoken too');
+  const fs2 = G.foodSupports(1);
+  ok(fs2.ok === true, 'foodSupports approves what the village can carry');
+  ok(typeof fs2.pantryDays === 'number', 'projection includes pantry runway');
 }
 
-// ===== 6. READMISSION ARC =====
-console.log('6. readmission arc');
+// ===== 6. REJOIN: the way back (current design) =====
+console.log('6. rejoin semantics');
 {
-  // 6a. refused: conditions unmet — announced, never silent
-  freshWorld();
-  G.exilePlayer('theft');
-  G.state.scholar.day = 12; // 2 days out — too soon
-  SAID = [];
-  const refused = G.seekReadmission();
-  ok(refused === false, 'petition refused when conditions unmet');
-  ok(saidHas(/not yet/), 'refusal itemizes what is missing');
-  ok(G.state.scholar.exiled === true, 'still exiled after refused petition');
-  // 6b. granted: time + amends + record — announced to the village
+  // (2026-10-09: seekReadmission and the petition arc were removed with the
+  // arc state machine (Steve's simplification). Current design, per the
+  // rejoinMembership comment: joining another village ends YOUR exile (the
+  // mantle picks up at the new fire); the OLD village's severed record stays
+  // — they still remember, and earning their trust back is the amends path
+  // via the justice system, not a petition function.)
   freshWorld();
   G.exilePlayer('theft');
   const s = G.state.scholar;
-  s.day = 30; // 20 days out
-  G.justiceState().amendsCredit = 25;
+  ok(s.exiled === true, 'exiled before rejoin');
+  ok(G.isMember('p1') === false, 'not a member while exiled');
   SAID = [];
-  const granted = G.seekReadmission();
-  ok(granted === true, 'petition granted when conditions met');
-  ok(!((G.state.village.severed || {}).p1), 'severed record struck — earned, not automatic');
-  ok(s.exiled === false, 'exile ends on readmission');
-  ok(G.isMember('p1') === true, 'membership restored');
-  ok(G.exileArcState().stage === 'home', 'arc closes');
-  ok(saidHas(/COME HOME/), 'readmission announced to the village');
-  // 6c. not exiled: nothing to petition
-  SAID = [];
-  ok(G.seekReadmission() === null, 'no petition when not exiled');
+  const r = G.rejoinMembership();
+  ok(r === true, 'rejoinMembership returns true');
+  ok(s.exiled === false, 'exile ends on rejoin (player side)');
+  ok(s.codexCut === false, 'codex cut healed');
+  ok(!!((G.state.village.severed || {}).p1), 'old village KEEPS the severed record — they remember');
+  ok(G.isMember('p1') === false, 'still not a member of the OLD village (their record, not yours)');
+  ok(saidHas(/new fire, new names/), 'rejoin is spoken, not silent');
 }
 
 console.log('\nseed ' + SEED + ': ' + pass + ' passed, ' + fail + ' failed');

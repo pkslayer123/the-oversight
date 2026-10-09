@@ -80,21 +80,43 @@ function saidHas(sub) { return said.some(t => t.indexOf(sub) >= 0); }
   ok('takeFromPantry works when member', !saidHas('not yours anymore'));
 
   // 4. villageEats skips the exiled (no phantom draw from the common pot)
+  // The player is never in the collective pot (parity 2026-10-08): their meal
+  // is the trust-scaled villageMeal. Exile must not change the pot's draw —
+  // the membership wrapper withholds non-members from the roster during the
+  // call. Differential: identical pantry outcome exiled vs member.
   freshGame();
   pid = Game.villagerId;
   Game.data.villagers.push({ id: 'tm_npc', name: 'Test Npc', providesPerDay: 0, kcalPerDay: 2000 });
-  var prec = Game.data.villagers.find(p => p.id === pid);
-  var savedProv = prec.providesPerDay, savedKcal = prec.kcalPerDay;
-  prec.providesPerDay = 0; prec.kcalPerDay = 2000;
   Game.state.village.roster = [pid, 'tm_npc'];
-  Game.state.village.health = {}; Game.state.village.trust = {}; Game.state.village.taught = {};
-  Game.state.village.pantry = [{ name: 'Test food', kcalEach: 1000, units: 10, spoilDay: 99 }];
+  var _realRandom = Math.random;
+  function seedRng(seed) {
+    var s = seed >>> 0;
+    Math.random = function () {
+      s |= 0; s = (s + 0x6D2B79F5) | 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function resetMeal() {
+    Game.state.village.pantry = [{ name: 'Test food', kcalEach: 1000, units: 10, spoilDay: 99 }];
+    Game.state.village.health = {}; Game.state.village.trust = {}; Game.state.village.taught = {};
+    Game.state.village.needs = {}; Game.state.village.contribLog = {}; Game.state.village.mealLog = [];
+    Game.state.village.lastPlayerMeal = 0;
+  }
+  resetMeal();
   Game.state.scholar.exiled = true; // player severed
+  seedRng(1234);
   Game.villageEats();
-  var left = Game.state.village.pantry.length ? Game.state.village.pantry[0].units : 0;
-  ok('villageEats skips exiled player (8 units left, not 6)', left === 8);
-  prec.providesPerDay = savedProv; prec.kcalPerDay = savedKcal;
+  var leftExiled = Game.state.village.pantry.length ? Game.state.village.pantry[0].units : 0;
+  resetMeal();
   Game.state.scholar.exiled = false;
+  seedRng(1234);
+  Game.villageEats();
+  var leftMember = Game.state.village.pantry.length ? Game.state.village.pantry[0].units : 0;
+  Math.random = _realRandom;
+  ok('villageEats: exiled player draws nothing extra (no phantom draw)', leftExiled === leftMember);
+  ok('villageEats: the pot was actually eaten from (npc fed)', leftMember < 10);
 
   // 5. severMembership: NPC cut is complete
   freshGame();
@@ -115,8 +137,12 @@ function saidHas(sub) { return said.some(t => t.indexOf(sub) >= 0); }
   ok('codex cut set', Game.state.scholar.codexCut === true);
   ok('severing is legible', saidHas('not one of ours anymore'));
   Game.rejoinMembership();
-  ok('rejoin clears severed', Game.isMember(pid) === true);
+  ok('rejoin ends the exile (player side)', Game.state.scholar.exiled === false);
   ok('rejoin clears codex cut', Game.state.scholar.codexCut === false);
+  // (Design 2026-10-05: rejoinMembership does NOT clear the old village's
+  // severed record — they still remember. The exile is over for YOU; earning
+  // the old village's trust back is the amends path.)
+  ok('old village still remembers the severing (their record stays)', Game.isMember(pid) === false);
 
   // 7. housing: default, build, cost
   freshGame();

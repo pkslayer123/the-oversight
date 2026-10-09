@@ -243,11 +243,11 @@ sec('R7 — debug scenario runs the real fireShow path');
   ok('showWhyEat runs without throwing', true);
 }
 
-// ================= PLAYABILITY: all 29 shows =================
+// ================= PLAYABILITY: all 30 shows =================
 sec('P1 — every pool show has an authored beat with 3 honest choices');
 {
   const pool = Game.showPool();
-  ok('pool has 29 shows', pool.length === 29, 'got ' + pool.length);
+  ok('pool has 30 shows', pool.length === 30, 'got ' + pool.length);
   let bad = [];
   for (const sh of pool) {
     const beat = Game.SHOW_BEATS[sh.id];
@@ -264,7 +264,7 @@ sec('P1 — every pool show has an authored beat with 3 honest choices');
     const hasCost = ch.some(c => c.do.kcal < 0 || c.do.trauma > 0 || c.do.fracture > 0 || c.do.dmg);
     if (!hasCost) bad.push(sh.id + ':no-cost');
   }
-  ok('all 29 beats authored, honest, costly', bad.length === 0, bad.slice(0, 5).join('; '));
+  ok('all 30 beats authored, honest, costly', bad.length === 0, bad.slice(0, 5).join('; '));
 }
 sec('P2 — playing every choice of every show ends the modal with real effects');
 {
@@ -528,7 +528,7 @@ sec('D3 — new functions exist and are ontology-listed');
     if (typeof Game[fn] !== 'function') { ok('Game.' + fn + ' defined', false); }
   }
   ok('all new Game functions defined', true);
-  ok('SHOW_BEATS table present', !!Game.SHOW_BEATS && Object.keys(Game.SHOW_BEATS).length === 29);
+  ok('SHOW_BEATS table present', !!Game.SHOW_BEATS && Object.keys(Game.SHOW_BEATS).length === 30);
 }
 
 console.log('\n==== SEED ' + SEED + ': ' + pass + ' pass, ' + fail + ' fail ====');

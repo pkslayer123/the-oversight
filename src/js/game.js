@@ -5899,22 +5899,10 @@
       this.state.otherVillages = villages;
     },
 
-    // joinVillage: you're at another village. Join them.
-    // You become one of theirs. Their pantry feeds you. You contribute.
-    // If you die, you can take over one of their villagers.
-    joinVillage(villageId) {
-      const v = (this.state.otherVillages || []).find(v => v.id === villageId);
-      if (!v) return null;
-      this.state.scholar.joinedVillage = villageId;
-      this.say(`You join ${v.name}. You're one of them now. Their pantry is yours. Their problems are yours.`);
-      return null;
-    },
-    // leaveVillage: go solo again. The wild is yours.
-    leaveVillage() {
-      this.state.scholar.joinedVillage = null;
-      this.say('You leave. Solo. The wild doesn\'t care, but it\'s honest.');
-      return null;
-    },
+    // NOTE (2026-10-09 gap sweep): the old joinVillage/leaveVillage stubs were
+    // removed — they had no live callers. The real join path is
+    // joinVillageReal (betrayal.js: probation, seat release, trust reset);
+    // leaving happens through probation rejection / village loss, inline.
 
     // turfKcal: what the land around (x,y) can actually give today.
     // Sums stocked tiles within 4 (their turf — same footprint depleteRandomTile

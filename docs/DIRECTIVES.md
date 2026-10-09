@@ -32,6 +32,7 @@ Verbatim-ish record of Steve's explicit instructions. These don't expire. When i
 - The Codex starts as a Journal (your handwriting); it becomes a Codex at the first milestone.
 - Energy is a future mana system: eating past full charges it; it fuels skills (powerful blow, dodge). Not before the skill/combat systems exist.
 - Survivors are people, not survival archetypes. Dialogue is character first, tips second.
+- Scale transitions are moments, not thresholds (Steve 2026-10-05): village → regional → national → global, each FELT as a played beat. One system — the System overlay grows from HUD/abilities into coordination/logistics, tied to the codex (knowledge → food → power → coordination → species agency). You always walk around as a person; verbs never change. Transitions are never speedrunnable: relationships take seasons, rival leaders have agendas, feeding a coalition scales exponentially, viewership gates System upgrades.
 - Keep business Drive files shared with Darren separate from personal files.
 - Reverify notification data older than ~30 minutes.
 

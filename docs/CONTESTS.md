@@ -105,6 +105,37 @@ villager pulled onto *Ask a Human* comes home with fans or with shame —
 sometimes both. Shows are also how the audience meets non-fighters: the
 gossip lane has its own celebrities.
 
+## Ratings summons (implemented 2026-10-09; canon: OVERSIGHT design, Steve 2026-10-04)
+
+When the numbers go soft, the System doesn't just schedule harder — it
+summons YOU for a promo stunt. "Ratings summons (promos/stunts, small gifts,
+ties to care packages)" is from the 2026-10-04 OVERSIGHT design; this
+section records the implemented behavior (code: `contestTick`,
+`fireRatingsSummons`, `ratingsSummonsPhases` in contests.js).
+
+**Trigger.** Inside the normal TV scheduling (`contestTick`, day 14+): the
+System schedules television like a producer — base 0.25/day, +0.15 when
+viewership is declining week-over-week, −0.10 when ratings are high and
+rising, +0.10 after a recent death or fracture (clamped 0.05–0.60). When
+ratings are dipping and the scheduling roll passes, there is a 20% chance
+the slot becomes a ratings summons instead of a contest or show pull.
+
+**Budget.** The summons counts against the same 2/week combined
+contests+shows budget — it replaces a slot, it doesn't add one.
+
+**The three played choices** (a promo stunt, live, sixty seconds):
+
+- **Do the stunt** — full commitment. Costs 200 kcal and 4 trauma. Wins:
+  the numbers tick up while you're still moving, and it shakes a fan care
+  package loose (`prize: true` → `_showEnd` WIN path).
+- **Phone it in** — minimum viable effort. Costs 2 trauma. The chat clocks
+  it instantly; lands as a loss.
+- **Refuse on camera** — the no is the content. No resource cost. Refusing
+  is itself a played sequence with consequences (lands as `refused`).
+
+Like all TV, the summons rides the show phase engine: it lands in fans and
+shame, never the contest prize/death paths. TV doesn't kill.
+
 ## Prizes — every lane
 
 Prizes feed EVERY progression lane, never just combat:

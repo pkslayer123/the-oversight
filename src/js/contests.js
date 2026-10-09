@@ -16,7 +16,7 @@
 //   - _showEnd(ac, outcome, prize) -> lands a player/village show or ratings summons (fans/shame/both/refused)
 //   - _showGossip(how, pid, showName) -> seeds show gossip (REP, never trust)
 //   - _showGenericBeat(show) -> fallback played beat for shows without an authored beat
-//   - SHOW_BEATS -> per-show played beats (all 29 pool shows authored)
+//   - SHOW_BEATS -> per-show played beats (all 30 pool shows authored)
 //   - fireRatingsSummons() -> played ratings-stunt summons modal
 //   - ratingsSummonsPhases() -> the summons beat (stunt / phone it in / refuse)
 //   - _cxFanLane(contest) -> fan-club lane for a contest category
@@ -384,6 +384,8 @@
         desc: 'Call-in show. Strangers ask you deeply uncomfortable questions.' },
       { id: 'death_reel', name: 'The Death Reel',
         desc: 'Highlights. Yes, including yours. Especially yours.' },
+      { id: 'moot', name: 'The Moot',
+        desc: 'Televised trials and debates. The village holds court on camera; the galaxy is the jury.' },
       { id: 'nap_wars', name: 'Nap Wars',
         desc: 'A villager is pulled mid-afternoon for competitive napping. The galaxy holds its breath. Someone always snores.' },
       { id: 'tiny_door', name: 'The Tiny Door',
@@ -889,6 +891,17 @@
       win: `The village adopts your commentary as canon. "The squirrel is winning" becomes a saying. You are in on every joke now.`,
       lose: `The empty-chair episode wins awards. You do not attend the ceremony.`,
       mixed: `Your narration makes the reel art. It also makes it permanent. Strangers quote your worst moments back at you, lovingly.`,
+    },
+    moot: {
+      setup: `📺 The Moot — the village holds a trial, on camera.\n\nThe charge is read aloud. It might even be yours. The jury is seventeen systems of beings who have never been accused of anything. Your village fills the gallery. Everyone is performing, a little.`,
+      choices: [
+        { label: 'Argue the case', sub: 'rhetoric, televised', end: 'won', note: 'You argue like the galaxy is the jury — because it is. The points land. The prosecutor-drone objects to your charisma. Overruled, by applause.', do: { fanLane: { n: 3, why: 'won the televised trial' }, notability: 'showmanship' } },
+        { label: 'Confess everything', sub: 'disarm the court', end: 'mixed', note: 'You confess — all of it, plainly, on the record. The court does not know what to do with honesty. The audience does: it leans in.', do: { trauma: 4, fanLane: { n: 2, why: 'the televised confession' } } },
+        { label: 'Accuse the accuser', sub: 'turn it around', end: 'lost', note: 'You point at the prosecutor-drone. "Who watches the watchers?" The court finds this contemptuous. The galaxy finds it delicious. The verdict does not go your way.', do: { trauma: 3, fracture: 1, fanLane: { n: 1, why: 'contempt of the televised court' } } },
+      ],
+      win: `Acquitted, applauded, archived. Law students on three worlds study your closing. The village quotes it back at you, badly, forever.`,
+      lose: `Guilty, televised. The sentence is community service and the clip. Mostly the clip.`,
+      mixed: `The confession breaks the format. The trial becomes a conversation. Nobody is acquitted, nobody is condemned, and the galaxy cannot stop talking about it.`,
     },
     nap_wars: {
       setup: `📺 Nap Wars — the arena is a couch.\n\nThe event: sleep, on camera, while the galaxy watches. Scoring on speed of onset, depth, and artistic snoring. Someone always snores.`,

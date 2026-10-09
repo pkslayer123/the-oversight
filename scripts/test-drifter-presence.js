@@ -71,10 +71,13 @@ const narrated = () => says.some(t => NARR.some(rx => rx.test(t)));
 
   // --- 3. away death queues to awayNews, no skull say ---
   stubRandom(0.4); // force the wounded branch (0.35 <= r < 0.5)
-  const bgIds = (v.roster || []).filter(id => !Game.data.villagers.find(m => m.id === id));
+  // (2026-10-09: the old !data.villagers.find filter matched NOBODY after
+  // hydration moved every roster member into data.villagers. The live sim
+  // picks from unassigned roster members excluding the player.)
+  const freeIds = (v.roster || []).filter(id => id !== Game.villagerId && !(v.assignments || {})[id]);
   const rosterBefore = (v.roster || []).length;
   v.health = v.health || {};
-  for (const id of bgIds) v.health[id] = 5; // dmg 20-35 -> whoever is picked, dies
+  for (const id of freeIds) v.health[id] = 5; // dmg 20-35 -> whoever is picked, dies
   says.length = 0; s.awayNews = [];
   try { Game.villageLives(); } catch (e) {}
   unstub();

@@ -41,6 +41,33 @@ Living record. New decisions go in DECISIONS.md with dates; this file holds the 
 - **Delegation:** absent leaders appoint a second with their own leanings.
 - **The Codex travels with you;** villages hold degraded copies.
 
+## Scale transitions (Steve 2026-10-05; recorded 2026-10-09)
+
+The game grows through four scales — **village → regional → national → global** — and the player must FEEL each one. A transition is **a moment, not a threshold**: a played beat the player lives through, never a number quietly ticking over in the background.
+
+**One system, not two.** Scale progression is a single progressively-manifesting knowledge system, not separate government and alien-interface systems. The System overlay grows from HUD and abilities into coordination and logistics as human cooperation scales — and it is tied to the codex. The chain:
+
+**knowledge → food → power → coordination → species agency**
+
+The Codex/knowledge substrate begins as journal, HUD, and abilities, and grows into increasingly sophisticated cooperation, coordination, governance, and logistics as people learn enough to organize at larger scales. Human institutions and the alien System interface are two faces of the same progression.
+
+**You always walk around as a person.** Combat never leaves. The verbs never change: move, talk, forage, fight, share. No fed village, no power base, no 4X map replacing the local grid — larger coordination raises the number of people and the stakes, but the village-scale game stays relevant all the way up. (A larger tactical grid is expected eventually — longer ranges, bigger AoEs, larger monsters, more people in a fight — but mobile legibility and the one-screen moment-to-moment rule remain the constraint.)
+
+**Transitions are NOT speedrunnable.** Early sketches based on quick thresholds ("three villages plus surplus") were rejected as too gameable. Each scale-up must be earned through:
+
+- deep knowledge and durable relationships (these take seasons, not days),
+- rival leaders and village autonomy (other villages have their own agendas),
+- coalition logistics (feeding a coalition is exponentially harder than feeding a village),
+- audience and System attention (viewership gates System upgrades),
+- escalating monsters and contests,
+- connected Havens.
+
+**Inter-village relations** (the regional fabric): representatives can link villages with primary/subordinate relations, and the hierarchy is retained. You may NOT end the game at the top — joining another kingdom as subordinate is a legitimate earned outcome. The fun is the climb: trust, proving worth, chafing, bidding for primacy — all earned. Deaths hit hard: succession crises, renegotiation. Every link is a relationship with moving trust. Presence-free membership and remote applications make regional expansion natural.
+
+**Implemented:** the village→regional moment is the **Regional Dawn** — the first Haven link triggers a played transition ("One fire was a village. Two fires is a NETWORK"), the panel becomes ⛓️ NETWORK, and the player makes a real first-gesture choice (gift 2,000 pantry kcal, send a representative away 3 days, or cold ink).
+
+[OPEN] The played moments for regional→national and national→global are not yet designed — each needs its own beat at least as strong as the Regional Dawn. [OPEN] The exact viewership gates for System upgrades at each scale are not yet specified. [OPEN] Monster-wave ties to scale (w4=regional, w5=national) are Steve's leaning, not a locked decision.
+
 ## Party system
 
 - You + 2 max. Companions are people: they eat (~2200 kcal/day — every member is a calorie decision), opine, refuse, bond, die permanently. You lead, not micromanage: abilities join your pipeline, voices surface at decisions. Recruitment is relational. The System names your group without asking; fans have favorites.

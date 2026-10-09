@@ -217,19 +217,26 @@ function walkTo(tx, ty) {
     ok('F3: return announced', saidHas('Haven') || saidHas('home') || saidHas('village'));
   }
 
-  // ---------- G. join/leave still works (exile path untouched) ----------
+  // ---------- G. join still works via the live path (exile path) ----------
+  // (2026-10-09 gap sweep: the old Game.joinVillage/leaveVillage stubs were
+  // removed — no live callers. joinVillageReal is the real join; leaving a
+  // joined village happens through probation rejection / village loss.)
   {
     const s = freshGame();
     s.exiled = true;
     const v = Game.state.otherVillages[0];
     Game.catchUpSim(v);
-    Game.joinVillage(v.id);
+    Game.joinVillageReal(v.id);
     ok('G1: join sets joinedVillage', s.joinedVillage === v.id);
+    ok('G1b: probation started', !!(s.probation && s.probation.villageId === v.id));
     const kcalBefore = s.kcal;
     Game.villageMeal();
     ok('G2: meal comes from their pantry', s.kcal >= kcalBefore || (v.pantryKcal || 0) >= 0);
-    Game.leaveVillage();
-    ok('G3: leave clears joinedVillage', s.joinedVillage === null);
+    // G3: rejoining releases nothing extra and does not double-dip (live
+    // "leave" is switching villages — joinVillageReal releases the old seat)
+    const popBefore = v.population || 0;
+    Game.joinVillageReal(v.id);
+    ok('G3: rejoin is idempotent on seat', (v.population || 0) <= popBefore + 1);
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);

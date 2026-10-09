@@ -125,7 +125,7 @@ function campNight() {
     const v = (Game.state.otherVillages || [])[0];
     walkTo(v.x, v.y);
     Game.checkVillageProximity();
-    Game.joinVillage(v.id);
+    Game.joinVillageReal(v.id);
     const u0 = rig([0.5]);
     Game.state.showBudget = null; Game.state.pendingContest = null;
     Game.fireContest(Object.assign({}, Game.contestPool().find(c => c.id === 'oath'), { givesChoice: false }));
