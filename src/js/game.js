@@ -4883,6 +4883,11 @@
               }
             }),
             turnIdx: f.turnIdx || 0, round: f.round || 1,
+            // ORDER FIDELITY (break-it persistence 2026-10-09): load() used to
+            // recompute this via turnOrder() — random tiebreak + reinforcements
+            // re-sorted by speed instead of their appended position. Persist
+            // the live order verbatim; load() restores it.
+            order: Array.isArray(f.order) ? f.order.slice() : null,
             terraform: f.terraform || {},
             // BELLTOAD CHORUS (break-it r3): the delayed pack is per-fight
             // state — dropping it on save let a mid-fight reload save-scum
@@ -4898,8 +4903,11 @@
         departed: this.departed, log: this.log.slice(-40),
         homeRegion: this.homeRegion, villagerId: this.villagerId,
         encounterDone: this.encounterDone, wanderer: this.wanderer || null,
-        talkIdx: this.state.talkIdx || {}, fireIdx: this.state.fireIdx || 0,
-        questGiven: !!this.state.questGiven,
+        // DEAD PAYLOAD REMOVED (break-it persistence 2026-10-09): talkIdx /
+        // fireIdx / questGiven were copied here but nothing ever read
+        // state.run.talkIdx (etc.) — they persist directly on state and
+        // survive via this.state = s in load(). The run copies were pure
+        // payload bloat.
         tbfight: tbSave,
         // PENDING ENCOUNTER (break-it camps-2 2026-10-08): a save during the
         // "face it" panel used to silently drop the encounter — reloading
@@ -4948,7 +4956,12 @@
     },
     load(key) {
       const s = S.state.load(key);
-      if (!s || !s.run) return false;
+      // SCHOLAR GUARD (break-it persistence 2026-10-09): a save without a
+      // scholar is not a loadable expedition — loading it "successfully" left
+      // Game in a half-built state (recomputeActiveSynergies, expeditionScreen
+      // and half the UI dereference scholar). Reject it so the title screen
+      // takes the honest "could not be loaded" path instead.
+      if (!s || !s.run || !s.scholar) return false;
       this.state = s;
       const r = s.run;
       this.map = r.map; this.dayPart = r.dayPart; this.location = r.location;
@@ -4962,6 +4975,16 @@
       this.pendingEncounter = !!r.pendingEncounter;
       this.pendingMonsterId = r.pendingMonsterId || null;
       this.pendingInTent = !!(r.pendingInTent && s.scholar && s.scholar.insideTent);
+      // PHANTOM ENCOUNTER (break-it persistence 2026-10-09): a restored
+      // pendingMonsterId with no monster def (removed/renamed in an update, or
+      // a tampered save) left a "face it" panel that could never resolve —
+      // startCombat throws on unknown ids, so the button always threw and the
+      // expedition was stuck. Clear it with an honest line instead.
+      if (this.pendingEncounter && this.pendingMonsterId &&
+          !(this.data.monsters || []).some(m => m.id === this.pendingMonsterId)) {
+        this.pendingEncounter = false; this.pendingMonsterId = null; this.pendingInTent = false;
+        this.say('The shape in the dark was gone when you came back — only the wind. (A saved encounter named a monster that no longer exists; it was cleared, not left as a phantom.)');
+      }
       // re-inject the generated cast: they live in the save, not in the JSON
       const rc = (s.village && s.village.rosterChars) || {};
       this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
@@ -4976,10 +4999,31 @@
       // FIGHT FIDELITY (break-it persistence 2026-10-08): restore the full
       // fighter snapshot (volatile combat state survives the reload) and the
       // original fight id (once-per-fight gates like read_stance stay honest).
+      // ORDER FIDELITY (break-it persistence 2026-10-09): the old code
+      // RECOMPUTED order via turnOrder() on load — whose tiebreak is
+      // Math.random() and which re-sorts mid-fight reinforcements by speed
+      // instead of their appended position. The save-time order (and with it
+      // whose turn turnIdx meant) was lost on every Continue. The order is
+      // persisted in syncRun now and restored verbatim; turnOrder is only the
+      // fallback for saves that predate it.
+      // PHANTOM FIGHTERS (break-it persistence 2026-10-09): a monster fighter
+      // whose def is gone at load (removed/renamed in an update, tampered
+      // save) used to restore with mdef undefined — tbMonsterTurn dereferences
+      // m.mdef.id, so the fight could never advance and Continue kept
+      // resurrecting it. Drop the ghost with an honest line instead of
+      // loading a fight that can't run.
+      // STALE CHORUS (break-it persistence 2026-10-09): _pendingPack is
+      // per-fight state on Game, not in the save — a load always replaces the
+      // fight, so a pack left over from the previous fight/session must be
+      // cleared before restoring (or a belltoad pack would answer the call in
+      // some other fight's round 2).
       try {
         const tbS = r.tbfight;
+        this._pendingPack = null;
         if (tbS && tbS.fighters && tbS.fighters.length) {
-          const fighters = tbS.fighters.map(fs => {
+          let droppedGhosts = 0;
+          const fighters = [];
+          for (const fs of tbS.fighters) {
             const ft = Object.assign({}, fs);
             delete ft.mdef; // reattached below by monsterId
             // Reattach monster definition
@@ -4992,14 +5036,38 @@
             if (fs.key === 'p') {
               ft.isPlayer = true;
             }
-            return ft;
-          });
+            // Drop monster fighters that can't reattach a def — but never the
+            // player: a save without its bearer is rejected by the scholar
+            // guard above, so this only ever drops monsters.
+            if ((ft.kind === 'monster' || ft.kind === 'hostile') && !ft.mdef && fs.key !== 'p') {
+              droppedGhosts++;
+              continue;
+            }
+            fighters.push(ft);
+          }
+          if (droppedGhosts > 0) {
+            this.say(`Something that was in the fight is gone — the world moved on without it. (${droppedGhosts} phantom fighter${droppedGhosts === 1 ? '' : 's'} dropped on load.)`);
+          }
+          const fkeys = new Set(fighters.map(f => f.key));
+          let order = Array.isArray(tbS.order) ? tbS.order.filter(k => fkeys.has(k)) : [];
+          if (droppedGhosts > 0 || !order.length) {
+            // ghosts dropped or pre-order save: rebuild. turnIdx restarts the
+            // round rather than pointing into a reshuffled deck.
+            order = (typeof S !== 'undefined' && S.combat && S.combat.turnOrder)
+              ? S.combat.turnOrder(fighters) : fighters.map(f => f.key);
+          }
+          // any live fighter missing from the restored order takes its place
+          // at the end (shouldn't happen — belt and suspenders).
+          for (const ft of fighters) {
+            if (!order.includes(ft.key) && ft.alive !== false && !ft.fled) order.push(ft.key);
+          }
+          let turnIdx = (droppedGhosts > 0 || !Array.isArray(tbS.order)) ? 0 : (tbS.turnIdx || 0);
+          if (turnIdx >= order.length) turnIdx = 0;
           this.tbfight = {
             id: tbS.id || ('f' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e9).toString(36)),
             fighters,
-            order: (typeof S !== 'undefined' && S.combat && S.combat.turnOrder)
-              ? S.combat.turnOrder(fighters) : fighters.map(f => f.key),
-            turnIdx: tbS.turnIdx || 0,
+            order,
+            turnIdx,
             round: tbS.round || 1,
             over: false, result: null,
             terraform: tbS.terraform || {},
@@ -19455,6 +19523,11 @@
         packDelayed = count - 1;
         count = 1;
       }
+      // STALE CHORUS (break-it persistence 2026-10-09): _pendingPack is
+      // per-fight Game state, not part of the save — a new fight must never
+      // inherit the previous fight's delayed pack (load() clears it too; this
+      // covers fights started without a load in between).
+      this._pendingPack = null;
       // Store for round-2 arrival
       if (packDelayed > 0) {
         this._pendingPack = { id: mdef.id, count: packDelayed, mdef: mdef };

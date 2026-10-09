@@ -2473,6 +2473,11 @@
       terraform: {},
       alienFight: true,
     };
+    // STALE CHORUS (break-it persistence 2026-10-09, sibling sweep): this path
+    // builds the fight directly instead of via Game.startCombat, so it needs
+    // the same _pendingPack clear — a belltoad pack left over from a previous
+    // fight must not answer the call in an alien duel's round 2.
+    this._pendingPack = null;
     var partyNames = fighters.filter(function (x) { return x.kind === 'villager'; }).map(function (x) { return x.name; });
     var dispName = fighter.name || 'The stranger';
     // FACE TO FACE (Steve 2026-10-04 rule, person edition): the ambiguity

@@ -630,7 +630,11 @@
       // FLAG HYGIENE (flesh-out loop 2026-10-07): this fight bypasses
       // startCombat — reset per-fight combat flags or the last fight's
       // rage/trade/debt would leak in for free.
+      // STALE CHORUS (break-it persistence 2026-10-09, sibling sweep): same
+      // bypass class — a belltoad pack left over from a previous fight must
+      // not answer the call in the betrayal fight's round 2.
       this.resetPerFightFlags();
+      this._pendingPack = null;
       this.tbfight = {
         fighters,
         order: (globalThis.Scattering.combat || {}).turnOrder
