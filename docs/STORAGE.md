@@ -41,6 +41,17 @@ Communal materials + spare tools + ledger. `state.village.stash`.
   Nobody saw anything.") and taking tools is noticed.
 - Chronic net-takers (takes − gives < −20) lose trust, get observed as hoarding.
 
+## Armory & pharmacy (Steve 2026-10-09)
+
+Sections of the stash opened by filter: weapons → armory, medicine →
+pharmacy. Deposit-gated: items become communal ONLY on deliberate deposit,
+never automatically. The engine enforces the section filter (armory takes
+weapons, pharmacy takes medicine — junk deposits refused honestly). Take-back
+rule mirrors tools: re-taking your own un-returned deposit is noticed, −5
+trust. (miser break-it 2026-10-09: the sections landed with a
+deposit↔take-back +2 trust farm, measured +22 over 11 cycles; killed by the
+same rule that guards the tool path.)
+
 ## Personal caches
 
 `buryCache('material'|'food', key, qty)` — 32 ticks, removes from inventory,
@@ -59,3 +70,5 @@ cache greets you with disturbed earth and an empty hole.
 - `src/js/app.js` — tool-aware tree actions, Haven stash panel, caches inline
   view, inventory Stash buttons.
 - `scripts/test-storage.js` — 59 tests.
+- `scripts/test-miser-attack-20261009.js` — 16 adversarial checks (armory/
+  pharmacy trust farms, section-filter bypass, stale cache take).

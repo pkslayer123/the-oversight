@@ -26,6 +26,7 @@
 //   - stashLog()
 //   - stashLedgerText()
 //   - _stashLedgers(vid)
+//   - _stashItemLedgers(vid, section)
 //   - _stashToolLedgers(vid)
 //   - _stashTotalNet(vid)
 //   - buryCache()
@@ -266,16 +267,25 @@
       return { gives: v.stashGives[vid], takes: v.stashTakes[vid] };
     },
     // _stashToolLedgers(vid): same, per tool itemId. Legacy numbers → __legacy.
-    _stashToolLedgers(vid) {
+    // MISER BREAK-IT 2026-10-09: generalized to _stashItemLedgers(vid,
+    // section) — the armory/pharmacy sections landed 2026-10-09 with the
+    // SAME hole the tool path had before the 2026-10-08 fix (+2 trust per
+    // deposit, no take-back sting, no per-item ledgers). Measured farm:
+    // deposit↔take-back of a kitchen knife printed +2 trust/cycle, +22
+    // over 11 cycles. Weapons/medicine now mirror the tool rule exactly:
+    // +2 on deposit, -5 sting on taking back your own un-returned gift.
+    _stashItemLedgers(vid, section) {
       const v = this.state.village;
-      v.stashToolGives = v.stashToolGives || {}; v.stashToolTakes = v.stashToolTakes || {};
-      for (const key of ['stashToolGives', 'stashToolTakes']) {
+      const gk = 'stash' + section + 'Gives', tk = 'stash' + section + 'Takes';
+      v[gk] = v[gk] || {}; v[tk] = v[tk] || {};
+      for (const key of [gk, tk]) {
         const cur = v[key][vid];
         if (typeof cur === 'number') v[key][vid] = { __legacy: cur };
         else if (!cur || typeof cur !== 'object') v[key][vid] = {};
       }
-      return { gives: v.stashToolGives[vid], takes: v.stashToolTakes[vid] };
+      return { gives: v[gk][vid], takes: v[tk][vid] };
     },
+    _stashToolLedgers(vid) { return this._stashItemLedgers(vid, 'Tool'); },
     _stashTotalNet(vid) {
       const led = this._stashLedgers(vid);
       const sum = (o) => Object.values(o).reduce((t, x) => t + (x || 0), 0);
@@ -500,6 +510,17 @@
         this.say("That's yours. Not the village's.");
         return null;
       }
+      // SECTION FILTER (miser break-it 2026-10-09): the UI gates with
+      // isStashableWeapon/isMedicine, but the engine accepted ANY item —
+      // a branch went into the armory as a "weapon" and minted +2 trust,
+      // with the say message lying about it ("Left your Branch in the
+      // armory."). Enforce at the engine level, refuse honestly.
+      const sectionOk = section === 'weapons' ? this.isStashableWeapon(item)
+        : section === 'medicine' ? this.isMedicine(item) : true;
+      if (!sectionOk) {
+        this.say(`The ${kindLabel} doesn't take ${item.name || 'that'}.`);
+        return null;
+      }
       inv.splice(idx, 1);
       const id = item.itemId || item.id;
       const def = (this.data.items || []).find(i => i.id === id) || {};
@@ -509,6 +530,10 @@
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
       v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
+      // TAKE-BACK TRACKING (miser break-it 2026-10-09): per-itemId
+      // give/take ledgers per section, mirroring donateTool's rule.
+      const il = this._stashItemLedgers(vid, section === 'weapons' ? 'Weapon' : 'Medicine');
+      il.gives[id] = (il.gives[id] || 0) + 1;
       this.say(`Left your ${item.name || def.name} in the ${kindLabel}. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },
@@ -532,6 +557,19 @@
       const [entry] = pile.splice(i, 1);
       inv.push({ itemId, name: entry.name, units: 1, kcalEach: 0, kg: def.kg || entry.kg || 0.5 });
       this.stashLog('take', entry.name, 1);
+      // TAKE-BACK (miser break-it 2026-10-09): mirrors the tool rule —
+      // re-taking your own un-returned deposit is noticed, -5. Taking
+      // someone else's gift is normal communal use. Kills the
+      // deposit↔take-back +2 trust farm that printed +22 over 11 cycles.
+      const v2 = this.state.village, vid2 = this.state.scholar.villagerId;
+      const il2 = this._stashItemLedgers(vid2, section === 'weapons' ? 'Weapon' : 'Medicine');
+      const gaveThis = (il2.gives[itemId] || 0) - (il2.takes[itemId] || 0);
+      il2.takes[itemId] = (il2.takes[itemId] || 0) + 1;
+      if (gaveThis > 0) {
+        v2.trust = v2.trust || {};
+        v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 5);
+        this.say(`You took back the ${entry.name} you left. They noticed. Trust -5.`);
+      }
       this.say(`Took the ${entry.name} from the ${kindLabel}.`);
       return this.tickAction(2) || this.status();
     },
@@ -819,7 +857,10 @@
         return this.tickAction(8) || this.status();
       }
       const it = c.items[itemIdx];
-      if (!it) return null;
+      // STALE INDEX (miser break-it 2026-10-09): a dead index returned a
+      // silent null — the Take button swallowed the tap with zero feedback.
+      // No silent actions.
+      if (!it) { this.say('Nothing there to take.'); return null; }
       // UNIT COERCION (miser break-it 2026-10-08): a cache item with missing
       // or NaN units went `it.units -= qty` → NaN, survived every take, and
       // yielded 1 unit per take FOREVER (measured 3 takes → 3 units from a
