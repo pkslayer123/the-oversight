@@ -7996,11 +7996,12 @@
       } catch (e) { return []; }
     },
 
-    // contractDisease(effectId, opts): the single contraction path for real
+    // contractDisease(effectId, opts): the single contraction path for MUNDANE
     // diseases. Symptom-only narration comes from the def's applyText.
-    // Handles east_nile severe escalation.
-    // TWO POOLS: mundane only. Alien diseases contract through the
-    // monster-meat table (cooking.monsterDiseases) — never here.
+    // TWO POOLS: mundane only — refuses anything else. Alien diseases
+    // contract through their own vectors: the monster-meat table
+    // (cooking.monsterDiseases) for meat-quirks, the giant-mosquito branch
+    // of diseaseVectorTick for the alien viruses (Eurika, East Nile).
     contractDisease(effectId, opts) {
       try {
         const d = this.seDef(effectId);
@@ -8322,9 +8323,19 @@
           const t = this.playerTile();
           wet = !!(t && (t.type === 'wetland' || t.type === 'swamp'));
         } catch (e) {}
-        if (wet && this.dayPart >= 2 && Math.random() < 0.10) {
-          if (Math.random() < 0.6) this.contractDisease('eurika', { source: 'the dusk mosquitoes' });
-          else this.contractDisease('east_nile', { source: 'the dusk mosquitoes' });
+        if (wet && this.dayPart >= 2) {
+          // MOSQUITOES (Steve 2026-10-06/2026-10-09): plain ones are just
+          // mosquitoes — the shock is that they're just bugs. Rarely, one
+          // lands with real weight: a giant, freakish thing, still plainly a
+          // mosquito. Its bite carries the alien viruses (Eurika, East Nile).
+          const mr = Math.random();
+          if (mr < 0.02) {
+            const avid = Math.random() < 0.5 ? 'eurika' : 'east_nile';
+            this.say('Something lands on your neck with real weight \u2014 a mosquito the size of your thumb. It drinks long.');
+            this.applyStatus('scholar', avid, { source: 'the giant mosquito' });
+          } else if (mr < 0.12) {
+            this.say('Mosquitoes. Just mosquitoes \u2014 itchy, whining, nothing more.');
+          }
         }
         // WOUNDS: low health means open cuts \u2014 they infect.
         if ((s.health || 100) < 40 && !this.hasStatus('scholar', 'wound_fever') && !this.hasStatus('scholar', 'lockjaw')) {
@@ -15210,13 +15221,28 @@
         const isVeteran = cast.veteran || false;
         this.wanderer = { x: s.x, y: s.y, dir: Math.random() < 0.5 ? 1 : -1, monsterId, veteran: isVeteran };
         this.encounterDone = false; // per-wanderer: the moveWanderer contact guard keys off this
-        this.say('Something big is moving in the woods. The birds went quiet.');
+        // EAST NILE (alien virus): the crows speak and you understand the shape
+        // of it — their screaming names the direction of danger.
+        if (this.hasStatus && this.hasStatus('scholar', 'east_nile')) {
+          const dx = s.x - this.map.px, dy = s.y - this.map.py;
+          const dirWord = Math.abs(dx) >= Math.abs(dy) ? (dx >= 0 ? 'east' : 'west') : (dy >= 0 ? 'south' : 'north');
+          this.say(`The crows are screaming \u2014 not the usual racket. They're screaming ${dirWord}, and you understand: something's moving in the woods, that way. (East Nile: the flock warns you)`);
+        } else {
+          this.say('Something big is moving in the woods. The birds went quiet.');
+        }
       }
       if (this.wanderer && this.map.px === this.wanderer.x && this.map.py === this.wanderer.y) {
         // eyes_in_back: you see behind you. Ambushes never surprise — always a warning first.
         if (this.hasAbility('eyes_in_back') && !this.wanderer.warned) {
           this.wanderer.warned = true;
           this.say('Your back-eyes catch it first — something big, pacing the treeline. It knows you see it. (no ambush)');
+          return;
+        }
+        // EURIKA (alien virus): mosquito-sense — warm bodies register before
+        // eyes do. Ambushes announce themselves first.
+        if (this.hasStatus && this.hasStatus('scholar', 'eurika') && !this.wanderer.warned) {
+          this.wanderer.warned = true;
+          this.say('Your skin prickles before your eyes catch up — warmth, moving, close. The sensory hairs know. Something is HERE. (eurika-sense: no ambush)');
           return;
         }
         // the monster is HERE, in the grid with you. spawn at a distance, not on top of you.

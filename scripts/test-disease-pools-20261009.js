@@ -28,8 +28,8 @@ function ok(name, cond, extra) {
   else { fail++; console.log(`  FAIL ${name}${extra ? ' — ' + extra : ''}`); }
 }
 
-const MUNDANE = ['gutrot','trichinosis','lemons','eurika','east_nile','lockjaw','wound_fever'];
-const ALIEN = ['howlbelly','gristlefit','croakbelly','shellgut','witness_maw','flockmind'];
+const MUNDANE = ['gutrot','trichinosis','lemons','lockjaw','wound_fever']; // real diseases only
+const ALIEN = ['howlbelly','gristlefit','croakbelly','shellgut','witness_maw','flockmind','eurika','east_nile']; // alien effects
 
 (async () => {
   await Game.init();
@@ -76,6 +76,13 @@ const ALIEN = ['howlbelly','gristlefit','croakbelly','shellgut','witness_maw','f
   ok('affliction chip shows true name for alien', chip && chip.label === 'Howlbelly');
   ok('affliction chip carries pool + transformation',
     chip && chip.pool === 'alien' && !!chip.transformation);
+
+  // 5b. Alien viruses are permanent warping — no natural expiry.
+  for (const id of ['eurika', 'east_nile']) {
+    const d = Game.seDef(id);
+    ok(`${id} never expires on its own (permanent warping)`, d.duration == null);
+    ok(`${id} has ongoing fever/static cost`, d.tick && d.tick.hp > 0);
+  }
 
   // 6. The monster-meat table still owns alien contraction.
   const md = ((Game.data.cooking || {}).monsterDiseases || []);

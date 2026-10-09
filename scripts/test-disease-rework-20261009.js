@@ -54,7 +54,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   const s = Game.state.scholar;
   console.log(`seed=${SEED}`);
 
-  const TRUE_NAMES = ['gut rot', 'trichinosis', 'lemons', 'eurika', 'east nile', 'lockjaw', 'wound fever'];
+  const TRUE_NAMES = ['gut rot', 'trichinosis', 'lemons', 'lockjaw', 'wound fever']; // mundane only — alien viruses (Eurika, East Nile) show true names by design
 
   // ---- 1. contraction is symptom-only ----
   clearSick(); clearSaid();
@@ -67,7 +67,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   ok('legacy mirror stores symptom label, not true name', (s.diseases || [])[0] && s.diseases[0].name === 'Nauseous', JSON.stringify(s.diseases));
   // every disease def: apply/tick/expire text is name-free
   let leak = [];
-  for (const id of ['gutrot', 'trichinosis', 'lemons', 'eurika', 'east_nile', 'lockjaw', 'wound_fever']) {
+  for (const id of ['gutrot', 'trichinosis', 'lemons', 'lockjaw', 'wound_fever']) {
     const d = Game.seDef(id);
     for (const k of ['applyText', 'tickText', 'expireText', 'description']) {
       const t = (d[k] || '').toLowerCase();
@@ -76,7 +76,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   }
   ok('no disease def names itself in symptom text', leak.length === 0, leak.join(','));
   // other diseases' chips
-  for (const [id, label] of [['trichinosis', 'Aching'], ['lemons', 'Achy'], ['lockjaw', 'Stiffening'], ['east_nile', 'Burning up']]) {
+  for (const [id, label] of [['trichinosis', 'Aching'], ['lemons', 'Achy'], ['lockjaw', 'Stiffening']]) {
     clearSick(); Game.contractDisease(id, { source: 'test' });
     const c = Game.afflictionChips();
     ok(`${id} chip symptom-labeled ("${label}")`, c.length === 1 && c[0].label === label, JSON.stringify(c));
@@ -144,16 +144,18 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   Game.treatDisease('herbal_remedy');
   ok("Fever's End turns herbal ease into cure", !Game.hasStatus('scholar', 'trichinosis'));
   s.activeSynergies = [];
-  // 3f. east_nile: triage support (not cure); viral ignores antibiotics
+  // 3f. medicine specificity: antibiotics cure bacterial wound_fever; antibiotics
+  // do NOT cure parasitic gutrot (wrong class wastes the dose)
   clearSick(); grant('triage', 1); s.abilities = s.abilities.filter(a => a.id !== 'field_medicine');
-  Game.contractDisease('east_nile', { source: 'test' });
-  Game.treatDisease('triage');
-  const ee = Game.seList('scholar').find(e => e.id === 'east_nile');
-  ok('triage supports east_nile (not cured, long ease)', Game.hasStatus('scholar', 'east_nile') && ee.easedUntil > 100);
+  Game.contractDisease('wound_fever', { source: 'test' });
   s.inventory.push({ itemId: 'med_antibiotics', medType: 'antibiotics', name: 'Antibiotics (amoxicillin)', doses: 3, units: 1, kg: 0.1 });
+  Game.useMedicine('antibiotics');
+  ok('antibiotics cure bacterial wound_fever', !Game.hasStatus('scholar', 'wound_fever'));
+  clearSick();
+  Game.contractDisease('gutrot', { source: 'test' });
   const doses0 = s.inventory.find(i => i.medType === 'antibiotics').doses;
   Game.useMedicine('antibiotics');
-  ok('antibiotics do NOT cure viral east_nile', Game.hasStatus('scholar', 'east_nile'));
+  ok('antibiotics do NOT cure parasitic gutrot', Game.hasStatus('scholar', 'gutrot'));
   ok('wrong medicine wastes the dose', s.inventory.find(i => i.medType === 'antibiotics').doses === doses0 - 1);
   // 3g. antiparasitic cures gutrot (parasitic)
   clearSick();
@@ -165,7 +167,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
 
   // ---- 4. folk remedies: anyone can try, uncertain ----
   clearSick(); s.abilities = [];
-  Game.contractDisease('eurika', { source: 'test' });
+  Game.contractDisease('gutrot', { source: 'test' });
   Game.folkRemedy('rest'); // no throw, no ability
   ok('folk rest attemptable without abilities', true);
   s.water = [{ quality: 'clean', liters: 1, source: 'well' }];
@@ -191,12 +193,27 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   const h0 = s.hydration = 80; const hp0 = s.health = 100;
   Game.tickStatuses('scholar', 'dayPart');
   ok('dayPart tick damages + drains', s.health < hp0 && s.hydration < h0, `hp ${hp0}->${s.health}, hyd ${h0}->${s.hydration}`);
-  // severe east_nile hits hard (lethality path)
+  // alien east_nile: permanent warping, ongoing fever cost (2/part), never diagnosed/cured mundanely
   clearSick(); s.health = 100;
   Game.applyStatus('scholar', 'east_nile', { source: 'test' });
-  Game.seList('scholar').find(e => e.id === 'east_nile').severe = true;
+  ok('east_nile contracts via alien path (applyStatus)', Game.hasStatus('scholar', 'east_nile'));
+  ok('contractDisease refuses alien east_nile', Game.contractDisease('east_nile', { source: 'test' }) === false);
   Game.tickStatuses('scholar', 'dayPart');
-  ok('severe east_nile ticks 6', s.health === 94, `health=${s.health}`);
+  ok('alien east_nile ticks 2 (fever dreams)', s.health === 98, `health=${s.health}`);
+  ok('alien east_nile is not a mundane disease', !Game.sickDiseases().some(e => e.id === 'east_nile'));
+  // eurika: mosquito-sense blocks ambush surprise
+  clearSick();
+  Game.applyStatus('scholar', 'eurika', { source: 'test' });
+  const said2 = [];
+  const _say2 = Game.say.bind(Game); Game.say = (m) => { said2.push(String(m)); };
+  Game.map.px = 5; Game.map.py = 5; // wild tile, not haven
+  Game.wanderer = { x: 5, y: 5, warned: false, monsterId: 'hushwolf' };
+  Game.state.scholar.mx = 4; Game.state.scholar.my = 4;
+  const _wt = Game.worldTick; Game.worldTick = () => {}; // isolate: don't walk the wanderer off
+  try { Game.checkEncounter(); } catch (e) {}
+  Game.worldTick = _wt;
+  Game.say = _say2;
+  ok('eurika-sense warns instead of ambush', said2.some(m => /eurika-sense/i.test(m)));
 
   // ---- 6. trichinosis via undercooked bear meat ----
   clearSick(); s.health = 100; s.kcal = 0;

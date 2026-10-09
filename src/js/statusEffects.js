@@ -213,7 +213,7 @@
     // Tick statuses for a target at a scope ('combat' = per-turn, 'dayPart').
     // Applies tick damage, decrements duration, expires. Never throws.
     // DISEASE REWORK (2026-10-09): easedUntil (treatment holding — tick halved),
-    // severe entries (east_nile escalation — deadlier tick), hydration drain
+    // severe entries (escalation flag — deadlier tick), hydration drain
     // from fever debuffs, lockjaw spasms, lemons chronic aftermath on expiry.
     tickStatuses: function (target, scope) {
       var list = this.seList(target);
