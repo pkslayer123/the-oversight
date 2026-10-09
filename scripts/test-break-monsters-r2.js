@@ -75,11 +75,13 @@ function check(name, cond, extra) {
       const wi = gameJs.indexOf('waterAffinity', fi);
       check('castMonster reads waterAffinity', fi >= 0 && wi > fi && wi - fi < 2000, 'castMonster');
     }
-    // BEFORE: HEAD's data lacked the fields (the guards were dead).
+    // BEFORE: the pre-fix base's data lacked the fields (the guards were dead).
+    // Pinned to e6e30c4 (the worktree's original base) — post-rebase HEAD
+    // contains the fix, so HEAD is no longer the "before" snapshot.
     const { execSync } = require('child_process');
-    const head = JSON.parse(execSync('git show HEAD:src/data/monsters.json', { cwd: ROOT }));
+    const head = JSON.parse(execSync('git show e6e30c4:src/data/monsters.json', { cwd: ROOT }));
     const headAff = head.filter(m => m.waterAffinity).length;
-    check('HEAD (pre-fix) had zero waterAffinity fields — the guards were dead', headAff === 0, 'HEAD had ' + headAff);
+    check('e6e30c4 (pre-fix) had zero waterAffinity fields — the guards were dead', headAff === 0, 'e6e30c4 had ' + headAff);
   }
 
   // ================= C2: specialist cook =================

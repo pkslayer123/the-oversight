@@ -206,3 +206,46 @@ conflicting index.html/app.js/build.js/sw.js/version.json. Recovered with
 `git checkout HEAD -- <files>` (my 4 files were never conflicted); the
 sibling's stash entry was preserved, NOT dropped. Lesson re-learned the hard
 way: never bare-pop on the shared tree — AGENTS.md already says this.
+
+## Coordinator addendum (post-rebase, 2026-10-09 ~12:55 CDT)
+
+Master moved mid-run: sibling loop landed `6d31d75` (giant mosquito + alien
+tick as real monster fights) + bump `151f56c` while this branch was based on
+e6e30c4. Coordinator actions:
+
+- Approved the `--force-delete` commit (5976522) after inspecting every
+  deleted line: patrol RNG table removal + wave-3/disengage copy fixes +
+  tbEnd→monsterMeatEntry refactor only. No unrelated deletions.
+  (Note: `safe-commit.sh` takes `--force-delete` FIRST: `--force-delete "msg"
+  -- paths` — the worker's suggested order was rejected by the script.)
+- Resynced the stale caller index twice (`git read-tree HEAD`) — the
+  documented safe-commit.sh index artifact.
+- Rebased the branch onto 151f56c: **clean, zero conflicts** (sibling's
+  tbMosquitoTurn/tbTickTurn + monsters.json additions live in different
+  regions). Verified sibling code intact (tbMosquitoTurn/tbTickTurn ×6 refs,
+  both new defs present) and worker code intact (monsterMeatEntry ×5,
+  waterAffinity ×4, resolvePatrol→fieldFight).
+- Fixed the C1 proof's "before" snapshot: it read `git show HEAD` for the
+  pre-fix state, which broke post-rebase (HEAD now contains the fix). Pinned
+  to e6e30c4 (the true pre-fix base). Re-ran: **32/32 ×3 seeds** green.
+- Post-rebase regressions: counters 17/17 ×3, villager-agency 43/43,
+  cooking-model PASS, real-fights 15/15, parity-combat 6/6, weakness 59/59,
+  fear 9/9 (exit 0), wavekills 4/4, fieldfights-r3 24/24, ontology 50/50
+  ("Release permitted").
+- Wave-2 reskin audit extended to the sibling's 2 new monsters: giant_mosquito
+  (The Drink, circle/dive/drink/heavy, 50/50 alien-virus bite) and alien_tick
+  (The Latch, quest/latch/feed/engorged, lemons-alien latch) are both
+  conceptual vector horrors — not stat-bump reskins. Escalation law holds at
+  15 wave-2 monsters.
+
+## Pre-existing issues found during rebase verification (not this run)
+
+- `scripts/test-monster-vectors-20261009.js` (sibling's proof) fails on seed
+  99: "rate plateaus at the 15% cap — d5=18.8 d10=12.2" (42/43). Reproduced on
+  the pristine main tree at 151f56c — a flaky aggregate-RNG assertion in the
+  SIBLING's test, not a game regression, untouched by this run. Flagged for
+  the vector loop / cleanup run (per the PROOF-TEST RNG STABILITY lesson, the
+  fix belongs in the test: seeded thresholds or wider tolerance).
+- `scripts/test-villager-agency-20261007.js` (old dated copy) crashes:
+  `Game.daylifeOf is not a function` — stale harness, superseded by
+  `test-villager-agency.js` (43/43 green). Flagged for the cleanup run.
