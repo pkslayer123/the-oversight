@@ -2692,6 +2692,24 @@
       return;
     }
 
+    // 6b. BEAM (replaces the strike): the alien fires its beam weapon INSTEAD
+    // of closing to strike. (break-it 2026-10-09: the beam used to fire from
+    // a tbAfterPlayerAction wrap AFTER the alien's normal turn — a free bonus
+    // attack that contradicted the "replaces their normal attack" design.
+    // The roll lives here now, in the alien's own turn.) No beam while
+    // recovering — the heavy strike took it out of them. No beam on the
+    // opening turn either: the old post-player-action beam could never fire
+    // before the player's first move, and a 90-110% max-HP beam with zero
+    // counterplay on turn zero is not a fight, it's an execution.
+    if (!(m.apSpent > 0) && (m.apTurns || 0) > 1) {
+      try {
+        if (typeof this.apMaybeBeamAttack === 'function' && this.apMaybeBeamAttack(m)) {
+          try { this.tbRefreshTelegraphUI(); } catch (e6b) {}
+          endTurn(); return;
+        }
+      } catch (e6b2) {}
+    }
+
     // 7. Melee strike when adjacent. Persona-flavored but knowledge-safe:
     // behavior, never species — pre-reveal this is just a strange person.
     if (dist <= 1 && !(m.apSpent > 0)) {

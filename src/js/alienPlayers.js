@@ -29,7 +29,7 @@
 //   - apRollGroupEncounter()
 //   - apGroupBanter(pids)
 //   - apStartGroupEncounter(pids)
-//   - apOnCombatEnd(pid, outcome)
+//   - apOnCombatEnd(pid, outcome, opts)
 //   - apDailyTick()
 //   - apActive()
 //   - apPlaygroundTick()
@@ -88,6 +88,7 @@
 //   - (lifeline_player_only) the benevolent lifeline fires only at the player's own death roll — apContestInterference(ac, {forPlayer:true}) from contestChoose's killing-blow check and from tbEnd's arena-loss branch (break-it 2026-10-08: arena deaths never checked the lifeline). The save converts death into 'lost' and leaves the player barely alive (break-it 2026-10-08: 0-HP saves died at the next endDay). The verdict call never passes forPlayer, so deathSave is always false there — a villager's played death is never converted by a hidden roll (break-it 2026-10-08: the old playerIn-only gate fired the lifeline at VERDICT, wasting the 7-day cooldown on a non-death and erasing a villager's earned death) (code: apContestInterference, contestChoose, tbEnd)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
+//   - (salvage_kill_only) alien armor salvage fires only on a real kill: a retreating persona ends the fight 'won' (drove them off) but leaves no body to strip — sibling honesty with monster 'routed' ("no meat, no trophy") (break-it 2026-10-09) (code: apOnCombatEnd)
 //   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
 //   - (progression) alien players level alongside you: kit grows 3->6 abilities, tech upgrades; rich progress faster (buy), broke slower (earn) (code: alienPlayers.js)
 //   - (groups) rare late-game 2-3 persona team encounters (day 40+, 3%, 14-day cooldown, needs 2+ established rivals) with inter-alien banter; they join the fight in turn via the tbEnd chain (wired break-it 2026-10-08 — was dead code) (code: alienPlayers.js, encounters.js)
@@ -838,7 +839,7 @@
     },
 
 
-    apOnCombatEnd: function (pid, outcome) {
+    apOnCombatEnd: function (pid, outcome, opts) {
       var p = this.apPersona(pid);
       if (!p) return;
       var ap = this.apState();
@@ -862,7 +863,12 @@
       // ALIEN ARMOR SALVAGE (Steve 2026-10-07): defeating an alien player
       // lets you strip their armor. This is how you GET beam-resistant gear.
       // The transition: kill them (hard, risky) → take their armor → survive beams.
-      if (outcome === 'won') {
+      // KILL-ONLY (break-it 2026-10-09): a broke persona that retreats ends the
+      // fight 'won' (you drove them off) — but there is no body to strip. The
+      // old code salvaged armor off a fled opponent 60% of the time, with copy
+      // claiming "from their body. It's warm." Sibling honesty: a monster
+      // 'routed' gives "no meat, no trophy" (game.js) — the alien pool matches.
+      if (outcome === 'won' && opts && opts.killed) {
         try {
           var armorPool = ['alien_helm', 'alien_carapace', 'alien_greaves', 'alien_gauntlets', 'alien_boots'];
           // Don't drop what you already have
@@ -1179,53 +1185,58 @@
       ap.lastFeedDay = day;
       var favor = this.apFavor(); // wired (break-it 2026-10-08)
       var msgs = [];
+      var msgPids = []; // parallel: which persona (if any) this message names
 
       // Rival gossip (sadistic pilots you've met talk about you)
       for (var pid in ap.met) {
         var per = this.apPersona(pid);
         if (per && per.disposition === 'sadistic' && ap.met[pid].encounters > 0) {
-          // HONEST (break-it 2026-10-08 r4): the old line promised "the odds on
-          // your next fight just shifted" — there are no odds on the played
-          // path (contest-engine pass 7ef1946 reworded the sibling lines to
-          // performance language but missed this one). The room turns; no
-          // phantom odds shift is claimed.
           msgs.push('"' + per.name.toUpperCase() + ' was overheard saying the human is "still interesting. For now." Your people just felt the room turn against them."');
-          // KNOWLEDGE SLIP: the feed can reveal a pilot's identity
-          if (!ap.known[pid] && Math.random() < 0.3) {
-            this.apRevealAlien(pid, 'the System feed named them');
-            return true;
-          }
+          msgPids.push(pid);
         }
       }
 
       // Fan chatter scales with favor
       if (favor >= 50) {
-        msgs.push('"Your fan club is GROWING. There\'s fan art. It\'s... surprisingly good. The System is confused but supportive."');
-        msgs.push('"Betting pools favor you 3-to-1 now. The smart money says you\'re learning faster than the monsters."');
+        msgs.push('"Your fan club is GROWING. There\'s fan art. It\'s... surprisingly good. The System is confused but supportive."'); msgPids.push(null);
+        msgs.push('"Betting pools favor you 3-to-1 now. The smart money says you\'re learning faster than the monsters."'); msgPids.push(null);
       } else if (favor <= -30) {
-        msgs.push('"The crowd is getting restless. "BORING," says the feed. The sadistic ones are smiling."');
-        msgs.push('"Your approval rating just dropped. Someone in the audience threw a tomato. Through the screen. How."');
+        msgs.push('"The crowd is getting restless. "BORING," says the feed. The sadistic ones are smiling."'); msgPids.push(null);
+        msgs.push('"Your approval rating just dropped. Someone in the audience threw a tomato. Through the screen. How."'); msgPids.push(null);
       } else {
-        msgs.push('"The audience is watching. The gamblers are watching. Everyone\'s watching. No pressure."');
+        msgs.push('"The audience is watching. The gamblers are watching. Everyone\'s watching. No pressure."'); msgPids.push(null);
       }
 
       // FAN CLUBS PER LANE (audit-shows 2026-10-09): a loud club (50+) gets
       // its own feed line — the gossip lane has its own celebrities, and
       // the feed should know which crowd is chanting.
       try {
-        if (this.apFanLane('fight') >= 50) msgs.push('"The fight clubs are making banners. Your name, in fire. The sadistic ones are taking it personally."');
-        if (this.apFanLane('survival') >= 50) msgs.push('"The long-haul fans are sending trail mix. Actual trail mix. Through the screen. Nobody knows how."');
-        if (this.apFanLane('social') >= 50) msgs.push('"The moot crowd has a chant for you now. It rhymes. It\'s devastating in debates."');
-        if (this.apFanLane('showbiz') >= 50) msgs.push('"Your showbiz fans voted you "most watchable human" three weeks running. The trophy is a small moon."');
+        if (this.apFanLane('fight') >= 50) { msgs.push('"The fight clubs are making banners. Your name, in fire. The sadistic ones are taking it personally."'); msgPids.push(null); }
+        if (this.apFanLane('survival') >= 50) { msgs.push('"The long-haul fans are sending trail mix. Actual trail mix. Through the screen. Nobody knows how."'); msgPids.push(null); }
+        if (this.apFanLane('social') >= 50) { msgs.push('"The moot crowd has a chant for you now. It rhymes. It\'s devastating in debates."'); msgPids.push(null); }
+        if (this.apFanLane('showbiz') >= 50) { msgs.push('"Your showbiz fans voted you "most watchable human" three weeks running. The trophy is a small moon."'); msgPids.push(null); }
       } catch (e) {}
 
       // Benevolent whispers (deniable)
       var wren = this.apPersona('wren');
       if (wren && Math.random() < 0.2) {
         msgs.push('"A message board post, quickly deleted: \'stay away from the northern treeline tomorrow. trust me.\' — the System claims it saw nothing."');
+        msgPids.push(null);
       }
 
-      if (msgs.length) this.sysSay(msgs[Math.floor(Math.random() * msgs.length)]);
+      if (msgs.length) {
+        var _mi = Math.floor(Math.random() * msgs.length);
+        this.sysSay(msgs[_mi]);
+        // HONEST (break-it 2026-10-09): the old line named the rival on the
+        // feed and then revealed them only 30% of the time — the other 70%
+        // you HEARD the name but the system still called them "Stranger".
+        // Naming someone on the System feed IS the reveal path ("the System
+        // feed named them"); it fires whenever the naming is actually heard.
+        var _np = msgPids[_mi];
+        if (_np && !this.apKnowsAlien(_np)) {
+          try { this.apRevealAlien(_np, 'the System feed named them'); } catch (e2n) {}
+        }
+      }
       return true;
     },
 
@@ -2407,20 +2418,25 @@
         var pid = fighter.alienPid;
         var per = this.apPersona(pid);
         if (!per) return false;
+        // SINGLE SOURCE OF TRUTH (break-it 2026-10-08): apHasBeam decides
+        // who fields a beam weapon — not a second hardcoded list. Old Tam
+        // fights fair: no beam, ever.
+        if (!this.apHasBeam(pid)) return false;
+        // Cooldown ticks on the alien's own turn: max one beam per ~3 rounds.
+        // (break-it 2026-10-09: the tick used to live in a tbAfterPlayerAction
+        // wrap that ALSO fired the beam after the alien's normal strike — a
+        // free bonus attack contradicting the "replaces their normal attack"
+        // design. The roll moved into tbAlienTurn (encounters.js); the tick
+        // moved with it.)
+        var f = this.tbfight;
+        if (f && f._beamCooldown > 0) { f._beamCooldown--; return false; }
         // Who uses beams? Sadistic ones love them. Others use them when serious.
         var chance = 0.25;
         if (per.disposition === 'sadistic') chance = 0.4;
         if (fighter._enraged) chance += 0.2;
-        // Don't beam spam: max once per 3 rounds
-        var f = this.tbfight;
-        if (f && f._beamCooldown > 0) return false;
         if (Math.random() >= chance) return false;
         if (f) f._beamCooldown = 3;
         // FIRE THE BEAM
-        // SINGLE SOURCE OF TRUTH (break-it 2026-10-08): apHasBeam decides
-        // who fields a beam weapon — not a second hardcoded list. The table
-        // below is display names only; the gate above is the truth.
-        if (!this.apHasBeam(pid)) return false;
         var beamNames = {
           'vex_marlowe': 'Vex\'s phase lance',
           'countess_sable': 'Sable\'s dread beam',
@@ -2429,8 +2445,15 @@
           'sarge': 'Sarge\'s service beam',
           'dr_fenwick': 'Fenwick\'s specimen beam',
         };
-        var beamName = beamNames[pid] || (per.name + '\'s beam weapon');
-        this.say('🔆 ' + per.name + ' raises ' + beamName + '. The air tastes like copper.');
+        // KNOWLEDGE GATE (break-it 2026-10-09): pre-reveal the fighter is a
+        // "Stranger" (apBuildFighter's convention) — the old line named them
+        // outright ("Vex raises Vex's phase lance") while the fighter card
+        // still said Stranger.
+        var _known = false;
+        try { _known = !!this.apKnowsAlien(pid); } catch (e0k) {}
+        var _who = _known ? per.name : 'The stranger';
+        var beamName = _known ? (beamNames[pid] || (per.name + '\'s beam weapon')) : 'a beam weapon';
+        this.say('🔆 ' + _who + ' raises ' + beamName + '. The air tastes like copper.');
         // AUDIO (break-it 2026-10-09): the beam is the aliens' signature
         // weapon — the raise is the "oh shit" telegraph and it was silent.
         // Machine-beam windup (beamTechWindup via the telegraph dispatcher),
@@ -2452,12 +2475,20 @@
     // After combat ends, check if it was an alien-player fight and record it.
     var _tbEnd = G.tbEnd;
     G.tbEnd = function (result) {
-      var alienPid = null;
+      var alienPid = null, alienKilled = false;
       try {
         if (this.tbfight && this.tbfight.fighters) {
           for (var i = 0; i < this.tbfight.fighters.length; i++) {
             var f = this.tbfight.fighters[i];
-            if (f.kind === 'hostile' && f.alienPid) { alienPid = f.alienPid; break; }
+            if (f.kind === 'hostile' && f.alienPid) {
+              alienPid = f.alienPid;
+              // KILLED vs FLED (break-it 2026-10-09): a broke persona that
+              // retreats ends the fight 'won' (encounters.js tbEndCheck treats
+              // a fled hostile as defeated) — but there is no body to strip.
+              // Armor salvage is kill-only.
+              if (!f.alive) alienKilled = true;
+              break;
+            }
           }
         }
         // Also check the alien encounter state
@@ -2469,7 +2500,7 @@
       try {
         if (alienPid) {
           var outcome = result === 'won' ? 'won' : result === 'lost' ? 'lost' : 'fled';
-          this.apOnCombatEnd(alienPid, outcome);
+          this.apOnCombatEnd(alienPid, outcome, { killed: alienKilled });
           // Clear the encounter state
           if (this.state.alienEncounter) delete this.state.alienEncounter;
         }
@@ -2624,32 +2655,12 @@
       return _tbDamage ? _tbDamage.call(this, targetKey, dmg, sourceLabel, sourceKey, opts) : undefined;
     };
 
-    // 3. BEAM ATTACKS IN COMBAT: alien fighters sometimes fire beam weapons.
-    // Hooked into the existing alien turn wrap (after chatter).
-    var _tbAfterBeam = G.tbAfterPlayerAction;
-    // Note: the alien chatter wrap already exists above. We chain onto it
-    // by wrapping again — the beam check runs after chatter.
-    (function () {
-      var prev = G.tbAfterPlayerAction;
-      G.tbAfterPlayerAction = function () {
-        var r = prev ? prev.apply(this, arguments) : undefined;
-        try {
-          if (this.tbfight && this.tbfight.fighters) {
-            for (var i = 0; i < this.tbfight.fighters.length; i++) {
-              var f = this.tbfight.fighters[i];
-              if (f.kind === 'hostile' && f.alienPid && f.alive && !f.fled) {
-                // Decrement beam cooldown
-                if (this.tbfight._beamCooldown > 0) this.tbfight._beamCooldown--;
-                // Maybe fire the beam (replaces their normal attack this turn)
-                if (this.apMaybeBeamAttack) this.apMaybeBeamAttack(f);
-                break;
-              }
-            }
-          }
-        } catch (e) {}
-        return r;
-      };
-    })();
+    // 3. BEAM ATTACKS IN COMBAT (break-it 2026-10-09): the beam roll lives in
+    // tbAlienTurn (encounters.js) — it REPLACES the alien's strike, per the
+    // design. The old second tbAfterPlayerAction wrap here fired the beam
+    // AFTER the alien's normal turn (a free bonus attack, contradicting the
+    // "replaces their normal attack" design) — removed, and the cooldown
+    // tick moved into apMaybeBeamAttack with the roll.
 
   })();
 })(typeof window !== 'undefined' ? window : global);
