@@ -284,6 +284,8 @@
       var mult = st.potential[vid] ? 2 : 1;
       a.xp[vid].tracking += mult;
       a.xp[vid].survival += mult;
+      // VILLAGER XP (Steve 2026-10-09): ranging the wild is field work.
+      try { if (this.villagerGainXP) this.villagerGainXP(vid, 'field', 1, 'expedition'); } catch (e) {}
       // one encounter roll per leg, weighted by distance
       var roll = R();
       var mChance = 0.10 + dist * 0.035;

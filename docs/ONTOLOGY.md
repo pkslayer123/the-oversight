@@ -580,6 +580,7 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 - phoenix_exile: 2nd+ use with village standing < 25 triggers the existing exile path (code: phoenixExileCheck, exilePlayer)
 - phoenix_fuse: unchosen links resolve at dawn (1-day) -- choice defaults to the link completing, struggle to the protester breaking free (code: phoenixFuseCheck)
 - npc_abilities_minimal: villagers hold no kits; v.npcAbilities is the minimal per-villager ability store (code: npcHasAbility/npcGrantAbility)
+- villager_xp_system: villagers earn XP per track (combat/field/social/craft) from real deeds; at thresholds (3/8/16/32/64, mirroring the player's skill-practice shape) the System grants the next ability from the track's fixed-priority kit -- deterministic, no RNG in the grant path; grants wait for systemArrived; six-slot rule same as the player (code: villagerGainXP, NPC_ABILITY_KITS, Steve 2026-10-09)
 - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 
 **Consumes:** state.scholar, state.village, state.codex (central game state roots)

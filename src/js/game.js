@@ -108,6 +108,7 @@
 //   - phoenix_exile: 2nd+ use with village standing < 25 triggers the existing exile path (code: phoenixExileCheck, exilePlayer)
 //   - phoenix_fuse: unchosen links resolve at dawn (1-day) -- choice defaults to the link completing, struggle to the protester breaking free (code: phoenixFuseCheck)
 //   - npc_abilities_minimal: villagers hold no kits; v.npcAbilities is the minimal per-villager ability store (code: npcHasAbility/npcGrantAbility)
+//   - villager_xp_system: villagers earn XP per track (combat/field/social/craft) from real deeds; at thresholds (3/8/16/32/64, mirroring the player's skill-practice shape) the System grants the next ability from the track's fixed-priority kit -- deterministic, no RNG in the grant path; grants wait for systemArrived; six-slot rule same as the player (code: villagerGainXP, NPC_ABILITY_KITS, Steve 2026-10-09)
 //   - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 // consumes:
 //   - state.scholar, state.village, state.codex (central game state roots)
@@ -4795,6 +4796,8 @@
       try { healer = this.campHealerName ? this.campHealerName() : null; } catch (e) {}
       if (healer) {
         v.health[vid] = Math.min(100, cur + 25);
+        // VILLAGER XP (Steve 2026-10-09): doctoring is craft work.
+        try { const hid = this.campHealerVid ? this.campHealerVid() : null; if (hid) this.villagerGainXP(hid, 'craft', 1, 'healing'); } catch (e) {}
         try {
           const who = healer === 'You' ? 'You patch them up' : `${healer} patches them up`;
           this.say(`🩹 ${nm} is hurting (${cur} HP) — ${who} before they head out. (${cur} → ${v.health[vid]} HP)`);
@@ -9190,6 +9193,23 @@
       } catch (e) {}
       return null;
     },
+    // campHealerVid(): the roster id behind campHealerName(), or null.
+    // (VILLAGER XP 2026-10-09: craft XP needs the vid, not the first name.)
+    campHealerVid() {
+      try {
+        if (this.hasAbility('triage') || this.hasAbility('field_medicine') || this.hasAbility('herbal_remedy')) return null; // 'You' -- the player has their own XP track
+        const v = this.state.village || {};
+        for (const id of (v.roster || [])) {
+          if (id === this.villagerId) continue;
+          let p = null;
+          try { p = this.getPerson(id); } catch (e) {}
+          if (!p || p.dead) continue;
+          const occ = String(p.formerOccupation || '').toLowerCase();
+          if (/nurse|medic|doctor|paramedic|midwife|veterinarian|pharmacist|herbalist|dentist/i.test(occ)) return id;
+        }
+      } catch (e) {}
+      return null;
+    },
 
     // removeTick(): get an attached ambient tick off. Gated on the
     // tick_removal technique or real medical ability (triage, field_medicine,
@@ -12854,6 +12874,9 @@
       // mark it shared — the village knows now, human-to-human
       entry.taughtAround = true;
       entry.taughtDay = this.state.scholar.day;
+      // VILLAGER XP (Steve 2026-10-09): teaching is acting like a player.
+      // The teacher earns social XP whether the lesson was true or not.
+      try { this.villagerGainXP(entry.discoveredBy, 'social', 1, 'teaching'); } catch (e) {}
       // BAD GOSSIP (Steve 2026-10-06): the teacher may be wrong — and the
       // fire spreads wrongness as fast as truth. The player gets the
       // wrongTeaching beat (contested if they know better); villagers who
@@ -19430,6 +19453,8 @@
           // BIG DAY: someone has the day of their life.
           const kcal = Math.round((1500 + Math.floor(Math.random() * 1001)) * boldMult * shareMult);
           this.stockPantry(kcal, 'Foraged food');
+          // VILLAGER XP (Steve 2026-10-09): acting like a player earns.
+          try { this.villagerGainXP(id, 'field', 1, 'foraging'); } catch (e) {}
           // COMPETITION: they depleted a real tile. the world is shared.
           // (2026-10-05: was called without coords — a silent no-op. Home turf
           // is the village's turf: pass haven so the depletion is real.)
@@ -19440,6 +19465,8 @@
           const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
           this.stockPantry(kcal, 'Foraged food');
           this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
+          // VILLAGER XP (Steve 2026-10-09): acting like a player earns.
+          try { this.villagerGainXP(id, 'field', 1, 'foraging'); } catch (e) {}
           if (present) this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
           // KNOWLEDGE SPREAD (Steve 2026-10-09, tweak B): working the land
           // teaches. A forager who brings food home learned SOMETHING about
@@ -30367,8 +30394,8 @@
 
     // --- minimal NPC ability storage. Villagers hold no kits in the base
     // game; this is the smallest honest extension letting one hold the clause.
-    // (Natural acquisition -- the System granting villagers abilities -- is
-    // future scope; tests/grant paths set it directly.)
+    // (Natural acquisition: the System grants villagers abilities via the
+    // villager XP system -- villagerGainXP/NPC_ABILITY_KITS, Steve 2026-10-09.)
     npcHasAbility(vid, id) {
       try { return (((this.state.village || {}).npcAbilities || {})[vid] || []).includes(id); }
       catch (e) { return false; }
@@ -30385,6 +30412,81 @@
         const m = (this.state.village || {}).npcAbilities || {};
         m[vid] = (m[vid] || []).filter(x => x !== id);
       } catch (e) {}
+    },
+
+    // --- VILLAGER XP & SYSTEM GRANTS (Steve 2026-10-09) ---
+    // "System abilities aren't RNG, they are earned by villagers acting like
+    // players." Villagers accrue XP per track from real deeds; at thresholds
+    // the System grants the next ability from the kit matching that track.
+    // Deterministic: same deeds -> same XP -> same grants. No RNG anywhere in
+    // the grant path. Kits fit the villager's situation (canon:
+    // people-not-classes, System-granted ability kits). Thresholds mirror the
+    // player's skill-practice shape (3/8/16, night_hunting). The System's
+    // six-slot rule applies to villagers too (same System, same slots).
+    // XP accrues from day one; GRANTS wait for the System's arrival (day 7) --
+    // nobody was watching before that. Pending grants fire on the next deed
+    // after arrival (the level loop grants all crossed thresholds).
+    NPC_XP_TRACKS: ['combat', 'field', 'social', 'craft'],
+    NPC_XP_THRESHOLDS: [3, 8, 16, 32, 64],
+    NPC_MAX_ABILITIES: 6,
+    NPC_ABILITY_KITS: {
+      // Fixed priority order = grant order. First unheld wins; ties impossible.
+      // phoenix_clause sits 4th in combat (32 XP): a real veteran's capstone,
+      // unlock type system_offer -- the System offers it to those who've
+      // proven themselves in death's doorway. This lights up the villager-
+      // Bearer <redacted> phoenix path (phoenixVillagerTrigger).
+      combat: ['patient_aim', 'haymaker', 'ambush', 'phoenix_clause', 'war_cry', 'trade_of_blows', 'unbreakable', 'dead_aim'],
+      field: ['game_sense', 'field_dressing', 'stalk', 'tracker', 'echo_location', 'blood_trail', 'purify', 'water_breathing', 'animal_ken'],
+      social: ['peacemaker', 'mediator', 'scream_cheese', 'animal_ken'],
+      craft: ['steady_hands', 'triage', 'preservation_instinct', 'iron_stomach'],
+    },
+    NPC_TRACK_NOUNS: { combat: 'fights', field: 'days worked on the land', social: 'words shared at the fire', craft: 'careful work' },
+    npcXp(vid) {
+      try {
+        const v = this.state.village; v.npcXp = v.npcXp || {};
+        const x = v.npcXp[vid] = v.npcXp[vid] || { combat: 0, field: 0, social: 0, craft: 0, granted: { combat: 0, field: 0, social: 0, craft: 0 } };
+        x.granted = x.granted || { combat: 0, field: 0, social: 0, craft: 0 };
+        return x;
+      } catch (e) { return { combat: 0, field: 0, social: 0, craft: 0, granted: { combat: 0, field: 0, social: 0, craft: 0 } }; }
+    },
+    villagerTrackLevel(xp) {
+      let lvl = 0;
+      for (const t of (this.NPC_XP_THRESHOLDS || [3, 8, 16, 32, 64])) if (xp >= t) lvl++;
+      return lvl;
+    },
+    // villagerGainXP(vid, track, n, why): the deed happened; accrue and maybe
+    // grant. The grant path uses NO randomness: kit order is fixed, first
+    // unheld wins, six-slot cap is a count. Same history -> same abilities.
+    villagerGainXP(vid, track, n, why) {
+      try {
+        if (!vid || vid === this.villagerId) return 0;
+        if ((this.NPC_XP_TRACKS || []).indexOf(track) < 0) return 0;
+        const vp = this.vpOf ? this.vpOf(vid) : null;
+        if (vp && vp.dead) return 0; // the dead earn nothing
+        const x = this.npcXp(vid);
+        x[track] = (x[track] || 0) + (n || 0);
+        if (!this.state.systemArrived) return x[track]; // XP accrues; the System isn't watching yet
+        const kits = this.NPC_ABILITY_KITS || {};
+        const kit = kits[track] || [];
+        const level = this.villagerTrackLevel(x[track]);
+        let granted = (x.granted && x.granted[track]) || 0;
+        while (granted < level) {
+          const held = ((this.state.village || {}).npcAbilities || {})[vid] || [];
+          if (held.length >= (this.NPC_MAX_ABILITIES || 6)) break; // six slots, same as you
+          const next = kit.find(id => held.indexOf(id) < 0);
+          if (!next) break; // kit exhausted: natural saturation, XP keeps accruing
+          this.npcGrantAbility(vid, next);
+          granted++;
+          const aname = ((this.data.abilities || []).find(a => a.id === next) || {}).name || next;
+          const vname = this.displayName ? this.displayName(vid) : 'Someone';
+          const noun = (this.NPC_TRACK_NOUNS || {})[track] || track;
+          this.say(`◈ THE SYSTEM has been watching ${vname} — ${x[track]} ${noun}. It offers ${aname}. Earned, not given. (${next}: villager System grant)`);
+          try { this.journalNote && this.journalNote('system', 'grant', `The System granted ${vname} ${aname} (${next}) for ${x[track]} ${noun}.`); } catch (e2) {}
+          try { this.tele && this.tele('villager_grant', { vid, ability: next, track, xp: x[track] }); } catch (e3) {}
+        }
+        x.granted[track] = granted;
+        return x[track];
+      } catch (e) { return 0; }
     },
 
     // phoenixPlayerTrigger: the scholar would die holding phoenix_clause.

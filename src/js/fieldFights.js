@@ -340,6 +340,15 @@
       rec.mHpLeft = Math.max(0, members[0].hp);
       // wounds persist onto the world entity — part of the world, not RNG
       try { if (m && rec.outcome !== 'vKill') m.hp = rec.mHpLeft; } catch (e) {}
+      // VILLAGER XP (Steve 2026-10-09): fighting teaches. Kills teach double.
+      // (vDie earns nothing -- the dead are done learning.)
+      try {
+        if (vid && vid !== 'player' && this.villagerGainXP) {
+          if (rec.outcome === 'vKill') this.villagerGainXP(vid, 'combat', 2, 'monster kill');
+          else if (rec.outcome === 'vFlee' || rec.outcome === 'mFlee') this.villagerGainXP(vid, 'combat', 1, 'survived a fight');
+          else if (rec.outcome === 'evade') this.villagerGainXP(vid, 'field', 1, 'read the signs');
+        }
+      } catch (e) {}
       return rec;
     },
 

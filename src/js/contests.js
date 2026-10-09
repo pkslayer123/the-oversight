@@ -712,6 +712,8 @@
     if (ac.comfort) this.sysSay(`📺 You go to ${pname} after. They're quiet. They'll talk about it later. Or never.`);
     else this.sysSay(`📺 The village will talk about this for days.`);
     try { this.leadShift('showmanship', 1); } catch (e) {}
+    // VILLAGER XP (Steve 2026-10-09): being on television teaches.
+    try { if (this.villagerGainXP) this.villagerGainXP(pid, 'social', 1, 'show'); } catch (e) {}
     // BROADCAST MODE: the commentators call the villager's fate.
     try { this.broadcastBeat('SHOW_VILLAGER_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     return { done: true, outcome: 'show_' + outcome };
@@ -4350,6 +4352,9 @@
         outcome = 'lost';
       }
       fates.push({ pid, outcome });
+      // VILLAGER XP (Steve 2026-10-09): surviving the cameras teaches.
+      // (The dead earn nothing -- same rule as fights.)
+      try { if (pid !== 'player' && outcome !== 'died' && this.villagerGainXP) this.villagerGainXP(pid, 'social', 1, 'contest'); } catch (e) {}
       // The bet rides on the first taken. The System honors wagers: 2x.
       if (i === 0 && ac.bet) {
         const amt = ac.bet.amount;
