@@ -3059,9 +3059,14 @@
       food.units -= 1;
       if (food.units <= 0) this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
       const first = this.displayName(vid);
-      // the deal sweetens obedience: +30 effective trust for this check
-      const trust = ((this.state.village.trust || {})[vid] || 10) + 30;
-      const t = this.state.village.trust || (this.state.village.trust = {});
+      // the deal sweetens obedience: +30 effective trust for this check ONLY.
+      // BREAK-IT (social r5 2026-10-09): the old code wrote the sweetened
+      // value into permanent trust (t[vid] = cur + 30, flat, no progressive
+      // scaling) — 3 cheap deals farmed 10->100 trust (measured). The bonus
+      // buys THIS ask; the permanent gain is a separate, progressive deed.
+      const vt = this.state.village.trust || (this.state.village.trust = {});
+      const cur0 = vt[vid] === undefined ? 10 : vt[vid]; // a real 0 stays 0
+      const trust = cur0 + 30;
       const reluctant = trust < 40 && Math.random() < 0.25;
       if (reluctant) {
         this.say(`${first} takes the ${food.name}, weighs it in their hand. "Still no. But... ask me tomorrow." The food is gone. The answer isn't.`);
@@ -3070,7 +3075,15 @@
         this.save();
         return { ok: false, refused: true };
       }
-      t[vid] = Math.min(100, trust);
+      // PERMANENT GAIN (break-it social r5 2026-10-09): a deal is a deed —
+      // real food changed hands — so it routes through the resolver as a
+      // real act (talk:false, no 40 words-cap) with progressive scaling.
+      // The +30 sweetener above bought this ask only; it does not persist.
+      if (typeof this.resolveConsequence === 'function') {
+        this.resolveConsequence(vid, { trust: 10, temper: 'neutral', talk: false, name: 'offerDeal' });
+      } else {
+        this.bumpTrust(vid, 10);
+      }
       const vv = this.state.village;
       vv.assignments = vv.assignments || {};
       vv.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart, via: 'deal' };
@@ -3109,9 +3122,18 @@
       const tasks = this.delegateTasks();
       if (!tasks[task]) return null;
       const ob = this.checkObedience(vid);
-      // appeal adds effective trust: 10 + 10 per affinity point
+      // appeal adds effective trust: 10 + 10 per affinity point — for THIS
+      // ask only.
+      // BREAK-IT (social r5 2026-10-09): the old code wrote the framed value
+      // into permanent trust (t[vid] = cur + up to 40, flat, no cap, no
+      // progressive) — 3 free appeals farmed 10->100 trust (measured), and
+      // words blew straight past the 40 words-cap. An appeal is words: the
+      // bonus buys this ask; the permanent residue is small, progressive,
+      // and capped at 40 like every other word.
       const bonus = 10 + aff * 10;
-      const trust = ((this.state.village.trust || {})[vid] || 10) + bonus;
+      const vt2 = this.state.village.trust || (this.state.village.trust = {});
+      const curA = vt2[vid] === undefined ? 10 : vt2[vid]; // a real 0 stays 0
+      const trust = curA + bonus;
       // framing a request through what they want — you learn this by doing it.
       this.discover('appeal');
       const lines = {
@@ -3130,8 +3152,17 @@
         this.observe('appeal', { target: vid, refused: true, noTrust: true }); // words: opinion forms, no trust drift (break-it social r2)
         return { ok: false };
       }
-      const t = this.state.village.trust || (this.state.village.trust = {});
-      t[vid] = Math.min(100, trust);
+      // PERMANENT RESIDUE (break-it social r5 2026-10-09): words only go so
+      // far — through the resolver the 40 talk cap applies (talk defaults
+      // true), with progressive scaling and mediation halving like every
+      // other word. The +bonus framed this ask; it does not persist.
+      if (typeof this.resolveConsequence === 'function') {
+        this.resolveConsequence(vid, { trust: 4, temper: 'neutral', name: 'appealToGoal' });
+      } else {
+        const t2 = this.state.village.trust || (this.state.village.trust = {});
+        const c2 = t2[vid] === undefined ? 10 : t2[vid];
+        t2[vid] = c2 >= 40 ? c2 : Math.min(40, c2 + this.trustGainProgressive(vid, 4));
+      }
       const vv = this.state.village;
       vv.assignments = vv.assignments || {};
       vv.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart, via: 'appeal' };
@@ -3564,11 +3595,19 @@
       v.heat[target] = Math.max(0, (v.heat[target] || 0) - 2);
       v.allies = v.allies || {};
       v.allies[vid] = target; // they stand with you against this contender
-      const t = v.trust || (v.trust = {});
-      t[vid] = Math.min(100, (t[vid] || 10) + 5);
+      // BREAK-IT (social r5 2026-10-09): the old flat +5 bypassed the 40
+      // talk cap and progressive scaling. Coalition-building is words —
+      // through the resolver; opinion still forms via observe, but trust
+      // moves only through the resolver (same class as promise, r2).
+      if (typeof this.resolveConsequence === 'function') {
+        this.resolveConsequence(vid, { trust: 5, temper: 'neutral', name: 'askSupport' });
+      } else {
+        const t = v.trust || (v.trust = {});
+        t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 5));
+      }
       this.say(`${first} considers it, then nods. "Yeah. ${tname} doesn't speak for me." You feel the ground firm up under you a little.`);
       this.remember(vid, 'ally', 'backed you against ' + target);
-      this.observe('coalition', { target: vid });
+      this.observe('coalition', { target: vid, noTrust: true });
       this.notePlaystyle('leader'); this.notePlaystyle('social');
       this.socialTick(vid);
       this.save();
@@ -10830,8 +10869,16 @@
         } else if (intel === 'practical') {
           // Practical minds give actionable advice. Talking shop builds trust —
           // they respect people who ask about the work, not the wonder.
-          const t = v.trust || (v.trust = {});
-          t[vid] = Math.min(100, (t[vid] || 10) + Math.max(1, Math.round(2 * mult)));
+          // BREAK-IT (social r5 2026-10-09): the old flat +2*mult bypassed the
+          // 40 talk cap and progressive scaling — theorizing all afternoon was
+          // a slow trust faucet. Same bug class; through the resolver.
+          const thAmt = Math.max(1, Math.round(2 * mult));
+          if (typeof this.resolveConsequence === 'function') {
+            this.resolveConsequence(vid, { trust: thAmt, temper: 'kind', name: 'theorize' });
+          } else {
+            const t = v.trust || (v.trust = {});
+            t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, thAmt));
+          }
           if (topic === 'situation') {
             const prog = grantProgress(['tactics_small', 'snare_wire', 'shelter_debris'], Math.max(1, Math.round(1 * mult)));
             if (prog && mult >= 1) this.say(`(${first}'s advice sticks with you. Practical knowledge accumulates.)`);

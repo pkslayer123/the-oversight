@@ -11665,7 +11665,11 @@
       body += `<p class="small" style="opacity:.8">"I'm on it — ${tasks[current.task].icon} ${esc(tasks[current.task].name).toLowerCase()}." — out until next part.</p>`;
     } else {
       body += `<p style="font-size:15px;line-height:1.5">"What do you need?"</p>`;
-      body += `<p class="small" style="opacity:.6">Trust: ${trust}/100.</p>`;
+      // NUMBERS DON'T LEAK (break-it social r5 2026-10-09): the person panel
+      // and the people journal read trust as qualitative bands — the assign
+      // panel showed the raw Trust: N/100. One convention everywhere.
+      const tone = trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.';
+      body += `<p class="small" style="opacity:.6">${tone}</p>`;
     }
     if (trust < 20) body += `<p class="small" style="color:#e88">"I don't take orders from strangers." (Need 20+ trust.)</p>`;
     body += `<p class="small" style="opacity:.6;margin-top:8px">They'll report back at the end of this part. Dangerous work can get people hurt.</p>`;

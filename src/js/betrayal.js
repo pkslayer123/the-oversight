@@ -317,10 +317,22 @@
       const t = this.state.village.trust || {};
       const roll = R();
       let outcome, line;
+      // SHARED-TIME TRUST (break-it social r5 2026-10-09): the old code wrote
+      // flat +3/+4/+5 with no progressive scaling and no 40 words-cap — same
+      // bug class as comfort/tellSide (break-it social r2). Walking together
+      // is shared time, not a deed: through the resolver like every other
+      // word. (NPC-paced, not player-farmable, but the math should be one math.)
+      const inviteTrust = (amt, nm) => {
+        if (typeof this.resolveConsequence === 'function') {
+          this.resolveConsequence(vid, { trust: amt, temper: 'kind', name: nm });
+        } else {
+          t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, amt));
+        }
+      };
       if (roll < 0.60) {
         // characterful smallness
         outcome = 'small';
-        t[vid] = Math.min(100, (t[vid] || 10) + 3);
+        inviteTrust(3, 'invite:small');
         line = pick([
           `You walk to ${def.spot} with ${first}. Nothing much there — but they talk the whole way, and you learn the shape of them a little better.`,
           `It's quiet at ${def.spot}. ${first} doesn't say much. Sometimes that's the whole point.`,
@@ -329,13 +341,13 @@
       } else if (roll < 0.90) {
         // real reward
         outcome = 'reward';
-        t[vid] = Math.min(100, (t[vid] || 10) + 5);
+        inviteTrust(5, 'invite:reward');
         const rw = this.inviteReward(vid);
         line = rw.line;
       } else {
         // wild danger — teaches caution about the WILD
         outcome = 'wild';
-        t[vid] = Math.min(100, (t[vid] || 10) + 4);
+        inviteTrust(4, 'invite:wild');
         line = pick([
           `Halfway to ${def.spot}, ${first} freezes. Fresh tracks — big. "We go back now. Quietly." You do. The wild, reminding you.`,
           `At ${def.spot} the ground is torn up. Something was here, recently, and it wasn't careful. ${first}'s hand finds your sleeve. You leave together, faster than you came.`,
