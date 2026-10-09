@@ -94,6 +94,14 @@
 //   - home_narration_presence: villageLives/ambientSocial/firesideTeaching narrate only when playerAtHaven(); sim still runs; home deaths queue to scholar.awayNews, delivered by returnToVillage (code: playerAtHaven)
 //   - homecoming_beat: returnToVillage says a return line after >=2 days away, tracked via scholar.lastHavenDay (code: returnToVillage)
 //   - broker_knowledge_presence: identifying a plant while away queues it in scholar.awayLearned — no home witness line, no home rumor, and the absent player is excluded from spreadPlantKnowledge; returnToVillage fires the broker's teaching beat and seeds the rumor only then (code: identifyPlant/spreadPlantKnowledge/returnToVillage, Steve 2026-10-07)
+//   - phoenix_burns_villager: phoenix_clause no longer respawns at Haven once per run -- lethal damage burns a RANDOM living villager (ash-death, no corpse) and the bearer emerges at the victim's location with 1 HP; no living villagers / no village = death sticks, honestly (code: phoenixPlayerTrigger, Steve 2026-10-09)
+//   - phoenix_link_beat: every trigger narrates before resolution -- who burns, who the fire chose, what happens next; gossip carries it distorted to non-witnesses (code: phoenixLinkBeat)
+//   - phoenix_volunteer: a villager with standing >= 40 may offer themselves, replacing the random pick -- willing sacrifice, honor not horror, no trust hit (code: phoenixVolunteer)
+//   - phoenix_protest: a chosen villager with standing <= 5 or fear >= 60 fights the pull -- a PLAYED 3-beat struggle (400 kcal + 1 trauma per beat, no RNG); breaking it kills the bearer true death (code: phoenixStartStruggle)
+//   - phoenix_bidirectional: a villager holding the clause (v.npcAbilities) triggers on death -- if you are the random pick you choose: give yourself (succession + life-debt) or pull away (struggle; win = bearer true death, lose = you burn + bearer trust collapse) (code: phoenixVillagerTrigger)
+//   - phoenix_exile: 2nd+ use with village standing < 25 triggers the existing exile path (code: phoenixExileCheck, exilePlayer)
+//   - phoenix_fuse: unchosen links resolve at dawn (1-day) -- choice defaults to the link completing, struggle to the protester breaking free (code: phoenixFuseCheck)
+//   - npc_abilities_minimal: villagers hold no kits; v.npcAbilities is the minimal per-villager ability store (code: npcHasAbility/npcGrantAbility)
 //   - combat_action_economy: move + acted (code: tbAfterPlayerAction)
 // consumes:
 //   - state.scholar, state.village, state.codex (central game state roots)
@@ -21288,6 +21296,9 @@
 
     endDay() {
       const scholar = this.state.scholar;
+      // PHOENIX FUSE (Steve 2026-10-09): unchosen links resolve at dawn --
+      // the fire doesn't wait. Silence is consent.
+      try { this.phoenixFuseCheck && this.phoenixFuseCheck(); } catch (e) {}
       // VILLAGE NAMING: the argument continues. Late proposers chime in, and
       // the village converges on a name for each unnamed beast.
       try {
@@ -30148,22 +30159,513 @@
         this.say(furious ? 'UNDYING FURY: death came for you mid-rage and you LAUGHED. FULL HEALTH. The rage does not end.' : `SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal.${swMax > 1 ? ` ${swMax - swUses - 1} use left today.` : ' Once today.'})`);
         return true;
       }
-      // phoenix_clause: once per run. Explode, then respawn at Haven with 1 HP.
-      // The System calls it 'great television.'
-      if (this.hasAbility('phoenix_clause') && !s.phoenixUsed && s.health <= 0) {
-        s.phoenixUsed = true;
-        if (this.fight && this.fight.monster) {
-          this.fight.monster.hp -= 60;
-          this.say('PHOENIX CLAUSE: you EXPLODE — 60 damage to everything nearby.');
-        }
-        s.health = 1; s.kcal = 500;
-        this.map.px = this.state.village.px ?? 4; this.map.py = this.state.village.py ?? 4;
-        s.mx = 4; s.my = 4; this.fight = null; this.syncMonsterAlias();
-        this.say('You wake at Haven, 1 HP, ash in your mouth. The audience applauds. (phoenix_clause: once per run)');
-        this.noteAbilityUse('phoenix_clause');
-        return true;
+      // PHOENIX (Steve 2026-10-09 rework): no longer a once-per-run Haven
+      // respawn. The clause burns a random living villager and you emerge
+      // from their ashes, wherever they were. The villagers ARE the cap now.
+      // Doom countdowns (Eulogy / Finale) do NOT bypass it -- Steve's ruling:
+      // unkillable means unkillable; the clause triggers normally.
+      if (this.hasAbility('phoenix_clause') && s.health <= 0) {
+        return this.phoenixPlayerTrigger();
       }
       return false;
+    },
+    // ============ PHOENIX REWORK (Steve 2026-10-09) ============
+    // The clause no longer respawns you at Haven once per run. It burns a
+    // RANDOM living villager -- body and all -- and you emerge from their
+    // ashes, wherever they were. The villagers ARE the cap now: no living
+    // villagers (or no village) and your death sticks, honestly.
+    // BIDIRECTIONAL AGENCY (Steve 2026-10-09, extension): the Link Beat
+    // narrates every trigger before resolution -- no one burns silently.
+    // Villagers have agency: devotion volunteers (replacing the random pick),
+    // resentment/fear protests (a played struggle, never RNG). A villager
+    // holding the clause can burn YOU: you get a real choice -- give yourself
+    // (succession + life-debt) or pull away (played struggle).
+    //
+    // DESIGN PROXIES (flagged, Steve to overrule):
+    // - "Relationship" has no pairwise matrix in the codebase; v.trust[vid]
+    //   is village standing. Witness closeness is proxied by the witness's
+    //   own standing (beloved >= 40 reads charitably; marginal <= 15 horrified).
+    //   Per-witness trust-in-player is tracked in v.trustIn (new, minimal).
+    // - Witnesses = your party (no villager position tracking exists).
+    // - The struggle is 3 beats x (400 kcal + 1 trauma), chosen via the self
+    //   bar -- no existing minigame fit; flagged, not silent.
+    // - Unchosen links resolve at dawn (1-day fuse): choice defaults to the
+    //   link completing (silence is consent); struggle defaults to the
+    //   protester breaking free.
+
+    // --- minimal NPC ability storage. Villagers hold no kits in the base
+    // game; this is the smallest honest extension letting one hold the clause.
+    // (Natural acquisition -- the System granting villagers abilities -- is
+    // future scope; tests/grant paths set it directly.)
+    npcHasAbility(vid, id) {
+      try { return (((this.state.village || {}).npcAbilities || {})[vid] || []).includes(id); }
+      catch (e) { return false; }
+    },
+    npcGrantAbility(vid, id) {
+      try {
+        const v = this.state.village; v.npcAbilities = v.npcAbilities || {};
+        v.npcAbilities[vid] = v.npcAbilities[vid] || [];
+        if (!v.npcAbilities[vid].includes(id)) v.npcAbilities[vid].push(id);
+      } catch (e) {}
+    },
+    npcRevokeAbility(vid, id) {
+      try {
+        const m = (this.state.village || {}).npcAbilities || {};
+        m[vid] = (m[vid] || []).filter(x => x !== id);
+      } catch (e) {}
+    },
+
+    // phoenixPlayerTrigger: the scholar would die holding phoenix_clause.
+    // Returns true if death was cheated or is being held (caller: don't set over).
+    phoenixPlayerTrigger() {
+      const s = this.state.scholar, v = this.state.village;
+      if (this.state.phoenixLink) return true; // a link is already holding this death
+      const living = this.phoenixLivingVillagers();
+      // No one left to burn for you -- or no village at all. Death sticks.
+      if (!v || !living.length) {
+        this.say('🔥 The phoenix clause stirs -- and finds no one. No village, no villagers, no fire to trade. Your death sticks. (phoenix_clause: no one left to burn for you)');
+        try { this.journalNote && this.journalNote('death', 'phoenix', 'The clause found no one. Death stuck.'); } catch (e) {}
+        return false;
+      }
+      s.phoenixUses = (s.phoenixUses || 0) + 1;
+      try { this.noteAbilityUse && this.noteAbilityUse('phoenix_clause'); } catch (e) {}
+      // Devotion volunteers before the fire ever picks at random.
+      const volunteer = this.phoenixVolunteer(living, this.villagerId);
+      if (volunteer) {
+        this.phoenixLinkBeat(true, null, volunteer, 'volunteer');
+        this.phoenixResolveBurn(true, null, volunteer, { willing: true });
+        return true;
+      }
+      // Truly random. The horror is that it could be the beloved medic.
+      const victim = living[Math.floor(Math.random() * living.length)];
+      if (this.phoenixWillProtest(victim, this.villagerId)) {
+        this.phoenixLinkBeat(true, null, victim, 'protest');
+        this.phoenixStartStruggle(true, null, victim, 'villager-protests');
+        return true; // death held -- the struggle decides
+      }
+      this.phoenixLinkBeat(true, null, victim, 'burn');
+      this.phoenixResolveBurn(true, null, victim, {});
+      return true;
+    },
+
+    phoenixLivingVillagers() {
+      try {
+        const v = this.state.village;
+        return (v.roster || []).filter(id => id !== this.villagerId && !(this.vpOf(id) || {}).dead);
+      } catch (e) { return []; }
+    },
+
+    // Devotion volunteers: the most beloved villager (standing >= 40) may
+    // offer themselves. They REPLACE the random pick -- the sacrifice is
+    // willing. Being loved literally changes whose body burns.
+    phoenixVolunteer(living, bearerId) {
+      try {
+        const trust = (this.state.village || {}).trust || {};
+        const cands = living.filter(id => id !== bearerId && (trust[id] || 0) >= 40);
+        if (!cands.length) return null;
+        cands.sort((a, b) => (trust[b] || 0) - (trust[a] || 0));
+        return cands[0];
+      } catch (e) { return null; }
+    },
+
+    // Resentment/fear protests: the chosen one fights the pull.
+    phoenixWillProtest(vid, targetId) {
+      try {
+        const trust = ((this.state.village || {}).trust || {})[vid] || 0;
+        let fear = 0;
+        try { fear = this.fearOf ? this.fearOf(vid, targetId) : 0; } catch (e) {}
+        return trust <= 5 || fear >= 60;
+      } catch (e) { return false; }
+    },
+
+    // THE LINK BEAT: narrated before every resolution, visible to everyone
+    // present. Who is burning, who the fire chose, what happens next.
+    phoenixLinkBeat(bearerIsPlayer, bearerVid, victimVid, kind) {
+      const bName = bearerIsPlayer ? 'you' : this.displayName(bearerVid);
+      const vIsYou = victimVid === this.villagerId;
+      const vName = vIsYou ? 'you' : this.displayName(victimVid);
+      this.say('🔥 ─── THE PHOENIX LINK ───');
+      if (kind === 'volunteer') {
+        this.say(`The fire takes ${bName} -- and ${vName} steps INTO it. "Take me. The village needs ${bearerIsPlayer ? 'you' : 'them'} more." No one burns silently. Everyone sees.`);
+      } else if (kind === 'protest') {
+        this.say(`The fire takes ${bName} -- and chooses ${vName}. ${vIsYou ? 'You SCREAM' : vName + ' SCREAMS'} and pull${vIsYou ? '' : 's'} away -- the link is live and ${vIsYou ? 'you are' : 'they are'} fighting it. Everyone sees.`);
+      } else if (kind === 'chosen-you') {
+        this.say(`The fire takes ${bName} -- and chooses YOU. ${bName} is dying, and the clause wants your body for theirs. Everyone sees.`);
+      } else {
+        this.say(`The fire takes ${bName}. It looks across the village -- and chooses ${vName}. Both bodies are already burning. Everyone sees.`);
+      }
+      if (kind !== 'chosen-you' && kind !== 'protest') {
+        this.say(`${bearerIsPlayer ? 'Your' : 'Their'} body explodes. So does ${vIsYou ? 'yours' : 'theirs'}. ${bearerIsPlayer ? 'You' : 'They'} will emerge from the ashes -- wherever ${vName} ${vIsYou ? 'were' : 'was'}.`);
+      }
+    },
+
+    // phoenixResolveBurn: the burn itself. Ash-death for the victim, the
+    // bearer emerges at the victim's location with 1 HP, social aftermath.
+    phoenixResolveBurn(bearerIsPlayer, bearerVid, victimVid, opts) {
+      opts = opts || {};
+      const s = this.state.scholar;
+      const vName = victimVid === this.villagerId ? 'you' : this.displayName(victimVid);
+      let vx = s.mx, vy = s.my;
+      try {
+        const vp = this.vpOf(victimVid) || {};
+        if (vp.mx != null) vx = vp.mx;
+        if (vp.my != null) vy = vp.my;
+      } catch (e) {}
+      this.phoenixAshDeath(victimVid, vName === 'you' ? 'you' : vName, vx, vy,
+        bearerIsPlayer ? this.villagerId : bearerVid);
+      const witnesses = this.phoenixWitnesses(victimVid, bearerIsPlayer ? null : bearerVid);
+      if (bearerIsPlayer) {
+        s.mx = vx; s.my = vy; s.hp = 1; s.health = 1;
+        this.say(`🔥 You come up out of ${vName}'s ashes, gasping, 1 HP${opts.willing ? ' -- their gift' : ''}. ${opts.willing ? 'They gave willingly. The village saw.' : 'Their death is on your hands. No one looks away. No one will forget this.'}`);
+        try { this.audioEvent && this.audioEvent('phoenix'); } catch (e) {}
+        this.phoenixAftermath(victimVid, witnesses, opts);
+        if ((s.phoenixUses || 0) >= 2) this.phoenixExileCheck();
+      } else {
+        const bName = this.displayName(bearerVid);
+        this.say(`🔥 ${bName} comes up out of ${vName}'s ashes, gasping, barely alive. The village saw who the fire chose -- and who let it.`);
+        this.phoenixWitnessAftermath(bearerVid, victimVid, witnesses, opts);
+      }
+      return true;
+    },
+
+    // Ash-death: death knowledge fires (registerDeath), witnesses see it --
+    // but there is no corpse. Ashes can't be looted. A victim holding the
+    // clause does NOT chain-trigger: the fire is already phoenix-fire, one
+    // burn per link.
+    phoenixAshDeath(vid, name, mx, my, killerId) {
+      this._phoenixResolving = true;
+      try {
+        this.registerDeath({
+          kind: 'villager', villagerId: vid, name, mx, my,
+          cause: 'the phoenix link', killerId: killerId || null,
+          witnesses: [this.villagerId], youWitnessed: true,
+        });
+        const list = this.corpses() || [];
+        for (let i = list.length - 1; i >= 0; i--) {
+          if (list[i].villagerId === vid) { list.splice(i, 1); break; }
+        }
+      } catch (e) {}
+      try { this.removeVillager(vid, 'killed'); } catch (e) {}
+      try {
+        const v = this.state.village; v.fallen = v.fallen || [];
+        v.fallen.push({ villagerId: vid, day: (this.state.scholar || {}).day || 0, cause: 'the phoenix link (ash)' });
+      } catch (e) {}
+      this._phoenixResolving = false;
+    },
+
+    phoenixWitnesses(victimVid, bearerVid) {
+      try {
+        const party = this.partyMembers ? this.partyMembers() : [];
+        const roster = (this.state.village || {}).roster || [];
+        return party.filter(id => id !== victimVid && id !== bearerVid && roster.includes(id));
+      } catch (e) { return []; }
+    },
+
+    // Social aftermath, player is the bearer. The core of the design.
+    phoenixAftermath(victimVid, witnesses, opts) {
+      const v = this.state.village;
+      const vName = this.displayName(victimVid);
+      v.trustIn = v.trustIn || {};
+      const pubTrust = v.trust[this.villagerId] || 15;
+      if (opts.willing) {
+        this.say(`🕊️ ${vName} gave willingly. The village will say their name with pride -- and look at you differently. (No trust lost; the village honors them.)`);
+        try { this.journalNote && this.journalNote('village', 'phoenix', vName + ' volunteered for the phoenix link. Honored.'); } catch (e) {}
+        try { this.seedGossip('phoenix_volunteer', { who: victimVid, brave: 12 }, witnesses.slice(0, 3), true); } catch (e) {}
+        return;
+      }
+      if (opts.protestBroken) {
+        this.say(`🔥 ${vName} fought you every step of the way. The village watched you overpower them.`);
+      }
+      let totalHit = 0;
+      for (const wid of witnesses) {
+        // Relationship-scaled hit: beloved witnesses read charitably
+        // ("they gave willingly"); marginal ones see only horror.
+        const standing = (v.trust || {})[wid] || 0;
+        let hit;
+        if (standing >= 40) hit = -3;
+        else if (standing <= 15) hit = -16;
+        else hit = -12;
+        if (opts.protestBroken) hit -= 4;
+        const cur = (v.trustIn[wid] == null) ? pubTrust : v.trustIn[wid];
+        v.trustIn[wid] = Math.max(0, cur + hit);
+        totalHit += hit;
+        this.say(`💔 ${this.displayName(wid)} watched ${vName} burn for you. (Their trust in you: ${hit}.)${standing >= 40 ? ' "They gave willingly," they whisper. It doesn\'t quite sound like belief.' : ''}`);
+        try { this.addFear && this.addFear(wid, this.villagerId, standing >= 40 ? 15 : 10); } catch (e) {}
+      }
+      // The village's public standing in you moves too, damped.
+      v.trust[this.villagerId] = Math.max(0, pubTrust + Math.round(totalHit / 2));
+      // Justice sees a player-caused witnessed death -- no separate crime invented.
+      try { this.recordCrime && this.recordCrime('murder', { victim: victimVid, witnessed: true }); } catch (e) {}
+      // Non-witnesses learn via gossip, distorted.
+      try { this.seedGossip('phoenix_burn', { who: this.villagerId, cruel: -10 }, witnesses.slice(0, 3), false); } catch (e) {}
+      try { this.journalNote && this.journalNote('village', 'phoenix', 'Burned ' + vName + ' to live. Witnesses: ' + witnesses.length + '.'); } catch (e) {}
+    },
+
+    // Social aftermath, a villager burned a villager. You witnessed.
+    phoenixWitnessAftermath(bearerVid, victimVid, witnesses, opts) {
+      const v = this.state.village;
+      const bName = this.displayName(bearerVid), vName = this.displayName(victimVid);
+      if (opts.willing) {
+        this.say(`🕊️ ${vName} gave willingly for ${bName}. The village honors them.`);
+        try { this.seedGossip('phoenix_volunteer', { who: victimVid, brave: 12 }, witnesses.slice(0, 3), true); } catch (e) {}
+        return;
+      }
+      const hit = -14;
+      v.trust[bearerVid] = Math.max(0, ((v.trust || {})[bearerVid] || 10) + hit);
+      this.say(`💔 You watched ${bName} burn ${vName} to live. (Village trust in ${bName}: ${hit}.)`);
+      for (const wid of witnesses) {
+        try { this.addFear && this.addFear(wid, bearerVid, 8); } catch (e) {}
+      }
+      try { this.seedGossip('phoenix_burn_npc', { who: bearerVid, cruel: -12 }, witnesses.slice(0, 3), false); } catch (e) {}
+      try { this.journalNote && this.journalNote('village', 'phoenix', bName + ' burned ' + vName + ' via the clause. I watched.'); } catch (e) {}
+    },
+
+    // Earn the privilege or get exiled. 2nd+ use with low standing triggers
+    // the EXISTING exile path (hard reset, new village fork).
+    phoenixExileCheck() {
+      const s = this.state.scholar, v = this.state.village;
+      if ((s.phoenixUses || 0) < 2) return;
+      const standing = (v.trust || {})[this.villagerId] || 0;
+      const uses = s.phoenixUses;
+      if (standing < 25) {
+        this.say(`🗡️ The village has watched you burn ${uses === 2 ? 'twice' : uses + ' times'} now. The fire takes -- and the village is done paying. "Go. Burn somewhere else."`);
+        try { this.journalNote && this.journalNote('village', 'exile', 'Exiled over the phoenix burns (' + uses + ' uses, standing ' + standing + ').'); } catch (e) {}
+        try { this.exilePlayer && this.exilePlayer('phoenix'); } catch (e) {}
+      } else {
+        this.say(`The village lets it stand. This time. (Standing ${standing} -- earn it or lose it.)`);
+      }
+    },
+
+    // --- villager-bearer: one of yours holds the clause and is dying.
+    // Hooked from removeVillager('killed'). Returns true if the link started
+    // (caller must NOT complete the death -- the bearer is held, not dead).
+    phoenixVillagerTrigger(vid) {
+      const v = this.state.village, s = this.state.scholar;
+      const living = (v.roster || []).filter(id => id !== vid && !(this.vpOf(id) || {}).dead);
+      if (!living.length) {
+        this.say(`🔥 ${this.displayName(vid)}'s phoenix clause stirs -- and finds no one. Their death sticks.`);
+        return false;
+      }
+      // Hold the death: the bearer is dying, not dead.
+      v.dyingLinks = v.dyingLinks || {}; v.dyingLinks[vid] = true;
+      this.npcRevokeAbility(vid, 'phoenix_clause'); // the clause is spent
+      // Devotion may volunteer before the fire picks.
+      const volunteer = this.phoenixVolunteer(living, vid);
+      if (volunteer === this.villagerId) {
+        // You volunteer for THEM -- treat as the choice beat (you choose).
+        this.phoenixLinkBeat(false, vid, volunteer, 'chosen-you');
+        this.say(`🔥 ${this.displayName(vid)} is dying -- and something in you steps toward the fire. Give yourself, or pull away? (Choose in your actions -- the fire won't wait forever.)`);
+        this.state.phoenixLink = { stage: 'choice', bearerIsPlayer: false, bearer: vid, victim: this.villagerId, deadline: (s.day || 0) + 1 };
+        return true;
+      }
+      if (volunteer) {
+        this.phoenixLinkBeat(false, vid, volunteer, 'volunteer');
+        this.phoenixResolveBurn(false, vid, volunteer, { willing: true });
+        try { delete (this.state.village.dyingLinks || {})[vid]; } catch (e) {}
+        return true;
+      }
+      // Truly random -- and you are in the pool.
+      const victim = living[Math.floor(Math.random() * living.length)];
+      if (victim === this.villagerId) {
+        this.phoenixLinkBeat(false, vid, victim, 'chosen-you');
+        this.say(`🔥 ${this.displayName(vid)} is dying -- and the fire has chosen YOU. Give yourself, or pull away? (Choose in your actions -- the fire won't wait forever.)`);
+        this.state.phoenixLink = { stage: 'choice', bearerIsPlayer: false, bearer: vid, victim: this.villagerId, deadline: (s.day || 0) + 1 };
+      } else if (this.phoenixWillProtest(victim, vid)) {
+        this.phoenixLinkBeat(false, vid, victim, 'protest');
+        this.phoenixStartStruggle(false, vid, victim, 'npc-protests');
+      } else {
+        this.phoenixLinkBeat(false, vid, victim, 'burn');
+        this.phoenixResolveBurn(false, vid, victim, {});
+        try { delete (this.state.village.dyingLinks || {})[vid]; } catch (e) {}
+      }
+      return true;
+    },
+
+    // The struggle: PLAYED, never RNG. 3 beats; each beat the protester
+    // pays 400 kcal + 1 trauma (real costs). Chosen via the self bar.
+    phoenixStartStruggle(bearerIsPlayer, bearerVid, victimVid, kind) {
+      const s = this.state.scholar;
+      // The link holds the dying at the threshold -- 1 HP, burning, not dead.
+      if (bearerIsPlayer) { s.hp = 1; s.health = 1; }
+      this.state.phoenixLink = {
+        stage: 'struggle', bearerIsPlayer, bearer: bearerVid, victim: victimVid,
+        kind, beats: 0, deadline: (s.day || 0) + 1,
+      };
+      if (kind === 'villager-protests') {
+        const vName = this.displayName(victimVid);
+        this.say(`🔥 ${vName} is fighting the link -- teeth bared, pulling away from the fire. Hold them (400 kcal + trauma per beat, 3 beats) or let them go. The fire won't wait. (Choose in your actions.)`);
+      } else if (kind === 'npc-protests') {
+        const vName = this.displayName(victimVid), bName = this.displayName(bearerVid);
+        this.say(`🔥 ${vName} is fighting ${bName}'s link -- and ${bName} is losing. Hold the link for them (400 kcal + trauma per beat, 3 beats) or let it collapse. (Choose in your actions.)`);
+      } else {
+        this.say(`🔥 You tear at the link. It holds like a hook in the chest. Hold on through 3 beats (400 kcal + trauma each) to break it -- or let go and burn. (Choose in your actions.)`);
+      }
+    },
+
+    phoenixStruggleHold() {
+      const L = this.state.phoenixLink; if (!L || L.stage !== 'struggle') return;
+      const s = this.state.scholar;
+      if ((s.kcal || 0) < 400) {
+        this.say(`🔥 You reach for the strength to hold -- and there's nothing there. Not enough fire in the blood. (${Math.round(s.kcal || 0)} kcal; need 400.)`);
+        return this.phoenixStruggleRelease('weak');
+      }
+      s.kcal -= 400;
+      try { this.recordTrauma && this.recordTrauma('phoenix-struggle'); } catch (e) {}
+      L.beats++;
+      if (L.beats >= 3) return this.phoenixStruggleWin();
+      const left = 3 - L.beats;
+      this.say(`🔥 You hold -- 400 kcal and something you'll never get back. The link strains. (${left} more beat${left > 1 ? 's' : ''}.)`);
+    },
+
+    phoenixStruggleWin() {
+      const L = this.state.phoenixLink; this.state.phoenixLink = null;
+      const s = this.state.scholar;
+      if (L.kind === 'villager-protests' || L.kind === 'npc-protests') {
+        // The protest was overpowered. The victim burns.
+        const vName = L.victim === this.villagerId ? 'you' : this.displayName(L.victim);
+        this.say(`🔥 The link wins. ${vName}'s resistance breaks -- the fire takes them. They fought every step. The village saw.`);
+        if (L.bearerIsPlayer) {
+          this.phoenixResolveBurn(true, null, L.victim, { protestBroken: true });
+        } else {
+          this.phoenixResolveBurn(false, L.bearer, L.victim, { protestBroken: true });
+          try { delete (this.state.village.dyingLinks || {})[L.bearer]; } catch (e) {}
+        }
+      } else {
+        // player-protests: you broke the bearer's link. True death for them.
+        const bName = this.displayName(L.bearer);
+        this.say(`🔥 The link SNAPS. ${bName} was holding your death -- now they're holding nothing. They die true death, and you live.`);
+        try { delete (this.state.village.dyingLinks || {})[L.bearer]; } catch (e) {}
+        this._phoenixResolving = true;
+        try {
+          this.registerDeath({
+            kind: 'villager', villagerId: L.bearer, name: bName,
+            mx: s.mx, my: s.my, cause: 'the phoenix link (broken)', killerId: null,
+            witnesses: [this.villagerId], youWitnessed: true,
+          });
+          this.removeVillager(L.bearer, 'killed');
+        } catch (e) {} finally { this._phoenixResolving = false; }
+        try { this.seedGossip('phoenix_broken', { who: this.villagerId, strong: 6 }, (this.npcIds ? this.npcIds() : []).slice(0, 3), true); } catch (e) {}
+        this.say(`The village watched you tear free. Uneasy respect -- not horror. (Gossip: you broke a phoenix link.)`);
+      }
+    },
+
+    phoenixStruggleRelease(reason) {
+      const L = this.state.phoenixLink; if (!L) return;
+      this.state.phoenixLink = null;
+      if (L.kind === 'villager-protests') {
+        // They tore free. You die true death -- the clause is spent.
+        const vName = this.displayName(L.victim);
+        this.say(`🔥 ${vName} tears free of the link -- and it snaps back into YOU. The phoenix got nothing. Your death sticks. (True death: the clause is spent.)`);
+        try { this.playerDeath('the phoenix link (broken)'); } catch (e) {}
+      } else if (L.kind === 'npc-protests') {
+        // You let the bearer's link collapse. They die; the victim lives.
+        const bName = this.displayName(L.bearer);
+        this.say(`🕊️ You let go. ${bName}'s link collapses -- they die true death, and ${this.displayName(L.victim)} lives. You chose not to hold them under.`);
+        try { delete (this.state.village.dyingLinks || {})[L.bearer]; } catch (e) {}
+        this._phoenixResolving = true;
+        try {
+          this.registerDeath({
+            kind: 'villager', villagerId: L.bearer, name: bName,
+            mx: this.state.scholar.mx, my: this.state.scholar.my,
+            cause: 'the phoenix link (released)', killerId: null,
+            witnesses: [this.villagerId], youWitnessed: true,
+          });
+          this.removeVillager(L.bearer, 'killed');
+        } catch (e) {} finally { this._phoenixResolving = false; }
+      } else {
+        // player-protests: you yielded. You burn -- and the village
+        // witnessed the coercion. Severe consequences for the bearer.
+        const bName = this.displayName(L.bearer);
+        const bearerVid = L.bearer;
+        this.say(`🔥 You let go${reason === 'weak' ? ' -- there was nothing left to hold with' : ''}. The fire takes you -- and ${bName} lives, standing in your ashes. The village watched them burn you.`);
+        try { delete (this.state.village.dyingLinks || {})[bearerVid]; } catch (e) {} // the bearer lives
+        try { this.playerDeath('the phoenix link'); } catch (e) {}
+        if (this.state.over) return;
+        // Applied AFTER succession: the office trust-transfer would
+        // otherwise overwrite the collapse (break-it 2026-10-09).
+        try {
+          const v = this.state.village;
+          v.trust[bearerVid] = 0;
+          this.seedGossip('phoenix_coercion', { who: bearerVid, cruel: -20 }, (this.npcIds ? this.npcIds() : []).slice(0, 4), false);
+          this.say(`🗡️ The village will not forget what ${bName} did. (Their standing: 0. The justice path is open.)`);
+          try { this.journalNote && this.journalNote('village', 'phoenix', bName + ' burned me via the clause. Village standing: 0.'); } catch (e) {}
+        } catch (e) {}
+      }
+    },
+
+    // The choice beat: give yourself, or pull away.
+    phoenixChooseGive() {
+      const L = this.state.phoenixLink; if (!L || L.stage !== 'choice') return;
+      const bearer = L.bearer;
+      this.state.phoenixLink = null;
+      const bName = this.displayName(bearer);
+      this.say(`🤲 You step into the link. "${bName} -- live." The fire takes you instead. Both bodies explode -- yours, and the death that was waiting for ${bName}.`);
+      try { delete (this.state.village.dyingLinks || {})[bearer]; } catch (e) {}
+      try { this.playerDeath('the phoenix link (given)'); } catch (e) {}
+      if (this.state.over) return;
+      // The village honors the sacrifice; the saved one owes a life-debt.
+      // (If the bearer inherited the mantle, the debt is owed to the village --
+      // they can't owe it to themselves.)
+      try {
+        const v = this.state.village;
+        v.trust[this.villagerId] = Math.min(100, ((v.trust || {})[this.villagerId] || 0) + 10);
+        v.lifeDebts = v.lifeDebts || {};
+        v.lifeDebts[bearer] = { owedTo: this.villagerId === bearer ? 'village' : this.villagerId, day: (this.state.scholar || {}).day || 0, reason: 'phoenix-gift' };
+        this.seedGossip('phoenix_gift', { who: bearer, brave: 12 }, (this.npcIds ? this.npcIds() : []).slice(0, 3), true);
+        this.say(`🕊️ The village honors the trade. ${bName} owes your mantle a life-debt -- recorded, remembered. (Village trust +10.)`);
+        try { this.journalNote && this.journalNote('village', 'phoenix', 'Gave myself to the link for ' + bName + '. Life-debt recorded.'); } catch (e) {}
+      } catch (e) {}
+    },
+
+    phoenixChoosePullAway() {
+      const L = this.state.phoenixLink; if (!L || L.stage !== 'choice') return;
+      this.phoenixStartStruggle(false, L.bearer, this.villagerId, 'player-protests');
+    },
+
+    // Self-bar actions while a link is pending (wired in app.js wireSelfBar).
+    phoenixLinkActions() {
+      const L = this.state.phoenixLink;
+      if (!L) return [];
+      if (L.stage === 'choice') {
+        return [
+          { id: 'phoenix:give', label: '🤲 Give yourself', hint: 'Die in their place. The village continues without you.' },
+          { id: 'phoenix:pullaway', label: '⚔️ Pull away', hint: 'Fight the link -- a played struggle, 3 beats.' },
+        ];
+      }
+      if (L.stage === 'struggle') {
+        if (L.kind === 'player-protests') {
+          return [
+            { id: 'phoenix:hold', label: '🔥 Hold on', hint: 'Resist the pull. 400 kcal + trauma per beat; 3 beats to break free.' },
+            { id: 'phoenix:letgo', label: '🕊️ Let go', hint: 'Stop fighting. You burn.' },
+          ];
+        }
+        return [
+          { id: 'phoenix:hold', label: '🔥 Hold the link', hint: 'Force it through. 400 kcal + trauma per beat; 3 beats.' },
+          { id: 'phoenix:letgo', label: '🕊️ Let them go', hint: 'Release them. The link collapses.' },
+        ];
+      }
+      return [];
+    },
+
+    phoenixLinkDo(id) {
+      if (id === 'phoenix:give') return this.phoenixChooseGive();
+      if (id === 'phoenix:pullaway') return this.phoenixChoosePullAway();
+      if (id === 'phoenix:hold') return this.phoenixStruggleHold();
+      if (id === 'phoenix:letgo') return this.phoenixStruggleRelease('choice');
+    },
+
+    // The fire doesn't wait: unchosen links resolve at dawn (1-day fuse).
+    phoenixFuseCheck() {
+      const L = this.state.phoenixLink; if (!L) return;
+      const day = (this.state.scholar || {}).day || 0;
+      if (day < (L.deadline || 0)) return;
+      if (L.stage === 'choice') {
+        this.say(`🔥 A day passed. The fire waited -- then stopped waiting. The link completes.`);
+        this.phoenixChooseGive(); // silence is consent: you burn in their place
+      } else {
+        this.say(`🔥 A day passed. The struggle went out.`);
+        this.phoenixStruggleRelease('fuse');
+      }
     },
 
     // --- telemetry: every meaningful event, with state deltas. for diagnosing playtests. ---

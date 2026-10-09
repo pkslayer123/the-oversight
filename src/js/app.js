@@ -1020,8 +1020,15 @@
       const onHaven = Game.playerTile && Game.playerTile().type === 'haven';
       if (acc === 'remote' && !onHaven) sysPantryBtn = `<button class="self-btn" data-self="syspantry" title="◈ SYSTEM requisition — the pantry manifests">◈ Pantry</button>`;
     } catch (e) {}
-    return (exileBtns || caseBtn || sysPantryBtn)
-      ? `<div class="selfbar"><span class="ctx-label">you:</span>${exileBtns}${caseBtn}${sysPantryBtn}</div>`
+    // PHOENIX LINK (Steve 2026-10-09): a pending link or struggle surfaces
+    // here -- always in reach, above the fold. A real choice, not a notice.
+    let phoenixBtns = '';
+    try {
+      const acts = Game.phoenixLinkActions ? Game.phoenixLinkActions() : [];
+      phoenixBtns = acts.map(a => `<button class="self-btn" data-self="${a.id}" title="${esc(a.hint || '')}">${esc(a.label)}</button>`).join('');
+    } catch (e) {}
+    return (exileBtns || caseBtn || sysPantryBtn || phoenixBtns)
+      ? `<div class="selfbar"><span class="ctx-label">you:</span>${exileBtns}${caseBtn}${sysPantryBtn}${phoenixBtns}</div>`
       : '';
   }
 
@@ -1037,6 +1044,7 @@
         else if (a === 'casefile') { caseFileSheetForCurrent(); }
         else if (a === 'syspantry') { pantrySheet(); }
         else if (a.indexOf('exile:') === 0) { Game.exileSelfDo(a.slice(6)); rerender(); }
+        else if (a.indexOf('phoenix:') === 0) { Game.phoenixLinkDo(a); rerender(); }
       };
     });
   }

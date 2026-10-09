@@ -61,7 +61,7 @@ Steve's directive (2026-10-07): *"Paint a path towards functional godhood. If th
 - Mid: deep_pocket_coat (torso, T2) — carry what you need to endure
 - Late: scar_tissue_wraps (hands, T3), deep_earth_boots (shoes, T3)
 - Godhood: worldroot_plate (torso full-body, T4) OR full alien armor set — walk through beams
-**How it plays:** You outlast. Sieges, winters, alien hunters — you're still standing. Weakness: you're a wall, not a weapon. Things you can't outlast (politics, betrayal) still hurt.
+**How it plays:** You outlast. Sieges, winters, alien hunters — you're still standing. But phoenix_clause isn't a free life anymore: when you would die, it burns a *random living villager* — body and all, only ash — and you crawl out of their ashes wherever they were, at 1 HP. No villagers left, no village, and your death sticks. The devoted may offer themselves; the resentful may fight the pull. Burn twice and the village judges you — earn their love or be exiled. The "Refuses Death" synergy still works (second_wind is untouched), but every phoenix has a name attached now. Weakness: you're a wall, not a weapon. Things you can't outlast (politics, betrayal) still hurt — and now your own village might be one of them.
 
 ## 5. Brawler → One-Person Army
 

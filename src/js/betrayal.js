@@ -3,6 +3,7 @@
 // description: Betrayal, accusation, trial & exile. Micro-quests disguise later betrayals; aftermath is the game.
 // provides:
 //   - betrayalState()
+//   - phoenixVillagerTrigger (delegates to game.js): removeVillager('killed') on a villager holding phoenix_clause fires the link instead of the death (bypasses: _phoenixResolving, dyingLinks) (Steve 2026-10-09)
 //   - grievanceBetween(a, b)
 //   - motiveBetween(a, b)
 //   - recordGrievance(g)
@@ -726,6 +727,17 @@
     return { ambush: true, sim: true, outcome, caseId: c.id };
   },
   removeVillager(vid, how) {
+    // PHOENIX (Steve 2026-10-09): a villager holding the clause doesn't die
+    // quietly -- the link fires instead of the death. Bypasses: ash-deaths
+    // and broken links set _phoenixResolving; dyingLinks marks a death
+    // already held by a link (don't re-trigger).
+    try {
+      if (how === 'killed' && !this._phoenixResolving &&
+          !(this.state.village.dyingLinks || {})[vid] &&
+          this.npcHasAbility && this.npcHasAbility(vid, 'phoenix_clause')) {
+        if (this.phoenixVillagerTrigger(vid)) return;
+      }
+    } catch (e) {}
     const v = this.state.village;
     // MENTORSHIP (Steve 2026-10-09): they were learning at your side, and they
     // died on your watch. That's a real social consequence — the village
