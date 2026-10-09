@@ -111,9 +111,12 @@ function meatEntry(day) {
   {
     const s = freshGame();
     const day = s.day;
+    // Bonus-aware (2026-10-09): "past the clock" means past spoilDay + the
+    // scholar's legitimate preservation bonus — isSpoiled's one boundary.
+    const b0 = Game.spoilBonusDays() || 0;
     const c = Game.registerDeath({ kind: 'monster', monsterId: 'hushwolf', monsterName: 'Hushwolf', name: 'Hushwolf', cause: 'combat', items: [meatEntry(day)] });
     nearCorpse(c);
-    s.day = day + 4; // past spoilDay (day+3), raw boundary
+    s.day = day + 4 + b0; // past spoilDay (day+3) + bonus
     Game.sweepSpoiled();
     ok('sweepSpoiled rots the carcass meat on the body', !c.items.some(i => (i.plantId || '').startsWith('meat_')));
     says.length = 0;
@@ -123,9 +126,11 @@ function meatEntry(day) {
   {
     const s = freshGame();
     const day = s.day;
-    // an EDIBLE item on a corpse, already past its clock
+    // an EDIBLE item on a corpse, already past its clock — rot under the
+    // live preservation bonus (one boundary everywhere, 2026-10-09)
+    const b0 = Game.spoilBonusDays() || 0;
     const c = Game.registerDeath({ kind: 'monster', monsterId: 'hushwolf', monsterName: 'Hushwolf', name: 'Hushwolf', cause: 'combat',
-      items: [{ name: 'Dried meat', plantId: 'dried_meat', kcalEach: 400, units: 2, edible: true, spoilDay: day, foodKind: 'meat', foodState: 'cleaned' }] });
+      items: [{ name: 'Dried meat', plantId: 'dried_meat', kcalEach: 400, units: 2, edible: true, spoilDay: day - b0 - 1, foodKind: 'meat', foodState: 'cleaned' }] });
     nearCorpse(c);
     const k0 = s.kcal || 0;
     says.length = 0;
@@ -400,15 +405,28 @@ function meatEntry(day) {
   console.log('\n-- G9. spoil-clock surfaces are live, dead giveFood stays dead --');
   {
     const s = freshGame();
+    // Bonus-robust (2026-10-09): the scholar may legitimately start with
+    // preservation_instinct (+spoilBonusDays). The clock and isSpoiled both
+    // honor it (one boundary everywhere, break-it food layer 1), so the
+    // expectations derive from the live bonus instead of assuming 0.
+    const b = Game.spoilBonusDays() || 0;
+    const expClock = (l) => l <= 0 ? 'spoiled' : (l === 1 ? 'spoils tomorrow' : `spoils in ${l}d`);
     const it = { name: 'Berries', kcalEach: 50, units: 2, spoilDay: s.day + 1 };
     const c1 = Game.stashClock(it);
     it.spoilDay = s.day + 5;
     const c2 = Game.stashClock(it);
     it.spoilDay = s.day - 1;
     const c3 = Game.stashClock(it);
-    ok('stashClock re-renders from live spoilDay', c1 === 'spoils tomorrow' && c2 === 'spoils in 5d' && c3 === 'spoiled', `${c1} / ${c2} / ${c3}`);
-    const k1 = Game.spoilClockShort({ spoilDay: s.day + 1 });
-    ok('spoilClockShort agrees with isSpoiled at the boundary', k1.includes('tomorrow') && Game.isSpoiled({ spoilDay: s.day }));
+    ok('stashClock re-renders from live spoilDay',
+      c1 === expClock(1 + b) && c2 === expClock(5 + b) && c3 === expClock(b - 1) && new Set([c1, c2, c3]).size === 3,
+      `${c1} / ${c2} / ${c3} (bonus ${b})`);
+    const k1 = Game.spoilClockShort({ spoilDay: s.day + 1 }); // left = 1+b
+    const expShort = (l) => l <= 0 ? '' : (l === 1 ? '⚠ spoils tomorrow' : (l === 2 ? 'spoils in 2d' : ''));
+    ok('spoilClockShort agrees with isSpoiled at the boundary',
+      k1 === expShort(1 + b) &&
+      Game.isSpoiled({ spoilDay: s.day - b }) === true &&
+      Game.isSpoiled({ spoilDay: s.day - b + 1 }) === false,
+      `short=${JSON.stringify(k1)} bonus=${b}`);
     const appSrc = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
     ok('app.js renders stashClock live per row', appSrc.includes('Game.stashClock(it)'));
   }

@@ -20460,6 +20460,12 @@
       // CONTRIBUTION LEDGER (grit): what they actually brought today, and what
       // was expected of them. The freeloader pipeline reads the rolling window.
       v.contribLog = v.contribLog || {};
+      // HEALTH MAP: the starvation branch below writes v.health[vid]. The
+      // drifter r6 fix inits this in villageEats, but villagerMealDay has
+      // direct callers too — init here so an unfed villager on a map-less
+      // village can't throw "Cannot set properties of undefined" (break-it
+      // food layer 3, seed 7: empty pantry + low production hit the write).
+      v.health = v.health || {};
       v.contribLog[vid] = { produced: Math.round(produced), expected: Math.round(this.villagerExpectedDaily(person, vid, v)), day: this.state.scholar.day };
       // KNOWLEDGE SPREAD (Steve 2026-10-09, tweak B): a day working the land
       // teaches. Food-skilled people learn faster; everyone learns something

@@ -151,3 +151,39 @@ modules.
 - src/js/app.js — stash Render button, Make-pemmican counter button, wiring;
   "who's pulling weight" band includes haven credit
 - scripts/test-break-food3-20261009.js — new proof test (46 asserts)
+
+## Landing addendum (coordinator, 2026-10-09 ~11:00 CDT)
+
+**Rebase, no conflicts.** Master moved during the worker run (sibling landings:
+playtest explorer r3 975b5f8, villager gear 94fa7f7, socialite r4 7447b64 +
+version bump 73e555d). Rebased the worker branch onto 73e555d cleanly; proof
+suites re-run on the new base.
+
+**Cross-loop regression hunt (the rebase caught this):** the layer-2 suite went
+red on the new base — seeds 20261009 (2 fail) and 7 (4 fail), seed 99 green.
+Root causes, all pre-existing on master, none from this worker's commit:
+
+1. **G9/G2 test fragility (test bug, not game bug).** Sibling commits shifted
+   the setup RNG stream, so the scholar now legitimately starts with
+   `preservation_instinct` (+2 spoilage days) on some seeds. The engine is
+   honest — stashClock/spoilClockShort and isSpoiled all honor the bonus (one
+   boundary everywhere, layer-1 canon). The test asserted absolute clock
+   strings ("spoils tomorrow", spoilDay=day means rot) assuming bonus=0.
+   Fixed in the TEST per the proof-test RNG stability rule: G9 expectations
+   now derive from the live `spoilBonusDays()`; G2's "past the clock" setups
+   use spoilDay/day offsets relative to the live bonus.
+2. **REAL KILL — H7. `villagerMealDay` crashed on unfed villagers when
+   `v.health` was uninitialized** ("Cannot set properties of undefined",
+   seed 7, empty pantry + low production hit the starvation write). The
+   drifter r6 fix (fe459b6) had initialized `v.health` in `villageEats` only;
+   `villagerMealDay` has direct callers and kept the unguarded
+   `v.health[vid] = ...` write. Structural fix: `v.health = v.health || {}`
+   at the top of `villagerMealDay`, next to the other ledger inits (same
+   self-init pattern as `npcNeeds`). Sibling sweep: all other `v.*[vid]`
+   writes in the meal chain are guarded; no further instances.
+
+**Final regression state (rebased branch, all green):**
+- food3 proof 46/46 × seeds 20261009, 7, 99
+- layer-1 116/116 · layer-2 42/42 × 3 seeds (post test-robustness fix)
+- villager-grit 22/22 · drifter-remote 27/27 · socialite r4 ALL GREEN × 3
+- ontology 50/50 validated
