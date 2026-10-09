@@ -1058,8 +1058,8 @@
     "attack": {
       "name": "Distress Call",
       "damage": [
-        16,
-        24
+        22,
+        34
       ],
       "telegraph": "Somewhere in the dark, a voice you know is calling your name. Crying. It sounds exactly like them. It is not them. The sound is coming from everywhere now.",
       "pattern": {
@@ -1159,8 +1159,8 @@
     "attack": {
       "name": "Confrontation",
       "damage": [
-        20,
-        30
+        28,
+        42
       ],
       "telegraph": "It turns its face toward you. The face is a mirror. You see yourself \u2014 tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.",
       "pattern": {
@@ -1270,8 +1270,8 @@
     "attack": {
       "name": "Scored Assessment",
       "damage": [
-        18,
-        28
+        25,
+        39
       ],
       "telegraph": "It hovers, projecting a grid over the ground. A calm voice: 'DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGET. COMMENCING CORRECTIVE ACTION IN THREE. TWO.' The line it is about to fire is already drawn on the dirt.",
       "pattern": {
@@ -1373,8 +1373,8 @@
     "attack": {
       "name": "Eureka",
       "damage": [
-        22,
-        34
+        31,
+        48
       ],
       "telegraph": "It sits perfectly still, glowing brighter and brighter. A beautiful idea, taking shape. You can feel the brilliance building. That's when you realize: ideas this bright are never safe to stand next to.",
       "pattern": {
@@ -1481,8 +1481,8 @@
     "attack": {
       "name": "Home Movies",
       "damage": [
-        16,
-        26
+        22,
+        36
       ],
       "telegraph": "It unfolds a screen of light between the trees. And there \u2014 impossibly \u2014 is home. Your street. Your kitchen. Someone you miss, laughing. You take a step closer without deciding to. The light has edges. The edges are sharp.",
       "pattern": {
@@ -1583,8 +1583,8 @@
     "attack": {
       "name": "The Pitch",
       "damage": [
-        14,
-        22
+        20,
+        31
       ],
       "telegraph": "No telegraph. That's the point. A phone is ringing in the trees \u2014 for you, specifically. Then the ringing STOPS. It's already moving.",
       "pattern": {
@@ -1981,8 +1981,8 @@
     "attack": {
       "name": "Your Move",
       "damage": [
-        14,
-        20
+        20,
+        28
       ],
       "telegraph": "It goes still. It is doing the thing you do before you do it.",
       "pattern": {
@@ -2073,8 +2073,8 @@
     "attack": {
       "name": "Eviction Notice",
       "damage": [
-        18,
-        26
+        25,
+        36
       ],
       "telegraph": "It hammers another sign into the dirt. The sign has your name on it. It always had your name on it.",
       "pattern": {
@@ -2169,8 +2169,8 @@
     "attack": {
       "name": "You Call That A Swing?",
       "damage": [
-        12,
-        18
+        17,
+        25
       ],
       "telegraph": "It leans in, grinning. \"Oh, this ought to be good.\"",
       "pattern": {
@@ -2261,8 +2261,8 @@
     "attack": {
       "name": "Flash Photography",
       "damage": [
-        12,
-        18
+        17,
+        25
       ],
       "telegraph": "The lens steadies. You hear the shutter think about it.",
       "pattern": {
@@ -2357,8 +2357,8 @@
     "attack": {
       "name": "Grievance Filed",
       "damage": [
-        14,
-        20
+        20,
+        28
       ],
       "telegraph": "It licks the pencil. \"Let's put this one in writing.\"",
       "pattern": {
@@ -2453,8 +2453,8 @@
     "attack": {
       "name": "Removal Notice",
       "damage": [
-        12,
-        18
+        17,
+        25
       ],
       "telegraph": "It raises the banhammer. A calm voice: 'YOUR CONTENT HAS BEEN FLAGGED. REMOVAL IMMINENT.' The air around it goes the color of a bruised screen.",
       "pattern": {
@@ -2769,8 +2769,8 @@
     "attack": {
       "name": "The Broadcast",
       "damage": [
-        12,
-        18
+        17,
+        25
       ],
       "telegraph": "The kite stops dead in the sky. It's framing the shot.",
       "pattern": {
@@ -2876,8 +2876,8 @@
     "attack": {
       "name": "The Drink",
       "damage": [
-        10,
-        16
+        14,
+        22
       ],
       "telegraph": "The whine climbs an octave and steadies \u2014 it\u2019s lining up the dive.",
       "pattern": {
@@ -2974,8 +2974,8 @@
     "attack": {
       "name": "The Latch",
       "damage": [
-        6,
-        10
+        8,
+        14
       ],
       "telegraph": "It doesn\u2019t telegraph. It\u2019s already on you \u2014 that\u2019s the telegraph.",
       "pattern": {
