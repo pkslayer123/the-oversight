@@ -11,9 +11,20 @@
 //   - seMoveMod(f)
 //   - seSteps(f)
 //   - seFizzle(f)
+//   -- DISEASE REWORK (Steve 2026-10-09) --
+//   - seIsDisease(id)
+//   - isDiagnosed(target, id)
+//   - diagnoseDisease(target, id, opts)
+//   - diseaseLabel(target, st)
+//   - diseaseDebuffs(target)
+//   - partIdx()
+//   - cureEffectFor(effectId, treatment)
+//   - easeDisease(target, effectId, parts, source)
 // rules:
 //   - single_entry: all status applications go through applyStatus — no direct field sets (code: applyStatus)
 //   - never_silent: application, ticks, expiry, and cures all narrate via say() (code: applyStatus)
+//   - symptom_only: disease apply/tick/expire text never names the disease; the legacy s.diseases mirror stores the symptom label, not the true name (code: applyStatus)
+//   - diagnosis_gated: the true name unlocks only via diagnoseDisease — medical ability, herb lore, or stethoscope (code: diagnoseDisease)
 //   - bridge: stun-family writes legacy stunned/stunFull fields; poison/disease mirror s.poisons/s.diseases (code: applyStatus)
 //   - legacy_countdown: stun-family turn countdown stays with existing consumption sites; engine tracks parallel turnsLeft (code: seTickFighter)
 //   - resistible: resistMod is read via modTarget as an apply-chance multiplier (code: applyStatus)
@@ -149,7 +160,11 @@
             var s = this.state.scholar;
             if (s && def.bridge.legacy === 'diseases') {
               s.diseases = s.diseases || [];
-              if (!existing) s.diseases.push({ name: opts.name || def.name, day: s.day });
+              // SYMPTOM-ONLY MIRROR (disease rework 2026-10-09): the legacy
+              // mirror must never carry the true disease name — nothing reads
+              // .name for display, but the symptom label is the honest value.
+              var mLabel = (def.symptomLabel || opts.name || def.name);
+              if (!existing) s.diseases.push({ name: mLabel, day: s.day });
             } else if (s && def.bridge.legacy === 'poisons') {
               s.poisons = s.poisons || [];
               if (!existing) s.poisons.push({ name: opts.name || def.name, day: s.day });
@@ -196,39 +211,68 @@
 
     // Tick statuses for a target at a scope ('combat' = per-turn, 'dayPart').
     // Applies tick damage, decrements duration, expires. Never throws.
+    // DISEASE REWORK (2026-10-09): easedUntil (treatment holding — tick halved),
+    // severe entries (east_nile escalation — deadlier tick), hydration drain
+    // from fever debuffs, lockjaw spasms, lemons chronic aftermath on expiry.
     tickStatuses: function (target, scope) {
       var list = this.seList(target);
       if (!list.length) return;
       var self = this;
       var isScholar = (target === 'scholar');
+      var pIdx = 0;
+      try { pIdx = this.partIdx ? this.partIdx() : 0; } catch (e) {}
       list.slice().forEach(function (st) {
         var def = self.seDef(st.id);
         if (!def) { self.seRemove(target, st); return; }
         var want = (scope === 'dayPart') ? 'dayPart' : 'turn';
+        var eased = !!(st.easedUntil && pIdx < st.easedUntil);
         if (def.tick && def.tick.per === want) {
-          var n = 0;
-          if (scope === 'dayPart') n = (def.tick.hp || 0) * (st.stacks || 1);
-          else n = (def.tick.combatHp != null ? def.tick.combatHp : (def.tick.hp || 0)) * (st.stacks || 1);
-          if (n > 0) {
-            try {
-              if (isScholar) {
-                var s = self.state.scholar;
+          var baseHp = (st.severe && def.severe && def.severe.tickHp != null) ? def.severe.tickHp : (def.tick.hp || 0);
+          var n = baseHp * (st.stacks || 1);
+          if (eased) n = Math.floor(n / 2);
+          var drain = (isScholar && def.debuff && def.debuff.hydrationDrain) ? def.debuff.hydrationDrain : 0;
+          try {
+            if (isScholar) {
+              var s = self.state.scholar;
+              if (n > 0) {
                 s.health = Math.max(0, (s.health || 0) - n);
-                self.say(self.seFill(def.tickText || '{name} {verb} hurting. (-{n} HP)', target, { n: n }));
-              } else if (target && typeof target === 'object') {
+                var msg = self.seFill(def.tickText || '{name} {verb} hurting. (-{n} HP)', target, { n: n });
+                if (drain > 0) msg += ' (-' + drain + ' hydration)';
+                self.say(msg);
+              } else if (eased) {
+                var sym = (def.symptomLabel || def.name || 'it').toLowerCase();
+                self.say(self.seFill('The ' + sym + ' eases a little \u2014 the treatment is holding.', target, {}));
+              }
+              if (drain > 0) s.hydration = Math.max(0, (s.hydration || 0) - drain);
+              // LOCKJAW SPASM: the wire strikes at random.
+              if (def.spasm && Math.random() < (def.spasm.chance || 0)) {
+                var sd = def.spasm.dmg || 0;
+                s.health = Math.max(0, (s.health || 0) - sd);
+                self.say(self.seFill(def.spasm.text || '{name} {verb} seizing. (-{n} HP)', target, { n: sd }));
+              }
+            } else if (target && typeof target === 'object') {
+              if (n > 0) {
                 target.hp = Math.max(0, (target.hp || 0) - n);
                 if (target.kind === 'player') {
                   try { self.state.scholar.health = Math.max(0, target.hp); } catch (e) {}
                 }
                 self.say(self.seFill(def.tickText || '{name} {verb} hurting. (-{n} HP)', target, { n: n }));
               }
-            } catch (e) {}
-          }
+            }
+          } catch (e) {}
         }
         var key = (scope === 'dayPart') ? 'dayPartsLeft' : 'turnsLeft';
         if (st[key] != null) {
           st[key] -= 1;
           if (st[key] <= 0) {
+            // LEMONS CHRONIC: untreated, it can settle into the joints.
+            try {
+              if (isScholar && def.chronic && Math.random() < (def.chronic.chance || 0)) {
+                var cs = self.state.scholar;
+                cs.chronicAchesUntil = pIdx + (def.chronic.dayParts || 0);
+                self.say(def.chronic.text || 'The joints never quite forgave you.');
+              }
+            } catch (e) {}
             self.seRemove(target, st);
             try { self.say(self.seFill(def.expireText || ('{name} {verb} no longer ' + def.name.toLowerCase() + '.'), target, {})); } catch (e) {}
           }
@@ -306,6 +350,135 @@
               this.say(this.seFill('{name} {verb} too afraid to close in — the turn slips.', f, {}));
               return true;
             }
+          }
+        }
+      } catch (e) {}
+      return false;
+    },
+
+    // ============ DISEASE REWORK (Steve 2026-10-09) ============
+    // Diseases never announce their names. Until diagnosed, a disease is its
+    // symptoms; diagnosis (medical ability, herb lore, stethoscope, or a
+    // medical villager's word) unlocks the true name, the class, and the cure.
+
+    // Absolute dayPart index for easedUntil/chronic bookkeeping.
+    partIdx: function () {
+      try {
+        var s = this.state.scholar || {};
+        return (s.day || 0) * 4 + (this.dayPart || 0);
+      } catch (e) { return 0; }
+    },
+
+    // Is this status id a disease (symptom-presented, diagnosis-gated)?
+    seIsDisease: function (id) {
+      var def = this.seDef(id);
+      return !!(def && def.symptomLabel);
+    },
+
+    // Has this disease been diagnosed on this target?
+    isDiagnosed: function (target, effectId) {
+      try {
+        if (target === 'scholar') {
+          var s = this.state.scholar || {};
+          s.diagnosed = s.diagnosed || {};
+          return !!s.diagnosed[effectId];
+        }
+        if (target && typeof target === 'object') {
+          target.diagnosed = target.diagnosed || {};
+          return !!target.diagnosed[effectId];
+        }
+      } catch (e) {}
+      return false;
+    },
+
+    // Diagnosis: unlock the true name. Narrates name + class + cure direction,
+    // records in the codex. Never throws. Returns true.
+    diagnoseDisease: function (target, effectId, opts) {
+      opts = opts || {};
+      var def = this.seDef(effectId);
+      if (!def) return false;
+      try {
+        if (target === 'scholar') {
+          var s = this.state.scholar || {};
+          s.diagnosed = s.diagnosed || {};
+          s.diagnosed[effectId] = { day: s.day || 0, by: opts.by || 'you' };
+          this.state.codex = this.state.codex || {};
+          this.state.codex.diseases = this.state.codex.diseases || {};
+          this.state.codex.diseases[effectId] = { diagnosed: s.day || 0, by: opts.by || 'you' };
+        } else if (target && typeof target === 'object') {
+          target.diagnosed = target.diagnosed || {};
+          target.diagnosed[effectId] = true;
+        }
+      } catch (e) {}
+      if (!opts.silent) {
+        try {
+          var cls = def['class'] || 'unknown';
+          var clsHint = cls === 'bacterial' ? 'Antibiotics would end it.'
+            : cls === 'parasitic' ? 'Antiparasitics would end it.'
+            : cls === 'viral' ? 'No pill touches it \u2014 rest, water, care.'
+            : 'Folk care and time.';
+          var who = (target === 'scholar' || (target && target.kind === 'player')) ? 'You' : seName(this, target);
+          this.say(who + (who === 'You' ? ' have' : ' has') + ' ' + def.name + '. ' +
+            (def.diagnosedDesc || '') + ' (' + clsHint + ')' +
+            (opts.by ? ' \u2014 diagnosed by ' + opts.by + '.' : ''));
+          try { this.audioEvent('statusCured', { id: effectId }); } catch (e2) {}
+        } catch (e) {}
+      }
+      return true;
+    },
+
+    // Display label for one status entry: symptom until diagnosed, true name after.
+    // Poison and meat-quirks show their names (identifiable phenomena).
+    diseaseLabel: function (target, st) {
+      var def = this.seDef(st.id);
+      if (!def) return { icon: '', label: st.id };
+      if (def.symptomLabel && !this.isDiagnosed(target, st.id)) {
+        return { icon: def.icon || '', label: def.symptomLabel };
+      }
+      return { icon: def.icon || '', label: def.name || st.id };
+    },
+
+    // Aggregated disease debuffs for a target: {hydrationDrain, kcalAbsorbMult, healMult, energyMult}.
+    diseaseDebuffs: function (target) {
+      var out = { hydrationDrain: 0, kcalAbsorbMult: 1, healMult: 1, energyMult: 1 };
+      try {
+        var list = this.seList(target);
+        for (var i = 0; i < list.length; i++) {
+          var def = this.seDef(list[i].id);
+          if (!def || !def.debuff) continue;
+          var db = def.debuff;
+          out.hydrationDrain += (db.hydrationDrain || 0);
+          if (db.kcalAbsorbMult) out.kcalAbsorbMult *= db.kcalAbsorbMult;
+          if (db.healMult) out.healMult *= db.healMult;
+          if (db.energyMult) out.energyMult *= (list[i].severe ? Math.min(db.energyMult, 0.5) : db.energyMult);
+        }
+        // LEMONS CHRONIC: the joints remember.
+        if (target === 'scholar') {
+          var s = this.state.scholar || {};
+          var pIdx = this.partIdx();
+          if (s.chronicAchesUntil && pIdx < s.chronicAchesUntil) out.energyMult *= 0.9;
+        }
+      } catch (e) {}
+      return out;
+    },
+
+    // Cure-table lookup: 'cure' | 'ease' | 'support' | 'no' (+ folk: 'slow'|'none').
+    cureEffectFor: function (effectId, treatment) {
+      var def = this.seDef(effectId);
+      if (!def || !def.cure) return 'no';
+      return def.cure[treatment] || 'no';
+    },
+
+    // Ease a disease entry: halve its tick for `parts` dayParts. Narrates.
+    easeDisease: function (target, effectId, parts, source) {
+      try {
+        var list = this.seList(target);
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].id === effectId) {
+            var until = this.partIdx() + (parts || 2);
+            list[i].easedUntil = Math.max(list[i].easedUntil || 0, until);
+            if (source) this.say(this.seFill('{name} {verb} eased a little \u2014 ' + source + '.', target, {}));
+            return true;
           }
         }
       } catch (e) {}

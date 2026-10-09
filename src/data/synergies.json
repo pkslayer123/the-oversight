@@ -1526,4 +1526,30 @@
     "tease1": "Your skin itched. Then it... hardened?",
     "tease2": "You moved fast, and the armor moved with you. Like weather."
   }
-}]
+},
+  {
+    "id": "fevers_end",
+    "name": "Fever's End",
+    "requires": [
+      "field_medicine",
+      "herbal_remedy"
+    ],
+    "minLevel": 3,
+    "modifiers": [],
+    "flags": [
+      "true_cure"
+    ],
+    "flavor": "You don't treat symptoms anymore. You end sickness.",
+    "discovery": "\"The field kit AND the herbs?! In the SAME master hands?! The sponsors are calling it 'vertical integration' and the gamblers are calling it IMMORTALITY! DOCTOR! DOCTOR!\"",
+    "discovery_method": {
+      "type": "sequential",
+      "order": [
+        "field_medicine",
+        "herbal_remedy"
+      ],
+      "hint": "Treat the wound first, then brew the tea. Both must be truly mastered — dabblers need not apply.",
+      "tease1": "The poultice and the tea stopped feeling like two treatments. They felt like one long motion.",
+      "tease2": "You reached for the herbs before the bandage was even tied. Your hands already knew the whole cure. One more, and it's not practice anymore — it's just what you do."
+    }
+  }
+]

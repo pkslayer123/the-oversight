@@ -1,6 +1,6 @@
 [
   {
-    "description": "Stop bleeding, set bones, treat infection. Your hands remember the ER.",
+    "description": "Stop bleeding, set bones, treat infection. Your hands remember the ER. Diagnose the sick at a glance; deepened, your care turns even the severe cases.",
     "id": "triage",
     "modifiers": [
       {
@@ -1381,7 +1381,7 @@
     "id": "field_medicine",
     "name": "Field Medicine",
     "pool": "care",
-    "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part). Real wounds only \u2014 Blood Price cuts are missing mass and knit ~10 a night.",
+    "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part). Treat wound sickness; deepened, you can work on others and read infection unnamed. Real wounds only \u2014 Blood Price cuts are missing mass and knit ~10 a night.",
     "modifiers": [],
     "unlock": {
       "type": "granted"
@@ -1397,7 +1397,7 @@
     "id": "herbal_remedy",
     "name": "Herbal Remedy",
     "pool": "care",
-    "description": "You know which plants draw fever out. Cure disease.",
+    "description": "You know which plants draw fever out. Treat the sick \u2014 cure some sicknesses outright, ease others; the proud ones need a name first. Master it and they won't.",
     "modifiers": [],
     "unlock": {
       "type": "granted"

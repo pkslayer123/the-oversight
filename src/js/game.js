@@ -108,6 +108,12 @@
     { id: 'can_corn', name: 'Canned corn', kcal: 550, kg: 0.4, text: 'The label is gone. The corn doesn\'t care.' },
     { id: 'can_soup', name: 'Canned soup', kcal: 450, kg: 0.35, text: 'Chicken soup. Tastes like before.' },
     { id: 'jar_peaches', name: 'Jarred peaches', kcal: 700, kg: 0.5, text: 'Home-canned. Whoever sealed this knew what they were doing.' },
+    // MEDICINE (disease rework, Steve 2026-10-09): rare and SPECIFIC. A
+    // medicine cabinet survives here and there. Antibiotics kill bacterial;
+    // antiparasitics kill parasitic. Nothing here touches a virus. The label
+    // says what it kills — and, by omission, what it doesn't.
+    { id: 'med_antibiotics', name: 'Antibiotics (amoxicillin)', kcal: 0, kg: 0.1, rare: true, medType: 'antibiotics', doses: 3, text: 'A rattling bottle, seal intact. For bacterial infections. Read the label.' },
+    { id: 'med_antiparasitic', name: 'Antiparasitic (mebendazole)', kcal: 0, kg: 0.1, rare: true, medType: 'antiparasitic', doses: 3, text: 'Foil blister pack, unbroken. For worms and gut parasites. Only for those.' },
   ];
   // ARRIVAL TEXT (Steve 2026-10-07): migrated to src/data/arrivalText.json.
   // Regions can override per-tile flavor via regionOverrides. See arrivalPoolFor().
@@ -6090,7 +6096,11 @@
         // finite pantry: 3-5 cans, scaled by landing zone. the houses feed you until they don't.
         const nLoot = Math.max(1, Math.round((3 + Math.floor(R() * 3)) * P.lootMult));
         tiles[ry3][rx3].loot = [];
-        for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(SCAVENGED[Math.floor(R() * SCAVENGED.length)].id);
+        // MEDICINE (disease rework 2026-10-09): rare, specific — never in the
+        // common pool. 8% of ruins hide a medicine cabinet.
+        const commonLoot = SCAVENGED.filter(x => !x.rare);
+        for (let i = 0; i < nLoot; i++) tiles[ry3][rx3].loot.push(commonLoot[Math.floor(R() * commonLoot.length)].id);
+        if (R() < 0.08) tiles[ry3][rx3].loot.push(R() < 0.5 ? 'med_antibiotics' : 'med_antiparasitic');
       }
       // stock: rich ground gives more pulls. number of times depends on the biome and landing zone.
       // (computed inline — this.map doesn't exist yet during gen)
@@ -7945,6 +7955,8 @@
     isUsable(item) {
       const name = (item.name || '').toLowerCase();
       if (name.includes('first aid') || name.includes('bandage') || name.includes('medicine')) return true;
+      // DISEASE REWORK (2026-10-09): ruin-found medicine is usable (dosed).
+      if (item && item.medType) return true;
       // ALIEN HEALING (Steve 2026-10-05): items with healAmount are usable.
       const def = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
       if (def && def.healAmount) return true;
@@ -7969,6 +7981,486 @@
       return true;
     },
 
+    // ============ DISEASE REWORK (Steve 2026-10-09) ============
+    // Diseases never announce themselves — only symptoms. Diagnosis (medical
+    // ability, herb lore, stethoscope, or a medical villager's word) unlocks
+    // the true name, the class, and the cure direction. Cures are tiered per
+    // disease: some need real medicine, some need herbs, some need a name
+    // first. Folk remedies are tryable by anyone, with honest uncertainty.
+
+    // sickDiseases(): active disease entries on the scholar (engine entries).
+    sickDiseases() {
+      try {
+        const list = this.seList ? this.seList('scholar') : [];
+        return list.filter(e => this.seIsDisease && this.seIsDisease(e.id));
+      } catch (e) { return []; }
+    },
+
+    // contractDisease(effectId, opts): the single contraction path for real
+    // diseases. Symptom-only narration comes from the def's applyText.
+    // Handles east_nile severe escalation.
+    contractDisease(effectId, opts) {
+      opts = opts || {};
+      const ok = this.applyStatus('scholar', effectId, opts);
+      if (!ok) return false;
+      try {
+        const def = this.seDef(effectId);
+        const entry = (this.seList('scholar') || []).find(e => e.id === effectId);
+        if (def && def.severe && entry && !entry.severe && Math.random() < (def.severe.chance || 0)) {
+          entry.severe = true;
+          this.say(this.seFill(def.severe.text, 'scholar', {}));
+        }
+      } catch (e) {}
+      return true;
+    },
+
+    // canDiagnose(): medical ability, herb lore (skill/occupation), or a stethoscope.
+    canDiagnose() {
+      try {
+        if (this.hasAbility('triage') || this.hasAbility('field_medicine') || this.hasAbility('herbal_remedy')) return true;
+        if (this.herbKnown && this.herbKnown()) return true;
+        if (this.hasItem && this.hasItem('stethoscope')) return true;
+      } catch (e) {}
+      return false;
+    },
+
+    // diagnoseOdds(): base + medical abilities + stethoscope + herb lore.
+    diagnoseOdds() {
+      let o = 0.45;
+      try {
+        if (this.hasAbility('triage')) o += 0.15;
+        if (this.hasAbility('field_medicine')) o += 0.15;
+        if (this.hasAbility('herbal_remedy')) o += 0.10;
+        if (this.herbKnown && this.herbKnown()) o += 0.10;
+        if (this.hasItem && this.hasItem('stethoscope')) o += 0.10;
+      } catch (e) {}
+      return Math.min(0.95, o);
+    },
+
+    // examineSick(vid): examine yourself (default) or a sick villager.
+    // Diagnosis unlocks the true name; failure leaves symptoms only.
+    examineSick(vid) {
+      if (this.over) return null;
+      if (!this.canDiagnose()) {
+        this.say('You look them over and see... a sick person. Fever, aches \u2014 you don\'t have the training to read more than that. (Examining takes medical knowledge: triage, field medicine, herbal remedy, herb lore, or a stethoscope.)');
+        return null;
+      }
+      // ACTION CLOCK: a real examination takes a while.
+      // TRIAGE L2 (advanced healer path): you diagnose at a glance.
+      const glance = this.abilityLevel && this.abilityLevel('triage') >= 2;
+      this.tickAction(glance ? 16 : 32);
+      if (!vid) {
+        const sick = this.sickDiseases();
+        if (!sick.length) { this.say('You\'re not sick. Nothing to examine.'); return null; }
+        sick.sort((a, b) => (b.dayPartsLeft || 0) - (a.dayPartsLeft || 0));
+        const entry = sick[0];
+        const def = this.seDef(entry.id);
+        if (this.isDiagnosed('scholar', entry.id)) {
+          this.say(`You check yourself over. Still ${def.name} \u2014 ${(def.symptoms || []).join(', ').toLowerCase()}. ${def.diagnosedDesc || ''}`);
+          return null;
+        }
+        if (glance || Math.random() < this.diagnoseOdds()) {
+          if (glance) this.say('One look. You\'ve seen enough sickness to read it at a glance.');
+          this.diagnoseDisease('scholar', entry.id, { by: 'you' });
+          this.markDiseaseKnown(entry.id);
+        } else {
+          const sym = (def.symptoms || ['fever', 'aches']).join(', ').toLowerCase();
+          this.say(`You press your wrist to your forehead, check your pulse, look at your tongue. ${sym[0].toUpperCase() + sym.slice(1)}. Beyond that \u2014 you can't place it. Rest, clean water, the general things. That's what you know.`);
+        }
+        return null;
+      }
+      const v = this.state.village || {};
+      const rec = (v.sick || {})[vid];
+      if (!rec) { this.say('They\'re not sick.'); return null; }
+      let first = 'They';
+      try { const p = this.getPerson(vid); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
+      if (rec.diagnosed) { this.say(`${first} is still down with ${rec.diagnosed}. Rest and fluids.`); return null; }
+      const vecMap = { 'wound fever': 'wound_fever', 'gut rot': 'gutrot', 'tick fever': 'lemons' };
+      const did = vecMap[rec.name] || null;
+      if (did && Math.random() < this.diagnoseOdds()) {
+        const ddef = this.seDef(did);
+        rec.diagnosed = ddef.name;
+        this.markDiseaseKnown(did);
+        try { if (this.remember) this.remember(vid, 'diagnosed', ddef.name + ' \u2014 you named it'); } catch (e) {}
+        const medHint = ddef['class'] === 'bacterial' ? ', and antibiotics if we had them' : ddef['class'] === 'parasitic' ? ', and the right pills if we had them' : '';
+        this.say(`You examine ${first} properly \u2014 pulse, eyes, the rash, the smell of it. "${ddef.name}." You've seen this. Rest, fluids${medHint}.`);
+      } else {
+        const sym = rec.name === 'gut rot' ? 'cramping, doubled up' : rec.name === 'wound fever' ? 'feverish, a wound gone hot' : 'achy and wrung out';
+        this.say(`You look ${first} over. ${sym[0].toUpperCase() + sym.slice(1)}. You can't name it \u2014 but rest and clean water never hurt.`);
+      }
+      return null;
+    },
+
+    // tendVillager(vid): sit with a sick villager. Care helps; skill helps more.
+    tendVillager(vid) {
+      const v = this.state.village || {};
+      const rec = (v.sick || {})[vid];
+      if (!rec) { this.say('They\'re not sick.'); return null; }
+      this.tickAction(32);
+      let first = 'They';
+      try { const p = this.getPerson(vid); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
+      const skilled = this.hasAbility('herbal_remedy') || this.hasAbility('field_medicine') || this.hasAbility('triage');
+      if (skilled) {
+        rec.daysLeft = Math.max(1, (rec.daysLeft || 3) - 2);
+        rec.severity = Math.max(1, (rec.severity || 1) - 1);
+        this.say(`You tend ${first} properly \u2014 cool cloth, the right tea, watching the breathing. They rest easier. (Skilled care: recovery shortened.)`);
+      } else {
+        rec.daysLeft = Math.max(1, (rec.daysLeft || 3) - 1);
+        this.say(`You sit with ${first} \u2014 cool cloth, water when they wake. It's not medicine, but it's not nothing.`);
+      }
+      return null;
+    },
+
+    // folkRemedy(kind): 'rest' | 'fluids' | 'tea' | 'fast'. Anyone can try.
+    // Uncertain efficacy \u2014 the player is TRYING things, not curing by menu.
+    folkRemedy(kind) {
+      if (this.over) return null;
+      const sick = this.sickDiseases();
+      if (!sick.length) { this.say('You\'re not sick.'); return null; }
+      const folkOf = (id) => { const d = this.seDef(id); return (d && d.cure && d.cure.folk) || 'none'; };
+      const slowRoll = (id, chance, why) => {
+        const list = this.seList('scholar');
+        const e = list.find(x => x.id === id);
+        if (e && Math.random() < chance) {
+          e.dayPartsLeft = Math.max(1, (e.dayPartsLeft || 1) - 2);
+          this.say(why);
+          return true;
+        }
+        return false;
+      };
+      if (kind === 'rest') {
+        this.tickAction(32);
+        let helped = false;
+        for (const e of sick) {
+          if (folkOf(e.id) === 'slow') helped = slowRoll(e.id, 0.35, 'You rest \u2014 really rest, the kind where the body does its work. Something in you turns a corner.') || helped;
+        }
+        if (!helped) this.say('You rest. It doesn\'t touch this \u2014 whatever this is, rest alone won\'t move it.');
+      } else if (kind === 'fluids') {
+        const s = this.state.scholar;
+        const idx = (s.water || []).findIndex(b => b.quality === 'clean');
+        if (idx === -1) { this.say('No clean water to drink. (Fluids need clean water \u2014 boil it first.)'); return null; }
+        s.water.splice(idx, 1);
+        s.hydration = Math.min(100, (s.hydration || 0) + 25);
+        this.tickAction(8);
+        this.say('You drink deep, slow, a full liter of clean water. The fever has something to sweat out.');
+        for (const e of sick) {
+          this.easeDisease('scholar', e.id, 2, null);
+          if (e.id === 'gutrot') slowRoll(e.id, 0.5, 'The water stays down this time. The cramps ease off a notch \u2014 fluids are half the battle with gut rot.');
+        }
+      } else if (kind === 'tea') {
+        const s = this.state.scholar;
+        const inv = s.inventory || [];
+        const herbIdx = inv.findIndex(i => (i.units || 0) > 0 && i.plantId && !String(i.plantId).startsWith('meat_'));
+        if (herbIdx === -1) { this.say('Nothing green to brew. (Bitter tea needs plant matter \u2014 forage something leafy.)'); return null; }
+        const herb = inv[herbIdx];
+        const pdef = (this.data.plants || []).find(p => p.id === herb.plantId) || {};
+        const medicinal = !!pdef.medicinal;
+        herb.units -= 1;
+        if (herb.units <= 0) inv.splice(herbIdx, 1);
+        this.tickAction(16);
+        if (medicinal) {
+          this.say(`You brew the ${pdef.name || 'bitter leaves'} dark and drink it down. It's awful. Awful is often medicine.`);
+          for (const e of sick) { this.easeDisease('scholar', e.id, 3, null); slowRoll(e.id, 0.4, 'The tea does real work \u2014 you can feel the fever giving ground.'); }
+        } else {
+          this.say('You chew bitter leaves and brew what you can. Folk wisdom, emphasis on the folk. You hope.');
+          for (const e of sick) { this.easeDisease('scholar', e.id, 1, null); }
+        }
+      } else if (kind === 'fast') {
+        const s = this.state.scholar;
+        s.kcal = Math.max(0, (s.kcal || 0) - 50);
+        this.tickAction(16);
+        this.say('You fast \u2014 nothing but water. An empty gut rests.');
+        let helped = false;
+        for (const e of sick) {
+          if (['gutrot', 'wound_fever', 'disease'].includes(e.id)) helped = slowRoll(e.id, 0.4, 'The empty gut rests, and the sickness loses ground it was holding.') || helped;
+        }
+        if (!helped) this.say('Hunger gnaws. The sickness doesn\'t care.');
+      }
+      return null;
+    },
+
+    // treatDisease(abilityId): ability-gated treatment. Tiered per the
+    // disease's cure table; strong cures need diagnosis first \u2014 otherwise
+    // they downgrade to easing symptoms.
+    treatDisease(abilityId) {
+      if (this.over) return null;
+      if (!this.hasAbility(abilityId)) { this.say('You don\'t have that training.'); return null; }
+      const s = this.state.scholar;
+      const sick = this.sickDiseases();
+      if (!sick.length) { this.say('Not sick.'); return null; }
+      const dayKey = (s.day || 0) + '-' + abilityId;
+      if (s.treatDayKey === dayKey) { this.say('Already treated today \u2014 the body can only take so much doctoring.'); return null; }
+      s.treatDayKey = dayKey;
+      this.tickAction(32);
+      const abName = abilityId === 'herbal_remedy' ? 'Herbal remedy' : abilityId === 'field_medicine' ? 'Field medicine' : 'Triage';
+      // ADVANCED HEALER PATH (Steve 2026-10-09): disease cure is EARNED.
+      // L3 herbalist reads sickness like a book (no diagnosis needed); L3
+      // field medicine knows infection (bacterial yields unnamed); L3 triage
+      // turns even severe cases; Fever's End (the synergy) ends all of it.
+      const trueCure = this.hasSynergy && this.hasSynergy('fevers_end');
+      const herbL3 = abilityId === 'herbal_remedy' && this.abilityLevel('herbal_remedy') >= 3;
+      const triageL3 = abilityId === 'triage' && this.abilityLevel('triage') >= 3;
+      const easeParts = (abilityId === 'herbal_remedy' && this.abilityLevel('herbal_remedy') >= 2) ? 5 : 3;
+      for (const e of sick) {
+        const def = this.seDef(e.id);
+        let eff = this.cureEffectFor(e.id, abilityId);
+        const diagnosed = this.isDiagnosed('scholar', e.id);
+        const fieldL3 = abilityId === 'field_medicine' && this.abilityLevel('field_medicine') >= 3 && def['class'] === 'bacterial';
+        const namedHealer = herbL3 || fieldL3 || triageL3 || trueCure;
+        if (trueCure && (eff === 'ease' || eff === 'support')) eff = 'cure';
+        else if (triageL3 && eff === 'support') eff = 'cure';
+        else if (def.cure.needsDiagnosis && !diagnosed && !namedHealer && (eff === 'cure' || eff === 'support')) eff = 'ease';
+        if (eff === 'cure') {
+          this.cureStatus('scholar', e.id, abName.toLowerCase());
+          this.say(`${abName}: ${this.treatFlavor(abilityId, def, true)}${trueCure ? ' (Fever\'s End: you don\'t treat symptoms anymore.)' : ''}`);
+        } else if (eff === 'support') {
+          this.easeDisease('scholar', e.id, 9999, null);
+          this.say(`${abName}: the fever is managed \u2014 fluids, cool cloth, watching through the night. (Supportive care: fever held down for the duration.)`);
+        } else if (eff === 'ease') {
+          this.easeDisease('scholar', e.id, easeParts, null);
+          if (def.cure.needsDiagnosis && !diagnosed && !namedHealer)
+            this.say(`${abName}: you don't know what you're treating, so you treat the symptoms \u2014 the fever eases, but the sickness holds. (Diagnose it to cure it.)`);
+          else
+            this.say(`${abName}: ${this.treatFlavor(abilityId, def, false)}`);
+        } else {
+          this.say(`${abName}: ${this.treatNoFlavor(abilityId, def)}`);
+        }
+      }
+      return null;
+    },
+
+    treatFlavor(abilityId, def, cured) {
+      const nm = (def.symptomLabel || def.name || 'it').toLowerCase();
+      if (abilityId === 'herbal_remedy')
+        return cured ? `the right plants, brewed dark \u2014 the ${nm} breaks and doesn't come back.` : `bitter tea, steam, rest \u2014 the ${nm} loosens its grip.`;
+      if (abilityId === 'field_medicine')
+        return cured ? `clean the wound, poultice it, bind it right \u2014 the sickness has nowhere left to stand.` : `clean dressings, careful watching \u2014 the body gets its chance.`;
+      return cured ? `assess, prioritize, act \u2014 the ER in your hands ends it.` : `stabilize, monitor, keep them breathing \u2014 textbook triage.`;
+    },
+    treatNoFlavor(abilityId, def) {
+      const cls = def['class'];
+      if (cls === 'viral') return `this isn't touched by ${abilityId === 'herbal_remedy' ? 'herbs' : 'doctoring'} \u2014 it's viral. Rest, water, time. That's the whole pharmacy.`;
+      return `this doesn't yield to ${abilityId === 'herbal_remedy' ? 'herbs' : 'field care'} \u2014 wrong tool for this sickness.`;
+    },
+
+    // useMedicine(kind): 'antibiotics' | 'antiparasitic'. Ruin-found, rare,
+    // specific: antibiotics kill bacterial, antiparasitics kill parasitic.
+    // Undiagnosed use is a gamble \u2014 the UI warns, the pills don't care.
+    useMedicine(kind) {
+      if (this.over) return null;
+      const s = this.state.scholar;
+      const inv = s.inventory || [];
+      const idx = inv.findIndex(i => i.medType === kind && (i.doses || 0) > 0);
+      if (idx === -1) { this.say('None left.'); return null; }
+      const sick = this.sickDiseases();
+      if (!sick.length) { this.say('You\'re not sick \u2014 save the pills. They\'re rarer than food.'); return null; }
+      const item = inv[idx];
+      item.doses -= 1;
+      if (item.doses <= 0) inv.splice(idx, 1);
+      this.tickAction(8);
+      const cls = kind === 'antibiotics' ? 'bacterial' : 'parasitic';
+      const kindName = kind === 'antibiotics' ? 'antibiotics' : 'antiparasitic';
+      sick.sort((a, b) => {
+        const da = this.isDiagnosed('scholar', a.id) ? 1 : 0, db = this.isDiagnosed('scholar', b.id) ? 1 : 0;
+        return db - da || (b.dayPartsLeft || 0) - (a.dayPartsLeft || 0);
+      });
+      const e = sick[0];
+      const def = this.seDef(e.id);
+      const diagnosed = this.isDiagnosed('scholar', e.id);
+      if (!diagnosed) this.say(`You dry-swallow the ${kindName}. You're guessing \u2014 nobody's named this sickness yet.`);
+      const eff = this.cureEffectFor(e.id, kind);
+      const matchClass = def['class'] === cls || def['class'] === 'fever';
+      if (eff === 'cure' && matchClass) {
+        this.cureStatus('scholar', e.id, kindName);
+        this.say(diagnosed
+          ? `The ${kindName} do exactly what they're for. The ${def.name.toLowerCase()} breaks within the day.`
+          : `The ${kindName} work anyway \u2014 the body doesn't need the name. The sickness breaks.`);
+      } else if (eff === 'ease' && matchClass) {
+        this.easeDisease('scholar', e.id, 3, null);
+        this.say(`The ${kindName} take the edge off, but don't end it.`);
+      } else {
+        this.say(`Nothing. Wrong medicine \u2014 ${def['class'] === 'viral' ? 'no pill touches a virus' : 'this isn\'t ' + cls}. The dose is gone. (Specificity matters: diagnose first, or guess.)`);
+      }
+      return null;
+    },
+
+    // sickRestTick(via): real rest helps the slow-folk diseases. Called by sleep().
+    sickRestTick(via) {
+      try {
+        for (const e of this.sickDiseases()) {
+          const def = this.seDef(e.id);
+          if (def && def.cure && def.cure.folk === 'slow' && Math.random() < 0.25) {
+            const list = this.seList('scholar');
+            const en = list.find(x => x.id === e.id);
+            if (en) {
+              en.dayPartsLeft = Math.max(1, (en.dayPartsLeft || 1) - 2);
+              this.say(`You sleep the sick sleep \u2014 deep, sweating, healing. Something in you turns a corner. (${via})`);
+            }
+          }
+        }
+      } catch (e) {}
+    },
+
+    // diseaseVectorTick(): called from advancePart. The world infects \u2014
+    // mosquitoes at dusk near still water, wounds gone wrong, ticks in the brush.
+    diseaseVectorTick() {
+      if (this.over) return;
+      try {
+        const s = this.state.scholar;
+        // MOSQUITOES: wetlands at dusk/night bite.
+        let wet = false;
+        try {
+          const t = this.playerTile();
+          wet = !!(t && (t.type === 'wetland' || t.type === 'swamp'));
+        } catch (e) {}
+        if (wet && this.dayPart >= 2 && Math.random() < 0.10) {
+          if (Math.random() < 0.6) this.contractDisease('eurika', { source: 'the dusk mosquitoes' });
+          else this.contractDisease('east_nile', { source: 'the dusk mosquitoes' });
+        }
+        // WOUNDS: low health means open cuts \u2014 they infect.
+        if ((s.health || 100) < 40 && !this.hasStatus('scholar', 'wound_fever') && !this.hasStatus('scholar', 'lockjaw')) {
+          const r = Math.random();
+          if (r < 0.12) this.contractDisease('wound_fever', { source: 'a cut gone wrong' });
+          else if (r < 0.16) this.contractDisease('lockjaw', { source: 'a dirty cut' });
+        }
+      } catch (e) {}
+    },
+
+    // villagerDiagnosisTick(): a medical villager at haven may name your sickness.
+    villagerDiagnosisTick() {
+      try {
+        const und = this.sickDiseases().filter(e => !this.isDiagnosed('scholar', e.id));
+        if (!und.length) return;
+        if (!this.playerAtHaven || !this.playerAtHaven()) return;
+        const v = this.state.village || {};
+        const med = (v.roster || []).find(id => {
+          if (id === this.villagerId) return false;
+          let p = null;
+          try { p = this.getPerson(id); } catch (e) {}
+          if (!p || p.dead) return false;
+          const occ = String(p.formerOccupation || '').toLowerCase();
+          return /nurse|medic|doctor|paramedic|midwife|veterinarian|pharmacist|herbalist|dentist/i.test(occ);
+        });
+        if (!med || Math.random() > 0.4) return;
+        let first = 'Someone';
+        try { const p = this.getPerson(med); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
+        const e = und[0];
+        const def = this.seDef(e.id);
+        const tell = def.id === 'lemons' ? ', the ringed rash' : def.id === 'lockjaw' ? ', the jaw' : '';
+        this.say(`${first} takes one look at you and frowns. "Let me see." Pulse, eyes, tongue${tell}. "${def.name}. I've seen it."`);
+        this.diagnoseDisease('scholar', e.id, { by: first });
+        this.markDiseaseKnown(e.id);
+      } catch (e) {}
+    },
+
+    // afflictionChips(): status-panel chips \u2014 symptoms until diagnosed.
+    afflictionChips() {
+      try {
+        const list = this.seList ? this.seList('scholar') : [];
+        const out = [];
+        for (const e of list) {
+          const def = this.seDef(e.id);
+          if (!def || !(def.scope || []).includes('scholar')) continue;
+          const dl = this.diseaseLabel('scholar', e);
+          out.push({ id: e.id, icon: dl.icon, label: dl.label,
+                     diagnosed: this.isDiagnosed('scholar', e.id),
+                     severe: !!e.severe, stacks: e.stacks || 1 });
+        }
+        return out;
+      } catch (e) { return []; }
+    },
+
+    // markDiseaseKnown(id): word of mouth \u2014 a named disease enters the
+    // village's shared knowledge. Villagers reference it by name from here.
+    markDiseaseKnown(id) {
+      try {
+        const v = this.state.village || {};
+        v.knownDiseases = v.knownDiseases || {};
+        v.knownDiseases[id] = true;
+      } catch (e) {}
+    },
+    villageKnowsDisease(id) {
+      try { return !!((this.state.village || {}).knownDiseases || {})[id]; } catch (e) { return false; }
+    },
+
+    // campHealerName(): who in this camp can actually doctor? The player with
+    // a care ability, else a medical villager, else null. A camp WITH a
+    // healer feels different from one without \u2014 this is the check.
+    campHealerName() {
+      try {
+        if (this.hasAbility('triage') || this.hasAbility('field_medicine') || this.hasAbility('herbal_remedy')) return 'You';
+        const v = this.state.village || {};
+        for (const id of (v.roster || [])) {
+          if (id === this.villagerId) continue;
+          let p = null;
+          try { p = this.getPerson(id); } catch (e) {}
+          if (!p || p.dead) continue;
+          const occ = String(p.formerOccupation || '').toLowerCase();
+          if (/nurse|medic|doctor|paramedic|midwife|veterinarian|pharmacist|herbalist|dentist/i.test(occ)) {
+            return String(p.name || 'Someone').split(' ')[0];
+          }
+        }
+      } catch (e) {}
+      return null;
+    },
+
+    // villagerDiseaseId(rec): map the light-sim vector to a real disease id.
+    villagerDiseaseId(rec) {
+      const m = { 'wound fever': 'wound_fever', 'gut rot': 'gutrot', 'tick fever': 'lemons' };
+      return (rec && m[rec.name]) || null;
+    },
+
+    // treatVillager(vid, abilityId): work on someone else. PARITY \u2014 the
+    // village runs on division of knowledge, and a healer's hands are the
+    // scarcest knowledge there is. Requires L2 (steady enough to work on
+    // someone else) and costs 150 kcal \u2014 food becomes healing.
+    treatVillager(vid, abilityId) {
+      if (this.over) return null;
+      if (!this.hasAbility(abilityId)) { this.say('You don\'t have that training.'); return null; }
+      if (this.abilityLevel(abilityId) < 2) {
+        this.say('You\'re not steady enough to work on someone else yet \u2014 deepen it to L2 first. (Practice on yourself.)');
+        return null;
+      }
+      const v = this.state.village || {};
+      const rec = (v.sick || {})[vid];
+      if (!rec) { this.say('They\'re not sick.'); return null; }
+      const s = this.state.scholar;
+      if ((s.kcal || 0) < 150) { this.say('Too hungry to give \u2014 healing burns food, and you\'re running on empty. Eat first. (Treating another costs 150 kcal.)'); return null; }
+      s.kcal -= 150;
+      this.tickAction(32);
+      let first = 'They';
+      try { const p = this.getPerson(vid); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
+      const did = this.villagerDiseaseId(rec);
+      const abName = abilityId === 'herbal_remedy' ? 'Herbal remedy' : abilityId === 'field_medicine' ? 'Field medicine' : 'Triage';
+      if (!did) {
+        rec.daysLeft = Math.max(1, (rec.daysLeft || 3) - 2);
+        this.say(`${abName} on ${first}: you do what you can. They rest easier.`);
+      } else {
+        const def = this.seDef(did);
+        let eff = this.cureEffectFor(did, abilityId);
+        const diagnosed = !!rec.diagnosed || this.villageKnowsDisease(did);
+        const trueCure = this.hasSynergy && this.hasSynergy('fevers_end');
+        const herbL3 = abilityId === 'herbal_remedy' && this.abilityLevel('herbal_remedy') >= 3;
+        if (trueCure && eff !== 'no' && eff !== 'cure') eff = 'cure';
+        if (def.cure.needsDiagnosis && !diagnosed && !(herbL3 || trueCure) && (eff === 'cure' || eff === 'support')) eff = 'ease';
+        if (eff === 'cure') {
+          delete v.sick[vid];
+          this.markDiseaseKnown(did);
+          try { if (this.remember) this.remember(vid, 'cured', 'cured of ' + def.name + ' by you'); } catch (e) {}
+          try { if (this.nvTrust) this.nvTrust(vid, 4); } catch (e) {}
+          this.say(`${abName} on ${first}: ${this.treatFlavor(abilityId, def, true)} ${first} is going to make it. (Cured \u2014 and the camp saw it.)`);
+        } else if (eff === 'support' || eff === 'ease') {
+          rec.daysLeft = Math.max(1, (rec.daysLeft || 3) - 2);
+          rec.severity = Math.max(1, (rec.severity || 1) - 1);
+          this.say(`${abName} on ${first}: ${this.treatFlavor(abilityId, def, false)}`);
+        } else {
+          this.say(`${abName} on ${first}: ${this.treatNoFlavor(abilityId, def)}`);
+        }
+      }
+      this.gainAbilityXP(abilityId, 2);
+      return null;
+    },
+
     // useItem: use it. First aid heals.
     useItem(idx) {
       const item = this.state.scholar.inventory[idx];
@@ -7987,6 +8479,13 @@
       // does), but useItem must never throw on a malformed one.
       const name = (item.name || '').toLowerCase();
       const def0 = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
+      // MEDICINE (disease rework 2026-10-09): ruin-found, rare, specific.
+      // Antibiotics kill bacterial; antiparasitics kill parasitic; neither
+      // touches a virus. Using the wrong one wastes the dose.
+      if (item.medType) {
+        if (_useInCombat) this.spendCombatAction('use'); else this.tickAction(8);
+        return this.useMedicine(item.medType);
+      }
       // DICE (Steve 2026-10-05): roll with the village. Fast decisions, random
       // blame, real laughter. +cheer, once per day.
       if (def0 && def0.id === 'dice_set') {
@@ -9127,12 +9626,14 @@
       // like every other consumable (Steve 2026-10-05).
       if (this.inCombat()) this.spendCombatAction('drink'); else this.tickAction(1);
       if (b.quality === 'risky') {
-        // 30% chance of sickness
+        // 30% chance of sickness — DISEASE REWORK (2026-10-09): risky water
+        // carries gut rot, not just a flat HP tax. Boiling is the answer.
         if (Math.random() < 0.3) {
-          this.addHealth(-15);
+          this.addHealth(-5);
+          this.contractDisease('gutrot', { source: 'the creek water' });
           this.state.codex = this.state.codex || {};
           this.state.codex.waterWise = true; // learned the hard way
-          this.say(`Drank risky water (${b.source}). Stomach cramps. -15 health. Boil it next time. (You won't make that mistake again — you can read water now.)`);
+          this.say(`Drank risky water (${b.source}). Stomach cramps within the hour — something's wrong in the gut. (-5 health. Boil it next time.)`);
         } else {
           this.say(`Drank risky water (${b.source}). Got lucky this time.`);
         }
@@ -12901,10 +13402,15 @@
         // (Before this, any shelter sleep fully erased the spiral: -15/+20
         // netted positive at the hall, so the DEHYDRATED warning was a lie.)
         const crisis = (s.hydration || 0) <= 0 || (s.kcal || 0) <= 0;
-        const healAmt = crisis ? Math.floor(prev.heal / 2) : prev.heal;
+        // DISEASE (Steve 2026-10-09): fever burns through rest. The sick heal
+        // slower and wake less restored — sickness degrades everything.
+        const dDb = this.diseaseDebuffs ? this.diseaseDebuffs('scholar') : null;
+        const healMult = dDb ? dDb.healMult : 1;
+        const energyMult = dDb ? dDb.energyMult : 1;
+        const healAmt = Math.floor((crisis ? Math.floor(prev.heal / 2) : prev.heal) * healMult);
         crisisHeal = healAmt;
         s.health = Math.min(this.maxHealth(), Math.round(s.health || 0) + healAmt);
-        s.energy = crisis ? 60 : 100;
+        s.energy = crisis ? Math.round(60 * energyMult) : Math.round(100 * energyMult);
         rested = crisis ? 'wrung out and unrepaired'
           : prev.quality === 'bunk' ? 'deeply rested' : prev.quality === 'ground' ? 'stiff and cold' : 'rested';
         if (crisis) exposureNote = ' You ran on empty — no water, no food, no real recovery. The body keeps score. (Drink and eat before you sleep.)';
@@ -12952,6 +13458,8 @@
                    : `(${netTxt} health, wrung-out morning.${conservedNote}${exposureNote})`)
         : `(${netTxt} health, energy restored.${conservedNote} ${prev.note})`;
       this.say(`Dawn. You wake ${rested}. ${wakeAcct}${nightmareNote}`);
+      // DISEASE (Steve 2026-10-09): real rest helps the slow-folk sicknesses.
+      try { this.sickRestTick('sleep'); } catch (e) {}
       // DIAGNOSTIC: log health after
       if (typeof console !== 'undefined') console.log(`[SLEEP] health after: ${Math.round(s.health || 0)}, expected gain: ${prev.heal}`);
       return this.status();
@@ -15632,8 +16140,11 @@
         if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return false; }
         if (!(s.diseases || []).length) { this.say('Not sick.'); return false; }
         s.herbalDay = s.day;
-        // CURE (statusEffects engine, Steve 2026-10-07): clears engine + legacy.
-        this.cureStatus('scholar', 'disease', 'herbal remedy');
+        // TIERED TREATMENT (disease rework 2026-10-09): herbs cure what they
+        // cure, ease what they don't, and need a diagnosis for the proud ones.
+        // (XP granted by the activateAbility wrapper on success.)
+        this.treatDisease('herbal_remedy');
+        return true;
       } else if (id === 'purify') {
         if (s.purifyDay === s.day) { this.say('Already purified today.'); return false; }
         if (!(s.poisons || []).length) { this.say('Not poisoned.'); return false; }
@@ -15962,6 +16473,13 @@
         // INVESTIGATION (Steve 2026-10-07)
         lie_detector: { 2: 'You catch 50% of lies.', 3: 'You know WHY they\'re lying.', 4: 'You can see the truth they\'re hiding.', 5: 'MASTER: No one lies to you. Ever.' },
         evidence_board: { 2: 'Contradictions glow.', 3: 'You reconstruct events from fragments.', 4: 'You can prove guilt with whispers.', 5: 'MASTER: Truth is your weapon.' },
+        // CARE / HEALER PATH (Steve 2026-10-09, disease rework): disease cure
+        // is EARNED through deepening. L2 unlocks working on others; L3
+        // transcends the diagnosis gate per ability; Fever's End (synergy)
+        // ends all of it.
+        herbal_remedy: { 2: 'Your teas bite deeper — easing lasts 5 day-parts, not 3.', 3: 'MASTER HERBALIST: you read sickness like a book. Your cures no longer need a diagnosis first.' },
+        field_medicine: { 2: 'You can work on others now — treat sick villagers, not just yourself. (Costs you 150 kcal: food becomes healing.)', 3: 'Your hands know infection — bacterial sicknesses yield to you even unnamed.' },
+        triage: { 2: 'You diagnose at a glance — examination always succeeds, and fast.', 3: 'BATTLEFIELD MASTER: your supportive care can turn even the severe cases, and you read any sickness at a touch — no diagnosis needed.' },
       };
       return (bonuses[id] && bonuses[id][level]) || 'Stronger. The System is pleased.';
     },
@@ -16808,7 +17326,10 @@
           this.noteToolUse(); // RELIC BOND: prying, cutting, carrying.
           const item = SCAVENGED.find(s => s.id === lootId);
           if (!this.canCarry(item.kg)) { t.loot.unshift(lootId); this.say('Too heavy — your pack can\'t take it. Eat something or leave it.'); return null; }
-          scholar.inventory.push({ plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: 'can', prep: 'No prep. The miracle of the can.', kg: item.kg });
+          // MEDICINE (disease rework 2026-10-09): bottled, dosed, specific.
+          const medPush = { plantId: lootId, units: 1, kcalEach: item.kcal, spoilDay: 9999, name: item.name, unit: item.medType ? 'bottle' : 'can', prep: item.medType ? 'Use from your pack when sick. Specific — read the label.' : 'No prep. The miracle of the can.', kg: item.kg };
+          if (item.medType) { medPush.itemId = lootId; medPush.medType = item.medType; medPush.doses = item.doses || 2; }
+          scholar.inventory.push(medPush);
           // scrounger: the System's gift. You see what others miss — +1 item per visit.
           if (this.hasAbility('scrounger') && t.loot.length) {
             const lootId2 = t.loot.shift();
@@ -16831,7 +17352,7 @@
             } else if (bonus) t.loot.unshift(bonusId);
           }
           scholar.kcal -= 100;
-          msg = `You pry open a cupboard: ${item.name} (+${item.kcal} kcal). ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
+          msg = `You pry open a cupboard: ${item.name}${item.kcal ? ` (+${item.kcal} kcal)` : ''}. ${item.text}` + (t.loot.length ? '' : ' That\'s everything. This house is done.');
           this.say(msg);
           this.tele('scavenge', { item: item.name, kcal: item.kcal, lootLeft: t.loot.length, packKg: Math.round(this.packWeight() * 10) / 10 });
           // ACTION CLOCK: searching a ruin = 2 chunks (64 ticks). 100 kcal effort above.
@@ -17250,6 +17771,9 @@
       // SHELLGUT (Steve 2026-10-08): an armored gut absorbs less (-25%) but
       // nothing ingested — poison or food-borne disease — can touch you.
       const shellgut = this.hasStatus && this.hasStatus('scholar', 'shellgut');
+      // DISEASE (Steve 2026-10-09): gut sickness steals absorption — the
+      // food goes in, the body can't keep it.
+      const disKcalMult = this.diseaseDebuffs ? this.diseaseDebuffs('scholar').kcalAbsorbMult : 1;
       let shellgutLoss = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
       let medAte = 0, medName = null; // medicinal plant units eaten (herb skill hook)
@@ -17290,8 +17814,13 @@
         if (it.diseaseRisk && !shellgut && Math.random() < it.diseaseRisk.p) {
           scholar.health = Math.max(0, (scholar.health || 100) - it.diseaseRisk.dmg);
           // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
-          this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
+          this.contractDisease('disease', { source: 'the ' + it.name });
           this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
+        }
+        // TRICHINOSIS (disease rework 2026-10-09): bear/boar meat not cooked
+        // through. Only a real cooking (foodState 'cooked') kills it.
+        if (it.parasiteRisk && !shellgut && it.foodState !== 'cooked' && Math.random() < (it.parasiteRisk.p || 0.25)) {
+          this.contractDisease(it.parasiteRisk.id || 'trichinosis', { source: 'the ' + it.name });
         }
         // POISON: belltoad throat sac, etc. Purify cures it.
         if (it.poisonRisk && !shellgut && Math.random() < it.poisonRisk.p) {
@@ -17302,6 +17831,7 @@
         }
         this.maybeMonsterWeirdness(it);
         if (shellgut) { const lost = kcal - Math.round(kcal * 0.75); shellgutLoss += lost; kcal = Math.round(kcal * 0.75); }
+        if (disKcalMult < 1) kcal = Math.round(kcal * disKcalMult);
         scholar.kcal += kcal; ate += kcal;
         // MEDICINE (Steve): chewing medicinal plants is a skill. Track it —
         // the knowledgeable use them deliberately, the ignorant chew and hope.
@@ -17457,8 +17987,13 @@
       if (it.diseaseRisk && !shellgut1 && Math.random() < it.diseaseRisk.p) {
         this.addHealth(-it.diseaseRisk.dmg);
         // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
-        this.applyStatus('scholar', 'disease', { name: it.diseaseRisk.note || 'food poisoning', source: 'the ' + it.name });
+        this.contractDisease('disease', { source: 'the ' + it.name });
         this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
+      }
+      // TRICHINOSIS (disease rework 2026-10-09): bear/boar meat not cooked
+      // through. Only a real cooking (foodState 'cooked') kills it.
+      if (it.parasiteRisk && !shellgut1 && it.foodState !== 'cooked' && Math.random() < (it.parasiteRisk.p || 0.25)) {
+        this.contractDisease(it.parasiteRisk.id || 'trichinosis', { source: 'the ' + it.name });
       }
       if (it.poisonRisk && !shellgut1 && Math.random() < it.poisonRisk.p) {
         this.addHealth(-10);
@@ -17469,6 +18004,9 @@
       this.maybeMonsterWeirdness(it);
       let kcal = it.kcalEach;
       if (shellgut1) kcal = Math.round(kcal * 0.75); // armor takes its cut
+      // DISEASE (Steve 2026-10-09): gut sickness steals absorption.
+      const dkMult1 = this.diseaseDebuffs ? this.diseaseDebuffs('scholar').kcalAbsorbMult : 1;
+      if (dkMult1 < 1) kcal = Math.round(kcal * dkMult1);
       scholar.kcal = Math.min(cap, scholar.kcal + kcal);
       if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
       it.units -= 1;
@@ -17671,6 +18209,8 @@
       } catch (e) {}
       // STATUS EFFECTS (Steve 2026-10-07): dayPart-scale ticks (disease fever, poison).
       try { this.tickStatuses('scholar', 'dayPart'); } catch (e) {}
+      // DISEASE VECTORS (Steve 2026-10-09): mosquitoes, wounds, ticks. The world infects.
+      try { this.diseaseVectorTick(); } catch (e) {}
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
       // (You're becoming a plant. The metabolic cost already took its cut.)
       // HONESTY: the bank cap applies — sunlight doesn't overfill the bar.
@@ -19258,11 +19798,26 @@
         try { const p = this.getPerson(id); return p ? String(p.name).split(' ')[0] : 'Someone'; }
         catch (e) { return 'Someone'; }
       };
+      // DISEASE REWORK (2026-10-09): a camp WITH a healer feels different.
+      // Someone who can doctor keeps the fever down — the sick worsen slower.
+      const healerHere = this.campHealerName && !!this.campHealerName();
+      const sickName = (rec) => {
+        const did = this.villagerDiseaseId ? this.villagerDiseaseId(rec) : null;
+        if (rec.diagnosed) return rec.diagnosed;
+        if (did && this.villageKnowsDisease && this.villageKnowsDisease(did)) {
+          try { return this.seDef(did).name; } catch (e) {}
+        }
+        return null;
+      };
+      const sickSymptom = (rec) => rec.name === 'gut rot' ? 'doubled up with gut cramps'
+        : rec.name === 'wound fever' ? 'feverish, a cut gone hot and angry'
+        : 'achy and wrung out, barely eating';
       // the sick get worse before they get better
       for (const vid of Object.keys(v.sick)) {
         const s = v.sick[vid];
         s.daysLeft -= 1;
-        try { this.hurtVillager(vid, 2 + (s.severity || 1) * 2, 'sickness'); } catch (e) {}
+        const sickDmg = Math.max(1, 2 + (s.severity || 1) * 2 - (healerHere ? 1 : 0));
+        try { this.hurtVillager(vid, sickDmg, 'sickness'); } catch (e) {}
         // DEAD IS DEAD (2026-10-08): hurtVillager now routes lethal sickness
         // through the real death pipeline. Clean up the sick record — no
         // "on the mend" for a corpse.
@@ -19270,15 +19825,17 @@
           delete v.sick[vid];
           // AWAY DEATHS QUEUE (drifter break-it 2026-10-09): same contract —
           // no real-time death bulletin for a player camped miles out.
-          const sickMsg = `💀 ${nm(vid)} succumbed to the ${s.name}. The village is ${v.roster.length} now.`;
+          const deadOf = sickName(s) || 'the fever';
+          const sickMsg = `💀 ${nm(vid)} succumbed to ${deadOf}. The village is ${v.roster.length} now.`;
           if (this.playerAtHaven()) this.say(sickMsg);
           else { const sch = this.state.scholar; sch.awayNews = sch.awayNews || []; if (sch.awayNews.length < 8) sch.awayNews.push(sickMsg); }
           continue;
         }
         if (s.daysLeft <= 0) {
           delete v.sick[vid];
-          this.say(`🤒 ${nm(vid)} is on the mend — the ${s.name} broke.`);
-          try { if (this.remember) this.remember(vid, 'recovered', 'survived ' + s.name); } catch (e) {}
+          const mendOf = sickName(s) || 'the fever';
+          this.say(`🤒 ${nm(vid)} is on the mend — ${mendOf} broke.`);
+          try { if (this.remember) this.remember(vid, 'recovered', 'survived ' + (sickName(s) || s.name)); } catch (e) {}
         }
       }
       // vectors: who gets sick today? (mirrors the player's vectors)
@@ -19335,9 +19892,71 @@
         }
         if (vector) {
           v.sick[vid] = { name: vector, daysLeft: 3 + Math.floor(Math.random() * 4), severity };
-          this.say(`🤒 ${nm(vid)} has come down with ${vector}. Rest and clean water — or it gets worse.`);
+          // SYMPTOM-ONLY (disease rework 2026-10-09): the camp sees symptoms,
+          // not names. A healer's presence changes the feeling of the news.
+          const sym = sickSymptom(v.sick[vid]);
+          const healerNm = this.campHealerName();
+          const reassure = healerHere ? (healerNm === 'You' ? ` You're already boiling water. It's handled.` : ` ${healerNm} is already boiling water. It's handled.`) : '';
+          this.say(`🤒 ${nm(vid)} is ${sym}. Rest and clean water — or it gets worse.${reassure}`);
         }
       }
+      // WORD OF MOUTH (disease rework 2026-10-09): medical villagers doctor.
+      // Each tends one sick villager a day; the camp's shared knowledge grows.
+      try { this.villagerCareTick(nm); } catch (e) {}
+      // A medical villager may name YOUR sickness (social path to diagnosis).
+      try { this.villagerDiagnosisTick(); } catch (e) {}
+      // A medical villager may treat you, not just name it.
+      try { this.villagerTreatTick(); } catch (e) {}
+    },
+
+    // villagerCareTick(nm): medical villagers tend the sick — the division of
+    // knowledge at work. Quiet, mostly: the remember() keeps the books.
+    villagerCareTick(nm) {
+      const v = this.state.village || {};
+      const sickIds = Object.keys(v.sick || {});
+      if (!sickIds.length) return;
+      const medics = (v.roster || []).filter(id => {
+        if (id === this.villagerId) return false;
+        let p = null;
+        try { p = this.getPerson(id); } catch (e) {}
+        if (!p || p.dead) return false;
+        const occ = String(p.formerOccupation || '').toLowerCase();
+        return /nurse|medic|doctor|paramedic|midwife|veterinarian|pharmacist|herbalist|dentist/i.test(occ);
+      });
+      if (!medics.length) return;
+      for (const mid of medics) {
+        const target = sickIds.find(id => id !== mid && (v.sick[id].daysLeft || 0) > 1);
+        if (!target) break;
+        v.sick[target].daysLeft -= 1;
+        try { if (this.remember) this.remember(mid, 'tended', 'tended ' + nm(target) + ' through the fever'); } catch (e) {}
+        if (Math.random() < 0.25) this.say(`${nm(mid)} sits with ${nm(target)} — cool cloth, bitter tea, watching the breathing.`);
+      }
+    },
+
+    // villagerTreatTick(): a medical villager eases YOUR sickness, unasked.
+    // The social path to treatment — a camp with a healer feels different.
+    villagerTreatTick() {
+      try {
+        const sick = this.sickDiseases();
+        if (!sick.length) return;
+        if (!this.playerAtHaven || !this.playerAtHaven()) return;
+        const v = this.state.village || {};
+        const med = (v.roster || []).find(id => {
+          if (id === this.villagerId) return false;
+          let p = null;
+          try { p = this.getPerson(id); } catch (e) {}
+          if (!p || p.dead) return false;
+          const occ = String(p.formerOccupation || '').toLowerCase();
+          return /nurse|medic|doctor|paramedic|midwife|veterinarian|pharmacist|herbalist|dentist/i.test(occ);
+        });
+        if (!med || Math.random() > 0.35) return;
+        let first = 'Someone';
+        try { const p = this.getPerson(med); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
+        const e = sick[0];
+        this.easeDisease('scholar', e.id, 3, null);
+        const dl = this.diseaseLabel ? this.diseaseLabel('scholar', e) : { label: e.id };
+        this.say(`${first} has been watching you. "${dl.label}, huh." A cup of something bitter is pressed into your hands. "Drink. Sleep. Doctor's orders." (Fever eased.)`);
+      } catch (e) {}
     },
 
     endDay() {
@@ -27981,6 +28600,8 @@
         hungryDays: this.state.village.hungryDays || 0,
         packKg: Math.round(this.packWeight() * 10) / 10,
         packCap: this.packCapacity(),
+        // DISEASE (Steve 2026-10-09): symptom-labeled until diagnosed.
+        afflictions: this.afflictionChips ? this.afflictionChips() : [],
         px: this.map.px, py: this.map.py,
         over: this.over, won: this.won,
         location: this.location, departed: this.departed,

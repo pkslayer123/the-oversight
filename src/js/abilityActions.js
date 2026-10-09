@@ -587,7 +587,7 @@
         out.push({
           abilityId: 'herbal_remedy', actionId: null, id: 'herbal_remedy',
           target: 'self', name: 'Herbal Remedy',
-          desc: 'Cure disease. Knowledge of plants.',
+          desc: 'Treat sickness with plants. Cures some, eases others — the proud ones need a diagnosis first.',
           available: sick && s.herbalDay !== s.day,
           why: !sick ? 'Not sick.' : 'Used today.'
         });

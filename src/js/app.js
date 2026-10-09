@@ -270,7 +270,20 @@
       statRow('PACK 🎒', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap, '', 'pack') +
       statRow('WATER', st.hydration + '% · ' + st.waterCleanL + 'L clean', st.hydration, st.hydration < 30) +
       (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '') +
-      contestRow;
+      contestRow + afflictionRow(st);
+  }
+
+  // DISEASE (Steve 2026-10-09): affliction chips — symptoms until diagnosed,
+  // true names after. Tap 🧬 You for the full picture.
+  function afflictionRow(st) {
+    try {
+      const affs = st.afflictions || [];
+      if (!affs.length) return '';
+      const chips = affs.map(a =>
+        `<span class="affchip" title="${esc(a.diagnosed ? a.label + ' (diagnosed)' : 'Undiagnosed — examine (🧬 You) to identify')}">${a.icon ? esc(a.icon) + ' ' : ''}${esc(a.label)}${a.severe ? '!' : ''}</span>`
+      ).join(' ');
+      return `<div class="statrow afflictions">${chips}</div>`;
+    } catch (e) { return ''; }
   }
 
   // LOWER MENU (Steve 2026-10-05): Pack, Sleep, Wait, Map — the slow actions.
@@ -12588,6 +12601,58 @@
     refresh();
   }
 
+  // DISEASE (Steve 2026-10-09): the affliction panel. Symptoms until
+  // diagnosed; examine/treat/folk-remedy/medicine/villager care all live here.
+  function renderAfflictionsSection() {
+    try {
+      const sick = (Game.sickDiseases && Game.sickDiseases()) || [];
+      const v = (Game.state && Game.state.village) || {};
+      const sickVillagers = Object.keys(v.sick || {});
+      if (!sick.length && !sickVillagers.length) return '';
+      let html = `<details open style="margin:8px 0"><summary style="cursor:pointer;font-size:15px;font-weight:bold">🤒 Afflictions <span style="opacity:.6;font-weight:normal">(${sick.length + sickVillagers.length})</span></summary><div style="margin-top:6px">`;
+      for (const e of sick) {
+        const def = Game.seDef(e.id) || {};
+        const dl = Game.diseaseLabel('scholar', e);
+        const diagnosed = Game.isDiagnosed('scholar', e.id);
+        html += `<p class="small">${dl.icon ? esc(dl.icon) + ' ' : ''}<b>${esc(dl.label)}</b>${diagnosed ? '' : ' <span style="opacity:.6">(unnamed — examine to identify)</span>'}${e.severe ? ' <b style="color:#ff5252">SEVERE</b>' : ''}<br><span style="opacity:.75">${esc(diagnosed ? (def.diagnosedDesc || def.description || '') : (def.description || ''))}</span></p>`;
+        html += `<p class="small">`;
+        if (!diagnosed && Game.canDiagnose && Game.canDiagnose()) html += `<button class="btn ghost sm" data-aff="examine">🔍 Examine</button> `;
+        if (Game.hasAbility('herbal_remedy')) html += `<button class="btn ghost sm" data-aff="treat:herbal_remedy">🌿 Herbal remedy</button> `;
+        if (Game.hasAbility('field_medicine')) html += `<button class="btn ghost sm" data-aff="treat:field_medicine">🩹 Field medicine</button> `;
+        if (Game.hasAbility('triage')) html += `<button class="btn ghost sm" data-aff="treat:triage">⚕️ Triage</button> `;
+        html += `</p><p class="small" style="opacity:.85">Folk remedies — anyone can try: `;
+        html += `<button class="btn ghost sm" data-aff="folk:rest">😴 Rest up</button> `;
+        html += `<button class="btn ghost sm" data-aff="folk:fluids">💧 Clean water</button> `;
+        html += `<button class="btn ghost sm" data-aff="folk:tea">🍵 Bitter tea</button> `;
+        html += `<button class="btn ghost sm" data-aff="folk:fast">🚫 Fast</button></p>`;
+        const meds = (Game.state.scholar.inventory || []).filter(i => i.medType && (i.doses || 0) > 0);
+        if (meds.length) {
+          html += `<p class="small">💊 Medicine (rare, specific — read the label): `;
+          for (const m of meds) html += `<button class="btn ghost sm" data-aff="med:${m.medType}">${esc(m.name)} (${m.doses})</button> `;
+          html += `</p>`;
+        }
+      }
+      for (const vid of sickVillagers) {
+        const rec = v.sick[vid] || {};
+        let first = 'Someone';
+        try { first = Game.displayName ? Game.displayName(vid) : vid; } catch (e2) {}
+        const label = rec.diagnosed || 'sick (unnamed)';
+        html += `<p class="small">🧍 <b>${esc(String(first).split(' ')[0])}</b> — ${esc(label)}<br>`;
+        if (Game.canDiagnose && Game.canDiagnose() && !rec.diagnosed) html += `<button class="btn ghost sm" data-aff="vexamine:${vid}">🔍 Examine</button> `;
+        html += `<button class="btn ghost sm" data-aff="vtend:${vid}">🤲 Tend</button> `;
+        for (const ab of ['herbal_remedy', 'field_medicine', 'triage']) {
+          if (Game.hasAbility(ab) && Game.abilityLevel(ab) >= 2) {
+            const nm = ab === 'herbal_remedy' ? 'herbs' : ab === 'field_medicine' ? 'field med' : 'triage';
+            html += `<button class="btn ghost sm" data-aff="vtreat:${vid}:${ab}">⚕️ Treat (${nm}, -150 kcal)</button> `;
+          }
+        }
+        html += `</p>`;
+      }
+      html += `</div></details>`;
+      return html;
+    } catch (e) { return ''; }
+  }
+
   function renderCharacterInline(slot, view) {
     const st = Game.status();
     const bodyHtml = `
@@ -12618,6 +12683,7 @@
         ${renderAbilitiesSection()}
         ${renderSkillsSection()}
         ${renderSynergiesSection()}
+        ${renderAfflictionsSection()}
         ${renderBuildIndicator()}
         ${renderSynergyStirrings()}
         ${renderIntegrationLevel()}
@@ -12630,6 +12696,18 @@
     wireInlineX(slot);
     const rewire = (fn, ok) => (e) => { fn(e); inlineView.result = ok; refresh(); };
     slot.querySelectorAll('[data-unequip-slot]').forEach(b => b.onclick = rewire(() => Game.unequip(b.dataset.unequipSlot), 'Taken off.'));
+    // DISEASE (Steve 2026-10-09): affliction buttons — examine, treat, folk
+    // remedies, medicine, villager care.
+    slot.querySelectorAll('[data-aff]').forEach(b => b.onclick = rewire(() => {
+      const k = b.dataset.aff;
+      if (k === 'examine') Game.examineSick();
+      else if (k.indexOf('treat:') === 0) { const ab = k.slice(6); Game.treatDisease(ab); Game.gainAbilityXP(ab, 1); }
+      else if (k.indexOf('folk:') === 0) Game.folkRemedy(k.slice(5));
+      else if (k.indexOf('med:') === 0) Game.useMedicine(k.slice(4));
+      else if (k.indexOf('vexamine:') === 0) Game.examineSick(k.slice(9));
+      else if (k.indexOf('vtend:') === 0) Game.tendVillager(k.slice(6));
+      else if (k.indexOf('vtreat:') === 0) { const parts = k.split(':'); Game.treatVillager(parts[1], parts[2]); }
+    }, 'Done.'));
   }
 
   // LOOT-AS-ACTION (Steve 2026-10-06): the enemy's pack. Per item: take it,

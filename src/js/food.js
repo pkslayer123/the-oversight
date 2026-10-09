@@ -442,6 +442,17 @@
           it.prep = '⚠️ Unknown flesh. You have no idea if this is food or poison. Test it cautiously, or ask someone who knows.';
         }
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
+        // TRICHINOSIS (disease rework 2026-10-09): bear and boar carry it.
+        // Only cooking through (foodState 'cooked') kills it — smoking won't.
+        if (['black_bear', 'wild_boar', 'javelina'].includes(meatId)) {
+          it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25 };
+        }
+        // TICKS (disease rework 2026-10-09): deer carry them — Lyme is real.
+        // Check the hide before you wear it.
+        if (meatId === 'white_tailed_deer' && Math.random() < 0.15) {
+          this.say('Something tiny and dark was in the hide \u2014 a tick, buried in. You pick it off, but it was feeding.');
+          if (Math.random() < 0.3) this.contractDisease('lemons', { source: 'a tick from the deer hide' });
+        }
         it.spoilDay = this.state.scholar.day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
         // unknown flesh keeps its warning — the generic risky-raw prep would
@@ -804,6 +815,10 @@
         it.units = units2; it.unit = 'portion';
         it.kcalEach = foodSafe ? per : 0; it.hiddenKcal = gross;
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
+        // TRICHINOSIS (disease rework 2026-10-09): bear and boar carry it.
+        if (['black_bear', 'wild_boar', 'javelina'].includes(aid2)) {
+          it.parasiteRisk = { id: 'trichinosis', p: aid2 === 'black_bear' ? 0.35 : 0.25 };
+        }
         it.spoilDay = day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
         if (foodSafe) it.prep = '\u26A0\uFE0F Risky: raw meat. Cook it, or preserve it.';

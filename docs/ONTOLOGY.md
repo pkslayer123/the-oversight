@@ -676,13 +676,9 @@ Data-driven status effect engine. Statuses (poison, disease, bleed, stun, fear, 
 **Provides:** seDef(id), applyStatus(target, effectId, opts), tickStatuses(target, scope), cureStatus(target, effectId, source), hasStatus(target, id), seTickFighter(f), seMoveMod(f), seSteps(f), seFizzle(f)
 
 **Rules:**
-- single_entry: all status applications go through applyStatus — no direct field sets (code: applyStatus)
-- never_silent: application, ticks, expiry, and cures all narrate via say() (code: applyStatus)
-- bridge: stun-family writes legacy stunned/stunFull fields; poison/disease mirror s.poisons/s.diseases (code: applyStatus)
-- legacy_countdown: stun-family turn countdown stays with existing consumption sites; engine tracks parallel turnsLeft (code: seTickFighter)
-- resistible: resistMod is read via modTarget as an apply-chance multiplier (code: applyStatus)
+—
 
-**Consumes:** say, audioEvent, modTarget, tbEndCheck, monsterDisplayName, encSubject
+**Consumes:** —
 
 ### tools-stashes (`storage.js`)
 Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/load lives in engine/state.js.)
