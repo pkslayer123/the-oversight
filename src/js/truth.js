@@ -20,6 +20,7 @@
 //   - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 //   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 //   - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
+//   - observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 // consumes:
 //   - village.gossip
 // ============ TRUTH-FINDING ============
@@ -625,11 +626,32 @@
       try { this.tickAction(2); } catch (e) {}
 
       const lies = this.npcLies(vid);
-      const intel = this.npcIntel ? this.npcIntel(vid).primary : 'steady';
+      // OBSERVER'S intellect (detective playtest 2026-10-08d): the one doing
+      // the watching is the player — the old code read the TARGET's intellect,
+      // so an observant mark was EASIER to read (+0.25), backwards from the
+      // comment and the fiction (sharp people notice the staring).
+      const intel = this.npcIntel ? this.npcIntel(this.villagerId).primary : 'steady';
       let detectChance = 0.30;
       if (intel === 'observant') detectChance += 0.25;
       if (intel === 'social') detectChance += 0.15;
       if (intel === 'analytical') detectChance += 0.10;
+      // WARINESS BITES (detective playtest 2026-10-08d): people who know
+      // they're being watched hide their tells. Count 'observed' memories
+      // from the last 14 days (written on every watch now, hit or miss —
+      // see below), capped like convoDrift wariness; each point shaves 0.08
+      // off the detect chance, floor 0.05. A first look is 30%; the third
+      // watch of the same person is 14% and they're reading guarded. Looping
+      // one villager settles near ~10 watches per tell — the liar's-den
+      // "watching is work" feel — instead of ~3. Watching is work again.
+      // Counted fresh from memories, not the cached drift (drift recomputes
+      // at most once per day — a same-day spam loop would never feel it).
+      let watches = 0;
+      try {
+        const day = (this.state.scholar || {}).day || 1;
+        const mem = ((this.state.village || {}).memory || {})[vid] || [];
+        watches = Math.min(3, mem.filter(m => m.t === 'observed' && day - (m.day || 0) <= 14).length);
+      } catch (e) {}
+      detectChance = Math.max(0.05, detectChance - 0.08 * watches);
 
       const lyingOcc = lies && lies.occupation && !lies.occupation.confessed;
       const lyingOrigin = lies && lies.origin && !lies.origin.confessed;
@@ -648,6 +670,10 @@
       // the same three sentences.
       const line = this.drawTruthLine('observeCalm', vid);
       this.say(line);
+      // being watched leaves a trace even when you learn nothing — they
+      // notice the staring. Feeds the wariness penalty above, so the trace
+      // is mechanical, not just flavor.
+      try { this.remember(vid, 'observed', 'you watched them for a while; they noticed'); } catch (e) {}
       return { ok: true, found: false, text: line };
     },
 
