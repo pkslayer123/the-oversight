@@ -218,13 +218,19 @@ function putInPack(item) {
   }
 
   // ---- J. CONTROL: stockPantry stocks real items with a clock ----
+  // NOTE (forager run 2026-10-08): GRANULAR PIECES (Steve 2026-10-08, game.js
+  // stockPantry) supersedes the old single-slab behavior — 3000 kcal now
+  // arrives as 6x500 pieces so villageMeal can take what it needs. The old
+  // assertion (kcalEach === 3000) contradicted HEAD's documented design.
   {
     v.pantry = []; v.pantryKcal = 0;
     Game.stockPantry(3000, 'Genesis fruit');
-    const it = (v.pantry || [])[0];
-    ok('J. control: stockPantry creates real item with clock',
-      !!it && it.kcalEach === 3000 && it.spoilDay === day + 3 && v.pantryKcal === 3000,
-      `item=${JSON.stringify(it)}`);
+    const items = (v.pantry || []).filter(i => i.name === 'Genesis fruit');
+    const it = items[0];
+    ok('J. control: stockPantry creates real items with a clock (granular pieces)',
+      items.length > 0 && items.every(i => i.kcalEach <= 500 && i.spoilDay === day + 3) &&
+        items.reduce((t, i) => t + i.kcalEach * (i.units || 1), 0) === 3000 && v.pantryKcal === 3000,
+      `items=${JSON.stringify(items)}`);
   }
 
   // ---- K. CONTROL: feastBurn needs 300 banked ----

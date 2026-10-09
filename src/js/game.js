@@ -14818,7 +14818,7 @@
       // herbal remedy cures disease, purify neutralizes poison.
       if (has('field_medicine')) {
         const used = s.fieldMedDayPart === `${s.day}-${this.dayPart}`;
-        out.push({ id: 'field_medicine', target: 'self', name: 'Field Medicine', desc: 'Heal 20 HP. Once per day part.', available: !used && (s.health || 0) < this.maxHealth(), why: used ? 'Used this day part.' : 'Already at full health.', combat: true });
+        out.push({ id: 'field_medicine', target: 'self', name: 'Field Medicine', desc: 'Heal 20 HP (real wounds — Price cuts are missing mass, knit ~10/night). Once per day part.', available: !used && (s.health || 0) < this.maxHealth(), why: used ? 'Used this day part.' : 'Already at full health.', combat: true });
       }
       if (has('herbal_remedy')) {
         const sick = (s.diseases || []).length > 0;
@@ -14870,8 +14870,18 @@
         const bpKey = `${s.day}-${this.dayPart}`;
         const bpUses = (s.bloodPriceDayPart === bpKey) ? (s.bloodPriceUses || 0) : 0;
         if (bpUses >= 2) { this.say('Your body needs time to knit back together — no more Blood Price this day part. (2/day part.)'); return false; }
+        // BLOOD-PRICE WOUND v2 (Steve 2026-10-08, break-it forager): the cap
+        // alone STILL printed ~+1,500 kcal/day at zero net HP — the Price
+        // self-throttles (too weak to pay) and sleep heals 35, so the loop ran
+        // forever at 2/3 of a day's food. The cut is missing mass now: max HP
+        // drops while it's open (see maxHealth), it knits ~10/night, and past
+        // 50 wound the body refuses — more scar than skin. Sustainable: ~1
+        // use/day (+500 kcal). Emergency use untouched: the Price is real.
+        const wound = Math.max(0, s.bloodPriceWound || 0);
+        if (wound >= 50) { this.say("Your body is more scar than skin — it won't open again until the Price's cuts knit. (~10 knits per night. Rest.)"); return false; }
         s.bloodPriceDayPart = bpKey; s.bloodPriceUses = bpUses + 1;
-        s.health -= cost;
+        s.bloodPriceWound = wound + cost;
+        s.health = Math.min((s.health || 0) - cost, this.maxHealth());
         // HONESTY: eating clamps to the bank cap — blood kcal shouldn't bypass it.
         s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + 500);
         this.say(`BLOOD PRICE: -${cost} HP, +500 kcal. Your body eats itself. Efficient. Horrifying.${cost < 10 ? ' (Crimson Circuit: the circuit closes, the price drops.)' : ''}`);
@@ -14919,12 +14929,19 @@
         const heal = 20;
         // COST: healing burns calories. No free lunch.
         // (Blood Magic: -10 HP → +500 kcal. The heal cost alone only BOUNDS the
-        // engine per daypart — the real gate is blood_magic's 2/day-part cap.)
+        // engine per daypart — the real gate is blood_magic's wound: the
+        // Price's cuts are missing mass, maxHealth() already excludes them, so
+        // field medicine heals real wounds only. The loop can't print free
+        // kcal anymore: farming the Price ratchets max HP down, ~1/day is
+        // sustainable, the body refuses past 50 wound.)
         const healCost = 100;
         if ((s.kcal || 0) < healCost) { this.say(`Too hungry to heal — need ${healCost} kcal.`); return false; }
+        const effMax = this.maxHealth();
+        const actual = Math.max(0, Math.min(heal, effMax - (s.health || 0)));
         s.kcal -= healCost;
-        this.addHealth(heal);
-        this.say(`Field medicine: clean the wound, poultice it, bind it. +${heal} HP, -${healCost} kcal.`);
+        s.health = Math.min(effMax, (s.health || 0) + actual);
+        if (actual <= 0) this.say(`Field medicine: clean the wound, poultice it, bind it. But the Blood Price's cuts are missing mass — dressings can't close them; they knit ~10 a night. (+0 HP, -${healCost} kcal.)`);
+        else this.say(`Field medicine: clean the wound, poultice it, bind it. +${actual} HP, -${healCost} kcal.${(s.bloodPriceWound || 0) > 0 ? " (The Price's cuts stay open — they knit on their own.)" : ''}`);
       } else if (id === 'herbal_remedy') {
         if (s.herbalDay === s.day) { this.say('Already used herbal remedy today.'); return false; }
         if (!(s.diseases || []).length) { this.say('Not sick.'); return false; }
@@ -14953,7 +14970,8 @@
         this.say(`You bury ${it.name}. The tile will remember. (+10% forage here. compost_king)`);
       } else if (id === 'cannibal_frenzy') {
         if ((s.kcal || 0) >= 500) { this.say('The Red Hunger sleeps. You are not starving enough.'); return false; }
-        s.kcal += 1000;
+        // HONESTY: no kcal source bypasses the bank cap (same rule as blood_magic).
+        s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + 1000);
         const v = this.state.village; v.trust = v.trust || {};
         for (const vid of Object.keys(v.trust)) v.trust[vid] = Math.max(0, (v.trust[vid] || 15) - 30);
         this.say('RED HUNGER: you eat what you should not. +1000 kcal. Everyone saw. Trust -30, permanently.');
@@ -16845,8 +16863,9 @@
       try { this.tickStatuses('scholar', 'dayPart'); } catch (e) {}
       // photosynthesis: gain 100 kcal in sunlight. Day parts are day; night is night.
       // (You're becoming a plant. The metabolic cost already took its cut.)
+      // HONESTY: the bank cap applies — sunlight doesn't overfill the bar.
       if (this.hasAbility('photosynthesis') && this.dayPart < 3) {
-        this.state.scholar.kcal += 100;
+        this.state.scholar.kcal = Math.min(this.kcalCap(), this.state.scholar.kcal + 100);
         this.say('Sunlight on your skin. You drink it. +100 kcal. (photosynthesis)');
       }
       this.moveWanderer();
@@ -17052,8 +17071,18 @@
       return mult;
     },
     // maxHealth: 100 + survivor bonus. Everything that heals caps here.
+    // BLOOD-PRICE WOUND (Steve 2026-10-08, break-it forager): the Price's cuts
+    // are missing mass — max HP drops while they're open, and they knit slowly
+    // (~10/night, see endDay). This is the real gate on the blood_magic food
+    // economy: the 2/daypart cap alone still printed a full day's food at zero
+    // net HP via field_medicine. Now farming the Price ratchets max HP down;
+    // ~1 use/day is sustainable (+500 kcal — a real min-max edge, not dinner),
+    // and the body refuses past 50 wound. Emergency use is untouched.
     maxHealth() {
-      return 100 + Math.round(this.modTarget('health.max_add', 0));
+      const base = 100 + Math.round(this.modTarget('health.max_add', 0));
+      const sch = (this.state && this.state.scholar) || {};
+      const wound = Math.max(0, sch.bloodPriceWound || 0);
+      return Math.max(1, base - wound);
     },
 
     // hasAbility / abilityLevel: delegate to the shared engine helper.
@@ -18564,7 +18593,8 @@
       } else if (this.state.weather === 'cold') {
         this.say('A cold snap. Breath smokes. The woods go quiet.');
         if (this.hasAbility('cold_blooded')) {
-          scholar.kcal += 440; // 20% of the 2200 daily need, returned
+          // HONESTY: the bank cap applies to refunds too.
+          scholar.kcal = Math.min(this.kcalCap(), scholar.kcal + 440); // 20% of the 2200 daily need, returned
           this.say('Cold-blooded: your body budgets like an accountant. (-20% food need today)');
         }
       }
@@ -18574,6 +18604,17 @@
       if (metDrain > 0) {
         scholar.kcal -= metDrain;
         if (scholar.kcal < 500) this.say(`The System's gifts are hungry: -${metDrain} kcal metabolic cost. Feed the power or lose it.`);
+      }
+      // BLOOD-PRICE KNITTING (Steve 2026-10-08, break-it forager): the Price's
+      // cuts are missing mass — they knit ~10/night, no faster. Dressings can't
+      // close them (see field_medicine). This is the real gate on the
+      // blood_magic economy: ~1 use/day is sustainable (+500 kcal, a real
+      // min-max edge); farming harder ratchets max HP down until the body
+      // refuses at 50 wound.
+      if ((scholar.bloodPriceWound || 0) > 0) {
+        const before = scholar.bloodPriceWound;
+        scholar.bloodPriceWound = Math.max(0, before - 10);
+        if (scholar.bloodPriceWound === 0) this.say("The last of the Price's cuts has knitted shut. Your body is whole again.");
       }
       // THE BANK: the war chest leaks overnight — use it or lose it.
       if (this.overnightBankBurn) this.overnightBankBurn();

@@ -504,16 +504,19 @@
       if (hasAb('blood_magic')) {
         var bc = this.hasSynergy('crimson_circuit') ? 7 : 10;
         // BLOOD-PRICE CAP (Steve 2026-10-08, break-it): 2/day part — the body
-        // must knit. See game.js _activateAbilityInner 'blood_magic'.
+        // must knit. WOUND (forager run): the cut is missing mass — max HP
+        // drops while open, knits ~10/night, body refuses past 50 wound.
+        // See game.js _activateAbilityInner 'blood_magic'.
         var bpKey = s.day + '-' + this.dayPart;
         var bpUses = (s.bloodPriceDayPart === bpKey) ? (s.bloodPriceUses || 0) : 0;
         var bpCapped = bpUses >= 2;
+        var bpWoundRefused = (s.bloodPriceWound || 0) >= 50;
         out.push({
           abilityId: 'blood_magic', actionId: null, id: 'blood_magic',
           target: 'self', name: 'Blood Price',
-          desc: '-' + bc + ' HP → +500 kcal. Your body eats itself. 2/day part.',
-          available: !bpCapped && (s.health || 0) > bc,
-          why: bpCapped ? 'Used twice this day part.' : 'Too weak — need ' + (bc + 1) + '+ HP.'
+          desc: '-' + bc + ' HP → +500 kcal. Your body eats itself. 2/day part; cuts knit ~10/night, body refuses past 50.',
+          available: !bpCapped && !bpWoundRefused && (s.health || 0) > bc,
+          why: bpCapped ? 'Used twice this day part.' : (bpWoundRefused ? "Too scarred — the cuts must knit first." : 'Too weak — need ' + (bc + 1) + '+ HP.')
         });
       }
       if (hasAb('time_skip')) {
@@ -543,7 +546,7 @@
         out.push({
           abilityId: 'field_medicine', actionId: null, id: 'field_medicine',
           target: 'self', name: 'Field Medicine',
-          desc: 'Heal 20 HP. Once per day part.',
+          desc: 'Heal 20 HP (real wounds — Price cuts are missing mass, knit ~10/night). Once per day part.',
           available: !used && (s.health || 0) < this.maxHealth(),
           why: used ? 'Used this day part.' : 'Already at full health.', combat: true
         });

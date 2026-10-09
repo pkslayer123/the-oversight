@@ -466,7 +466,7 @@
   {
     "id": "photosynthesis",
     "name": "Photosynthesis",
-    "description": "Gain 100 kcal/hour in sunlight. (You're becoming a plant.)",
+    "description": "Gain 100 kcal per daylight day part. (You're becoming a plant.)",
     "flavor": "YOU EAT THE SUN! We eat... we don't eat! But WOW!",
     "pool": "system",
     "tier": "overpowered",
@@ -661,7 +661,7 @@
   {
     "id": "blood_magic",
     "name": "Blood Price",
-    "description": "Spend 10 HP to gain 500 kcal. Your body eats itself. The body can only take so much: twice per day part.",
+    "description": "Spend 10 HP to gain 500 kcal. Your body eats itself. Twice per day part. The cut is missing mass \u2014 max HP drops while it\u2019s open, knits ~10 a night, and the body refuses past 50.",
     "flavor": "You burn the red! The red becomes... lunch?! We are CONCERNED! (We checked the math twice. The math is as confused as we are.)",
     "pool": "system",
     "tier": "risky",
@@ -1381,7 +1381,7 @@
     "id": "field_medicine",
     "name": "Field Medicine",
     "pool": "care",
-    "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part).",
+    "description": "Clean wounds, poultice infections, set bones in the field. Heal 20 HP (once per day part). Real wounds only \u2014 Blood Price cuts are missing mass and knit ~10 a night.",
     "modifiers": [],
     "unlock": {
       "type": "granted"
