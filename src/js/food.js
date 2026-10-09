@@ -640,8 +640,10 @@
     // PROPORTIONAL BARS (hunter break-it 2026-10-09): the old fixed 3
     // bars/set let small inputs print money — 2 smoked fish portions +
     // javelina fat (~1058 kcal in) paid a fixed 1800 out. Bars now track
-    // input kcal at ~97% retention (canon), half-bar granularity; full-size
-    // sets still pay 3 bars. Units are picked back-to-front like the old
+    // input kcal at ~97% retention (canon): the bar COUNT rounds to whole
+    // bars (full sets still pay 3), but each set's kcalEach is scaled so
+    // retention is ~97% at any input size — small sets pay small bars, never
+    // a free 600. Units are picked back-to-front like the old
     // takeUnits, so partial stacks split the same way.
     pemmicanPlan(container) {
       const inv = container || this.state.scholar.inventory;
@@ -666,7 +668,15 @@
         const mp = pick(MEAT, 2), fp = pick(FAT, 1), bp = pick(BERRY, 2);
         if (!mp || !fp || !bp) break;
         const inKcal = mp.concat(fp, bp).reduce((a, p) => a + p.kcal, 0);
-        plan.push({ picks: mp.concat(fp, bp), bars: Math.max(1, Math.round(inKcal * 0.97 / 600)) });
+        const bars = Math.max(1, Math.round(inKcal * 0.97 / 600));
+        // HONEST RETENTION (forager break-it 2026-10-09): the old fixed
+        // kcalEach=600 printed calories on small inputs — 250 kcal in paid a
+        // 600-kcal bar (240%), 1058 in paid 1200 (113%). Bars stay whole for
+        // the UI promise ("3 bars"), but each set's bars carry that set's
+        // ~97% retention: kcalEach = inKcal*0.97/bars. Full sets still pay
+        // 3x600; small sets pay honest small bars. Energy is never created.
+        const kcalEach = Math.max(1, Math.round(inKcal * 0.97 / bars));
+        plan.push({ picks: mp.concat(fp, bp), bars, kcalEach, inKcal });
       }
       return plan;
     },
@@ -702,14 +712,16 @@
           if (it.units <= 0) inv.splice(p.i, 1);
         }
         totalBars += set.bars;
+        // One stack per set: that set's bars carry that set's ~97%
+        // retention (forager break-it 2026-10-09). Full sets read 3x600.
+        inv.push({
+          itemId: 'pemmican', plantId: null, foodKind: 'meat', foodState: 'pemmican',
+          edible: true, units: set.bars, unit: 'bar', kcalEach: set.kcalEach,
+          spoilDay: day + 120, kg: 0.3 * set.bars, safe: true,
+          name: 'Pemmican',
+          prep: 'Dried meat pounded with rendered fat and berries. The original energy bar. Nearly indestructible.',
+        });
       }
-      inv.push({
-        itemId: 'pemmican', plantId: null, foodKind: 'meat', foodState: 'pemmican',
-        edible: true, units: totalBars, unit: 'bar', kcalEach: 600,
-        spoilDay: day + 120, kg: 0.3 * totalBars, safe: true,
-        name: 'Pemmican',
-        prep: 'Dried meat pounded with rendered fat and berries. The original energy bar. Nearly indestructible.',
-      });
       this.tickAction(20);
       this.say(`You pound, mix, and pack — ${totalBars} bars of pemmican. This will keep till spring and beyond. (20 ticks)`);
       try { this.audioEvent('animalButcher'); } catch (e) {}

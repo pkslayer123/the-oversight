@@ -48,3 +48,8 @@ must earn meaningful rewards — that's the whole point of the ladder.
   ~97% retention (half-bar granularity) instead of a fixed 3 bars/set — small
   inputs (smoked fish + javelina fat, ~1058 kcal) were printing 1800. Full-size
   sets still pay 3 bars. Recipe and retention unchanged.
+- 2026-10-09 (forager break-it): per-set variable kcalEach — the fixed
+  600 kcal/bar was STILL printing on small inputs (250 in -> 600 out, 240%;
+  1058 -> 1200, 113%). Bars stay whole (full sets still pay 3), but each
+  set's bars carry that set's ~97% retention: small sets pay honest small
+  bars. Energy is never created.

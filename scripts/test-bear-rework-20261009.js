@@ -172,10 +172,14 @@ function check(name, cond, detail) {
   const bars = inv.filter(i => i.itemId === 'pemmican');
   check('pemmican: 3 bars from one set', bars.reduce((a, i) => a + (i.units || 1), 0) === 3, '');
   const bar = bars[0];
-  check('pemmican: 600 kcal/bar', bar.kcalEach === 600, '');
+  // HONEST RETENTION (forager break-it 2026-10-09): bars carry the set's
+  // ~97% retention — 1930 in -> 3 bars x 624 (1930*0.97/3), not a fixed 600.
+  // The old fixed-600 printed calories on small inputs (250 -> 600, 240%).
+  check('pemmican: honest per-bar kcal (97% of set)', bar.kcalEach === 624, `got ${bar.kcalEach}, want 624 (1930*0.97/3)`);
   check('pemmican: 120-day shelf', bar.spoilDay === s.day + 120, `day+${bar.spoilDay - s.day}`);
-  const retention = (3 * 600) / inKcal;
-  check('pemmican: ~full kcal retention (>=90%)', retention >= 0.9, `${Math.round(retention * 100)}% of ${inKcal} in -> ${3 * 600} out`);
+  const outKcal = bars.reduce((a, i) => a + (i.kcalEach || 0) * (i.units || 1), 0);
+  const retention = outKcal / inKcal;
+  check('pemmican: ~97% kcal retention (90-100%)', retention >= 0.9 && retention <= 1.001, `${Math.round(retention * 100)}% of ${inKcal} in -> ${outKcal} out`);
   check('pemmican costs 20 ticks (most work)', tickLog[tickLog.length - 1] === 20, `last tick cost ${tickLog[tickLog.length - 1]}`);
   check('ingredients consumed', !inv.some(i => i.foodState === 'rendered' && i.foodKind === 'fat') && !inv.some(i => /blackberries/i.test(i.name || '')), 'fat + berries gone');
   // Gated: no render technique -> refused.
