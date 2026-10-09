@@ -272,7 +272,11 @@ function gossipNamingPlayer() {
   let honest = null;
   for (const id of ids) { const l = Game.npcLies(id); if (!l || !Object.values(l).some(x => x && x.told && !x.confessed)) { honest = id; break; } }
   if (!honest) { console.log('    (no fully-honest villager; forcing)'); honest = ids[0]; const vp = Game.vpOf(honest); vp.lies = {}; }
-  const d = Game.addDoubt(honest, 'behavior', 'test baseless', ['claims goal: belong', 'observed: selfish behavior']);
+  // REFINED 2026-10-09b: a behavior doubt was never an accusation — it is a
+  // real observation raised tentatively, and now clears neutrally (see B2 in
+  // test-detective-breakit-20261009b.js). The truly-baseless case is a REAL
+  // accusation (observation doubt) with nothing behind it.
+  const d = Game.addDoubt(honest, 'observation', 'test baseless', ['claims "baker"', 'observed: something off']);
   const rep0 = repOf(playerId()).honest || 0;
   const r = Game.confrontDoubt(honest, d.id);
   say();

@@ -4,6 +4,7 @@
 // provides:
 //   - trackClaim(vid, topic, claim)
 //   - getClaims(vid)
+//   - lieLive(vid, lie)
 //   - makeLie(vid, topic)
 //   - getActiveLie(vid)
 //   - addDoubt(doubt)
@@ -25,6 +26,8 @@
 //   - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
 //   - lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
 //   - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
+//   - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
+//   - tentative_clears_neutral: behavior doubts and gossip leads resolve with no false-accusation cost (code: confrontDoubt)
 //   - observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 // consumes:
 //   - village.gossip
@@ -438,6 +441,23 @@
       return lie;
     },
 
+    // lieLive(vid, lie): is this lie actually being TOLD right now?
+    // TRUTH.md promises "High trust (>60) → truth, UNLESS pathological
+    // (malicious psychos lie better when trusted)". getActiveLie knew this,
+    // but every speech path (fillTalkLine, convoThreadBeat, convoAskTopic,
+    // scrubLiesFromLine) swapped the cover in on trust alone — a trusted
+    // liar kept lying forever and the promise was dead code (detective
+    // break-it 2026-10-09b). All speech paths gate on this now.
+    lieLive(vid, lie) {
+      if (!lie || lie.confessed) return false;
+      try {
+        const trust = ((this.state.village.trust || {})[vid]) || 10;
+        const dark = this.vpOf(vid).personality && this.vpOf(vid).personality.dark;
+        if (trust > 60 && !(dark && dark.kind === 'malicious' && lie.motive === 'pathological')) return false;
+      } catch (e) {}
+      return true;
+    },
+
     // lieScrubLine(line, truth, cover): replace the TRUTH occupation/origin
     // in a finished line with the cover story, the way a careful liar would.
     // Case-insensitive, whole-word(ish); tolerates a trailing plural.
@@ -461,7 +481,9 @@
         const lies = this.npcLies(vid) || {};
         for (const f of ['occupation', 'origin']) {
           const lf = lies[f];
-          if (lf && !lf.confessed && lf.truth && lf.told) line = this.lieScrubLine(line, lf.truth, lf.told);
+          // lieLive (detective break-it 2026-10-09b): scrubbing a truthful
+          // line would REWRITE the truth into the cover — only scrub live lies.
+          if (lf && this.lieLive(vid, lf) && lf.truth && lf.told) line = this.lieScrubLine(line, lf.truth, lf.told);
         }
       } catch (e) {}
       return line;
@@ -1044,25 +1066,31 @@
       }
 
       if (!lie) {
-        // no lie behind this doubt — it was a misunderstanding, and the
-        // accusation itself was the offense. Baseless accusations sting a
-        // little: people remember being called a liar. (Detective feel
-        // 2026-10-08: this branch used to grant +3 trust, which made
-        // accuse-everyone the dominant strategy — confrontation was
-        // risk-free.) Behavior doubts are real observations, not
-        // accusations — those stay neutral.
-        // The player still raises it (tentative windup), then the honest clearing.
+        // TENTATIVE CLEARS (detective break-it 2026-10-09b): behavior doubts
+        // and gossip leads were never accusations — the windup says so
+        // ("Something's been bothering me... help me understand it" /
+        // "I wanted to hear your side"). Running accuserPays('cleared') on
+        // them branded the player a false accuser (honest -5 + village
+        // gossip "you called X a liar, and you were wrong") for asking an
+        // honest question — the engine narrating an accusation that never
+        // happened (H1-class copy lie). Tentative clears resolve neutrally:
+        // no accuser cost, no wrongly_accused memory. (Supersedes the
+        // 2026-10-09 H2 reading that a behavior-doubt clear was a punishable
+        // "baseless accusation" — the observation was real.)
+        // Real accusations (contradiction/slip/observation/gossip-with-claim
+        // doubts with nothing behind them) still sting: that WAS an offense.
+        const tentative = doubt.kind === 'behavior' ||
+          (doubt.evidence || []).some(e => /haven't heard/.test(String(e)));
         this.confrontWindup(vid, doubt, null);
         line = this.drawTruthLine('clears', vid);
         outcome = 'cleared';
-        this.resolveDoubt(doubtId, 'misunderstanding — they explained it');
+        this.resolveDoubt(doubtId, tentative ? 'talked it through — they explained it' : 'misunderstanding — they explained it');
         this.noteSocialLesson('cleared');
+        if (tentative) return { ok: true, line, outcome };
         const clearedAfterSay = this.accuserPays(vid, outcome);
         try {
-          if (doubt.kind !== 'behavior') {
-            this.bumpTrust(vid, -2);
-            this.remember(vid, 'wrongly_accused', 'you called them a liar and were wrong');
-          }
+          this.bumpTrust(vid, -2);
+          this.remember(vid, 'wrongly_accused', 'you called them a liar and were wrong');
         } catch (e) {}
         return { ok: true, line, outcome, afterSay: clearedAfterSay };
       }
@@ -1302,7 +1330,9 @@
     try {
       for (const [f, key] of [['occupation', 'formerOccupation'], ['origin', 'homeRegion'], ['goal', 'goal']]) {
         const lf = lies[f];
-        if (lf && !lf.confessed && v && v[key] && lf.told) { swaps.push([key, v[key]]); v[key] = lf.told; }
+        // lieLive (detective break-it 2026-10-09b): a trusted non-pathological
+        // liar speaks the truth now — the cover swap must honor the trust gate.
+        if (lf && this.lieLive(vid, lf) && v && v[key] && lf.told) { swaps.push([key, v[key]]); v[key] = lf.told; }
       }
     } catch (e) {}
     let out;
@@ -1324,7 +1354,8 @@
     try {
       for (const [f, key] of [['occupation', 'formerOccupation'], ['origin', 'homeRegion'], ['goal', 'goal']]) {
         const lf = lies[f];
-        if (lf && !lf.confessed && v && v[key] && lf.told) { swaps.push([key, v[key]]); v[key] = lf.told; }
+        // lieLive (detective break-it 2026-10-09b): see fillTalkLine wrapper.
+        if (lf && this.lieLive(vid, lf) && v && v[key] && lf.told) { swaps.push([key, v[key]]); v[key] = lf.told; }
       }
     } catch (e) {}
     try { return origThreadBeat.call(this, vid); }
@@ -1347,7 +1378,10 @@
       try {
         for (const [f, key] of [['occupation', 'formerOccupation'], ['origin', 'homeRegion']]) {
           const lf = lies0[f];
-          if (lf && !lf.confessed && vp && vp[key]) { swaps0.push([key, vp[key]]); vp[key] = lf.told; }
+          // lieLive (detective break-it 2026-10-09b): trusted non-pathological
+          // liars speak the truth — no cover swap, and the baseline below
+          // records what was actually heard.
+          if (lf && this.lieLive(vid, lf) && vp && vp[key]) { swaps0.push([key, vp[key]]); vp[key] = lf.told; }
         }
       } catch (e) {}
       let raw;
@@ -1368,8 +1402,11 @@
       const line = topic === 'gossip' ? raw : this.scrubLiesFromLine(vid, raw);
       // track truthful claims too (baseline for future contradictions)
       try {
-        const occHeard = (lies0.occupation && !lies0.occupation.confessed) ? lies0.occupation.told : vp.formerOccupation;
-        const orgHeard = (lies0.origin && !lies0.origin.confessed) ? lies0.origin.told : vp.homeRegion;
+        // lieLive (detective break-it 2026-10-09b): the claim baseline must
+        // record what the player HEARD — the truth when the lie is dormant,
+        // never a cover the player was never told.
+        const occHeard = (lies0.occupation && this.lieLive(vid, lies0.occupation)) ? lies0.occupation.told : vp.formerOccupation;
+        const orgHeard = (lies0.origin && this.lieLive(vid, lies0.origin)) ? lies0.origin.told : vp.homeRegion;
         if ((topic === 'past' || topic === 'personal') && vp.formerOccupation) this.trackClaimSilent(vid, 'occupation', occHeard);
         if ((topic === 'past' || topic === 'personal') && vp.homeRegion) this.trackClaimSilent(vid, 'origin', orgHeard);
         if (topic === 'goal') this.trackClaimSilent(vid, 'goal', this.npcGoal(vid));

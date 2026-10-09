@@ -47,7 +47,10 @@ Personality-driven outcomes:
 - **Deflect** (smooth if malicious, clumsy if not): doubt deepens.
 - **Counter-attack**: relationship damage, they turn hostile.
 
-If no lie behind the doubt, it's cleared as a misunderstanding (trust +).
+If no lie behind the doubt, it's cleared as a misunderstanding — but a real
+accusation that lands empty costs the accuser (rep dent, village gossip names
+them). Tentative questions — behavior doubts, gossip leads formed before you
+heard their story — clear neutrally: no accusation was made.
 
 ## Design notes
 

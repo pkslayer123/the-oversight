@@ -711,7 +711,7 @@ Composes each world-map tile as a miniature auto-composed SVG scene: terrain bas
 ### truth (`truth.js`)
 Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip distorts per retelling (code: game.js seedGossip).
 
-**Provides:** trackClaim(vid, topic, claim), getClaims(vid), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), confrontDoubt(vid), npcGossipAbout(vid)
+**Provides:** trackClaim(vid, topic, claim), getClaims(vid), lieLive(vid, lie), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), confrontDoubt(vid), npcGossipAbout(vid)
 
 **Rules:**
 - claim_gossip_shares_truth_no_distortion: true (code: npcGossipAbout)
@@ -727,6 +727,8 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
 - lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
 - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
+- trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
+- tentative_clears_neutral: behavior doubts and gossip leads resolve with no false-accusation cost (code: confrontDoubt)
 - observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 
 **Consumes:** village.gossip

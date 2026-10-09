@@ -65,6 +65,13 @@ const innocent = (roster) => roster.find(vid => {
   let roster = await newSession(111);
   const vid = innocent(roster);
   ok(!!vid, 'found a villager with no lies');
+  // REFINED 2026-10-09b: a gossip LEAD (rumor relayed before ever hearing
+  // their story) is a tentative question, not an accusation — it clears
+  // neutrally now (see test-detective-breakit-20261009b.js B2f). The real
+  // false-accusation case needs a claim on file first: then the gossip
+  // contradicts what they TOLD you, and the confrontation is a genuine
+  // accusation that stings when baseless.
+  Game.trackClaimSilent(vid, 'occupation', 'baker');
   Game.checkGossipClaim(vid, 'occupation', 'underwater basket weaver', roster[0]);
   const doubt = Game.getDoubts(vid).find(d => d.kind === 'gossip');
   ok(!!doubt, 'false gossip formed a doubt');
