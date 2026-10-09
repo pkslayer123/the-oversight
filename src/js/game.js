@@ -30198,6 +30198,11 @@
     // Returns true if death was cheated (caller must not set over).
     maybeCheatDeath() {
       const s = this.state.scholar;
+      // BREAK-IT godhood 2026-10-09: a pending phoenix link already holds
+      // this death at the threshold. Firing molt/second_wind first burned
+      // their weekly/daily uses for zero benefit -- the link was going to
+      // hold anyway. The link holds; the cheats keep.
+      if (this.state.phoenixLink) return true;
       // molt: once per week, shed your skin. Heal to full — but lose all equipped gear.
       const week = Math.floor(s.day / 7);
       const moltUses = (s.moltWeek === week) ? (s.moltUses || 1) : 0;
@@ -30213,16 +30218,19 @@
       }
       // second_wind: once per day, when you'd die, you don't. 1 HP, 500 kcal.
       // refuses_death synergy: twice per day. undying_fury: full restore mid-rage.
+      // BREAK-IT godhood 2026-10-09: the card says DURING RAGE -- the old
+      // check was hasAbility('rage') (mere possession), so any rage-holder
+      // got the full heal even when calm. Now it reads the real rage state
+      // (s.rageActive, set by unleash_rage, spent per strike).
       const swUses = (s.secondWindDay === s.day) ? (s.secondWindUses || 1) : 0;
       const swMax = this.hasSynergy('refuses_death') ? 2 : 1;
       if (this.hasAbility('second_wind') && swUses < swMax && s.health <= 0) {
         s.secondWindDay = s.day; s.secondWindUses = swUses + 1;
-        const furious = this.hasSynergy('undying_fury') && this.hasAbility('rage');
-        // undying_fury: rage was active (health hit 0, which is below half). Log both as simultaneous.
-        const wasRaging = this.hasAbility('rage');
+        const furious = this.hasSynergy('undying_fury') && !!(s.rageActive && s.rageActive.rounds > 0);
+        // undying_fury: rage was active (not merely held). Log both as simultaneous.
         s.health = furious ? this.maxHealth() : 1; s.kcal = Math.max(s.kcal, 500);
         this.noteAbilityUse('second_wind');
-        if (wasRaging) this.noteAbilityUse('rage');
+        if (furious) this.noteAbilityUse('rage');
         this.say(furious ? 'UNDYING FURY: death came for you mid-rage and you LAUGHED. FULL HEALTH. The rage does not end.' : `SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal.${swMax > 1 ? ` ${swMax - swUses - 1} use left today.` : ' Once today.'})`);
         return true;
       }
@@ -30379,6 +30387,30 @@
     // bearer emerges at the victim's location with 1 HP, social aftermath.
     phoenixResolveBurn(bearerIsPlayer, bearerVid, victimVid, opts) {
       opts = opts || {};
+      // BREAK-IT godhood 2026-10-09: the victim may have died by other means
+      // while the link was pending (the fuse day is real time). Burning the
+      // corpse double-recorded the death -- a second registerDeath, a second
+      // fallen push, and removeVillager's mentorship trust hit landing twice.
+      // The fire accepts the death that already happened. No second burn.
+      const vGone = victimVid !== this.villagerId &&
+        (((this.vpOf(victimVid) || {}).dead) || !((this.state.village || {}).roster || []).includes(victimVid));
+      if (vGone) {
+        this.state.phoenixLink = null;
+        const goneName = this.displayName(victimVid);
+        this.say(`🔥 The fire reached for ${goneName} -- and found them already gone. It takes what was offered. The link goes quiet.`);
+        try { this.journalNote && this.journalNote('village', 'phoenix', 'The link reached for ' + goneName + ' -- already dead. No second burn.'); } catch (e) {}
+        if (bearerIsPlayer) {
+          const s = this.state.scholar;
+          s.health = Math.max(s.health || 0, 1); s.hp = s.health;
+        } else {
+          // The bearer's held death falls through: they were dying and the
+          // trade failed. dyingLinks stays set through removeVillager so the
+          // spent clause doesn't re-trigger; the death proceeds normally.
+          try { this.removeVillager(bearerVid, 'killed'); } catch (e) {}
+          try { delete (this.state.village.dyingLinks || {})[bearerVid]; } catch (e) {}
+        }
+        return true;
+      }
       const s = this.state.scholar;
       const vName = victimVid === this.villagerId ? 'you' : this.displayName(victimVid);
       let vx = s.mx, vy = s.my;
@@ -30600,6 +30632,16 @@
     // (caller must NOT complete the death -- the bearer is held, not dead).
     phoenixVillagerTrigger(vid) {
       const v = this.state.village, s = this.state.scholar;
+      // BREAK-IT godhood 2026-10-09: ONE link slot. A second bearer dying
+      // while a link is pending used to SILENTLY OVERWRITE state.phoenixLink,
+      // orphaning the first bearer in dyingLinks limbo (alive, clauseless, a
+      // held death that never resolves). Now the clause is spent against a
+      // busy fire, the death proceeds normally, honestly.
+      if (this.state.phoenixLink) {
+        this.npcRevokeAbility(vid, 'phoenix_clause');
+        this.say(`🔥 ${this.displayName(vid)}'s phoenix clause stirs -- but the fire is already holding a death. It lets this one through. (The clause is spent.)`);
+        return false;
+      }
       // PHOENIX CANNOT BURN PHOENIX (Steve 2026-10-09): unspent-clause
       // holders are excluded from the victim pool. (The Bearer <redacted> own
       // clause is revoked below, after the pool is built -- id !== vid
@@ -30702,6 +30744,10 @@
         // player-protests: you broke the bearer's link. True death for them.
         const bName = this.displayName(L.bearer);
         this.say(`🔥 The link SNAPS. ${bName} was holding your death -- now they're holding nothing. They die true death, and you live.`);
+        // BREAK-IT godhood 2026-10-09: the player's own death was HELD by
+        // this link -- they can be sitting at 0 HP with no pending damage, a
+        // limbo state. Tearing free of death leaves you alive.
+        s.health = Math.max(s.health || 0, 1); s.hp = s.health;
         try { delete (this.state.village.dyingLinks || {})[L.bearer]; } catch (e) {}
         this._phoenixResolving = true;
         try {
