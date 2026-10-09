@@ -626,12 +626,25 @@
     var v = this.state.village;
     if (!v || !v.roster) return _villageEats ? _villageEats.call(this) : undefined;
     var saved = v.roster;
+    var self = this;
+    // non-members are withheld from the pot during the call — but they must
+    // come back after, even though the call below may kill members.
+    var withheld = saved.filter(function (id) { return !self.isMember(id); });
     try {
-      var self = this;
       v.roster = saved.filter(function (id) { return self.isMember(id); });
       return _villageEats.call(this);
     } finally {
-      v.roster = saved;
+      // DEAD STAY DEAD (drifter break-it 2026-10-09): villagers who starved
+      // during the call were correctly dropped from the live roster by
+      // removeVillager. The old `v.roster = saved` restored the pre-call
+      // array wholesale — resurrecting corpses onto the roster as
+      // dead-marked zombies (eating again tomorrow, counted in meals).
+      // Restore = live roster (deaths honored) + pre-call non-members.
+      var live = v.roster || [];
+      var seen = {}, out = [], i, id;
+      for (i = 0; i < live.length; i++) { id = live[i]; if (!seen[id]) { seen[id] = true; out.push(id); } }
+      for (i = 0; i < withheld.length; i++) { id = withheld[i]; if (!seen[id]) { seen[id] = true; out.push(id); } }
+      v.roster = out;
     }
   };
 

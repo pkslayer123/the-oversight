@@ -18881,7 +18881,13 @@
             try { if (this.registerDeath) this.registerDeath({ kind: 'villager', villagerId: rid, name: this.displayName(rid), cause: 'starvation', killerId: null }); } catch (e) {}
             try { if (this.removeVillager) this.removeVillager(rid, 'killed'); } catch (e) {}
             try { if (this.seedGossip) this.seedGossip('death', { who: rid }, []); } catch (e) {}
-            this.say(`💀 ${this.displayName(rid)} starved. Slowly. The village is ${v.roster.length} now.`);
+            // AWAY DEATHS QUEUE (drifter break-it 2026-10-09): like wound
+            // deaths — you weren't there to mourn, and there's no vector for
+            // real-time news from 50 miles out. They'll tell you when you're
+            // back (returnToVillage delivers awayNews).
+            const starveMsg = `💀 ${this.displayName(rid)} starved. Slowly. The village is ${v.roster.length} now.`;
+            if (this.playerAtHaven()) this.say(starveMsg);
+            else { const sch = this.state.scholar; sch.awayNews = sch.awayNews || []; if (sch.awayNews.length < 8) sch.awayNews.push(starveMsg); }
             delete v.health[rid];
           }
         }
@@ -18936,7 +18942,11 @@
             try { if (this.registerDeath) this.registerDeath({ kind: 'villager', villagerId: id, name: this.displayName(id), cause: 'thirst', killerId: null }); } catch (e) {}
             try { if (this.removeVillager) this.removeVillager(id, 'killed'); } catch (e) {}
             try { if (this.seedGossip) this.seedGossip('death', { who: id }, []); } catch (e) {}
-            this.say(`💀 ${this.displayName(id)} died of thirst. There was nothing to drink.`);
+            // AWAY DEATHS QUEUE (drifter break-it 2026-10-09): same contract
+            // as wound/starvation deaths — no real-time bulletin from afar.
+            const thirstMsg = `💀 ${this.displayName(id)} died of thirst. There was nothing to drink.`;
+            if (this.playerAtHaven()) this.say(thirstMsg);
+            else { const sch = this.state.scholar; sch.awayNews = sch.awayNews || []; if (sch.awayNews.length < 8) sch.awayNews.push(thirstMsg); }
           }
         }
       }
@@ -19086,7 +19096,11 @@
         // "on the mend" for a corpse.
         if ((this.vpOf(vid) || {}).dead || !(v.roster || []).includes(vid)) {
           delete v.sick[vid];
-          this.say(`💀 ${nm(vid)} succumbed to the ${s.name}. The village is ${v.roster.length} now.`);
+          // AWAY DEATHS QUEUE (drifter break-it 2026-10-09): same contract —
+          // no real-time death bulletin for a player camped miles out.
+          const sickMsg = `💀 ${nm(vid)} succumbed to the ${s.name}. The village is ${v.roster.length} now.`;
+          if (this.playerAtHaven()) this.say(sickMsg);
+          else { const sch = this.state.scholar; sch.awayNews = sch.awayNews || []; if (sch.awayNews.length < 8) sch.awayNews.push(sickMsg); }
           continue;
         }
         if (s.daysLeft <= 0) {
