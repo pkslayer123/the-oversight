@@ -107,6 +107,7 @@
 //   - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
 //   - win_tax_announced: the -5 hp winner's mark is said out loud, never silent — a hidden HP tax is a lie (code: _contestEnd, Steve 2026-10-08)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
+//   - broadcast_hooks: BROADCAST MODE entry/exit/beat hooks — fireShow, fireRatingsSummons, and the contest watch branch call broadcastStart; all 7 activeContest=null end paths call broadcastEnd (idempotent); _contestRenderPhase routes phase.beat into broadcastBeat; _contestVerdict fires broadcastReplay; show phases declare beat names; _showEnd/_showVillagerEnd call the outcome beat (code: broadcast.js, Steve 2026-10-09)
 // consumes:
 //   - scholar.day
 //   - state.showBudget
@@ -544,6 +545,9 @@
       wounds: 0,
     };
     this.sysSay('📺 ───');
+    // BROADCAST MODE (Steve 2026-10-09): the show gets the TV frame —
+    // entry card, LIVE bug, commentary. The frame, not the beats, is new.
+    try { this.broadcastStart('show', { showId: s.id, showName: s.name, participant: who }); } catch (e) {}
     const rendered = this._contestRenderPhase(this.state.activeContest, phases[0], 0);
     this._cxStorePhase(this.state.activeContest, 0, rendered);
     this._cxPhaseSay(rendered.text);
@@ -580,7 +584,7 @@
       do: Object.assign({ note: c.note }, c.do || {}),
       next: c.end === 'won' ? 'WIN' : (c.end === 'lost' ? 'LOSE' : 'MIXED'),
     }));
-    return [{ text: beat.setup, choices }];
+    return [{ beat: 'showDeclare', text: beat.setup, choices }];
   };
 
   // SHOW WATCH PHASES (audit-shows 2026-10-09): a villager was pulled — the
@@ -590,6 +594,7 @@
   G.showWatchPhases = function(show, pid) {
     const pname = this.displayName(pid);
     return [{
+      beat: 'showWatchDeclare',
       text: `📺 ${show.name} — ${pname} is on.\n\n${show.desc}\n\nYou watch with the village. The cameras love the watchers almost as much as the watched — what you do in the crowd is content too.`,
       choices: [
         { label: 'Cheer them on', sub: 'real support', do: { note: `You cheer until your throat hurts. ${pname} hears it — everyone hears it.`, cheer: 0.05, fanLane: { lane: 'showbiz', n: 1, why: 'cheering for ' + pname } }, next: 'SHOW_VILLAGER' },
@@ -603,6 +608,7 @@
   // watches together. One communal beat, still a choice, still costs.
   G.showTogetherPhases = function(show) {
     return [{
+      beat: 'showTogetherDeclare',
       text: `📺 ${show.name} — the village watches together.\n\n${show.desc}\n\nSomeone brought snacks. It helps. The chat is already arguing about everything.`,
       choices: [
         { label: 'Bring the good snacks', sub: '150 kcal, worth it', do: { kcal: -150, note: 'You bring out the good stuff. The village settles in around you. This is the good part of being watched.', unity: 1, fanLane: { lane: 'showbiz', n: 1, why: 'watch-party snacks' } }, next: 'WIN' },
@@ -642,6 +648,7 @@
     try { r = this.showResolveVillager(pid, { id: ac.showId }, { cheer: ac.cheer || 0, heckle: !!ac.heckle }); } catch (e) {}
     const outcome = (r && r.outcome) || 'both';
     ac.phase = 'done';
+    try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     this.sysSay('📺 ───');
     if (outcome === 'fans' || outcome === 'both') {
@@ -658,6 +665,8 @@
     if (ac.comfort) this.sysSay(`📺 You go to ${pname} after. They're quiet. They'll talk about it later. Or never.`);
     else this.sysSay(`📺 The village will talk about this for days.`);
     try { this.leadShift('showmanship', 1); } catch (e) {}
+    // BROADCAST MODE: the commentators call the villager's fate.
+    try { this.broadcastBeat('SHOW_VILLAGER_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     return { done: true, outcome: 'show_' + outcome };
   };
 
@@ -673,6 +682,7 @@
     const isSummons = ac.kind === 'summons';
     const showName = ac.showName || 'the show';
     ac.phase = 'done';
+    try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     this.sysSay('📺 ───');
     const sayFavor = (n, why) => { try { if (this.apAdjustFavor) this.apAdjustFavor(n, why, 'showbiz'); } catch (e) {} };
@@ -710,6 +720,9 @@
         sayFavor(isSummons ? -2 : -1, 'refused ' + (isSummons ? 'the ratings summons' : showName));
       }
     }
+    // BROADCAST MODE: the commentators call the outcome — tied to the
+    // actual result, never a generic line.
+    try { this.broadcastBeat('SHOW_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     // Prize: a wacky alien curio, real and usable (apGrantItem), never
     // dinner. If the vault is shy, say so — never a silent pocket.
     if (prize && (isPlayer || isSummons)) {
@@ -753,6 +766,8 @@
       wounds: 0,
     };
     this.sysSay('📺 ───');
+    // BROADCAST MODE (Steve 2026-10-09): the summons airs too.
+    try { this.broadcastStart('summons', { showId: '__summons', showName: 'Ratings Summons', participant: 'player' }); } catch (e) {}
     const rendered = this._contestRenderPhase(this.state.activeContest, phases[0], 0);
     this._cxStorePhase(this.state.activeContest, 0, rendered);
     this._cxPhaseSay(rendered.text);
@@ -1363,6 +1378,8 @@
         variant: contest.variant || null,
         wounds: 0,
       };
+      // BROADCAST MODE (Steve 2026-10-09): watching a contest is television.
+      try { this.broadcastStart('contest-watch', { showId: contest.id, showName: contest.name, participant: ids[0] }); } catch (e) {}
       if (wphases && wphases[0]) {
         this.sysSay('📺 ───');
         const wrendered = this._contestRenderPhase(this.state.activeContest, wphases[0], 0);
@@ -1893,6 +1910,13 @@
     // when the phase is presented (phase 0 goes through here in both the
     // grabbed and choice paths, and contestChoose routes advances here too).
     if (phase.beat) { try { this._cxBeat(phase.beat); } catch (e) {} }
+    // BROADCAST MODE (Steve 2026-10-09): commentary follows the beats —
+    // the line is picked from the pool for THIS beat type, never generic.
+    try {
+      if (phase.beat && this.state && this.state.broadcast && this.state.broadcast.live) {
+        this.broadcastBeat(phase.beat, this.state.activeContest || {});
+      }
+    } catch (e) {}
     // Idempotent: the rendered phase is stored back into ac.phases (the
     // choice box renders phases directly), so a second render must not
     // stack another readout onto the text (Steve 2026-10-06).
@@ -3501,7 +3525,8 @@
       try { this.sysSay('📺 ' + this._contestDeathLine(contest, 'the arena', 'You')); } catch (e) {}
       this.sysSay('📺 The Death Reel will be tasteful. It won\'t be.');
       ac.phase = 'done';
-      this.state.activeContest = null;
+      try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
+    this.state.activeContest = null;
       if (ac.others && ac.others.length) {
         try { this._contestResolveOthers(ac); } catch (e) {}
       }
@@ -3660,6 +3685,7 @@
       try { this._contestResolveOthers(ac); } catch (e) {}
     }
     // Clear after a beat — the village processes what happened
+    try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     // (break-it 2026-10-09 r4: the old state.lastContestDay write was dead
     // code — written here and in _contestVerdict, read nowhere. Removed.)
@@ -3751,6 +3777,7 @@
       this.drama('contest', { type: 'loser', name: pname, integration: integ });
     } catch (e) {}
     if (!ac._suppressLearn) { try { this.contestLearn(ac.contestId, 'died'); } catch (e) {} }
+    try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     if (isWatch) {
       // A villager died on camera. The village buries them; the player lives
@@ -3806,6 +3833,7 @@
     // sustained beat audio (tithe's heartbeat) must die with the contest.
     try { this.audioEvent('heartbeatStop'); } catch (e) {}
     ac.phase = 'done';
+    try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     return { done: true, outcome: 'refused' };
   };
@@ -4195,6 +4223,9 @@
       try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
       this.drama('contest', { type: 'judging', integration: integ });
     } catch (e) {}
+    // BROADCAST MODE (Steve 2026-10-09): the Death Reel moment — inside a
+    // live broadcast, the verdict gets the replay treatment.
+    try { this.broadcastReplay(); } catch (e) {}
     const contest = this._cxScaledContest(ac);
     // WATCHER AGENCY (Steve 2026-10-06, real 2026-10-08): cheering moves
     // your people — as real performance, not odds. Steadies the arm in
@@ -4293,6 +4324,7 @@
     }
     ac.participant = pids[0];
     ac._suppressLearn = false;
+    try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     // (break-it 2026-10-09 r4: the old state.lastContestDay write was dead
     // code — read nowhere. Removed.)

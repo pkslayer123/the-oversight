@@ -11502,7 +11502,16 @@
     const tag = ac.kind === 'summons' ? '📺 RATINGS SUMMONS'
       : ac.kind === 'show' ? (ac.participant === 'player' ? '📺 SHOW — YOU' : (ac.participant === 'together' ? '📺 SHOW — VILLAGE' : '📺 SHOW — WATCHING'))
       : (ac.participant === 'player' ? '📺 CONTEST — YOU' : '📺 CONTEST — WATCHING');
-    return `<div class="dialogue-box contest-box"><div class="dlg-head">${tag}</div><div class="dlg-line">${text}</div><div class="inline-btns">${btns}</div></div>`;
+    // BROADCAST MODE (Steve 2026-10-09): the TV frame inside the modal —
+    // LIVE bug, watching ribbon, commentary ticker. The player must never
+    // wonder whether they're playing or watching.
+    const bc = Game.state && Game.state.broadcast;
+    const bcLive = !!(bc && bc.live);
+    const liveBug = bcLive ? `<div class="broadcast-live-bug"><span class="live-dot"></span>LIVE</div>` : '';
+    const watching = (bcLive && ac.participant !== 'player')
+      ? `<div class="broadcast-watching-ribbon">🔭 YOU ARE WATCHING — this is a scene playing out, not your life</div>` : '';
+    const ticker = bcLive ? Game.broadcastTickerHTML() : '';
+    return `<div class="dialogue-box contest-box${bcLive ? ' broadcast-on' : ''}">${liveBug}<div class="dlg-head">${tag}</div>${watching}<div class="dlg-line">${text}</div>${ticker}<div class="inline-btns">${btns}</div></div>`;
   }
 
   function narrationBoxHTML(st, chatView) {

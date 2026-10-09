@@ -1117,6 +1117,32 @@
       } catch (e) { Game.say('🐞 show failed: ' + e.message); }
     },
 
+    // BROADCAST MODE (Steve 2026-10-09): airs a full show end to end —
+    // entry title card, LIVE bug, commentary ticker following the beats,
+    // CUT TO transitions, lower third, explicit exit card. Drives the
+    // whole beat programmatically: entry -> beats -> outcome -> exit.
+    broadcastShow() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 16;
+      Game.state.systemArrived = true;
+      placeVillagers([[2,2],[6,6]]);
+      Game.say('🐞 SCENARIO: BROADCAST MODE — a full show, end to end.');
+      Game.say('🐞 Watch for: entry title card, LIVE bug, scanline grid, ticker commentary, CUT TO, lower third, exit card.');
+      try {
+        const show = Game.showPool().find(x => x.id === 'why_eat');
+        if (!show) { Game.say('🐞 no why_eat show in pool'); return; }
+        Game.fireShow(show);
+        Game.say(`🐞 frame live after fireShow: ${!!(Game.state.broadcast && Game.state.broadcast.live)} (want true)`);
+        Game.say(`🐞 ticker lines after entry: ${((Game.state.broadcast || {}).ticker || []).length} (want >= 1 — the pull/declare beat)`);
+        let guard = 0;
+        while (Game.state.activeContest && guard++ < 8) {
+          try { Game.contestChoose(0); } catch (e) { Game.say('🐞 choose failed: ' + e.message); break; }
+        }
+        const stillLive = !!(Game.state.broadcast && Game.state.broadcast.live);
+        Game.say(`🐞 frame live after show end: ${stillLive} (want false — the exit card fired)`);
+      } catch (e) { Game.say('🐞 broadcastShow failed: ' + e.message); }
+    },
     // Contest eligibility check
     contestEligible() {
       freshGame();
@@ -1252,6 +1278,7 @@
       ['contestForage', '📺 Contest: Calorie Run'],
       ['contestWatch', '📺 Contest: WATCH MODE (villager taken)'],
       ['showWhyEat', '📺 Show: WHY DO THEY EAT?'],
+      ['broadcastShow', '📺 Broadcast: full show end-to-end'],
       ['contestEligible', '📺 Contest eligibility check'],
       ['alienEncounter', '👤 Alien player encounter'],
     ];
@@ -1268,7 +1295,7 @@
       '👹 Monsters — Wave 2': ['static', 'griefcounselor', 'reviewdrone', 'influencer', 'motivationalspeaker', 'customerservice', 'termsconditions', 'middlemanager', 'inspiration', 'nostalgia', 'statickite'],
       '⚖️ Justice & Social': ['ambush', 'mootAccused', 'mootJuror', 'exile', 'uprising', 'liars'],
       '📖 Story': ['mantle', 'day7', 'day1', 'night', 'language', 'starving'],
-      '📺 Contests & Shows': ['contestPit', 'contestHide', 'contestForage', 'contestWatch', 'showWhyEat', 'contestEligible'],
+      '📺 Contests & Shows': ['contestPit', 'contestHide', 'contestForage', 'contestWatch', 'showWhyEat', 'broadcastShow', 'contestEligible'],
       '👤 Alien Players': ['alienEncounter'],
       '💍 Items': ['keepsake'],
     };

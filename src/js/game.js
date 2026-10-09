@@ -17347,6 +17347,7 @@
         else if (kind === 'npcAlert') D.npcAlert(...args);
         else if (kind === 'abilityBurst') D.abilityBurst(...args);
         else if (kind === 'contest') D.contestFlash(...args);
+        else if (kind === 'broadcast') D.broadcastFlash(...args);
         else if (kind === 'integration') D.integrationPulse(...args);
         else if (kind === 'secret') D.secretShimmer(...args);
         else if (kind === 'ambush') D.ambushWarning(...args);

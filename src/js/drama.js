@@ -606,6 +606,83 @@
       );
     },
 
+    // broadcastFlash: BROADCAST MODE dispatcher (Steve 2026-10-09).
+    // Game.drama('broadcast', spec) routes here. spec.type:
+    // 'entry' | 'exit' | 'lowerthird' | 'replay'
+    broadcastFlash(spec) {
+      if (!spec || typeof spec !== 'object' || !spec.type) return;
+      switch (spec.type) {
+        case 'entry': return this.broadcastEntry(spec.showName || 'the show', spec.kind || 'show');
+        case 'exit': return this.broadcastExit();
+        case 'lowerthird': return this.broadcastLowerThird(spec.name || '???', spec.title || '');
+        case 'replay': return this.broadcastReplay();
+        default: return;
+      }
+    },
+
+    // broadcastEntry: the show title card (~2s). Unmistakable: you are
+    // about to watch television.
+    broadcastEntry(showName, kind) {
+      const kindLabel = kind === 'summons' ? 'RATINGS SUMMONS'
+        : kind === 'contest-watch' ? 'CONTEST — LIVE COVERAGE' : 'LIVE SHOW';
+      this.spawn(
+        `<div style="text-align:center;padding:28px 20px;background:rgba(8,4,16,0.96);border:3px solid #4df3ff;border-radius:16px;max-width:320px;box-shadow:0 0 50px rgba(77,243,255,0.45);">
+          <div style="display:inline-block;background:#ff3b3b;color:#fff;font-weight:bold;font-size:12px;letter-spacing:2px;padding:4px 10px;border-radius:4px;margin-bottom:10px;">● LIVE</div>
+          <div style="font-size:13px;color:#4df3ff;letter-spacing:3px;margin-bottom:6px;">${kindLabel}</div>
+          <div style="font-size:20px;font-weight:bold;color:#fff;margin-bottom:8px;">${showName}</div>
+          <div style="font-size:12px;color:#9db4c0;">You are watching. This is television, not your life.</div>
+        </div>`,
+        `position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(0.85);`,
+        'drama-broadcast-entry',
+        2000
+      );
+    },
+
+    // broadcastExit: ALWAYS explicit. The frame lifts, the grid is a grid again.
+    broadcastExit() {
+      this.spawn(
+        `<div style="text-align:center;padding:20px;background:rgba(8,4,16,0.94);border:2px solid #666;border-radius:12px;max-width:280px;">
+          <div style="font-size:15px;color:#fff;font-weight:bold;">📺 Broadcast over</div>
+          <div style="font-size:12px;color:#9db4c0;margin-top:4px;">Back to your life.</div>
+        </div>`,
+        `position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);`,
+        'drama-broadcast-exit',
+        1800
+      );
+    },
+
+    // broadcastLowerThird: "MARA — Villager, Doomed" style. Playful, the
+    // show's tone — a name card, not a threat display.
+    broadcastLowerThird(name, title) {
+      const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      this.spawn(
+        `<div style="background:linear-gradient(90deg,rgba(8,4,16,0.95) 70%,transparent);border-left:4px solid #ff6b9d;padding:8px 36px 8px 14px;border-radius:0 8px 8px 0;">
+          <div style="font-size:16px;font-weight:bold;color:#fff;letter-spacing:1px;">${esc(name).toUpperCase()}</div>
+          <div style="font-size:12px;color:#ff9dc0;">${esc(title)}</div>
+        </div>`,
+        `position:absolute;left:4%;bottom:12%;`,
+        'drama-broadcast-lowerthird',
+        2600
+      );
+    },
+
+    // broadcastReplay: the Death Reel moment — slow-mo treatment: desaturate
+    // + "REPLAY" stamp, inside a live broadcast.
+    broadcastReplay() {
+      this.spawn(
+        '',
+        `position:absolute;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:grayscale(0.85) contrast(1.1);`,
+        'drama-broadcast-replay-dim',
+        2200
+      );
+      this.spawn(
+        `<div style="font-size:18px;font-weight:bold;color:#ffd54a;text-shadow:0 2px 10px rgba(0,0,0,1);letter-spacing:5px;border:3px solid #ffd54a;border-radius:6px;padding:6px 14px;background:rgba(0,0,0,0.55);">📼 REPLAY</div>`,
+        `position:absolute;left:50%;top:18%;transform:translate(-50%,-50%) rotate(-4deg);`,
+        'drama-broadcast-replay-stamp',
+        2200
+      );
+    },
+
     // ================= COMBAT SPECTACLE (Steve 2026-10-07, Drama B1) =================
     // phaseShift: monster shifts combat phase — edge pulse + readable label.
     // Scales with integration: L0 silent-ish, L3 full banner.
