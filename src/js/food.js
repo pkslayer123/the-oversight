@@ -2196,7 +2196,13 @@
   // when the fire actually cooked something.
   const origCookAll = G.cookAll;
   G.cookAll = function () {
-    if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
+    // TENT FIRE COUNTS (break-it camps-8 2026-10-09): the interior tent fire
+    // is a real fire — cookInTent cooks on it. nearFire() only sees grid
+    // cells; without this the tent-room Cook button (shown when the fire pan
+    // is lit) charged 24 ticks then said "Need a fire to cook." two feet
+    // from a flame. Same pattern as boilWater (game.js).
+    const fireHere = this.nearFire() || (typeof this.tentFireLit === 'function' && this.tentFireLit());
+    if (!fireHere) { this.say('Need a fire to cook.'); return null; }
     const captured = [];
     const origSay = this.say;
     this.say = (m) => captured.push(String(m));

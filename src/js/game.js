@@ -55,6 +55,7 @@
 //   - removeTick() (attached ambient tick removal: technique/ability-gated, blind attempt with botch risk)
 //   - villagerTickTeachTick() (camp healer teaches tick_removal within a couple days)
 //   - campHealerName() -> name | null
+//   - campTentStanding(tx, ty) -> bool (camp integrity: an intact yours-tent still stands on the tile)
 //   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
 //   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge; records the sharing for the codex MAPS gate)
 //   - villageMapKnown() -> {"x,y":1} (codex MAPS: your seen tiles + visited tiles of villagers who actually shared via compareMaps; unshared seed tiles are never shown)
@@ -7770,6 +7771,20 @@
       }
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
+      // NO PHANTOM TENT ROOMS (break-it camps-8 2026-10-09): node travel
+      // moves the player to another tile — the tent-room screen keys off
+      // insideTent alone, so a stale insideTent would render the old tent's
+      // room (and tentFire()/sleepQuality() reads) on the new tile, and
+      // validateInsideTent would keep it (the old tent still stands, yours).
+      // You walk out of the tent to travel. (Unreachable from the honest UI —
+      // the tent room has no travel button — this is engine armor for direct
+      // calls and debug scenarios.)
+      try {
+        if (this.state && this.state.scholar && this.state.scholar.insideTent) {
+          this.state.scholar.insideTent = null;
+          this.state.scholar.tentSmoke = 0;
+        }
+      } catch (e) {}
       const dest = this.tileAt(x, y);
       // blocked? don't travel — return the blockage so the UI can offer solutions.
       // (force bypasses: swimming doesn't fix the path, it just gets you across.)
@@ -16276,6 +16291,25 @@
       this.pendingMonsterId = monsterId;
       this.say(`The flap stirs. A shape detaches from the dark inside your tent — eyes catching the firelight. ${mname} is IN here with you.`);
     },
+    // campTentStanding(tx, ty): does an intact YOURS tent still stand on this
+    // tile? The camp's body is its tents — wreck paths (wreckTent,
+    // destroyCell, scorchCells) must only break the camp when the LAST one
+    // falls, not when one of several does. (break-it camps-8: same over-break
+    // class as camps-7's scorchCells fix — a monster tearing down one tent
+    // must not condemn the other pitched tent via breakCamp's sweep.)
+    campTentStanding(tx, ty) {
+      try {
+        const t = this.tileAt(tx, ty);
+        const detail = this.genDetail(tx, ty);
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+          if (detail[y] && detail[y][x] === 'tent') {
+            const sec = t.secrets && t.secrets[x + ',' + y];
+            if (sec && sec.yours && sec.condition !== 'shredded') return true;
+          }
+        }
+      } catch (e) {}
+      return false;
+    },
     // wreckTent: one tent cell, gone. No salvage, no packing — wreckage.
     wreckTent(tx, ty, cx, cy) {
       try {
@@ -16293,13 +16327,18 @@
           const f = fires[i];
           if (f.inside && f.tx === tx && f.ty === ty && f.cx === cx && f.cy === cy) fires.splice(i, 1);
         }
-        // CAMP INTEGRITY (break-it camps-2 2026-10-08): a wrecked camp-tent
-        // kills the camp — same phantom-camp class as destroyCell (break-it
-        // camps 2026-10-08). Without this, state.camp survived on a wrecked
-        // tent: atCamp() stayed true (sort ritual on dirt), "Set up camp"
-        // refused, and no abandon action existed. Only the camp's own tile.
+        // CAMP INTEGRITY (break-it camps-2 2026-10-08, refined camps-8): a
+        // wrecked camp-tent kills the camp that stood on it — same
+        // phantom-camp class as destroyCell (break-it camps 2026-10-08).
+        // Without this, state.camp survived on a wrecked tent: atCamp()
+        // stayed true (sort ritual on dirt), "Set up camp" refused, and no
+        // abandon-camp action existed. Only the camp's own tile — and only
+        // when no INTACT yours-tent remains (camps-8): one tent torn down
+        // must not condemn the others via breakCamp's sweep.
         const c = this.state.camp;
-        if (c && c.px === tx && c.py === ty) { try { this.breakCamp('a monster tore it down'); } catch (e) {} }
+        if (c && c.px === tx && c.py === ty && !this.campTentStanding(tx, ty)) {
+          try { this.breakCamp('a monster tore it down'); } catch (e) {}
+        }
       } catch (e) {}
     },
     // _breachLock (break-it camps-2 2026-10-08): while the thing is IN the tent
@@ -22796,8 +22835,10 @@
       // Mark the map as changed so it saves
       this.map.dirty = true;
       // the camp's body was the tent: no tent, no camp. breakCamp's own
-      // tent-sweep is idempotent here (the cell is already cleared).
-      if (smashedCampTent) {
+      // tent-sweep is idempotent here (the cell is already cleared). Only
+      // when no INTACT yours-tent remains (break-it camps-8): smashing one
+      // of two pitched tents must not condemn the other via the sweep.
+      if (smashedCampTent && !this.campTentStanding(this.map.px, this.map.py)) {
         try { this.breakCamp(cause === 'bulldozer' ? 'a bulldozer flattened it' : 'the world took it'); } catch (e) {}
       }
       return true;
@@ -22955,19 +22996,13 @@
       // phantom-camp class as wreckTent/destroyCell). If no INTACT yours-tent
       // remains on the camp's tile, the camp's body is gone: break it.
       // breakCamp's sweep wrecks the shredded tents and kills the fires
-      // honestly. A surviving intact tent keeps the camp standing.
+      // honestly. A surviving intact tent keeps the camp standing. (break-it
+      // camps-8: the scan moved into campTentStanding — one rule, three
+      // wreck paths: scorchCells, wreckTent, destroyCell.)
       try {
         const c = this.state.camp;
-        if (c && c.px === this.map.px && c.py === this.map.py) {
-          const detail = this.genDetail(c.px, c.py);
-          let intact = false;
-          for (let y = 0; y < 9 && !intact; y++) for (let x = 0; x < 9; x++) {
-            if (detail[y] && detail[y][x] === 'tent') {
-              const sec = t.secrets && t.secrets[x + ',' + y];
-              if (sec && sec.yours && sec.condition !== 'shredded') { intact = true; break; }
-            }
-          }
-          if (!intact) this.breakCamp('the beam tore it to ribbons');
+        if (c && c.px === this.map.px && c.py === this.map.py && !this.campTentStanding(c.px, c.py)) {
+          this.breakCamp('the beam tore it to ribbons');
         }
       } catch (e) {}
     },
