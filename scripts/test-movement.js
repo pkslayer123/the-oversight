@@ -92,7 +92,12 @@ function resetMA() {
     const kcal0 = s.kcal, t0 = s.dayTicks || 0;
     const path = Game.beginPathWalk(target[0], target[1]);
     ok('beginPathWalk returns the path', Array.isArray(path) && path.length === testPath.length);
-    eq('beginPathWalk charges 10 kcal/square up front', Math.round(kcal0 - s.kcal), path.length * 10);
+    // HONESTY r6 (break-it travel r6 2026-10-09): beginPathWalk validates +
+    // quotes but charges nothing up front — pathStep levies walkStepKcal()
+    // per landed square, so an interrupted walk never bills squares never
+    // walked. The old "charges up front" assertion is the retired contract.
+    eq('beginPathWalk charges nothing up front', Math.round(kcal0 - s.kcal), 0);
+    eq('beginPathWalk quotes walkCost(path.length)', Game.walkCost(path.length), path.length * 10);
     eq('beginPathWalk charges no ticks yet', (s.dayTicks || 0) - t0, 0);
     // path is single steps: consecutive deltas are Chebyshev-1 (animatable)
     let allSingle = true, px = sx, py = sy;
@@ -121,7 +126,9 @@ function resetMA() {
     ok('every pathStep landed', allOk);
     eq('pathStep count == path length', stepped, testPath.length);
     eq('pathStep: 1 tick per step', (s.dayTicks || 0) - t0, testPath.length);
-    eq('pathStep: no double kcal charge (prepaid)', Math.round(kcal0 - s.kcal), 0);
+    // HONESTY r6: the walk bills exactly the landed squares — no double
+    // charge (steps never bill twice) and no shortfall.
+    eq('pathStep: 10 kcal per landed square, total == walkCost(n)', Math.round(kcal0 - s.kcal), Game.walkCost(testPath.length));
     eq('monsterTurn ran once per step', monsters, testPath.length);
     eq('animalTurn ran once per step', animals, testPath.length);
     const [ex, ey] = testPath[testPath.length - 1];

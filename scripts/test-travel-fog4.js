@@ -314,9 +314,18 @@ function setupBarrierDeath() {
     if (BEFORE) {
       ok('BEFORE: plain walk charges 10/square', charged === target.n * 10, `charged=${charged} n=${target.n}`);
     } else {
+      // HONESTY r6 (break-it travel r6 2026-10-09): beginPathWalk no longer
+      // charges up front — pathStep levies walkStepKcal() per landed square,
+      // so an interrupted walk never bills squares never walked. The quote
+      // (walkCost) must equal the sum of the step charges exactly.
       ok('AFTER: walkCost(n) exists', typeof Game.walkCost === 'function');
       ok('AFTER: walkCost(n) === 10*n unmodified', Game.walkCost(target.n) === target.n * 10);
-      ok('AFTER: charged === walkCost(n)', charged === Game.walkCost(target.n), `charged=${charged} walkCost=${Game.walkCost(target.n)}`);
+      ok('AFTER: beginPathWalk charges nothing up front', charged === 0, `charged=${charged}`);
+      let landed = 0;
+      for (const [qx, qy] of path) if (Game.pathStep(qx, qy)) landed++;
+      const walked = Math.round(k0 - s.kcal);
+      ok('AFTER: full walk bills exactly walkCost(n)', walked === Game.walkCost(target.n) && landed === target.n,
+        `walked=${walked} walkCost=${Game.walkCost(target.n)} landed=${landed}/${target.n}`);
     }
     // WITH Wanderer (-10%): the old label (n*10) lied; walkCost is the truth
     s.kcal = 9000;
@@ -329,16 +338,21 @@ function setupBarrierDeath() {
     }
     if (t2) {
       s.kcal = 9000;
-      Game.beginPathWalk(t2.tx, t2.ty);
-      const charged2 = Math.round(9000 - s.kcal);
-      const expect = Math.max(t2.n, Math.round(t2.n * 10 * 0.9));
-      console.log(`  [info T5] n=${t2.n} oldLabel=${t2.n * 10} charged=${charged2} expect=${expect}`);
+      const p2path = Game.beginPathWalk(t2.tx, t2.ty);
+      const chargedUpfront = Math.round(9000 - s.kcal);
+      const expect = BEFORE ? Math.max(t2.n, Math.round(t2.n * 10 * 0.9)) : t2.n * Game.walkStepKcal(); // per-step sum == walkCost(n)
+      console.log(`  [info T5] n=${t2.n} oldLabel=${t2.n * 10} upfront=${chargedUpfront} walkCost=${Game.walkCost(t2.n)}`);
       if (BEFORE) {
-        ok('BEFORE: Wanderer pays LESS than the quoted label (label dishonest)', charged2 === expect && charged2 !== t2.n * 10,
-          `label=${t2.n * 10} charged=${charged2}`);
+        ok('BEFORE: Wanderer pays LESS than the quoted label (label dishonest)', chargedUpfront === expect && chargedUpfront !== t2.n * 10,
+          `label=${t2.n * 10} charged=${chargedUpfront}`);
       } else {
-        ok('AFTER: walkCost(n) applies the Wanderer discount', Game.walkCost(t2.n) === expect, `walkCost=${Game.walkCost(t2.n)} expect=${expect}`);
-        ok('AFTER: charged === walkCost(n) with Wanderer', charged2 === Game.walkCost(t2.n), `charged=${charged2}`);
+        ok('AFTER: walkCost(n) applies the Wanderer discount', Game.walkCost(t2.n) < t2.n * 10, `walkCost=${Game.walkCost(t2.n)} raw=${t2.n * 10}`);
+        ok('AFTER: beginPathWalk charges nothing up front (Wanderer)', chargedUpfront === 0, `charged=${chargedUpfront}`);
+        let landed2 = 0;
+        for (const [qx, qy] of p2path) if (Game.pathStep(qx, qy)) landed2++;
+        const walked2 = Math.round(9000 - s.kcal);
+        ok('AFTER: full walk bills exactly walkCost(n) with Wanderer', walked2 === Game.walkCost(t2.n) && walked2 === expect && landed2 === t2.n,
+          `walked=${walked2} walkCost=${Game.walkCost(t2.n)}`);
       }
     } else {
       ok('T5 second leg: walk target found', false);

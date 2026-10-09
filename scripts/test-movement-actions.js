@@ -35,13 +35,23 @@ function ok(name, cond) {
 
   const k2 = s.kcal, t2 = s.dayTicks || 0;
   Game.pathStep(4, 6);
-  ok('pathStep costs 2 kcal', Math.round(k2 - s.kcal) === 2);
+  // HONESTY r6 (break-it travel r6 2026-10-09): pathStep levies one square's
+  // walk cost per landed step (walkStepKcal, 10 unmodified) — the old "2 kcal"
+  // assertion predates the prepaid model entirely and never passed against it.
+  ok('pathStep costs walkStepKcal() per landed step', Math.round(k2 - s.kcal) === Game.walkStepKcal());
   ok('pathStep costs 1 tick', (s.dayTicks || 0) - t2 === 1);
 
   console.log('\n=== Haven re-entry ===');
-  // Simulate haven grounds
+  // Simulate haven grounds — back on the haven tile (the movement section
+  // above moved the map to 3,3; enterBuilding's haven-tile gate needs home).
+  Game.map.px = Game.state.village.px ?? 4; Game.map.py = Game.state.village.py ?? 4;
   s.mx = 4; s.my = 2; s.insideHaven = false;
-  const actions = Game.cellActions(4, 1); // lodge cell
+  // the grounds/hall layouts cache in tile.detail — flipping insideHaven by
+  // hand needs the same invalidation exitBuilding/enterBuilding perform.
+  Game.tileAt(Game.map.px, Game.map.py).detail = null;
+  // the lodge sits centered on the grounds (rows 3-4, cols 3-5 — Steve
+  // 2026-10-07); the old (4,1) coordinate predates the centered layout.
+  const actions = Game.cellActions(4, 3); // lodge cell
   ok('Go inside action available at lodge', actions.includes('Go inside'));
   
   // Enter and verify state

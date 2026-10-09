@@ -204,7 +204,12 @@ const keepAlive = s => { s.kcal = 2400; s.hydration = 100; if (s.health < 200) s
     if (pathp) for (const [tx, ty] of pathp) { if (Game.pathStep(tx, ty)) steps++; else break; }
     const totalSpent = k0 - s.kcal;
     say();
-    attack('H2 committed-walk kcal accounting', charged !== announced || totalSpent !== announced,
+    // HONESTY r6 (break-it travel r6 2026-10-09): the contract changed —
+    // beginPathWalk charges nothing up front; pathStep levies walkStepKcal()
+    // per landed square. The invariant is now: upfront 0, total after all
+    // steps === announced quote === walkCost(n). (The old prepaid model
+    // forfeited kcal for squares never walked when a walk was interrupted.)
+    attack('H2 committed-walk kcal accounting', charged !== 0 || totalSpent !== announced || steps !== (pathp ? pathp.length : 0),
       `announced:${announced} chargedUpfront:${charged} totalAfterSteps:${totalSpent} steps:${steps}`);
   }
 

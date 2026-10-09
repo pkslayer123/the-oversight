@@ -56,7 +56,8 @@
 //   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
 //   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge; records the sharing for the codex MAPS gate)
 //   - villageMapKnown() -> {"x,y":1} (codex MAPS: your seen tiles + visited tiles of villagers who actually shared via compareMaps; unshared seed tiles are never shown)
-//   - walkCost(n) -> kcal (the one honest price of a committed n-square walk: quoted by the "Walk here" button AND charged by beginPathWalk; applies travel.cost_mult)
+//   - walkCost(n) -> kcal (the one honest price of a committed n-square walk: quoted by the "Walk here" button AND equal to the sum of the per-step charges pathStep levies as squares land; applies travel.cost_mult)
+//   - walkStepKcal() -> kcal (the honest price of ONE square of a committed walk; pathStep charges this per landed step so an interrupted walk never bills squares never walked)
 // rules:
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
@@ -73,6 +74,8 @@
 //   - codex_maps_are_shared: the codex MAPS section shows only shared ground — your seen tiles plus villagers who actually compared maps with you (code: villageMapKnown, break-it travel r4 2026-10-09)
 //   - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
 //   - monster_alias_resyncs_on_travel: scholar.monster mirrors the player-tile monster — travelTo re-syncs on arrival so the monster left behind can't haunt perceptionHints as a phantom (code: travelTo, explorer break-it 2026-10-09)
+//   - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding) refuse when over — the corpse walks nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
+//   - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
@@ -7090,6 +7093,9 @@
     // HAVEN DOORS: the building has an inside and an outside. Doors are real.
     // Step through and you're on the Haven grounds — tents, fire pit, the world beyond.
     exitBuilding() {
+      // DEAD (break-it travel r6 2026-10-09): the corpse walks through no
+      // doors — same class as the examineCell post-death fix (round 5).
+      if (this.over) return false;
       const s = this.state.scholar;
       s.insideHaven = false;
       // invalidate the cached detail — the grounds are a different place than the hall
@@ -7129,6 +7135,8 @@
       return true;
     },
     enterBuilding() {
+      // DEAD (break-it travel r6 2026-10-09): same class as exitBuilding.
+      if (this.over) return false;
       const s = this.state.scholar;
       // STATE INTEGRITY: the hall is at Haven. Going "inside" from a
       // thicket six tiles out would desync inside/outside (and with it the
@@ -7496,6 +7504,10 @@
     // micro-move: step to an adjacent cell in the 9x9. 1 tick of time, no effort.
     // this is how you reach the plant, the water, the monster. the world is physical.
     microMove(cx, cy) {
+      // DEAD (break-it travel r6 2026-10-09): the corpse takes no steps —
+      // same class as the examineCell post-death fix (round 5), which the
+      // sibling sweep missed on every movement function.
+      if (this.over) return false;
       // COMBAT (break-it travel 2026-10-08, sibling sweep): same class as the
       // travelTo combat-escape — a raw microMove mid-fight slides scholar.mx/my
       // without moving the tb fighter, desyncing the fight. Combat movement is
@@ -7553,6 +7565,9 @@
       return r;
     },
     _cellInteract(cx, cy) {
+      // DEAD (break-it travel r6 2026-10-09): no interacting past death —
+      // the old code ran monster/animal/villager turns for a corpse.
+      if (this.over) return null;
       // ACTIONS move the world. Steps don't.
       this.monsterTurn();
       this.animalTurn();
@@ -8780,25 +8795,39 @@
       return null; // no path
     },
 
-    // walkCost(n): the honest price of a committed n-square walk — quoted by
-    // the "Walk here" button AND charged by beginPathWalk. One formula, both
-    // surfaces (break-it travel r4 2026-10-09: the label ignored
-    // travel.cost_mult, so Wanderer/Second Skin paid less than quoted —
-    // a label is a promise).
-    walkCost(n) {
-      let cost = n * 10;
+    // walkStepKcal(): the honest price of ONE square of a committed walk.
+    // walkCost(n) is exactly n of these — so the "Walk here (C kcal)" quote
+    // and the sum of the per-step charges pathStep levies always agree, even
+    // with travel.cost_mult (Wanderer / Second Skin).
+    walkStepKcal() {
+      let cost = 10;
       try {
         const mult = this.modTarget('travel.cost_mult', 1);
-        if (mult !== 1) cost = Math.max(n, Math.round(cost * mult));
+        if (mult !== 1) cost = Math.max(1, Math.round(cost * mult));
       } catch (e) {}
       return cost;
     },
 
-    // beginPathWalk: validate + charge a committed walk UP FRONT (10 kcal/
-    // square via walkCost — the same number the "Walk here" button quotes),
-    // step-by-step via pathStep. Returns the path ([[x,y],...]) or null.
+    // walkCost(n): the honest price of a committed n-square walk — quoted by
+    // the "Walk here" button AND equal to the sum of the per-step charges.
+    // One formula, both surfaces, exact agreement (break-it travel r6
+    // 2026-10-09: the old Math.max(n, round(n*10*mult)) form disagreed with
+    // the per-step sum under fractional mults).
+    walkCost(n) {
+      return n * this.walkStepKcal();
+    },
+
+    // beginPathWalk: validate a committed walk (path exists, affordable) and
+    // announce the honest price — but charge NOTHING up front. pathStep
+    // levies walkStepKcal() per landed square. The old prepaid model billed
+    // the whole path on commit, so a walk interrupted mid-way (combat starts
+    // via monsterTurn, a cell blocks) forfeited kcal for squares never
+    // walked — while the label promised "Walking N squares (C kcal)".
+    // Returns the path ([[x,y],...]) or null.
     // The UI animates the FULL path — tap-to-move never teleports.
     beginPathWalk(tx, ty) {
+      // DEAD (break-it travel r6 2026-10-09): the corpse starts no walks.
+      if (this.over) return null;
       // COMBAT (break-it travel 2026-10-08, sibling sweep): no committed walks
       // mid-fight — same desync class as travelTo/microMove. Say so, loudly.
       if (this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
@@ -8811,9 +8840,10 @@
       // applies here too — the promise is "-10% travel cost", and committed
       // walks are the most expensive travel in the game. walkCost() is the
       // single formula the button label quotes, so the label stays honest.
+      // Affordability is validated here; the kcal leaves square by square in
+      // pathStep, so an interrupted walk never over-bills.
       const cost = this.walkCost(path.length);
       if (s.kcal < cost) { this.say(`Need ${cost} kcal, have ${Math.round(s.kcal)}. Eat first.`); return null; }
-      s.kcal -= cost;
       const [lx, ly] = path[path.length - 1];
       const [p2x, p2y] = path.length >= 2 ? path[path.length - 2] : [sx, sy];
       s.facing = { x: Math.sign(lx - p2x) || 0, y: Math.sign(ly - p2y) || 1 };
@@ -8821,12 +8851,15 @@
       return path;
     },
 
-    // pathStep: ONE step of a committed walk. The kcal cost was prepaid by
-    // beginPathWalk; this charges the 1 tick of time, runs the world
-    // (monsters notice per square, villagers reposition), and revalidates
-    // the tile — the world may have changed mid-walk. Returns true if the
-    // step landed, false if the walk must stop here (caller purges the rest).
+    // pathStep: ONE step of a committed walk. This step costs walkStepKcal()
+    // kcal (levied here, per landed square — never up front, never twice)
+    // plus the 1 tick of time; it runs the world (monsters notice per
+    // square, villagers reposition), and revalidates the tile — the world
+    // may have changed mid-walk. Returns true if the step landed, false if
+    // the walk must stop here (caller purges the rest).
     pathStep(tx, ty) {
+      // DEAD (break-it travel r6 2026-10-09): the corpse takes no steps.
+      if (this.over) return false;
       // COMBAT (break-it travel 2026-10-08, sibling sweep): same desync class
       // as travelTo/microMove — steps mid-fight belong to tbPlayerMove.
       if (this.inCombat()) return false;
@@ -8838,10 +8871,14 @@
       const cell = detail[ty] && detail[ty][tx];
       if (this.cellProps(cell).blocks) return false;
       s.facing = { x: Math.sign(tx - px), y: Math.sign(ty - py) };
-      // KCAL WAS PREPAID by beginPathWalk (10/square, announced up front) —
-      // charging here too double-billed every committed walk (break-it travel
-      // 2026-10-08: the project's own test-movement.js asserted no double
-      // charge and was failing). This step costs the 1 tick of time only.
+      // PER-STEP CHARGE (break-it travel r6 2026-10-09): the kcal for this
+      // square leaves NOW, because the square is walked. beginPathWalk only
+      // validated affordability and announced the quote — charging here too
+      // would double-bill (break-it travel 2026-10-08), and charging up
+      // front forfeited kcal on interrupted walks. Interrupted walks bill
+      // exactly the squares landed: the label's promise, kept.
+      // SECOND SKIN / WANDERER: travel.cost_mult reduces the kcal cost.
+      s.kcal = Math.max(0, (s.kcal || 0) - this.walkStepKcal());
       s.mx = tx; s.my = ty;
       // MONSTERS MOVE WHEN YOU DO — per square, same as microMove.
       this.monsterTurn(); this.animalTurn();
