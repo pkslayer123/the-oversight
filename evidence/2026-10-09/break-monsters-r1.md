@@ -144,4 +144,4 @@ SCAFFOLD-AUDIT.md, which is a historical report and correctly left alone).
 
 ## Commits
 
-- (pending) break-it monsters r1: proof suite + drift repairs
+- a70d07b5 break-it monsters r1 (2026-10-09): 6 kills + proof suite — wave-2 roster drift repairs
