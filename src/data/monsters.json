@@ -27,7 +27,7 @@
       "damageType": "physical"
     },
     "weaknesses": [
-      "soft flanks (HARRY then STRIKE)",
+      "dodge the charge - it ends winded, flanks soft; STRIKE then",
       "it never goes around \u2014 position accordingly"
     ],
     "edible": {
@@ -247,7 +247,7 @@
       "damageType": "psychic"
     },
     "weaknesses": [
-      "interrupt the freeze (HARRY)",
+      "a solid strike while the beam burns can break its aim",
       "unaware while grazing \u2014 strike before it notices you"
     ],
     "edible": {
@@ -349,7 +349,7 @@
     },
     "weaknesses": [
       "attack from behind (it must face you to flash)",
-      "overcast days dull the wings"
+      "after the flash the wings hang dull and lightless - strike while it recovers"
     ],
     "edible": {
       "calories": 120,
@@ -451,7 +451,7 @@
       "damageType": "sonic"
     },
     "weaknesses": [
-      "deafened by its own chorus (loud noises scatter the pack)",
+      "deafened by its own chorus - SHOUT breaks it for a round",
       "slow on land"
     ],
     "edible": {
@@ -760,7 +760,7 @@
     },
     "weaknesses": [
       "the hum needs the swarm \u2014 scatter them",
-      "cats (ordinary cats terrify them)"
+      "loud noise breaks the chorus - SHOUT scatters the swarm for a round"
     ],
     "edible": {
       "calories": 150,
@@ -1073,7 +1073,7 @@
     "vibe": "a dead radio that learned to cry like people",
     "weaknesses": [
       "it broadcasts \u2014 follow the signal back",
-      "fire scrambles it",
+      "resist the crying - exposed, the signal scrambles; strike then",
       "don't go toward the crying"
     ],
     "edible": {
@@ -1997,7 +1997,7 @@
     "weaknesses": [
       "kill it fast \u2014 every round it watches is a round it learns",
       "unpredictability: it can only copy what it has seen",
-      "fire breaks its concentration"
+      "below 30% it panics and chains everything it learned - end it clean"
     ],
     "edible": {
       "calories": 0,
@@ -2470,7 +2470,7 @@
       "vary your verbs \u2014 it mutes what you lean on",
       "step OUT of the suppression field \u2014 the mute only holds inside it",
       "violations feed it: never swing at a muted verb, the +3 stacks",
-      "darkness \u2014 it cannot moderate what it cannot see"
+      "silence is a verb it cannot moderate - go quiet and it loses the thread"
     ],
     "edible": {
       "calories": 0,
@@ -2565,7 +2565,7 @@
     "weaknesses": [
       "the lane is the tell \u2014 step OFF it, not along it",
       "it always lands after a strafing run \u2014 that's the window",
-      "fire scatters it"
+      "it always lands after a strafing run - strike it grounded"
     ],
     "edible": {
       "calories": 350,

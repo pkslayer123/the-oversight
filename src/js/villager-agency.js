@@ -316,6 +316,9 @@
       a.know[vid].monsters++;
       if (rec.outcome === 'vKill') {
         try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
+        // WAVE GATE (break-it 2026-10-09): village-wide kill minimums —
+        // see resolveWildMonsterEncounter. The expedition's kill counts too.
+        try { this.recordWaveKill(m.id); } catch (e) {}
         a.know[vid].monsters++;
         a.xp[vid].bravery += 3 * (st.potential[vid] ? 2 : 1);
         a.stats[vid].monsterKills++;

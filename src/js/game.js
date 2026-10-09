@@ -12242,6 +12242,10 @@
         // (2026-10-08: these were silently dropped; villagers fought for
         // free and the gossip lied about wounds that never landed.)
         try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
+        // WAVE GATE (break-it 2026-10-09): the design promises village-wide
+        // kill minimums ("village-wide, not just player") — a villager's real
+        // kill proves the village can handle it, same as yours.
+        try { this.recordWaveKill(m.id); } catch (e) {}
         this.removeWorldMonster(m);
         tell(`\u2694\uFE0F ${summary} The village cheers.`);
         try { this.bumpTrust(vid, 4); } catch (e) {}
@@ -13727,15 +13731,6 @@
       if (b === 'pack' || b === 'swarm') return 'hungry';
       return 'curious';
     },
-    // scholarNearCell: is the player within r of a cell type? (fire, water...)
-    scholarNearCell(type, r) {
-      const detail = this.genDetail(this.map.px, this.map.py);
-      const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
-      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
-        if (detail[y] && detail[y][x] === type && Math.max(Math.abs(x - px), Math.abs(y - py)) <= r) return true;
-      }
-      return false;
-    },
     // monsterNearCell: same, from the monster's position.
     monsterNearCell(m, type, r) {
       const detail = this.genDetail(this.map.px, this.map.py);
@@ -14044,22 +14039,20 @@
         }
       };
       // --- stimuli: the world pushes stances around ---
+      // WORLD FEARS (break-it 2026-10-09): the fire/daylight/movement fear
+      // checks used to live here, feeding a `feared` flag that no live branch
+      // could consume — the raccoon branch required fear='dogs' (matching no
+      // condition) and the numbers branch requires !feared. Monsters don't
+      // flee from fear (Steve 2026-10-04/05); the lockpick still bolts via its
+      // bespoke steal-then-bolt turn (tbLockpickTurn). Deleted; what survives:
       const fear = (mdef.fear || '').toLowerCase();
-      let feared = false;
-      if (fear === 'fire' && this.scholarNearCell('fire', 2)) feared = true;
-      if (fear === 'daylight' && this.dayPart >= 3) feared = true; // night is when it hunts
-      if (fear === 'movement' && dist <= 2 && m.stance !== 'territorial') feared = true;
       // nightlight: only hunts near water at night. otherwise it's just a glow.
       const isNightlight = m.id === 'nightlight_catfish';
       const nightlightActive = !isNightlight || (this.dayPart >= 3 && this.monsterNearCell(m, 'water', 3));
-      // NO SELF-PRESERVATION (Steve 2026-10-04/05): monsters don't flee from
-      // fear. You flee from monsters. Exception: lockpick_raccoon (thematic thief).
-      const canFlee = (m.id === 'lockpick_raccoon');
-      if (feared && canFlee && m.stance !== 'ambush' && m.stance !== 'fearful') {
-        m.stance = 'fearful'; m.fearTurns = 0;
-        maybeCue('fearful'); m.cueCd = 0;
-        const fl = this.monsterCue(m.id, 'fearful'); if (fl) this.say(fl);
-      } else if (!feared && fear === 'numbers' && this.villagersNear(px, py, 3) >= 2 && m.stance !== 'ambush' && m.stance !== 'cautious') {
+      // NUMBERS (hushwolf, review_drone): a crowd makes it cautious — it
+      // circles and commits within ~3 rounds, never sheepish. The shout path
+      // (tbPlayerShout) reads fear='loud noise' separately and is untouched.
+      if (fear === 'numbers' && this.villagersNear(px, py, 3) >= 2 && m.stance !== 'ambush' && m.stance !== 'cautious') {
         m.stance = 'cautious';
         const fl = this.monsterCue(m.id, 'fearful'); if (fl) this.say(fl);
       }
@@ -19952,7 +19945,7 @@
             this.say('Crying, in the dark. A voice you know. It sounds exactly like them — but they\'re safe at the haven. Aren\'t they?');
             const vstage = (this.ensureMonsterEntry('voice_mimic_radio') || {}).stage;
             if (vstage === 'observed' || vstage === 'slain') {
-              this.say('(It\'s bait. Don\'t walk toward the crying — that feeds it. Stand still, resist, and the act breaks. Fire scrambles the signal.)');
+              this.say('(It\'s bait. Don\'t walk toward the crying — that feeds it. Stand still, resist, and the act breaks. The signal scrambles once it\'s exposed — hit it then.)');
             }
             this.audioEvent('staticCry', {});
           } else if (this.stagIs(mo)) {
