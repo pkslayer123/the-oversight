@@ -7856,9 +7856,18 @@
       }
       // Where are you? Only the Haven well is clean. Everything wild is unknown.
       const t = this.playerTile();
-      const isCreek = t && t.type === 'creek';
       let atHaven = this.location === 'haven';
       try { if (t && t.type === 'haven') atHaven = true; } catch (e) {}
+      // WATER IS PHYSICAL (survivalist loop 2026-10-08): the engine must not
+      // conjure water from dry ground. The UI only offers Fill on 'water'
+      // cells, but fillWater trusted its caller — a dry meadow filled 1L of
+      // "Wild source (unknown)" for 10 kcal (proof: attack-survivalist
+      // E2, tile='forest_floor'). Refuse unless there's real water here.
+      const wildWater = t && (t.type === 'creek' || t.type === 'wetland' || t.type === 'pond');
+      if (!atHaven && !wildWater) {
+        this.say('No water here — find a creek, pond, or wetland. Dry ground doesn\'t fill a bottle.');
+        return null;
+      }
       if (atHaven) {
         // THE CISTERN IS REAL. Haven water comes from the shared supply —
         // that's why the well is where Haven is. It can run dry.
@@ -7872,7 +7881,11 @@
       // HAULING WATER IS WORK. 10 kcal per liter. (nothing is free)
       s.kcal = Math.max(0, (s.kcal || 0) - 10);
       const quality = atHaven ? 'clean' : 'risky';
-      const source = atHaven ? 'Haven well' : isCreek ? 'Creek (unknown)' : 'Wild source (unknown)';
+      // NAME THE WATER (survivalist loop 2026-10-08): the old fallback called
+      // every non-creek source "Wild source (unknown)" — wetlands and ponds
+      // are real water and deserve their names.
+      const wname = !t ? 'Wild' : t.type === 'creek' ? 'Creek' : t.type === 'wetland' ? 'Wetland' : t.type === 'pond' ? 'Pond' : 'Wild';
+      const source = atHaven ? 'Haven well' : `${wname} source (unknown)`;
       s.water.push({ liters: 1, quality, source });
       const left = atHaven ? ` Cistern: ${Math.floor((this.state.village.water || {}).clean || 0)}L left.` : '';
       this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).${left}`);
@@ -7941,7 +7954,23 @@
       const s = this.state.scholar;
       if (!this.nearFire()) { this.say('Need a burning fire — charcoal comes from the ash bed.'); return null; }
       const t = this.playerTile();
-      const key = (this.map ? this.map.px + ',' + this.map.py : 'x') + ':' + (s.day || 0);
+      // PER-FIRE, PER-DAY (survivalist loop 2026-10-08): the key used to be
+      // per-node per-day, so a second campfire on the same node was refused
+      // with "You already raked this fire today" — a lie about a different
+      // fire. Key on the nearest player fire's cell; map-made fires (hearth)
+      // keep the old node key.
+      let fireKey = 'mapfire';
+      try {
+        const px = s.mx ?? 4, py = s.my ?? 4;
+        let best = null, bd = 1e9;
+        for (const f of (this.state.fires || [])) {
+          if (f.tx !== this.map.px || f.ty !== this.map.py) continue;
+          const d = Math.abs((f.cx ?? 4) - px) + Math.abs((f.cy ?? 4) - py);
+          if (d < bd) { bd = d; best = f; }
+        }
+        if (best) fireKey = (best.cx ?? 4) + ',' + (best.cy ?? 4);
+      } catch (e) {}
+      const key = (this.map ? this.map.px + ',' + this.map.py : 'x') + ':' + fireKey + ':' + (s.day || 0);
       t.charcoalRaked = t.charcoalRaked || {};
       if (t.charcoalRaked[key]) { this.say('You already raked this fire today. Let it burn down more.'); return null; }
       t.charcoalRaked[key] = true;
@@ -16369,12 +16398,24 @@
         const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
         const restGain = Math.round(30 * restMult);
         scholar.energy = Math.min(100, scholar.energy + restGain);
-        // triage: practiced hands heal more, even resting.
-        scholar.health = Math.min(this.maxHealth(), scholar.health + Math.round(this.modTarget('healing.amount', 5)));
-        scholar.kcal -= S.calories.ACTION_COSTS.rest;
+        // METABOLIC CRISIS (survivalist loop 2026-10-08): mirrors sleep()'s
+        // crisis rule — a body running on empty does not rebuild tissue.
+        // Without this, a hydrated starving player rest-looped +10..+30
+        // health/day at kcal=0: infinite healing from nothing (proof:
+        // scripts/proof-rest-heal-20261008.js, seed 7: 40 -> 70 in 6 rests).
+        // Breath still steadies (energy), so a starving player can always
+        // rest up for the walk to food — no softlock. Wounds need fuel first.
+        const crisis = (scholar.kcal || 0) <= 0 || (scholar.hydration || 0) <= 0;
+        if (!crisis) {
+          // triage: practiced hands heal more, even resting.
+          scholar.health = Math.min(this.maxHealth(), scholar.health + Math.round(this.modTarget('healing.amount', 5)));
+        }
+        scholar.kcal = Math.max(0, (scholar.kcal || 0) - S.calories.ACTION_COSTS.rest);
         // COST HONESTY: rest burns 96 ticks + the ACTION_COSTS.rest kcal — most
         // of the day part. The message names both so rest feels earned, not stolen.
-        msg = `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy. (-${S.calories.ACTION_COSTS.rest} kcal — rest burns fuel too.)`;
+        msg = crisis
+          ? `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy — but your body has nothing to rebuild with. (No healing while starving or dehydrated: eat and drink first.)`
+          : `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy. (-${S.calories.ACTION_COSTS.rest} kcal — rest burns fuel too.)`;
       } else if (kind === 'wait') {
         msg = 'You wait. The light changes. Nothing asks anything of you.';
       } else if (kind === 'drink') {
