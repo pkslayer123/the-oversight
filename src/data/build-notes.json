@@ -2,7 +2,7 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "The Craft screen now lists recipes you're learning \u2014 early attempts are honest blind tries (materials stay hidden until you've learned them).",
+      "The Craft screen now lists recipes you're learning — early attempts are honest blind tries (materials stay hidden until you've learned them).",
       "Map monster popups no longer name creatures the village hasn't named yet."
     ],
     "version": "a6d63840-20261009-165835"
@@ -10,7 +10,7 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "Gristlefit rage can lash out at allies mid-fight \u2014 and now they remember it. Trust drops, and it haunts you.",
+      "Gristlefit rage can lash out at allies mid-fight — and now they remember it. Trust drops, and it haunts you.",
       "Trying to strike an ally in a fight gets an honest refusal instead of silence."
     ],
     "version": "4bb5cc7e-20261009-165604"
@@ -18,8 +18,8 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "Boiling water now honestly costs time and energy \u2014 bulk purification was free on the action clock.",
-      "Storms wrecking your camp wake you with a start \u2014 no more sleeping through the destruction in tent-quality comfort.",
+      "Boiling water now honestly costs time and energy — bulk purification was free on the action clock.",
+      "Storms wrecking your camp wake you with a start — no more sleeping through the destruction in tent-quality comfort.",
       "Rain and storm water now respect your carry limit."
     ],
     "version": "d3d1494c-20261009-162902"
@@ -38,8 +38,8 @@
     "notes": [
       "Your gear is yours: villagers keep their own belongings. The village stash only holds what someone deliberately deposits.",
       "New armory (weapons) and pharmacy (medicine) sections in the village stash.",
-      "The dead carry their real belongings \u2014 open their packs and loot.",
-      "13 craftable weapons and armor (spears, bows, bark armor, hide armor\u2026) through the normal crafting menu."
+      "The dead carry their real belongings — open their packs and loot.",
+      "13 craftable weapons and armor (spears, bows, bark armor, hide armor…) through the normal crafting menu."
     ],
     "version": "a208a9e-20261009-161955"
   },
@@ -54,7 +54,7 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "Fixed villagers fighting unarmed \u2014 they now actually equip the weapons they carry.",
+      "Fixed villagers fighting unarmed — they now actually equip the weapons they carry.",
       "Villagers gear up and get patched up by the healer before heading into danger."
     ],
     "version": "94fa7f7-20261009-154608"
