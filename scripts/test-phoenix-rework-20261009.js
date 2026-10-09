@@ -119,9 +119,11 @@ sec('(a) lethal blow burns exactly one random villager; player at their location
   ok('exactly one villager dead', dead.length === 1, 'dead=' + dead.length);
   ok('player alive', !Game.state.over && Game.villagerId);
   ok('player at 1 HP', s.health === 1 && s.hp === 1, 'hp=' + s.hp);
-  // no lootable corpse for the victim (ashes)
+  // ash-pile: a flagged ash corpse REMAINS (lootable gear, no body) --
+  // Steve 2026-10-09: the victim's gear must not silently vanish.
   const corpses = (Game.corpses() || []).filter(c => c.villagerId === dead[0]);
-  ok('no lootable corpse (ash)', corpses.length === 0);
+  ok('ash-pile remains (flagged ash)', corpses.length === 1 && corpses[0].ash === true, 'n=' + corpses.length);
+  ok('ash tags the victim', corpses[0] && corpses[0].ashVictim === dead[0]);
   // death knowledge fired: fallen memorial has the ash death
   ok('ash death memorialized', (v.fallen || []).some(f => f.villagerId === dead[0] && /ash/.test(f.cause)));
   // Link Beat narrated (no silent burn)

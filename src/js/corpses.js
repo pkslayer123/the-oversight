@@ -12,6 +12,7 @@
 //   - corpseEatItem(cid, idx)
 //   - registerDeath(vid, cause)
 //   - corpseStage(c)
+//   - corpseIsPerson(c): 'person' + 'villager' kinds are sapient dead (Steve 2026-10-09)
 //   - corpseGlyph(c)
 //   - knowsDeath(vid)
 //   - generatePossessions(vid)
@@ -20,6 +21,7 @@
 // rules:
 //   - sapient_dead_carry_their_gear: villager corpses hold the dead person's actual carried + stashed gear as the lootable death pack — nothing auto-transfers (code: generatePossessions, Steve 2026-10-09)
 //   - sentimentals_die_with_them: sentimental items are buried with the body, never lootable, and grant no bond to non-owners (code: generatePossessions, Steve 2026-10-09)
+//   - ash_pile: a phoenix victim's corpse is flagged ash -- no body, no decay, no disease, no trauma (ashes aren't gross); carried gear ONLY (never stashed) as the lootable pack; pocketing it fires loot_ash (amplified theft; worse still when the bearer takes their own victim's gear); the ash description states the village norm (code: phoenixAshDeath/phoenixAshGearPack in game.js, Steve 2026-10-09)
 // consumes:
 //   - state.corpses
 /* CORPSE SYSTEM
@@ -86,6 +88,7 @@
     },
 
     corpseStage(c) {
+      if (c.ash) return 0; // ASH (Steve 2026-10-09): ashes don't decay. No rot, ever.
       const days = (this.state.scholar.day || 0) - (c.dayDied || 0);
       for (let i = 0; i < STAGES.length; i++) {
         if (days < STAGES[i].until) return i;
@@ -101,9 +104,18 @@
         !c.buried && c.node.x === px && c.node.y === py && c.mx === cx && c.my === cy);
     },
 
+    // corpseIsPerson: 'person' and 'villager' kinds are both sapient dead.
+    // Every villager death registers kind 'villager' (starvation, thirst,
+    // wounds, player death, phoenix) -- bare kind === 'person' gates missed
+    // them all: no witness path, wrong glyph, wrong voice. (Steve 2026-10-09)
+    corpseIsPerson(c) {
+      return !!c && (c.kind === 'person' || c.kind === 'villager');
+    },
+
     corpseGlyph(c) {
+      if (c.ash) return '⚱️'; // ASH (Steve 2026-10-09): a pile of ashes, not a body.
       const st = this.corpseStageInfo(c);
-      if (c.kind === 'person') return st.glyphPerson;
+      if (this.corpseIsPerson(c)) return st.glyphPerson;
       if (c.kind === 'monster') return st.glyphMonster;
       return st.glyphAnimal;
     },
@@ -322,13 +334,23 @@
       const trauma = this.corpseTrauma(c, {});
       try { this.addTrauma(trauma); } catch (e) {}
       const s = this.state.scholar;
-      if (Math.random() < st.diseaseP) {
+      // ASH: no rot, no disease from ashes.
+      if (!c.ash && Math.random() < st.diseaseP) {
         s.health = Math.max(0, (s.health || 100) - st.diseaseDmg);
         this.say(`Handling the ${st.id} remains was a mistake. Fever by nightfall. (-${st.diseaseDmg} health)`);
       }
       // WITNESSES: looting a fresh person-corpse where others can see.
-      if (c.kind === 'person' && this.corpseStage(c) <= 2) {
-        try { this.observe('loot_corpse', { target: c.villagerId }); } catch (e) {}
+      // ASH (Steve 2026-10-09): pocketing a phoenix victim's gear is theft
+      // with an amplifier -- they died for the bearer, or for the village.
+      // The bearer taking their own victim's gear is the worst case (see the loot_ash lens).
+      if (this.corpseIsPerson(c) && this.corpseStage(c) <= 2) {
+        if (c.ash) {
+          const bearerTakesOwn = !!(c.ashBearer && c.ashBearer === this.villagerId);
+          try { this.observe('loot_ash', { target: c.villagerId, bearerTakesOwn }); } catch (e) {}
+          if (bearerTakesOwn) this.say('You burned them to live -- and now you\'re picking through their ashes. Someone saw.');
+        } else {
+          try { this.observe('loot_corpse', { target: c.villagerId }); } catch (e) {}
+        }
       }
       if (this.tickAction) this.tickAction(8);
     },
@@ -363,7 +385,14 @@
       const ex = inv.find(x => x.plantId === it.plantId && !x.keepsake && !it.keepsake &&
         (!this.stacksMatch || this.stacksMatch(x, it)));
       if (ex && !it.keepsake) ex.units = (ex.units || 1) + units;
-      else inv.push(Object.assign({}, it, { units }));
+      else {
+        // ASH (Steve 2026-10-09): gear taken from a phoenix ash-pile carries
+        // provenance -- the village knows whose ashes it came from. Bringing
+        // it home to Haven honors the dead; pocketing it is theft amplified.
+        const carried = Object.assign({}, it, { units });
+        if (c.ash) carried.ashOf = c.ashVictim;
+        inv.push(carried);
+      }
       it.units = 0;
       // GEAR DISCOVERY (Steve 2026-10-09): looting a gear item teaches its
       // recipe L1 — you've held one. (Sapient dead carry their real gear.)
@@ -372,7 +401,7 @@
       this.say(`Taken: ${nm} x${units}.`);
       if (!c.items.some(i => (i.units == null ? 1 : i.units) > 0)) {
         c.looted = true;
-        this.say('The body is stripped. What\'s left isn\'t worth taking.');
+        this.say(c.ash ? 'The ashes are picked clean. Nothing left but grey.' : 'The body is stripped. What\'s left isn\'t worth taking.');
       }
       return it;
     },
@@ -391,6 +420,7 @@
       // move one unit to the pack, then use via the standard path
       it.units = (it.units || 1) - 1;
       const copy = Object.assign({}, it, { units: 1 });
+      if (c.ash) copy.ashOf = c.ashVictim; // ASH: provenance rides along
       s.inventory.push(copy);
       const invIdx = s.inventory.length - 1;
       try { this.useItem(invIdx); } catch (e) {}
@@ -422,6 +452,10 @@
     // Monsters are field-dressing; people are people.
     corpseTrauma(c, opts) {
       opts = opts || {};
+      // ASH (Steve 2026-10-09): ashes aren't a body -- no grossness, no
+      // handling-the-dead trauma. The weight of the act is carried by the
+      // phoenix aftermath and the theft path, not the pile.
+      if (c.ash) return 0;
       const st = this.corpseStageInfo(c);
       let base;
       if (c.kind === 'monster') base = 2;
@@ -470,7 +504,11 @@
           ? inv.find(x => x.plantId === it.plantId && !x.keepsake && this.stacksMatch(x, it))
           : null;
         if (ex) ex.units = (ex.units || 1) + 1;
-        else inv.push(Object.assign({}, it, { units: 1 }));
+        else {
+          const carried = Object.assign({}, it, { units: 1 });
+          if (c.ash) carried.ashOf = c.ashVictim; // ASH: provenance rides along
+          inv.push(carried);
+        }
         it.units -= 1;
         took.push(it);
         return true;
@@ -491,13 +529,14 @@
       // DISEASE: handling rot risks illness. Fresh is safer physically.
       // addHealth routing (break-it food r3 2026-10-08): the old direct write
       // bypassed the combat fighter — mid-fight damage was erased at tbEnd.
-      if (Math.random() < st.diseaseP) {
+      // ASH: no rot, no disease from ashes.
+      if (!c.ash && Math.random() < st.diseaseP) {
         this.addHealth(-st.diseaseDmg);
         this.say(`Handling the ${st.id} remains was a mistake. Fever by nightfall. (-${st.diseaseDmg} health)`);
       }
 
       // voice: what it felt like
-      if (c.kind === 'person') {
+      if (this.corpseIsPerson(c)) {
         const known = this.nameKnown ? this.nameKnown(c.villagerId) : true;
         const who = known ? this.displayName(c.villagerId) : 'them';
         this.say(`You take ${took.map(t => t.name.toLowerCase()).join(', ')} from ${who}. Your hands know what they did. (+${trauma} trauma)`);
@@ -507,8 +546,14 @@
 
       // WITNESSES: looting a fresh person-corpse where others can see.
       // The village watches. Trust hits; gossip carries it.
-      if (c.kind === 'person' && this.corpseStage(c) <= 2) {
-        try { this.observe('loot_corpse', { target: c.villagerId }); } catch (e) {}
+      // ASH (Steve 2026-10-09): the ash-pile fires the amplified loot_ash.
+      if (this.corpseIsPerson(c) && this.corpseStage(c) <= 2) {
+        if (c.ash) {
+          const bearerTakesOwn = !!(c.ashBearer && c.ashBearer === this.villagerId);
+          try { this.observe('loot_ash', { target: c.villagerId, bearerTakesOwn }); } catch (e) {}
+        } else {
+          try { this.observe('loot_corpse', { target: c.villagerId }); } catch (e) {}
+        }
       }
 
       if (!c.items.some(i => (i.units == null ? 1 : i.units) > 0)) {
@@ -523,12 +568,22 @@
     // ---------- examination & rites ----------
 
     corpseDesc(c) {
+      // ASH (Steve 2026-10-09): the funeral custom, stated plainly. A burned
+      // villager's belongings belong to the village -- not to whoever's
+      // standing in the ashes. Both paths visible, no lecture, no hidden rules.
+      if (c.ash) {
+        const known = this.nameKnown ? this.nameKnown(c.villagerId) : true;
+        const who = known ? this.displayName(c.villagerId) : 'Someone';
+        const first = (who || 'Someone').split(' ')[0];
+        const n = (c.items || []).filter(i => (i.units == null ? 1 : i.units) > 0).length;
+        return `${first}'s ashes lie here, still warm. ${n ? `Their gear -- ${n} ${n === 1 ? 'thing' : 'things'} -- is scattered in the grey.` : 'The fire took everything they carried.'} What they carried belongs to the village now, not to whoever's standing here. Pocket it, or bring it home. The village will remember.`;
+      }
       const st = this.corpseStageInfo(c);
       const s = this.state.scholar;
       const days = (s.day || 0) - (c.dayDied || 0);
       const when = days <= 0 ? 'today' : days === 1 ? 'yesterday' : days + ' days ago';
       let who;
-      if (c.kind === 'person') {
+      if (this.corpseIsPerson(c)) {
         const known = this.nameKnown ? this.nameKnown(c.villagerId) : true;
         who = known ? this.displayName(c.villagerId) : 'someone you don\'t recognize';
       } else if (c.kind === 'monster') {
@@ -568,7 +623,7 @@
       const st = this.corpseStageInfo(c);
       const remaining = c.items.filter(i => (i.units == null ? 1 : i.units) > 0).length;
       if (remaining && !c.looted) {
-        this.say(c.kind === 'person'
+        this.say(this.corpseIsPerson(c)
           ? `They're still wearing their life: ${remaining} thing${remaining > 1 ? 's' : ''} worth taking. Whether you should is another question.`
           : `The carcass has ${remaining} thing${remaining > 1 ? 's' : ''} worth cutting free.`);
       } else if (c.looted) {

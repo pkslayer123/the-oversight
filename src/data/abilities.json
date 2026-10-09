@@ -1266,7 +1266,7 @@
   {
     "id": "phoenix_clause",
     "name": "Phoenix Clause",
-    "description": "When you would die: the clause burns a RANDOM living villager of yours \u2014 body and all, no corpse, only ash \u2014 and you emerge from their ashes wherever they were, at 1 HP. No villagers left, or no village, and your death sticks. The devoted may offer themselves willingly; the resentful may fight the pull. Use it twice and the village will judge you: earn their love or be exiled. The cost is plain. The horror is knowing and doing it anyway.",
+    "description": "When you would die: the clause burns a RANDOM living villager of yours \u2014 body and all, no corpse, only ash \u2014 and you emerge from their ashes wherever they were, at 1 HP. The fire cannot take another bearer: only bearers left, and your death sticks. No villagers left, or no village, and your death sticks. Their gear survives the fire where they fell \u2014 it belongs to the village now, not to you. Pocket it and the village will judge you; bring it home to Haven and they will honor you. The devoted may offer themselves willingly; the resentful may fight the pull. Use it twice and the village will judge you: earn their love or be exiled. The cost is plain. The horror is knowing and doing it anyway.",
     "flavor": "You DIE! Then \u2014 KABOOM! \u2014 you're BACK! ...in someone else's ashes. The audience LOVED it! The ratings! THE RATINGS! (Someone's family is screaming. The ratings don't cover that.)",
     "pool": "system",
     "tier": "overpowered",

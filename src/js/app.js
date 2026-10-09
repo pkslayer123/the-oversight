@@ -1222,10 +1222,11 @@
           actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
           const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
           // LOOT-AS-ACTION (Steve 2026-10-06): open the pack, don't take-all.
-          if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
+          // ASH (Steve 2026-10-09): no body to search -- sift the ashes.
+          if (remaining && !dc.buried) actions.push([dc.ash ? '🎒 Sift the ashes' : '🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried) actions.push([dc.ash ? 'Bury the ashes' : 'Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.ash && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
         }
       }
     } else if (isMon) {
@@ -1271,17 +1272,18 @@
       const dead = Game.corpseAt(cx, cy);
       if (dead.length) {
         const dc = dead[0];
-        name = dc.kind === 'person' ? 'A body' : 'A carcass';
+        name = dc.ash ? 'Ashes' : (Game.corpseIsPerson(dc) ? 'A body' : 'A carcass');
         desc = Game.corpseDesc(dc);
         if (dist <= 1) {
           actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
           const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
           // LOOT-AS-ACTION (Steve 2026-10-06): no take-all. Open the pack —
           // take, leave, or use per item.
-          if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
+          // ASH (Steve 2026-10-09): no body to search -- sift the ashes.
+          if (remaining && !dc.buried) actions.push([dc.ash ? '🎒 Sift the ashes' : '🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried) actions.push([dc.ash ? 'Bury the ashes' : 'Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.ash && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
         } else {
           desc += ' (Too far.)';
           actions.push(walkCloser(cx, cy));
@@ -12980,8 +12982,10 @@
         `</p>`;
     }).join('') : '<p class="small">Nothing left worth taking.</p>';
     slot.innerHTML = `<div class="inlinecard">
-      ${inlineHead('🎒 ' + esc(who) + ' — ' + stage)}
-      <p class="small" style="opacity:.7">Take what you want. What's left stays — and meat rots where it lies.</p>
+      ${c.ash ? inlineHead('⚱️ ' + esc(who) + "'s ashes") : inlineHead('🎒 ' + esc(who) + ' — ' + stage)}
+      ${c.ash
+        ? `<p class="small" style="opacity:.7">What they carried belongs to the village now, not to whoever's standing here. Pocket it, or bring it home. The village will remember.</p>`
+        : `<p class="small" style="opacity:.7">Take what you want. What's left stays — and meat rots where it lies.</p>`}
       ${bodyHtml}
     </div>`;
     wireInlineX(slot);
