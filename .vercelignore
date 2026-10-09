@@ -1,0 +1,11 @@
+# Vercel build-cost control (Steve 2026-10-09): the deployed PWA only needs
+# index.html, sw.js, version.json, manifest.json, src/, and assets/.
+# Everything else is dev-only (proof scripts, evidence, docs) and was being
+# uploaded on every one of ~600 deploys/48h for no reason.
+scripts/
+evidence/
+docs/
+playtests/
+tools/
+hidden_files/
+slice1-playtest.html
