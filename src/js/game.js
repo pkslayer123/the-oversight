@@ -7720,12 +7720,25 @@
           // Steve 2026-10-08 (break-it): door-flee stashed each monster's HP
           // (monsterPositions, ~19126) but re-engage spawned a FRESH full-HP
           // monster — beat it to 1 HP, duck inside, heal for free, walk out to
-          // a full-HP monster. A no-cost full reset of YOUR damage. Now the
-          // stashed HP is honored: they waited, and they're still bleeding.
-          if (first.hp != null && this.tbfight) {
-            const mf = this.tbfight.fighters.find(x =>
-              (x.kind === 'monster' || x.kind === 'hostile') && (x.monsterId === first.id || (x.mdef && x.mdef.id === first.id)));
-            if (mf) mf.hp = Math.max(1, Math.min(mf.maxHp, first.hp));
+          // a full-HP monster. A no-cost full reset of YOUR damage.
+          // r6 honored the stashed HP — but ONLY for waiting[0]. A pack fight
+          // stashes every monster, and startCombat respawns the whole pack
+          // fresh, so monsters 2..N came back at FULL hp behind the "they're
+          // still here. Waiting." promise. (break-it travel r7 2026-10-09:
+          // hostile re-run with a 3-wolf pack caught wolves 2-3 respawning
+          // unwounded.) Now EVERY waiting monster keeps its wounds: each
+          // stashed entry claims one respawned fighter of the same species,
+          // in order. They waited, and they're still bleeding.
+          if (this.tbfight) {
+            const claimed = new Set();
+            for (const w of waiting) {
+              if (w.hp == null) continue;
+              const mf = this.tbfight.fighters.find(x =>
+                !claimed.has(x) && (x.kind === 'monster' || x.kind === 'hostile') &&
+                (x.monsterId === w.id || (x.mdef && x.mdef.id === w.id)));
+              // (mf.maxHp || w.hp): never NaN a fighter's hp if maxHp is absent.
+              if (mf) { claimed.add(mf); mf.hp = Math.max(1, Math.min(mf.maxHp || w.hp, w.hp)); }
+            }
           }
         } catch (e) {}
       }
@@ -9526,7 +9539,12 @@
       if (tx < 0 || tx > 8 || ty < 0 || ty > 8) return false;
       const detail = this.genDetail(this.map.px, this.map.py);
       const cell = detail[ty] && detail[ty][tx];
-      if (this.cellProps(cell).blocks) return false;
+      // BLOCKED MID-WALK (break-it travel r7 2026-10-09): the world
+      // revalidates every step — nothing in the per-step world updates plants
+      // new blockers today, but the refusal must never be silent if it ever
+      // fires. No silent actions: the player tapped "walk", they get the
+      // reason the walk stops here.
+      if (this.cellProps(cell).blocks) { this.say('Blocked — the way changed under your feet. The walk stops here.'); return false; }
       s.facing = { x: Math.sign(tx - px), y: Math.sign(ty - py) };
       // PER-STEP CHARGE (break-it travel r6 2026-10-09): the kcal for this
       // square leaves NOW, because the square is walked. beginPathWalk only
