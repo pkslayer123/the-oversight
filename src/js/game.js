@@ -4110,6 +4110,23 @@
       const v = this.state.village;
       const via = (opts && opts.via) || 'in-person';
       v.assignments = v.assignments || {};
+      // DRIFTER (break-it 2026-10-09 r6): remote leadership was UNGATED.
+      // The talk-menu UI only reaches this face-to-face, and remote
+      // assignment needs a remoteAssign ability (nobody has one yet) — but
+      // the engine accepted ANY via from ANY distance, so a drifter 8
+      // tiles out ran the whole labor economy by remote control for free,
+      // and the order even engaged the villager from afar (batch freeze
+      // at a distance via socialTick). Mirror the UI's honest line here.
+      if (via !== 'in-person') {
+        const methods = this.remoteAssignMethods ? this.remoteAssignMethods() : [];
+        if (!methods.some(m => m.id === via)) {
+          this.say("You need to be face-to-face to ask for help. (Abilities can unlock remote assignment.)");
+          return null;
+        }
+      } else if (!this.playerAtHaven()) {
+        this.say(`${this.displayName(vid)} is back at Haven — you're miles out. You need to be face-to-face to ask for help.`);
+        return null;
+      }
       if (vid === this.villagerId) { this.say("You're the leader. Lead."); return null; }
       const tasks = this.delegateTasks();
       if (!tasks[task]) return null;
@@ -20195,6 +20212,13 @@
     villageEats() {
       const v = this.state.village;
       if (!v || !v.roster) return;
+      // HEALTH MAP (drifter break-it r6 2026-10-09): villagerMealDay's
+      // starvation branch writes v.health[vid]. On a fresh game nothing had
+      // initialized the map yet — the first starving day threw "Cannot set
+      // properties of undefined" and killed endDay (seed 999; the old suite
+      // only survived it because villageLives' wounded branch happened to
+      // init the map first on the old RNG sequence). Init it here, up front.
+      v.health = v.health || {};
       v.mealLog = []; // today's co-eating record — company is organic, not scheduled
       const cookId = this.villageCookId(v);
       let totalEat = 0, totalGive = 0, totalDrawn = 0;

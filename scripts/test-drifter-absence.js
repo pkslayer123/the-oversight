@@ -88,8 +88,20 @@ function captureSay(fn) {
   return { r, says, err };
 }
 function farTile() {
-  // a wild tile far from every village and haven (haven is ~(4,4))
-  Game.map.px = 0; Game.map.py = 0;
+  // a wild tile far from every village and haven (haven is ~(4,4)).
+  // DYNAMIC (drifter r6 2026-10-09): village placement RNG shifts between
+  // commits — the old hardcoded (0,0) landed exactly on village_0's tile on
+  // current master, so "away" was secretly "at their fire": tickJoinedVillage
+  // simmed daily, the probation clock ran, and D1 failed for test reasons,
+  // not game reasons (verified: all three behaviors are per-design when the
+  // player is genuinely at the fire). Compute the farthest corner instead.
+  const vs = (Game.state.otherVillages || []).concat([{ x: 4, y: 4 }]);
+  let bx = 0, by = 0, bestD = -1;
+  for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+    const d = Math.min.apply(null, vs.map(v => Math.abs(v.x - x) + Math.abs(v.y - y)));
+    if (d > bestD) { bestD = d; bx = x; by = y; }
+  }
+  Game.map.px = bx; Game.map.py = by;
 }
 function nearVillage(v) { Game.map.px = v.x; Game.map.py = v.y; }
 function endDayFed() {
@@ -200,6 +212,10 @@ setup();
 {
   const v0 = Game.state.otherVillages[0];
   farTile();
+  // FOG (break-it travel r5 2026-10-09): the card returns null for tiles
+  // never seen — that's the fix holding. The honest "at distance" setup is
+  // a SEEN tile (traveler rumor: markSeen 's') with the player far away.
+  Game.markSeen(v0.x, v0.y, 's', 'traveler rumor');
   const cardFar = Game.villageCard(v0.id);
   const farActs = (cardFar.actions || []).map(a => a.id);
   ok('D4 card at distance offers no sit-down actions', farActs.length === 0 && !!cardFar.hint,
@@ -358,16 +374,34 @@ setup();
 setup();
 {
   // CONTROL: the same deaths AT haven still say immediately (no regression).
+  // Loop up to 4 endDays: villageLives foragers can trickle food into the
+  // pantry mid-endDay (famine deaths need a literally empty pantry array),
+  // so the death may land on day 2-3 (seed 999). The contract under test is
+  // *immediacy* (said, not queued), not which day.
   const v = Game.state.village;
   const rid = v.roster.find(id => id !== Game.villagerId);
   v.health = v.health || {}; v.health[rid] = 1;
   v.pantry = []; v.pantryKcal = 0;
   v.water = { clean: 100, dirty: 0 };
   Game.map.px = v.px ?? 4; Game.map.py = v.py ?? 4; // at haven
-  const cap = captureSay(() => endDayFed());
+  const says = [];
+  const origSay = Game.say; Game.say = (m) => says.push(String(m));
+  let err = null, died = false;
+  try {
+    for (let i = 0; i < 4 && !died; i++) {
+      endDayFed();
+      // keep the pantry bare — the trickle must not stall the famine
+      v.pantry = []; v.pantryKcal = 0;
+      died = !Game.state.village.roster.includes(rid);
+    }
+  } catch (e) { err = e; } finally { Game.say = origSay; }
+  ok('D8 control: starvation death at haven: no throw', err === null, err && err.message);
   ok('D8 control: starvation death at haven said immediately',
-     cap.says.join(' ').includes('starved'),
-     cap.says.join(' ').slice(0, 120));
+     died && says.join(' ').includes('starved'),
+     'died=' + died + ' ' + says.join(' ').slice(0, 120));
+  ok('D8 control: at-haven death NOT queued to awayNews',
+     !(Game.state.scholar.awayNews || []).some(m => m.includes('starved')),
+     'awayNews: ' + JSON.stringify(Game.state.scholar.awayNews || []).slice(0, 120));
 }
 
 console.log(`\nRESULT: ${pass} pass, ${fail} fail (seed ${SEED})`);
