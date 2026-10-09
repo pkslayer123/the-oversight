@@ -4,17 +4,34 @@
 // provides:
 //   - isMember(vid)
 //   - mshipState()
+//   - memberBenefits(vid)
+//   - awayMembers()
 //   - acceptApplication(app)
 //   - refuseApplication(app)
 //   - genApplicant()
 //   - judgeApplication(app)
 //   - considerApplications()
+//   - debateIntake(app)
 //   - rejoinMembership()
 //   - severMembership(vid)
 //   - housingCap()
+//   - buildShelter()
 //   - foodSupports(n)
+//   - growthStatus()
+//   - regionalStanding(village)
+//   - villageStandingOf(villageId)
+//   - formAlliance(villageId)
+//   - proposeAlliance(villageId)
+//   - isAllied(aId, bId)
+//   - recognizedAbroad(vid, otherVillage)
+//   - memberReputationAbroad(vid)
+//   - guestMeal(villageId)
+//   - loanedReturnTick()
+//   - membershipDaily()
 // rules:
-//   - (none documented)
+//   - membership_needs_no_presence: on the roster, alive, not severed = member, wherever they are; exile is the one severing. (code: membership.js)
+//   - alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once a day, real food from their pantry. (code: membership.js)
+//   - the_loaned_come_home: m.loaned is surfaced in awayMembers and the return is said aloud by loanedReturnTick. (code: membership.js)
 // consumes:
 //   - village.members
 /* VILLAGE MEMBERSHIP — src/js/membership.js
@@ -113,21 +130,31 @@
 
     // awayMembers: roster members not currently at Haven (expeditions etc.)
     // Membership needs no presence — this is informational, never punitive.
+    // The loaned representative (accord gesture / aid demand) counts: three
+    // days at another fire is away, honestly shown. (Regional audit
+    // 2026-10-09: m.loaned was set but never surfaced anywhere — the "walks
+    // out for three days" was a fiction. Now the panel shows it.)
     awayMembers() {
       var out = [];
       try {
         var roster = (this.state.village.roster || []);
         var ag = null;
         try { ag = this.agencyState ? this.agencyState() : null; } catch (e) {}
+        var loanedVid = null;
+        try {
+          var m = this.mshipState ? this.mshipState() : null;
+          var day = (this.state.scholar || {}).day || 0;
+          if (m && m.loaned && day < (m.loaned.untilDay || 0)) loanedVid = m.loaned.vid;
+        } catch (e2) {}
         for (var i = 0; i < roster.length; i++) {
           var id = roster[i];
           if (id === this.villagerId) continue;
-          var away = false;
+          var away = (id === loanedVid);
           if (ag && ag.exped && ag.exped[id] && ag.exped[id].status === 'away') away = true;
           // npcNodeTravel away-system: villagers have node positions
           try {
             if (!away && this.npcNodePos && this.npcNodePos(id)) away = true;
-          } catch (e2) {}
+          } catch (e3) {}
           if (away && this.isMember(id)) out.push(id);
         }
       } catch (e) {}
@@ -135,11 +162,8 @@
     },
 
     // ---------- 2. PANTRY (distance-free by construction) ----------
-
-    // pantryAccess: the exiled don't draw. Everyone else does — wherever.
-    pantryAccess(vid) {
-      return this.isMember(vid == null ? this.villagerId : vid);
-    },
+    // (The exiled are cut off by the _blockIfExiled wraps below — legible,
+    // per-action. No separate gate needed.)
 
     // ---------- 3. EXILE IS THE SEVERING ----------
 
@@ -602,12 +626,113 @@
       return -5;
     },
 
+    // proposeAlliance: an understanding, sealed with a feast. NOT a link —
+    // no tribute, no bowing, no primary. Their fire opens to our people and
+    // ours to theirs (recognizedAbroad becomes real: the guest's meal).
+    // This is what formAlliance was built for — it had no callers, and the
+    // "already allies" bonuses in judgeLink/judgeApplication were
+    // unreachable. Played: opinion-gated (they must know Haven), feast-priced
+    // (1,500 real kcal), knowledge-gated (no proposing to the unheard-of).
+    // (Regional audit 2026-10-09.)
+    proposeAlliance(villageId) {
+      var ov = null;
+      try { ov = (this.state.otherVillages || []).find(function (x) { return x.id === villageId; }); } catch (e) {}
+      var nm = (ov && ov.name) || 'them';
+      if (!ov || (this.knowsVillage && !this.knowsVillage(ov))) {
+        this.say('You don\'t know them well enough to propose anything.');
+        return null;
+      }
+      if (this.linkWith && this.linkWith(villageId)) {
+        this.say('There is already a link. One organization, one link — tend it.');
+        return null;
+      }
+      if (this.isAllied('haven', villageId)) {
+        this.say('The understanding with ' + nm + ' already holds.');
+        return null;
+      }
+      var opinion = ov.opinion || 0;
+      if (opinion < 10) {
+        this.say(`${nm} isn't ready for an understanding — they don't know Haven well enough yet. (Regard: ${opinion}. Sit at their fire. Share food. Study their book.)`);
+        return null;
+      }
+      var have = 0;
+      try { have = this.pantryKcal ? this.pantryKcal() : 0; } catch (e) {}
+      if (have < 1500) {
+        this.say(`An understanding is sealed with a feast — 1,500 kcal. The pantry holds ${Math.round(have).toLocaleString()}. Not yet.`);
+        return null;
+      }
+      try { this._removePantryKcal(1500); } catch (e) {}
+      this.formAlliance(villageId);
+      if (this._nudgeOpinion) this._nudgeOpinion(villageId, 5);
+      try { if (this.journalNote) this.journalNote('village', 'alliance', 'Understanding with ' + nm + ', sealed with a feast. Their fire is open to our people.'); } catch (e) {}
+      this.say(`🤝 An understanding with ${nm}, sealed with a feast (1,500 kcal from the pantry). Their fire is open to our people — and ours to theirs. No tribute, no bowing. Just: we know each other now.`);
+      return true;
+    },
+
+    // guestMeal: the alliance, played. An allied village's fire is open —
+    // a guest's meal, once a day. Real food from THEIR pantry (they feel
+    // it), honest when the pot is empty. Guests, not locusts.
+    // (Regional audit 2026-10-09: recognizedAbroad had no callers.)
+    guestMeal(villageId) {
+      var ov = null;
+      try { ov = (this.state.otherVillages || []).find(function (x) { return x.id === villageId; }); } catch (e) {}
+      if (!ov) return null;
+      var nm = ov.name || 'them';
+      if (!this.recognizedAbroad(this.villagerId, ov)) {
+        this.say('Their fire is not open to you. Earn an understanding first.');
+        return null;
+      }
+      var day = (this.state.scholar || {}).day || 0;
+      var m = this.mshipState();
+      m.lastGuestMeal = m.lastGuestMeal || {};
+      if (m.lastGuestMeal[villageId] === day) {
+        this.say('They already fed you today. Guests, not locusts.');
+        return null;
+      }
+      if ((ov.pantryKcal || 0) < 1500) {
+        this.say(`Their pot is nearly empty too — ${nm} shares the embarrassment, not the meal. (Their pantry: ${Math.round(ov.pantryKcal || 0).toLocaleString()} kcal.)`);
+        return null;
+      }
+      ov.pantryKcal -= 1500;
+      var s = this.state.scholar || {};
+      var cap = 3000;
+      try { cap = this.kcalCap ? this.kcalCap() : 3000; } catch (e) {}
+      var before = s.kcal || 0;
+      s.kcal = Math.min(cap, before + 1500);
+      var gained = Math.round(s.kcal - before);
+      m.lastGuestMeal[villageId] = day;
+      if (this._nudgeOpinion) this._nudgeOpinion(villageId, 2);
+      this.say(`🍲 ${nm} feeds you from their pot — a guest's meal, +${gained.toLocaleString()} kcal. "Eat. You're one of the understood." Their pantry feels it; so does their regard.`);
+      return gained;
+    },
+
     // ---------- 7. DAILY ----------
+
+    // loanedReturnTick: the loaned walk back in when their days are served —
+    // the accord gesture and the aid demand both promise three days, and the
+    // return is said aloud. (Regional audit 2026-10-09: m.loaned was
+    // write-only — nobody came home because nobody tracked the leaving.)
+    loanedReturnTick() {
+      try {
+        var m = this.mshipState();
+        if (!m.loaned) return;
+        var day = (this.state.scholar || {}).day || 0;
+        if (day < (m.loaned.untilDay || 0)) return;
+        var nm = 'Someone';
+        try { nm = String(this.displayName(m.loaned.vid)).split(' ')[0]; } catch (e) {}
+        var to = m.loaned.to;
+        m.loaned = null;
+        var tonm = 'them';
+        try { tonm = this._ovName ? this._ovName(to) : tonm; } catch (e2) {}
+        this.say(`${nm} walks back in — days at ${tonm}'s fire, served. Still ours; membership never needed presence.`);
+      } catch (e) {}
+    },
 
     membershipDaily() {
       try { this.considerApplications(); } catch (e) {}
       try { this.arrivalTick(); } catch (e) {}
       try { this.crowdingTick(); } catch (e) {}
+      try { this.loanedReturnTick(); } catch (e) {}
     },
   };
 
@@ -699,13 +824,17 @@
     return r;
   };
 
-  // Rejoining heals the cut: petition accepted, haven founded.
-  var _joinVillage = G.joinVillage;
-  G.joinVillage = function (villageId) {
-    var r = _joinVillage ? _joinVillage.call(this, villageId) : undefined;
-    try { this.rejoinMembership(); } catch (e) {}
-    return r;
-  };
+  // Rejoining heals the cut: petition accepted, haven founded — and the REAL
+  // join path, joinVillageReal (betrayal.js). The old wrap sat on
+  // G.joinVillage (game.js), which has no callers. (Regional audit 2026-10-09.)
+  var _joinVillageRealM = G.joinVillageReal;
+  if (_joinVillageRealM) {
+    G.joinVillageReal = function (villageId) {
+      var r = _joinVillageRealM.apply(this, arguments);
+      try { this.rejoinMembership(); } catch (e) {}
+      return r;
+    };
+  }
   var _foundHaven = G.foundHaven;
   G.foundHaven = function () {
     var r = _foundHaven ? _foundHaven.call(this) : undefined;

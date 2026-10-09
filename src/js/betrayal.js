@@ -1862,6 +1862,12 @@
         try { pack = this.playerPackKcal(); } catch (e) {}
         if (pack >= 700) card.actions.push({ id: 'sharefood', label: '🍲 Share a day\'s food (700 kcal)', hint: 'Feed their fire from your pack. They\'ll remember — especially if the pot is empty.', giftKcal: 700 });
         if (pack >= 1500) card.actions.push({ id: 'sharefood', label: '🍲🍲 Lay down a feast (1500 kcal)', hint: 'More than a day\'s food from your pack. A gift nobody shrugs at.', giftKcal: 1500 });
+        // ALLIANCE (regional audit 2026-10-09): an allied village's fire is
+        // open to our people — recognizedAbroad, played as a guest's meal.
+        // (formAlliance/recognizedAbroad were engine-only with no callers.)
+        if (this.recognizedAbroad && this.recognizedAbroad(this.villagerId, ov)) {
+          card.actions.push({ id: 'guestmeal', label: '🍲 Ask for a guest meal (allied)', hint: 'Their fire is open to our people. Once a day — guests, not locusts.' });
+        }
       } else {
         card.hint = 'Walk to the edge of the map to travel there.';
       }
@@ -1873,6 +1879,7 @@
     if (actionId === 'talk') return this.villageTalk(villageId);
     if (actionId === 'study') return this.studyVillageCodex(villageId);
     if (actionId === 'sharefood') return this.villageShareFood(villageId, opts);
+    if (actionId === 'guestmeal') return this.guestMeal(villageId);
     return null;
   },
   // villageTalk: sit with another village. Trade news, trade plant knowledge.

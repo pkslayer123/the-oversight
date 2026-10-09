@@ -62,8 +62,11 @@ const ok = (name, cond, extra) => {
   const op0 = ov.opinion || 0;
 
   // --- join: opinion +5, once; news delivered ---
+  // (Regional audit 2026-10-09: the courtship wrap moved from the dead
+  // G.joinVillage to the real join path, joinVillageReal. This test now
+  // exercises the path the game actually takes.)
   says.length = 0;
-  Game.joinVillage(ov.id);
+  Game.joinVillageReal(ov.id);
   const joinLines = says.splice(0).map(String);
   ok('join moves opinion +5', (ov.opinion || 0) === op0 + 5, `opinion=${ov.opinion}`);
   ok('join surfaces village news (catch-up history read to the player)',
@@ -71,7 +74,7 @@ const ok = (name, cond, extra) => {
     joinLines.slice(0, 3).map(l => l.slice(0, 60)).join(' | '));
   says.length = 0;
   Game.leaveVillage();
-  Game.joinVillage(ov.id); // rejoin: no farming
+  Game.joinVillageReal(ov.id); // rejoin: no farming
   says.splice(0);
   ok('rejoin does not double-dip opinion', (ov.opinion || 0) === op0 + 5, `opinion=${ov.opinion}`);
 

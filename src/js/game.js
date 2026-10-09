@@ -95,6 +95,7 @@
 //   - homecoming_beat: returnToVillage says a return line after >=2 days away, tracked via scholar.lastHavenDay (code: returnToVillage)
 //   - broker_knowledge_presence: identifying a plant while away queues it in scholar.awayLearned — no home witness line, no home rumor, and the absent player is excluded from spreadPlantKnowledge; returnToVillage fires the broker's teaching beat and seeds the rumor only then (code: identifyPlant/spreadPlantKnowledge/returnToVillage, Steve 2026-10-07)
 //   - phoenix_burns_villager: phoenix_clause no longer respawns at Haven once per run -- lethal damage burns a RANDOM living villager (ash-death, no corpse) and the bearer emerges at the victim's location with 1 HP; no living villagers / no village = death sticks, honestly (code: phoenixPlayerTrigger, Steve 2026-10-09)
+//   - phoenix_no_burn_phoenix: bearers holding an UNSPENT phoenix_clause are never valid victims (pool + volunteer both exclude them); a spent bearer (clause revoked on trigger) is eligible again; only bearers left = death sticks, honestly (code: phoenixLivingVillagers/phoenixVolunteer/phoenixVillagerTrigger, Steve 2026-10-09)
 //   - phoenix_link_beat: every trigger narrates before resolution -- who burns, who the fire chose, what happens next; gossip carries it distorted to non-witnesses (code: phoenixLinkBeat)
 //   - phoenix_volunteer: a villager with standing >= 40 may offer themselves, replacing the random pick -- willing sacrifice, honor not horror, no trust hit (code: phoenixVolunteer)
 //   - phoenix_protest: a chosen villager with standing <= 5 or fear >= 60 fights the pull -- a PLAYED 3-beat struggle (400 kcal + 1 trauma per beat, no RNG); breaking it kills the bearer true death (code: phoenixStartStruggle)
@@ -11665,6 +11666,12 @@
         // CORPSE SYSTEM: looting the fresh dead where others can see.
         // "They were picking his pockets before he was cold."
         loot_corpse: { honest: -10, generous: -8, brave: -2, competent: 0 },
+        // ASH-PILE (Steve 2026-10-09): pocketing a phoenix victim's gear.
+        // They died for the bearer, or for the village -- picking through
+        // the ashes reads ghoulish, worse than ordinary looting of the dead.
+        // The bearer pocketing their own victim's gear is worse still (see the
+        // loot_ash lens below).
+        loot_ash: { honest: -18, generous: -14, brave: -4, competent: 0 },
         // THEFT: hands in someone's pack. The village hates thieves more
         // than cowards — trust is the currency and you counterfeited it.
         theft: { honest: -25, generous: -15, brave: -3, competent: 0 },
@@ -11724,6 +11731,11 @@
           // different than a dead innocent — same blood, different meaning.
           const md = this.murderDims(opts.target);
           for (const k of Object.keys(md)) dims[k] = md[k];
+        }
+        if (action === 'loot_ash' && opts.bearerTakesOwn) {
+          // The bearer pocketing their own victim's gear -- burned them to
+          // live, now taking their boots. The village sees exactly what this is.
+          dims.honest = -30; dims.generous = -24; dims.brave = -6;
         }
         const skipTrust = opts.noTrust || (isTarget && opts.trustMoved);
         this.applyRep(vid, dims, isTarget ? 1 : 0.8, skipTrust);
@@ -30228,7 +30240,12 @@
       const living = this.phoenixLivingVillagers();
       // No one left to burn for you -- or no village at all. Death sticks.
       if (!v || !living.length) {
-        this.say('🔥 The phoenix clause stirs -- and finds no one. No village, no villagers, no fire to trade. Your death sticks. (phoenix_clause: no one left to burn for you)');
+        const anyLeft = (v && v.roster || []).filter(id => id !== this.villagerId && !(this.vpOf(id) || {}).dead);
+        if (v && anyLeft.length) {
+          this.say('🔥 The fire looked across the village and found only its own. Phoenix cannot burn phoenix. It took nothing. Your death sticks. (phoenix_clause: only bearers left)');
+        } else {
+          this.say('🔥 The phoenix clause stirs -- and finds no one. No village, no villagers, no fire to trade. Your death sticks. (phoenix_clause: no one left to burn for you)');
+        }
         try { this.journalNote && this.journalNote('death', 'phoenix', 'The clause found no one. Death stuck.'); } catch (e) {}
         return false;
       }
@@ -30256,17 +30273,21 @@
     phoenixLivingVillagers() {
       try {
         const v = this.state.village;
-        return (v.roster || []).filter(id => id !== this.villagerId && !(this.vpOf(id) || {}).dead);
+        // PHOENIX CANNOT BURN PHOENIX (Steve 2026-10-09): bearers holding an
+        // unspent clause are never valid victims. A spent bearer (clause
+        // revoked on trigger) IS eligible again -- only unspent counts.
+        return (v.roster || []).filter(id => id !== this.villagerId && !(this.vpOf(id) || {}).dead && !this.npcHasAbility(id, 'phoenix_clause'));
       } catch (e) { return []; }
     },
 
     // Devotion volunteers: the most beloved villager (standing >= 40) may
     // offer themselves. They REPLACE the random pick -- the sacrifice is
-    // willing. Being loved literally changes whose body burns.
+    // willing. Being loved literally changes whose body burns. A bearer can
+    // never volunteer for another bearer -- the fire refuses its own.
     phoenixVolunteer(living, bearerId) {
       try {
         const trust = (this.state.village || {}).trust || {};
-        const cands = living.filter(id => id !== bearerId && (trust[id] || 0) >= 40);
+        const cands = living.filter(id => id !== bearerId && (trust[id] || 0) >= 40 && !this.npcHasAbility(id, 'phoenix_clause'));
         if (!cands.length) return null;
         cands.sort((a, b) => (trust[b] || 0) - (trust[a] || 0));
         return cands[0];
@@ -30322,32 +30343,41 @@
       if (bearerIsPlayer) {
         s.mx = vx; s.my = vy; s.hp = 1; s.health = 1;
         this.say(`🔥 You come up out of ${vName}'s ashes, gasping, 1 HP${opts.willing ? ' -- their gift' : ''}. ${opts.willing ? 'They gave willingly. The village saw.' : 'Their death is on your hands. No one looks away. No one will forget this.'}`);
+        this.say(`${vName}'s gear lies in the ashes. It belongs to the village now — pocket it, or bring it home. The village will remember what you do.`);
         try { this.audioEvent && this.audioEvent('phoenix'); } catch (e) {}
         this.phoenixAftermath(victimVid, witnesses, opts);
         if ((s.phoenixUses || 0) >= 2) this.phoenixExileCheck();
       } else {
         const bName = this.displayName(bearerVid);
         this.say(`🔥 ${bName} comes up out of ${vName}'s ashes, gasping, barely alive. The village saw who the fire chose -- and who let it.`);
+        this.say(`${vName}'s gear lies in the ashes. It belongs to the village now — pocket it, or bring it home. The village will remember what anyone does.`);
         this.phoenixWitnessAftermath(bearerVid, victimVid, witnesses, opts);
       }
       return true;
     },
 
     // Ash-death: death knowledge fires (registerDeath), witnesses see it --
-    // but there is no corpse. Ashes can't be looted. A victim holding the
+    // but there is no body, only an ash-pile. ASH GEAR (Steve 2026-10-09):
+    // the victim's CARRIED gear survives the fire as a lootable ash-pile at
+    // the burn site (take, leave, or use per item -- loot as action). Their
+    // stashed gear stays at their space, never teleported to the ash.
+    // Sentimental/bonded items burn with the owner. A victim holding the
     // clause does NOT chain-trigger: the fire is already phoenix-fire, one
     // burn per link.
     phoenixAshDeath(vid, name, mx, my, killerId) {
       this._phoenixResolving = true;
       try {
-        this.registerDeath({
+        const ashPack = this.phoenixAshGearPack(vid);
+        const corpse = this.registerDeath({
           kind: 'villager', villagerId: vid, name, mx, my,
           cause: 'the phoenix link', killerId: killerId || null,
           witnesses: [this.villagerId], youWitnessed: true,
+          items: ashPack,
         });
-        const list = this.corpses() || [];
-        for (let i = list.length - 1; i >= 0; i--) {
-          if (list[i].villagerId === vid) { list.splice(i, 1); break; }
+        if (corpse) {
+          corpse.ash = true;
+          corpse.ashVictim = vid;
+          corpse.ashBearer = killerId || null;
         }
       } catch (e) {}
       try { this.removeVillager(vid, 'killed'); } catch (e) {}
@@ -30356,6 +30386,40 @@
         v.fallen.push({ villagerId: vid, day: (this.state.scholar || {}).day || 0, cause: 'the phoenix link (ash)' });
       } catch (e) {}
       this._phoenixResolving = false;
+    },
+
+    // phoenixAshGearPack: the victim's carried gear ONLY (rec.items -- what
+    // they had on them when the fire took them). Mirrors the sapient-death
+    // rule that sentimentals die with the owner. Stashed gear is deliberately
+    // excluded: it stays at their space, lootable per normal rules.
+    phoenixAshGearPack(vid) {
+      try {
+        const rec = ((this.data.villagers || []).find(x => x.id === vid))
+          || ((this.data.background_survivors || []).find(x => x.id === vid))
+          || ((((this.state || {}).village || {}).rosterChars || {})[vid]);
+        if (!rec) return [];
+        const defs = {}; (this.data.items || []).forEach(i => { defs[i.id] = i; });
+        const seen = new Set();
+        const pack = [];
+        for (const it of (rec.items || [])) {
+          const gid = (it && (it.itemId || it.id)) || it;
+          if (!gid || seen.has(gid)) continue;
+          seen.add(gid);
+          const def = defs[gid] || {};
+          const inst = (typeof it === 'object' && it) || {};
+          if (inst.bonded || inst.sentimental || def.class === 'sentimental') continue; // burns with them
+          const personal = (rec.itemPersonal || {})[gid];
+          pack.push({
+            itemId: gid,
+            name: personal ? personal.name : (inst.name || def.name || gid),
+            units: inst.units || 1,
+            kg: inst.kg != null ? inst.kg : (def.kg != null ? def.kg : 0.3),
+            kcalEach: 0, spoilDay: 9999,
+            prep: 'Theirs. Take it, leave it, or use it — the village watches.',
+          });
+        }
+        return pack;
+      } catch (e) { return []; }
     },
 
     phoenixWitnesses(victimVid, bearerVid) {
@@ -30446,9 +30510,18 @@
     // (caller must NOT complete the death -- the bearer is held, not dead).
     phoenixVillagerTrigger(vid) {
       const v = this.state.village, s = this.state.scholar;
-      const living = (v.roster || []).filter(id => id !== vid && !(this.vpOf(id) || {}).dead);
+      // PHOENIX CANNOT BURN PHOENIX (Steve 2026-10-09): unspent-clause
+      // holders are excluded from the victim pool. (The Bearer <redacted> own
+      // clause is revoked below, after the pool is built -- id !== vid
+      // already excludes them here.)
+      const living = (v.roster || []).filter(id => id !== vid && !(this.vpOf(id) || {}).dead && !this.npcHasAbility(id, 'phoenix_clause'));
       if (!living.length) {
-        this.say(`🔥 ${this.displayName(vid)}'s phoenix clause stirs -- and finds no one. Their death sticks.`);
+        const anyLeft = (v.roster || []).filter(id => id !== vid && !(this.vpOf(id) || {}).dead);
+        if (anyLeft.length) {
+          this.say(`🔥 The fire looked across the village and found only its own. Phoenix cannot burn phoenix. It took nothing. ${this.displayName(vid)}'s death sticks.`);
+        } else {
+          this.say(`🔥 ${this.displayName(vid)}'s phoenix clause stirs -- and finds no one. Their death sticks.`);
+        }
         return false;
       }
       // Hold the death: the bearer is dying, not dead.
@@ -30582,7 +30655,7 @@
         // witnessed the coercion. Severe consequences for the bearer.
         const bName = this.displayName(L.bearer);
         const bearerVid = L.bearer;
-        this.say(`🔥 You let go${reason === 'weak' ? ' -- there was nothing left to hold with' : ''}. The fire takes you -- and ${bName} lives, standing in your ashes. The village watched them burn you.`);
+        this.say(`🔥 You let go${reason === 'weak' ? ' -- there was nothing left to hold with' : ''}. The fire takes you -- and ${bName} lives, standing in your ashes. Your gear lies in them too -- it belongs to the village now. The village watched them burn you.`);
         try { delete (this.state.village.dyingLinks || {})[bearerVid]; } catch (e) {} // the bearer lives
         try { this.playerDeath('the phoenix link'); } catch (e) {}
         if (this.state.over) return;
@@ -30604,7 +30677,7 @@
       const bearer = L.bearer;
       this.state.phoenixLink = null;
       const bName = this.displayName(bearer);
-      this.say(`🤲 You step into the link. "${bName} -- live." The fire takes you instead. Both bodies explode -- yours, and the death that was waiting for ${bName}.`);
+      this.say(`🤲 You step into the link. "${bName} -- live." The fire takes you instead. Both bodies explode -- yours, and the death that was waiting for ${bName}. Your gear lies in your ashes -- it belongs to the village now, and the village will remember what anyone does with it.`);
       try { delete (this.state.village.dyingLinks || {})[bearer]; } catch (e) {}
       try { this.playerDeath('the phoenix link (given)'); } catch (e) {}
       if (this.state.over) return;

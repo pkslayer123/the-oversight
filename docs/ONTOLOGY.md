@@ -327,11 +327,12 @@ Generated conversation topics. Every villager is a unique person
 ### corpses (`corpses.js`)
 Corpse system. Dead bodies persist, can be butchered, buried, or left.
 
-**Provides:** buryCorpse(cid), corpseAt(x, y), corpseDesc(c), examineCorpse(cid), lootCorpse(cid), corpseTakeItem(cid, idx), corpseUseItem(cid, idx), corpseEatItem(cid, idx), registerDeath(vid, cause), corpseStage(c), corpseGlyph(c), knowsDeath(vid), generatePossessions(vid), payRespects(cid), codexDeathSync()
+**Provides:** buryCorpse(cid), corpseAt(x, y), corpseDesc(c), examineCorpse(cid), lootCorpse(cid), corpseTakeItem(cid, idx), corpseUseItem(cid, idx), corpseEatItem(cid, idx), registerDeath(vid, cause), corpseStage(c), corpseIsPerson(c): 'person' + 'villager' kinds are sapient dead (Steve 2026-10-09), corpseGlyph(c), knowsDeath(vid), generatePossessions(vid), payRespects(cid), codexDeathSync()
 
 **Rules:**
 - sapient_dead_carry_their_gear: villager corpses hold the dead person's actual carried + stashed gear as the lootable death pack — nothing auto-transfers (code: generatePossessions, Steve 2026-10-09)
 - sentimentals_die_with_them: sentimental items are buried with the body, never lootable, and grant no bond to non-owners (code: generatePossessions, Steve 2026-10-09)
+- ash_pile: a phoenix victim's corpse is flagged ash -- no body, no decay, no disease, no trauma (ashes aren't gross); carried gear ONLY (never stashed) as the lootable pack; pocketing it fires loot_ash (amplified theft; worse still when the bearer takes their own victim's gear); the ash description states the village norm (code: phoenixAshDeath/phoenixAshGearPack in game.js, Steve 2026-10-09)
 
 **Consumes:** state.corpses
 
@@ -553,6 +554,7 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 - homecoming_beat: returnToVillage says a return line after >=2 days away, tracked via scholar.lastHavenDay (code: returnToVillage)
 - broker_knowledge_presence: identifying a plant while away queues it in scholar.awayLearned — no home witness line, no home rumor, and the absent player is excluded from spreadPlantKnowledge; returnToVillage fires the broker's teaching beat and seeds the rumor only then (code: identifyPlant/spreadPlantKnowledge/returnToVillage, Steve 2026-10-07)
 - phoenix_burns_villager: phoenix_clause no longer respawns at Haven once per run -- lethal damage burns a RANDOM living villager (ash-death, no corpse) and the bearer emerges at the victim's location with 1 HP; no living villagers / no village = death sticks, honestly (code: phoenixPlayerTrigger, Steve 2026-10-09)
+- phoenix_no_burn_phoenix: bearers holding an UNSPENT phoenix_clause are never valid victims (pool + volunteer both exclude them); a spent bearer (clause revoked on trigger) is eligible again; only bearers left = death sticks, honestly (code: phoenixLivingVillagers/phoenixVolunteer/phoenixVillagerTrigger, Steve 2026-10-09)
 - phoenix_link_beat: every trigger narrates before resolution -- who burns, who the fire chose, what happens next; gossip carries it distorted to non-witnesses (code: phoenixLinkBeat)
 - phoenix_volunteer: a villager with standing >= 40 may offer themselves, replacing the random pick -- willing sacrifice, honor not horror, no trust hit (code: phoenixVolunteer)
 - phoenix_protest: a chosen villager with standing <= 5 or fear >= 60 fights the pull -- a PLAYED 3-beat struggle (400 kcal + 1 trauma per beat, no RNG); breaking it kills the bearer true death (code: phoenixStartStruggle)
@@ -567,11 +569,16 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 ### hierarchy (`hierarchy.js`)
 Inter-village hierarchy. Villages have relationships, rivalries, trade.
 
-**Provides:** hierarchyState(), linkWith(vid, other), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerDemand(a, b), payTribute(a, b), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid), _nudgeOpinion(villageId, delta)
+**Provides:** hierarchyState(), linkWith(vid, other), knowsVillage(v), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerCounter(how), answerDemand(a, b), payTribute(a, b), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid), theirLeaderDied(linkId), stageFirstAccord(link), answerAccord(how), deliverVillageRumors(), kingdomEndingEligible(), _nudgeOpinion(villageId, delta)
 
 **Rules:**
 - courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually decline (judgeLink base 38) — the climb is earned. (code: hierarchy.js)
 - join_surfaces_village_news: joining a village reads up to 3 recent village.news entries (named catch-up deaths/births) at their fire. (code: hierarchy.js)
+- negotiation_is_played: proposeLink scores the courtship; >=55 accepts, 35-54 counters with the village's own terms (accept/sweeten/walk away — played, never rolled), <35 declines. (code: hierarchy.js)
+- regional_dawn: Haven's first-ever link stages a played beat, not a threshold flip — the System overlay grows into coordination (networkLive) and the player chooses Haven's first gesture (gift/visit/cold), each with real costs. (code: hierarchy.js)
+- speaker_is_named: theirSpeaker is a named person from the sim's roster; when the sim kills them, theirLeaderDied fires the mirror succession beat. (code: hierarchy.js)
+- rumors_are_delivered: queued village rumors are spoken one per day at the day boundary — "heard of them" is reachable. (code: hierarchy.js)
+- diplomacy_is_knowledge_gated: proposeLink/proposeAlliance refuse villages the player never heard of or visited (knowsVillage). (code: hierarchy.js)
 
 **Consumes:** state.otherVillages
 
@@ -636,10 +643,12 @@ Procedural foundation. Procedural depth before more systems.
 ### membership (`membership.js`)
 Village membership. Joining, leaving, exile status.
 
-**Provides:** isMember(vid), mshipState(), acceptApplication(app), refuseApplication(app), genApplicant(), judgeApplication(app), considerApplications(), rejoinMembership(), severMembership(vid), housingCap(), foodSupports(n)
+**Provides:** isMember(vid), mshipState(), memberBenefits(vid), awayMembers(), acceptApplication(app), refuseApplication(app), genApplicant(), judgeApplication(app), considerApplications(), debateIntake(app), rejoinMembership(), severMembership(vid), housingCap(), buildShelter(), foodSupports(n), growthStatus(), regionalStanding(village), villageStandingOf(villageId), formAlliance(villageId), proposeAlliance(villageId), isAllied(aId, bId), recognizedAbroad(vid, otherVillage), memberReputationAbroad(vid), guestMeal(villageId), loanedReturnTick(), membershipDaily()
 
 **Rules:**
-- (none documented)
+- membership_needs_no_presence: on the roster, alive, not severed = member, wherever they are; exile is the one severing. (code: membership.js)
+- alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once a day, real food from their pantry. (code: membership.js)
+- the_loaned_come_home: m.loaned is surfaced in awayMembers and the return is said aloud by loanedReturnTick. (code: membership.js)
 
 **Consumes:** village.members
 
@@ -730,10 +739,10 @@ Data-driven status effect engine. Statuses (poison, disease, bleed, stun, fear, 
 ### tools-stashes (`storage.js`)
 Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/load lives in engine/state.js.)
 
-**Provides:** MAT_DEFS (code: storage.js), hasToolItem(itemId), woodcutTier(), canFell(), canPrune(), cutInfo(), pruneBranches(), gatherFallen(), addMaterial(mat, n), spendMaterial(mat, n), takeMaterial(mat, n), materialCount(mat), donateMaterial(mat, n), donateTool(itemId), takeTool(itemId), donateWeapon(idx) / takeWeapon(itemId) (armory section, Steve 2026-10-09), donateMedicine(idx) / takeMedicine(itemId) (pharmacy section, Steve 2026-10-09), isStashableWeapon(item), isMedicine(item) (section filters), isStashableTool(item), stashState(), stashHtml(), stashLog(), stashLedgerText(), _stashLedgers(vid), _stashItemLedgers(vid, section), _stashToolLedgers(vid), _stashTotalNet(vid), buryCache(), digUpCache(), takeFromCache(cacheId, itemIdx, qty), playerCaches(), cachesHtml(), cacheTheftChance(), pickCacheRobber(village?), plantCacheTheftSuspicion(vid, c, village?), villageTrustLevel()
+**Provides:** MAT_DEFS (code: storage.js), hasToolItem(itemId), woodcutTier(), canFell(), canPrune(), cutInfo(), pruneBranches(), gatherFallen(), addMaterial(mat, n), spendMaterial(mat, n), takeMaterial(mat, n), materialCount(mat), donateMaterial(mat, n), donateTool(itemId), phoenixHonorDeposit(item): honored path for ashOf-tagged gear -- trust +8, honoring gossip (Steve 2026-10-09), takeTool(itemId), donateWeapon(idx) / takeWeapon(itemId) (armory section, Steve 2026-10-09), donateMedicine(idx) / takeMedicine(itemId) (pharmacy section, Steve 2026-10-09), isStashableWeapon(item), isMedicine(item) (section filters), isStashableTool(item), stashState(), stashHtml(), stashLog(), stashLedgerText(), _stashLedgers(vid), _stashItemLedgers(vid, section), _stashToolLedgers(vid), _stashTotalNet(vid), buryCache(), digUpCache(), takeFromCache(cacheId, itemIdx, qty), playerCaches(), cachesHtml(), cacheTheftChance(), pickCacheRobber(village?), plantCacheTheftSuspicion(vid, c, village?), villageTrustLevel()
 
 **Rules:**
-- (none documented)
+- ash_gear_honored: depositing ashOf-tagged gear (from a phoenix ash-pile) at Haven honors the dead -- trust +8 + honoring gossip, gear enters village circulation; armor/misc have no deposit hook (no communal armor pile, canon) (code: phoenixHonorDeposit, Steve 2026-10-09)
 
 **Consumes:** scholar.inventory, state.codex
 

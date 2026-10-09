@@ -16,6 +16,7 @@
 //   - materialCount(mat)
 //   - donateMaterial(mat, n)
 //   - donateTool(itemId)
+//   - phoenixHonorDeposit(item): honored path for ashOf-tagged gear -- trust +8, honoring gossip (Steve 2026-10-09)
 //   - takeTool(itemId)
 //   - donateWeapon(idx) / takeWeapon(itemId) (armory section, Steve 2026-10-09)
 //   - donateMedicine(idx) / takeMedicine(itemId) (pharmacy section, Steve 2026-10-09)
@@ -39,7 +40,7 @@
 //   - plantCacheTheftSuspicion(vid, c, village?)
 //   - villageTrustLevel()
 // rules:
-//   - (none documented)
+//   - ash_gear_honored: depositing ashOf-tagged gear (from a phoenix ash-pile) at Haven honors the dead -- trust +8 + honoring gossip, gear enters village circulation; armor/misc have no deposit hook (no communal armor pile, canon) (code: phoenixHonorDeposit, Steve 2026-10-09)
 // consumes:
 //   - scholar.inventory
 //   - state.codex
@@ -405,6 +406,31 @@
     },
     // donateTool / takeTool: spare tools live in the stash for anyone to use.
     // (Borrowing is trust-neutral in an open village; in a closed one it's noticed.)
+    // phoenixHonorDeposit(item): the honored path for a phoenix victim's gear
+    // (Steve 2026-10-09). An item taken from an ash-pile carries ashOf
+    // provenance; depositing it at Haven brings it home -- the taking is
+    // forgiven, the bringing is honored: meaningful trust, honoring gossip,
+    // and the gear enters normal village circulation. Returns true when it
+    // handled the deposit (caller skips its normal line). NOTE: only
+    // tools/weapons/medicine have deposit hooks -- armor and misc gear have
+    // no communal section (canon: no communal armor pile), so the honored
+    // path can't complete for those; flagged, not built.
+    phoenixHonorDeposit(item) {
+      if (!item || !item.ashOf) return false;
+      const v = this.state.village, vid = this.state.scholar.villagerId;
+      v.trust = v.trust || {};
+      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 8);
+      let deadName = 'the dead';
+      try { deadName = (this.displayName(item.ashOf) || 'the dead').split(' ')[0]; } catch (e) {}
+      const iname = item.name || 'their gear';
+      try {
+        const heardBy = (this.witnesses ? (this.witnesses(6) || []) : []) || [];
+        this.seedGossip('phoenix_honored', { who: vid, generous: 10, honest: 8 }, heardBy.slice(0, 4), true);
+      } catch (e) {}
+      this.say(`You brought ${deadName}'s ${iname} home to the village. The village saw you take it -- and saw you bring it back. (Trust +8.)`);
+      try { this.journalNote && this.journalNote('village', 'phoenix', 'Brought ' + deadName + "'s " + iname + ' home. Honored.'); } catch (e) {}
+      return true;
+    },
     donateTool(idx) {
       // PHYSICAL STORES (miser break-it 2026-10-08): same gate as donateMaterial
       // — tools don't teleport into the hall either.
@@ -427,6 +453,13 @@
       const v = this.state.village, vid = this.state.scholar.villagerId;
       v.trust = v.trust || {};
       v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
+      // ASH GEAR HONORED (Steve 2026-10-09): bringing a phoenix victim's
+      // belongings home replaces the ordinary deposit line.
+      if (this.phoenixHonorDeposit && this.phoenixHonorDeposit(item)) {
+        const tg = this._stashToolLedgers(vid);
+        tg.gives[id] = (tg.gives[id] || 0) + 1;
+        return this.tickAction(2) || this.status();
+      }
       // TAKE-BACK TRACKING (miser loop 2026-10-08; per-tool miser break-it
       // 2026-10-08): donating then re-taking the same tool farmed +2 trust
       // per cycle. The old flat counter ALSO accused you of taking back YOUR
@@ -534,6 +567,11 @@
       // give/take ledgers per section, mirroring donateTool's rule.
       const il = this._stashItemLedgers(vid, section === 'weapons' ? 'Weapon' : 'Medicine');
       il.gives[id] = (il.gives[id] || 0) + 1;
+      // ASH GEAR HONORED (Steve 2026-10-09): bringing a phoenix victim's
+      // belongings home replaces the ordinary deposit line.
+      if (this.phoenixHonorDeposit && this.phoenixHonorDeposit(item)) {
+        return this.tickAction(2) || this.status();
+      }
       this.say(`Left your ${item.name || def.name} in the ${kindLabel}. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },

@@ -1222,10 +1222,11 @@
           actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
           const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
           // LOOT-AS-ACTION (Steve 2026-10-06): open the pack, don't take-all.
-          if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
+          // ASH (Steve 2026-10-09): no body to search -- sift the ashes.
+          if (remaining && !dc.buried) actions.push([dc.ash ? '🎒 Sift the ashes' : '🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried) actions.push([dc.ash ? 'Bury the ashes' : 'Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.ash && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
         }
       }
     } else if (isMon) {
@@ -1271,17 +1272,18 @@
       const dead = Game.corpseAt(cx, cy);
       if (dead.length) {
         const dc = dead[0];
-        name = dc.kind === 'person' ? 'A body' : 'A carcass';
+        name = dc.ash ? 'Ashes' : (Game.corpseIsPerson(dc) ? 'A body' : 'A carcass');
         desc = Game.corpseDesc(dc);
         if (dist <= 1) {
           actions.push(['Look closely', () => { Game.examineCorpse(dc.id); refresh(); }]);
           const remaining = (dc.items || []).filter(i => (i.units || 1) > 0).length;
           // LOOT-AS-ACTION (Steve 2026-10-06): no take-all. Open the pack —
           // take, leave, or use per item.
-          if (remaining && !dc.buried) actions.push(['🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried) actions.push(['Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
-          if (dc.kind === 'person' && !dc.buried && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
+          // ASH (Steve 2026-10-09): no body to search -- sift the ashes.
+          if (remaining && !dc.buried) actions.push([dc.ash ? '🎒 Sift the ashes' : '🎒 Search the body', () => { inlineView = { kind: 'loot', cid: dc.id, mapKey: inlineMapKey() }; refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.respectsPaid) actions.push(['Say a few words', () => { Game.payRespects(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried) actions.push([dc.ash ? 'Bury the ashes' : 'Bury them', () => { Game.buryCorpse(dc.id); refresh(); }]);
+          if (Game.corpseIsPerson(dc) && !dc.buried && !dc.ash && !dc.butchered && Game.corpseButcher) actions.push(['🔪 Butcher the body', () => { Game.corpseButcher(dc.id); refresh(); }]);
         } else {
           desc += ' (Too far.)';
           actions.push(walkCloser(cx, cy));
@@ -12985,8 +12987,10 @@
         `</p>`;
     }).join('') : '<p class="small">Nothing left worth taking.</p>';
     slot.innerHTML = `<div class="inlinecard">
-      ${inlineHead('🎒 ' + esc(who) + ' — ' + stage)}
-      <p class="small" style="opacity:.7">Take what you want. What's left stays — and meat rots where it lies.</p>
+      ${c.ash ? inlineHead('⚱️ ' + esc(who) + "'s ashes") : inlineHead('🎒 ' + esc(who) + ' — ' + stage)}
+      ${c.ash
+        ? `<p class="small" style="opacity:.7">What they carried belongs to the village now, not to whoever's standing here. Pocket it, or bring it home. The village will remember.</p>`
+        : `<p class="small" style="opacity:.7">Take what you want. What's left stays — and meat rots where it lies.</p>`}
       ${bodyHtml}
     </div>`;
     wireInlineX(slot);
@@ -13674,6 +13678,16 @@
     // Hierarchy: propose a link (drifter loop 2026-10-08 — was engine-only).
     document.querySelectorAll('[data-link-propose-sub]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposeSub, { asSubordinate: true, tributeKcalPerWeek: 4000 }); refresh(); });
     document.querySelectorAll('[data-link-propose-prim]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposePrim, { asSubordinate: false, tributeKcalPerWeek: 4000 }); refresh(); });
+    // Hierarchy: the negotiation, played (regional audit 2026-10-09).
+    document.querySelectorAll('[data-counter-accept]').forEach(b => b.onclick = () => { Game.answerCounter('accept'); refresh(); });
+    document.querySelectorAll('[data-counter-sweeten]').forEach(b => b.onclick = () => { Game.answerCounter('sweeten'); refresh(); });
+    document.querySelectorAll('[data-counter-walk]').forEach(b => b.onclick = () => { Game.answerCounter('walk'); refresh(); });
+    // Regional dawn: Haven's first gesture (regional audit 2026-10-09).
+    document.querySelectorAll('[data-accord-gift]').forEach(b => b.onclick = () => { Game.answerAccord('gift'); refresh(); });
+    document.querySelectorAll('[data-accord-visit]').forEach(b => b.onclick = () => { Game.answerAccord('visit'); refresh(); });
+    document.querySelectorAll('[data-accord-cold]').forEach(b => b.onclick = () => { Game.answerAccord('cold'); refresh(); });
+    // Alliance: the understanding (regional audit 2026-10-09 — was engine-only).
+    document.querySelectorAll('[data-ally-propose]').forEach(b => b.onclick = () => { Game.proposeAlliance(b.dataset.allyPropose); refresh(); });
     document.querySelectorAll('[data-demand-yes]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandYes, true); refresh(); });
     document.querySelectorAll('[data-demand-no]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandNo, false); refresh(); });
     // Hierarchy: the climb (break-it social r2 2026-10-08 — were engine-only).
@@ -14009,7 +14023,8 @@
             const j = Game.judgeApplication(a);
             return `<p class="small">📨 <b>${a.name}</b>${a.fromVillageName ? ' <span style="opacity:.7">of ' + a.fromVillageName + '</span>' : ''} — ${a.formerOccupation || 'drifter'} · "${a.reason}"<br><span style="opacity:.7">${j.reasons.join(' ')}</span><br><button class="btn sm" data-mship-accept="${a.id}">Accept</button> <button class="btn sm ghost" data-mship-refuse="${a.id}">Turn away</button></p>`;
           }).join('');
-          return `<p class="small" style="margin-top:6px"><b>🏠 Membership:</b> ${gs.used}/${gs.housing} housed${away ? ' · ' + away + ' away (still ours — no check-ins)' : ''}${gs.room <= 0 ? ' · ⚠ FULL' : ''}</p>
+          const ben = Game.memberBenefits ? Game.memberBenefits().map(b => String(b.label).split(' — ')[0]).join(' · ') : '';
+          return `<p class="small" style="margin-top:6px"><b>🏠 Membership:</b> ${gs.used}/${gs.housing} housed${away ? ' · ' + away + ' away (still ours — no check-ins)' : ''}${gs.room <= 0 ? ' · ⚠ FULL' : ''}${ben ? `<br><span style="opacity:.6">Membership means: ${esc(ben)}</span>` : ''}</p>
           <div class="btnrow"><button class="btn sm ghost" data-mship-build>🔨 Build shelter (+2, 10 wood)</button></div>
           ${apps ? `<div style="margin-top:4px"><p class="small"><b>Remote applications:</b></p>${apps}</div>` : ''}
           ${(() => {
@@ -14017,7 +14032,11 @@
               const links = Game.villageLinks('haven');
               let html = '';
               if (links.length) {
-                html = '<div style="margin-top:4px"><p class="small"><b>⛓️ Links:</b></p>' + links.map(l => {
+                // REGIONAL DAWN (2026-10-09): once the first link forms, the
+                // System's coordination layer is visibly online — the header
+                // grows from "Links" to "NETWORK (regional)".
+                const netLive = !!Game.state.networkLive;
+                html = `<div style="margin-top:4px"><p class="small"><b>⛓️ ${netLive ? 'NETWORK (regional)' : 'Links'}:</b></p>` + links.map(l => {
                   const other = l.subordinate === 'haven' ? l.primary : l.subordinate;
                   const nm = Game._ovName(other);
                   const sub = l.subordinate === 'haven';
@@ -14030,21 +14049,46 @@
                   // as the proposeLink gap the drifter loop wired).
                   if (sub) h += ` <button class="btn sm ghost" data-link-reneg="${l.id}">Renegotiate</button> <button class="btn sm ghost" data-link-bid="${l.id}">Bid for primacy</button> <button class="btn sm ghost" data-link-break="${l.id}">🗡️ Break away</button>`;
                   if (l.pendingDemand) h += `<br>📯 ${l.pendingDemand.detail}<br><button class="btn sm" data-demand-yes="${l.id}">Honor it</button> <button class="btn sm ghost" data-demand-no="${l.id}">Refuse</button>`;
+                  // REGIONAL DAWN (2026-10-09): the first link stages a
+                  // played beat — Haven's first gesture toward the other
+                  // fire. Real costs, real consequences.
+                  if (Game.state.pendingAccord && Game.state.pendingAccord.linkId === l.id && l.status === 'active') {
+                    let rep = null; try { rep = Game.representative(); } catch (e) {}
+                    let rnm = 'our speaker'; try { rnm = rep ? String(Game.displayName(rep.id)).split(' ')[0] : rnm; } catch (e) {}
+                    const isSelf = !!(rep && Game.villagerId && rep.id === Game.villagerId);
+                    h += `<br>🌅 <b>First accord:</b> ${esc(nm)} watches what Haven does first.<br><button class="btn sm" data-accord-gift="${l.id}">🎁 Send a gift (2,000 kcal)</button> <button class="btn sm ghost" data-accord-visit="${l.id}">🚶 ${isSelf ? 'Go yourself' : 'Send ' + esc(rnm) + ' (3 days)'}</button> <button class="btn sm ghost" data-accord-cold="${l.id}">Send nothing</button>`;
+                  }
+                  // THE VALUED SUBORDINATE (2026-10-09): the earned ending
+                  // frame, visible when earned — kingdomEndingEligible was
+                  // engine-only with no consumer.
+                  if (sub) { try { const ke = Game.kingdomEndingEligible && Game.kingdomEndingEligible(); if (ke && ke.eligible && ke.linkId === l.id) h += `<br>👑 They can't afford to lose Haven — the valued subordinate.`; } catch (e) {} }
                   return h + '</p>';
                 }).join('') + '</div>';
               }
               // PROPOSE (drifter loop 2026-10-08): proposeLink had no UI — the
               // whole link system was engine-only and unreachable. Court them
               // first (join, learn their codex, deeds); cold proposals decline.
+              // KNOWLEDGE GATE (regional audit 2026-10-09): only villages
+              // you've heard of (rumor) or visited (generated) appear — a
+              // name you never heard is not a button.
               if (typeof Game.proposeLink === 'function') {
                 const linked = {};
                 for (const l of links) { linked[l.primary] = 1; linked[l.subordinate] = 1; }
-                const cands = (Game.state.otherVillages || []).filter(v => v.id !== 'haven' && !linked[v.id]);
+                const knows = v => !Game.knowsVillage || Game.knowsVillage(v);
+                const cands = (Game.state.otherVillages || []).filter(v => v.id !== 'haven' && !linked[v.id] && knows(v));
+                // A counter-offer on the table: the negotiation, played.
+                const pc = Game.state.pendingCounter;
+                if (pc) {
+                  const pv = (Game.state.otherVillages || []).find(x => x.id === pc.targetId);
+                  const pnm = (pv && pv.name) || 'them';
+                  html += `<div style="margin-top:4px"><p class="small"><b>⛓️ ${esc(pnm)} counters:</b> ${esc(pc.terms)}<br><button class="btn sm" data-counter-accept>Accept their terms</button> <button class="btn sm ghost" data-counter-sweeten>Sweeten it (1,500 kcal)</button> <button class="btn sm ghost" data-counter-walk>Walk away</button></p></div>`;
+                }
                 if (cands.length) {
                   html += '<div style="margin-top:4px"><p class="small" style="opacity:.75"><b>⛓️ No link yet — propose one:</b></p>' + cands.map(v => {
                     const op = v.opinion || 0;
                     const opTxt = op >= 20 ? ' (they think well of us)' : op <= -20 ? ' (they think poorly of us)' : '';
-                    return `<p class="small">${v.name || v.id}${opTxt}<br><button class="btn sm ghost" data-link-propose-sub="${v.id}">Bow to them (4k kcal/wk)</button> <button class="btn sm ghost" data-link-propose-prim="${v.id}">Ask them to bow</button></p>`;
+                    const allied = Game.isAllied && Game.isAllied('haven', v.id);
+                    return `<p class="small">${v.name || v.id}${opTxt}<br><button class="btn sm ghost" data-link-propose-sub="${v.id}">Bow to them (4k kcal/wk)</button> <button class="btn sm ghost" data-link-propose-prim="${v.id}">Ask them to bow</button>${allied ? '' : ` <button class="btn sm ghost" data-ally-propose="${v.id}">🤝 Understanding</button>`}</p>`;
                   }).join('') + '</div>';
                 }
               }

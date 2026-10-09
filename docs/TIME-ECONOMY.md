@@ -16,7 +16,12 @@ time passing.
   assignments resolve, −5 energy, photosynthesis, wanderer moves).
 - `TICKS_PER_DAY = 512` — the day has a **fixed budget**. When it's used,
   the day advances (`endDay()`).
-- `TRAVEL_TICKS = 32` — node travel is a "bigger tick" on the same clock.
+- Node travel is FREE (Steve 2026-10-05): crossing a node boundary is just
+  walking — the steps to reach the edge already cost. `TIME.TRAVEL_TICKS`
+  is deprecated (nothing reads it; kept so old saves don't crash). The world
+  still moves while you travel (`travelTimeStep`: one NPC batch turn), but it
+  is gated on the player's clock having advanced — zero-cost ping-pong between
+  two tiles advances nothing (break-it travel 2026-10-08).
 
 The part structure (dawn/midday/dusk/night) **derives from ticks** — it is not
 a separate currency. `tickAction(n)` is the single choke point; `advancePart()`
@@ -62,7 +67,7 @@ Every action is priced in up to three currencies:
 | Boil water (`treat`) | 32 (1 chunk) | 50 kcal | Half an hour, a fire, effort |
 | Craft a tool | 32 (1 chunk) | 0 | Hand work, not heavy labor |
 | Cook a meal | 32 (1 chunk) | 0 | Tending the fire |
-| Node travel (`travelTo`) | 32 (1 chunk) | 30 kcal × distance | The "bigger tick" |
+| Node travel (`travelTo`) | 0 | 0 | Free (Steve 2026-10-05) — the boundary is just walking; the steps to the edge already cost. The world still takes one batch turn per travel (NPCs act), gated on the player's clock having moved since the last step |
 | Forage | 16 (half a chunk) | 60 kcal | Quick beat, small yield (~200-650 kcal). Two presses = one NPC batch. Time feels spent, not skipped |
 | Fell a tree (`cutTree`) | 96 (3 chunks) | 80 kcal | Felling a tree is serious work |
 | Build a bridge | 96 (3 chunks) | 60 kcal | Construction is work |
