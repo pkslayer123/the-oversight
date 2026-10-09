@@ -61,7 +61,7 @@
     return m.value * level; // add
   }
 
-  function collectModifiers(scholar, abilitiesData) {
+  function collectModifiers(scholar, abilitiesData, synergiesData) {
     const out = [];
     const byId = {};
     (abilitiesData || []).forEach(a => { byId[a.id] = a; });
@@ -78,6 +78,18 @@
         }
       }
     });
+    // SYNERGIES: discovered synergies grant modifiers too. (Fix 2026-10-09:
+    // synergy modifiers were never collected — every synergy reward was dead.)
+    const synById = {};
+    (synergiesData || []).forEach(s => { synById[s.id] = s; });
+    for (const sid of (scholar.synergies || [])) {
+      const s = synById[sid];
+      if (s && s.modifiers) {
+        for (const m of s.modifiers) {
+          out.push(Object.assign({ source: 'synergy:' + sid }, m));
+        }
+      }
+    }
     // RELICS: bonded relic enhancements speak the same modifier language.
     // Each enhancement maps to real game targets (see RELIC_MOD_MAP).
     // resolve/anchor are special-cased in game.js (not plain modifiers).

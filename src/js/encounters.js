@@ -2086,7 +2086,7 @@
     var relicHunt = 0;
     try {
       var S_ = _g.Scattering || {};
-      if (S_.modifiers) relicHunt = S_.modifiers.resolve(0, 'hunt.success', S_.modifiers.collectModifiers(s, this.data.abilities), {});
+      if (S_.modifiers) relicHunt = S_.modifiers.resolve(0, 'hunt.success', S_.modifiers.collectModifiers(s, this.data.abilities, this.data.synergies), {});
     } catch (e) {}
     var nightHuntBonus = 0;
     try {

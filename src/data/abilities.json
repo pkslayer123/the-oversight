@@ -224,7 +224,7 @@
     }
   },
   {
-    "description": "Burn bright, pay later. Once per expedition, act twice.",
+    "description": "Adrenaline hits and the world slows — you are harder to hit when it matters.",
     "id": "adrenaline_surge",
     "modifiers": [
       {
@@ -1541,14 +1541,7 @@
     "name": "Gossip Network",
     "pool": "social",
     "description": "You hear things. People tell you things. You remember who told you what.",
-    "modifiers": [
-      {
-        "target": "social.gossip_chance",
-        "op": "add",
-        "value": 0.3,
-        "scale": "level"
-      }
-    ],
+    "modifiers": [],
     "unlock": {
       "type": "trial",
       "trial": "hear_10_rumors"
@@ -1559,14 +1552,7 @@
     "name": "Peacemaker",
     "pool": "social",
     "description": "You can walk into a fight and walk out with friends. It's a gift.",
-    "modifiers": [
-      {
-        "target": "social.deescalate",
-        "op": "add",
-        "value": 0.35,
-        "scale": "level"
-      }
-    ],
+    "modifiers": [],
     "unlock": {
       "type": "trial",
       "trial": "stop_a_fight"
@@ -1656,14 +1642,7 @@
     "name": "Evidence Board",
     "pool": "investigation",
     "description": "You keep track. Who said what, when. The contradictions surface.",
-    "modifiers": [
-      {
-        "target": "truth.contradiction_spot",
-        "op": "add",
-        "value": 0.3,
-        "scale": "level"
-      }
-    ],
+    "modifiers": [],
     "unlock": {
       "type": "trial",
       "trial": "catch_3_lies"
@@ -1695,32 +1674,7 @@
       "daily": 40
     }
   },
-  {
-    "id": "stormcall",
-    "name": "Stormcall",
-    "description": "You feel storms coming half a day out, and you can nudge them. Rain answers when you ask.",
-    "flavor": "Not weather control \u2014 weather negotiation. The sky drives a hard bargain.",
-    "pool": "system",
-    "tier": "rare",
-    "unlock": {
-      "type": "system_offer"
-    },
-    "modifiers": [
-      {
-        "target": "weather.prediction_hours",
-        "op": "add",
-        "value": 12
-      },
-      {
-        "target": "weather.rain_chance",
-        "op": "add",
-        "value": 0.15
-      }
-    ],
-    "metabolic": {
-      "daily": 40
-    }
-  },
+  
   {
     "id": "stalk",
     "name": "Stalk",
@@ -1874,13 +1828,7 @@
     "unlock": {
       "type": "system_offer"
     },
-    "modifiers": [
-      {
-        "target": "water.breath_time",
-        "op": "add",
-        "value": 999
-      }
-    ],
+    "modifiers": [],
     "actions": [
       {
         "id": "dive_deep",

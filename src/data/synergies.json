@@ -526,41 +526,7 @@
     },
     "flags": []
   },
-  {
-    "id": "seedkeeper",
-    "name": "Seedkeeper's Promise",
-    "requires": [
-      "tech:seed_saving",
-      "skill:farming",
-      "green_thumb"
-    ],
-    "minLevel": 2,
-    "flavor": "The farmer's seed wisdom + your hands + the green gift. What you plant remembers you.",
-    "discovery": "\"You save the seeds AND you grow them with your HANDS?! The plants are writing you into their family tree! LITERALLY!\"",
-    "modifiers": [
-      {
-        "op": "multiply",
-        "target": "farming.yield",
-        "value": 1.4
-      },
-      {
-        "op": "add",
-        "target": "farming.seed_keep",
-        "value": 0.3
-      }
-    ],
-    "discovery_method": {
-      "type": "sequential",
-      "order": [
-        "green_thumb",
-        "farming"
-      ],
-      "hint": "Grow with the gift. Then save the seeds. The cycle teaches.",
-      "tease1": "The seeds you saved felt warm. Not from the sun \u2014 from something else. Your green thumb tingled.",
-      "tease2": "You planted a saved seed and it sprouted overnight. The farmer's technique + your gift \u2014 the earth noticed."
-    },
-    "flags": []
-  },
+  
   {
     "id": "wildreader",
     "name": "Wildreader",
@@ -575,7 +541,7 @@
     "modifiers": [
       {
         "op": "add",
-        "target": "forage.find_chance",
+        "target": "forage.rare_find_chance",
         "value": 0.2
       },
       {
@@ -803,40 +769,7 @@
     },
     "flags": []
   },
-  {
-    "id": "story_sold",
-    "name": "Story Sold",
-    "requires": [
-      "skill:farming",
-      "silver_tongue"
-    ],
-    "minLevel": 1,
-    "flavor": "The harvest sells itself when you tell its story.",
-    "discovery": "\"You sold TURNIPS with a SPEECH?! People are trading spare boots for your STORY about turnips! The turnips are INCIDENTAL! SELL THE STORY!\"",
-    "modifiers": [
-      {
-        "op": "multiply",
-        "target": "farming.yield",
-        "value": 1.2
-      },
-      {
-        "op": "multiply",
-        "target": "trust.gain_mult",
-        "value": 1.1
-      }
-    ],
-    "discovery_method": {
-      "type": "sequential",
-      "order": [
-        "silver_tongue",
-        "farming"
-      ],
-      "hint": "Work the field. Then work the room.",
-      "tease1": "You told the traders about the blight you beat and the rain you prayed for, and they paid double for the grain. The grain was fine. The story was better.",
-      "tease2": "Silver tongue in the field, silver tongue at the table. Your harvest moves because people want a piece of the telling, not just the eating."
-    },
-    "flags": []
-  },
+  
   {
     "id": "trailblazers_promise",
     "name": "Trailblazer's Promise",
@@ -884,7 +817,7 @@
       },
       {
         "op": "add",
-        "target": "forage.find_chance",
+        "target": "forage.rare_find_chance",
         "value": 0.1
       }
     ],
@@ -1107,41 +1040,7 @@
     },
     "flags": []
   },
-  {
-    "id": "granary_heart",
-    "name": "Granary Heart",
-    "requires": [
-      "tech:seed_saving",
-      "skill:farming",
-      "hoarder"
-    ],
-    "minLevel": 2,
-    "flavor": "Save every seed. The hoard becomes a promise.",
-    "discovery": "\"You HOARD seeds?! Like, ON PURPOSE?! Your stash could plant a FIELD and the field would THANK you! HOARD WITH PRIDE!\"",
-    "modifiers": [
-      {
-        "op": "multiply",
-        "target": "farming.yield",
-        "value": 1.25
-      },
-      {
-        "op": "add",
-        "target": "farming.seed_keep",
-        "value": 0.2
-      }
-    ],
-    "discovery_method": {
-      "type": "sequential",
-      "order": [
-        "hoarder",
-        "farming"
-      ],
-      "hint": "Keep everything. Then plant the keeping.",
-      "tease1": "Your seed jars multiplied \u2014 every harvest, a tithe to the jars. The farmer's seed-saving technique turned your hoard into a library.",
-      "tease2": "Hoarder's instinct, farmer's skill, seed-saver's wisdom. What you kept, you planted. What you planted, remembered you."
-    },
-    "flags": []
-  },
+  
   {
     "id": "green_highway",
     "name": "Green Highway",
@@ -1191,7 +1090,7 @@
     "modifiers": [
       {
         "op": "add",
-        "target": "forage.find_chance",
+        "target": "forage.rare_find_chance",
         "value": 0.15
       },
       {
@@ -1459,5 +1358,172 @@
     "paths": [
       "brawler"
     ]
+  },
+{
+  "id": "war_chest",
+  "name": "War Chest",
+  "requires": [
+    "deep_reserves",
+    "blood_magic"
+  ],
+  "minLevel": 1,
+  "flavor": "Bank the calories. Spend the blood. The furnace never empties.",
+  "discovery": "\"WAIT. You're banking FIVE TIMES the calories AND burning blood for power?! The furnace is ALWAYS lit! That's not a body, that's a WAR CHEST!\"",
+  "modifiers": [
+    {
+      "op": "multiply",
+      "target": "food.bank_mult",
+      "value": 1.5
+    }
+  ],
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "blood_magic",
+      "deep_reserves"
+    ],
+    "hint": "Burn blood. Then bank. The body learns.",
+    "tease1": "You spent blood for energy, and your body... remembered. It wants to keep more.",
+    "tease2": "The reserves are deeper than they should be. The blood remembers the hunger."
   }
-]
+},
+{
+  "id": "iron_gut",
+  "name": "Iron Gut",
+  "requires": [
+    "extra_stomach",
+    "iron_stomach"
+  ],
+  "minLevel": 1,
+  "flavor": "Two stomachs, both iron. Eat anything. Eat everything.",
+  "discovery": "\"TWO stomachs?! And they can handle ANYTHING?! You're not eating, you're... processing! The System is taking notes and also feeling a little sick!\"",
+  "modifiers": [
+    {
+      "op": "multiply",
+      "target": "food.poison_chance",
+      "value": 0.5
+    }
+  ],
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "iron_stomach",
+      "extra_stomach"
+    ],
+    "hint": "Eat the questionable thing. Then eat more of it.",
+    "tease1": "Your stomach handled something it shouldn't have. It's... proud?",
+    "tease2": "Two stomachs now, and neither one is picky. The System is concerned."
+  }
+},
+{
+  "id": "loud_and_proud",
+  "name": "Loud and Proud",
+  "requires": [
+    "loud_chewer",
+    "scream_cheese"
+  ],
+  "minLevel": 1,
+  "flavor": "Noise is a weapon. You are the weapon.",
+  "discovery": "\"You chew LOUD and you SCREAM louder?! The monsters don't know whether to eat you or run! It's... it's a STRATEGY! A LOUD strategy!\"",
+  "modifiers": [
+    {
+      "op": "multiply",
+      "target": "combat.strike_damage",
+      "value": 1.2
+    }
+  ],
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "loud_chewer",
+      "scream_cheese"
+    ],
+    "hint": "Eat loud. Then scream louder.",
+    "tease1": "Your chewing echoed. Something in the woods paused.",
+    "tease2": "The scream came easier this time. Louder. The woods went quiet."
+  }
+},
+{
+  "id": "master_of_flame",
+  "name": "Master of Flame",
+  "requires": [
+    "pyrokinesis",
+    "camp_cook"
+  ],
+  "minLevel": 1,
+  "flavor": "The fire obeys. The food remembers.",
+  "discovery": "\"You coax flame from NOTHING and then COOK with it?! The fire respects you! The food tastes the difference! The System wants your recipe!\"",
+  "modifiers": [
+    {
+      "op": "multiply",
+      "target": "cook.kcal",
+      "value": 1.25
+    }
+  ],
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "pyrokinesis",
+      "camp_cook"
+    ],
+    "hint": "Tend the fire. Then cook over it.",
+    "tease1": "The fire burned hotter than it should have. The pot noticed.",
+    "tease2": "You didn't just cook \u2014 you conducted. The flames danced."
+  }
+},
+{
+  "id": "the_long_con",
+  "name": "The Long Con",
+  "requires": [
+    "scarecrow",
+    "ambush"
+  ],
+  "minLevel": 1,
+  "flavor": "Lure them in. They never see it coming.",
+  "discovery": "\"You FAKED an injury to lure them into a trap, THEN ambushed them?! That's... that's two lies and a truth! The monsters are filing a complaint!\"",
+  "modifiers": [
+    {
+      "op": "multiply",
+      "target": "hunt.trap_catch",
+      "value": 1.5
+    }
+  ],
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "scarecrow",
+      "ambush"
+    ],
+    "hint": "Lure first. Strike second.",
+    "tease1": "The trap caught something. You were already waiting.",
+    "tease2": "They fell for the limp. They always fall for the limp."
+  }
+},
+{
+  "id": "living_armor",
+  "name": "Living Armor",
+  "requires": [
+    "second_skin",
+    "chitin_skin"
+  ],
+  "minLevel": 1,
+  "flavor": "The armor is not worn. It is grown.",
+  "discovery": "\"Your armor doesn't slow you AND it's part of your SKIN?! You're not wearing armor, you ARE armor! The System is reclassifying you as 'fortified'!\"",
+  "modifiers": [
+    {
+      "op": "add",
+      "target": "armor.flat",
+      "value": 15
+    }
+  ],
+  "discovery_method": {
+    "type": "sequential",
+    "order": [
+      "chitin_skin",
+      "second_skin"
+    ],
+    "hint": "Grow the skin. Then move in it.",
+    "tease1": "Your skin itched. Then it... hardened?",
+    "tease2": "You moved fast, and the armor moved with you. Like weather."
+  }
+}]

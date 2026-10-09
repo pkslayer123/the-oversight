@@ -2622,10 +2622,15 @@
           const fishHere = FISH_IDS.filter(id => (_wl[id] || 0) > 0);
           if (!fishHere.length) continue;
           if (net.uses == null) net.uses = 12; // backfill pre-fix nets
-          if (Math.random() < 0.35) {
+          // SYNERGY (fix 2026-10-09): tidecaller grants fishing.yield and
+          // fishing.rare_chance — wire them into the net check.
+          const _fm = S.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies);
+          const fishYield = S.modifiers.resolve(1, 'fishing.yield', _fm, {});
+          const fishRare = S.modifiers.resolve(0, 'fishing.rare_chance', _fm, {});
+          if (Math.random() < 0.35 + fishRare) {
             const fid = fishHere[Math.floor(Math.random() * fishHere.length)];
             _wl[fid]--; if (_wl[fid] <= 0) delete _wl[fid];
-            const kcal = 300 + Math.floor(Math.random() * 300);
+            const kcal = Math.round((300 + Math.floor(Math.random() * 300)) * fishYield);
             const animal = (this.data.animals || []).find(a => a.id === 'fish') || { id: 'fish', name: 'fish', calories: kcal };
             this.state.scholar.inventory.push(this.foodCarcass(animal, kcal, this.state.scholar.day, 'netted'));
             const px = this.map.px, py = this.map.py;
@@ -8929,7 +8934,7 @@
           }
           if (needsWater) { const spent = this.spendCleanWater(cost); waterUsed += cost; wellUsed += spent.fromWell; }
           // RELIC — impossible_edge: physics-defying prep. +10% cooked kcal.
-          const relicCook = S.modifiers.resolve(1, 'cook.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities), {});
+          const relicCook = S.modifiers.resolve(1, 'cook.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies), {});
           // DIGESTIBILITY: batch camp cooking — the shared honest math, capped by gross.
           const caR = this.cookTransform(item, { knows: true, skillMult: kcalMult, relicMult: relicCook });
           if (caR) {
@@ -9422,7 +9427,7 @@
       const trackLvl = this.abilityLevel('tracker');
       const trackBonus = trackLvl >= 2 ? 0.5 : trackLvl >= 1 ? 0.3 : 0;
       // RELIC — never_fails: the tool works when it matters. +10% hunt success.
-      const relicHunt = S.modifiers.resolve(0, 'hunt.success', S.modifiers.collectModifiers(s, this.data.abilities), {});
+      const relicHunt = S.modifiers.resolve(0, 'hunt.success', S.modifiers.collectModifiers(s, this.data.abilities, this.data.synergies), {});
       // lucky_rock: the System finds your faith adorable and helps a little.
       const luck = this.modTarget('luck.global', 1);
       // NIGHT HUNTING (knowledge): at night, the prepared hunter is the apex thing.
@@ -14158,7 +14163,7 @@
       // still dodge it, so the counter-play is already in the game.
       if (this.isNight()) chance *= 1.5;
       // RELIC — ghost_weave: harder to detect, by animals and otherwise.
-      chance *= S.modifiers.resolve(1, 'travel.encounter', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
+      chance *= S.modifiers.resolve(1, 'travel.encounter', S.modifiers.collectModifiers(scholar, this.data.abilities, this.data.synergies), {});
       // soft_step: you move quiet. Fewer encounters find you.
       chance = this.modTarget('travel.encounter_chance', chance);
       // loud_chewer: they heard you eating. More encounters while noisy.
@@ -16551,7 +16556,7 @@
           }
         }
         // eagle_eye/third_eye: the sharp-eyed find the odd one.
-        const rareChance = S.modifiers.resolve(0, 'forage.rare_find_chance', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
+        const rareChance = S.modifiers.resolve(0, 'forage.rare_find_chance', S.modifiers.collectModifiers(scholar, this.data.abilities, this.data.synergies), {});
         if (rareChance > 0 && Math.random() < rareChance) {
           const rp = this.data.plants.find(pp => pp.id === 'rare_herb');
           if (rp && !this.plantKnown(rp.id)) {
@@ -16612,7 +16617,7 @@
         // Sleep already refuses mid-fight; rest does too.
         if (this.inCombat && this.inCombat()) { this.say('Not in the middle of a fight.'); return false; }
         // RELIC — second_skin: no blisters, no misery. Energy returns faster.
-        const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
+        const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities, this.data.synergies), {});
         const restGain = Math.round(30 * restMult);
         scholar.energy = Math.min(100, scholar.energy + restGain);
         // METABOLIC CRISIS (survivalist loop 2026-10-08): mirrors sleep()'s
@@ -17502,7 +17507,7 @@
     // Knowledge isn't separate from powers — it amplifies them.
     allModifiers() {
       const S = globalThis.Scattering;
-      const base = S.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
+      const base = S.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies);
       const know = S.modifiers.collectKnowledgeModifiers(
         (this.state.codex || {}).skills,
         this.data.knowledge
@@ -17995,7 +18000,7 @@
 
     // mods: all active ability modifiers for the scholar (system + background + synergies).
     mods() {
-      const base = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities);
+      const base = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies);
       const mods = base.concat(this.synergyMods());
       // BUILD BONUS (Steve 2026-10-07): specialists and generalists both get
       // rewarded. The bonus applies as a modifier so it stacks with everything.
