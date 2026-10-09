@@ -88,7 +88,7 @@ function unforce() { Math.random = realRandom; }
     G.apAdjustFavor(-2000, null);
     ok(G.apFavor() === -100, `seed ${seed}: favor clamps at -100 (got ${G.apFavor()})`);
     // Daily drift toward 0 (crowd forgets) — not farmable to a permanent max.
-    G.apState().favor = 50;
+    G.apState().fanClubs = { fight: 0, survival: 0, social: 0, showbiz: 50 }; G.apSyncFavor(); // pin exactly (per-lane, audit-shows 2026-10-09)
     forceRoll(0.999); // suppress daily-tick random events; drift is unconditional
     try { G.apDailyTick(); } finally { unforce(); }
     ok(G.apFavor() === 49, `seed ${seed}: favor drifts toward 0 daily (50 -> ${G.apFavor()})`);
@@ -110,7 +110,7 @@ function unforce() { Math.random = realRandom; }
     }
     // Care package: favor>=20 unlocks, then 4-day gate under forced RNG.
     H.RNG.reset(seed); setup(30);
-    G.apState().favor = 80; G.apState().lastPackageDay = -999;
+    G.apState().fanClubs.showbiz = 80; G.apSyncFavor(); G.apState().lastPackageDay = -999; // per-lane (audit-shows 2026-10-09)
     forceRoll(0);
     let p1, p2;
     try { p1 = G.apCarePackage(); p2 = G.apCarePackage(); } finally { unforce(); }

@@ -134,7 +134,7 @@ function leakScan(name, text) {
   // Each trial gets its own 2-roll script so trials stay independent.
   for (const [favor, label] of [[100, 'loved'], [0, 'neutral']]) {
     await freshRun(); apFresh();
-    Game.apState().favor = favor;
+    Game.apState().fanClubs = { fight: favor, survival: 0, social: 0, showbiz: 0 }; Game.apSyncFavor(); // per-lane (audit-shows 2026-10-09)
     let wins = 0; const trials = 300;
     for (let i = 0; i < trials; i++) {
       const w = 0.40 + (i % 20) * 0.005; // win roll 0.40..0.495
@@ -265,7 +265,7 @@ function leakScan(name, text) {
   ok('apContactWarning: warns through the contact', w1.r === true && /Dreamed|north|proud/.test(w1.t), w1.t.slice(0, 120));
   await freshRun(); apFresh();
   ok('apCarePackage: unfavored crowd sends nothing', Game.apCarePackage() === false);
-  Game.apState().favor = 80;
+  Game.apState().fanClubs = { fight: 0, survival: 0, social: 0, showbiz: 80 }; Game.apSyncFavor(); // per-lane (audit-shows 2026-10-09)
   const kcalBefore = Game.state.scholar.kcal || 0;
   const pkg = scriptedRandom([0.1, 0.1], () => Game.apCarePackage());
   ok('apCarePackage: favored crowd sends a package', pkg === true);

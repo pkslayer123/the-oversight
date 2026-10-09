@@ -50,7 +50,7 @@ async function main() {
     let startKcal = s.kcal;
     for (let d = 40; d < 130; d++) {
       s.day = d;
-      ap.favor = 90; // re-max every day (the hostile player keeps winning)
+      Game.apAdjustFavor(90, 'test pin', 'fight'); // re-max every day (the hostile player keeps winning; per-lane audit-shows 2026-10-09)
       try { Game.apDailyTick(); } catch (e) {}
     }
     const total = s.kcal - startKcal;
@@ -68,7 +68,7 @@ async function main() {
     eligibleGame(SEED + 5, 60);
     const s = Game.state.scholar;
     const ap = Game.apState();
-    ap.favor = 90; ap.lastPackageDay = -999; ap.lastDropDay = -999;
+    ap.fanClubs = { fight: 90, survival: 0, social: 0, showbiz: 0 }; Game.apSyncFavor(); ap.lastPackageDay = -999; ap.lastDropDay = -999; // per-lane (audit-shows 2026-10-09)
     ap.lastPersonaPackageDay = -999;
     ap.met['old_tam'] = { encounters: 2, bond: 3 };
     ap.met['vex_marlowe'] = { encounters: 3, bond: 0 };

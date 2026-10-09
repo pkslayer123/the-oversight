@@ -54,8 +54,13 @@
 //   - apMaybeBeamAttack(fighter)
 //   - apIsArsonist()
 //   - apExperience()
-//   - apFavor()
-//   - apAdjustFavor(n, why)
+//   - apFavor() -> loudest fan-club lane (max of fight/survival/social/showbiz)
+//   - apFanLane(lane) -> one club's favor
+//   - apTopLane() -> loudest club id
+//   - apClubName(lane) -> plain-language club name
+//   - apAdjustFavor(n, why, lane)
+//   - apPackageClubLine() -> " — your X fans" credit for care packages
+//   - apClubBoon() -> a loud club (50+) votes a small favor, max 1/5 days
 //   - apDeadDrop()
 //   - apFeedMessage()
 //   - apContestInterference(ac, opts)
@@ -76,6 +81,9 @@
 //   - (knowledge) alien identity hidden until earned: reveal, System feed slip, 3rd encounter with same persona, or spotting Wren at a dead drop (break-it 2026-10-08 r4: Wren never fights, so she had no reveal path) (code: alienPlayers.js)
 //   - (limits) dead drops max 1 per 3 days; feed max 1 per day; same-rival hunts min 2 days apart (sporting rules); group encounters max 1 per 14 days, cooldown recorded on successful start only (break-it 2026-10-08 r4); benevolent help is deniable and subtle (code: alienPlayers.js)
 //   - (favor) fan favor -100..100; high favor improves care packages and contest lean; low favor makes the crowd bloodthirsty (code: alienPlayers.js)
+//   - (fan_clubs_per_lane) four audience clubs (fight/survival/social/showbiz); apFavor() is the loudest lane; legacy favor seeds all lanes on migration; drift is per-lane toward 0 (code: apState, apFavor, apAdjustFavor, apDailyTick, audit-shows 2026-10-09)
+//   - (club_boons_vote) a lane at 50+ may vote a small favor — fight: +10 health, survival: +300 kcal pantry, social: +1 unity, showbiz: wacky curio — max 1 per 5 days, always announced (code: apClubBoon, audit-shows 2026-10-09)
+//   - (package_club_credit) care packages name the loudest club; feed messages get per-lane lines at 50+ (code: apCarePackage, apPackageClubLine, apFeedMessage, audit-shows 2026-10-09)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
 //   - (lifeline_player_only) the benevolent lifeline fires only at the player's own death roll — apContestInterference(ac, {forPlayer:true}) from contestChoose's killing-blow check and from tbEnd's arena-loss branch (break-it 2026-10-08: arena deaths never checked the lifeline). The save converts death into 'lost' and leaves the player barely alive (break-it 2026-10-08: 0-HP saves died at the next endDay). The verdict call never passes forPlayer, so deathSave is always false there — a villager's played death is never converted by a hidden roll (break-it 2026-10-08: the old playerIn-only gate fired the lifeline at VERDICT, wasting the 7-day cooldown on a non-death and erasing a villager's earned death) (code: apContestInterference, contestChoose, tbEnd)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
@@ -124,13 +132,24 @@
       var s = this.state;
       s.alienPlayers = s.alienPlayers || {
         met: {},           // pid -> { encounters, lastOutcome, lastDay, bond }
-        favor: 0,          // fan club favor, -100..100
+        favor: 0,          // legacy aggregate (kept in sync = loudest lane)
         lastDropDay: -999,
         lastFeedDay: -999,
         lastHuntDay: {},   // pid -> day (sporting rules)
         known: {},         // pid -> how the player learned (knowledge gate)
       };
-      return s.alienPlayers;
+      // FAN CLUBS PER LANE (audit-shows 2026-10-09): canon (docs/CONTESTS.md)
+      // says "audience segments per lane that send care packages, vote, and
+      // grow with highlights. Whatever you do, there's a club for it." The
+      // old single favor is now four clubs: fight (Blood), survival
+      // (Endurance), social (Moot), showbiz (Weird + TV shows). Migration:
+      // legacy favor seeds every lane, so nothing earned is lost.
+      var ap = s.alienPlayers;
+      if (!ap.fanClubs) {
+        var legacy = ap.favor || 0;
+        ap.fanClubs = { fight: legacy, survival: legacy, social: legacy, showbiz: legacy };
+      }
+      return ap;
     },
 
     apEligible: function () {
@@ -791,7 +810,7 @@
       } else {
         this.say('(⚠ Multiple hostiles — and they\'re coordinating. This is a major event. The System is watching closely.)');
       }
-      try { this.apAdjustFavor(5, 'survived a group encounter setup — the crowd loves a spectacle'); } catch (e) {}
+      try { this.apAdjustFavor(5, 'survived a group encounter setup — the crowd loves a spectacle', 'fight'); } catch (e) {}
     },
 
     // Start a group encounter with 2-3 alien players
@@ -888,11 +907,11 @@
       if (outcome === 'won') {
         // Stylish wins please the crowd; stomping a tourist doesn't
         var gain = (p.disposition === 'sadistic') ? 6 : (p.id === 'pip_quindle' ? 1 : 4);
-        this.apAdjustFavor(gain, 'defeated ' + p.name);
+        this.apAdjustFavor(gain, 'defeated ' + p.name, 'fight');
       } else if (outcome === 'lost') {
-        this.apAdjustFavor(-2, 'lost to ' + p.name);
+        this.apAdjustFavor(-2, 'lost to ' + p.name, 'fight');
       } else if (outcome === 'fled') {
-        this.apAdjustFavor(-5, 'fled from ' + p.name + ' — the crowd boos');
+        this.apAdjustFavor(-5, 'fled from ' + p.name + ' — the crowd boos', 'fight');
       }
 
       // Benevolent bond deepens
@@ -908,17 +927,71 @@
       try { this.apCodexEntry(pid); } catch (e) {}
     },
 
-    // ---------- fan favor ----------
+    // ---------- fan favor (per-lane clubs) ----------
+    // apFavor() is the CROWD'S MOOD: the lane with the strongest feeling,
+    // sign preserved. A club that loves you (+100) unlocks the favor gates;
+    // a club that hates you (-100) makes the crowd bloodthirsty — the old
+    // -100..100 threshold semantics (care packages >= 20, booing <= -30)
+    // keep working, now driven by whichever club feels most.
     apFavor: function () {
-      return this.apState().favor || 0;
+      var ap = this.apState();
+      var fc = ap.fanClubs;
+      if (!fc) return ap.favor || 0;
+      var best = 0, bestAbs = -1;
+      var lanes = ['fight', 'survival', 'social', 'showbiz'];
+      for (var i = 0; i < lanes.length; i++) {
+        var v = fc[lanes[i]] || 0;
+        var a = Math.abs(v);
+        if (a > bestAbs) { bestAbs = a; best = v; }
+      }
+      return best;
     },
 
-    apAdjustFavor: function (n, why) {
+    // One club's favor.
+    apFanLane: function (lane) {
+      var fc = this.apState().fanClubs || {};
+      return fc[lane] || 0;
+    },
+
+    // Which club is loudest right now (ties -> showbiz, the default crowd).
+    apTopLane: function () {
+      var fc = this.apState().fanClubs || {};
+      var best = 'showbiz', bestV = -101;
+      var lanes = ['fight', 'survival', 'social', 'showbiz'];
+      for (var i = 0; i < lanes.length; i++) {
+        var v = fc[lanes[i]] || 0;
+        if (v > bestV) { bestV = v; best = lanes[i]; }
+      }
+      return best;
+    },
+
+    // Legacy mirror: state.alienPlayers.favor always equals apFavor(),
+    // so direct readers of the field keep working.
+    apSyncFavor: function () {
       var ap = this.apState();
-      ap.favor = Math.max(-100, Math.min(100, (ap.favor || 0) + n));
+      ap.favor = this.apFavor();
+      return ap.favor;
+    },
+
+    // Plain-language club names for announcements (descriptive, not proper
+    // nouns — the clubs are audience segments, not characters).
+    apClubName: function (lane) {
+      return { fight: 'your fight fans', survival: 'your survival fans',
+        social: 'your moot crowd', showbiz: 'your showbiz fans' }[lane] || 'your fans';
+    },
+
+    apAdjustFavor: function (n, why, lane) {
+      var ap = this.apState();
+      var L = lane || 'showbiz';
+      ap.fanClubs = ap.fanClubs || { fight: 0, survival: 0, social: 0, showbiz: 0 };
+      if (typeof ap.fanClubs[L] !== 'number') ap.fanClubs[L] = 0;
+      ap.fanClubs[L] = Math.max(-100, Math.min(100, ap.fanClubs[L] + n));
+      // Legacy mirror stays in sync (direct readers of
+      // state.alienPlayers.favor keep working).
+      this.apSyncFavor();
       if (why && Math.abs(n) >= 3 && this.state.systemArrived) {
         var dir = n > 0 ? '📈' : '📉';
-        this.sysSay(dir + ' Fan favor ' + (n > 0 ? '+' : '') + n + ' — ' + why + ' (favor: ' + ap.favor + ')');
+        this.sysSay(dir + ' ' + this.apClubName(L) + ' ' + (n > 0 ? '+' : '') + n + ' — ' + why + ' (favor: ' + ap.fanClubs[L] + ')');
       }
     },
 
@@ -976,7 +1049,7 @@
       // Plus some practical supplies (the fans know you need to eat)
       var kcal = 300 + Math.floor(Math.random() * 400) + favor * 5;
 
-      this.say('📦 A care package drops from the sky with a little parachute. There\'s a note: "WE LOVE YOU! — your fans."');
+      this.say('📦 A care package drops from the sky with a little parachute. There\'s a note: "WE LOVE YOU!' + this.apPackageClubLine() + '"');
       // AUDIO (break-it 2026-10-09, sibling of the silent alien beam): the
       // fanPackageDrop voice was built for exactly this beat (descent
       // whistle, silk flutter, thump) but only the fan-package unboxing
@@ -995,6 +1068,56 @@
       }
       this.say('Plus ' + kcal + ' kcal of fan-approved snacks.');
       try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + kcal); } catch (e) {}
+      return true;
+    },
+
+    // Club credit: the package comes from your LOUDEST club, said out loud.
+    apPackageClubLine: function () {
+      try {
+        var top = this.apTopLane();
+        if ((this.apFanLane(top) || 0) >= 20) return ' — ' + this.apClubName(top);
+      } catch (e) {}
+      return '';
+    },
+
+    // CLUB BOONS (audit-shows 2026-10-09): the clubs "vote" (docs/CONTESTS.md:
+    // "the audience can vote small favors"). A lane at 50+ may vote you a
+    // small favor — max 1 per 5 days, always announced, always real. This is
+    // the vote mechanic; the care package is the gift mechanic.
+    apClubBoon: function () {
+      var ap = this.apState();
+      var day = (this.state.scholar || {}).day || 1;
+      if (day - (ap.lastBoonDay || -999) < 5) return false;
+      if (Math.random() > 0.15) return false;
+      var top = this.apTopLane();
+      if ((this.apFanLane(top) || 0) < 50) return false;
+      ap.lastBoonDay = day;
+      var club = this.apClubName(top);
+      if (top === 'fight') {
+        this.say('📦 ' + club.charAt(0).toUpperCase() + club.slice(1) + ' voted: a training stimulant, military-grade, questionably legal. You feel dangerous.');
+        try { var s = this.state.scholar; s.health = Math.min(this.maxHealth(), (s.health || 0) + 10); } catch (e) {}
+        this.say('(+10 health. The crowd approves of your continued breathing.)');
+      } else if (top === 'survival') {
+        this.say('📦 ' + club.charAt(0).toUpperCase() + club.slice(1) + ' voted: trail rations for the pantry. They want you ALIVE out there.');
+        try {
+          var pday = (this.state.scholar || {}).day || 1;
+          var share = { name: "Fan-voted trail rations", kcalEach: 150, units: 2, spoilDay: pday + 9, safe: true };
+          var added = (typeof this.pantryAdd === 'function') ? this.pantryAdd(share) : false;
+          this.say(added ? '(+300 kcal to the pantry, voted by your fans.)' : '(The pantry is full — the village eats the voted rations on the spot.)');
+        } catch (e) {}
+      } else if (top === 'social') {
+        this.say('📦 ' + club.charAt(0).toUpperCase() + club.slice(1) + ' voted: a spotlight segment on your people. The village stands a little taller today.');
+        try { this.leadShift('unity', 1); } catch (e) {}
+        this.say('(+1 unity. Being seen, together.)');
+      } else {
+        this.say('📦 ' + club.charAt(0).toUpperCase() + club.slice(1) + ' voted: a wacky curio, gift-wrapped, no note. The note would have explained it. There is no note.');
+        try {
+          var items = this.data.items || [];
+          var cands = items.filter(function (it) { return it.origin === 'alien' && (it.tier || 1) <= 1; });
+          if (cands.length) this.apGrantItem(cands[Math.floor(Math.random() * cands.length)].id);
+          else this.say('(The vault was shy — the thought counts. The thought is televised.)');
+        } catch (e) {}
+      }
       return true;
     },
 
@@ -1086,6 +1209,16 @@
         msgs.push('"The audience is watching. The gamblers are watching. Everyone\'s watching. No pressure."');
       }
 
+      // FAN CLUBS PER LANE (audit-shows 2026-10-09): a loud club (50+) gets
+      // its own feed line — the gossip lane has its own celebrities, and
+      // the feed should know which crowd is chanting.
+      try {
+        if (this.apFanLane('fight') >= 50) msgs.push('"The fight clubs are making banners. Your name, in fire. The sadistic ones are taking it personally."');
+        if (this.apFanLane('survival') >= 50) msgs.push('"The long-haul fans are sending trail mix. Actual trail mix. Through the screen. Nobody knows how."');
+        if (this.apFanLane('social') >= 50) msgs.push('"The moot crowd has a chant for you now. It rhymes. It\'s devastating in debates."');
+        if (this.apFanLane('showbiz') >= 50) msgs.push('"Your showbiz fans voted you "most watchable human" three weeks running. The trophy is a small moon."');
+      } catch (e) {}
+
       // Benevolent whispers (deniable)
       var wren = this.apPersona('wren');
       if (wren && Math.random() < 0.2) {
@@ -1100,15 +1233,24 @@
     apDailyTick: function () {
       if (!this.apEligible()) return;
       var ap = this.apState();
-      // Favor drifts slowly toward 0 (the crowd forgets)
-      if (ap.favor > 0) ap.favor = Math.max(0, ap.favor - 1);
-      else if (ap.favor < 0) ap.favor = Math.min(0, ap.favor + 1);
+      // Favor drifts slowly toward 0 (the crowd forgets) — per lane now.
+      var fc = ap.fanClubs || {};
+      var lanes = ['fight', 'survival', 'social', 'showbiz'];
+      for (var li = 0; li < lanes.length; li++) {
+        var L = lanes[li];
+        if ((fc[L] || 0) > 0) fc[L] = Math.max(0, fc[L] - 1);
+        else if ((fc[L] || 0) < 0) fc[L] = Math.min(0, fc[L] + 1);
+      }
+      this.apSyncFavor();
 
       // Off-screen actions (each self-limited by cooldowns)
       try { this.apDeadDrop(); } catch (e) {}
       try { this.apFeedMessage(); } catch (e) {}
       // Care packages are rarer — check every day, gate inside
       try { if (Math.random() < 0.25) this.apCarePackage(); } catch (e) {}
+      // CLUB BOONS (audit-shows 2026-10-09): canon says clubs "vote" —
+      // a loud club (lane >= 50) votes you small favors. Max 1 per 5 days.
+      try { this.apClubBoon(); } catch (e) {}
       // Playground: persistent aliens act (kill, burn, raid, duel)
       try { this.apPlaygroundTick(); } catch (e) {}
       // Deep integration ticks

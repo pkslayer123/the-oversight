@@ -54,7 +54,7 @@ function setup(day) {
     ok(!stillThere, `seed ${seed}: medkit consumed on use (no infinite-use brick)`);
 
     // ---- E2: care-package gift is usable too ----
-    ap.favor = 60; ap.lastPackageDay = -999;
+    G.apAdjustFavor(60, 'test pin', 'fight'); ap.lastPackageDay = -999;
     fired = false; guard = 0;
     while (!fired && guard++ < 400) { ap.lastPackageDay = -999; s.day++; fired = G.apCarePackage(); }
     ok(fired, `seed ${seed}: care package fired at favor 60`);
@@ -74,7 +74,7 @@ function setup(day) {
       H.RNG.reset(seed);
       const s = setup(30);
       const G = H.Game, ap = G.apState();
-      ap.favor = favor; // pinned: apFavor reads state
+      G.apAdjustFavor(favor, 'test pin', 'fight'); // pinned: apFavor reads lanes (audit-shows 2026-10-09)
       const seen = new Set();
       for (let t = 0; t < 300; t++) {
         ap.lastPackageDay = -999; s.day++;

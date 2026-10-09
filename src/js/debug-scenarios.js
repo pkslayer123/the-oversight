@@ -1097,7 +1097,9 @@
       } catch (e) { Game.say('🐞 contest watch failed: ' + e.message); }
     },
 
-    // TV Show: WHY DO THEY EAT?
+    // TV Show: WHY DO THEY EAT? (audit-shows 2026-10-09): runs the REAL
+    // fireShow path — the played beat, not just the announcement. The old
+    // scenario only printed the show's name; shows are played now.
     showWhyEat() {
       freshGame();
       const s = Game.state.scholar;
@@ -1108,9 +1110,7 @@
       Game.say('The aliens are horrified by cooking. The audience is delighted.');
       try {
         const show = Game.showPool().find(s => s.id === 'why_eat');
-        if (show) {
-          Game.sysSay(`📺 TONIGHT: ${show.name}. ${show.desc}`);
-        }
+        if (show) Game.fireShow(show);
       } catch (e) { Game.say('🐞 show failed: ' + e.message); }
     },
 

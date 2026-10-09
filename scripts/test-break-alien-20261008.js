@@ -49,11 +49,11 @@ async function main() {
     Game.apAdjustFavor(1000, 'test'); assert(Game.apFavor() === 100, 'seed ' + seed + ': favor clamps at +100');
     Game.apAdjustFavor(-1000, 'test'); assert(Game.apFavor() === -100, 'seed ' + seed + ': favor clamps at -100');
     // Decay: 60 daily ticks pull toward 0 from both extremes
-    Game.apState().favor = 100;
+    Game.apAdjustFavor(100, 'test pin', 'fight'); // per-lane clubs (audit-shows 2026-10-09)
     for (let d = 0; d < 60; d++) { Game.state.scholar.day++; Game.apDailyTick(); }
     const f1 = Game.apFavor();
     assert(f1 <= 45, 'seed ' + seed + ': +100 decays toward 0 over 60d (got ' + f1 + ')');
-    Game.apState().favor = -100;
+    Game.apAdjustFavor(-100, 'test pin', 'fight');
     for (let d = 0; d < 60; d++) { Game.state.scholar.day++; Game.apDailyTick(); }
     const f2 = Game.apFavor();
     assert(f2 >= -45, 'seed ' + seed + ': -100 decays toward 0 over 60d (got ' + f2 + ')');
@@ -65,7 +65,7 @@ async function main() {
   for (const seed of [SEED, SEED + 1, SEED + 2]) {
     RNG.reset(seed); tickEligible();
     const ap = Game.apState();
-    ap.favor = 100; // max favor: packages as generous as they get
+    Game.apAdjustFavor(100, 'test pin', 'fight'); // max favor: packages as generous as they get
     const s = Game.state.scholar;
     const kcal0 = s.kcal || 0;
     let fired = 0;

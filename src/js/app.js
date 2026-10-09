@@ -11494,7 +11494,12 @@
     const btns = (phase.choices || []).map((c, i) =>
       `<button class="btn sm" data-contest-choice="${i}">${esc(c.label)}${c.sub ? ` <span class="small" style="opacity:.65">· ${esc(c.sub)}</span>` : ''}</button>`
     ).join('');
-    const tag = ac.participant === 'player' ? '📺 CONTEST — YOU' : '📺 CONTEST — WATCHING';
+    // SHOW TAG (audit-shows 2026-10-09): show/summons modals ride the
+    // contest phase engine — the tag must say SHOW, not CONTEST. Honest
+    // labeling: a cooking show is not a blood contest.
+    const tag = ac.kind === 'summons' ? '📺 RATINGS SUMMONS'
+      : ac.kind === 'show' ? (ac.participant === 'player' ? '📺 SHOW — YOU' : (ac.participant === 'together' ? '📺 SHOW — VILLAGE' : '📺 SHOW — WATCHING'))
+      : (ac.participant === 'player' ? '📺 CONTEST — YOU' : '📺 CONTEST — WATCHING');
     return `<div class="dialogue-box contest-box"><div class="dlg-head">${tag}</div><div class="dlg-line">${text}</div><div class="inline-btns">${btns}</div></div>`;
   }
 

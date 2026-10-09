@@ -65,7 +65,7 @@ const SRC = path.join(__dirname, '..', 'src', 'js');
     const cRig = G._cxCaseScore(vid, -0.12 * 20); // cheerLift = apRig*20 in _contestVerdict
     ok(cRig === c0 - 2.4, `seed ${seed}: rigged cheerLift is a real -2.4 case-score penalty (${c0} -> ${cRig})`);
     // Fan favor: verdict-style, favor high -> +0.08
-    ap.favor = 60; ap.lastRigDay = s.day; // rig on cooldown so only favor speaks
+    G.apAdjustFavor(60, 'test pin', 'fight'); ap.lastRigDay = s.day; // rig on cooldown so only favor speaks (per-lane, audit-shows 2026-10-09)
     forceRoll(0.99);
     let res2;
     try { res2 = G.apContestInterference({ participants: ['v1'] }); } finally { unforce(); }
@@ -223,7 +223,7 @@ const SRC = path.join(__dirname, '..', 'src', 'js');
   for (const seed of seeds) {
     H.RNG.reset(seed);
     const s = setup(30); const G = H.Game; const ap = G.apState();
-    ap.favor = 42;
+    G.apAdjustFavor(42, 'test pin', 'fight'); // per-lane clubs (audit-shows 2026-10-09)
     ap.met = { vex_marlowe: { encounters: 3, bond: 0, lastOutcome: 'lost', lastDay: 28 } };
     ap.known = { vex_marlowe: 'you recognized the fighting style' };
     ap.lastHuntDay = { vex_marlowe: 28 };
@@ -234,6 +234,7 @@ const SRC = path.join(__dirname, '..', 'src', 'js');
     ok(!!snap, `seed ${seed}: full state serializes (save path)`);
     const a2 = snap.alienPlayers;
     ok(a2 && a2.favor === 42, `seed ${seed}: favor survives save/load`);
+    ok(a2.fanClubs && a2.fanClubs.fight === 42, `seed ${seed}: favor lanes survive save/load`);
     ok(a2.met.vex_marlowe.encounters === 3, `seed ${seed}: met records survive`);
     ok(a2.known.vex_marlowe, `seed ${seed}: knowledge survives`);
     ok(a2.lastHuntDay.vex_marlowe === 28 && a2.lastDropDay === 27 && a2.lastGroupDay === 20 && a2.lastDuelDay === 15,

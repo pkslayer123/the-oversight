@@ -7,7 +7,19 @@
 //   - contestPool()
 //   - pickContest()
 //   - pickShow()
-//   - fireShow(show) -> show (pull-away: a villager goes on TV for a silly reason)
+//   - fireShow(show) -> show (played TV beat: the pull can land on the player, a villager, or the village together — modal via the contest phase engine)
+//   - showPhases(show, who) -> played phases for a player show pull
+//   - showWatchPhases(show, pid) -> watch beat when a villager is pulled (cheer/heckle/comfort)
+//   - showTogetherPhases(show) -> communal watch-together beat
+//   - showResolveVillager(pid, show, opts) -> {outcome, score} (deterministic: fans/shame/both)
+//   - _showVillagerEnd(ac) -> lands a villager's show (fans/shame/both + gossip)
+//   - _showEnd(ac, outcome, prize) -> lands a player/village show or ratings summons (fans/shame/both/refused)
+//   - _showGossip(how, pid, showName) -> seeds show gossip (REP, never trust)
+//   - _showGenericBeat(show) -> fallback played beat for shows without an authored beat
+//   - SHOW_BEATS -> per-show played beats (all 29 pool shows authored)
+//   - fireRatingsSummons() -> played ratings-stunt summons modal
+//   - ratingsSummonsPhases() -> the summons beat (stunt / phone it in / refuse)
+//   - _cxFanLane(contest) -> fan-club lane for a contest category
 //   - fireContest(contest)
 //   - resolveContest()
 //   - contestInterruption(contest, participant) -> sequence
@@ -66,7 +78,7 @@
 //   - moot_standing: moot is argued not rolled — rhetorical standing (trust/10 + notability×2 base, sway per choice) vs System demand; deterministic judgment (code: _contestMoot, contestChoose MOOT_JUDGE, Steve 2026-10-08)
 //   - maw_pursuit: the Maw is a deterministic pursuit — distance 3, choices move it, 0 = caught (death). No rolls (code: _contestMaw, contestChoose MAW_JUDGE, Steve 2026-10-08)
 //   - ratings_casting: the System wants its stars — picks weighted by notability (1 + notes×2), 10% whim dark-horse path (uniform, announced). The lead pick is weighted too when the player isn't castable (break-it 2026-10-09: the old lead fallback was uniform and unannounced, so fame never mattered for a solo lead). Recast honors the bias (code: fireContest, resolveContest, Steve 2026-10-08)
-//   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08)
+//   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08; DIP-SIGNAL FIX audit-shows 2026-10-09: the dip was compared AFTER _lastWeekViewership was overwritten — always false, the 75% branch was dead; now computed once from the trend)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
 //   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08; moot 'Walk out'->MOOT_JUDGE win fixed break-it 2026-10-09) (code: contestPlayable, contestChoose, Steve 2026-10-06)
@@ -84,6 +96,13 @@
 //   - countdown_announced: the warning names the grab ("at dawn, one more day"); the grab lands a dread beat first ("It is today") (code: fireContest, resolveContest, Steve 2026-10-08)
 //   - gossip_aftermath: contest outcomes seed village gossip (contest_won/contest_survived/contest_died) via _cxGossip — news travels by mouth, distorted by retelling, not broadcast; villagers only (code: _cxGossip, _contestEnd, _contestDie, _contestResolveOthers, Steve 2026-10-08)
 //   - fan_favor_contests: televised wins move the fan club (+4 player, +2 villager); a player win can shake loose a fan care package (code: _contestEnd, Steve 2026-10-08)
+//   - fan_favor_lanes: televised wins move the club that watched them — blood→fight, endurance→survival, moot→social, everything else→showbiz (code: _cxFanLane, _contestEnd, audit-shows 2026-10-09)
+//   - show_playable: shows are PLAYED beats, not announcements — the pull can land on the player (showPhases), a villager (showWatchPhases + deterministic showResolveVillager), or the village together (showTogetherPhases); every pool show has an authored beat in SHOW_BEATS, with _showGenericBeat as fallback (code: fireShow, SHOW_BEATS, audit-shows 2026-10-09)
+//   - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
+//   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
+//   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
+//   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, wacky gift, showbiz favor, shakes a care package loose), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09)
+//   - summons_budget: ratings summons consume the shared 2/week TV budget like contests and shows (code: contestTick)
 //   - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
 //   - win_tax_announced: the -5 hp winner's mark is said out loud, never silent — a hidden HP tax is a lie (code: _contestEnd, Steve 2026-10-08)
 //   - fame_is_deed: showmanship notability (TV pull-aways, camera play) surfaces as "audience favorite" in the eligibility panel (code: notability, Steve 2026-10-06)
@@ -202,13 +221,18 @@
     // Clamped 0.05–0.60. Budget (2/week) still caps it. Contests are bigger
     // TV than shows — the contest share rises when ratings dip.
     let chance = 0.25;
+    // RATINGS DIP (audit-shows 2026-10-09): computed ONCE from the trend,
+    // before _lastWeekViewership is overwritten below. The old code compared
+    // v.viewership < v._lastWeekViewership AFTER the update — always false,
+    // so the "75% contest when the numbers are bad" branch was dead.
+    let ratingsDipping = false;
     try {
       const v = this.state.village || {};
       const now = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0);
       const lastWeek = v._lastWeekViewership;
       if (lastWeek !== undefined && lastWeek !== null) {
         const trend = now - lastWeek;
-        if (trend < -1) chance += 0.15;
+        if (trend < -1) { chance += 0.15; ratingsDipping = true; }
         else if (trend > 2) chance -= 0.10;
       }
       v._lastWeekViewership = now;
@@ -226,10 +250,17 @@
 
     // 60% contest, 40% show — 75% contest when the numbers are bad.
     let contestShare = 0.6;
-    try {
-      const v = this.state.village || {};
-      if ((v.viewership || 0) < (v._lastWeekViewership || 0)) contestShare = 0.75;
-    } catch (e) {}
+    if (ratingsDipping) contestShare = 0.75;
+    // RATINGS SUMMONS (audit-shows 2026-10-09): when the numbers go soft the
+    // System doesn't just schedule harder — 20% of the time it summons YOU
+    // for a promo stunt instead. Canon: OVERSIGHT design (Steve 2026-10-04:
+    // "Ratings summons (promos/stunts, small gifts, ties to care packages)")
+    // — no doc covers it; noted here, not invented silently. Played via
+    // fireRatingsSummons, inside the same 2/week budget.
+    if (ratingsDipping && Math.random() < 0.20) {
+      this.state.showBudget.used++;
+      return { id: '__summons' };
+    }
     const isContest = Math.random() < contestShare;
     const event = isContest ? this.pickContest() : this.pickShow();
     if (!event) return null;
@@ -379,31 +410,636 @@
     return pool[Math.floor(Math.random() * pool.length)];
   };
 
-  // FIRE SHOW (Steve 2026-10-06): the in-between isn't just an announcement.
-  // Someone gets pulled away for a silly reason, the village talks about it.
-  // Wired: game.js's dawn branch calls fireShow(event) for non-contest events.
+  // FIRE SHOW (Steve 2026-10-06; PLAYABLE audit-shows 2026-10-09): the
+  // in-between is a played beat, not an announcement. The old version
+  // printed three lines and a notability tick — and never pulled the
+  // player, so shows were unreachable as play. Now: the pull can land on
+  // the player (played modal via showPhases), a villager (the player gets a
+  // watch beat with real choices; the villager comes home with fans or
+  // shame — sometimes both, per docs/CONTESTS.md), or the village together
+  // (one communal beat). Wired: game.js's dawn branch calls fireShow(event)
+  // for non-contest events.
   G.fireShow = function(show) {
     const s = (show && show.id) ? show : this.pickShow();
+    this.sysSay(`📺 TONIGHT: ${s.name}. ${s.desc}`);
+    // Who gets pulled. The player is a villager too — the cameras don't
+    // care whose turn it is to be embarrassed.
     // SIBLING (Steve 2026-10-06): same dead/severed exclusion as
     // contestEligible — a corpse can't be pulled for TV either.
     const roster = (this.state.village.roster || []).filter(id =>
       id !== this.villagerId && this.isMember(id));
-    let pulled = null;
-    if (roster.length && Math.random() < 0.7) {
-      pulled = roster[Math.floor(Math.random() * roster.length)];
+    const s0 = this.state.scholar || {};
+    const playerOk = !this.state.over && (s0.health || 0) > 0 && !s0.exiled;
+    const r = Math.random();
+    let who = 'together';
+    if (playerOk && roster.length) {
+      if (r < 0.30) who = 'player';
+      else if (r < 0.70) who = roster[Math.floor(Math.random() * roster.length)];
+    } else if (playerOk) {
+      who = (r < 0.5) ? 'player' : 'together';
+    } else if (roster.length) {
+      who = (r < 0.6) ? roster[Math.floor(Math.random() * roster.length)] : 'together';
     }
-    if (pulled) {
-      const pname = this.displayName(pulled);
-      this.sysSay(`📺 TONIGHT: ${s.name}. ${s.desc}`);
+    let phases = null;
+    if (who === 'player') {
+      this.sysSay(`📺 The cameras want YOU. No reason. You're going on television.`);
+      try { this.audioEvent('contestTaken'); } catch (e) {}
+      phases = this.showPhases(s, 'player');
+    } else if (who === 'together') {
+      this.sysSay(`📺 No pull tonight — the village watches together. Someone brings snacks. It helps.`);
+      phases = this.showTogetherPhases(s);
+    } else {
+      const pname = this.displayName(who);
       this.sysSay(`📺 The cameras want ${pname}. No reason. ${pname} is going on television.`);
       this.sysSay(`📺 ${pname} will be back by morning. Probably. The village will talk about this for days.`);
-      this.addNotability(pulled, 'showmanship');
-    } else {
-      this.sysSay(`📺 TONIGHT: ${s.name}. ${s.desc}`);
-      this.sysSay(`📺 The village watches together. Someone brings snacks. It helps.`);
+      try { this.audioEvent('contestTaken'); } catch (e) {}
+      phases = this.showWatchPhases(s, who);
     }
-    try { this.leadShift('showmanship', 1); } catch (e) {}
+    if (!phases || !phases.length) {
+      // Never leave the player in a modal with no phases — that's a stuck
+      // screen (same rule as contests). Fall back to the old announcement.
+      this.addNotability(who === 'together' ? 'player' : who, 'showmanship');
+      try { this.leadShift('showmanship', 1); } catch (e) {}
+      return s;
+    }
+    this.state.activeContest = {
+      kind: 'show',
+      showId: s.id,
+      showName: s.name,
+      participant: who,
+      phase: 'intro',
+      phaseIdx: 0,
+      phases: phases,
+      variant: null,
+      wounds: 0,
+    };
+    this.sysSay('📺 ───');
+    const rendered = this._contestRenderPhase(this.state.activeContest, phases[0], 0);
+    this._cxStorePhase(this.state.activeContest, 0, rendered);
+    this._cxPhaseSay(rendered.text);
     return s;
+  };
+
+  // SHOW GOSSIP (audit-shows 2026-10-09): like _cxGossip but for the TV
+  // shows — the village talks about who went on, who got fans, who got
+  // shame. Same machinery (gossip moves REP, never trust).
+  G._showGossip = function(how, pid, showName) {
+    try {
+      if (!pid || pid === 'player') return;
+      const v = this.state.village;
+      v.gossip = v.gossip || [];
+      const day = (this.state.scholar || {}).day || 1;
+      const partKey = day + ':show:' + (showName || '') + ':' + how + ':' + pid;
+      if (v.gossip.some(g => g.partKey === partKey)) return;
+      const heard = [];
+      const roster = (v.roster || []).filter(id => id !== this.villagerId && id !== pid);
+      if (roster.length) heard.push(roster[Math.floor(Math.random() * roster.length)]);
+      v.gossip.push({ action: 'show_' + how, dims: { who: pid }, heard,
+        distortion: 0, day, partKey, noTrust: false, source: 'show' });
+    } catch (e) {}
+  };
+
+  // SHOW PHASES (audit-shows 2026-10-09): the player's played beat for a
+  // show pull. One phase, three choices with real costs — then a terminal
+  // WIN/LOSE/MIXED that _showEnd lands as fans, shame, or both (canon:
+  // "comes home with fans or with shame — sometimes both").
+  G.showPhases = function(show, who) {
+    const beat = (this.SHOW_BEATS || {})[show.id] || this._showGenericBeat(show);
+    const choices = (beat.choices || []).map(c => ({
+      label: c.label, sub: c.sub,
+      do: Object.assign({ note: c.note }, c.do || {}),
+      next: c.end === 'won' ? 'WIN' : (c.end === 'lost' ? 'LOSE' : 'MIXED'),
+    }));
+    return [{ text: beat.setup, choices }];
+  };
+
+  // SHOW WATCH PHASES (audit-shows 2026-10-09): a villager was pulled — the
+  // player watches with agency (contest watch-mode pattern). Cheering is
+  // real support (feeds the deterministic resolution), heckling is noticed
+  // by the cameras, going to them after lands. Terminal SHOW_VILLAGER.
+  G.showWatchPhases = function(show, pid) {
+    const pname = this.displayName(pid);
+    return [{
+      text: `📺 ${show.name} — ${pname} is on.\n\n${show.desc}\n\nYou watch with the village. The cameras love the watchers almost as much as the watched — what you do in the crowd is content too.`,
+      choices: [
+        { label: 'Cheer them on', sub: 'real support', do: { note: `You cheer until your throat hurts. ${pname} hears it — everyone hears it.`, cheer: 0.05, fanLane: { lane: 'showbiz', n: 1, why: 'cheering for ' + pname } }, next: 'SHOW_VILLAGER' },
+        { label: 'Heckle', sub: 'the cameras notice', do: { note: `You heckle. The crowd laughs. ${pname} will remember this.`, notability: 'showmanship', heckle: true }, next: 'SHOW_VILLAGER' },
+        { label: 'Watch quietly', sub: 'then go to them', do: { note: `You watch every second. Whatever happens, you'll be there after.`, comfort: true }, next: 'SHOW_VILLAGER' },
+      ],
+    }];
+  };
+
+  // SHOW TOGETHER PHASES (audit-shows 2026-10-09): no pull — the village
+  // watches together. One communal beat, still a choice, still costs.
+  G.showTogetherPhases = function(show) {
+    return [{
+      text: `📺 ${show.name} — the village watches together.\n\n${show.desc}\n\nSomeone brought snacks. It helps. The chat is already arguing about everything.`,
+      choices: [
+        { label: 'Bring the good snacks', sub: '150 kcal, worth it', do: { kcal: -150, note: 'You bring out the good stuff. The village settles in around you. This is the good part of being watched.', unity: 1, fanLane: { lane: 'showbiz', n: 1, why: 'watch-party snacks' } }, next: 'WIN' },
+        { label: 'Watch from the doorway', sub: 'keep your distance', do: { note: 'You watch from the doorway, half in the dark. The show is fine. The company is better.' }, next: 'LOSE' },
+      ],
+    }];
+  };
+
+  // SHOW RESOLVE VILLAGER (audit-shows 2026-10-09): the pulled villager's
+  // fate — DETERMINISTIC, documented, no outcome table. Score = 2 base +
+  // 2 per showmanship notability (the gossip lane has its own celebrities —
+  // fame is the skill here) + a stable per-villager hash 0..2 (some people
+  // are just good TV) + player cheer (0..6, capped like contest cheer).
+  // fans >= 7, shame <= 3, else both. The village talks about it either way.
+  G.showResolveVillager = function(pid, show, opts) {
+    opts = opts || {};
+    let hash = 0;
+    const key = String(pid) + ':' + String((show && show.id) || show);
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 997;
+    const deeds = ((this.state.notability || {})[pid]) || {};
+    const cheer = Math.round((opts.cheer || 0) * 40);
+    const heckle = opts.heckle ? -2 : 0;
+    const score = 2 + (deeds.showmanship || 0) * 2 + (hash % 3) + cheer + heckle;
+    const outcome = score >= 7 ? 'fans' : (score <= 3 ? 'shame' : 'both');
+    return { outcome, score };
+  };
+
+  // SHOW VILLAGER END (audit-shows 2026-10-09): lands the watched villager's
+  // show — fans, shame, or both (docs/CONTESTS.md). The galaxy's love is
+  // real even for a trainwreck: shame still moves the showbiz club +1, said
+  // out loud. Gossip seeds so the village talks about it for days.
+  G._showVillagerEnd = function(ac) {
+    const pid = ac.participant;
+    const pname = this.displayName(pid);
+    const showName = ac.showName || 'the show';
+    let r = null;
+    try { r = this.showResolveVillager(pid, { id: ac.showId }, { cheer: ac.cheer || 0, heckle: !!ac.heckle }); } catch (e) {}
+    const outcome = (r && r.outcome) || 'both';
+    ac.phase = 'done';
+    this.state.activeContest = null;
+    this.sysSay('📺 ───');
+    if (outcome === 'fans' || outcome === 'both') {
+      this.sysSay(`📺 ${pname} was MADE for this. The chat is already making clips. ${pname} comes home with fans — messages, art, a following.`);
+      this.addNotability(pid, 'showmanship');
+      try { if (this.apAdjustFavor) this.apAdjustFavor(2, pname + ' shone on ' + showName, 'showbiz'); } catch (e) {}
+      this._showGossip('fans', pid, showName);
+    }
+    if (outcome === 'shame' || outcome === 'both') {
+      this.sysSay(`📺 It went... badly. The clip of ${pname} will outlive all of you. ${pname} comes home with shame — and, somehow, fans anyway. The galaxy loves a trainwreck.`);
+      try { if (this.apAdjustFavor) this.apAdjustFavor(1, pname + "'s beautiful disaster on " + showName, 'showbiz'); } catch (e) {}
+      this._showGossip('shame', pid, showName);
+    }
+    if (ac.comfort) this.sysSay(`📺 You go to ${pname} after. They're quiet. They'll talk about it later. Or never.`);
+    else this.sysSay(`📺 The village will talk about this for days.`);
+    try { this.leadShift('showmanship', 1); } catch (e) {}
+    return { done: true, outcome: 'show_' + outcome };
+  };
+
+  // SHOW END (audit-shows 2026-10-09): lands the player's (or village's)
+  // show — fans, shame, or both. Lower-stakes than contests, higher
+  // embarrassment (docs/CONTESTS.md). A prize, when earned, is a wacky
+  // alien curio — never dinner (canon).
+  G._showEnd = function(ac, outcome, prize) {
+    const beat = (this.SHOW_BEATS || {})[ac.showId] || {};
+    const s = this.state.scholar;
+    const who = ac.participant;
+    const isPlayer = who === 'player';
+    const isSummons = ac.kind === 'summons';
+    const showName = ac.showName || 'the show';
+    ac.phase = 'done';
+    this.state.activeContest = null;
+    this.sysSay('📺 ───');
+    const sayFavor = (n, why) => { try { if (this.apAdjustFavor) this.apAdjustFavor(n, why, 'showbiz'); } catch (e) {} };
+    if (outcome === 'won') {
+      this.sysSay('📺 ' + (isSummons ? `Stunt delivered. The numbers tick up in real time — you can SEE the galaxy lean in. The System is already cutting the promo.`
+        : (beat.win || `You were good. Genuinely good. The chat is making clips.`)));
+      if (isPlayer || isSummons) {
+        this.addNotability('player', 'showmanship');
+        sayFavor(isSummons ? 3 : 2, (isSummons ? 'ratings stunt' : 'show: ' + showName));
+        try { this.leadShift('showmanship', 1); } catch (e) {}
+      } else {
+        try { this.leadShift('unity', 1); } catch (e) {}
+      }
+      // The stunt shakes a care package loose (canon: summons tie to care
+      // packages). Rate-limited inside apCarePackage — may whiff honestly.
+      if (isSummons) { try { if (this.apCarePackage) this.apCarePackage(); } catch (e) {} }
+    } else if (outcome === 'lost') {
+      this.sysSay('📺 ' + (isSummons ? `You phoned it in and seventeen systems could tell. The numbers don't move. The System makes a note.`
+        : (beat.lose || `It went badly. The clip will outlive you. But the galaxy loves a trainwreck — the shame comes with fans attached.`)));
+      if (isPlayer || isSummons) {
+        this.addNotability('player', 'showmanship');
+        sayFavor(1, 'beautiful disaster: ' + showName);
+      }
+    } else if (outcome === 'mixed') {
+      this.sysSay('📺 ' + (beat.mixed || `Both. Fans AND shame, in the same broadcast. The chat can't decide whether to crown you or roast you, so it does both.`));
+      if (isPlayer) {
+        this.addNotability('player', 'showmanship');
+        sayFavor(2, 'show: ' + showName);
+        try { this.leadShift('showmanship', 1); } catch (e) {}
+      }
+    } else { // refused
+      this.sysSay(`📺 You say no — on camera, clearly, where everyone can see it. The refusal IS the content. The System files your defiance under: interesting.`);
+      if (isPlayer || isSummons) {
+        this.addNotability('player', 'showmanship');
+        sayFavor(isSummons ? -2 : -1, 'refused ' + (isSummons ? 'the ratings summons' : showName));
+      }
+    }
+    // Prize: a wacky alien curio, real and usable (apGrantItem), never
+    // dinner. If the vault is shy, say so — never a silent pocket.
+    if (prize && (isPlayer || isSummons)) {
+      try {
+        const items = this.data.items || [];
+        const cands = items.filter(it => it.origin === 'alien' && (it.tier || 1) <= 1);
+        const gift = cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+        if (gift && this.apGrantItem) {
+          this.apGrantItem(gift.id);
+          this.sysSay(`📺 The System presses something humming into your hands: ${gift.name || gift.id}. It's wacky. It's yours.`);
+        } else {
+          this.sysSay('📺 Prize: the System\'s favor (and a story). The vault was feeling shy tonight.');
+        }
+      } catch (e) { this.sysSay('📺 Prize: the System\'s favor (and a story).'); }
+    }
+    return { done: true, outcome: 'show_' + outcome };
+  };
+
+  // === RATINGS SUMMONS ===
+  // (audit-shows 2026-10-09): when the numbers go soft, the System doesn't
+  // just schedule harder — it SUMMONS you for a promo stunt. Canon basis:
+  // the OVERSIGHT design (Steve 2026-10-04: "Ratings summons (promos/stunts,
+  // small gifts, ties to care packages)") — no doc covers it, so this is
+  // noted, not invented silently. Played, not announced: do the stunt (real
+  // cost, real gift, showbiz favor, shakes a care package loose), phone it
+  // in, or refuse on camera (a sequence, with consequences).
+  G.fireRatingsSummons = function() {
+    this.sysSay(`📺 RATINGS SUMMONS — the numbers are soft and the System is nervous.`);
+    this.sysSay(`📺 "WE NEED A MOMENT. YOU WILL PROVIDE THE MOMENT." The cameras are already rolling.`);
+    try { this.audioEvent('contestTaken'); } catch (e) {}
+    const phases = this.ratingsSummonsPhases();
+    this.state.activeContest = {
+      kind: 'summons',
+      showId: '__summons',
+      showName: 'Ratings Summons',
+      participant: 'player',
+      phase: 'intro',
+      phaseIdx: 0,
+      phases: phases,
+      variant: null,
+      wounds: 0,
+    };
+    this.sysSay('📺 ───');
+    const rendered = this._contestRenderPhase(this.state.activeContest, phases[0], 0);
+    this._cxStorePhase(this.state.activeContest, 0, rendered);
+    this._cxPhaseSay(rendered.text);
+    return this.state.activeContest;
+  };
+
+  G.ratingsSummonsPhases = function() {
+    return [{
+      text: `📺 The brief: a promo stunt, live, sixty seconds, for the ratings. The System suggests interpretive dance about the food supply. The chat suggests worse.\n\nYour body is the budget. Your dignity is the marketing spend.`,
+      choices: [
+        { label: 'Do the stunt', sub: '200 kcal, full commitment', do: { kcal: -200, trauma: 4, note: 'You commit completely — dance, pratfall, a speech about turnips that somehow lands. The numbers tick UP while you\'re still moving. The System is delighted in seventeen languages.', prize: true }, next: 'WIN' },
+        { label: 'Phone it in', sub: 'minimum viable effort', do: { trauma: 2, note: 'You do the smallest possible version. A wave. A nod. The chat clocks it instantly — "HE\'S PHONING IT IN" trends in four systems.' }, next: 'LOSE' },
+        { label: 'Refuse on camera', sub: 'the no is the content', do: { note: 'You look straight into the lens and say no. The silence that follows is the most-watched nine seconds of the week.' }, next: 'REFUSE' },
+      ],
+    }];
+  };
+
+  // SHOW BEATS (audit-shows 2026-10-09): every show in the pool gets a
+  // played beat — setup + three choices with real costs, landing as fans,
+  // shame, or both. Lower-stakes than contests, higher embarrassment
+  // (docs/CONTESTS.md). do.fanLane moves the showbiz fan club; costs are
+  // kcal/trauma/notability, all said out loud.
+  G.SHOW_BEATS = {
+    why_eat: {
+      setup: `📺 WHY DO THEY EAT? — the studio kitchen.\n\nSeventeen systems are watching a human boil water like it's a sacrament. The judges have never eaten. They are about to learn. The ingredients are real. The horror will be too.`,
+      choices: [
+        { label: 'Cook the comfort dish', sub: 'the one your grandmother made', end: 'won', note: 'You cook it the slow way, the right way. Halfway through, one of the judges makes a sound like a kettle learning to cry. The audience is on its feet.', do: { kcal: -150, fanLane: { n: 3, why: 'comfort cooking on WHY DO THEY EAT?' } } },
+        { label: 'Cook the weird one', sub: 'fermented, alarming', end: 'mixed', note: 'You serve the fermented thing. The judges recoil — then lean back in, fascinated. Horror and delight, same bite. The chat can\'t look away.', do: { trauma: 3, fanLane: { n: 2, why: 'horror cooking on WHY DO THEY EAT?' } } },
+        { label: 'Lecture about chewing', sub: 'explain instead of cook', end: 'lost', note: 'You explain mastication for nine minutes. The judges take notes. The audience learns nothing and the chat roasts you in four languages.', do: { trauma: 2, fanLane: { n: 1, why: 'the chewing lecture' } } },
+      ],
+      win: `The judges don't understand food. But they understand YOU now, a little. Fan art of your grandmother's dish is already circulating.`,
+      lose: `The lecture airs. It is, technically, television. Your village will quote it back at you forever.`,
+      mixed: `The weird dish trends overnight. Half the galaxy is horrified. The other half wants the recipe. You get both kinds of famous.`,
+    },
+    break_room: {
+      setup: `📺 Break Room — the green room couch.\n\nThe host knows about the thing. The thing you did. The cameras are already rolling, and the audience can smell a confession coming.`,
+      choices: [
+        { label: 'Own it', sub: 'confession, televised', end: 'mixed', note: 'You say it plainly, on the couch, to everyone. The host goes quiet — they wanted squirming, not honesty. The audience doesn\'t know whether to applaud.', do: { trauma: 4, fanLane: { n: 2, why: 'the couch confession' } } },
+        { label: 'Deflect with gossip', sub: 'someone else\'s drama', end: 'won', note: 'You pivot so smoothly the host doesn\'t notice until it\'s too late. Someone ELSE\'s drama fills the segment. The village will have opinions about whose.', do: { fracture: 1, fanLane: { n: 2, why: 'the great deflection' } } },
+        { label: 'Walk out', sub: 'leave the couch', end: 'lost', note: 'You stand up mid-question and walk. The cameras follow you all the way to the door. The host calls it "powerful." You call it Tuesday.', do: { trauma: 3, fanLane: { n: -1, why: 'walked out of Break Room' } } },
+      ],
+      win: `The deflection is studied in media classes on three worlds. Your drama stays yours. Someone else's doesn't.`,
+      lose: `The walkout clip plays on loop. Powerful, they say. You say nothing, which only makes it worse.`,
+      mixed: `The confession lands wrong and right at once. Strangers write to say it helped. Villagers give you looks. Both, forever.`,
+    },
+    mouth_race: {
+      setup: `📺 Mouth Race — sixty seconds, a mystery basket, one rival.\n\nThe other cook is already plating. The judges have very long utensils and no patience. Speed matters. So does not poisoning the judges.`,
+      choices: [
+        { label: 'Speed, no fear', sub: 'burners up, fingers down', end: 'won', note: 'You move like a kitchen fire. Something sizzles, something singes — including you, slightly — and the plate lands with two seconds left. The judges blink.', do: { kcal: -100, dmg: [0, 4], fanLane: { n: 3, why: 'won the Mouth Race' } } },
+        { label: 'Slow and perfect', sub: 'lose the race, win the dish', end: 'mixed', note: 'You ignore the clock and cook the thing properly. The buzzer finds you mid-garnish. The judges taste anyway — and go very quiet.', do: { fanLane: { n: 2, why: 'the perfect late plate' } } },
+        { label: 'Sabotage (lightly)', sub: 'a pinch of chaos', end: 'lost', note: 'You "accidentally" salt their station. The cameras catch the exact moment. The judges catch it too. The audience gasps, then boos, then laughs — at you.', do: { trauma: 5, fanLane: { n: -2, why: 'caught salting the rival' } } },
+      ],
+      win: `Your plate wins on speed AND merit. The rival shakes your hand through gritted teeth. The galaxy replays the final garnish.`,
+      lose: `The sabotage airs in slow motion. You are the villain of the week. Villains get fan mail too — the wrong kind.`,
+      mixed: `You lost the race and won the tasting. The judges argue about it for the rest of the episode. So does the chat.`,
+    },
+    ask_human: {
+      setup: `📺 Ask a Human — the hotline is open.\n\nSeventeen systems. The first caller asks about your childhood. The second asks about your taxes. The third asks what grief tastes like. There is no screening process.`,
+      choices: [
+        { label: 'Answer honestly', sub: 'all of it, true', end: 'mixed', note: 'You answer the grief one truthfully. The line goes quiet across seventeen systems. Then the messages start — thousands of strangers saying "me too."', do: { trauma: 5, fanLane: { n: 3, why: 'the honest hour on Ask a Human' } } },
+        { label: 'Answer with jokes', sub: 'deflect with charm', end: 'won', note: 'You turn every question into a bit. The taxes question becomes a five-minute routine. The galaxy laughs so hard the hotline crashes twice.', do: { fanLane: { n: 2, why: 'the comedy hour' } } },
+        { label: 'Hang up', sub: 'end the call', end: 'lost', note: 'You hang up on a caller mid-sentence. The dial tone is the loudest sound on television that night. The System replays it.', do: { trauma: 3, fanLane: { n: -1, why: 'hung up on the galaxy' } } },
+      ],
+      win: `You are, briefly, the funniest human alive. The village quotes your taxes bit for weeks.`,
+      lose: `The hang-up is the clip. Nine seconds of dial tone, forever. Strangers send you phones.`,
+      mixed: `The honest answer breaks the show open. Fans AND the kind of attention that follows you to the well. Both.`,
+    },
+    death_reel: {
+      setup: `📺 The Death Reel — tonight: YOUR greatest hits.\n\nThe falls. The screams. The time you ran from a squirrel. The village is watching WITH you, on the same couch, and nobody is looking away.`,
+      choices: [
+        { label: 'Narrate it yourself', sub: "director's commentary", end: 'mixed', note: '"Here\'s where I realize the squirrel is winning." Your commentary is so good the reel becomes a different show — funnier, sadder, yours.', do: { trauma: 3, fanLane: { n: 3, why: 'narrated their own Death Reel' } } },
+        { label: 'Laugh along', sub: 'with the village', end: 'won', note: 'You laugh first and loudest, and the village laughs WITH you instead of at you. The reel can\'t hurt someone who\'s already in on the joke.', do: { unity: 1, fanLane: { n: 2, why: 'laughed with the reel' } } },
+        { label: 'Leave the room', sub: 'don\'t watch', end: 'lost', note: 'You leave. The cameras follow. The reel plays to your empty chair, and the galaxy watches you not watching. It\'s the saddest thing on TV tonight.', do: { trauma: 5, fanLane: { n: 1, why: 'the empty chair' } } },
+      ],
+      win: `The village adopts your commentary as canon. "The squirrel is winning" becomes a saying. You are in on every joke now.`,
+      lose: `The empty-chair episode wins awards. You do not attend the ceremony.`,
+      mixed: `Your narration makes the reel art. It also makes it permanent. Strangers quote your worst moments back at you, lovingly.`,
+    },
+    nap_wars: {
+      setup: `📺 Nap Wars — the arena is a couch.\n\nThe event: sleep, on camera, while the galaxy watches. Scoring on speed of onset, depth, and artistic snoring. Someone always snores.`,
+      choices: [
+        { label: 'Commit to the nap', sub: 'sleep like the dead', end: 'won', note: 'You are out in ninety seconds. Deep, total, magnificent sleep. The judges weep. The sleep scientists in the audience take notes.', do: { heal: 5, fanLane: { n: 2, why: 'the ninety-second nap' } } },
+        { label: 'Fake it', sub: 'act asleep', end: 'lost', note: 'You fake it. The snore gives you away — it\'s rhythmic, performative, wrong. The judges confer. The verdict: "theater."', do: { trauma: 2, fanLane: { n: 1, why: 'the fake nap' } } },
+        { label: 'Snore operatically', sub: 'weaponized', end: 'won', note: 'You snore in movements. Allegro, adagio, a finale that rattles the set. The judges have never seen anything like it. Neither has anyone.', do: { fanLane: { n: 3, why: 'the snore symphony' }, notability: 'showmanship' } },
+      ],
+      win: `You are the nap champion. The village treats you with new respect. Sleep has never been so televised.`,
+      lose: `"Theater," the judges rule. The clip of your fake snore is used in acting classes as a warning.`,
+    },
+    tiny_door: {
+      setup: `📺 The Tiny Door — a door, knee-high, in the middle of the village.\n\nIt appeared at noon. It is very small. Someone has to go through. The audience has opinions about who, and the chat has a poll.`,
+      choices: [
+        { label: 'Go through', sub: 'headfirst, obviously', end: 'won', note: 'You fold yourself through. Inside: a pantry of alien snacks, a tiny chair, and a note that says "WE KNEW IT WOULD BE YOU."', do: { prize: true, fanLane: { n: 2, why: 'went through the Tiny Door' } } },
+        { label: 'Send the drone', sub: 'let the System look', end: 'lost', note: 'You send a drone. It comes back with footage of snacks and a tiny chair. The chat\'s verdict is unanimous: coward.', do: { trauma: 2, fanLane: { n: -1, why: 'droned the Tiny Door' } } },
+        { label: 'Widen the door', sub: 'make it human-sized', end: 'mixed', note: 'You spend the afternoon with a saw. The door is now a door. The mystery is gone but the snacks are accessible. The audience mourns the mystery.', do: { kcal: -100, fanLane: { n: 1, why: 'de-mysteried the door' } } },
+      ],
+      win: `The tiny chair is yours now. The note goes in the journal. The galaxy approves of your knees.`,
+      lose: `The drone footage airs without you in it. You are a footnote in your own episode.`,
+      mixed: `Practical. Boring. Correct. The snacks are real, which is more than mystery ever gave anyone.`,
+    },
+    grudge_pudding: {
+      setup: `📺 Grudge Pudding — you and your favorite rival have a grudge.\n\nThe System knows. Everyone knows. You must cook a pudding together, on camera. The pudding is a metaphor. The grudge is not.`,
+      choices: [
+        { label: 'Cook it out', sub: 'stir until it\'s over', end: 'won', note: 'Somewhere between the custard and the crust, the grudge runs out of fuel. The pudding is perfect. You split it on camera and the village exhales.', do: { unity: 1, fanLane: { n: 2, why: 'the pudding truce' } } },
+        { label: 'Cook to win', sub: 'perfect pudding, intact grudge', end: 'mixed', note: 'Your half is flawless. Their half is flawless. You do not speak except about temperatures. The pudding wins awards. The grudge continues, televised.', do: { fanLane: { n: 2, why: 'the cold war pudding' }, fracture: 1 } },
+        { label: 'Salt their half', sub: 'petty, televised', end: 'lost', note: 'You salt their half on camera, clearly, deliberately. The judges taste it. The galaxy tastes your pettiness. The pudding is ruined and so, briefly, are you.', do: { trauma: 4, fanLane: { n: -1, why: 'salted the pudding' } } },
+      ],
+      win: `The truce holds past the credits. The pudding recipe enters the village canon.`,
+      lose: `The salted pudding airs in slow motion. You apologize for weeks. The pudding does not forgive.`,
+      mixed: `A perfect pudding and a perfect standoff. The audience picks sides. The village does too.`,
+    },
+    who_moved_it: {
+      setup: `📺 Who Moved It? — your favorite thing is three inches left of where it was.\n\nThe System is treating this like a murder. Evidence tags. A timeline. A detective with seventeen eyes. The culprit is always the last person you'd suspect.`,
+      choices: [
+        { label: 'Solve it properly', sub: 'evidence board, interviews', end: 'won', note: 'You dust for prints. You interview the village. You find the culprit (it was the wind, plus a goat). The detective bows to you.', do: { fanLane: { n: 2, why: 'solved the three inches' } } },
+        { label: 'Accuse dramatically', sub: 'point, on camera', end: 'mixed', note: 'You accuse the elder, loudly, wrongly. The real culprit confesses laughing. The galaxy loves a wrong accusation delivered with total confidence.', do: { fracture: 1, fanLane: { n: 1, why: 'the great wrong accusation' } } },
+        { label: 'Move it back silently', sub: 'case closed', end: 'lost', note: 'You move it back when no one\'s looking. The episode ends in eleven minutes. The System is furious. The audience is asleep.', do: { fanLane: { n: -1, why: 'the boring solution' } } },
+      ],
+      win: `The detective requests you by name next time. Your evidence board is archived. The goat is unrepentant.`,
+      lose: `Eleven minutes. The shortest episode in the show's history. Your name is a verb for it now.`,
+      mixed: `Wrong, loud, beloved. The elder forgives you on camera. The clip trends for a week.`,
+    },
+    apology_tour: {
+      setup: `📺 The Apology Tour — you must apologize for something you did in a dream.\n\nThe dream is shown. Everyone has seen it. The dream-you did the thing with total confidence. The real you must now answer for it.`,
+      choices: [
+        { label: 'Apologize sincerely', sub: 'for a dream', end: 'mixed', note: '"I\'m sorry my subconscious did that." You mean it, which is the absurd part. The audience doesn\'t know whether to laugh or cry, so it does both.', do: { trauma: 4, unity: 1, fanLane: { n: 2, why: 'the dream apology' } } },
+        { label: 'Apologize to the dream', sub: 'address dream-you', end: 'won', note: 'You turn to the screen and address your dream-self directly: "We need to talk." The galaxy has never seen anything like it. Dream-you looks ashamed.', do: { fanLane: { n: 3, why: 'confronted their dream-self' } } },
+        { label: 'Refuse — it was a dream', sub: 'stand your ground', end: 'lost', note: 'You refuse. "It was a DREAM." The System replays the dream. The village watches you watch yourself. Your ground is not as firm as you thought.', do: { trauma: 5, fanLane: { n: -1, why: 'refused the dream apology' } } },
+      ],
+      win: `Dream-you apologizes back, in the edit. The segment wins awards. Therapists across the galaxy assign it.`,
+      lose: `The replay airs uncut. You will never live it down. Dreams are forever now.`,
+      mixed: `A sincere apology for an unreal crime. It shouldn't work. It does. Strangers write to you about their dreams.`,
+    },
+    dance_off: {
+      setup: `📺 Dance-Off at Dusk — the System demands dancing.\n\nNo music is provided. The village provides its own — drums, spoons, someone's excellent whistling. It goes better than anyone expects.`,
+      choices: [
+        { label: 'Dance like it\'s a ritual', sub: 'full body, full heart', end: 'won', note: 'You dance like the harvest depends on it. Sweat, dust, the spoons keeping time. The judges don\'t understand it and can\'t look away.', do: { kcal: -150, fanLane: { n: 3, why: 'the dusk dance' } } },
+        { label: 'Lead the village', sub: 'everyone, now', end: 'won', note: 'You pull the whole village in. A line dance, ragged and joyful, under the cameras. The galaxy has never seen anything less rehearsed or more real.', do: { unity: 1, fanLane: { n: 2, why: 'the village line dance' } } },
+        { label: 'Stand still, arms crossed', sub: 'refuse the rhythm', end: 'lost', note: 'You stand perfectly still while the village dances around you. It is, technically, a choice. The cameras hold on your face for a full minute.', do: { trauma: 3, fanLane: { n: 1, why: 'the stillness' } } },
+      ],
+      win: `The dance becomes a village tradition. Dusk, spoons, dust. The galaxy tunes in for it now.`,
+      lose: `The stillness is the clip. A minute of your face, unmoving, while joy happens around you. It haunts.`,
+    },
+    mystery_smell: {
+      setup: `📺 The Mystery Smell — something smells incredible somewhere in the village.\n\nFind it before the cameras do. The chat already knows what it is. They are not telling. They are enjoying this.`,
+      choices: [
+        { label: 'Follow your nose', sub: 'trust the senses', end: 'won', note: 'You track it like a hound — around the hall, behind the stores — to a crate of alien catering, still warm, left by "mistake." Dinner is served.', do: { kcal: 200, prize: true, fanLane: { n: 2, why: 'found the mystery smell' } } },
+        { label: 'Ask the chat', sub: 'they know', end: 'lost', note: 'You ask the chat. The chat lies, beautifully, in twelve directions at once. You dig up a compost heap on live TV. The smell was never there.', do: { trauma: 3, fanLane: { n: 1, why: 'the compost incident' } } },
+        { label: 'Cook something better', sub: 'out-smell the mystery', end: 'mixed', note: 'You fire up your own pot and out-cook the mystery. The village eats YOUR food while the cameras hunt the smell. Both smells trend.', do: { kcal: -200, fanLane: { n: 2, why: 'the smell-off' } } },
+      ],
+      win: `The catering crate feeds the village. "Mistake," the System says. Nobody believes it. Everybody eats.`,
+      lose: `The compost incident. The chat's directions were perfect and perfectly wrong. You can still smell it.`,
+      mixed: `Two incredible smells, one village. The smell-off is declared a draw. Everyone eats twice.`,
+    },
+    complaint_box: {
+      setup: `📺 The Complaint Box — your complaint is being read aloud.\n\nBy a seven-foot alien. Who is visibly hurt. "IT SAYS HERE," the alien reads, voice wobbling, "'THE SHOW IS TOO LOUD.'"`,
+      choices: [
+        { label: 'Stand by it', sub: 'yes, too loud', end: 'won', note: '"Yes. Too loud." The alien wilts. The audience — which has also thought it — erupts. Complaints triple by morning.', do: { fanLane: { n: 2, why: 'stood by the complaint' }, notability: 'showmanship' } },
+        { label: 'Soften it live', sub: 'diplomacy, on camera', end: 'mixed', note: '"What I meant was, the loudness has... character." The alien perks up. The audience boos the softening and loves you for the kindness, both at once.', do: { unity: 1, fanLane: { n: 1, why: 'the softened complaint' } } },
+        { label: 'File another one', sub: 'right now, on air', end: 'won', note: 'You pull out a SECOND complaint and read it yourself. "The chairs." The alien sits down, wounded, in the chair in question. The galaxy howls.', do: { trauma: 3, fanLane: { n: 2, why: 'the second complaint' } } },
+      ],
+      win: `The complaint box overflows for a week. The show gets quieter. The chairs get better. You did that.`,
+      lose: ``,
+      mixed: `The alien sends you a personal note: "NOTED." with seventeen underlines. The village frames it.`,
+    },
+    hot_take: {
+      setup: `📺 Hot Take — defend a food opinion on live television.\n\nYour position: soup is a beverage. The galaxy has thoughts. The galaxy is wrong. Prove it.`,
+      choices: [
+        { label: 'Argue with science', sub: 'kcal as rhetoric', end: 'won', note: 'You cite viscosity, serving temperature, vessel design. The science is sound. The galaxy is furious. The galaxy is also taking notes.', do: { fanLane: { n: 2, why: 'the soup thesis' } } },
+        { label: 'Argue with passion', sub: 'weep about broth', end: 'mixed', note: 'You weep, actually weep, about a broth from your childhood. The panel doesn\'t know what to do. The audience does: it cries with you.', do: { trauma: 2, fanLane: { n: 3, why: 'the broth tears' } } },
+        { label: 'Concede', sub: 'soup is food, fine', end: 'lost', note: 'You concede at the first commercial break. "Fine. Soup is food." The galaxy wins. Your village will never let you hear the end of it.', do: { trauma: 4, fanLane: { n: -1, why: 'conceded the soup' } } },
+      ],
+      win: `The soup thesis is taught, debated, memed. Beverage. The galaxy knows it now.`,
+      lose: `The concession airs. "Fine. Soup is food." Four words that follow you forever.`,
+      mixed: `The broth tears break the panel. Half the galaxy is converted. The other half is concerned about you.`,
+    },
+    who_farted: {
+      setup: `📺 Who Farted? — a full forensic investigation, televised.\n\nEvidence boards. Suspect interviews. Airflow modeling. It was you. Everyone will know by the end of the hour. The only question is how.`,
+      choices: [
+        { label: 'Confess early', sub: 'efficient dignity loss', end: 'mixed', note: '"It was me." Eleven minutes in. The investigators are furious — they had forty more minutes of content. The audience respects the efficiency.', do: { trauma: 3, fanLane: { n: 2, why: 'the early confession' } } },
+        { label: 'Run a real investigation', sub: 'frame the wind', end: 'won', note: 'You build the case against the wind with total commitment — diagrams, witness testimony, a reenactment. The wind is convicted. You walk free.', do: { fanLane: { n: 3, why: 'the wind did it' } } },
+        { label: 'Blame the System', sub: 'it was the aliens', end: 'lost', note: '"The System did it." The System heard. The System replays the audio with enhancement. The System is very good at audio.', do: { trauma: 4, fanLane: { n: -1, why: 'blamed the System' } } },
+      ],
+      win: `The wind is formally charged. You are exonerated on every screen in the galaxy. Justice is served.`,
+      lose: `The enhanced audio airs. There is no coming back from enhanced audio.`,
+      mixed: `An early confession, gracefully done. The investigators forgive you on camera. The village does not.`,
+    },
+    stare_down: {
+      setup: `📺 The Stare-Down — out-stare an alien champion.\n\nBlinking is defeat. The champion has four eyelids and no mercy. Seventeen systems are watching both faces.`,
+      choices: [
+        { label: 'Do not blink', sub: 'become the stare', end: 'won', note: 'You do not blink for six minutes. Your eyes water. The champion\'s fourth eyelid twitches — once — and that\'s enough. The galaxy erupts.', do: { trauma: 4, fanLane: { n: 3, why: 'won the Stare-Down' } } },
+        { label: 'Blink strategically', sub: 'a tactical blink', end: 'lost', note: 'You blink at minute two and call it strategy. The champion does not call it strategy. Nobody calls it strategy.', do: { trauma: 2, fanLane: { n: 1, why: 'the tactical blink' } } },
+        { label: 'Make them laugh first', sub: 'unhinged offense', end: 'mixed', note: 'You cross your eyes. The champion\'s composure cracks — a sound like a dropped chandelier. You lose on a technicality and win the crowd outright.', do: { fanLane: { n: 2, why: 'broke the champion' } } },
+      ],
+      win: `Six minutes, no blinks. The champion requests a rematch. Your eyes take a day to forgive you.`,
+      lose: `The tactical blink is studied as a failure. Two minutes. The galaxy saw.`,
+      mixed: `Disqualified, beloved. The crossed-eyes moment is the most-clipped second of the season.`,
+    },
+    crib_mine: {
+      setup: `📺 Cribs: Burrow Edition — the aliens are touring your shelter.\n\nThey are horrified. Then delighted. Then they "improve" one thing. You get to watch.`,
+      choices: [
+        { label: 'Give the tour proudly', sub: 'this is my home', end: 'won', note: '"And THIS is where I keep the good rocks." Your pride is so total the aliens are charmed despite themselves. The episode is wholesome. Nobody expected wholesome.', do: { fanLane: { n: 2, why: 'the proud tour' } } },
+        { label: 'Hide the embarrassing shelf', sub: 'too late', end: 'mixed', note: 'You try to block the shelf. The camera drone goes around you. The shelf — its contents, its organization system — airs in 4K. The chat is kind. The chat is devastating.', do: { trauma: 3, fanLane: { n: 2, why: 'the shelf' } } },
+        { label: 'Let them improve it', sub: 'whatever they do', end: 'lost', note: 'They "improve" your bed into a sculpture. It is beautiful. It is unusable. You must live in it for a week. The galaxy watches you try.', do: { trauma: 2, fanLane: { n: 1, why: 'the sculpture bed' } } },
+      ],
+      win: `The good rocks get their own fan following. Your shelter is declared "aspirational." You laugh for a week.`,
+      lose: `The sculpture bed. Seven nights. The galaxy watches you sleep on art. Your back files a complaint.`,
+      mixed: `The shelf airs. It is, somehow, endearing. Strangers organize their shelves like yours now.`,
+    },
+    talent_pit: {
+      setup: `📺 The Talent Pit — talent show, judged by beings who have never seen talent.\n\nYour slot is next. Applause is measured in decibels and confusion. The act before you juggled weather.`,
+      choices: [
+        { label: 'Your real talent', sub: 'the true thing', end: 'won', note: 'You do the thing you\'re actually good at. The judges have no frame for it — so they feel it instead. Confusion, then delight, then the loudest almost-applause of the night.', do: { fanLane: { n: 3, why: 'the real talent' }, notability: 'showmanship' } },
+        { label: 'A talent you invented', sub: 'tonight only', end: 'mixed', note: 'You invent "competitive pebble admiration" on the spot. The judges can\'t tell it\'s new. The audience can, and loves the audacity.', do: { fanLane: { n: 2, why: 'pebble admiration' } } },
+        { label: 'Stage fright, televised', sub: 'freeze', end: 'lost', note: 'You freeze. Full, total, televised freeze. The judges wait. The galaxy waits. You bow and walk off to the kindest applause ever given.', do: { trauma: 6, fanLane: { n: 1, why: 'the brave freeze' } } },
+      ],
+      win: `The judges demand an encore. You give one. Pebble admiration gets its own episode.`,
+      lose: `The freeze is the clip — but the applause is real. Strangers write to say the freeze helped them.`,
+      mixed: `A brand-new talent, born on TV. The judges add it to the official list. It was never a thing before tonight.`,
+    },
+    lost_found: {
+      setup: `📺 Lost & Found — the System returns something you lost years ago.\n\nIt's yours. From before all this. It is not quite the same as you remember. Nobody says why.`,
+      choices: [
+        { label: 'Take it back', sub: 'it\'s yours', end: 'mixed', note: 'You take it. It\'s heavier than you remember, or you\'re weaker, or both. The difference — the not-quite-sameness — sits in your chest all episode.', do: { trauma: 3, prize: true, fanLane: { n: 2, why: 'reclaimed the lost thing' } } },
+        { label: 'Ask what changed', sub: 'demand answers', end: 'lost', note: '"What did you DO to it?" The System changes the subject with enormous skill. The audience notices the dodge. You don\'t get answers. You get a segment.', do: { trauma: 4, fanLane: { n: 1, why: 'asked too much' } } },
+        { label: 'Thank them on camera', sub: 'grace', end: 'won', note: 'You thank them, simply, and mean it. The alien presenting it looks... moved? Something in its posture changes. The galaxy sees it too.', do: { fanLane: { n: 2, why: 'the gracious thank-you' } } },
+      ],
+      win: `The thank-you trends. The alien sends a follow-up note. It is almost warm. Almost.`,
+      lose: `No answers. The dodge airs. You lie awake wondering about the not-quite-sameness. So does everyone.`,
+      mixed: `It's yours again, changed and unchanged. You carry it. The village understands without asking.`,
+    },
+    swear_jar: {
+      setup: `📺 The Swear Jar — you're miked for a day.\n\nEvery curse costs the village a ration. Everyone is suddenly, terribly polite. The village is watching you like a hawk watches a field mouse.`,
+      choices: [
+        { label: 'Go full silent film', sub: 'mime, grace, effort', end: 'won', note: 'You communicate entirely in mime for a full day. It is exhausting and magnificent. The village weeps laughing. Zero curses. Zero rations lost.', do: { kcal: -100, fanLane: { n: 3, why: 'the silent day' } } },
+        { label: 'Curse in the old tongue', sub: 'a loophole', end: 'mixed', note: 'You curse fluently in your grandmother\'s language. The System\'s filter doesn\'t know it. The village does. The jar stays empty and the galaxy learns new words.', do: { fanLane: { n: 2, why: 'the loophole' } } },
+        { label: 'Slip once', sub: 'one ration', end: 'lost', note: 'Hour eleven. A stubbed toe. One perfect curse, broadcast to seventeen systems. A ration, gone. The village forgives you. The jar does not.', do: { kcal: -150, trauma: 3, fanLane: { n: 1, why: 'the slip' } } },
+      ],
+      win: `The silent day enters village legend. Mimes are attempted at dinner for weeks. All of them worse than yours.`,
+      lose: `The slip airs in slow motion. The ration is mourned. Your toe is fine. Your pride is not.`,
+      mixed: `The loophole holds. The System updates its filters by morning. Your grandmother would be proud.`,
+    },
+    makeover: {
+      setup: `📺 Extreme Burrow Makeover — you wake up redecorated.\n\nThe aliens did your shelter overnight. It is beautiful. It is unusable. You must live in it for a week. The reveal is being filmed.`,
+      choices: [
+        { label: 'Live in it graciously', sub: 'a week of art', end: 'won', note: 'You live in the beautiful unusable shelter with total grace. You learn to sleep diagonally. The galaxy admires your commitment to the bit.', do: { fanLane: { n: 2, why: 'the gracious week' } } },
+        { label: 'Fix it on camera', sub: 'un-improve it', end: 'mixed', note: 'You start moving furniture back while the cameras roll. The aliens watch, wounded, as you "ruin" their art. The audience takes your side immediately.', do: { kcal: -100, fanLane: { n: 2, why: 'the un-improvement' } } },
+        { label: 'Sleep outside', sub: 'protest', end: 'lost', note: 'You sleep outside for a week in protest. It rains twice. The beautiful shelter sits empty, perfect, useless. The galaxy finds this very funny.', do: { trauma: 2, fanLane: { n: 1, why: 'the protest' } } },
+      ],
+      win: `Diagonal sleeping becomes a trend. The shelter is photographed for alien magazines. You are gracious in every one.`,
+      lose: `A week outside. The rain. The perfect empty shelter. The galaxy's favorite comedy of the season.`,
+      mixed: `The un-improvement airs. "FUNCTION," you explain, moving a chair. The chat chants it. FUNCTION.`,
+    },
+    karaoke: {
+      setup: `📺 Alien Karaoke — you must sing.\n\nThe System provides music from seventeen systems. None of it has a beat a human can find. The village provides backup vocals anyway.`,
+      choices: [
+        { label: 'Sing your heart out', sub: 'no beat, no fear', end: 'won', note: 'You sing against the beat, around the beat, in open defiance of the beat. It shouldn\'t work. The village\'s backup vocals catch you and carry you home.', do: { trauma: 2, fanLane: { n: 3, why: 'the beatless ballad' } } },
+        { label: 'Let the village carry you', sub: 'everyone sings', end: 'won', note: 'You start, the village joins, and soon it\'s a chorus — ragged, loud, joyful. The aliens record it. They don\'t understand it. They play it twice.', do: { unity: 1, fanLane: { n: 2, why: 'the village chorus' } } },
+        { label: 'Read the lyrics as poetry', sub: 'spoken word', end: 'mixed', note: 'You read the alien lyrics as dead-serious poetry. "MOON OF SEVEN HUNGRY LIGHTS." A judge weeps. Nobody knows what the song was supposed to be.', do: { fanLane: { n: 2, why: 'the poetry reading' } } },
+      ],
+      win: `The ballad is requested at every gathering after. The beat remains unfound. Nobody minds.`,
+      lose: ``,
+      mixed: `"MOON OF SEVEN HUNGRY LIGHTS" becomes a saying. The judge's tears are the clip. Poetry wins.`,
+    },
+    shelter_swap: {
+      setup: `📺 Shelter Swap — you're living in someone else's shelter for a week.\n\nThe aliens film the adjustment. Someone always cries about someone else's storage system. This week, the someone might be you.`,
+      choices: [
+        { label: 'Embrace it', sub: 'their weird, your week', end: 'won', note: 'You learn their system, sleep in their bed, cook in their pot. By day three it feels almost like yours. The cameras capture you defending their storage to the village.', do: { fanLane: { n: 2, why: 'the gracious swap' } } },
+        { label: 'Cry about their storage', sub: 'the required crying', end: 'mixed', note: 'Day four. The storage system breaks you. You cry, on camera, about jars. The other villager cries about YOUR jars. The galaxy finds this deeply moving.', do: { trauma: 3, fanLane: { n: 2, why: 'the jar tears' } } },
+        { label: 'Sneak back nightly', sub: 'just to check', end: 'lost', note: 'You sneak back to your own shelter every night. The night-vision cameras catch all of it. The audience names the segment "HOMESICK."', do: { fanLane: { n: -1, why: 'the sneaking' } } },
+      ],
+      win: `You return the shelter cleaner than you found it. The swap is declared a triumph. Jars are respected now.`,
+      lose: `"HOMESICK" airs for a week. Your own bed missed you. The galaxy adopts you.`,
+      mixed: `The jar tears unite the village. Everyone's storage is a little weird. Everyone cries a little.`,
+    },
+    small_claims: {
+      setup: `📺 Small Claims — alien judges settle your village dispute.\n\nThe case: someone borrowed your thing and "forgot." The gavel is a meteorite. Justice is swift, final, and deeply confused by property law.`,
+      choices: [
+        { label: 'Argue the case', sub: 'your thing, your rules', end: 'won', note: 'You present the case with exhibits, a timeline, and a witness (the goat). The judges confer. The meteorite falls in your favor. The thing comes home.', do: { fanLane: { n: 2, why: 'won in Small Claims' } } },
+        { label: 'Settle out of court', sub: 'split the difference', end: 'mixed', note: 'You settle in the hallway, on camera. Shared custody of the thing. The judges are disappointed — they wanted the meteorite. The village approves.', do: { unity: 1, fanLane: { n: 1, why: 'the hallway settlement' } } },
+        { label: 'Contempt of court', sub: 'laugh at the gavel', end: 'lost', note: 'You laugh at the meteorite gavel. The courtroom goes silent across seventeen systems. The judges confer for a long time. The ruling is... creative.', do: { trauma: 4, fanLane: { n: 1, why: 'contempt of the meteorite' } } },
+      ],
+      win: `The thing comes home. The goat's testimony is entered into the record. Property law remains confused.`,
+      lose: `The creative ruling involves the thing, the goat, and a week of community service. The galaxy replays your laugh.`,
+      mixed: `Shared custody. The hallway handshake is the clip — two villagers, one thing, no meteorite required.`,
+    },
+    how_to_human: {
+      setup: `📺 How to Human — the aliens attempt a human tutorial episode.\n\nYou are the demonstration model. Today's lesson: elbows. Tomorrow, allegedly: knees.`,
+      choices: [
+        { label: 'Demonstrate enthusiastically', sub: 'elbows, with joy', end: 'won', note: 'You demonstrate elbows like it\'s the most important joint in the body. Bending! Carrying! Leaning thoughtfully! The aliens take seventeen pages of notes.', do: { fanLane: { n: 3, why: 'the elbow masterclass' } } },
+        { label: 'Improvise the curriculum', sub: 'today: knees?!', end: 'mixed', note: 'You go off-script into knees. The presenters panic — knees are TOMORROW\'s lesson. The galaxy loves a rebel academic.', do: { fanLane: { n: 2, why: 'the knees incident' } } },
+        { label: 'Go limp', sub: 'uncooperative prop', end: 'lost', note: 'You go completely limp. "THE MODEL IS BROKEN," the presenter announces. You are carried off by drones. It is the funniest thing on TV that night.', do: { trauma: 2, fanLane: { n: 1, why: 'the broken model' } } },
+      ],
+      win: `The elbow masterclass is archived as the definitive text. Aliens practice elbows now. Badly.`,
+      lose: `"THE MODEL IS BROKEN" trends. You are carried everywhere in clips. Your dignity files a complaint.`,
+      mixed: `The knees incident. Tomorrow's lesson, today. The presenters recover. The galaxy does not forget.`,
+    },
+    rose_ceremony: {
+      setup: `📺 The Rose Ceremony — one rose, one choice.\n\nGive it to the most trustworthy person you know. On camera. The village does the math before the cameras do.`,
+      choices: [
+        { label: 'Give it truly', sub: 'the real most-trustworthy', end: 'won', note: 'You give it to the person who deserves it, and say why, plainly. They cry. The village nods — the math checked out. The galaxy awws in seventeen languages.', do: { unity: 1, fanLane: { n: 2, why: 'the true rose' } } },
+        { label: 'Give it strategically', sub: 'politics, televised', end: 'mixed', note: 'You give it to the person it HELPS to give it to. The village sees exactly what you did. The galaxy sees romance. Both are watching.', do: { fracture: 1, fanLane: { n: 1, why: 'the strategic rose' } } },
+        { label: 'Eat the rose', sub: 'unhinged', end: 'won', note: 'You eat the rose. On camera. Deliberately. "Trust is earned, not given," you say, chewing. The galaxy has never loved anyone more.', do: { trauma: 2, fanLane: { n: 3, why: 'ate the rose' } } },
+      ],
+      win: `The true rose is pressed in the journal. The village's math was right. Some things are simple.`,
+      lose: ``,
+      mixed: `The strategic rose works and everyone knows it worked. Politics, televised. The village keeps score.`,
+    },
+    the_leak: {
+      setup: `📺 The Leak — the System "accidentally" broadcasts a page from your private journal.\n\nIt's your handwriting. It's being read aloud. The village pretends it didn't hear. The village heard.`,
+      choices: [
+        { label: 'Claim it proudly', sub: 'yes, I wrote that', end: 'mixed', note: '"Yes. I wrote that. Every word." The village stops pretending it didn\'t hear. Someone squeezes your shoulder. The galaxy leans in.', do: { trauma: 4, fanLane: { n: 3, why: 'claimed the leaked page' }, notability: 'showmanship' } },
+        { label: 'Deny everything', sub: 'not my handwriting', end: 'lost', note: '"That\'s not mine." It is obviously yours. The handwriting analysis airs. The denial is the clip. The page is the truth.', do: { trauma: 5, fanLane: { n: 1, why: 'denied the page' } } },
+        { label: 'Read along', sub: 'duet with the System', end: 'won', note: 'You read along with the broadcast, in harmony with the System\'s voice. A duet. It shouldn\'t work. The galaxy is enchanted.', do: { fanLane: { n: 2, why: 'the journal duet' } } },
+      ],
+      win: `The duet is replayed for weeks. Your journal becomes the village's favorite literature. You lock the next one.`,
+      lose: `The denial airs next to the handwriting analysis. There is no surviving this. The page survives everything.`,
+      mixed: `Claimed, proudly. The shame and the fans arrive together, as they always do with the truth.`,
+    },
+    museum_of_you: {
+      setup: `📺 Museum of You — the aliens curated your life into an exhibit.\n\nYou must narrate the audio tour. Some rooms are closed for renovation. The audience wants the closed rooms.`,
+      choices: [
+        { label: 'Narrate honestly', sub: 'the open rooms, true', end: 'mixed', note: 'You narrate the open rooms without flinching — the good, the wreckage, all of it. The audio tour becomes the most-borrowed recording in the galaxy.', do: { trauma: 4, fanLane: { n: 3, why: 'the honest tour' } } },
+        { label: 'Skip the closed rooms', sub: 'renovation, sorry', end: 'lost', note: 'You glide past every closed door. "Renovation." The audience presses against the glass. The closed rooms become the whole story.', do: { fanLane: { n: 1, why: 'skipped the closed rooms' } } },
+        { label: 'Open one closed room', sub: 'the bravest TV', end: 'won', note: 'You open ONE closed door, on camera, and narrate what\'s inside. The galaxy goes completely silent. Then the messages start. Thousands of them.', do: { trauma: 8, fanLane: { n: 4, why: 'opened the closed room' }, notability: 'showmanship' } },
+      ],
+      win: `The opened room changes the show. Strangers write to say it changed them. You don't regret it. Most days.`,
+      lose: `The closed rooms trend without you. Speculation fills every silence you left. It is worse than the truth.`,
+      mixed: `The honest tour. No closed doors opened, none needed. The wreckage, narrated kindly, becomes something like art.`,
+    },
+    infomercial: {
+      setup: `📺 The Infomercial — sixty seconds to sell a rock.\n\nThe product is a rock. The rock is $400. The galaxy is watching. Go.`,
+      choices: [
+        { label: 'Sell the dream', sub: 'this rock changes lives', end: 'won', note: 'You sell the rock like it\'s destiny. "This rock has SEEN things." Orders flood in from four systems. The rock sells out. It\'s a rock.', do: { fanLane: { n: 3, why: 'sold the $400 rock' } } },
+        { label: 'Sell it honestly', sub: "it's a rock", end: 'mixed', note: '"It\'s a rock. It\'s $400. I don\'t know why either." The honesty breaks the format. The galaxy respects it enormously and buys twelve.', do: { fanLane: { n: 2, why: 'the honest pitch' } } },
+        { label: 'Buy it yourself', sub: 'take the rock', end: 'mixed', note: 'You buy the rock yourself, on air, for $400. "I\'ve always wanted this specific rock." It\'s your rock now. The galaxy is delighted by your commitment.', do: { prize: true, trauma: 2, fanLane: { n: 1, why: 'bought the rock' } } },
+      ],
+      win: `The rock sells out. A second rock is commissioned. You get a percentage. The percentage is also a rock.`,
+      lose: ``,
+      mixed: `Twelve rocks sold on honesty. Your rock sits on your shelf, $400 of pure commitment.`,
+    },
+  };
+
+  // SHOW GENERIC BEAT (audit-shows 2026-10-09): fallback if a show id has no
+  // authored beat — still played, never an announcement. The pool is data;
+  // the beat is the contract.
+  G._showGenericBeat = function(show) {
+    return {
+      setup: `📺 ${show.name} — you're on.\n\n${show.desc}\n\nThe cameras are rolling. The galaxy is watching. Be interesting.`,
+      choices: [
+        { label: 'Give it everything', sub: 'full commitment', end: 'won', note: 'You throw yourself into it completely. The audience can tell the difference between effort and coasting, and this is effort.', do: { kcal: -100, trauma: 2, fanLane: { n: 2, why: 'show: ' + show.name } } },
+        { label: 'Play it cool', sub: 'understated', end: 'mixed', note: 'You underplay everything. Half the audience finds it magnetic. The other half finds it boring. Both are loud about it.', do: { fanLane: { n: 1, why: 'show: ' + show.name } } },
+        { label: 'Freeze up', sub: 'televised nerves', end: 'lost', note: 'The cameras get to you. You freeze, thaw, freeze again. The galaxy finds it relatable, which is worse than finding it good.', do: { trauma: 4, fanLane: { n: 1, why: 'show: ' + show.name } } },
+      ],
+      win: `You were interesting. The chat says so, which is the only review that matters.`,
+      lose: `The freeze airs. Relatable, they say. You'd rather be good.`,
+      mixed: `Magnetic to half, boring to half. The argument IS the episode.`,
+    };
   };
 
   // === RESOLUTION ===
@@ -2518,6 +3154,12 @@
       // the paper tiger gets teeth here, at the one choke point every
       // phase's damage flows through. Moot demand already scales via risk.
       if (ac.variant === 'hardened') amt = Math.ceil(amt * 1.25);
+      // SHOWS (audit-shows 2026-10-09): TV doesn't kill. Shows are
+      // lower-stakes than contests by canon (docs/CONTESTS.md) — a Mouth
+      // Race burn leaves you at 1 HP and ends the bit, never a death line.
+      if ((ac.kind === 'show' || ac.kind === 'summons') && amt > 0) {
+        amt = Math.min(amt, Math.max(0, (s.health || 0) - 1));
+      }
       // VETERAN (contest knowledge level 3): you read the hits coming.
       try {
         const ck = this.contestKnowledge(ac.contestId);
@@ -2593,6 +3235,23 @@
       this.addNotability('player', d.notability);
       log.push(`noted: ${d.notability}`);
     }
+    // FAN CLUBS PER LANE (audit-shows 2026-10-09): do.fanLane moves a
+    // specific audience club — {lane, n, why} or a bare number (showbiz).
+    if (d.fanLane !== undefined && d.fanLane !== null) {
+      try {
+        const fl = (typeof d.fanLane === 'object') ? d.fanLane : { n: d.fanLane };
+        if ((fl.n || 0) && typeof this.apAdjustFavor === 'function') {
+          this.apAdjustFavor(fl.n, fl.why || ('show: ' + (ac.showName || ac.showId || 'TV')), fl.lane || 'showbiz');
+        }
+      } catch (e) {}
+    }
+    // WATCHER HECKLE (audit-shows 2026-10-09): heckling a villager's show
+    // is noticed — it dings their deterministic resolution (read in
+    // _showVillagerEnd) and the village remembers the cruelty.
+    if (d.heckle) {
+      ac.heckle = true;
+      log.push('heckled — the cameras noticed');
+    }
     // WATCHER AGENCY (Steve 2026-10-06): watcher choices move performance.
     // Cheering is real support — capped, and the cameras notice.
     if (d.cheer) {
@@ -2634,10 +3293,16 @@
 
     // Advance
     const next = choice.next;
-    if (next === 'WIN') return this._contestEnd(ac, 'won', d.prize);
-    if (next === 'LOSE') return this._contestEnd(ac, 'lost', false);
-    if (next === 'DIE') return this._contestDie(ac, choice.label);
-    if (next === 'REFUSE') return this._contestRefuse(ac);
+    // SHOWS (audit-shows 2026-10-09): show/summons modals ride the same
+    // phase engine but land in _showEnd (fans/shame), never the contest
+    // prize/death paths. TV doesn't kill: DIE becomes a bad night.
+    const isShowKind = ac.kind === 'show' || ac.kind === 'summons';
+    if (next === 'WIN') return isShowKind ? this._showEnd(ac, 'won', d.prize) : this._contestEnd(ac, 'won', d.prize);
+    if (next === 'LOSE') return isShowKind ? this._showEnd(ac, 'lost', false) : this._contestEnd(ac, 'lost', false);
+    if (next === 'MIXED') return this._showEnd(ac, 'mixed', d.prize);
+    if (next === 'SHOW_VILLAGER') return this._showVillagerEnd(ac);
+    if (next === 'DIE') return isShowKind ? this._showEnd(ac, 'lost', false) : this._contestDie(ac, choice.label);
+    if (next === 'REFUSE') return isShowKind ? this._showEnd(ac, 'refused', false) : this._contestRefuse(ac);
     if (next === 'VERDICT') return this._contestVerdict(ac);
     // MOOT JUDGMENT (Steve 2026-10-08): the argument is scored — standing
     // (social capital + rhetorical choices) vs the System's demand.
@@ -2778,6 +3443,17 @@
     return this._contestEnd(ac, 'lost', false);
   };
 
+  // FAN LANE BY CONTEST (audit-shows 2026-10-09): televised wins move the
+  // club that watched them — Blood→fight, Endurance→survival, Moot→social,
+  // everything else (Weird/Puzzle/Detective/Forage/Chance)→showbiz.
+  G._cxFanLane = function(contest) {
+    const cat = (contest && contest.cat) || '';
+    if (cat === 'blood') return 'fight';
+    if (cat === 'endurance') return 'survival';
+    if (cat === 'moot') return 'social';
+    return 'showbiz';
+  };
+
   G._contestEnd = function(ac, outcome, prize) {
     const contest = this._cxScaledContest(ac);
     const s = this.state.scholar;
@@ -2809,9 +3485,10 @@
         this.addNotability(ac.participant, 'contestWin');
         // GOSSIP (Steve 2026-10-08): the village will talk about this win.
         this._cxGossip('won', ac.participant, contest.name);
-        // ALIEN PLAYERS (Steve 2026-10-08): a televised win moves the fan
-        // club — your people winning entertains the crowd too.
-        try { if (this.apAdjustFavor) this.apAdjustFavor(2, pname + ' won ' + contest.name + ' on camera'); } catch (e) {}
+        // ALIEN PLAYERS (Steve 2026-10-08; lanes audit-shows 2026-10-09): a
+        // televised win moves the fan club that watched it (blood→fight,
+        // endurance→survival, moot→social, else showbiz).
+        try { if (this.apAdjustFavor) this.apAdjustFavor(2, pname + ' won ' + contest.name + ' on camera', this._cxFanLane(contest)); } catch (e) {}
         // Villager gets the prize (not the player) — REAL, not a line: the
         // winner brings home alien rations the whole village feels.
         // (Steve 2026-10-08: "the System's favor (and a story)" was a
@@ -2844,10 +3521,11 @@
         this.sysSay(`📺 ${contest.name} — YOU WIN. The crowd is a weather system.`);
         this.addNotability('player', 'contestWin');
         try { this.leadShift('showmanship', 2); } catch (e) {}
-        // ALIEN PLAYERS (Steve 2026-10-08): winning on camera moves the fan
-        // club — the crowd watched, and the crowd has opinions. A televised
-        // win can also shake loose a fan care package (rate-limited inside).
-        try { if (this.apAdjustFavor) this.apAdjustFavor(4, 'won ' + contest.name + ' on camera'); } catch (e) {}
+        // ALIEN PLAYERS (Steve 2026-10-08; lanes audit-shows 2026-10-09):
+        // winning on camera moves the fan club that watched it — the crowd
+        // watched, and the crowd has opinions. A televised win can also
+        // shake loose a fan care package (rate-limited inside).
+        try { if (this.apAdjustFavor) this.apAdjustFavor(4, 'won ' + contest.name + ' on camera', this._cxFanLane(contest)); } catch (e) {}
         try { if (this.apCarePackage) this.apCarePackage(); } catch (e) {}
         if (prize) {
           try {

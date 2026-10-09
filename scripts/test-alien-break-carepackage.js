@@ -47,7 +47,7 @@ async function main() {
   for (const seed of [SEED, SEED + 1, SEED + 2]) {
     const s = eligibleGame(seed);
     const ap = Game.apState();
-    ap.favor = 75; // tier-3 fan love
+    Game.apAdjustFavor(75, 'test pin', 'fight'); // tier-3 fan love (per-lane clubs, audit-shows 2026-10-09)
     ap.lastPackageDay = -999;
     s.day = 50;
     const invBefore = (s.inventory || []).length;
@@ -72,7 +72,7 @@ async function main() {
   {
     const s = eligibleGame(SEED + 10);
     const ap = Game.apState();
-    ap.favor = 80; ap.lastPackageDay = -999; s.day = 60;
+    ap.fanClubs = { fight: 0, survival: 0, social: 0, showbiz: 80 }; Game.apSyncFavor(); ap.lastPackageDay = -999; s.day = 60; // per-lane (audit-shows 2026-10-09)
     let n = 0;
     for (let d = 60; d < 80; d++) {
       s.day = d;

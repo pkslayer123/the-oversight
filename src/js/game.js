@@ -21379,7 +21379,12 @@
         const event = this.contestTick();
         if (event && event.id) {
           // It's a contest (has id) vs show (just desc)
-          if (this.contestPool().find(c => c.id === event.id)) {
+          if (event.id === '__summons') {
+            // RATINGS SUMMONS (audit-shows 2026-10-09): the System summons
+            // the player for a promo stunt when the numbers go soft. Played
+            // via fireRatingsSummons (contests.js), inside the 2/week budget.
+            this.fireRatingsSummons();
+          } else if (this.contestPool().find(c => c.id === event.id)) {
             this.fireContest(event);
           } else {
             // TV show pull (Steve 2026-10-06): fireShow (contests.js) announces

@@ -90,7 +90,7 @@ async function main() {
     assert(Game.apFavor() === 0, 'apFavor() reads 0 initially');
     Game.apAdjustFavor(25, 'test');
     assert(Game.apFavor() === 25, 'apFavor() reflects adjustments');
-    Game.apState().favor = 0;
+    Game.apState().fanClubs = { fight: 0, survival: 0, social: 0, showbiz: 0 }; Game.apSyncFavor(); // per-lane reset (audit-shows 2026-10-09)
   }
 
   section('4. feed/gossip knowledge gates hold');
