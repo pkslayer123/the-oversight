@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Wave-2 escalation verification (2026-10-08).
-// Proof that the wave-2 roster (13 monsters) sits at the escalation bar
+// Wave-2 escalation verification (2026-10-08; roster updated 2026-10-09:
+// 13 entertainment predators + giant_mosquito + alien_tick disease vectors).
+// Proof that the wave-2 roster (15 monsters) sits at the escalation bar
 // ("wave 2 on its own terms", Steve 2026-10-06): each monster is scored on the
 // same 7 escalation dimensions as the 2026-10-07 audit (band, telegraph,
 // phases, audio, codex, pattern, defense) with the same verdict rule:
@@ -71,18 +72,19 @@ for (const m of wave1) {
   (w1Sigs[p.type] = w1Sigs[p.type] || new Set()).add(sig);
 }
 
-const EXPECTED_13 = ['voice_mimic_radio', 'mirror_stag', 'review_drone', 'bright_idea',
+const EXPECTED_15 = ['voice_mimic_radio', 'mirror_stag', 'review_drone', 'bright_idea',
   'memory_projector', 'warranty_caller', 'understudy', 'landlord', 'heckler',
-  'paparazzo', 'union_rep', 'moderator', 'statickite'];
+  'paparazzo', 'union_rep', 'moderator', 'statickite',
+  'giant_mosquito', 'alien_tick'];
 
 let pass = 0, fail = 0;
 const failures = [];
 const ok = (cond, label) => { if (cond) { pass++; } else { fail++; failures.push(label); } };
 
 // --- roster shape ---------------------------------------------------------------
-ok(wave2.length === 13, `exactly 13 wave-2 monsters at HEAD (got ${wave2.length})`);
-const missingIds = EXPECTED_13.filter(id => !wave2.find(m => m.id === id));
-ok(missingIds.length === 0, `all 13 expected ids present (missing: ${missingIds.join(',')})`);
+ok(wave2.length === 15, `exactly 15 wave-2 monsters at HEAD (got ${wave2.length})`);
+const missingIds = EXPECTED_15.filter(id => !wave2.find(m => m.id === id));
+ok(missingIds.length === 0, `all 15 expected ids present (missing: ${missingIds.join(',')})`);
 
 // --- per-monster escalation bar -------------------------------------------------
 const N = 20000;
@@ -92,12 +94,15 @@ for (const m of wave2) {
   const enc = m.encounter || {};
   const warns = [], fails = [];
 
-  // 1. band: raw ranges inside HP 30-170 / dmg 12-34; seeded E[.] inside too
+  // 1. band: raw ranges inside HP 30-170 / dmg 8-48 (bands widened 2026-10-09:
+  // cedacea1 hardening pushed predator damage to 48; the tick vector sits at
+  // 8-14 by design — its threat is the disease, not the damage); seeded E[.]
+  // inside too
   let hpSum = 0, dmgSum = 0;
   for (let i = 0; i < N; i++) { hpSum += rollInt(m.hp[0], m.hp[1]); dmgSum += rollInt(atk.damage[0], atk.damage[1]); }
   const eHp = hpSum / N, eDmg = dmgSum / N;
-  if (!(m.hp[0] >= 30 && m.hp[1] <= 170 && atk.damage[0] >= 12 && atk.damage[1] <= 34 &&
-        eHp >= 30 && eHp <= 170 && eDmg >= 12 && eDmg <= 34))
+  if (!(m.hp[0] >= 30 && m.hp[1] <= 170 && atk.damage[0] >= 8 && atk.damage[1] <= 48 &&
+        eHp >= 30 && eHp <= 170 && eDmg >= 8 && eDmg <= 48))
     fails.push(`out of band: hp [${m.hp}] dmg [${atk.damage}] E[hp]=${eHp.toFixed(1)} E[dmg]=${eDmg.toFixed(1)} (seed ${SEED}, n=${N})`);
 
   // 2. telegraph: bespoke, unique, no template leaks, has unknown-descriptor
@@ -129,12 +134,13 @@ for (const m of wave2) {
   if (!enc.knownCue) fails.push('missing knownCue');
   if (!enc.knownTactics) warns.push('missing knownTactics (no learned-pattern coaching)');
 
-  // 6. pattern: grid-visual distinctness vs wave-1 same-type (rush exempt:
-  //    rush never declares, so the escalation check is a documented text tell)
+  // 6. pattern: grid-visual distinctness vs wave-1 same-type (rush and single
+  //    exempt: rush never declares, single is the tick's bespoke latch — the
+  //    escalation check is a documented text tell for both)
   const pKeys = Object.keys(pat).filter(k => k !== 'type');
   const bare = pKeys.length === 0;
-  if (pat.type === 'rush') {
-    if (bare && !(enc.noticeText || enc.proximityText || enc.knownCue)) fails.push('bare rush with no documented non-grid tell');
+  if (pat.type === 'rush' || pat.type === 'single') {
+    if (bare && !(enc.noticeText || enc.proximityText || enc.knownCue)) fails.push(`bare ${pat.type} with no documented non-grid tell`);
   } else if (bare) {
     fails.push(`bare {"type":"${pat.type}"} — no params, no grid-visual distinctness`);
   } else if (!(pat.windup || pat.range || pat.radius || pat.length ||
@@ -162,16 +168,16 @@ if (w2aMatch) {
   const stale = RETIRED.filter(id => new RegExp(`\\b${id}\\b`).test(listed));
   ok(stale.length === 0, `W2A_IDS lists no retired id (found: ${stale.join(',')})`);
 }
-// 2. docs/MONSTER-WAVES.md lists the real 13-monster roster, not retired names
+// 2. docs/MONSTER-WAVES.md lists the real 15-monster roster, not retired names
 const doc = fs.readFileSync(path.join(ROOT, 'docs/MONSTER-WAVES.md'), 'utf8');
 const staleNames = ['Influencer', 'Motivational Speaker', 'Customer Service', 'Terms & Conditions', 'Middle Manager']
   .filter(n => new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(doc));
 ok(staleNames.length === 0, `MONSTER-WAVES.md has no retired names (found: ${staleNames.join(',')})`);
-const missingNames = EXPECTED_13.filter(id => {
+const missingNames = EXPECTED_15.filter(id => {
   const m = wave2.find(x => x.id === id);
   return m && !new RegExp(m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(doc);
 });
-ok(missingNames.length === 0, `MONSTER-WAVES.md names all 13 (missing: ${missingNames.join(',')})`);
+ok(missingNames.length === 0, `MONSTER-WAVES.md names all 15 (missing: ${missingNames.join(',')})`);
 // 3. scripts/test-wave2.js references no retired id
 const t2 = fs.readFileSync(path.join(ROOT, 'scripts/test-wave2.js'), 'utf8');
 const staleInTest = RETIRED.filter(id => new RegExp(`['"]${id}['"]`).test(t2));

@@ -211,6 +211,20 @@
       "fleeAt": 0,
       "preTurnHooks": [],
       "preferredRange": 4
+    },
+    "giant_mosquito": {
+      "aggroRange": 6,
+      "archetype": "diver",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 2
+    },
+    "alien_tick": {
+      "aggroRange": 3,
+      "archetype": "ambusher",
+      "fleeAt": 0,
+      "preTurnHooks": [],
+      "preferredRange": 1
     }
   }
 }

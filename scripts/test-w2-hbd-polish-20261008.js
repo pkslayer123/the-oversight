@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Wave-2 "Highbeam Deer level" polish audit + proof (2026-10-08).
-// For each of the 13 wave-2 monsters, audits:
+// For each of the 15 wave-2 monsters, audits:
 //   1. Distinct telegraph text (data-level: unique, non-generic)
 //   2. Grid telegraph: declare sets m.telegraph with real cells / lock-on
 //      (rush = telegraph-less by design) — captured live during the fight
@@ -63,7 +63,8 @@ Game.genDetail = function () {
 };
 const W2 = ['voice_mimic_radio', 'mirror_stag', 'review_drone', 'bright_idea',
   'memory_projector', 'warranty_caller', 'understudy', 'landlord', 'heckler',
-  'paparazzo', 'union_rep', 'moderator', 'statickite'];
+  'paparazzo', 'union_rep', 'moderator', 'statickite',
+  'giant_mosquito', 'alien_tick'];
 
 let pass = 0, fail = 0;
 const ok = (cond, label) => { if (cond) { pass++; } else { fail++; console.log('FAIL:', label); } };
@@ -87,9 +88,18 @@ function fightAudit(id, rounds) {
   // HARNESS GEOMETRY: freeSpotNear can fall through to the player's tile in
   // this headless map node (all-nearby-blocked) — a spawn artifact that would
   // zero every aim-dependent telegraph. Separate them for honest geometry.
+  // (bright_idea parks at d=2, not d=3: its burst reach is 2 and it doesn't
+  // chase — at d=3 the disengage rule correctly ends the fight before it can
+  // declare, which is the counterplay working, not a missing telegraph.
+  // alien_tick parks adjacent (d=1): it is a questing ambusher that never
+  // closes beyond d=2 — at d=3 it quests forever and the latch never fires.)
   {
     const mm = Game.tbfight && Game.tbfight.fighters.find(f => f.kind === 'monster');
-    if (mm) { mm.mx = 1; mm.my = 4; }
+    if (mm) {
+      if (id === 'bright_idea') { mm.mx = 2; mm.my = 4; }
+      else if (id === 'alien_tick') { mm.mx = 3; mm.my = 4; }
+      else { mm.mx = 1; mm.my = 4; }
+    }
   }
   const rec = { phases: [], telegraphs: [], turns: 0 };
   let m = null, guard = 0;
@@ -139,7 +149,7 @@ function fightAudit(id, rounds) {
     seen.set(t, id);
   }
 
-  // ===== (5-data) knownCue exists for all 13 =====
+  // ===== (5-data) knownCue exists for all 15 =====
   for (const id of W2) {
     const kc = (defs[id].encounter || {}).knownCue;
     ok(!!(kc && kc.length > 10), `${id}: knownCue present in data`);
@@ -168,10 +178,11 @@ function fightAudit(id, rounds) {
     ok(!!m && rec.turns > 0, `${id}: fight ran (monster took ${rec.turns} turns)`);
     if (!m || !rec.turns) { report.push(`${id}: NO MONSTER TURNS`); continue; }
 
-    // (2) grid telegraph
-    if (pat === 'rush') {
+    // (2) grid telegraph (rush and the tick's bespoke single-pattern exempt:
+    // neither declares on the grid by design — the tell is documented text)
+    if (pat === 'rush' || pat === 'single') {
       const anyTel = rec.telegraphs.length > 0;
-      ok(!anyTel, `${id}: rush declares NO grid telegraph (silence by design${anyTel ? ' — VIOLATED' : ''})`);
+      ok(!anyTel, `${id}: ${pat} declares NO grid telegraph (silence by design${anyTel ? ' — VIOLATED' : ''})`);
     } else {
       const cellTel = rec.telegraphs.filter(t => t.cells > 0);
       const lockTel = rec.telegraphs.filter(t => t.kind === 'direct' && t.target);

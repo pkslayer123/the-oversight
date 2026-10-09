@@ -40,9 +40,9 @@ const APPJS_FILE = opt('--appjs', path.join(ROOT, 'src', 'js', 'app.js'));
 const SEED = parseInt(opt('--seed', '20261007'), 10);
 const AS_JSON = args.includes('--json');
 
-// Wave-2 band per docs/MONSTER-WAVES.md ("13 monsters, tougher across the
-// board (HP 30-170, damage 12-34 vs wave 1's 12-70 / 6-30)").
-const BAND = { hpLo: 30, hpHi: 170, dmgLo: 12, dmgHi: 34 };
+// Wave-2 band per docs/MONSTER-WAVES.md (HP 30-170, damage 8-48 as of the
+// 2026-10-09 hardening + vector additions; was 12-34).
+const BAND = { hpLo: 30, hpHi: 170, dmgLo: 8, dmgHi: 48 };
 
 // --- seeded RNG (mulberry32) -------------------------------------------------
 function mulberry32(seed) {
@@ -107,6 +107,8 @@ const THESIS = {
   union_rep: 'It does not fight, it organizes — the picket line is the damage.',
   moderator: 'Wave-2 apex — content enforcement: muting and shadowban before removal.',
   statickite: 'Marked for broadcast — the scan zone is the telegraph; the dip is the melee window.',
+  giant_mosquito: 'The shock is that it is just a mosquito — a hit-and-run drinker carrying alien viruses (Eurika / East Nile).',
+  alien_tick: 'Patience is its whole plan — it quests, latches, and feeds; the latch can carry Lemons disease.',
 };
 
 // --- per-monster audit ----------------------------------------------------------
@@ -199,12 +201,14 @@ for (const m of wave2) {
   const styleFields = ['chargeStyle', 'burstStyle', 'sweep', 'chargeDesc', 'burstDesc'].filter(k => pat[k]);
   const patIssues = [];
   let patStatus = 'PASS', patDetail = '';
-  if (pat.type === 'rush') {
+  if (pat.type === 'rush' || pat.type === 'single') {
+    // rush never declares and the tick's bespoke single-pattern latch never
+    // declares (no grid telegraph by engine design) — the tell is textual.
     const tell = enc.noticeText || enc.proximityText || enc.knownCue;
     if (bare && tell) {
-      patDetail = `rush never declares (no grid telegraph by engine design) — tell is textual: "${String(tell).slice(0, 80)}..."`;
+      patDetail = `${pat.type} never declares (no grid telegraph by engine design) — tell is textual: "${String(tell).slice(0, 80)}..."`;
     } else if (bare) {
-      patIssues.push('bare rush with no documented non-grid tell');
+      patIssues.push(`bare ${pat.type} with no documented non-grid tell`);
     }
   } else {
     if (bare && w1HasBare) patIssues.push(`bare {"type":"${pat.type}"} — identical data signature to wave-1 (${pat.type} w/o params)`);

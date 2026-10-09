@@ -24,8 +24,11 @@ twist," more purpose-built entertainment predator. These are designed around
 what the System learned about humans in week 1: we run toward crying, we
 stare at our reflections, we fear performance reviews.
 
-13 monsters, tougher across the board (HP 30-170, damage 12-34 vs wave 1's
-12-70 / 6-30). Players have abilities by now; the game should feel it.
+15 monsters (13 entertainment predators + 2 disease vectors), tougher across
+the board (HP 30-170, damage 8-48 post-2026-10-09 hardening, vs wave 1's
+10-170 / 4-32 — the averages tell the story: wave-2 mean HP ~89 vs ~54,
+mean damage ~25 vs ~16). Players have abilities by now; the game should
+feel it.
 
 | Monster | Concept | Pattern | Activity |
 |---|---|---|---|
@@ -42,6 +45,8 @@ stare at our reflections, we fear performance reviews.
 | The Union Rep 📋 | It does not fight, it organizes — the picket line is the damage | direct (windup 2) | diurnal |
 | The Moderator 🔨 | Wave-2 apex: content enforcement — muting and shadowban before removal | direct (range 4) | nocturnal |
 | The Static Kite 🪁 | System surveillance kite, marks 3x3 scan-zones then dips to transmit (the dip is the melee window) | burst (r1, windup 2) | both |
+| mosquito | Giant freakish mosquito — plainly called "mosquito" (the shock is that it's just a mosquito). Alien-disease vector: bite can land Eurika virus or East Nile virus (see docs/DISEASES.md) | rush | crepuscular |
+| tick | Giant freakish tick — plainly called "tick". Latches on; vector for Lemons disease (alien pool, see docs/DISEASES.md) | single | both |
 
 ## Wave 3: Reserved (integration 80+)
 
@@ -55,7 +60,7 @@ System has stopped pretending these are animals at all.
 - `wave` field on each monster in `src/data/monsters.json` (schema allows it).
 - `Game.monsterWavePool()` in game.js: filters by `state.systemArrived` and
   `scholar.integration`.
-- `checkEncounter()` uses the pool. The wanderer is hardcoded wave-1.
+- `checkEncounter()` uses the pool. The wanderer casts via `castMonster()`, which is wave-gated on `unlockedWave()` (day 8 + 4 wave-1 kills for wave 2) — never over-leveled, never stuck on wave 1.
 - Wave-2 announcement woven into `checkSystemArrival()` dialogue.
-- Tests: `scripts/test-wave2.js` (148 checks: gating, integrity, combat smoke).
-- Content gate: `node scripts/validate-data.js` (monster count now 28).
+- Tests: `scripts/test-wave2.js` (gating, integrity, combat smoke), `scripts/test-wave2-harden-20261009.js` (post-hardening ranges).
+- Content gate: `node scripts/validate-data.js` (monster count now 30).

@@ -11,7 +11,7 @@
  *
  * Set A — wave2-escalation-patches-20261007/ (10 .diff against
  *           src/data/monsters.json): apply to a scratch copy, assert valid
- *           JSON + all 13 wave-2 monsters present, re-run the escalation
+ *           JSON + all 15 wave-2 monsters present, re-run the escalation
  *           audit (seeded) — every wave-2 monster must PASS.
  * Set B — dialogue-rethink-20261007/ (6 .diff against src/js): git apply
  *           --check -p1 against the fresh extract, apply in numeric order
@@ -90,8 +90,8 @@ const setAResults = { go: false, per: [] };
     valid = true;
   } catch (e) { console.log('    JSON parse failed: ' + e.message); }
   ok(valid, 'A: patched monsters.json is valid JSON');
-  ok(wave2.length === 13, `A: all 13 wave-2 monsters present (got ${wave2.length})`);
-  if (valid && wave2.length === 13) {
+  ok(wave2.length === 15, `A: all 15 wave-2 monsters present (got ${wave2.length})`);
+  if (valid && wave2.length === 15) {
     const auditOut = sh('node', ['scripts/audit-wave2-escalation-20261007.js',
       '--file', path.join(scratch, 'src', 'data', 'monsters.json'),
       '--appjs', path.join(scratch, 'src', 'js', 'app.js'),
@@ -104,8 +104,8 @@ const setAResults = { go: false, per: [] };
       ok(pass, `A: wave-2 audit PASS — ${r.id} (${r.name})`);
       allPass = allPass && pass;
     }
-    ok(audit.results.length === 13, `A: audit covered 13 wave-2 monsters (got ${audit.results.length})`);
-    setAResults.go = allPass && audit.results.length === 13;
+    ok(audit.results.length === 15, `A: audit covered 15 wave-2 monsters (got ${audit.results.length})`);
+    setAResults.go = allPass && audit.results.length === 15;
   }
 }
 console.log(setAResults.go ? 'SET A: GO' : 'SET A: NO-GO');

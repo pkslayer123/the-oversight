@@ -120,7 +120,7 @@ const SCENARIOS = [
   ok('monsterBehaviors.json loaded', !!mb && !!mb.behaviors);
   const monsterIds = Game.data.monsters.map(m => m.id);
   const missing = monsterIds.filter(id => !mb.behaviors[id]);
-  ok('all 28 monsters have behavior entries', missing.length === 0, missing.join(','));
+  ok('all 30 monsters have behavior entries', missing.length === 0, missing.join(','));
   const migrated = ['gallowdeer', 'speedbump_turtle', 'hummice', 'review_drone'];
   for (const id of migrated) {
     const hooks = (mb.behaviors[id] || {}).preTurnHooks || [];
