@@ -97,7 +97,9 @@
 //   - broker_knowledge_presence: identifying a plant while away queues it in scholar.awayLearned — no home witness line, no home rumor, and the absent player is excluded from spreadPlantKnowledge; returnToVillage fires the broker's teaching beat and seeds the rumor only then (code: identifyPlant/spreadPlantKnowledge/returnToVillage, Steve 2026-10-07)
 //   - phoenix_burns_villager: phoenix_clause no longer respawns at Haven once per run -- lethal damage burns a RANDOM living villager (ash-death, no corpse) and the bearer emerges at the victim's location with 1 HP; no living villagers / no village = death sticks, honestly (code: phoenixPlayerTrigger, Steve 2026-10-09)
 //   - phoenix_no_burn_phoenix: bearers holding an UNSPENT phoenix_clause are never valid victims (pool + volunteer both exclude them); a spent bearer (clause revoked on trigger) is eligible again; only bearers left = death sticks, honestly (code: phoenixLivingVillagers/phoenixVolunteer/phoenixVillagerTrigger, Steve 2026-10-09)
-//   - phoenix_link_beat: every trigger narrates before resolution -- who burns, who the fire chose, what happens next; gossip carries it distorted to non-witnesses (code: phoenixLinkBeat)
+//   - phoenix_link_beat: every trigger narrates before resolution -- who burns, who the fire chose, what happens next (code: phoenixLinkBeat)
+//   - phoenix_broadcast: the seen-crime rule's EXCEPTION (Steve 2026-10-09) -- the show airs every burn, so the whole village learns ACCURATELY (no distortion, replaces phoenix_burn gossip); roster-wide relationship-scaled trust hits, full fear for present witnesses / half for broadcast viewers (code: phoenixBroadcast)
+//   - seen_crime_rule: crimes aren't crimes unless people know or suspect them (Steve 2026-10-09) -- observe() witness-gates ALL punishment: no position data → party members are the witnesses (target always counts), never the whole village; gossip is seeded from actual witnesses only; gossip moves REP only, never trust; applyRep's trust ripple is witness-gated (code: observe/applyRep/spreadGossip)
 //   - phoenix_volunteer: a villager with standing >= 40 may offer themselves, replacing the random pick -- willing sacrifice, honor not horror, no trust hit (code: phoenixVolunteer)
 //   - phoenix_protest: a chosen villager with standing <= 5 or fear >= 60 fights the pull -- a PLAYED 3-beat struggle (400 kcal + 1 trauma per beat, no RNG); breaking it kills the bearer true death (code: phoenixStartStruggle)
 //   - phoenix_bidirectional: a villager holding the clause (v.npcAbilities) triggers on death -- if you are the random pick you choose: give yourself (succession + life-debt) or pull away (struggle; win = bearer true death, lose = you burn + bearer trust collapse) (code: phoenixVillagerTrigger)
@@ -11708,18 +11710,34 @@
       const roster = ((this.state.village || {}).roster || []).filter(id => id !== this.villagerId);
       // witnesses see it directly; the 9x9 grid means range 3 is "there",
       // beyond that it's hearsay.
-      const wit = this.witnesses(3);
-      const hasPositions = wit !== null;
+      // SEEN-CRIME RULE (Steve 2026-10-09): crimes aren't crimes unless people
+      // know or suspect them. Position data is usually absent — the old
+      // fallback (!hasPositions → everyone counts as witness) auto-convicted
+      // the whole village for unseen acts. Now: no positions → party members
+      // are the witnesses (they're with you); the target always saw it.
+      let wit = this.witnesses(3);
+      if (wit === null) {
+        try {
+          const rosterIds = ((this.state.village || {}).roster || []);
+          wit = (this.partyMembers ? this.partyMembers() : [])
+            .filter(id => id !== this.villagerId && rosterIds.includes(id));
+        } catch (e) { wit = []; }
+      }
+      // Witness gate for the trust ripple below: trust moves only for those
+      // who actually saw it (or the target). Rep still ripples on suspicion.
+      const witGate = [...new Set([...wit, ...(opts.target ? [opts.target] : [])])]
+        .filter(id => id !== this.villagerId);
       // those who weren't there hear about it later — secondhand, distorted.
-      if (hasPositions && !opts.noGossip) {
-        const heardBy = wit.filter(id => id !== this.villagerId);
-        if (heardBy.length < roster.length) this.seedGossip(action, AX, heardBy, opts.noTrust);
+      // Seeded from actual witnesses only: no witnesses, no tale to tell.
+      if (!opts.noGossip) {
+        const heardBy = witGate;
+        if (heardBy.length && heardBy.length < roster.length) this.seedGossip(action, AX, heardBy, opts.noTrust);
       }
       for (const vid of roster) {
         const temp = this.npcTemper(vid);
         const goal = this.npcGoal(vid);
         const isTarget = opts.target === vid;
-        const isWitness = !hasPositions || isTarget || wit.includes(vid);
+        const isWitness = isTarget || wit.includes(vid);
         if (!isWitness) continue; // they'll hear it secondhand, distorted
         const dims = { ...AX };
         // THE LENS: the same act means different things to different people.
@@ -11753,7 +11771,7 @@
           dims.honest = -30; dims.generous = -24; dims.brave = -6;
         }
         const skipTrust = opts.noTrust || (isTarget && opts.trustMoved);
-        this.applyRep(vid, dims, isTarget ? 1 : 0.8, skipTrust);
+        this.applyRep(vid, dims, isTarget ? 1 : 0.8, skipTrust, witGate);
       }
     },
     // witnesses: who was close enough to SEE it. Information follows eyes,
@@ -11948,7 +11966,10 @@
             // ripple). Player-ACTION gossip (no 'who') keeps its intended
             // secondhand-reputation drift.
             const repTarget = dims.who ? subject : listener;
-            this.applyRep(repTarget, repDims, 0.4, g.noTrust || !!dims.who);
+            // CANON (Trust ≠ reputation) + SEEN-CRIME RULE (Steve 2026-10-09):
+            // gossip/rumors move REP only, never trust. Suspicion is not
+            // knowledge — secondhand talk shapes opinion, not trust.
+            this.applyRep(repTarget, repDims, 0.4, true);
           }
           // TRACING: the subject might figure out who started this.
           // Higher distortion = harder to trace. Direct witness = easy.
@@ -12062,7 +12083,11 @@
       return String(line || '').replaceAll('__NAME__', this.displayName(vid));
     },
     // applyRep: write the dims, drift trust, ripple through their group.
-    applyRep(vid, dims, weight, noTrust) {
+    applyRep(vid, dims, weight, noTrust, trustRippleTo) {
+      // trustRippleTo: ids allowed to receive RIPPLE trust (SEEN-CRIME RULE,
+      // Steve 2026-10-09). Omit = everyone (legacy, for non-observe callers).
+      // observe() passes its witness gate: the circle's REP still ripples on
+      // suspicion (they heard), but TRUST only moves for those who saw it.
       const r = this.repOf(vid);
       let dTrust = 0;
       for (const k of Object.keys(dims)) {
@@ -12093,7 +12118,8 @@
         t[vid] = Math.max(0, Math.min(100, cur + adj));
         dTrust = adj; // the ripple below scales from the scaled value
       }
-      // RIPPLES: their circle feels it too, at 40%.
+      // RIPPLES: their circle feels it too, at 40%. Rep ripples on suspicion;
+      // trust only for witnesses (see trustRippleTo above).
       for (const g of (this.state.village.groups || [])) {
         if (!g.members.includes(vid)) continue;
         for (const mid of g.members) {
@@ -12103,7 +12129,7 @@
             const rd = Math.round((dims[k] || 0) * (weight || 1) * 0.4);
             if (rd) mr[k] = Math.max(-100, Math.min(100, (mr[k] || 0) + rd));
           }
-          if (!noTrust && dTrust !== 0) {
+          if (!noTrust && dTrust !== 0 && (!trustRippleTo || trustRippleTo.includes(mid))) {
             const mcur = t[mid] === undefined ? 10 : t[mid];
             t[mid] = Math.max(0, Math.min(100, mcur + Math.round(dTrust * 0.4)));
           }
@@ -30465,11 +30491,60 @@
       } catch (e) { return []; }
     },
 
+    // PHOENIX BROADCAST (Steve 2026-10-09): the seen-crime rule's exception.
+    // The show airs every burn — the cameras never miss it. The whole village
+    // learns ACCURATELY (who burned whom, willing or not). No distortion, no
+    // double-dip: the broadcast REPLACES the phoenix_burn gossip path.
+    // Screen counts as seeing: present witnesses take full fear, broadcast
+    // viewers take half. Returns the summed relationship-scaled trust hit;
+    // the caller damps it into the bearer's public standing.
+    phoenixBroadcast(bearerIsPlayer, bearerVid, victimVid, witnesses, opts) {
+      opts = opts || {};
+      const v = this.state.village;
+      const bearer = bearerIsPlayer ? this.villagerId : bearerVid;
+      const bName = this.displayName(bearer);
+      let vName = opts.victimName;
+      if (!vName) { try { vName = this.displayName(victimVid); } catch (e) { vName = 'the burned'; } }
+      const roster = (v.roster || []).filter(id => id !== victimVid && id !== bearer);
+      const witSet = new Set(witnesses || []);
+      const vPub = v.trust || {};
+      let totalHit = 0;
+      for (const rid of roster) {
+        // Accurate knowledge, not rumor: the show aired it.
+        try { this.remember(rid, 'phoenix_burn_seen', `${bName} burned ${vName} via the phoenix link${opts.protestBroken ? ' -- they fought it every step' : ''}${opts.coerced ? ' -- coerced' : ''}. The show aired it.`); } catch (e) {}
+        // Relationship-scaled hit: beloved villagers read charitably
+        // ("they gave willingly"); marginal ones see only horror.
+        const standing = vPub[rid] || 0;
+        let hit;
+        if (standing >= 40) hit = -3;
+        else if (standing <= 15) hit = -16;
+        else hit = -12;
+        if (opts.protestBroken) hit -= 4;
+        totalHit += hit;
+        const onScreen = witSet.has(rid);
+        if (bearerIsPlayer) {
+          v.trustIn = v.trustIn || {};
+          const pubTrust = v.trust[this.villagerId] || 15;
+          const cur = (v.trustIn[rid] == null) ? pubTrust : v.trustIn[rid];
+          v.trustIn[rid] = Math.max(0, cur + hit);
+        }
+        if (onScreen) {
+          const rName = rid === this.villagerId ? 'you' : this.displayName(rid);
+          const were = rid === this.villagerId ? 'were' : 'was';
+          this.say(`💔 ${rName} ${were} there when ${vName} burned for ${bearerIsPlayer ? 'you' : bName}. (Trust ${bearerIsPlayer ? 'in you' : 'in ' + bName}: ${hit}.)${standing >= 40 ? ' "They gave willingly," they whisper. It doesn\'t quite sound like belief.' : ''}`);
+        }
+        // Fear: full for those who were there, half for those who watched it air.
+        const full = bearerIsPlayer ? (standing >= 40 ? 15 : 10) : 8;
+        try { this.addFear && this.addFear(rid, bearer, onScreen ? full : Math.round(full / 2)); } catch (e) {}
+      }
+      this.say(`📺 The show aired it. The cameras never miss a burn — the whole village knows ${bName} burned ${vName} to live.`);
+      return totalHit;
+    },
+
     // Social aftermath, player is the bearer. The core of the design.
     phoenixAftermath(victimVid, witnesses, opts) {
       const v = this.state.village;
       const vName = this.displayName(victimVid);
-      v.trustIn = v.trustIn || {};
       const pubTrust = v.trust[this.villagerId] || 15;
       if (opts.willing) {
         this.say(`🕊️ ${vName} gave willingly. The village will say their name with pride -- and look at you differently. (No trust lost; the village honors them.)`);
@@ -30480,29 +30555,23 @@
       if (opts.protestBroken) {
         this.say(`🔥 ${vName} fought you every step of the way. The village watched you overpower them.`);
       }
-      let totalHit = 0;
-      for (const wid of witnesses) {
-        // Relationship-scaled hit: beloved witnesses read charitably
-        // ("they gave willingly"); marginal ones see only horror.
-        const standing = (v.trust || {})[wid] || 0;
-        let hit;
-        if (standing >= 40) hit = -3;
-        else if (standing <= 15) hit = -16;
-        else hit = -12;
-        if (opts.protestBroken) hit -= 4;
-        const cur = (v.trustIn[wid] == null) ? pubTrust : v.trustIn[wid];
-        v.trustIn[wid] = Math.max(0, cur + hit);
-        totalHit += hit;
-        this.say(`💔 ${this.displayName(wid)} watched ${vName} burn for you. (Their trust in you: ${hit}.)${standing >= 40 ? ' "They gave willingly," they whisper. It doesn\'t quite sound like belief.' : ''}`);
-        try { this.addFear && this.addFear(wid, this.villagerId, standing >= 40 ? 15 : 10); } catch (e) {}
-      }
+      // PHOENIX BROADCAST (Steve 2026-10-09): the seen-crime exception.
+      // Roster-wide scaled hits, accurate knowledge, no distorted gossip.
+      const totalHit = this.phoenixBroadcast(true, null, victimVid, witnesses, opts);
       // The village's public standing in you moves too, damped.
       v.trust[this.villagerId] = Math.max(0, pubTrust + Math.round(totalHit / 2));
-      // Justice sees a player-caused witnessed death -- no separate crime invented.
-      try { this.recordCrime && this.recordCrime('murder', { victim: victimVid, witnessed: true }); } catch (e) {}
-      // Non-witnesses learn via gossip, distorted.
-      try { this.seedGossip('phoenix_burn', { who: this.villagerId, cruel: -10 }, witnesses.slice(0, 3), false); } catch (e) {}
-      try { this.journalNote && this.journalNote('village', 'phoenix', 'Burned ' + vName + ' to live. Witnesses: ' + witnesses.length + '.'); } catch (e) {}
+      // Justice sees a player-caused KNOWN death — the broadcast means the crime
+      // is known by definition. No separate crime invented. (The death
+      // pipeline records it unsolved first via the villageEvent wrapper; the
+      // broadcast upgrades it to known — same key, no double jeopardy.)
+      try {
+        const j = this.justiceState && this.justiceState();
+        const key = 'murder:' + victimVid + ':' + this.state.scholar.day + ':' + this.dayPart;
+        const c = j && (j.crimes || []).find(x => x.key === key);
+        if (c) c.witnessed = true;
+        else if (this.recordCrime) this.recordCrime('murder', { victim: victimVid, witnessed: true });
+      } catch (e) {}
+      try { this.journalNote && this.journalNote('village', 'phoenix', 'Burned ' + vName + ' to live. Aired: the whole village knows.'); } catch (e) {}
     },
 
     // Social aftermath, a villager burned a villager. You witnessed.
@@ -30514,14 +30583,11 @@
         try { this.seedGossip('phoenix_volunteer', { who: victimVid, brave: 12 }, witnesses.slice(0, 3), true); } catch (e) {}
         return;
       }
-      const hit = -14;
-      v.trust[bearerVid] = Math.max(0, ((v.trust || {})[bearerVid] || 10) + hit);
-      this.say(`💔 You watched ${bName} burn ${vName} to live. (Village trust in ${bName}: ${hit}.)`);
-      for (const wid of witnesses) {
-        try { this.addFear && this.addFear(wid, bearerVid, 8); } catch (e) {}
-      }
-      try { this.seedGossip('phoenix_burn_npc', { who: bearerVid, cruel: -12 }, witnesses.slice(0, 3), false); } catch (e) {}
-      try { this.journalNote && this.journalNote('village', 'phoenix', bName + ' burned ' + vName + ' via the clause. I watched.'); } catch (e) {}
+      // PHOENIX BROADCAST: the whole village learns, accurately. Scaled hits
+      // roster-wide, damped into the bearer's public standing.
+      const totalHit = this.phoenixBroadcast(false, bearerVid, victimVid, witnesses, opts);
+      v.trust[bearerVid] = Math.max(0, ((v.trust || {})[bearerVid] || 10) + Math.round(totalHit / 2));
+      try { this.journalNote && this.journalNote('village', 'phoenix', bName + ' burned ' + vName + ' via the clause. Aired: the whole village knows.'); } catch (e) {}
     },
 
     // Earn the privilege or get exiled. 2nd+ use with low standing triggers
@@ -30692,6 +30758,15 @@
         const bearerVid = L.bearer;
         this.say(`🔥 You let go${reason === 'weak' ? ' -- there was nothing left to hold with' : ''}. The fire takes you -- and ${bName} lives, standing in your ashes. Your gear lies in them too -- it belongs to the village now. The village watched them burn you.`);
         try { delete (this.state.village.dyingLinks || {})[bearerVid]; } catch (e) {} // the bearer lives
+        // Capture before succession: the broadcast needs a stable roster.
+        // The burn airs FIRST (the village learns), then the mantle passes.
+        const coercedVid = this.villagerId;
+        let coercedWit = [];
+        try { coercedWit = this.phoenixWitnesses(coercedVid, bearerVid) || []; } catch (e) {}
+        // PHOENIX BROADCAST (Steve 2026-10-09): every burn airs. The
+        // distorted coercion gossip is replaced by accurate village-wide
+        // knowledge.
+        try { this.phoenixBroadcast(false, bearerVid, coercedVid, coercedWit, { coerced: true, victimName: 'you' }); } catch (e) {}
         try { this.playerDeath('the phoenix link'); } catch (e) {}
         if (this.state.over) return;
         // Applied AFTER succession: the office trust-transfer would
@@ -30699,7 +30774,6 @@
         try {
           const v = this.state.village;
           v.trust[bearerVid] = 0;
-          this.seedGossip('phoenix_coercion', { who: bearerVid, cruel: -20 }, (this.npcIds ? this.npcIds() : []).slice(0, 4), false);
           this.say(`🗡️ The village will not forget what ${bName} did. (Their standing: 0. The justice path is open.)`);
           try { this.journalNote && this.journalNote('village', 'phoenix', bName + ' burned me via the clause. Village standing: 0.'); } catch (e) {}
         } catch (e) {}

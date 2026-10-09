@@ -169,8 +169,10 @@ sec('(c) witness trust deltas scaled by relationship');
   // justice saw a witnessed murder
   const crimes = (Game.justiceState().crimes || []).filter(c => c.type === 'murder' && c.victim === v3);
   ok('justice: witnessed murder recorded', crimes.length >= 1);
-  // gossip seeded for non-witnesses
-  ok('gossip seeded', (v.gossip || []).some(g => g.action === 'phoenix_burn'));
+  // BROADCAST (Steve 2026-10-09): phoenix_burn gossip is REPLACED by the
+  // village-wide accurate broadcast -- no distorted gossip, everyone knows.
+  ok('no distorted burn gossip', !(v.gossip || []).some(g => g.action === 'phoenix_burn'));
+  ok('broadcast knowledge (accurate)', [v1, v2].every(id => (v.memory[id] || []).some(m => m.t === 'phoenix_burn_seen')));
 }
 
 // ============ (d) 2nd use + low standing -> exile ============
@@ -274,9 +276,9 @@ sec('(f3) pull away -> struggle WIN: bearer true death, player lives');
 sec('(f4) pull away -> struggle LOSE: player burns, bearer trust collapse');
 {
   freshGame();
-  const [bearer] = villagers(1);
+  const [bearer, w1] = villagers(2);
   Game.npcGrantAbility(bearer, 'phoenix_clause');
-  setTrust({ [bearer]: 20, [Game.villagerId]: 20 });
+  setTrust({ [bearer]: 20, [w1]: 20, [Game.villagerId]: 20 });
   const oldId = Game.villagerId;
   Game.removeVillager(bearer, 'killed');
   Game.phoenixChoosePullAway();
@@ -286,7 +288,10 @@ sec('(f4) pull away -> struggle LOSE: player burns, bearer trust collapse');
   ok('player burned -> succession', Game.villagerId !== oldId && !Game.state.over);
   ok('bearer lives', v.roster.includes(bearer));
   ok('bearer trust collapse (0)', (v.trust[bearer] || 0) === 0, 'trust=' + v.trust[bearer]);
-  ok('coercion gossip seeded', (v.gossip || []).some(g => g.action === 'phoenix_coercion'));
+  // BROADCAST (Steve 2026-10-09): the coercion burn airs too -- accurate
+  // village-wide knowledge replaces the distorted coercion gossip.
+  ok('no distorted coercion gossip', !(v.gossip || []).some(g => g.action === 'phoenix_coercion'));
+  ok('coercion broadcast remembered', (v.roster || []).some(id => ((v.memory || {})[id] || []).some(m => m.t === 'phoenix_burn_seen')));
 }
 
 // ============ (g) devotion volunteers ============
