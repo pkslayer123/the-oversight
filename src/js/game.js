@@ -20515,7 +20515,21 @@
         this.say('🚪 You hurl yourself at the barrier — no escape that way. The fight continues here.');
         return true; // consumed the push attempt
       }
-      // 50% to break contact at the barrier
+      // 50% to break contact at the barrier — but only against things that
+      // can actually pursue. HONEST PURSUIT (break-it turtle 2026-10-08): a
+      // monster that can't chase (follows:false — the turtle is the poster
+      // child: "it cannot chase (it is a turtle)") does not teleport through
+      // the barrier after you. If nothing can follow, the getaway is clean —
+      // no roll, no "they're right behind you" lie.
+      const chasers = mons.filter(m => (m.mdef || {}).follows !== false);
+      const stayers = mons.filter(m => (m.mdef || {}).follows === false);
+      if (!chasers.length) {
+        this.say('🚪 BARRIER CROSSED — you crash through to a new area. It can\'t follow. (You left the fight — it\'s still back there, if you want it.)');
+        p.fled = true;
+        if (f.betrayal) f.playerFled = true;
+        this.tbEnd('fled');
+        return true;
+      }
       if (Math.random() < 0.5) {
         this.say('🚪 BARRIER CROSSED — you crash through the treeline to a new area. The barrier shimmers. They lose your trail. (You fled the fight by leaving the area.)');
         p.fled = true;
@@ -20526,12 +20540,16 @@
         return true;
       }
       this.say('🚪 BARRIER CROSSED — you stumble into a new area, but they\'re right behind you — through the barrier! The fight continues here. (The edge of the grid is an exit. They followed you.)');
-      // They follow: reposition monsters near the entry edge on the new node
-      // (combat continues; the node changed under the fight.)
-      for (const m of mons) {
+      // They follow: reposition CHASERS near the entry edge on the new node
+      // (combat continues; the node changed under the fight). Stayers
+      // (can't chase) are left behind — out of the fight, still on the old
+      // node as world monsters.
+      for (const m of chasers) {
         m.mx = Math.max(0, Math.min(8, 4 - dx * 3 + Math.floor(Math.random() * 3) - 1));
         m.my = Math.max(0, Math.min(8, 4 - dy * 3 + Math.floor(Math.random() * 3) - 1));
       }
+      for (const m of stayers) { m.fled = true; }
+      if (stayers.length) this.say('The slow ones are left behind.');
       // Player enters from the opposite edge
       p.mx = Math.max(0, Math.min(8, 4 + dx * 3));
       p.my = Math.max(0, Math.min(8, 4 + dy * 3));
@@ -26472,6 +26490,27 @@
         return false;
       }
       if (!monstersFighting.length) { this.tbEnd(monstersAlive ? 'routed' : 'won'); return true; }
+      // DISENGAGE (break-it turtle 2026-10-08): you walked away from things
+      // that can't/won't chase. If every living monster is beyond striking
+      // distance (3+ tiles, chebyshev) and none of them chases
+      // (follows:false — territorial, ambush, drifter), the fight is over:
+      // you're not fighting, you're leaving. (The turtle's own weakness:
+      // "it cannot chase (it is a turtle)", "just walk around".) Chasers
+      // (follows !== false) always hold the fight — a hushwolf at 5 tiles
+      // is still hunting you. The chorus check above runs first, so
+      // incoming reinforcements still hold the fight open.
+      if (p && p.alive && !p.fled) {
+        const allGone = monstersFighting.every(m => {
+          if ((m.mdef || {}).follows !== false) return false;
+          const d = Math.max(Math.abs((m.mx || 0) - (p.mx || 0)), Math.abs((m.my || 0) - (p.my || 0)));
+          return d > 2;
+        });
+        if (allGone) {
+          p.fled = true;
+          this.say('You walk clear of them. Nothing follows. The fight ends — they\'re still out there, if you want them.');
+          return this.tbEndCheck();
+        }
+      }
       return false;
     },
 
