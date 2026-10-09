@@ -2927,7 +2927,13 @@
     if (ac.others && ac.others.length) {
       try { this._contestResolveOthers(ac); } catch (e) {}
     }
-    try { this.playerDeath('contest'); } catch (e) { this.state.scholar.health = 0; this.state.over = true; }
+    // DEATH-PATH INVARIANT (break-it persistence-2 2026-10-08): every
+    // transition to over=true must wipe the save in the same tick. The old
+    // fallback wrote this.state.over (a flag nothing else ever sets — the
+    // game reads Game.over) with no wipe: a throwing playerDeath left a live
+    // save behind AND a split-brain zombie (Game.over=false, state.over=true
+    // persisted across load). Now it matches the other four death catches.
+    try { this.playerDeath('contest'); } catch (e) { this.over = true; try { this.wipe(); } catch (e2) {} }
     return { done: true, outcome: 'died' };
   };
 

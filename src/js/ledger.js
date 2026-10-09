@@ -578,7 +578,11 @@
       this.say(opt.outcome);
       this.recordLegend({ outcome: 'table', frame: tc.frame, choice: opt.label });
       this.over = true; this.won = true;
-      try { this.save(); } catch (e) {}
+      // WON RUNS ARE WIPED (break-it persistence-2 2026-10-08): save() no-ops
+      // when over, so the pre-choice save survived the finale — Continue
+      // resurrected tableChoices and the final live choice could be re-picked
+      // (ending-shopping). A finished run doesn't continue.
+      try { this.wipe(); } catch (e) {}
       return null;
     },
 
@@ -998,7 +1002,7 @@
       } catch (e) {}
       this.say(`📺 ${nm} dies in the arena. The show keeps the footage. They always keep the footage.`);
       try { this.recordMoment(`${nm} died in the arena. The footage plays on.`); } catch (e) {}
-      try { this.playerDeath('the arena'); } catch (e) { this.over = true; }
+      try { this.playerDeath('the arena'); } catch (e) { this.over = true; try { this.wipe(); } catch (e2) {} }
       return null;
     },
     replayFootage() {
