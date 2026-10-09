@@ -14351,6 +14351,18 @@
         this.say('It\'s barely dawn. The day is yours — sleep is for later.');
         return this.status();
       }
+      // TOO LATE FOR REAL SLEEP (survivalist loop 2026-10-09): the mirror of
+      // the dawn guard. The sleep loop exits as soon as endDay rolls the day,
+      // then ran the FULL dawn accounting unconditionally — sleeping at 23:59
+      // granted a whole night's healing + energy for a 1-tick nap, and the
+      // unconscious-window danger model (monster turns between 32-tick
+      // chunks, encounter checks, tent-wreck wake, contest grab) never ran.
+      // Below two batch turns there is no real night left to sleep through.
+      // Refuse honestly; Rest is the alternative. (Steve can overrule.)
+      if (T.TICKS_PER_DAY - (s.dayTicks || 0) < T.TICKS_PER_BATCH * 2) {
+        this.say('Dawn\'s an hour off — too late for real sleep. Rest a while instead, or wait for morning.');
+        return this.status();
+      }
       const prev = this.sleepPreview();
       // HONEST SLEEP (survivalist loop 2026-10-06): the haven panel renders
       // sleepPreview via sleepHintHTML, but the wild lower-menu Sleep button
