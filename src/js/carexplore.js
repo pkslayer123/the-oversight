@@ -111,6 +111,10 @@
   const _origGiveFood = Game.giveFood;
   Game.giveFood = function (vid, amount) {
     amount = amount || 'meal';
+    // PHANTOM TARGET (break-it social r6 2026-10-09): killed records stay in
+    // data.villagers with dead=true, so this lookup resolved corpses. Same
+    // bug class as the startConvo phantom — roster is the truth.
+    if (!((this.state.village.roster || []).includes(vid))) return null;
     const v = (this.data.villagers || []).find(x => x.id === vid)
       /* unified: hydrated seeds are in villagers */;
     if (!v) return null;
@@ -231,6 +235,10 @@
   const _origComfort = Game.comfort;
   Game.comfort = function (vid, approach) {
     approach = approach || 'silent';
+    // PHANTOM TARGET (break-it social r6 2026-10-09): same class as the
+    // startConvo phantom — comforting an exiled/dead villager paid real
+    // fear/trust deltas to a ghost. Roster is the truth.
+    if (!((this.state.village.roster || []).includes(vid))) return null;
     const mood = this.npcMood(vid);
     if (mood !== 'scared' && mood !== 'grieving' && mood !== 'hungry') {
       this.say("They don't need comforting right now.");

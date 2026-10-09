@@ -10524,7 +10524,17 @@
       const g = {
         action: rumorType, dims: { who: targetId }, heard,
         distortion: 0, day: this.state.scholar.day, partKey,
-        noTrust: false, source: teller, playerRumor: true,
+        // BREAK-IT (social r6 2026-10-09): rumors about an NPC SUBJECT pay
+        // TRUST drift through applyRep — every gossip hop paid the subject
+        // trust-of-player (+~2/hop, plus an unscaled 40% ripple to their whole
+        // group). Re-spreading the same rumor every daypart farmed
+        // 10->52 trust and +90 village-wide in 2 days of free words, while
+        // the "caught lying" trace only ever cost -2. Rumors move REP, not
+        // trust — the subject's trust of you moves only when the trace
+        // catches you lying (bumpTrust below), which is the promised cost.
+        // Player-ACTION gossip (dims without 'who') keeps its intended
+        // secondhand-reputation drift.
+        noTrust: true, source: teller, playerRumor: true,
       };
       v.gossip.push(g);
       
@@ -10577,8 +10587,16 @@
             // stayed at 0 rep after a public gift traveled the full gossip
             // chain). Secondhand reputation lands on the hearer — per-hearer
             // accounting, like the witness loop in observe().
+            // BREAK-IT (social r6 2026-10-09): subject-targeted gossip (dims.who)
+            // moves REP only, never TRUST — the subject's trust of the player
+            // must not move because of third-party talk ABOUT the subject
+            // (same class as the spreadRumor generous-farm: mootAccuserAftermath
+            // seeds 'moot_weak_case' with dims.who and no noTrust flag, which
+            // paid -4 trust-of-player per hop to the accuser plus the group
+            // ripple). Player-ACTION gossip (no 'who') keeps its intended
+            // secondhand-reputation drift.
             const repTarget = dims.who ? subject : listener;
-            this.applyRep(repTarget, repDims, 0.4, g.noTrust);
+            this.applyRep(repTarget, repDims, 0.4, g.noTrust || !!dims.who);
           }
           // TRACING: the subject might figure out who started this.
           // Higher distortion = harder to trace. Direct witness = easy.

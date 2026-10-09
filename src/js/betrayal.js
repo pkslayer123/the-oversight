@@ -1426,11 +1426,21 @@
         // the village never received it. Real food arrives as a real item.
         if (typeof this.stockPantry === 'function') this.stockPantry(3000, 'Weregild');
         else v.pantryKcal = (v.pantryKcal || 0) + 3000;
-        // the player pays from their own stores — it has to hurt
-        if (c.accused.includes(this.villagerId)) {
+        // the player pays from their own stores — it has to hurt.
+        // ABSENTIA (break-it social r6 2026-10-09): a moot fired for an
+        // already-exiled player (open case + exile via a non-moot path)
+        // silently drained 3000 kcal from a pack walking the wilds — the
+        // village can't collect from someone who isn't there, and the
+        // sentence line is spoken to an empty fire. No payer, no payment.
+        if (c.accused.includes(this.villagerId) && !this.state.scholar.exiled) {
           const s = this.state.scholar;
+          if (typeof this.stockPantry === 'function') this.stockPantry(3000, 'Weregild');
+          else v.pantryKcal = (v.pantryKcal || 0) + 3000;
           if (typeof s.kcal === 'number') s.kcal = Math.max(0, s.kcal - 3000);
           try { this.justiceState().amendsCredit = (this.justiceState().amendsCredit || 0) + 30; } catch (e) {}
+        } else if (!c.accused.includes(this.villagerId)) {
+          if (typeof this.stockPantry === 'function') this.stockPantry(3000, 'Weregild');
+          else v.pantryKcal = (v.pantryKcal || 0) + 3000;
         }
         const t = v.trust || {};
         for (const a of c.accused) t[a] = Math.max(0, ((t[a]) || 10) - 20);
@@ -2047,7 +2057,10 @@
     const missing = this.foundingMissing();
     acts.push({
       id: 'foundhaven', label: '🏕️ Found your haven',
-      hint: missing.length ? 'Not yet — need: ' + missing.join('; ') + '.' : 'The site is claimed, the hut stands, the cache is full. Day one.',
+      // HONESTY (break-it social r6 2026-10-09): Steve's hard-reset law — the
+      // old hint "Day one." never said what day one MEANS. A new fire, new
+      // faces, relationships reset; only self, pack, and Codex cross over.
+      hint: missing.length ? 'Not yet — need: ' + missing.join('; ') + '.' : 'Day one — a new fire, new faces. What you carried is what you have: yourself, your pack, and everything you learned.',
       disabled: missing.length > 0,
     });
     if (!s.drifting) acts.push({ id: 'drift', label: '🚶 Drift', hint: "Solo. Petition a village at their 🏘️ tile, or build your own fire." });

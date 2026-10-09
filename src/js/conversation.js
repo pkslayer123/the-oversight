@@ -3082,6 +3082,15 @@
       }
       const vp = this.vpOf(vid);
       if (!vp || !vp.id) return null;
+      // PHANTOM TALK (break-it social r6 2026-10-09): removeVillager drops the
+      // roster but leaves rosterChars, so vpOf still resolved exiled/dead
+      // villagers and startConvo opened full conversations with ghosts — you
+      // could talk to, teach, and trade with people who were gone. The living
+      // roster is the source of truth for who can hold a conversation.
+      if (!(v.roster || []).includes(vid)) {
+        try { this.say(`${this.displayName(vid)} isn't here anymore.`); } catch (e) {}
+        return null;
+      }
       const c = this.convoGet(vid);
       c.active = true; c.exchanges = 0; c.budget = this.convoBudget(vid);
       c.thread = null; c.depth = 0; c.transcript = []; c.pendingQ = null;
