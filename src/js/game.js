@@ -16470,7 +16470,11 @@
             const item = this.foodForageItem(e.plant, true, e.units, kcal, scholar.day);
             scholar.inventory.push(item);
             packedBits.push(`${e.units}\u00d7 ${e.plant.name}`);
-            totalKcalKnown += kcal;
+            // HONESTY (forager break-it 2026-10-08): nuts land in-shell
+            // (edible:false, 0 kcal until shelled) — the "(X kcal)" promise
+            // counts only food you can eat now. In-shell nuts are listed by
+            // name; their kcal arrives after the Shell action, honestly.
+            if (item.edible) totalKcalKnown += kcal;
           } else {
             this.addUnknownToLump(e.plant, e.units, scholar.day);
             packedBits.push(`${e.units}\u00d7 ${this.lumpFormName(e.plant)}`);
@@ -16528,7 +16532,11 @@
         if (woodSticks && !knownBits.length && !unknownBits.length) {
           msg = `No food in these trees — but the ground gives deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}. This patch is picked clean — it'll recover in a few days.`;
         } else if (knownBits.length && !unknownBits.length) {
-          msg = `You work the patch with practiced hands: ${knownBits.join(', ')} (${totalKcalKnown} kcal).${woodBit} This patch is picked clean — it'll recover in a few days.`;
+          // HONESTY (forager break-it 2026-10-08): the kcal parenthetical
+          // counts only edible-now food — an all-nut haul says so instead of
+          // printing "(0 kcal)" like a bug.
+          const kcalBit = totalKcalKnown > 0 ? ` (${totalKcalKnown} kcal)` : ' (in shell \u2014 shell them to eat)';
+          msg = `You work the patch with practiced hands: ${knownBits.join(', ')}${kcalBit}.${woodBit} This patch is picked clean \u2014 it'll recover in a few days.`;
         } else if (unknownBits.length && !knownBits.length) {
           msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit} This patch is picked clean — it'll recover in a few days.`;
         } else {

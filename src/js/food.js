@@ -550,9 +550,13 @@
     spoilClockShort(it) {
       if (!it || it.spoilDay === undefined || it.spoilDay === null || it.spoilDay >= 9999) return '';
       const left = it.spoilDay + this.spoilBonusDays() - this.state.scholar.day;
-      if (left < 0) return ''; // the UI rows flag spoiled items themselves
-      if (left === 0) return '\u26A0 SPOILING TODAY';
-      if (left === 1) return 'spoils tomorrow';
+      if (left <= 0) return ''; // the UI rows flag spoiled items themselves
+      // HONESTY (forager break-it 2026-10-08): at left=0 the engine already
+      // calls it spoiled (isSpoiled: spoilDay <= day - the pack row shows
+      // 'spoiled'), so the clock must NOT say "SPOILING TODAY" for food
+      // that's already uneatable. The countdown speaks only while there's
+      // still time; the row's own flag covers the dead.
+      if (left === 1) return '\u26A0 spoils tomorrow';
       if (left === 2) return 'spoils in 2d';
       return '';
     },
@@ -1563,8 +1567,7 @@
     // stashClock(it): the visible spoilage clock.
     stashClock(it) {
       const left = (it.spoilDay ?? 9999) + this.spoilBonusDays() - this.state.scholar.day;
-      if (left < 0) return 'spoiled';
-      if (left === 0) return 'SPOILING TODAY';
+      if (left <= 0) return 'spoiled'; // same honesty fix as spoilClockShort
       if (left === 1) return 'spoils tomorrow';
       return `spoils in ${left}d`;
     },
