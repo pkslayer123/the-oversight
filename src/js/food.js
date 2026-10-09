@@ -511,7 +511,12 @@
         it.diseaseRisk = null; it.safe = true;
         it.spoilDay = this.state.scholar.day + (knows ? 30 : 15);
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
-        it.prep = 'Smoked. Keeps ~a month. The pantry\'s future.';
+        // HONESTY (break-it food 2026-10-09 layer 2): the old prep always
+        // said "Keeps ~a month" even when the unskilled smoke only earned
+        // 15 days (spoilDay = day+15 above). The decision UI already said
+        // ~15d honestly; the item copy lied. The rough job says so now.
+        it.prep = knows ? 'Smoked. Keeps ~a month. The pantry\'s future.'
+          : 'Smoked (rough job). Keeps ~two weeks — a real preserver could do better.';
         n++;
         if (!knows) {
           it._messyPreserves = (it._messyPreserves || 0) + 1;

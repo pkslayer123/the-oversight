@@ -5146,6 +5146,20 @@
             if (fs.key === 'p') {
               ft.isPlayer = true;
             }
+            // DEATH-CORPSE REATTACH (break-it food 2026-10-09 layer 2): the
+            // save round-trips _deathCorpse into a DETACHED snapshot — it is
+            // no longer the corpse in state.corpses. tbEnd's per-kill reward
+            // loop (corpseForKill) prefers mf._deathCorpse, so a mid-fight
+            // save+reload pushed the carcass meat onto a phantom no UI can
+            // ever loot, and the real corpse stayed meatless (the kill's food
+            // vanished while the say line promised "the carcass is there on
+            // the ground"). Reattach by id; drop the phantom so the
+            // node+species search in corpseForKill can find the real body.
+            if (ft._deathCorpse && ft._deathCorpse.id) {
+              const real = (this.state.corpses || []).find(c => c && c.id === ft._deathCorpse.id);
+              if (real) ft._deathCorpse = real;
+              else delete ft._deathCorpse;
+            }
             // Drop monster fighters that can't reattach a def — but never the
             // player: a save without its bearer is rejected by the scholar
             // guard above, so this only ever drops monsters.
