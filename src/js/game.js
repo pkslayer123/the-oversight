@@ -2898,9 +2898,24 @@
       if (!food) { this.say("You have no food to give."); return null; }
       food.units -= 1;
       if (food.units <= 0) this.state.scholar.inventory = this.state.scholar.inventory.filter(i => i.units > 0);
-      const trust = (this.state.village.trust && this.state.village.trust[vid]) || 10;
-      const newTrust = Math.min(100, trust + 12);
-      if (this.state.village.trust) this.state.village.trust[vid] = newTrust;
+      // DEED, NOT WORDS (socialite r4 2026-10-09): the old flat +12 bypassed
+      // resolveConsequence entirely (no progressive scaling, no deed
+      // accounting), resurrected 0-trust villagers via `|| 10`, ignored the
+      // gift's size (a 20-kcal crumb paid like a feast), and observe()
+      // double-paid the recipient as their own witness (no trustMoved).
+      // A personal gift scales with its substance through the one resolver:
+      // crumbs earn little, a real meal earns more. (The live path is
+      // carexplore.js's giveFood override — bite/meal/full with the same
+      // rules; this base stays honest for partial-load harnesses.)
+      const giftKcal = (food.kcalEach || 0);
+      const deedAmt = Math.min(12, Math.max(2, Math.floor(giftKcal / 250)));
+      if (typeof this.resolveConsequence === 'function') {
+        this.resolveConsequence(vid, { trust: deedAmt, temper: 'kind', talk: false, name: 'giveFood' });
+      } else {
+        const t = this.state.village.trust || (this.state.village.trust = {});
+        const cur = t[vid] === undefined ? 10 : t[vid];
+        t[vid] = Math.min(100, cur + this.trustGainProgressive(vid, deedAmt));
+      }
       // ALIVE: they remember. hunger eases. an answered ask is gratitude.
       const req = (this.state.village.requests || {})[vid];
       if (req && req.type === 'food') {
@@ -2912,7 +2927,11 @@
       }
       this.npcNeeds(vid).hunger = Math.max(0, this.npcNeeds(vid).hunger - 60);
       this.say(`You give ${this.displayName(vid)} some ${food.name}. They look at you differently now.`);
-      this.observe('give_food', { target: vid });
+      // trustMoved (socialite r4 2026-10-09): the recipient's trust already
+      // moved through the deed gain above — observe warms the crowd, not
+      // double-warms them. (The r5 comment claimed this flag was passed; it
+      // never was.)
+      this.observe('give_food', { target: vid, trustMoved: true });
       try { this.checkPromises('food', vid); } catch (e) {}
       // ACTION CLOCK: a handoff is 1 tick (time-only — the food is the real cost).
       this.tickAction(1);
@@ -3781,7 +3800,14 @@
       if (!goal) { this.say("You don't know what they want yet."); return null; }
       const v = this.state.village;
       v.promises = v.promises || {};
-      if (v.promises[vid]) { this.say("You already made them a promise. Keep it first."); return null; }
+      // SETTLED PROMISES (socialite r4 2026-10-09): kept/broken promises are
+      // settled — the old refusal fired for them too, lying ("Keep it first"
+      // when it IS kept) and permanently blocking new promises to that
+      // villager (the entry was never cleared). Only an OPEN promise blocks
+      // a new one; a settled one is replaced by the new vow.
+      const oldP = v.promises[vid];
+      if (oldP && !oldP.kept) { this.say("You already made them a promise. Keep it first."); return null; }
+      if (oldP) delete v.promises[vid];
       const want = this.goalWant(vid);
       const first = this.displayName(vid);
       const promiseLines = {
@@ -11670,7 +11696,14 @@
             this.remember(subject, 'rumor_about_them', `heard a rumor about themselves, traced to ${blamed}`);
             if (caught) {
               const nasty = ['untrustworthy', 'scheming', 'stingy', 'coward'].includes(g.action);
-              this.applyRep(this.villagerId, nasty ? { honest: -10, trustworthy: -8 } : { honest: -3 }, 1, true);
+              // PLAYER ATTRIBUTION COST (socialite r4 2026-10-09): the old
+              // applyRep(this.villagerId, ...) wrote to the player's SELF-rep
+              // (repOf(player) is their view of themselves — never read
+              // anywhere), so the promised "reputation tanks" was a dead
+              // write and only the trust hit landed. The cost belongs on the
+              // person who caught you: their view of your honesty tanks, and
+              // it travels from there.
+              this.applyRep(subject, nasty ? { honest: -10, trustworthy: -8 } : { honest: -3 }, 1, true);
               this.bumpTrust(subject, nasty ? -6 : -2);
             }
           }

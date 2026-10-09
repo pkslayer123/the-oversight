@@ -51,7 +51,7 @@ productive. NPCs fill silence in character.
 
 ## Costs & effects
 
-- 20 kcal per conversation (not per line — cheaper than the old per-tap cost,
+- 10 kcal per conversation (charged on open — cheaper than the old per-tap cost,
   encouraging real exchanges)
 - Trust +3 on natural end (same 40-cap as before: words only go so far)
 - Eases their social need, diplomat XP, `observe('talk')`, promise checks,

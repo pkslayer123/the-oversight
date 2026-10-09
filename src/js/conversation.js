@@ -3112,6 +3112,9 @@
       // or the second rumor with the same person dangles at the prompt with
       // no targets.
       c.rumorDone = false; c.rumorTarget = null; c.rumorTargets = null;
+      // INTERPRETER GRATITUDE (socialite r4 2026-10-09): per-conversation —
+      // reset here like rumorDone/speakBackDone's cousins.
+      c._interpThanks = false;
       c.traderMentioned = false; c.pendingTrade = null;
       c.reactiveQ = null; c.windingDown = false; c.pastDeflected = false;
       // MOOD (convo-mood.js): every conversation starts at a temperature
@@ -4745,8 +4748,22 @@
         if (!yid) return 'No one here can bridge the gap. Gestures will have to do.';
         const ph = this.foreignLine(vid, 'questions') || this.foreignLine(vid, 'openers');
         const r = this.renderForeign(vid, ph);
-        const yt = this.state.village.trust || {};
-        yt[yid] = Math.min(100, (yt[yid] || 10) + 2);
+        // INTERPRETER GRATITUDE (socialite r4 2026-10-09): the old +2 per
+        // gesture was a direct write — no resolver, no progressive scaling,
+        // no cap — so spamming 'translate' farmed interpreter trust 10->100
+        // for free (measured). Thanks is a per-conversation beat, not a
+        // per-gesture faucet: once per conversation, a real act (talk:false),
+        // progressive like every other gain.
+        if (!c._interpThanks) {
+          c._interpThanks = true;
+          if (typeof this.resolveConsequence === 'function') {
+            this.resolveConsequence(yid, { trust: 3, temper: 'kind', talk: false, name: 'foreign:interpreted' });
+          } else {
+            const yt = this.state.village.trust || (this.state.village.trust = {});
+            const cur = yt[yid] === undefined ? 10 : yt[yid];
+            yt[yid] = Math.min(100, cur + (typeof this.trustGainProgressive === 'function' ? this.trustGainProgressive(yid, 3) : 3));
+          }
+        }
         return (r ? r.text : 'They speak; the translation falters.') + mediatedNote;
       }
       const reactKind = { nod: 'agree', smile: 'warm', pointself: 'warm' }[kind] || 'agree';
