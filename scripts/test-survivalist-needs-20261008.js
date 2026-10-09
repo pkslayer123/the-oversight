@@ -286,10 +286,18 @@ function freshFireTile(Game, s) {
     if (vid && typeof Game.resolveAssignments === 'function') {
       Game.state.village.assignments = Game.state.village.assignments || {};
       Game.state.village.assignments[vid] = { task: 'water' };
-      const before = Game.state.village.water.clean;
+      const before = Game.state.village.water.dirty;
       Game.resolveAssignments();
-      ok('water duty refills the cistern (promise kept)', Game.state.village.water.clean > before,
-        `before=${before} after=${Game.state.village.water.clean}`);
+      // CREEK WATER IS RISKY (Steve 2026-10-08): the haul lands DIRTY, not
+      // clean — the old 'clean > before' assertion is a stale contract. The
+      // loop closes at the hearth: 6L boiled clean per wood.
+      ok('water duty hauls creek water (lands dirty, by design)', Game.state.village.water.dirty > before,
+        `dirty before=${before} after=${Game.state.village.water.dirty}`);
+      Game.state.village.wood = 10;
+      const dirtyBefore = Game.state.village.water.dirty;
+      Game.hearthBoil();
+      ok('hearth boils the haul clean (6L/wood)', Game.state.village.water.clean >= Math.min(dirtyBefore, 60),
+        `clean=${Game.state.village.water.clean} dirty=${Game.state.village.water.dirty} wood=${Game.state.village.wood}`);
     } else {
       console.log('  SKIP water-duty refill: no NPC roster id available');
     }

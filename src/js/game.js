@@ -3869,16 +3869,12 @@
     },
 
     villageAction(kind) {
-      const scholar = this.state.scholar;
-      if (kind === 'water') {
-        // WATER BOTTLES are {liters, quality, source} objects — never assign a
-        // bare number here; the status bar stringifies the array and you'd get
-        // "[object Object]". (This bit the live build once.)
-        scholar.water = scholar.water || [];
-        for (let i = 0; i < 4; i++) scholar.water.push({ liters: 1, quality: 'clean', source: 'Haven well' });
-        const msg = 'You fill your skin from the well. Cold. Clean. Home water.';
-        this.say(msg); this.save(); return msg;
-      }
+      // ('water' branch DELETED — survivalist loop 2026-10-09: dead code with
+      // zero callers that granted +4L clean with no cistern draw, no carry
+      // check, no kcal cost — a wired button away from an infinite-water
+      // faucet. The live path is fillWater(), hardened with physical checks.
+      // Precedent: fillWaterFromVillage, deleted break-it food r3 2026-10-08
+      // for the same reason.)
       if (kind === 'fire') {
         const lines = [
           'The fire pops. Nobody talks for a while. It\'s enough.',
@@ -8050,7 +8046,12 @@
       const s = this.state.scholar;
       // NEED FIRE. you can't boil water with wishes.
       // (beard_moss: moss in your beard is always tinder. Anywhere works.)
-      if (!this.nearFire() && !this.hasAbility('beard_moss')) { this.say('Need a fire to boil water.'); return null; }
+      // TENT FIRE COUNTS (survivalist loop 2026-10-09): nearFire() only sees
+      // grid cells — inside your tent beside a lit fire pan it said "Need a
+      // fire to boil water." two feet from a flame. cookInTent already cooks
+      // on the interior fire; boiling works on it too.
+      const fireHere = this.nearFire() || (typeof this.tentFireLit === 'function' && this.tentFireLit());
+      if (!fireHere && !this.hasAbility('beard_moss')) { this.say('Need a fire to boil water.'); return null; }
       s.water = s.water || [];
       let n = 0;
       for (const b of s.water) {
@@ -8071,7 +8072,7 @@
       // COST HONESTY (survivalist loop 2026-10-07): the charge was silent.
       // Name it. Moss-tinder boiling (no fire) still costs the work —
       // coaxing damp moss into enough heat to boil a liter is real labor.
-      const mossBoil = n > 0 && !this.nearFire() && this.hasAbility('beard_moss');
+      const mossBoil = n > 0 && !fireHere && this.hasAbility('beard_moss');
       this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       return null;
     },
@@ -17251,12 +17252,20 @@
         // (Sleepers keep their own accounting in sleep() — _sleeping is set
         // while the sleep loop ticks, so there's no double bite. The hall and
         // a live fire still protect.)
+        // TENT SHELTERS THE AWAKE (survivalist loop 2026-10-09): the bite
+        // omitted the tent — a player awake inside their pitched tent, even
+        // beside a lit interior fire, took -12 as if naked in the snow. The
+        // day shiver tax exempts the tent (shelteredFromSky), tent sleep is
+        // fully protected, and sleepPreview says "Feed it, or pitch a tent" —
+        // the tent IS shelter in this game's fiction. "Exposed" means the
+        // same here as in the day bite: not haven, not sheltered, not by fire.
+        // (No exploit: sleeping in the tent was already free protection.)
         if (!this._sleeping && this.state.weather === 'cold' && !this.over) {
           try {
             let atHavenN = this.location === 'haven';
             const nt = this.playerTile();
             if (nt && nt.type === 'haven') atHavenN = true;
-            if (!atHavenN && !this.nearFire()) {
+            if (!atHavenN && !this.shelteredFromSky() && !this.nearFire()) {
               const sc2 = this.state.scholar;
               sc2.health = Math.max(1, Math.round(sc2.health || 0) - 12);
               sc2.energy = Math.min(sc2.energy || 0, 40);
