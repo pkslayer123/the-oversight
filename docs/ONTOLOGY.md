@@ -249,6 +249,7 @@ Dialogue-driven conversation turn handling. Phase 1 (2026-10-08): the dead menu 
 - no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
 - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: buildMenu, Steve 2026-10-06)
 - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: buildMenu + dlg:more/dlg:react, 2026-10-06)
+- substantive_light_set: bare acknowledgments (goon/leave/recap/dlg:react/dlg:more/agree/joke/silence/nv:nod/nv:smile/nv:pointself) never flip c.substantive — only real engagement earns endConvo's uncapped mood residue (code: convoTurn wrapper, break-it 2026-10-09)
 - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
 
 **Consumes:** village.villagers, state.convos, convoGet(vid), buildMenu(vid) / convoChoices(vid) (conversation.js — the single menu pipeline), playerVoice()

@@ -8,6 +8,7 @@
 //   - no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
 //   - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: buildMenu, Steve 2026-10-06)
 //   - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: buildMenu + dlg:more/dlg:react, 2026-10-06)
+//   - substantive_light_set: bare acknowledgments (goon/leave/recap/dlg:react/dlg:more/agree/joke/silence/nv:nod/nv:smile/nv:pointself) never flip c.substantive — only real engagement earns endConvo's uncapped mood residue (code: convoTurn wrapper, break-it 2026-10-09)
 //   - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
 // consumes:
 //   - village.villagers
@@ -100,9 +101,23 @@
     // choice id passes through here (dlg: handled below, the rest
     // delegated). Anything but the light acknowledgments marks the
     // conversation substantive.
-    if (c && c.active && typeof choiceId === 'string' &&
-        choiceId !== 'goon' && choiceId !== 'leave' && choiceId !== 'recap' &&
-        choiceId !== 'dlg:react' && choiceId !== 'dlg:more') {
+    // LIGHT SET, r2 (break-it 2026-10-09): the 2026-10-08 fix named
+    // "yeah" (agree) in the comment but never added 'agree'/'joke'/
+    // 'silence' to the exclusion — and missed the no-language menu's
+    // gesture acks (nv:nod/smile/pointself). Pure acknowledgment spam
+    // ("You're right." x6, or smile x6) flipped substantive=true, and
+    // with the mood those acks pump, endConvo's uncapped residue fired
+    // every conversation: measured 13->57 over 25 empty convos, straight
+    // past the 40 talk cap. Nodding along is listening, not engaging —
+    // it earns the capped talk stipend, never the residue. Answering a
+    // direct question (react:*) IS engaging and stays substantive, as do
+    // nv:listen (active language learning) and nv:translate (a real act
+    // involving a third person).
+    const _light = choiceId === 'goon' || choiceId === 'leave' || choiceId === 'recap' ||
+      choiceId === 'dlg:react' || choiceId === 'dlg:more' ||
+      choiceId === 'agree' || choiceId === 'joke' || choiceId === 'silence' ||
+      choiceId === 'nv:nod' || choiceId === 'nv:smile' || choiceId === 'nv:pointself';
+    if (c && c.active && typeof choiceId === 'string' && !_light) {
       c.substantive = true;
     }
 
