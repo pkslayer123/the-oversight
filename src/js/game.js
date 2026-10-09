@@ -2545,14 +2545,20 @@
             _wl[catchId]--; if (_wl[catchId] <= 0) delete _wl[catchId];
             const animal = this.data.animals.find(a => a.id === catchId);
             // FOOD REALITY: trapped game is a carcass too — clean it, don't just eat it.
-            this.state.scholar.inventory.push(this.foodCarcass(animal, animal.calories, this.state.scholar.day, 'trapped'));
+            // MEAT YIELD (hunter break-it 2026-10-08b): a trapped kill is a kill.
+            // hunt.meat_yield bakes into the carcass here, the same as strike
+            // kills (encounters.js) — your skill kept more of the carcass at
+            // the catch. dress_game converts; it never multiplies.
+            let catchKcal = animal.calories;
+            try { catchKcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
+            this.state.scholar.inventory.push(this.foodCarcass(animal, catchKcal, this.state.scholar.day, 'trapped'));
             // a body in hand teaches you what it was — same as a kill.
             try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(catchId); } catch (e) {}
             // TRAP PRIORITY (Steve 2026-10-07): trap catches were getting buried
             // mid-dawn-log (~8 messages) — on mobile one-screen that's dinner
             // vs rot. The 🪤 TRAP: prefix makes the catch visually scannable
             // even mid-list; the rot warning is explicit, not implied.
-            this.say(`🪤 TRAP: Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${animal.calories} kcal on the bone — clean it quickly (knife). It rots fast.`);
+            this.say(`🪤 TRAP: Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${catchKcal} kcal on the bone — clean it quickly (knife). It rots fast.`);
             // STRIPED SKUNK (hunter loop 2026-10-07): the box-trap recipe
             // warns "a skunk, which you will regret." Deliver the regret —
             // opening the box is the spray moment, same as pressing one on

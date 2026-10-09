@@ -237,11 +237,20 @@
         return false;
       }
       // Dispatch to implementation
-      var result = impl(this, target);
-      // Implementation must narrate via say(). If it returned false without
-      // saying anything, we add a fallback (never silent).
+      // FIZZLE HONESTY (hunter break-it 2026-10-08b): the fallback below
+      // used to fire even when the impl had already narrated its refusal —
+      // a refused Field Dress said "No game to dress..." AND "Nothing
+      // happened. (Field Dress fizzled.)". Count says during the impl; the
+      // fallback only speaks when the impl said nothing.
+      var _said = 0;
+      var _say = this.say;
+      var _self = this;
+      this.say = function (t) { _said++; return _say.call(_self, t); };
+      var result;
+      try { result = impl(this, target); }
+      finally { this.say = _say; }
       if (result === false) {
-        this.say('Nothing happened. (' + (def.action.name || actionId) + ' fizzled.)');
+        if (_said === 0) this.say('Nothing happened. (' + (def.action.name || actionId) + ' fizzled.)');
       } else {
         // XP + synergy: only a REAL attempt counts. gainAbilityXP logs the
         // use for synergy discovery internally (game.js:14421), so a separate
@@ -651,6 +660,18 @@
         return { ok: false, why: 'Nothing here to calm.' };
       return { ok: true };
     },
+    'field_dressing.dress_game': function (game, target) {
+      // REFUSED TAPS COST NOTHING (hunter break-it 2026-10-08b): tapping
+      // Field Dress with no carcass in the pack used to pay the 30-min /
+      // 40-kcal cost and then fizzle. The no-carcass check runs here, before
+      // payment, like the per-fight refusals above.
+      var inv = (game.state.scholar && game.state.scholar.inventory) || [];
+      for (var i = inv.length - 1; i >= 0; i--) {
+        var it = inv[i];
+        if (it && it.foodKind === 'meat' && it.foodState === 'carcass' && !it.charred) return { ok: true };
+      }
+      return { ok: false, why: 'No game to dress. Hunt or trap something first, then break it down clean.' };
+    },
   };
   var ABILITY_ACTION_IMPLS = {
 
@@ -762,19 +783,20 @@
       }
       var c = inv[idx];
       // NO DOUBLE-DIP (hunter loop 2026-10-07): the hunt.meat_yield modifier
-      // is already baked into hiddenKcal at the kill — your skill earned the
+      // is baked into hiddenKcal when the carcass is created — at the strike
+      // kill AND at the trap catch (game.js checkTraps). Your skill earned the
       // bigger carcass then. Dressing converts it to usable meat + parts; it
-      // multiplies nothing. (The old impl re-multiplied ×1.3 on top.)
+      // multiplies nothing, so it claims no multiplier in the text either
+      // (hunter break-it 2026-10-08b: the old "(Field Dressing ×1.3)" line
+      // implied the dress action applied the bonus — for trapped game it had
+      // never applied at all).
       var yield_ = Math.round(c.hiddenKcal || 100);
-      var mult = 1;
-      try { mult = game.modTarget('hunt.meat_yield', 100) / 100; } catch (e) {}
-      var multTxt = mult > 1.001 ? ' (Field Dressing ×' + (Math.round(mult * 100) / 100) + ' — your skill kept more of the carcass.)' : '';
       inv.splice(idx, 1);
       // BANK CAP (break-it food r3 2026-10-08): no kcal source bypasses the
       // cap — dressed meat is no exception (same class as blood_magic's fix).
       var _cap = game.kcalCap ? game.kcalCap() : 2400;
       s.kcal = Math.min(_cap, (s.kcal || 0) + yield_);
-      game.say('You work fast and clean — hide, sinew, bone, all usable. +' + yield_ + ' kcal of meat, plus parts.' + multTxt + ' (Field Dress)');
+      game.say('You work fast and clean — hide, sinew, bone, all usable. +' + yield_ + ' kcal of meat, plus parts. (Field Dress)');
       return true;
     },
 
