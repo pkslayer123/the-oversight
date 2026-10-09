@@ -1644,26 +1644,38 @@
       var ap = this.apState();
       var day = (this.state.scholar || {}).day || 1;
 
-      // Limit: max 1 burn per 7 days (balance)
+      // Limit: max 1 burn per 7 days (balance) — recorded only when the burn
+      // actually lands (break-it r4: a fizzled burn must not eat the cooldown).
       if (day - (ap.lastBurnDay || -999) < 7) return false;
-      ap.lastBurnDay = day;
 
       // Burn some tiles — mark them as burned in the detail
-      // We do this abstractly: the next time the player visits, tiles are ash
+      // HONEST (break-it 2026-10-08 r4): burnedTiles was write-only — "the
+      // next time the player visits, tiles are ash" never happened. Now the
+      // burn scorches the current node's grid for real: tiles become rubble
+      // (scavengeable ash). Arsonists torch the wild, not Haven.
       try {
         var s = this.state.scholar;
         s.burnedTiles = s.burnedTiles || {};
-        // Burn 3-5 random tiles on the current node
         var key = this.map.px + ',' + this.map.py;
         s.burnedTiles[key] = s.burnedTiles[key] || [];
-        for (var i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
-          s.burnedTiles[key].push({
-            mx: Math.floor(Math.random() * 9),
-            my: Math.floor(Math.random() * 9),
-            day: day, by: pid
-          });
+        var tile = null;
+        try { tile = this.tileAt ? this.tileAt(this.map.px, this.map.py) : null; } catch (e0b) {}
+        if (tile && tile.type === 'haven') return false; // not Haven. Never Haven.
+        var bd = this.genDetail(this.map.px, this.map.py);
+        var bpx = (s.mx == null ? 4 : s.mx), bpy = (s.my == null ? 4 : s.my);
+        var want = 3 + Math.floor(Math.random() * 3), scorched = 0, btries = 0;
+        while (scorched < want && btries++ < 80) {
+          var bx = Math.floor(Math.random() * 9), by = Math.floor(Math.random() * 9);
+          if (bx === bpx && by === bpy) continue;
+          var bc = bd[by] && bd[by][bx];
+          if (!bc || bc === 'rubble' || bc === 'tent' || bc === 'wall' || bc === 'water' || bc === 'lodge') continue;
+          bd[by][bx] = 'rubble';
+          s.burnedTiles[key].push({ mx: bx, my: by, day: day, by: pid });
+          scorched++;
         }
+        if (scorched < 3) return false; // couldn't scorch: no burn, no cooldown
       } catch (e) {}
+      ap.lastBurnDay = day;
 
       // Villagers are terrified
       try { this.apVillagerFear(pid, null, 'burn'); } catch (e) {}
@@ -1678,6 +1690,36 @@
     },
 
     // RAID: veterans exploit game mechanics they know.
+    // Douse the player's nearest lit fire on the current tile: the grid cell
+    // goes cold AND the tracked fire entry is removed, so hasCampfireNearby,
+    // cooking, and fireLastsTillDawn all agree the fire is out. Returns true
+    // when a fire was actually doused. (break-it 2026-10-08 r4: fire
+    // sabotage used to write a write-only flag while the fire kept burning.)
+    apDousePlayerFire: function () {
+      try {
+        var detail = this.genDetail(this.map.px, this.map.py);
+        var s = this.state.scholar || {};
+        var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
+        var bx = -1, by = -1, best = 1e9;
+        for (var y = 0; y < 9; y++) {
+          for (var x = 0; x < 9; x++) {
+            if (detail[y] && detail[y][x] === 'fire') {
+              var d2 = Math.abs(x - px) + Math.abs(y - py);
+              if (d2 < best) { best = d2; bx = x; by = y; }
+            }
+          }
+        }
+        if (bx < 0) return false;
+        detail[by][bx] = 'dirt';
+        var fires = this.state.fires || [];
+        for (var i = fires.length - 1; i >= 0; i--) {
+          var f = fires[i];
+          if (f.tx === this.map.px && f.ty === this.map.py && f.cx === bx && f.cy === by) fires.splice(i, 1);
+        }
+        return true;
+      } catch (e) { return false; }
+    },
+
     apPlaygroundRaid: function (pid) {
       var per = this.apPersona(pid);
       if (!per) return false;
@@ -1691,17 +1733,30 @@
       var didSomething = false;
 
       if (roll < 0.35) {
-        // PANTRY RAID: they know about the pantry
+        // PANTRY RAID: they know about the pantry.
+        // HONEST (break-it 2026-10-08 r4): the pantry is a LIST of food
+        // items (game.js), not a kcal scalar — the old code read
+        // v.pantry.kcal (always undefined), stole 0, and the raid was a
+        // silent no-op. Now it takes real pieces off the pile.
         try {
           var v = this.state.village || {};
-          var pantry = v.pantry || { kcal: 0 };
-          var steal = Math.min(pantry.kcal || 0, 500 + Math.floor(Math.random() * 500));
-          if (steal > 0) {
-            pantry.kcal = (pantry.kcal || 0) - steal;
-            v.pantry = pantry;
+          v.pantry = v.pantry || [];
+          var want = 500 + Math.floor(Math.random() * 500);
+          var stolen = 0;
+          for (var si = v.pantry.length - 1; si >= 0 && stolen < want; si--) {
+            var pit = v.pantry[si];
+            var pku = pit.kcalEach || 0, pun = pit.units || 1;
+            if (!(pku > 0)) continue;
+            // Take units, not whole pieces — a 12000-kcal slab doesn't vanish.
+            var takeUnits = Math.min(pun, Math.ceil((want - stolen) / pku));
+            stolen += takeUnits * pku;
+            if (takeUnits >= pun) v.pantry.splice(si, 1);
+            else pit.units = pun - takeUnits;
+          }
+          if (stolen > 0) {
             ap.lastRaidDay = day;
             didSomething = true;
-            this.say('🥷 Your pantry is lighter. Someone knew exactly where it was. Someone who\'s played this game before.');
+            this.say('🥷 Your pantry is lighter (' + stolen + ' kcal gone). Someone knew exactly where it was. Someone who\'s played this game before.');
             if (this.state.systemArrived) {
               var known = this.apKnowsAlien(pid);
               this.sysSay('◈ "' + (known ? per.name : 'Someone') + ' just raided a pantry. Textbook. They\'ve done this before."');
@@ -1709,16 +1764,25 @@
           }
         } catch (e) {}
       } else if (roll < 0.60) {
-        // FIRE SABOTAGE: extinguish the fire to hurt you
-        try {
-          // We mark it abstractly — the fire goes out
-          var s = this.state.scholar;
-          s.fireSabotaged = { day: day, by: pid };
-          ap.lastRaidDay = day;
-          didSomething = true;
-          this.say('🔥 Your fire is out. Not burned down — doused. Deliberately. Someone knows that fire is life out here.');
-        } catch (e) {}
-      } else {
+        // FIRE SABOTAGE: douse the player's fire — for real.
+        // HONEST (break-it 2026-10-08 r4): the old branch wrote a write-only
+        // s.fireSabotaged flag while the fire kept burning, and announced
+        // "your fire is out" even with no fire lit. Now it douses the
+        // nearest lit fire (grid cell + tracked fire); with no fire nearby
+        // they poison trust instead of lying about it.
+        var doused = false;
+        try { doused = !!this.apDousePlayerFire(); } catch (e0f) { doused = false; }
+        if (doused) {
+          try {
+            ap.lastRaidDay = day;
+            didSomething = true;
+            this.say('🔥 Your fire is out. Not burned down — doused. Deliberately. Someone knows that fire is life out here.');
+          } catch (e) {}
+        } else {
+          roll = 0.99; // no fire to douse — fall through to trust sabotage
+        }
+      }
+      if (roll >= 0.60) {
         // TRUST SABOTAGE: turn villagers against you
         try {
           var v2 = this.state.village || {};
