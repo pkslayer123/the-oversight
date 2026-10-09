@@ -15,6 +15,7 @@
 //   - tbAdvance()
 //   - tbRoundWrap(f) (shared round wrap: order re-sort, ROUND call, belltoad chorus arrivals — sync + stepped-async)
 //   - tbAfterPlayerAction()
+//   - tbPlayerFlip(targetKey) (speedbump turtle: strength-check flip — 3 turns armor 0, no snap, no bunker; fail eats a snap)
 //   - tbMonsterReach(m) -> tiles (honest striking distance of a monster's attack; disengage gate)
 //   - contestTick() (delegates to contests.js)
 //   - fireShow(event) -> show (delegates to contests.js)
@@ -20879,7 +20880,12 @@
         // meant permanent armor-piercing on every later strike.
         let ignoreArmor = false;
         try { ignoreArmor = !!this.state.scholar.ignoreArmorNext; this.state.scholar.ignoreArmorNext = false; } catch (e) {}
-        if (wType === 'physical' && mdef.armor > 0 && !ignoreArmor) {
+        // FLIPPED (speedbump, Steve 2026-10-08): upside down — the shell
+        // isn't between you and the soft parts. Armor doesn't apply.
+        const flippedTurtle = this.turtleIs(t) && (t.turtleFlipped || 0) > 0;
+        if (flippedTurtle && wType === 'physical' && mdef.armor > 0) {
+          this.say(`(Upside down — the shell isn't in the way.)`);
+        } else if (wType === 'physical' && mdef.armor > 0 && !ignoreArmor) {
           const absorbed = Math.min(d, mdef.armor);
           d -= absorbed;
           if (absorbed > 0) this.say(`(${tName}'s hide absorbs ${absorbed}.)`);
@@ -21201,6 +21207,44 @@
     // turn now. This is an ACTION — during the beam's firing it feeds the
     // beam a tick (hesitate and it ticks anyway). "If you want to pause a
     // sec, don't use all your actions" — or just don't tap; the game waits.
+    // FLIP (speedbump turtle, Steve 2026-10-08): the codex weakness "flip it
+    // (good luck)" is real. Adjacent-only, spends the turn. Strength check:
+    // 0.3 + str*0.04, +0.25 with a crowbar (leverage). Success: turtle
+    // flipped 3 turns — armor 0, can't snap, can't bunker. Fail: it snaps
+    // you (you're in its office). Can't flip a sealed (bunkered) turtle.
+    tbPlayerFlip(targetKey) {
+      const f = this.tbfight;
+      if (!f || !this.tbIsPlayerTurn()) return false;
+      const p = this.tbFighter('p');
+      if (!p) return false;
+      if (p.acted) { this.say('Already acted this turn.'); return false; }
+      const t = this.tbFighter(targetKey);
+      if (!t || !this.turtleIs(t)) return false;
+      if (!t.alive || t.fled) { this.say("It's already down."); return false; }
+      const d = Math.max(Math.abs((t.mx || 0) - (p.mx || 0)), Math.abs((t.my || 0) - (p.my || 0)));
+      if (d > 1) { this.say("Too far — you have to be right next to it to flip it. (That's the bad part.)"); return false; }
+      if ((t.turtleBunker || 0) > 0) { this.say("It's sealed shut — no edge to grab. Wait it out."); return false; }
+      if ((t.turtleFlipped || 0) > 0) { this.say("It's already upside down. Hit the soft parts!"); return false; }
+      // The attempt spends the turn either way.
+      p.acted = true; p.moveLeft = 0;
+      const str = ((this.state.scholar || {}).stats || {}).str || 5;
+      let chance = 0.3 + str * 0.04;
+      try {
+        const wid = String((((this.state.scholar || {}).equipped || {}).weapon || {}).itemId || '');
+        if (wid === 'crowbar') chance += 0.25;
+      } catch (e) {}
+      if (Math.random() < chance) {
+        t.turtleFlipped = 3;
+        this.say('🐢 You get under the shell\u2019s edge and HEAVE — the turtle goes over with a crash, legs waving at the sky. Soft underside exposed. (FLIPPED: no armor, can\u2019t snap, 3 turns.)');
+        try { this.audioEvent('turtleFlip'); } catch (e) {}
+      } else {
+        this.say('🐢 You lunge for the shell\u2019s edge — the head is suddenly somewhere else.');
+        const atk = (t.mdef || {}).attack || {};
+        this.tbDamage('p', S.combat.roll(atk.damage || [20, 30]), t.name || 'the turtle');
+      }
+      this.tbAfterPlayerAction();
+      return true;
+    },
     tbPlayerWait() {
       const f = this.tbfight;
       if (!f || !this.tbIsPlayerTurn()) return false;
@@ -21925,8 +21969,10 @@
         this.say("The lead staggers — and the pack's silence shatters into yips and snarls. Coordination broken. (WOUND THE LEAD: it worked.)");
         this.audioEvent('wolfBreak');
       }
-      // BUNKER TRIGGER (speedbump): below half HP, it seals up.
-      if (t.kind === 'monster' && this.turtleIs(t) && t.hp > 0 && !t.turtleBunkered && t.hp < t.maxHp * 0.5) {
+      // BUNKER TRIGGER (speedbump): below half HP, it seals up. Not while
+      // flipped (Steve 2026-10-08) — upside down, it can't seal; the flip
+      // window is the reward, not a bunker trigger.
+      if (t.kind === 'monster' && this.turtleIs(t) && t.hp > 0 && !t.turtleBunkered && (t.turtleFlipped || 0) <= 0 && t.hp < t.maxHp * 0.5) {
         t.turtleBunker = 2; t.turtleBunkered = true; t.bunkerNoted = false;
         if (this.encUsesFifo(t)) this.encSetPhase(t, 'bunker');
         this.say('It withdraws. The shell seals with a sound like a door closing. (BUNKER: nearly invulnerable for 2 turns — wait it out.)');
@@ -23680,6 +23726,22 @@
       // Closing in is risky EVERY turn: the antlers thrash anyone adjacent
       // IN ADDITION to whatever the deer is doing. You get in, you hit,
       // you get OUT.
+      // FLIPPED (speedbump, Steve 2026-10-08): upside down, legs waving.
+      // No snap, no bunker, no armor — the soft underside is exposed. It
+      // rights itself after 3 of its turns. Checked BEFORE bunker: a
+      // flipped turtle can't seal.
+      if (this.turtleIs(m) && (m.turtleFlipped || 0) > 0) {
+        m.turtleFlipped -= 1;
+        if (m.turtleFlipped <= 0) {
+          this.say('With great dignity, the turtle rights itself. The bad attitude is back.');
+          if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
+        } else {
+          this.say('The turtle flails, upside down. Legs everywhere. No dignity whatsoever.');
+        }
+        this.tbRefreshTelegraphUI();
+        if (this.tbEndCheck()) return;
+        return;
+      }
       // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
       // you out. Nearly invulnerable; the answer is patience, not force.
       if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {

@@ -13684,6 +13684,8 @@
     const wname = Game.equippedWeapon ? Game.equippedWeapon().name : '';
     const canScream = Game.hasAbility('scream_cheese') && Game.state.scholar.screamDay !== Game.state.scholar.day;
     const hasWell = Game.hasItem && Game.hasItem('gravity_well');
+    // FLIP (speedbump, Steve 2026-10-08): show when a live turtle is adjacent.
+    const flippable = p ? mons.some(m => Game.turtleIs && Game.turtleIs(m) && Math.max(Math.abs(m.mx - p.mx), Math.abs(m.my - p.my)) <= 1) : false;
     const yourTurn = Game.tbIsPlayerTurn();
     if (!yourTurn || !p) return '';
     // INTEGRATED (Steve 2026-10-05): combat actions use the SAME selfbar
@@ -13710,6 +13712,7 @@
       ${mons.some(m => m.kind === 'hostile') ? `<button class="self-btn" id="c-talk" ${p.acted ? 'disabled' : ''}>💬 Talk</button>` : ''}
       ${canScream ? `<button class="self-btn" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 Scream</button>` : ''}
       ${hasWell ? `<button class="self-btn" id="c-well" ${p.acted ? 'disabled' : ''} title="Gravity well — hold monsters within 3 tiles for 2 turns (one use)">🕳 Well</button>` : ''}
+      ${flippable ? `<button class="self-btn" id="c-flip" ${p.acted ? 'disabled' : ''} title="Flip the turtle — strength check. Upside down: no armor, can't snap, 3 turns. Fail and it snaps you.">🐢 Flip</button>` : ''}
       <button class="self-btn" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢 Shout</button>
       <button class="self-btn" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖 Offer</button>
       <button class="self-btn" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸ Wait</button>
@@ -13780,6 +13783,20 @@
     on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
     on('c-shout', () => { Game.tbPlayerShout(); rerender(); });
     on('c-well', () => { Game.tbPlayerGravityWell(); rerender(); });
+    on('c-flip', () => {
+      const tf = Game.tbfight;
+      if (!tf || !Game.turtleIs) return;
+      const p = Game.tbFighter('p');
+      const cands = tf.fighters.filter(x => Game.turtleIs(x) && x.alive && !x.fled
+        && Math.max(Math.abs(x.mx - p.mx), Math.abs(x.my - p.my)) <= 1);
+      if (!cands.length) return;
+      if (cands.length === 1) { Game.tbPlayerFlip(cands[0].key); rerender(); return; }
+      enterTargeting({
+        prompt: '🐢 Flip which?',
+        targets: cands.map(m => ({ key: m.key, cx: m.mx, cy: m.my, label: m.name })),
+        onPick: (t) => { Game.tbPlayerFlip(t.key); rerender(); },
+      });
+    });
     on('c-offer', () => { Game.tbPlayerOfferFood(); rerender(); });
     // TALK: words are actions too. Pick who, then how.
     const showTalkRow = (targetKey) => {
