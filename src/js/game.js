@@ -8853,6 +8853,14 @@
       try { this.drama('abilityBurst', this.map.px, this.map.py, '#ff9d45'); } catch (e) {}
       const item = this.state.scholar.inventory[idx];
       if (!item) return null;
+      // BREAK-IT CAMPS-7 (2026-10-09): the fire gate must not trust a stale
+      // cell. The old code scanned for any 'fire' cell without sweeping —
+      // a burned-out player fire (cell not yet swept, no fire-touching path
+      // since) passed the gate, then consumeCookFire found no live tracked
+      // fire and returned 'ok': cooking for free over a cold pit. Same
+      // stale-cell class as the setUpCamp catch. Map fires (hearths) are
+      // established and untouched by the sweep — hearth cooking still works.
+      this.sweepDeadFires();
       // need fire (in detail grid)
       const detail = this.genDetail(this.map.px, this.map.py);
       let hasFire = false;
@@ -9327,18 +9335,23 @@
     // a new camp abandons the old one. Camps break: storms, monsters, or
     // just the world being unkind. Not safe like a haven.
     hasCampfireNearby() {
+      // BREAK-IT CAMPS-7 (2026-10-09): a camp needs YOUR campfire — a live,
+      // tracked fire, not any warm-looking cell. The old check scanned the
+      // grid for any 'fire' cell: a burned-out fire whose cell hadn't been
+      // swept yet founded camps on cold pits ("fire going" — a lie), and
+      // haven hearths / edge-blended map fires founded camps on fires you
+      // never built (breakCamp then promised "the fire's scattered cold"
+      // about a hearth that keeps burning, and the camp's fire sweep can't
+      // kill what it never tracked). Sweep first so dead cells can't lie,
+      // then require a tracked, live, grid (not interior-tent) fire.
+      this.sweepDeadFires();
       const detail = this.genDetail(this.map.px, this.map.py);
       const px = this.state.scholar.mx ?? 4, py = this.state.scholar.my ?? 4;
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          const cell = detail[py + dy] && detail[py + dy][px + dx];
-          // (break-it camps 2026-10-08: the old check also accepted 'campfire',
-          // but no generator ever emits a 'campfire' CELL — cell_defs only
-          // uses it as a fire size descriptor. Dead branch removed.)
-          if (cell === 'fire') return true;
-        }
-      }
-      return false;
+      const now = this._absTick();
+      return (this.state.fires || []).some(f =>
+        !f.inside && f.tx === this.map.px && f.ty === this.map.py && f.till > now &&
+        Math.max(Math.abs(f.cx - px), Math.abs(f.cy - py)) <= 1 &&
+        detail[f.cy] && detail[f.cy][f.cx] === 'fire');
     },
     hasTentNearby() {
       const detail = this.genDetail(this.map.px, this.map.py);
@@ -9370,7 +9383,7 @@
     setUpCamp() {
       if (this.over) return null;
       if (!this.hasTentNearby()) { this.say('You need a pitched tent to make camp.'); return null; }
-      if (!this.hasCampfireNearby()) { this.say('You need a campfire to make camp.'); return null; }
+      if (!this.hasCampfireNearby()) { this.say('You need your own campfire burning to make camp — a hearth or a cold pit doesn\'t count.'); return null; }
       // ONE CAMP (break-it camps-2 2026-10-08): the design comment always said
       // "Setting up a new camp abandons the old one", but the engine refused
       // ("already have a camp... let it go") and no abandon action existed —
@@ -9386,10 +9399,9 @@
       }
       this.state.camp = {
         px: this.map.px, py: this.map.py,
-        condition: 'shitty',
-        setUpDay: this.state.day || 0
+        condition: 'shitty'
       };
-      this.say('Camp made. Tent up, fire going, your little patch of claimed ground. It\'s not a haven — wind, beasts, or bad luck can take it. But it\'s yours. (Sorting, resting, and camp rituals work here.)');
+      this.say('Camp made. Tent up, fire going, your little patch of claimed ground. It\'s not a haven — wind, beasts, or bad luck can take it. But it\'s yours. (Sorting, resting, and camp rituals work here. 30 ticks of work.)');
       this.tickAction(30);
       return null;
     },
@@ -9402,28 +9414,34 @@
       const struck = (r === 'you packed up the tent');
       // WRECKED TENT (survivalist loop 2026-10-08): the pitched tent does not
       // survive the camp's end — a wrecked tent cell left on the grid would
-      // let hasTentNearby/canSetUpCamp resurrect a dead camp. The packTent
-      // path clears its own cell and re-packs the tent BEFORE calling here,
-      // so this sweep is idempotent for that path (no cell, nothing to do).
+      // let hasTentNearby/canSetUpCamp resurrect a dead camp.
+      // BREAK-IT CAMPS-7 (2026-10-09): the sweep only runs when the camp is
+      // DESTROYED. A struck camp's other tents stand — you packed one tent
+      // up; the rest are still pitched, still yours, still set-up-able. The
+      // old code wrecked every other yours-tent on the tile silently when
+      // you packed just one ("Struck, not destroyed" — except the rest).
       // BREAK-IT CAMPS-2 (2026-10-08): tents wrecked by this sweep take their
       // interior fires with them (phantom-fire sibling — see wreckTent).
       const fires = this.state.fires || [];
-      try {
-        const detail = this.genDetail(c.px, c.py);
-        const t = this.tileAt(c.px, c.py);
-        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
-          if (detail[y] && detail[y][x] === 'tent') {
-            const sec = t.secrets && t.secrets[x + ',' + y];
-            if (sec && sec.yours) {
-              detail[y][x] = 'dirt'; delete t.secrets[x + ',' + y];
-              for (let i = fires.length - 1; i >= 0; i--) {
-                const f = fires[i];
-                if (f.inside && f.tx === c.px && f.ty === c.py && f.cx === x && f.cy === y) fires.splice(i, 1);
+      let wrecked = 0;
+      if (!struck) {
+        try {
+          const detail = this.genDetail(c.px, c.py);
+          const t = this.tileAt(c.px, c.py);
+          for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+            if (detail[y] && detail[y][x] === 'tent') {
+              const sec = t.secrets && t.secrets[x + ',' + y];
+              if (sec && sec.yours) {
+                detail[y][x] = 'dirt'; delete t.secrets[x + ',' + y]; wrecked++;
+                for (let i = fires.length - 1; i >= 0; i--) {
+                  const f = fires[i];
+                  if (f.inside && f.tx === c.px && f.ty === c.py && f.cx === x && f.cy === y) fires.splice(i, 1);
+                }
               }
             }
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
       // FIRE HONESTY (break-it camps-2 2026-10-08): the old message said "the
       // fire's cold" while camp-tile fires kept burning, feedable — copy vs
       // engine. A destroyed camp's player fires (grid and interior) go out
@@ -9440,12 +9458,19 @@
         } catch (e) {}
       }
       if (struck) {
-        const fireLeft = fires.some(f => f.tx === c.px && f.ty === c.py);
+        // BREAK-IT CAMPS-7 (2026-10-09): "keeps burning" must name a fire
+        // that's actually alive. The old check trusted the ledger raw — a
+        // burned-out entry still said "it'll die on its own" about a fire
+        // already cold. Sweep first, then name only live grid fires.
+        this.sweepDeadFires();
+        const now = this._absTick();
+        const fireLeft = (this.state.fires || []).some(f => !f.inside && f.tx === c.px && f.ty === c.py && f.till > now);
         this.say(`Camp struck — the tent's back in your pack.` +
           (fireLeft ? ` The fire keeps burning; it'll die on its own.` : ``) +
           ` That's the deal with camps: they're not havens.`);
       } else {
-        this.say(`Your camp is gone — ${r}. The tent's wrecked, the fire's scattered cold. That's the deal with camps: they're not havens.`);
+        const tentBit = wrecked > 1 ? `The ${wrecked} tents are wrecked` : `The tent's wrecked`;
+        this.say(`Your camp is gone — ${r}. ${tentBit}, the fire's scattered cold. That's the deal with camps: they're not havens.`);
       }
       // TENT ROOMS: if you were inside the tent, the wreck dumps you outside.
       try {
@@ -21771,6 +21796,29 @@
           this.say('The beam shreds a tent in its path. Canvas peels like paper.');
         }
       }
+      // CAMP INTEGRITY (break-it camps-7 2026-10-09): the beam shredded tents
+      // but never touched state.camp — a shredded camp-tent left the camp
+      // standing on ribbons. packTent/enterTent refuse shredded, no abandon
+      // action exists, and "Set up camp" says "already your camp" — a stuck
+      // camp, with the sort ritual still working on wreckage (same
+      // phantom-camp class as wreckTent/destroyCell). If no INTACT yours-tent
+      // remains on the camp's tile, the camp's body is gone: break it.
+      // breakCamp's sweep wrecks the shredded tents and kills the fires
+      // honestly. A surviving intact tent keeps the camp standing.
+      try {
+        const c = this.state.camp;
+        if (c && c.px === this.map.px && c.py === this.map.py) {
+          const detail = this.genDetail(c.px, c.py);
+          let intact = false;
+          for (let y = 0; y < 9 && !intact; y++) for (let x = 0; x < 9; x++) {
+            if (detail[y] && detail[y][x] === 'tent') {
+              const sec = t.secrets && t.secrets[x + ',' + y];
+              if (sec && sec.yours && sec.condition !== 'shredded') { intact = true; break; }
+            }
+          }
+          if (!intact) this.breakCamp('the beam tore it to ribbons');
+        }
+      } catch (e) {}
     },
     cellScorched(cx, cy) {
       const nkey = this.map.px + ',' + this.map.py;
