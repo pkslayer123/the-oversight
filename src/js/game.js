@@ -84,6 +84,8 @@
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - load_resets_session_death: load() clears villageLost (session state of a dead run, not save data) — a Continued living run always has a home (code: load, break-it persistence r5 2026-10-09)
+//   - fight_gates_round_trip: per-fight gates on the fight object (alien beam _beamCooldown) and the uprising's identity (uprising/uprisingAttackers, rebuilt into _lastBetrayal) persist in tbSave and restore verbatim — a mid-fight reload can neither re-arm the beam nor downgrade an uprising to an ordinary betrayal (code: syncRun, load, break-it persistence r6 2026-10-09)
+//   - fight_gate_sibling_sweep: the same save-scum class in related systems — hummice sound pressure (humStacks/humMice/humRiseRound/humDecayRound), the player shout cap (shouts) + its chorus-break duration (chorusBrokenUntil), the scorch narration flag (terraformScorched), the pending order re-sort (orderDirty) — all persist in tbSave and restore verbatim (code: syncRun, load, break-it persistence r6 2026-10-09)
 //   - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
@@ -5541,6 +5543,41 @@
             betrayer: f.betrayer || null,
             aggressor: f.aggressor || null,
             playerFled: !!f.playerFled,
+            // BEAM COOLDOWN (break-it persistence 2026-10-09 r6): the alien
+            // beam's once-per-~3-rounds gate lives on the fight object. Dropping
+            // it on save let a mid-fight reload re-arm the beam instantly (a
+            // save-scummer gets a beam every round) — same save-scum-gate class
+            // as the belltoad chorus and read_stance (break-it persistence r3).
+            beamCooldown: f._beamCooldown || 0,
+            // UPRISING (break-it persistence 2026-10-09 r6): an uprising is a
+            // betrayal fight with extra identity — the village-wide justice
+            // aftermath (uprisingAftermath) keys off _lastBetrayal.uprising /
+            // uprisingAttackers. Without these a mid-uprising reload resolved
+            // as an ordinary betrayal and the uprising's consequences silently
+            // never fired.
+            uprising: !!f.uprising,
+            uprisingAttackers: Array.isArray(f.uprisingAttackers) ? f.uprisingAttackers.slice() : null,
+            // SIBLING SWEEP (break-it persistence 2026-10-09 r6): the same
+            // save-scum class in related systems — per-fight fields on the
+            // fight object that a reload silently reset:
+            // - humStacks/humMice/humRiseRound/humDecayRound: the hummice
+            //   swarm's sound-pressure mechanic (damage multiplier up to x2).
+            //   Resetting it to zero was a free threat-eraser.
+            // - shouts: the player's 2/fight shout cap (tbPlayerShout).
+            //   Resetting it meant infinite shouts (infinite chorus-breaks).
+            // - chorusBrokenUntil: how long the shout's chorus-break lasts —
+            //   dropping it made the bellow's effect evaporate on reload.
+            // - terraformScorched: the scorch once-per-fight narration flag.
+            // - orderDirty: a mid-round speed change's pending re-sort for
+            //   the next round (tbRoundWrap).
+            humStacks: f.humStacks || 0,
+            humMice: (f.humMice === undefined || f.humMice === null) ? null : f.humMice,
+            humRiseRound: f.humRiseRound || 0,
+            humDecayRound: (f.humDecayRound === undefined) ? -1 : f.humDecayRound,
+            shouts: f.shouts || 0,
+            chorusBrokenUntil: f.chorusBrokenUntil || 0,
+            terraformScorched: !!f.terraformScorched,
+            orderDirty: !!f.orderDirty,
           };
         }
       } catch (e) {}
@@ -5812,6 +5849,25 @@
             betrayer: tbS.betrayer || null,
             aggressor: tbS.aggressor || null,
             playerFled: !!tbS.playerFled,
+            // UPRISING RESTORE (break-it persistence 2026-10-09 r6): the
+            // fight-level uprising flag drives hostile talk lines and the
+            // uprising flee-line handling in justice.js.
+            uprising: !!tbS.uprising,
+            // BEAM COOLDOWN (break-it persistence 2026-10-09 r6): persisted
+            // in syncRun; restore verbatim so a reload can't re-arm the beam.
+            _beamCooldown: tbS.beamCooldown || 0,
+            // SIBLING SWEEP (break-it persistence 2026-10-09 r6): the same
+            // per-fight gate class in related systems — hummice sound
+            // pressure, the player shout cap + its chorus-break duration, the
+            // scorch narration flag, the pending order re-sort.
+            humStacks: tbS.humStacks || 0,
+            humMice: (tbS.humMice === undefined || tbS.humMice === null) ? null : tbS.humMice,
+            humRiseRound: tbS.humRiseRound || 0,
+            humDecayRound: (tbS.humDecayRound === undefined) ? -1 : tbS.humDecayRound,
+            shouts: tbS.shouts || 0,
+            chorusBrokenUntil: tbS.chorusBrokenUntil || 0,
+            terraformScorched: !!tbS.terraformScorched,
+            orderDirty: !!tbS.orderDirty,
           };
           // BETRAYAL AFTERMATH CONTEXT (break-it combat r7 2026-10-09):
           // _lastBetrayal is session state, not save data — rebuild it from
@@ -5820,12 +5876,21 @@
           if (tbS.betrayal) {
             try {
               const _bf = fighters.find(x => x.kind === 'hostile');
+              const _vill = fighters.filter(x => x.kind === 'villager' && x.alive && x.villagerId).map(x => x.villagerId);
               this._lastBetrayal = {
                 betrayer: tbS.betrayer || (_bf && _bf.villagerId) || null,
                 aggressor: tbS.aggressor || 'npc',
-                witnesses: fighters.filter(x => x.kind === 'villager' && x.alive && x.villagerId).map(x => x.villagerId),
+                witnesses: _vill,
                 betrayerDead: !!(_bf && !_bf.alive),
                 playerFled: !!tbS.playerFled,
+                // UPRISING RESTORE (break-it persistence 2026-10-09 r6):
+                // the uprising's identity lives in _lastBetrayal, which is
+                // session state — without these a mid-uprising reload resolved
+                // as an ordinary betrayal (betrayalAftermath ran instead of
+                // uprisingAftermath). uprisingAllies == defenders == witnesses.
+                uprising: !!tbS.uprising,
+                uprisingAttackers: tbS.uprisingAttackers || [],
+                uprisingAllies: _vill,
               };
             } catch (e) {}
           }
