@@ -119,3 +119,25 @@ invalidated) — fixed, now 9/9 ×4 runs.
   test-movement-actions.js: 9/9 ×4; attack-explorer-20261009.js: 9/9 held;
   test-explorer-attack-20261009.js: 6/6 held
 - validate-ontology.js: 50/50, release permitted
+
+## Landing addendum (coordinator, 2026-10-09 ~09:05 CDT)
+- Sibling's miser break-it (9f251e4) landed on master while the worker ran —
+  master had moved, so the branch was rebased onto 9242b35 (no file overlap:
+  sibling touched storage.js + test-miser file; worker touched game.js + travel
+  tests; diff verified sibling content intact) and merged --ff-only as c0e3b15.
+- Landing verification caught a 4th break the worker's suite missed:
+  T6 (tryNodeExit dead-refusal) was SEED-FLAKY — a blocked exit returned
+  {blocked} to a corpse before ever reaching travelTo's over-guard (seeds 1–2
+  failed, seed 3 passed). Fix: over-guard at the top of tryNodeExit returning
+  {moved:false, dir} in the round-5 refusal shape, every seed. One-line,
+  same bug class.
+- Landing verification also caught a flaky proof test:
+  test-movement-actions.js never seeded Math.random — hardcoded targets (4,5)/
+  (4,6) are blocking cells on some seeds and refused moves cost nothing
+  (5 pass / 4 fail ~1 run in 6). Fixed in the test, not the game: mulberry32
+  + SEED env (repo convention) and runtime walkable-neighbor selection.
+  Now 12/12 ×8 seeds (1, 2, 3, 7, 42, 99, 123, 2026).
+- Post-landing suite state: test-travel-r6.js 34/34 ×3 seeds; test-travel-fog4
+  34/34; test-movement.js 49/49; test-movement-actions.js 12/12 ×8 seeds;
+  attack-explorer 9/9 held; test-explorer-attack 6/6 held; validate-ontology
+  release permitted.

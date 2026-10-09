@@ -7178,14 +7178,19 @@
     // Steve 2026-10-04: no tap-yourself, no confirmation. Blocked exits stop you.
     // Returns { moved:true } | { blocked:block } | null (no exit attempted).
     tryNodeExit(dx, dy) {
-      if (this.inCombat()) return null;
-      const s = this.state.scholar;
-      const inside = s.insideHaven && this.playerTile().type === 'haven';
-      if (inside) return null;
+      // CORPSE GUARD (landing verification 2026-10-09): round 5's dead-refusal
+      // ({moved:false}) only held when travelTo was reached — a BLOCKED exit
+      // returned {blocked} to a corpse before the guard, seed-dependently.
+      // Refuse first, in the same shape, every seed.
       const ex = dx < 0 ? { dx: -1, dy: 0, dir: 'west' }
         : dx > 0 ? { dx: 1, dy: 0, dir: 'east' }
         : dy < 0 ? { dx: 0, dy: -1, dir: 'north' }
         : { dx: 0, dy: 1, dir: 'south' };
+      if (this.over) return { moved: false, dir: ex.dir };
+      if (this.inCombat()) return null;
+      const s = this.state.scholar;
+      const inside = s.insideHaven && this.playerTile().type === 'haven';
+      if (inside) return null;
       const nx = this.map.px + ex.dx, ny = this.map.py + ex.dy;
       // WORLD EDGE (explorer loop 2026-10-06): the known world ends at the
       // map border. NO SILENT ACTIONS — say so once per game, not on every
