@@ -12109,10 +12109,10 @@
       } else if (rec.outcome === 'vFlee') {
         // real wounds from the real fight — not a scaled table number
         try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
-        tell(`\U0001FA78 ${summary}`);
+        tell(`🩸 ${summary}`);
       } else if (rec.outcome === 'vDie') {
         try { this.hurtVillager(vid, 500, 'monster'); } catch (e) {}
-        tell(`\U0001F480 ${summary}`);
+        tell(`💀 ${summary}`);
         try { this.villageEvent('death'); } catch (e) {}
       }
       this.syncMonsterAlias();
