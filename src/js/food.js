@@ -447,7 +447,12 @@
           for (const mk of Object.keys(by)) {
             const n2 = by[mk] || 0;
             if (n2 <= 0) continue;
-            this.state.scholar.inventory.push({
+            // ROUTING (hunter break-it 2026-10-09): the hide/bones go where
+            // the carcass came from (inv), not silently into the cleaner's
+            // pack. Cleaning the village stash's carcass used to teleport
+            // its hide into your pockets — theft should be a deliberate take,
+            // not a side effect of labor.
+            inv.push({
               material: mk, units: n2, name: (matName[mk] || mk) + (n2 > 1 ? 's' : ''),
               kcalEach: 0, spoilDay: 9999, kg: (matKg[mk] || 0.3) * n2,
             });
@@ -668,7 +673,10 @@
           for (const mk of Object.keys(by2)) {
             const n3 = by2[mk] || 0;
             if (n3 <= 0) continue;
-            this.state.scholar.inventory.push({
+            // ROUTING (hunter break-it 2026-10-09): same container rule as
+            // self-clean — the specialist's cuts leave the hide where the
+            // carcass was, not in your pack.
+            inv.push({
               material: mk, units: n3, name: (matName2[mk] || mk) + (n3 > 1 ? 's' : ''),
               kcalEach: 0, spoilDay: 9999, kg: (matKg2[mk] || 0.3) * n3,
             });
@@ -1334,7 +1342,7 @@
         } else {
           if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
             a.edgeTurns = (a.edgeTurns || 0) + 1;
-            if (a.edgeTurns >= 2) { s.animal = null; this.say(`${cap} melts into the treeline. Gone. (-50 kcal)`); }
+            if (a.edgeTurns >= 2) { this.encReleaseAnimal(a); this.say(`${cap} melts into the treeline. Gone. (-50 kcal)`); }
             else this.say(`${cap} catches your move and explodes away! (-50 kcal)`);
           } else {
             a.edgeTurns = 0;

@@ -12,6 +12,7 @@
 //   - encAudio(name, data)
 //   - encKillLine(animal, kcal)
 //   - encButcherHonesty(kcal, animal)
+//   - encReleaseAnimal(a)
 //   - feedback(msg)
 //   - feedbackLines()
 //   - feedbackMark()
@@ -865,20 +866,20 @@
     }
     var cap = this.encCap(this.encAnimalLabel(a));
     if (b === 'arboreal' && nearKind(['tree', 'bigtree'])) {
-      s.animal = null;
+      this.encReleaseAnimal(a);
       this.say(this.encFleeText(a, cap + ' spirals up the trunk — chattering at you from the branches. Catch it on the ground next time.'));
       try { this.audioEvent('animalChatter'); } catch (e) {}
       return true;
     }
     if ((b === 'aquatic' || b === 'aquatic_ambush' || b === 'architect') && nearKind(['water', 'creek'])) {
-      s.animal = null;
+      this.encReleaseAnimal(a);
       this.say(this.encFleeText(a, cap + ' dives — gone under. The water keeps it.'));
       try { this.audioEvent('animalSplash'); } catch (e) {}
       return true;
     }
     if (b === 'flock' && Math.random() < 0.45) {
       // the flock is gone; one bird lags behind
-      s.animal = { id: a.id, mx: a.mx, my: a.my, aware: 0.2, stamina: 1, pstate: 'wary', edgeTurns: 0 };
+      s.animal = { id: a.id, mx: a.mx, my: a.my, aware: 0.2, stamina: 1, pstate: 'wary', edgeTurns: 0, wild: a.wild };
       this.say(cap + ' erupts — wings like thunder, all going different ways. One hen didn\'t get the memo: half-folded wings, your chance.');
       return false; // caller fires animalBolt
     }
@@ -1011,7 +1012,7 @@
       tries++;
     } while (tries < 20 && Math.max(Math.abs(ax - px), Math.abs(ay - py)) < 3);
     var cfg = this.encPreyCfg(animal.id);
-    s.animal = { id: animal.id, mx: ax, my: ay, aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0 };
+    s.animal = { id: animal.id, mx: ax, my: ay, aware: 0, stamina: cfg.stamina, pstate: 'graze', edgeTurns: 0, wild: true };
     // the animal left the tile population to wander the detail grid
     if (t.wildlife && t.wildlife[animal.id] > 0) t.wildlife[animal.id]--;
     this.say('Movement — ' + this.encDescribeAnimal(animal) + '.');
@@ -1033,6 +1034,25 @@
   // keep a reference for tests that want the original spawn shape
   G.checkAnimals._wrapped = true;
 
+  // ESCAPE ACCOUNTING (hunter break-it 2026-10-09): checkAnimals moves one
+  // animal out of the tile's wildlife onto the detail grid (tagged a.wild).
+  // An animal that ESCAPES — bolts off the grid, dives, trees, melts away —
+  // is not dead: it rejoins the tile population. Kills never call this (the
+  // spawn already consumed the population; the carcass is the receipt).
+  // Debug-spawned animals (no a.wild) just vanish — they were never counted.
+  G.encReleaseAnimal = function (a) {
+    try {
+      if (a && a.wild && a.id && this.map && this.map.tiles) {
+        var row = this.map.tiles[this.map.py];
+        var t = row && row[this.map.px];
+        if (t) {
+          t.wildlife = t.wildlife || {};
+          t.wildlife[a.id] = (t.wildlife[a.id] || 0) + 1;
+        }
+      }
+    } catch (e) {}
+    try { this.state.scholar.animal = null; } catch (e2) {}
+  };
   G.animalTurn = function () {
     var s = this.state.scholar;
     var a = s.animal;
@@ -1149,7 +1169,7 @@
     }
     if (beh === 'plays_dead' && a.pstate === 'playing_dead') {
       if (dist >= 4) { // you left: it gets up and wanders off
-        s.animal = null;
+        this.encReleaseAnimal(a);
         this.say('It was already gone — just a rustle in the grass.');
       }
       return; // stays put while you watch
@@ -1257,7 +1277,7 @@
         var sdx = Math.sign(a.mx - px), sdy = Math.sign(a.my - py);
         tryMove(a.mx + sdx * 2, a.my + sdy * 2) || tryMove(a.mx + sdx, a.my + sdy);
         a.pstate = 'bolt'; a.aware = 1;
-        if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) s.animal = null;
+        if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) this.encReleaseAnimal(a);
         return;
       }
     }
@@ -1321,7 +1341,7 @@
         // holding ground or closing: it circles closer, or loses interest
         a.satTurns = (a.satTurns || 0) + 1;
         if (a.satTurns >= 3) {
-          s.animal = null;
+          this.encReleaseAnimal(a);
           this.say(this.encCap(label) + ' holds your gaze a long moment — then melts into the brush. You were too expensive.');
           try { this.audioEvent('animalYowl'); } catch (e) {}
           return;
@@ -1398,7 +1418,7 @@
       // it clocks you (aware < 0.5).
       if ((a.aware || 0) >= 0.5 && !a.mobbed) {
         a.mobbed = true;
-        s.animal = null;
+        this.encReleaseAnimal(a);
         this.say(this.encFleeText(a, 'Cawing — three sharp barks, then the whole treeline joins in. It lifts to the dead branch, still cawing. Everything within earshot knows exactly where you\'re standing.') + ' (the woods are on edge)');
         try { this.audioEvent('animalFlush'); } catch (e) {} // wingbeats
         try { s.whAlert = { day: s.day }; } catch (e) {}
@@ -1442,7 +1462,7 @@
         }
       }
       if (best && bd <= 2) {
-        a.mx = best[0]; a.my = best[1]; s.animal = null;
+        a.mx = best[0]; a.my = best[1]; this.encReleaseAnimal(a);
         this.say(this.encFleeText(a, this.encCap(label) + ' dives — gone under. The water keeps it.'));
         try { this.audioEvent('animalSplash'); } catch (e) {}
         return;
@@ -1452,7 +1472,7 @@
       // SQUIRREL: reaches a trunk → spirals up. Uncatchable in the tree.
       var tc = detail[a.my] && detail[a.my][a.mx];
       if (tc === 'tree' || tc === 'bigtree') {
-        s.animal = null;
+        this.encReleaseAnimal(a);
         this.say(this.encCap(label) + ' spirals up the trunk — chattering at you from the branches. Catch it on the ground next time.');
         try { this.audioEvent('animalChatter'); } catch (e) {}
         return;
@@ -1500,7 +1520,7 @@
     // flat tail rises — the slap is already decided: CRACK, it dives, and
     // every animal on the water hears it (woods-on-edge for the day).
     if (beh === 'sentinel' && a.aware >= 0.7 && a.pstate !== 'bolt' && a.pstate !== 'winded') {
-      s.animal = null;
+      this.encReleaseAnimal(a);
       this.say('CRACK — ' + this.encCap(label) + ' slaps the water with its flat tail and dives. Just spreading rings. Every animal on the creek heard that. (the woods are on edge)');
       try { this.audioEvent('animalTailSlap'); } catch (e) {}
       try { s.whAlert = { day: s.day }; } catch (e) {}
@@ -1525,7 +1545,7 @@
         if (mc === 'water' || mc === 'creek') mwNear = true;
       }
       if (mwNear) {
-        s.animal = null;
+        this.encReleaseAnimal(a);
         this.say(this.encFleeText(a, this.encCap(label) + ' vanishes — under the bank before you can move. The water keeps it.'));
         try { this.audioEvent('animalSplash'); } catch (e) {}
         return;
@@ -1715,7 +1735,7 @@
         } else if (!(tryMove(a.mx + ddx, a.my) || tryMove(a.mx, a.my + ddy))) break;
       }
       if (a.mx === 0 || a.mx === 8 || a.my === 0 || a.my === 8) {
-        s.animal = null;
+        this.encReleaseAnimal(a);
         this.say(this.encCap(label) + ' breaks past everything and is GONE — just torn grass and your hammering heart.');
         try { this.audioEvent('animalBolt'); } catch (e) {}
         return;
@@ -1821,7 +1841,7 @@
         // GROUNDHOG: one edge turn is enough — the hole is right there.
         var edgeNeed = beh === 'alarmed' ? 1 : 2;
         if (a.edgeTurns >= edgeNeed) {
-          s.animal = null;
+          this.encReleaseAnimal(a);
           this.say(beh === 'alarmed'
             ? this.encCap(label) + ' pours itself down its burrow — a dark hole in the bank. Gone. The whistle echoes a little longer than the groundhog does.'
             : this.encCap(label) + ' melts into the treeline. Gone.');
@@ -1965,7 +1985,7 @@
     if (b === 'stalker') {
       var cd = 6 + Math.floor(Math.random() * 6);
       try { s.health = Math.max(0, (s.health || 100) - cd); } catch (e) {}
-      s.animal = null;
+      this.encReleaseAnimal(a);
       this.feedback(this.encCap(this.encAnimalLabel(a)) + ' twists aside — claws raking as it goes (-' + cd + ' HP) — and melts into the brush. It hates a fair fight.');
       try { this.audioEvent('animalYowl'); } catch (e) {}
       return true;

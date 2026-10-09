@@ -344,7 +344,7 @@ Drama overlay — loosely-bound animation layer for emphasis.
 ### encounters (`encounters.js`)
 Encounter framework. Every animal and monster follows the same pattern.
 
-**Provides:** encAnimalKnown(id), encDescribeAnimal(adef), encIdentifyAnimal(id), encDescribeMonster(mdef), encQueueOf(m), encPickCue(known, rawCue, knownCue), encPhase(ent, phase, beats), encAudio(name, data), encKillLine(animal, kcal), encButcherHonesty(kcal, animal), feedback(msg), feedbackLines(), feedbackMark(), startAlienCombat(fighter), tbAlienTurn(m)
+**Provides:** encAnimalKnown(id), encDescribeAnimal(adef), encIdentifyAnimal(id), encDescribeMonster(mdef), encQueueOf(m), encPickCue(known, rawCue, knownCue), encPhase(ent, phase, beats), encAudio(name, data), encKillLine(animal, kcal), encButcherHonesty(kcal, animal), encReleaseAnimal(a), feedback(msg), feedbackLines(), feedbackMark(), startAlienCombat(fighter), tbAlienTurn(m)
 
 **Rules:**
 - knowledge_gated: true (code: encounters.js)

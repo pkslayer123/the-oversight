@@ -2560,6 +2560,12 @@
           // promise. Only skip traps whose setDay is in the future (defensive).
           if (trap.setDay > this.state.scholar.day) continue;
           const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
+          // USES BACKFILL (hunter break-it 2026-10-09): nets got a pre-fix
+          // backfill (uses=12); traps never did. A trap with uses undefined
+          // went NaN on the first catch (undefined - 1), and NaN <= 0 is
+          // false — an unbreakable, infinite trap. Coerce to the recipe's
+          // uses, the same number craft() stamps on a fresh trap.
+          if (trap.uses == null) trap.uses = (recipe && recipe.uses) || 1;
           // ECOLOGY (hunter loop 2026-10-08): traps hunt the tile's REAL
           // wildlife — the simEcology populations — not conjured infinity.
           // A trap only catches species actually present on its tile; each
@@ -5892,6 +5898,27 @@
                 nt.wildlife[sid] = (nt.wildlife[sid] || 0) + 1;
                 if (t.wildlife[sid] <= 0) delete t.wildlife[sid];
               }
+            }
+          }
+        }
+        // RECOLONIZATION (hunter break-it 2026-10-09): extinction was sticky.
+        // A species at 0 is deleted above, so breeding (needs n > 0) could
+        // never bring it back, and migration needs a stocked neighbor. A
+        // hostile hunter could render a species locally extinct FOREVER,
+        // breaking the design promise "hunting depletes, absence lets it
+        // recover." So the land re-seeds: each day, on tiles the player is
+        // NOT standing on, every biome-appropriate missing species has a 3%
+        // chance to wander in from beyond the treeline at 1. Absence heals —
+        // it just takes a season. The tile you're camping stays honestly
+        // empty while you're on it.
+        if (!(x === this.map.px && y === this.map.py)) {
+          const present = t.wildlife || {};
+          const cands = (this.data.animals || []).filter(ad =>
+            (ad.biomes || []).includes(t.type) && !(present[ad.id] > 0));
+          for (const cand of cands) {
+            if (Math.random() < 0.03) {
+              t.wildlife = t.wildlife || {};
+              t.wildlife[cand.id] = 1;
             }
           }
         }
