@@ -92,12 +92,18 @@ function forceResolve() { // like game.js dawn path
   if (pc && (Game.state.scholar.day || 1) >= pc.firesDay) Game.resolveContest();
 }
 function playToEnd(maxSteps) {
-  // hostile auto-player: always pick choice 0 until done
+  // hostile auto-player: always pick choice 0 until done.
+  // ARENA-AWARE (2026-10-09): pit/gauntlet/siege suspend the modal for a real
+  // fight — the harness drives the tbEnd resume the way game.js does.
   let steps = 0;
   while (Game.state.activeContest && Game.state.activeContest.phase !== 'done' && steps < (maxSteps || 60)) {
     const ac = Game.state.activeContest;
     const r = Game.contestChoose(0);
     steps++;
+    if (r && r.arena) {
+      try { Game._contestArenaAfter(Game.state.arenaContest, 'won'); } catch (e) {}
+      continue;
+    }
     if (r === null && Game.state.activeContest && Game.state.activeContest.phase !== 'done') {
       return { stuck: true, steps, ac };
     }
@@ -274,7 +280,9 @@ sec('SOFTLOCK 1 — phase-graph validation, all pool contests');
 {
   const pool = Game.contestPool();
   let bad = [];
-  const TERM = new Set(['WIN', 'LOSE', 'DIE', 'REFUSE', 'VERDICT']);
+  // Terminal nexts handled by contestChoose (2026-10-08: MOOT_JUDGE/MAW_JUDGE
+  // added when moot/maw went deterministic; the old set predates them)
+  const TERM = new Set(['WIN', 'LOSE', 'DIE', 'REFUSE', 'VERDICT', 'MOOT_JUDGE', 'MAW_JUDGE']);
   for (const c of pool) {
     let phases = null;
     try { phases = Game.contestPlayable(c); } catch (e) { bad.push(c.id + ': playable threw'); continue; }
@@ -395,7 +403,13 @@ sec('HONESTY 3 — cheer odds copy vs engine (+5%/+10%, cap 15%)');
   ok('veteran cheer 0.10 choice exists', /cheer: 0\.10/.test(src));
   ok('cap 0.15 enforced at accumulate', /ac\.cheer = Math\.min\(0\.15/.test(src));
   ok('cap 0.15 enforced at verdict', /const cheer = Math\.min\(0\.15, ac\.cheer/.test(src));
-  ok('verdict adds cheer to winOdds', /winBase \+ cheer \+ apWinMod/.test(src));
+  // CHEER-AS-PERFORMANCE (Steve 2026-10-08): the old winBase+cheer+apWinMod
+  // odds formula is gone — cheer is a real performance modifier now.
+  ok('verdict passes cheerBonus+cheerLift to the engine',
+    /contestResolveGroup\(pids\.filter\(pid => pid !== 'player'\), contest, \{ cheerBonus, cheerLift \}\)/.test(src));
+  const esrc = fs.readFileSync(path.join(ROOT, 'src/js/contestEngine.js'), 'utf8');
+  ok('cheerBonus steadies the arm in blood', /braveryBonus: opts\.cheerBonus/.test(esrc));
+  ok('cheerLift lifts the case in moot', /_cxCaseScore\(pid, opts\.cheerLift/.test(esrc));
 }
 
 sec('HONESTY 4 — FEAR: what does the game CLAIM fear does?');

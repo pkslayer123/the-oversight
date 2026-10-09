@@ -64,11 +64,13 @@
 //   - arena_fights: Blood pit/gauntlet/siege send the player into REAL tactical fights — contest modal suspends (arenaSuspended), grid becomes arena, tbEnd resumes via _contestArenaAfter (won→next wave/WIN, lost→death processed, fled→LOSE+shame). Weapon choices grant real items (code: _contestArena, _contestArenaAfter, contestChoose d.arena/d.grantWeapon, tbEnd hook, Steve 2026-10-08); duel/tithe stay phase-engine (tb has no villager enemies; tithe is a ritual) — documented, not hidden
 //   - moot_standing: moot is argued not rolled — rhetorical standing (trust/10 + notability×2 base, sway per choice) vs System demand; deterministic judgment (code: _contestMoot, contestChoose MOOT_JUDGE, Steve 2026-10-08)
 //   - maw_pursuit: the Maw is a deterministic pursuit — distance 3, choices move it, 0 = caught (death). No rolls (code: _contestMaw, contestChoose MAW_JUDGE, Steve 2026-10-08)
-//   - ratings_casting: the System wants its stars — picks weighted by notability (1 + notes×2), 10% whim dark-horse path (uniform, announced). Recast honors the bias (code: fireContest, resolveContest, Steve 2026-10-08)
+//   - ratings_casting: the System wants its stars — picks weighted by notability (1 + notes×2), 10% whim dark-horse path (uniform, announced). The lead pick is weighted too when the player isn't castable (break-it 2026-10-09: the old lead fallback was uniform and unannounced, so fame never mattered for a solo lead). Recast honors the bias (code: fireContest, resolveContest, Steve 2026-10-08)
 //   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
-//   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08) (code: contestPlayable, contestChoose, Steve 2026-10-06)
+//   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08; moot 'Walk out'->MOOT_JUDGE win fixed break-it 2026-10-09) (code: contestPlayable, contestChoose, Steve 2026-10-06)
+//   - arena_reentry_guard: while the contest modal is suspended for a real arena fight, contestChoose drops all input ({arena:true}) and _contestArena refuses a second start — a double-tap race used to re-fire startCombat (clobbering state.arenaContest mid-fight) and re-grant grantWeapon choices (code: contestChoose, _contestArena, break-it 2026-10-09)
+//   - winner_share_pantryadd: a villager's watched win puts the winner's share through pantryAdd — the pantry cap is real, pantryKcal stays in sync; a full pantry gets the honest "eaten on the spot" line, never a silent overfill (code: _contestEnd, break-it 2026-10-09)
 //   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 16 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil, then sorting/witness/cache/longodds (code: _contestWatchBeat, Steve 2026-10-06)
 //   - risk_rebalance_20261006: HIGH RISK rebalance — brave choices now usually kill (~50% death across full aggressive runs), smart choices live but cost heavily. Pit aggressive: 0.08/0.12 -> 0.20/0.30. Hide: 0.20/0.18/0.25 -> 0.32/0.25/0.38. Siege/hold: 0.20 -> 0.30. Rewards NOT nerfed — high risk justifies high reward (code: contestChoose die odds, Steve 2026-10-06)
 //   - pool_expansion_20261006c: four NEW competition styles (Steve 2026-10-06) — price (moot/extreme: sacrifice, village chooses who pays), impress (weird/medium: creative, make aliens feel something new), exchange (endurance/high: team vs team village relay), auction (chance/high: bid memories/years/parts, everyone pays). NOT reskins: price is social horror not trial (moot); impress is creation not performance (cookfight); exchange is team not solo (drop); auction is economic not random (lottery) (code: contestPool, contestPlayable, Steve 2026-10-06)
@@ -407,20 +409,11 @@
     const want = Math.max(1, Math.min(contest.participants || 1, eligible.length));
     const pool = eligible.slice();
     const picks = [];
-    // First pick: prefer the player (System's whim: 10% random override)
-    let whim = false;
-    if (Math.random() < 0.1) {
-      whim = true;
-      picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-    } else {
-      const pi = pool.findIndex(e => e.id === 'player');
-      picks.push(pi >= 0 ? pool.splice(pi, 1)[0] : pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-    }
-    while (picks.length < want && pool.length) {
-      // RATINGS (Steve 2026-10-08): the System wants its stars — picks are
-      // weighted by notability (each earned note doubles your chances),
-      // not uniform. The 10% whim above stays the documented dark-horse
-      // path: uniform random, announced as the System's whim.
+    // RATINGS (Steve 2026-10-08): the System wants its stars — picks are
+    // weighted by notability (each earned note doubles your chances),
+    // not uniform. The 10% whim below stays the documented dark-horse
+    // path: uniform random, announced as the System's whim.
+    const weightedPick = () => {
       let totalW = 0;
       const weights = pool.map(e => {
         const w = 1 + (e.notability || []).length * 2;
@@ -430,8 +423,23 @@
       let r = Math.random() * totalW;
       let si = 0;
       for (; si < pool.length - 1; si++) { r -= weights[si]; if (r <= 0) break; }
-      picks.push(pool.splice(si, 1)[0]);
+      return pool.splice(si, 1)[0];
+    };
+    // First pick: prefer the player (the System's surest star). If the
+    // player isn't castable, the lead is drawn weighted like every other
+    // pick — fame matters for the lead too. (break-it contest 2026-10-09:
+    // the old fallback was uniform and unannounced, so notability only
+    // ever weighted the co-stars — a famous villager had no edge for a
+    // solo lead.)
+    let whim = false;
+    if (Math.random() < 0.1) {
+      whim = true;
+      picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    } else {
+      const pi = pool.findIndex(e => e.id === 'player');
+      picks.push(pi >= 0 ? pool.splice(pi, 1)[0] : weightedPick());
     }
+    while (picks.length < want && pool.length) picks.push(weightedPick());
     const ids = picks.map(p => p.id);
     if (whim) {
       const wSubj = picks[0].id === 'player' ? 'You are' : picks[0].name + ' is';
@@ -1305,7 +1313,11 @@
         choices: [
           { label: 'The whole truth', sub: 'burn it down', do: { prize: true, trauma: 8, note: isLies ? 'You tell all of it. Every ugly true thing. The scanner is silent. The audience is silent. Then — applause like weather.' : 'You tell all of it. Every ugly true thing. The jury is silent. Then — applause like weather.', notability: 'contestWin', sway: 5 }, next: 'MOOT_JUDGE' },
           { label: 'The perfect lie', sub: 'one for the ages', do: { prize: true, note: isLies ? 'You deliver a lie so beautiful the scanner hesitates. The crowd erupts. You win the moment, if not the truth.' : 'You deliver a lie so beautiful the jury forgets to breathe. The crowd erupts. You win the moment, if not the truth.', notability: 'showmanship', sway: 5 }, next: 'MOOT_JUDGE' },
-          { label: 'Walk out', sub: 'refuse the game', do: { note: 'You stand and leave. The cameras follow you to the door. The System lets you go — the refusal IS the content.', notability: 'showmanship', sway: -3 }, next: 'MOOT_JUDGE' },
+          // WALK-OUT PRIZE (break-it contest 2026-10-09): refusing the game
+          // (sway -3) almost never wins — but a towering standing still can.
+          // A WIN is a WIN: the winners-get-prizes contract (template_prize)
+          // holds even for defiance the System found interesting.
+          { label: 'Walk out', sub: 'refuse the game', do: { prize: true, note: 'You stand and leave. The cameras follow you to the door. The System lets you go — the refusal IS the content.', notability: 'showmanship', sway: -3 }, next: 'MOOT_JUDGE' },
         ] },
     ].map((ph, i) => {
       // Stash the judging parameters on the first phase (the engine reads them).
@@ -2423,6 +2435,14 @@
   G.contestChoose = function(idx) {
     const ac = this.state.activeContest;
     if (!ac || ac.phase === 'done') return null;
+    // ARENA RE-ENTRY (break-it contest 2026-10-09): while the modal is
+    // suspended for a real tactical fight, choice input is dead — a
+    // double-tap race (or any re-entrant call) used to re-run the arena
+    // choice's effects: startCombat fired AGAIN, clobbering
+    // state.arenaContest mid-fight (phantom fight), and any grantWeapon on
+    // the same choice re-granted. The fight resumes via _contestArenaAfter;
+    // nothing else may run until then. Proof: scripts/test-break-contest-20261009.js E1.
+    if (ac.arenaSuspended) return { arena: true };
     const phases = ac.phases;
     const phase = phases[ac.phaseIdx || 0];
     if (!phase || !phase.choices || !phase.choices[idx]) return null;
@@ -2645,6 +2665,9 @@
   // spec: { waves: n } — beasts are picked wave-appropriate at fight time.
   G._contestArena = function(ac, spec, log) {
     log = log || [];
+    // Belt-and-suspenders with the contestChoose guard above: a direct
+    // re-call while suspended must not start a second fight either.
+    if (ac.arenaSuspended) return { arena: true, log };
     const n = Math.max(1, Math.min(3, (spec && spec.waves) || 1));
     const wave = this.unlockedWave ? this.unlockedWave() : 1;
     const beasts = [];
@@ -2758,11 +2781,24 @@
         //  placeholder prize.)
         if (prize) {
           try {
-            const vv = this.state.village;
-            vv.pantry = vv.pantry || [];
             const pday = (this.state.scholar || {}).day || 1;
-            vv.pantry.push({ name: "Winner's share (alien rations)", kcalEach: 300, units: 2, spoilDay: pday + 9, safe: true });
-            this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
+            const share = { name: "Winner's share (alien rations)", kcalEach: 300, units: 2, spoilDay: pday + 9, safe: true };
+            // PANTRY CAP (break-it contest 2026-10-09): the winner's share
+            // goes through pantryAdd like every other finished-food grant —
+            // the cap is real, and pantryKcal stays in sync. The old direct
+            // push bypassed both (silent overfill, stale pantryKcal).
+            const canAdd = (typeof this.pantryAdd === 'function');
+            const added = canAdd ? this.pantryAdd(share) : false;
+            if (added) {
+              this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
+            } else if (canAdd) {
+              this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations. The pantry is full to bursting, so the village eats them on the spot, laughing.`);
+            } else {
+              const vv = this.state.village;
+              vv.pantry = vv.pantry || [];
+              vv.pantry.push(share);
+              this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
+            }
           } catch (e2) {
             this.sysSay(`📺 Prize for ${pname}: the System's favor (and a story they'll tell forever).`);
           }
