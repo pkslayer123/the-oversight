@@ -4717,7 +4717,11 @@
         this.say(hasGreens ? `Aki: "You brought something green! I knew it."` : `Aki: "You're back. That's enough."`);
       }
       else if (s.health <= 0) {
-        try { this.playerDeath('the expedition'); } catch (e) { this.over = true; }
+        // DEATH-PATH INVARIANT (break-it persistence-2 2026-10-08): every
+        // transition to over=true must wipe the save in the same tick. A
+        // throwing playerDeath used to leave the last autosave behind and
+        // Continue resurrected the dead run (load() resets over=false).
+        try { this.playerDeath('the expedition'); } catch (e) { this.over = true; try { this.wipe(); } catch (e2) {} }
       }
       else {
         // (homecomingSaid: the days-away beat above already welcomed you —
@@ -18667,7 +18671,7 @@
           this.say('Death knocked. Something else answered.');
         } else {
           // the village is the protagonist: the mantle passes, the story continues.
-          try { this.playerDeath('the night'); } catch (e) { this.over = true; }
+          try { this.playerDeath('the night'); } catch (e) { this.over = true; try { this.wipe(); } catch (e2) {} }
           this.returnToVillage();
           return this.status();
         }
@@ -26581,7 +26585,7 @@
           } catch (e2) {}
           try { this.state.arenaContest = null; } catch (e3) {}
           try { this._contestEnd(_arenaAc, 'lost', false); } catch (e4) {}
-        } else if (!this.over) { try { this.playerDeath('combat'); } catch (e5) { this.over = true; } }
+        } else if (!this.over) { try { this.playerDeath('combat'); } catch (e5) { this.over = true; try { this.wipe(); } catch (e6) {} } }
       }
       } finally {
         this.tbfight = null;
