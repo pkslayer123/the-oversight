@@ -139,13 +139,23 @@ sec('R2 — fireShow villager pull gives a WATCH beat (was: announcement only)')
   ok('pulled the notable villager', !!ac && ac.participant === star, 'got ' + (ac && ac.participant));
   ok('watch beat has cheer/heckle/comfort choices', !!ac && ac.phases[0].choices.length === 3);
 }
-sec('R3 — fireShow village-together is a communal beat');
+sec('R3 — fireShow village-together is a communal beat (milestone trigger)');
 {
   freshGame(16);
   const show = Game.showPool().find(s => s.id === 'nap_wars');
-  withRandom(0.9, () => Game.fireShow(show)); // no notables in a fresh game -> together trigger
+  Game.state.village._peakViewership = 50; // arm the milestone trigger...
+  Game.state.village.viewership = 100;     // ...then beat it by a real margin
+  withRandom(0.9, () => Game.fireShow(show));
   const ac = Game.state.activeContest;
   ok('together sets communal modal', !!ac && ac.kind === 'show' && ac.participant === 'together');
+}
+sec('R3b — no notables: the scholar debuts (no default-together)');
+{
+  freshGame(16);
+  const show = Game.showPool().find(s => s.id === 'nap_wars');
+  withRandom(0.9, () => Game.fireShow(show)); // no notables, no milestone -> scholar debut
+  const ac = Game.state.activeContest;
+  ok('scholar debut sets player modal', !!ac && ac.kind === 'show' && ac.participant === 'player');
 }
 sec('R4 — ratings summons fires from contestTick when ratings dip (was: no code at all)');
 {

@@ -1,9 +1,11 @@
 // PROOF: show pull casting is NOTABILITY-FIRST (Steve 2026-10-09).
 // Before: flat RNG — player 30% / random villager 40% / together 30%.
 // "The cameras want YOU. No reason."
-// After: the pull goes to the notable (weight 1 + notes×2, SAME as contest
-// ratings_casting). Zero notability notes = NEVER pulled, across any number
-// of seeds. Together episodes fire on triggers (no notables, viewership
+// After: the pull goes to the notable via ONE shared notabilityWeight —
+// depth AND impact count (W = 1 + 2×Σ impact×depthMult; repeats halve:
+// 1, 0.5, 0.25, 0.125). Zero-deed villagers are NEVER pulled while
+// notables exist. NO default-together: with nobody notable the pull goes
+// to the SCHOLAR (debut). Together episodes fire on triggers (viewership
 // milestone), never a die roll. 10% whim is announced and constrained to
 // notables. Exact ties share the top band (tiny RNG among equals only).
 // The pull is exposure, not a prize: "popular isn't good, it's just what
@@ -118,8 +120,8 @@ for (const sd of [SEED, SEED + 1, SEED + 2]) {
   rng.reset(sd);
   const roster = freshGame(16);
   const A = roster[0], B = roster[1];
-  Game.addNotability(A, 'contestWin'); Game.addNotability(A, 'wave2Kill'); // 2 note types, w = 5
-  Game.addNotability(B, 'wave2Kill');                                      // 1 note type, w = 3
+  Game.addNotability(A, 'contestWin'); Game.addNotability(A, 'wave2Kill'); // w = 1+2×(2+3) = 11
+  Game.addNotability(B, 'wave2Kill');                                      // w = 1+2×3 = 7
   const cast = castNoWhim();
   ok(`seed ${sd}: top notable pulled`, cast.who === A && cast.why === 'star',
      `who=${cast.who} why=${cast.why}, expected ${A}`);
@@ -149,17 +151,17 @@ sec('(c) most-notable scholar pulled; rules pick, not a flat rate');
   let roster = freshGame(16);
   Game.addNotability('player', 'contestWin');
   Game.addNotability('player', 'wave2Kill');
-  Game.addNotability('player', 'survivedMoot'); // 3 note types, w = 7
-  Game.addNotability(roster[0], 'wave2Kill');   // 1 note type, w = 3
+  Game.addNotability('player', 'survivedMoot'); // w = 1+2×(2+3+2) = 15
+  Game.addNotability(roster[0], 'wave2Kill');   // w = 7
   let cast = castNoWhim();
   ok('most-notable scholar pulled', cast.who === 'player' && cast.why === 'star',
      `who=${cast.who} why=${cast.why}`);
   // and the reverse: a more-notable villager beats the scholar — no 30% flat rate
   rng.reset(SEED);
   roster = freshGame(16);
-  Game.addNotability('player', 'wave2Kill'); // w = 3
+  Game.addNotability('player', 'wave2Kill'); // w = 7
   Game.addNotability(roster[0], 'contestWin');
-  Game.addNotability(roster[0], 'survivedMoot'); // 2 note types, w = 5
+  Game.addNotability(roster[0], 'survivedMoot'); // w = 1+2×(2+2) = 9
   cast = castNoWhim();
   ok('more-notable villager beats scholar (no flat player rate)', cast.who === roster[0],
      `who=${cast.who}, expected ${roster[0]}`);
@@ -168,14 +170,17 @@ sec('(c) most-notable scholar pulled; rules pick, not a flat rate');
 // ================= (d) together fires on triggers, never randomly =================
 sec('(d) together fires on triggers only');
 {
-  // d1: no notables -> always together
-  let together = 0;
+  // d1: no notables -> the SCHOLAR, every time (debut). No default-together.
+  let debut = 0, tog1 = 0;
   for (let i = 0; i < 10; i++) {
     rng.reset(SEED * 7 + i);
     freshGame(16); // nobody notable
-    if (Game.showCastPull().who === 'together') together++;
+    const c = Game.showCastPull();
+    if (c.who === 'player' && c.why === 'debut') debut++;
+    if (c.who === 'together') tog1++;
   }
-  ok('no notables -> together every time (10/10)', together === 10, `${together}/10`);
+  ok('no notables -> scholar debut every time (10/10)', debut === 10, `${debut}/10`);
+  ok('no notables -> together never fires (0/10)', tog1 === 0, `${tog1}/10`);
   // d2: notables present, no milestone -> NEVER together (20 seeds)
   let tog = 0;
   freshGame(16);
@@ -230,8 +235,8 @@ sec('tie band — RNG among equals, nobody below');
   freshGame(16);
   const roster = (Game.state.village.roster || []).filter(id => id !== Game.villagerId && Game.isMember(id));
   const A = roster[0], B = roster[1], C = roster[2]; // C: unwatched
-  Game.addNotability(A, 'contestWin'); // w=3
-  Game.addNotability(B, 'wave2Kill');  // w=3 — exact tie at top
+  Game.addNotability(A, 'contestWin'); // w = 1+2×2 = 5
+  Game.addNotability(B, 'contestWin'); // w = 5 — exact tie at top
   const seen = new Set(); let stray = 0;
   for (let i = 0; i < 20; i++) {
     rng.reset(SEED * 17 + i);
@@ -244,18 +249,24 @@ sec('tie band — RNG among equals, nobody below');
   ok('nobody below the top band ever picked', stray === 0 && !seen.has(C), 'seen: ' + [...seen].join(','));
 }
 
-// ================= weight parity with contest casting =================
-sec('weight parity: 1 + notes×2, same as ratings_casting');
+// ================= weight parity: ONE shared notabilityWeight =================
+sec('weight parity: show + contest casting share notabilityWeight');
 {
   freshGame(16);
   const roster = (Game.state.village.roster || []).filter(id => id !== Game.villagerId && Game.isMember(id));
-  // 2 notes (w=5) beats 1 note (w=3): weight is per-NOTE, not per-category
+  // depth+impact, not breadth: 2×showmanship (1+2×1.5=4) loses to 1×contestWin (5);
+  // 1×contestWin (5) loses to 1×wave2Kill (7) — impact outranks a second small deed
   Game.addNotability(roster[0], 'showmanship');
-  Game.addNotability(roster[0], 'contestWin'); // 2 note types, w = 5
-  Game.addNotability(roster[1], 'contestWin'); // 1 note type, w = 3
+  Game.addNotability(roster[0], 'showmanship'); // depth: 1 + 2×1×1.5 = 4
+  Game.addNotability(roster[1], 'contestWin'); // w = 5
+  Game.addNotability(roster[2], 'wave2Kill');  // w = 7 — top
   const cast = castNoWhim();
-  ok('per-note weight decides (2×showmanship beats 1×contestWin)', cast.who === roster[0],
-     `who=${cast.who}, expected ${roster[0]}`);
+  ok('impact beats repeated small deeds (wave2Kill on top)', cast.who === roster[2],
+     `who=${cast.who}, expected ${roster[2]}`);
+  // and the shared function is what contest casting calls
+  const src = Game.fireContest.toString();
+  ok('fireContest uses the shared notabilityWeight', /notabilityWeight/.test(src));
+  ok('showCastPull uses the shared notabilityWeight', /notabilityWeight/.test(Game.showCastPull.toString()));
 }
 
 console.log('\n==== SEED ' + SEED + ': ' + pass + ' pass, ' + fail + ' fail ====');

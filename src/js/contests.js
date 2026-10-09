@@ -77,7 +77,7 @@
 //   - arena_fights: Blood pit/gauntlet/siege send the player into REAL tactical fights — contest modal suspends (arenaSuspended), grid becomes arena, tbEnd resumes via _contestArenaAfter (won→next wave/WIN, lost→death processed, fled→LOSE+shame). Weapon choices grant real items (code: _contestArena, _contestArenaAfter, contestChoose d.arena/d.grantWeapon, tbEnd hook, Steve 2026-10-08); duel/tithe stay phase-engine (tb has no villager enemies; tithe is a ritual) — documented, not hidden
 //   - moot_standing: moot is argued not rolled — rhetorical standing (trust/10 + notability×2 base, sway per choice) vs System demand; deterministic judgment (code: _contestMoot, contestChoose MOOT_JUDGE, Steve 2026-10-08)
 //   - maw_pursuit: the Maw is a deterministic pursuit — distance 3, choices move it, 0 = caught (death). No rolls (code: _contestMaw, contestChoose MAW_JUDGE, Steve 2026-10-08)
-//   - ratings_casting: the System wants its stars — picks weighted by notability (1 + notes×2), 10% whim dark-horse path (uniform, announced). The lead pick is weighted too when the player isn't castable (break-it 2026-10-09: the old lead fallback was uniform and unannounced, so fame never mattered for a solo lead). Recast honors the bias (code: fireContest, resolveContest, Steve 2026-10-08)
+//   - ratings_casting: the System wants its stars — picks weighted by notabilityWeight (ONE shared weight: depth + impact, Steve 2026-10-09), 10% whim dark-horse path (uniform, announced). The lead pick is weighted too when the player isn't castable (break-it 2026-10-09: the old lead fallback was uniform and unannounced, so fame never mattered for a solo lead). Recast honors the bias (code: fireContest, resolveContest, Steve 2026-10-08)
 //   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08; DIP-SIGNAL FIX audit-shows 2026-10-09: the dip was compared AFTER _lastWeekViewership was overwritten — always false, the 75% branch was dead; now computed once from the trend)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
@@ -98,7 +98,7 @@
 //   - fan_favor_contests: televised wins move the fan club (+4 player, +2 villager); a player win can shake loose a fan care package (code: _contestEnd, Steve 2026-10-08)
 //   - fan_favor_lanes: televised wins move the club that watched them — blood→fight, endurance→survival, moot→social, everything else→showbiz (code: _cxFanLane, _contestEnd, audit-shows 2026-10-09)
 //   - show_playable: shows are PLAYED beats, not announcements — the pull can land on the player (showPhases), a villager (showWatchPhases + deterministic showResolveVillager), or the village together (showTogetherPhases); every pool show has an authored beat in SHOW_BEATS, with _showGenericBeat as fallback (code: fireShow, SHOW_BEATS, audit-shows 2026-10-09)
-//   - show_casting: notability-first — the pull goes to the notable (weight 1 + notes×2, SAME as contest ratings_casting); zero notability notes = never pulled across any number of seeds; together episodes fire on triggers (no notables, viewership milestone +5), never a die roll; 10% whim announced and constrained to notables; exact ties share the top band (code: showCastPull, showEligible, Steve 2026-10-09)
+//   - show_casting: notability-first — the pull goes to the notable (ONE shared notabilityWeight: depth + impact, Steve 2026-10-09); zero-deed villagers never pulled while notables exist; NO default-together — with nobody notable the pull goes to the SCHOLAR ("the cameras don't know these people yet"); together episodes fire ONLY on triggers (viewership milestone +5); 10% whim announced and constrained to notables; exact ties share the top band (code: showCastPull, showEligible, notabilityWeight, Steve 2026-10-09)
 //   - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
@@ -191,6 +191,37 @@
     this.state.notability = this.state.notability || {};
     this.state.notability[vid] = this.state.notability[vid] || {};
     this.state.notability[vid][deed] = (this.state.notability[vid][deed] || 0) + 1;
+  };
+
+  // NOTABILITY WEIGHT (Steve 2026-10-09): ONE shared casting weight for
+  // contests (ratings_casting) and shows (showCastPull). Depth AND impact
+  // count now — the old 1 + distinctNoteTypes×2 is gone.
+  //   W = 1 + 2 × Σ over deed types Σ over repeats (impact_t × depthMult_k)
+  // depthMult halves per repeat of the SAME deed: 1st ×1, 2nd ×0.5,
+  // 3rd ×0.25, 4th+ ×0.125 (floored — the galaxy gets bored, not blind).
+  // All multipliers are powers of two, so float equality on ties is exact.
+  G.NOTABILITY_IMPACT = {
+    wave3Kill: 4,    // slew a wave-3 horror — the biggest thing filmed
+    wave2Kill: 3,    // slew a wave-2 beast — high
+    survivedMoot: 2, // survived the Moot
+    heist: 2,        // pulled off a heist
+    contestWin: 2,   // won a contest — a real deed, every time
+    showmanship: 1,  // a TV appearance — the aliens' small change
+    // Any other tracked deed ('unboxed on camera', 'trial of the long
+    // stalk', 'trial of stone', …): impact 1 — no metadata, no invention.
+  };
+  G.notabilityWeight = function(vid) {
+    const deeds = (this.state.notability || {})[vid] || {};
+    let s = 0;
+    for (const t of Object.keys(deeds)) {
+      const n = deeds[t] | 0;
+      if (n <= 0) continue;
+      const impact = (this.NOTABILITY_IMPACT[t] != null) ? this.NOTABILITY_IMPACT[t] : 1;
+      for (let k = 0; k < n; k++) {
+        s += impact * (k === 0 ? 1 : k === 1 ? 0.5 : k === 2 ? 0.25 : 0.125);
+      }
+    }
+    return 1 + 2 * s;
   };
 
   // === SCHEDULER ===
@@ -435,24 +466,27 @@
 
   // SHOW CAST PULL (Steve 2026-10-09): notability-first casting. The aliens
   // want their stars. Rules, in order:
-  // 1. THE FLOOR: zero notability notes → never pulled, across any number
-  //    of seeds. The aliens don't point cameras at the unwatched.
-  // 2. TOGETHER TRIGGERS (never a die roll): no notables at all, or a
-  //    viewership milestone (new all-time high by a real margin — the
-  //    village gathers to watch itself be watched).
-  // 3. WHIM: 10%, uniform among NOTABLES only, announced — same shape as
+  // 1. MILESTONE: viewership all-time high by a real margin (+5) — the
+  //    village gathers to watch itself be watched. A trigger, never a roll.
+  // 2. NO DEFAULT-TOGETHER: when nobody is notable, the pull goes to the
+  //    SCHOLAR — the audience follows the protagonist; the show is
+  //    introducing its cast. ("The cameras don't know these people yet.
+  //    They know YOU.") If the scholar isn't eligible, fall back to
+  //    together — can't pull a corpse.
+  // 3. THE FLOOR: zero-weight villagers (no deeds) are never pulled while
+  //    notables exist. The aliens don't point cameras at the unwatched.
+  // 4. WHIM: 10%, uniform among NOTABLES only, announced — same shape as
   //    the contest whim (alien whimsy), but unpopular people are never
   //    randomly chosen, period.
-  // 4. THE RULE: highest weight wins — 1 + notes×2, the SAME weight as
-  //    contest ratings_casting. Exact ties share the top band: tiny RNG
-  //    among equals only ("the cameras couldn't decide").
+  // 5. THE RULE: highest notabilityWeight wins — depth and impact count,
+  //    the SAME weight as contest ratings_casting. Exact ties share the
+  //    top band: tiny RNG among equals only ("the cameras couldn't decide").
   // Fame's price: more notability → more pulls → more embarrassment risk.
   // Obscurity is safety — a legitimate player tradeoff, not an exploit.
   // Returns {who: 'player'|vid|'together', why, note}.
   G.showCastPull = function() {
     const cands = this.showEligible();
     const v = this.state.village || {};
-    const notable = cands.filter(c => (c.notability || []).length > 0);
     // Milestone: new all-time viewership high by a real margin (+5, not +1
     // noise). The bar ratchets — peak updates whenever exceeded.
     let now = 0;
@@ -460,17 +494,23 @@
     if (v._peakViewership == null) v._peakViewership = now;
     const milestone = now >= v._peakViewership + 5;
     if (now > v._peakViewership) v._peakViewership = now;
-    if (!notable.length || milestone) {
-      return { who: 'together', why: !notable.length ? 'no-stars' : 'milestone', note: null };
+    if (milestone) {
+      return { who: 'together', why: 'milestone', note: null };
     }
-    const weighted = notable.map(c => ({ c, w: 1 + c.notability.length * 2 }));
+    const weighted = cands.map(c => ({ c, w: this.notabilityWeight(c.id) }));
+    const notable = weighted.filter(x => x.w > 1);
+    if (!notable.length) {
+      const scholar = cands.find(c => c.id === 'player');
+      if (scholar) return { who: 'player', why: 'debut', note: null };
+      return { who: 'together', why: 'no-cast', note: null };
+    }
     if (Math.random() < 0.10) {
-      const pick = weighted[Math.floor(Math.random() * weighted.length)];
+      const pick = notable[Math.floor(Math.random() * notable.length)];
       return { who: pick.c.id, why: 'whim', note: (pick.c.notability || [])[0] || null };
     }
     let maxW = -1;
-    for (const x of weighted) if (x.w > maxW) maxW = x.w;
-    const band = weighted.filter(x => x.w === maxW);
+    for (const x of notable) if (x.w > maxW) maxW = x.w;
+    const band = notable.filter(x => x.w === maxW);
     const pick = band[Math.floor(Math.random() * band.length)];
     return { who: pick.c.id, why: band.length > 1 ? 'tie' : 'star',
              note: (pick.c.notability || [])[0] || null, band: band.length };
@@ -501,9 +541,13 @@
     const who = cast.who; // 'player' | villagerId | 'together'
     let phases = null;
     if (who === 'player') {
-      if (cast.why === 'whim') this.sysSay(`📺 The System's whim: you are *interesting*.`);
-      else if (cast.why === 'tie') this.sysSay(`📺 The cameras couldn't decide — they chose you.`);
-      this.sysSay(`📺 The cameras want YOU — ${cast.note || 'the galaxy knows your name'}.`);
+      if (cast.why === 'debut') {
+        this.sysSay(`📺 The cameras don't know these people yet. They know YOU. Somebody has to be first on the screen.`);
+      } else {
+        if (cast.why === 'whim') this.sysSay(`📺 The System's whim: you are *interesting*.`);
+        else if (cast.why === 'tie') this.sysSay(`📺 The cameras couldn't decide — they chose you.`);
+        this.sysSay(`📺 The cameras want YOU — ${cast.note || 'the galaxy knows your name'}.`);
+      }
       this.sysSay(`📺 That's not an honor. It's just what the aliens like to see. You're going on television.`);
       try { this.audioEvent('contestTaken'); } catch (e) {}
       phases = this.showPhases(s, 'player');
@@ -511,7 +555,7 @@
       if (cast.why === 'milestone') {
         this.sysSay(`📺 Biggest audience yet — the whole galaxy is watching tonight. The village gathers to watch itself be watched. Someone brings snacks. It helps.`);
       } else {
-        this.sysSay(`📺 No stars tonight — nobody the galaxy knows by name. The village watches together. Someone brings snacks. It helps.`);
+        this.sysSay(`📺 The village watches together. Someone brings snacks. It helps.`);
       }
       phases = this.showTogetherPhases(s);
     } else {
@@ -1140,14 +1184,15 @@
     const want = Math.max(1, Math.min(contest.participants || 1, eligible.length));
     const pool = eligible.slice();
     const picks = [];
-    // RATINGS (Steve 2026-10-08): the System wants its stars — picks are
-    // weighted by notability (each earned note doubles your chances),
-    // not uniform. The 10% whim below stays the documented dark-horse
-    // path: uniform random, announced as the System's whim.
+    // RATINGS (Steve 2026-10-08; depth+impact Steve 2026-10-09): the System
+    // wants its stars — picks are weighted by notabilityWeight (depth and
+    // impact count, shared with show casting), not uniform. The 10% whim
+    // below stays the documented dark-horse path: uniform random, announced
+    // as the System's whim.
     const weightedPick = () => {
       let totalW = 0;
       const weights = pool.map(e => {
-        const w = 1 + (e.notability || []).length * 2;
+        const w = this.notabilityWeight(e.id);
         totalW += w;
         return w;
       });
