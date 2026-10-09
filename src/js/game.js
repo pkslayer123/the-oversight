@@ -716,17 +716,12 @@
           abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
           items: [], // filled below with char context (keepsake personalization)
           talk, quest, kcalPerDay: (occ.kcalPerDay || 2000) + Math.floor(Math.random() * 201) - 100,
-          // villagers feed themselves FIRST — but they're strangers in a strange
-          // land. providesPerDay is the PRE-knowledge base (~60% of need):
-          // starting background knowledge multiplies it, and it KEEPS growing as
-          // the village learns (see villagerLearnsPlant). the learning curve IS
-          // the difficulty curve: an ignorant village leans on the pantry and the
-          // player; a knowledgeable village feeds itself and builds surplus.
-          // knowledgeFactor = 1 + 0.10 * knownPlants, capped at 1.8.
-          // (missing this field entirely meant generated villagers produced 0 and
-          // the village burned ~12k/day from the pantry — the forager could never
-          // keep up, and the "self-sufficient" fiction was a lie.)
-          providesPerDay: Math.round((occ.kcalPerDay || 2000) * 0.60) + Math.floor(Math.random() * 201) - 100,
+          // villagers feed themselves FIRST. providesPerDay is the identity-based
+          // snapshot (VILLAGER GRIT, Steve 2026-10-09): occupation skill × age
+          // capacity — no flat percentages. The live number is computed daily
+          // by villagerDayProduction (adds knowledge, stranger curve, grit,
+          // health); this field is the pre-knowledge base for old readers.
+          providesPerDay: 0, // set below via villagerFoodBase (needs char.age)
           survivalProbability: 25 + Math.floor(Math.random() * 21),
           systemAssessment: sysAssess,
           secretFear, languages: langs, occupationId: occ.id || null,
@@ -741,6 +736,7 @@
         // ITEMS (Steve 2026-10-05): generated with full char context so kin
         // keepsakes are THAT person's — named from their own culture.
         char.items = this.genItemCandidates(occ, char);
+        try { char.providesPerDay = this.villagerFoodBase(char); } catch (e) { char.providesPerDay = 1200; }
         // EQUIPMENT (Steve 2026-10-06): villagers wear what they have.
         try { if (S.equipment) S.equipment.autoEquip(char, this.data.items); } catch (e) {}
         return char;
@@ -947,7 +943,7 @@
         abilityWeights: occ.abilityWeights || { care: 1, fieldcraft: 1, system: 1 },
         items: [], talk, quest,
         kcalPerDay: s.kcalPerDay || 2000,
-        providesPerDay: s.providesPerDay || 1500,
+        providesPerDay: 0, // identity-based below (seed may override)
         survivalProbability: 25 + Math.floor(Math.random() * 21),
         systemAssessment: sysAssess,
         secretFear, languages: langs, occupationId: occ.id || null,
@@ -961,6 +957,9 @@
       char.items = this.genItemCandidates(occ, char);
       // EQUIPMENT (Steve 2026-10-06): villagers wear what they have.
       try { if (S.equipment) S.equipment.autoEquip(char, this.data.items); } catch (e) {}
+      // VILLAGER GRIT: identity-based base; the seed's hand-written value wins.
+      try { char.providesPerDay = s.providesPerDay || this.villagerFoodBase(char); }
+      catch (e) { char.providesPerDay = 1200; }
       return char;
     },
 
@@ -4013,6 +4012,10 @@
         water:  { icon: '💧', name: 'Fetch water', desc: 'Bring back clean water. Safe.', danger: 0 },
         scout:  { icon: '🔭', name: 'Scout', desc: 'Explore and map nearby land. May find things.', danger: 0 },
         patrol: { icon: '⚔️', name: 'Patrol / Fight', desc: 'Deal with monster threats. DANGEROUS.', danger: 2 },
+        cook:   { icon: '🍲', name: 'Cook', desc: 'Cook meals at Haven. Stretches every calorie. Haven work counts.', danger: 0, haven: true },
+        tend:   { icon: '🕯️', name: 'Tend', desc: 'Tend the fire and the sick. Haven work counts.', danger: 0, haven: true },
+        teach:  { icon: '📖', name: 'Teach', desc: 'Teach what you know. The village learns. Haven work counts.', danger: 0, haven: true },
+        mend:   { icon: '🧵', name: 'Mend', desc: 'Mend gear and clothing. Haven work counts.', danger: 0, haven: true },
         rest:   { icon: '😴', name: 'Rest', desc: 'Recover at Haven. Clears assignment.', danger: 0 },
       };
     },
@@ -4046,6 +4049,18 @@
         if (has('soldier', 'marine', 'police', 'officer', 'fighter', 'boxer', 'martial')) mult = 1.4;
         else if (has('hunter', 'firefighter', 'athlete')) mult = 1.2;
         else if (has('librarian', 'teacher', 'accountant', 'nurse', 'cook')) mult = 0.7;
+      } else if (task === 'cook') {
+        if (has('cook', 'chef', 'baker', 'butcher')) mult = 1.4;
+        else if (has('farmer', 'gardener')) mult = 1.2;
+      } else if (task === 'tend') {
+        if (has('nurse', 'medic', 'doctor', 'midwife', 'veterinarian', 'firefighter')) mult = 1.4;
+        else if (has('teacher', 'social worker')) mult = 1.2;
+      } else if (task === 'teach') {
+        if (has('teacher', 'professor', 'instructor')) mult = 1.4;
+        else if (has('librarian', 'forager', 'botanist', 'herbalist')) mult = 1.2;
+      } else if (task === 'mend') {
+        if (has('tailor', 'seamstress', 'carpenter', 'mechanic')) mult = 1.4;
+        else if (has('blacksmith', 'welder')) mult = 1.2;
       }
       // temperament: bold takes risks (better results, more danger).
       // cautious plays safe (smaller hauls, fewer injuries).
@@ -4308,6 +4323,41 @@
           ? `💧 ${first} returns with ${liters}L of creek water. Risky until the hearth boils it.`
           : `💧 ${first} returns with ${liters}L, but the cistern only holds ${added}L more.`);
         this.bumpTrust(vid, 1);
+      } else if (a.task === 'cook' || a.task === 'tend' || a.task === 'teach' || a.task === 'mend') {
+        // HAVEN ROLES (Steve 2026-10-09): haven work is contribution. The
+        // credit lands in v.gives so the ledger — and the freeloader pipeline
+        // — sees it. A villager who never leaves haven but keeps the home
+        // fires burning is pulling weight.
+        const credit = this.havenRoleCredit(vid, this.state.village) || 400;
+        const vv2 = this.state.village;
+        vv2.gives = vv2.gives || {};
+        vv2.gives[vid] = (vv2.gives[vid] || 0) + credit;
+        const roleLine = {
+          cook: `🍲 ${first} cooked for the haven — meals stretched, nothing wasted.`,
+          tend: `🕯️ ${first} tended the fire and the sick — the haven held together.`,
+          teach: `📖 ${first} taught what they know — the village is a little wiser.`,
+          mend: `🧵 ${first} mended gear and clothing — everything lasts a little longer.`,
+        }[a.task];
+        // the teacher actually teaches: one plant they know, passed on
+        if (a.task === 'teach') {
+          try {
+            const taught = (vv2.taught && vv2.taught[vid]) || [];
+            const learners = (vv2.roster || []).filter(rid => rid !== vid);
+            let shared = 0;
+            for (const pid of taught) {
+              for (const rid of learners) {
+                const lt = (vv2.taught && vv2.taught[rid]) || [];
+                if (!lt.includes(pid)) {
+                  try { if (this.villagerLearnsPlant(rid, pid, 'taught')) shared++; } catch (e) {}
+                  break;
+                }
+              }
+              if (shared >= 2) break;
+            }
+          } catch (e) {}
+        }
+        this.say(`${roleLine} (+${credit} contribution recognized.)`);
+        this.bumpTrust(vid, 2);
       } else if (a.task === 'scout') {
         // reveal tiles around haven + small chance of a find
         let revealed = 0;
@@ -12029,7 +12079,12 @@
       // there is nothing to teach), so later parts revert to the ambient gate.
       const homecoming = !!v.homecomingFireside;
       v.homecomingFireside = false;
-      if (!v.roster || (!homecoming && Math.random() > 0.35)) return; // not every part
+      // KNOWLEDGE SPREAD (Steve 2026-10-09, tweak B): the fire teaches
+      // reliably when villagers share it. 3+ at haven → most days. This is
+      // how the village bootstraps: knowledgeFactor is the long game.
+      const atHaven = (v.roster || []).filter(rid => !(v.away && v.away[rid])).length;
+      const fireGate = atHaven >= 3 ? 0.75 : 0.35;
+      if (!v.roster || (!homecoming && Math.random() > fireGate)) return; // not every part
       // the lesson is spoken at the fire — you only hear it if you're there.
       const present = isPresent === undefined ? this.playerAtHaven() : isPresent;
       const shared = v.sharedKnowledge || {};
@@ -18558,6 +18613,25 @@
           this.stockPantry(kcal, 'Foraged food');
           this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
           if (present) this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
+          // KNOWLEDGE SPREAD (Steve 2026-10-09, tweak B): working the land
+          // teaches. A forager who brings food home learned SOMETHING about
+          // what grows where — and what they learn, the village can learn
+          // (sharedKnowledge feeds firesideTeaching).
+          try {
+            const known = (v.taught && v.taught[id]) || [];
+            if (known.length < 12 && Math.random() < 0.35 && (this.data.plants || []).length) {
+              const cands = this.data.plants.filter(pl => !known.includes(pl.id));
+              if (cands.length) {
+                const pl = cands[Math.floor(Math.random() * cands.length)];
+                if (this.villagerLearnsPlant(id, pl.id, 'foraging')) {
+                  v.sharedKnowledge = v.sharedKnowledge || {};
+                  if (!v.sharedKnowledge[pl.id]) {
+                    v.sharedKnowledge[pl.id] = { discoveredBy: id, day: this.state.scholar.day, level: 1 };
+                  }
+                }
+              }
+            }
+          } catch (e) {}
         } else if (r < 0.5) {
           // wounded: health bars. -20 to -35 per bad day.
           v.health = v.health || {};
@@ -19593,6 +19667,298 @@
       return take;
     },
 
+    // VILLAGER GRIT (Steve 2026-10-09): "Villagers should vary. No more
+    // inputting percentages like 60% of own needs. These are people trying
+    // to survive. But not everyone has the same grit or capacity especially
+    // in the early game." Every number below traces to a person — occupation,
+    // body, temperament, knowledge, and how long they've been here. There are
+    // no global flat percentages anywhere in this model.
+    //
+    // The pipeline: villagerFoodBase (identity capacity) × knowledgeFactor
+    // (learning the land) × strangerFactor (finding their feet) × gritRoll
+    // (today's effort — the day-to-day variance) × healthFactor.
+    // villagerExpectedDaily is the same WITHOUT the grit roll: what this
+    // person SHOULD produce. The freeloader pipeline judges actual vs
+    // expected-per-person — never a flat bar (Steve: "You can't make an old
+    // woman go fight bears").
+    occupationFoodSkill(occName) {
+      const o = String(occName || '').toLowerCase();
+      const has = (...words) => words.some(w => o.includes(w));
+      // who can feed themselves from the land on day one
+      if (has('farmer', 'gardener', 'forager', 'hunting guide', 'fishing guide',
+              'fisherman', 'rancher', 'beekeeper', 'mushroom', 'trail crew')) return 1.5;
+      // food people: they know what's edible and how to extract calories
+      if (has('chef', 'cook', 'butcher', 'baker')) return 1.3;
+      // outdoors/practical: fieldcraft transfers
+      if (has('soldier', 'sailor', 'firefighter', 'police', 'army medic',
+              'paramedic', 'veterinarian', 'exterminator', 'pilot', 'truck driver')) return 1.1;
+      // desk work: the land is a foreign country
+      if (has('programmer', 'lawyer')) return 0.6;
+      // indoor/care work: no land skills, but capable people
+      if (has('teacher', 'librarian', 'interpreter', 'social worker', 'journalist',
+              'artist', 'musician', 'tailor', 'bartender', 'dispatcher', 'mortician',
+              'dentist', 'pharmacist', 'nurse', 'midwife', 'physical therapist', 'esl')) return 0.8;
+      return 1.0;
+    },
+    ageCapacity(age) {
+      const a = age == null ? 35 : age;
+      if (a < 18) return 0.6;
+      if (a < 25) return 0.9;
+      if (a <= 50) return 1.0;
+      if (a <= 60) return 0.85;
+      if (a <= 70) return 0.7;
+      return 0.55;
+    },
+    gritRoll(temperament) {
+      // DAY-TO-DAY VARIANCE: grit is showing up. Steady types are reliable;
+      // bold/warm types put in big days; anxious/fidgety types swing — some
+      // days they can't face the treeline, and that's honest.
+      const t = temperament || 'steady';
+      const R = Math.random;
+      if (t === 'bold') return 0.95 + R() * 0.35;
+      if (t === 'warm') return 0.90 + R() * 0.30;
+      if (t === 'steady') return 0.90 + R() * 0.20;
+      if (t === 'cautious') return 0.80 + R() * 0.30;
+      if (t === 'anxious' || t === 'fidgety') return 0.50 + R() * 0.70;
+      return 0.80 + R() * 0.40;
+    },
+    strangerFactor(day) {
+      // ripped from their lives into a strange land: stress, no routines,
+      // disorganization. A farmer's hands still work — but everything is
+      // harder for the first week. (The "unknown land" penalty lives in the
+      // knowledge factor, not here — no double-counting.) Short and shallow:
+      // the KNOWLEDGE ramp is the real long game.
+      const d = Math.max(0, day || 0);
+      return 0.8 + 0.2 * Math.min(1, d / 7);
+    },
+    villagerFoodBase(person) {
+      // identity-based daily kcal capacity: pre-knowledge, pre-settling.
+      // A 24-year-old farmer and a 59-year-old programmer do not haul the same.
+      // (Steve 2026-10-09, tweak C: competent people net out HIGHER than the
+      // old flat mean — a farmer feeds themselves from day one on skill
+      // alone; knowledge takes them to real surplus.)
+      const p = person || {};
+      return Math.round(1500
+        * this.occupationFoodSkill(p.formerOccupation || p.occupation)
+        * this.ageCapacity(p.age));
+    },
+    villagerDaysHere(v) {
+      // days since the village was founded (arrival proxy for the stranger curve)
+      const st = this.state || {};
+      const v0 = v || st.village || {};
+      const sch = st.scholar || {};
+      const f = v0.foundedDay != null ? v0.foundedDay
+        : (sch.foundedDay != null ? sch.foundedDay : null);
+      const day = sch.day || 0;
+      if (f == null) return Math.max(0, day); // day 0 is arrival day
+      return Math.max(0, day - f);
+    },
+    villagerKnowledgeFactor(vid, v) {
+      const vv = v || this.state.village || {};
+      const known = (vv.taught && vv.taught[vid]) ? vv.taught[vid].length : 0;
+      return Math.min(1.8, 1 + known * 0.10);
+    },
+    villagerExpectedDaily(person, vid, v) {
+      // what THIS person should produce today: capacity × knowledge ×
+      // settled × health, at MEAN grit. Expectations judge capacity, not luck —
+      // a bad grit day doesn't make you a freeloader.
+      const vv = v || this.state.village || {};
+      const health = (vv.health && vv.health[vid] !== undefined) ? vv.health[vid] : 100;
+      return this.villagerFoodBase(person)
+        * this.villagerKnowledgeFactor(vid, vv)
+        * this.strangerFactor(this.villagerDaysHere(vv))
+        * (health / 100);
+    },
+    villagerDayProduction(person, vid, v) {
+      // the actual roll: expectation × today's grit. Mentorship compounds:
+      // time spent learning at the player's side makes hands steadier.
+      const temp = (person.personality && person.personality.temperament) || 'steady';
+      return this.villagerExpectedDaily(person, vid, v)
+        * this.gritRoll(temp) * (1 + (person.mentorBonus || 0));
+    },
+
+    // HAVEN ROLES (Steve 2026-10-09): "Haven contributions count." Cooking,
+    // mending, teaching, fire-tending, tending the sick, watching kids —
+    // haven work is contribution and the ledger must recognize it. A villager
+    // who never leaves haven but keeps the home fires burning is pulling
+    // weight. Credits are kcal-equivalent and land in v.gives via
+    // resolveOneAssignment; this is the daily rate card.
+    havenRoleCredit(vid, v) {
+      const vv = v || this.state.village || {};
+      const asg = (vv.assignments || {})[vid];
+      if (!asg) return 0;
+      const def = (this.delegateTasks ? this.delegateTasks() : {})[asg.task] || {};
+      if (!def.haven) return 0;
+      const comp = this.villagerCompetence ? this.villagerCompetence(vid, asg.task) : 1.0;
+      const base = { cook: 800, tend: 600, teach: 500, mend: 400 }[asg.task] || 0;
+      return Math.round(base * comp);
+    },
+
+    // FREELOADER PIPELINE (Steve 2026-10-09): "They should kick you out if you
+    // don't do that." Sustained net-negative contribution → trust floor →
+    // warnings (honest, never silent) → moot vote → exile. Judged against
+    // PER-PERSON expectation (no cruelty: an old woman producing modestly is
+    // not a freeloader; a healthy 30-year-old producing the same is). A bad
+    // week is not exile; a pattern is. Applies to the PLAYER too.
+    freeloaderTick(v) {
+      const st = this.state || {};
+      const vv = v || st.village || {};
+      if (!vv.roster) return;
+      vv.freeload = vv.freeload || {};
+      vv.contribHist = vv.contribHist || {};
+      const day = (st.scholar || {}).day || 0;
+      for (const vid of vv.roster) {
+        const person = this.getPerson(vid);
+        if (!person || (person.dead)) continue;
+        const expected = this.villagerExpectedDaily(person, vid, vv);
+        // actual: today's logged production + haven credit + explicit gives
+        const log = (vv.contribLog || {})[vid];
+        const gave = (vv.gives || {})[vid] || 0;
+        const actual = ((log && log.day === day) ? log.produced : 0) + gave;
+        const hist = (vv.contribHist[vid] = vv.contribHist[vid] || []);
+        hist.push({ day, actual, expected });
+        while (hist.length > 5) hist.shift();
+        const fl = (vv.freeload[vid] = vv.freeload[vid] || { days: 0, stage: 0 });
+        if (fl.exiled || fl.acquitted) continue;
+        // need 5 days of data before judging — no snap judgments
+        if (hist.length < 5) continue;
+        const totA = hist.reduce((t, h) => t + h.actual, 0);
+        const totE = hist.reduce((t, h) => t + h.expected, 0);
+        const effort = totE > 0 ? totA / totE : 1;
+        const takes = (vv.takes || {})[vid] || 0;
+        // freeloading = not trying (under half of own capacity) AND draining
+        // the commons meaningfully. Low capacity is not a crime — low EFFORT is.
+        const draining = takes - gave > 1500;
+        if (effort < 0.5 && draining) {
+          fl.days++;
+          if (fl.days === 3 && fl.stage < 1) { fl.stage = 1; this.freeloadGossip(vid); }
+          else if (fl.days === 7 && fl.stage < 2) { fl.stage = 2; this.freeloadWarning(vid); }
+          else if (fl.days === 12 && fl.stage < 3) { fl.stage = 3; this.freeloadVote(vid); }
+        } else if (effort >= 0.7) {
+          // a good stretch clears the pattern
+          if (fl.days > 0 && fl.stage < 3) {
+            fl.days = 0; fl.stage = 0;
+            if (this.playerAtHaven() && !this.isPlayer(vid)) {
+              const nm = String(person.name || 'Someone').split(' ')[0];
+              this.say(`${nm} has been pulling weight lately. The grumbling stops.`);
+            }
+          }
+        }
+      }
+    },
+    freeloadGossip(vid) {
+      // stage 1: the village talks. Gossip moves REP, never trust (canon).
+      const nm = this.displayName(vid);
+      const first = String(nm || 'Someone').split(' ')[0];
+      try {
+        if (this.seedGossip) this.seedGossip('freeload', { who: vid }, []);
+      } catch (e) {}
+      try {
+        const v = this.state.village;
+        v.rep = v.rep || {};
+        v.rep[vid] = Math.max(-100, (v.rep[vid] || 0) - 8);
+      } catch (e) {}
+      if (this.playerAtHaven()) {
+        this.say(`Around the fire, low voices: ${first} isn't pulling weight. Nobody says it to their face. Yet.`);
+      }
+    },
+    freeloadWarning(vid) {
+      // stage 2: said to their face. Honest, never silent.
+      const isP = this.isPlayer(vid);
+      const nm = isP ? 'you' : this.displayName(vid);
+      const first = isP ? 'You' : String(nm || 'Someone').split(' ')[0];
+      try {
+        const v = this.state.village;
+        v.trust = v.trust || {};
+        v.trust[vid] = Math.max(0, (v.trust[vid] == null ? 15 : v.trust[vid]) - 10);
+      } catch (e) {}
+      this.say(isP
+        ? `Mara corners you by the fire. "We all eat from the same pot. You've been taking more than you bring for a while now. That can't continue — the village will decide." (Warning: pull weight or face a moot.)`
+        : `${first} gets told straight: pull weight or the village will decide. The words hang in the air all evening. (Trust -10.)`);
+      try { this.remember(vid, 'warned', 'freeloading warning'); } catch (e) {}
+    },
+    freeloadVote(vid) {
+      // stage 3: the village decides. Simple majority of the roster (minus the
+      // accused) — each votes by trust. Not the betrayal trial: no plot, no
+      // cover story. Just: does this person belong here?
+      const v = this.state.village;
+      const isP = this.isPlayer(vid);
+      const nm = isP ? 'you' : this.displayName(vid);
+      const voters = (v.roster || []).filter(id => id !== vid);
+      // player votes too when they're not the accused
+      let yes = 0, no = 0;
+      for (const voter of voters) {
+        if (voter === vid) continue;
+        const t = ((v.trust || {})[vid] == null ? 15 : v.trust[vid]);
+        if (t < 35) yes++; else no++;
+      }
+      const total = yes + no;
+      this.say(`The village gathers. No fire-show, no System — just people, tired. "We've carried ${isP ? 'you' : nm} long enough," someone says. "All in favor of asking them to leave?"`);
+      this.say(`Hands: ${yes} for exile, ${no} against.`);
+      if (total > 0 && yes > total / 2) {
+        this.say(`It's done. "${isP ? 'Take what you can carry and go' : 'Take what you can carry and go.'}" The village watches until the trees close.`);
+        try {
+          if (isP) { if (this.exilePlayer) this.exilePlayer('moot'); }
+          else { if (this.removeVillager) this.removeVillager(vid, 'exiled'); }
+        } catch (e) {}
+        try { if (this.journalNote) this.journalNote('village', 'exile', (isP ? 'You were' : nm + ' was') + ' exiled for freeloading.'); } catch (e) {}
+        const fl = (v.freeload || {})[vid]; if (fl) fl.exiled = true;
+      } else {
+        this.say(`Not enough hands. ${isP ? 'You stay' : nm + ' stays'} — this time. But everyone heard the count.`);
+        const fl = (v.freeload || {})[vid]; if (fl) { fl.acquitted = true; fl.days = 0; fl.stage = 0; }
+      }
+    },
+
+    // MENTORSHIP (Steve 2026-10-09): a stay-at-home villager in the player's
+    // party learns by watching — exp and knowledge without combat roles. The
+    // player is responsible for keeping them safe: if they die on your watch,
+    // that's a real social consequence.
+    mentorTick(v) {
+      const st = this.state || {};
+      const vv = v || st.village || {};
+      vv.mentored = vv.mentored || {};
+      let party = [];
+      try { party = this.partyMembers ? this.partyMembers() : []; } catch (e) {}
+      if (!party.length) return;
+      const day = ((this.state || {}).scholar || {}).day || 0;
+      // the player's known plants, for learning-by-watching
+      let known = [];
+      try { known = Object.keys(((this.state || {}).codex || {}).plants || {}); } catch (e) {}
+      for (const vid of party) {
+        if (this.isPlayer(vid)) continue;
+        const person = this.getPerson(vid);
+        if (!person || person.dead) continue;
+        const m = (vv.mentored[vid] = vv.mentored[vid] || { sinceDay: day, plants: 0, xp: 0 });
+        // learn by watching: one of the player's plants per day, if any's new
+        if (known.length) {
+          const taught = (vv.taught && vv.taught[vid]) || [];
+          const newOnes = known.filter(pid => !taught.includes(pid));
+          if (newOnes.length && Math.random() < 0.7) {
+            const pid = newOnes[Math.floor(Math.random() * newOnes.length)];
+            try { if (this.villagerLearnsPlant(vid, pid, 'mentored')) { m.plants++; } } catch (e) {}
+            if (this.playerAtHaven() && Math.random() < 0.3) {
+              const first = String(person.name || 'Someone').split(' ')[0];
+              this.say(`${first} watches how you handle ${pid} — files it away. Learning by watching.`);
+            }
+          }
+        }
+        // exp share: practice in their weighted lane, safely at the edges
+        const w = person.abilityWeights || { care: 1, fieldcraft: 1, system: 1 };
+        const lane = w.fieldcraft >= w.care && w.fieldcraft >= w.system ? 'fieldcraft'
+          : w.care >= w.system ? 'care' : 'system';
+        m.xp += 1;
+        m.lane = lane;
+        // every 10 xp of watching = real growth: they get better at feeding themselves
+        if (m.xp % 10 === 0) {
+          person.mentorBonus = Math.min(0.5, (person.mentorBonus || 0) + 0.05);
+          if (this.playerAtHaven()) {
+            const first = String(person.name || 'Someone').split(' ')[0];
+            this.say(`${first} is getting sharper out there with you — steadier hands, better eyes. (Mentor bonus growing.)`);
+          }
+        }
+      }
+    },
+
     // villagerMealDay(vid, person, v, ctx): one villager's whole day of
     // eating — the individual behind the old collective drain. Returns
     // {ate, gave}. They eat what they catch first, then stores: pantry at
@@ -19609,15 +19975,37 @@
       n.hunger = Math.min(100, (n.hunger || 0) + 25 + Math.floor(Math.random() * 15));
       const health = (v.health && v.health[vid] !== undefined) ? v.health[vid] : 100;
       const healthFactor = health / 100;
-      // KNOWLEDGE FEEDS: villagers who LEARN forage better — the learning
-      // curve IS the difficulty curve. 1.0 at zero knowledge, 1.8 cap.
-      const knownPlants = (v.taught && v.taught[vid]) ? v.taught[vid].length : 0;
-      const knowledgeFactor = Math.min(1.8, 1 + (knownPlants * 0.10));
       // TRUST: they share food when they trust you. strangers hoard.
       // trust 0-30: 20% shared. 30-60: 50%. 60-80: 80%. 80+: all.
       const trust = (v.trust && v.trust[vid] !== undefined) ? v.trust[vid] : 10;
       const trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
-      const produced = (person.providesPerDay || 0) * healthFactor * knowledgeFactor;
+      // VILLAGER GRIT (Steve 2026-10-09): production from identity — no flat
+      // percentages. Haven-role work credits on top (see havenRoleCredit).
+      const havenCredit = this.havenRoleCredit(vid, v);
+      const produced = this.villagerDayProduction(person, vid, v) + havenCredit;
+      // CONTRIBUTION LEDGER (grit): what they actually brought today, and what
+      // was expected of them. The freeloader pipeline reads the rolling window.
+      v.contribLog = v.contribLog || {};
+      v.contribLog[vid] = { produced: Math.round(produced), expected: Math.round(this.villagerExpectedDaily(person, vid, v)), day: this.state.scholar.day };
+      // KNOWLEDGE SPREAD (Steve 2026-10-09, tweak B): a day working the land
+      // teaches. Food-skilled people learn faster; everyone learns something
+      // eventually. What one villager learns, the fireside spreads.
+      try {
+        const knownW = (v.taught && v.taught[vid]) || [];
+        const skillW = this.occupationFoodSkill ? this.occupationFoodSkill(person.formerOccupation) : 1;
+        if (knownW.length < 12 && Math.random() < 0.06 * skillW && (this.data.plants || []).length) {
+          const candsW = this.data.plants.filter(pl => !knownW.includes(pl.id));
+          if (candsW.length) {
+            const plW = candsW[Math.floor(Math.random() * candsW.length)];
+            if (this.villagerLearnsPlant(vid, plW.id, 'working')) {
+              v.sharedKnowledge = v.sharedKnowledge || {};
+              if (!v.sharedKnowledge[plW.id]) {
+                v.sharedKnowledge[plW.id] = { discoveredBy: vid, day: this.state.scholar.day, level: 1 };
+              }
+            }
+          }
+        }
+      } catch (e) {}
       const need = (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
       const away = !!(v.away && v.away[vid]);
       // THEY FEED THEMSELVES FIRST: what they catch never sees the pantry
@@ -19781,6 +20169,20 @@
       const honestNet = Math.max(0, totalDrawn - totalGive) + (v.lastPlayerMeal || 0);
       v.lastEat = totalEat; v.lastGive = totalGive;
       v.lastProviders = providers.map(p => String(p.name || '').split(' ')[0]);
+      // LEGIBILITY (grit): who's pulling weight — per-person actual vs expected.
+      // The Haven panel renders this; no new screens.
+      try {
+        v.lastContrib = (v.roster || []).map(rid => {
+          const pp = this.getPerson(rid); if (!pp) return null;
+          const lg = (v.contribLog || {})[rid];
+          return {
+            name: String(pp.name || '?').split(' ')[0],
+            produced: lg ? lg.produced : 0,
+            expected: lg ? lg.expected : Math.round(this.villagerExpectedDaily(pp, rid, v)),
+            me: rid === this.villagerId,
+          };
+        }).filter(Boolean);
+      } catch (e) { v.lastContrib = []; }
       v.burnHistory = (v.burnHistory || []).concat([honestNet]).slice(-7);
       // keep pantryKcal in sync (derived, not source of truth)
       v.pantryKcal = (v.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
@@ -19832,6 +20234,10 @@
         if (v.hungryDays) this.say('Haven eats again. The hollow look fades.');
         v.hungryDays = 0;
       }
+      // VILLAGER GRIT (Steve 2026-10-09): the village judges contribution
+      // (freeloaders get warned, then voted out), and the mentored learn.
+      try { this.freeloaderTick(v); } catch (e) {}
+      try { this.mentorTick(v); } catch (e) {}
     },
 
     // villageDrinks: VILLAGERS DRINK LIKE PEOPLE (Steve 2026-10-08). Every
@@ -29010,6 +29416,7 @@
         villageEat: Math.round(this.state.village.lastEat || 800),
         villageGive: Math.round(this.state.village.lastGive || 0),
         villageProviders: this.state.village.lastProviders || [],
+        villageContrib: this.state.village.lastContrib || [],
         villageKnowledge: this.state.village.lastKnowledgeBonus || 0,
         rosterCount: (this.state.village.roster || []).length,
         integration: Math.round(this.state.scholar.integration || 5),

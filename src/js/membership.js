@@ -220,11 +220,11 @@
           person = this.getPerson(roster[i]);
         } catch (e) {}
         if (!person) continue;
+        // VILLAGER GRIT (Steve 2026-10-09): projection from identity, not flat %.
+        var produced = 0;
+        try { produced = this.villagerExpectedDaily ? this.villagerExpectedDaily(person, roster[i], v) : ((person.providesPerDay || 0)); } catch (e) { produced = (person.providesPerDay || 0); }
         var health = (v.health && v.health[roster[i]] !== undefined) ? v.health[roster[i]] : 100;
         var hf = health / 100;
-        var known = (v.taught && v.taught[roster[i]]) ? v.taught[roster[i]].length : 0;
-        var kf = Math.min(1.8, 1 + known * 0.10);
-        var produced = (person.providesPerDay || 0) * hf * kf;
         var needed = (person.kcalPerDay || 2000) * (0.7 + 0.3 * hf);
         if (produced >= needed) give += (produced - needed) * 0.5;
         else eat += (needed - produced);

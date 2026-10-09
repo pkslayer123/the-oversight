@@ -13838,6 +13838,20 @@
         } catch (e) { return ''; }
       })()}
       <p class="small" style="opacity:.75">${st.rosterCount} mouths need ${st.villageEat.toLocaleString()}/day · the village brings in ${st.villageGive.toLocaleString()} · shortfall ${net.toLocaleString()}/day</p>
+      ${(() => {
+        // WHO'S PULLING WEIGHT (Steve 2026-10-09): per-person actual vs expected.
+        // Knowledge-gated like everything: you see effort bands, not numbers
+        // you haven't earned. (Bands are honest — they come from the ledger.)
+        const rows = (st.villageContrib || []).filter(r => !r.me);
+        if (!rows.length) return '';
+        const band = r => {
+          if (!r.expected) return '—';
+          const e = r.produced / r.expected;
+          return e >= 0.9 ? '💪' : e >= 0.5 ? '👍' : e >= 0.2 ? '😟' : '⚠️';
+        };
+        return `<p class="small" style="margin-top:4px"><b>Who's pulling weight</b> <span style="opacity:.6">(today vs their own capacity)</span><br>` +
+          rows.map(r => `${band(r)} ${esc(r.name)}`).join(' · ') + '</p>';
+      })()}
       <p class="small">Haven survives when: ${Game.journalName()} 10 (${st.codexCount}) · Pantry ${Game.fmtKcal(8000)}+ (${Game.fmtKcal(st.pantryKcal)})</p>
       <p class="small" style="opacity:.7">Tap a person in the grid to talk. They\'re living their lives.</p>
       ${mains.map(p => {

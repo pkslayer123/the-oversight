@@ -11,6 +11,9 @@
 //              trip (exit, forage nearest green, donate the haul) — nothing more.
 //   'leader' — the player does no personal work but each dawn assigns every
 //              free villager to forage (the actual minimum leadership).
+//   'mentor' — like mvc, plus on day 7 the player takes the least combat-ready
+//              homebody into the party to learn. Measures mentored knowledge/xp
+//              growth vs a control villager, and the trust cost if they die.
 //
 // Harness: mulberry32 seeded BEFORE eval, full src/js list in index.html order
 // minus DOM-only files + drama.js, window stubbed for eval then deleted.
@@ -51,6 +54,7 @@ const M = {
   assignments: {},
   abilitySamples: [],
   trustFloor: 99, trustEnd: null,
+  mentor: null, mentorControl: null,
 };
 
 function classifyStockSource() {
@@ -62,9 +66,26 @@ function classifyStockSource() {
 
 (async () => {
   await Game.init();
-  Game.genRoster('Columbus, Ohio');
-  Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
-  Game.depart();
+  // COMPETENT ROSTER (grit): re-roll the whole setup until the final 12-person
+  // village roster has >=4 food-skilled people and >=1 healerish. Tests Steve's
+  // hypothesis: a competent group with weeks + learning should feed itself.
+  async function setupOnce() {
+    Game.genRoster('Columbus, Ohio');
+    Game.newGame('Columbus, Ohio', null, Game.generatedRoster[0].id);
+    Game.depart();
+  }
+  if (process.env.COMPETENT === '1') {
+    for (let r = 0; r < 60; r++) {
+      await setupOnce();
+      const rs = (Game.state.village.roster || []).map(id => Game.getPerson(id) || {});
+      const food = rs.filter(p => /hunter|fisher|forager|trapper|farmer|cook|chef|butcher|angler|gather|garden/i.test(String(p.formerOccupation || ''))).length;
+      const heal = rs.filter(p => /medic|doctor|nurse|herbalist|paramedic|surgeon|veterinarian|midwife/i.test(String(p.formerOccupation || ''))).length;
+      if (food >= 4 && heal >= 1) break;
+      await Game.init(); // reset for re-roll
+    }
+  } else {
+    await setupOnce();
+  }
 
   const v = Game.state.village;
   for (const id of (v.roster || [])) {
@@ -188,6 +209,24 @@ function classifyStockSource() {
       upkeep._mvcDone = true;
       forageTrip();
     }
+    if (MODE === 'mentor' && !upkeep._mentorDone && Game.state.scholar.day >= 7) {
+      upkeep._mentorDone = true;
+      const vv = Game.state.village;
+      const cands = (vv.roster || []).filter(id => id !== Game.villagerId);
+      // homebody = lowest patrol competence
+      cands.sort((a, b) => (Game.villagerCompetence ? Game.villagerCompetence(a, 'patrol') : 1) - (Game.villagerCompetence ? Game.villagerCompetence(b, 'patrol') : 1));
+      const mentee = cands[0];
+      const control = cands[1];
+      if (mentee) {
+        vv.party = vv.party || [];
+        if (!vv.party.includes(mentee)) vv.party.push(mentee);
+        if (!vv.party.includes(Game.villagerId)) vv.party.unshift(Game.villagerId);
+        const mp = Game.getPerson(mentee) || {};
+        const cp = control ? (Game.getPerson(control) || {}) : {};
+        M.mentor = { id: mentee, name: (mp.name || mentee).split(' ')[0], occ: mp.formerOccupation || '?' };
+        M.mentorControl = control ? { id: control, name: (cp.name || control).split(' ')[0], occ: cp.formerOccupation || '?' } : null;
+      }
+    }
     if (MODE === 'leader' && !upkeep._leadDone) {
       upkeep._leadDone = true;
       const vv = Game.state.village;
@@ -295,6 +334,11 @@ function classifyStockSource() {
     M.pantryCurve.push([day, Math.round(pantryKcal())]);
     if (pop() === 0) break;
     if (day % 30 === 0) sampleAbilities(day);
+  }
+  if (M.mentor) {
+    const vv = Game.state.village;
+    const mg = id => { const t = ((vv.taught || {})[id] || []).length; const m = ((vv.mentored || {})[id] || {}); return { taught: t, xp: m.xp || 0, bonus: +(m && m.xp ? ((Game.getPerson(id) || {}).mentorBonus || 0) : 0).toFixed(2), alive: (vv.roster || []).includes(id) }; };
+    M.mentorGrowth = { mentee: mg(M.mentor.id), control: M.mentorControl ? mg(M.mentorControl.id) : null };
   }
   M.ms = Date.now() - t0;
   M.endReason = Game.over

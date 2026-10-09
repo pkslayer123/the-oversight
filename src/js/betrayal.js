@@ -727,6 +727,26 @@
   },
   removeVillager(vid, how) {
     const v = this.state.village;
+    // MENTORSHIP (Steve 2026-10-09): they were learning at your side, and they
+    // died on your watch. That's a real social consequence — the village
+    // trusted you with them.
+    try {
+      const wasMentored = v.mentored && v.mentored[vid];
+      let inParty = false;
+      try { inParty = this.partyMembers ? this.partyMembers().includes(vid) : false; } catch (e) {}
+      if (wasMentored && inParty && (how === 'killed' || how === 'ambushed')) {
+        const nm = this.displayName ? this.displayName(vid) : vid;
+        for (const rid of (v.roster || [])) {
+          if (rid === vid) continue;
+          v.trust = v.trust || {};
+          v.trust[rid] = Math.max(0, ((v.trust[rid] == null) ? 15 : v.trust[rid]) - 8);
+        }
+        this.say(`${nm} was under your wing — learning, getting sharper — and now they're gone. The village doesn't say it, but you feel the trust go. (Village trust -8.)`);
+        try { if (this.recordTrauma) this.recordTrauma('mentee-death'); } catch (e) {}
+        try { if (this.journalNote) this.journalNote('village', 'grief', nm + ' died while mentored in your party.'); } catch (e) {}
+      }
+      if (v.mentored) delete v.mentored[vid];
+    } catch (e) {}
     v.roster = (v.roster || []).filter(id => id !== vid);
     for (const gr of (v.groups || [])) gr.members = (gr.members || []).filter(m => m !== vid);
     v.exiles = v.exiles || [];
