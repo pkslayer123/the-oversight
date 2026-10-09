@@ -1590,6 +1590,10 @@
       // the whole confrontation (doubt resolution, trust moves, transcript
       // writes) to an inactive convo object — effects with no scene.
       if (!c.active) return { line: '"Not now — go talk to them first."', choices: [], ended: true, transcript: [] };
+      // SUBSTANCE (socialite r8 2026-10-09): this early return never
+      // reaches convo-dialogue.js's choke-point wrapper. A confrontation
+      // is substantive engagement — mark it here.
+      try { this.convoMarkSubstantive(vid, choiceId); } catch (e) {}
       const r = this.confrontDoubt(vid, doubtId);
       const youSaid = '"I need to ask you something."';
       c.transcript.push({ who: 'you', text: youSaid });

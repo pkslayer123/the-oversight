@@ -51,7 +51,7 @@
 //   - drift_visible: when a drift channel crosses >=2 since the last note, the next conversation opens with one short stage-direction beat showing the change — at most once per day per villager, always matching the actual drift state (code: convoDriftNote, Steve 2026-10-07)
 //   - thread_lifecycle: open threads older than 14 days lapse into a remembered lapsed list (never silently deleted); resuming a lapsed topic gets an honest nod, and a hanging thread that gets discussed earns its closing beat at goodbye (code: convoTopicLedger/convoCloseLine/convoLapseLine, Steve 2026-10-07)
 //   - resume_honest_time: the resume opener names how long the thread hung (a 12-day-old thread is not "last time") and nods at other hanging threads so none feel orphaned (code: convoResumeOpener, Steve 2026-10-07)
-//   - goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the uncapped mood residue lingers only after 3+ exchanges in a SUBSTANTIVE conversation (c.substantive set by the convoTurn wrapper — agree-spam must not smuggle trust past the 40 talk cap) (code: endConvo, break-it 2026-10-08)
+//   - goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the mood residue (talk-capped at 40 like the stipend — words only go so far, r8 2026-10-09) lingers only after 3+ exchanges in a SUBSTANTIVE conversation (c.substantive set by the convoTurn wrapper / convoMarkSubstantive — agree-spam must not smuggle trust past the 40 talk cap) (code: endConvo, break-it 2026-10-08)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -4221,25 +4221,28 @@
       // MOOD LINGERS (convo-mood.js): how the conversation felt sticks to
       // the relationship — ending warm earns a little trust, ending tense
       // costs a little. Small, but felt over many conversations.
-      // SCENE (Phase 2): both through the resolver. The talk stipend caps;
-      // the mood residue is felt experience, not words (talk:false).
+      // SCENE (Phase 2): both through the resolver. The talk stipend caps,
+      // and so does the mood residue.
       // BREAK-IT (socialite 2026-10-08): the stipend paid +3 even for a
       // zero-exchange hello-goodbye — spam open/close farmed to the 40 talk
       // cap with nothing said. Words must be spoken for words to build
-      // trust: the stipend scales with actual exchanges. And the mood
-      // residue (talk:false, uncapped) only lingers on a REAL conversation —
-      // agree-spam + goodbye must not smuggle uncapped trust past the cap.
-      // SUBSTANCE GATE (socialite break-it 2026-10-08): the old guard was
-      // exchanges >= 3, which agree-spam trivially satisfies ("yeah" x3,
-      // warm goodbye, +3 uncapped — measured 18->61 over 25 convos). The
-      // residue now requires c.substantive: at least one choice that isn't
-      // a bare acknowledgment (set by the convoTurn wrapper). Listening
-      // still earns the capped stipend; felt warmth beyond words has to be
-      // earned by actually engaging.
+      // trust: the stipend scales with actual exchanges. The residue got a
+      // substance gate (c.substantive) the same run — agree-spam + goodbye
+      // must not smuggle trust past the cap.
+      // KILL (socialite r8 2026-10-09): the residue was talk:false
+      // (uncapped) on the theory that it was "felt experience, not words".
+      // The hostile player manufactures the feeling with words alone: one
+      // cheap topic-ask + two "You're right." + goodbye satisfies the
+      // substance gate every time, and the residue harvested trust 40->69
+      // over 60 conversations — the exact farm the 40 cap was built to
+      // kill. Words are words: the residue obeys the same 40 cap as the
+      // stipend. Above 40, trust comes from real acts (food, kept promises,
+      // fair deals). Penalties still land whole — a tense ending above 40
+      // still costs.
       const stipend = c.exchanges >= 3 ? 3 : (c.exchanges >= 1 ? 1 : 0);
       if (stipend > 0) this.resolveConsequence(vid, { trust: stipend, temper: 'neutral', name: 'endConvo:talk' });
       const cm = Math.max(-3, Math.min(3, c.mood || 0));
-      if (cm !== 0 && c.exchanges >= 3 && c.substantive) this.resolveConsequence(vid, { trust: cm, talk: false, temper: 'neutral', name: 'endConvo:mood-lingers' });
+      if (cm !== 0 && c.exchanges >= 3 && c.substantive) this.resolveConsequence(vid, { trust: cm, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
       try { this.checkPromises('social', vid); } catch (e) {}
       // BUGFIX (break-it 2026-10-08): `t` was undefined here — every natural

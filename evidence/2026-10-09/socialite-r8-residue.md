@@ -1,0 +1,88 @@
+# Break-it: socialite r8 (2026-10-09, playtest loop)
+
+Hostile run against the conversation trust economy. Fresh ground only —
+r6/r7 covered rumor farms, who-gossip bleed, phantom talk, deal/appeal,
+mediate/theft/intimidation double-pays, truth confrontation seeds, betrayal
+story seeds, and promises. This run attacked the dialogue rethink's
+end-of-conversation trust payouts.
+
+Two proof scripts: scripts/test-socialite-r8-residue.js (E1/E2/E3),
+scripts/test-socialite-r8-deadends.js (S1/H1/H2). All GREEN x3 seeds
+(20261009/777/424242).
+
+Standing canon applied: docs/CANON.md ("Trust ≠ reputation"), "words only go
+so far" (talk-originated trust caps at 40), docs/CONVERSATIONS.md ("Trust +3
+on natural end (same 40-cap as before: words only go so far)").
+
+## KILL 1 — mood-residue words→trust farm (EXPLOIT)
+`endConvo` paid a mood residue — `trust: clamp(mood,-3..3)` with `talk:false`
+(UNCAPPED) — on the theory it was "felt experience, not words". The hostile
+player manufactures the feeling with words alone: one cheap topic-ask (or any
+single non-light choice) + two "You're right." + goodbye satisfies the
+substance gate every time, and mood hits +3 from the agrees. Measured BEFORE:
+trust 40 -> 69 over 60 conversations, 10 kcal + 1 tick each — the exact farm
+the 40 words-cap was built to kill, wearing a "felt experience" disguise.
+The 2026-10-08/09 substance gates closed agree-spam but left the one-fig-leaf
+path open: any single non-light choice id flips `c.substantive`, and the
+wrapper only checks the id, never whether the choice had content.
+Fix (design call, Steve can overrule): words are words — the residue obeys
+the same 40 talk cap as the stipend (`talk:false` removed). Above 40, trust
+comes from real acts (food, kept promises, fair deals, interpreter thanks —
+all still talk:false). Penalties still land whole: a tense ending above 40
+still costs (verified E2: 60 -> 54/51 across seeds). Canon doc already said
+the natural-end trust was 40-capped; the code now agrees.
+
+## KILL 2 — choke-point bypass x4 (EXPLOIT-adjacent)
+convo-dialogue.js's convoTurn wrapper is documented as "the choke point:
+every choice id passes through here" for the substantive flip. Four outer
+wrappers intercept non-light ids with early returns and never delegate:
+convo-beats.js `dlg:subject` (its own comment claimed the inner wrapper
+"handles the rest" — it doesn't; the early return skips it), party-formal.js
+party name/role picks, truth.js `confront:`, betrayal.js `betrayal:`.
+Measured BEFORE: `dlg:subject` left `c.substantive=false` after running.
+Fix: new `Game.convoMarkSubstantive(vid, choiceId)` (light set hoisted to
+module scope in convo-dialogue.js); all four intercepts call it. Verified E3:
+dlg:subject now flips substantive.
+
+## HELD — and why
+- SOFTLOCK sweep: 45 distinct choice ids probed across 6 conversations —
+  no handler throws, no null returns, no stranded live menus without leave.
+- HONESTY: 10 kcal open cost charged exactly once per successful open, never
+  on failed opens (roster guard). 'left' and 'natural' ends pay identically
+  (+3) — the canon doc says "natural end" but the engine treats any goodbye
+  as the event (documented in code since 2026-10-08); noted, not changed.
+- COMFORT/EMPATHIZE per-turn trust (+2/+1) is talk-capped at 40 — bounded,
+  not a farm.
+- speak_back (+3 talk:false) requires language exposure and disappears at
+  translatorStage 2 — bounded by progression, a real act.
+
+## Design calls made (Steve: decide + document, he can overrule)
+- The mood residue is words, not "felt experience": it obeys the 40 words
+  cap. The uncapped-residue design died to a three-click farm.
+- Goodbye = event: 'left' pays the same stipend as 'natural' (pre-existing,
+  kept).
+
+## Regressions
+- test-socialite-r8-residue.js: ALL GREEN x3 seeds
+- test-socialite-r8-deadends.js: ALL GREEN (45 ids, H1/H2)
+- test-social-r7-trustbleed.js: ALL GREEN; test-social-r7-promises.js: ALL GREEN
+- test-social-r6-rumor-farm/whogossip/edge/wiring: PASS
+- test-gossip-rumors: 11/11; test-gossip-norepeat: 17/17
+- test-social-breakit-promises: 3/3; deal-appeal: 12/12; r2: 7/7
+- test-social-breakit-softlock: 5/5; honesty: 1/1; confront-20261008: GREEN
+- attack-socialite-r4-20261009.js: ALL GREEN; exile-fork: PASS
+- validate-ontology.js: 52/52, release permitted
+- Pre-existing failures (fail on pristine HEAD too): test-sibling-sweep
+  CLASS 2 formAlliance; test-gossip-drama is RNG-flaky (3/2, 5/0, 3/2).
+
+## Files changed
+- src/js/conversation.js: endConvo mood residue no longer talk:false + kill comment; ontology rule text
+- src/js/convo-dialogue.js: hoisted light set, Game.convoMarkSubstantive, ontology rule text
+- src/js/convo-beats.js: dlg:subject intercept marks substantive
+- src/js/party-formal.js: party name/role picks mark substantive
+- src/js/truth.js: confront: marks substantive
+- src/js/betrayal.js: betrayal: turns mark substantive
+- src/js/convo-mood.js: ontology rule text
+- docs/ONTOLOGY.md: regenerated by validator
+- scripts/test-socialite-r8-residue.js, scripts/test-socialite-r8-deadends.js: new
+- evidence/2026-10-09/socialite-r8-residue.md: this note

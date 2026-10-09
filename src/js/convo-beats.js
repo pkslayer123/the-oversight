@@ -403,6 +403,10 @@
     Game.convoTurn = function (vid, choiceId) {
       const c = this.convoGet(vid);
       if (choiceId === 'dlg:subject') {
+        // SUBSTANCE (socialite r8 2026-10-09): this early return never
+        // reaches convo-dialogue.js's choke-point wrapper — changing the
+        // subject is real engagement, so mark it here.
+        try { this.convoMarkSubstantive(vid, choiceId); } catch (e) {}
         const fromTopic = c.thread || (c.lastBeat && c.lastBeat.topic) || 'small';
         c.transcript.push({ who: 'you', text: '"Can I ask you something else?"' });
         const bridge = this.bridgeLine(vid, fromTopic);

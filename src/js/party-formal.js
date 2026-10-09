@@ -913,6 +913,10 @@
         choiceId === 'party_role' || choiceId.indexOf('party_rolepick:') === 0) {
       const c = this.convoGet(vid);
       if (!c || !c.active) return null;
+      // SUBSTANCE (socialite r8 2026-10-09): this early return never
+      // reaches convo-dialogue.js's choke-point wrapper. Naming the party
+      // and assigning roles is real engagement — mark it here.
+      try { this.convoMarkSubstantive(vid, choiceId); } catch (e) {}
       const res = this.partyConvoTurn(vid, choiceId, c);
       if (!res) return origConvoTurn.call(this, vid, choiceId);
       // name-pick / role-pick present sub-choices instead of ending the beat

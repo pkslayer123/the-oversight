@@ -249,7 +249,7 @@ Real back-and-forth dialogue. Player always has response choices.
 - drift_visible: when a drift channel crosses >=2 since the last note, the next conversation opens with one short stage-direction beat showing the change — at most once per day per villager, always matching the actual drift state (code: convoDriftNote, Steve 2026-10-07)
 - thread_lifecycle: open threads older than 14 days lapse into a remembered lapsed list (never silently deleted); resuming a lapsed topic gets an honest nod, and a hanging thread that gets discussed earns its closing beat at goodbye (code: convoTopicLedger/convoCloseLine/convoLapseLine, Steve 2026-10-07)
 - resume_honest_time: the resume opener names how long the thread hung (a 12-day-old thread is not "last time") and nods at other hanging threads so none feel orphaned (code: convoResumeOpener, Steve 2026-10-07)
-- goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the uncapped mood residue lingers only after 3+ exchanges in a SUBSTANTIVE conversation (c.substantive set by the convoTurn wrapper — agree-spam must not smuggle trust past the 40 talk cap) (code: endConvo, break-it 2026-10-08)
+- goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the mood residue (talk-capped at 40 like the stipend — words only go so far, r8 2026-10-09) lingers only after 3+ exchanges in a SUBSTANTIVE conversation (c.substantive set by the convoTurn wrapper / convoMarkSubstantive — agree-spam must not smuggle trust past the 40 talk cap) (code: endConvo, break-it 2026-10-08)
 
 **Consumes:** village.villagers, state.convos, village.topicLog, village.saidFacts, village.memory, npcNeeds(rid)
 
@@ -278,7 +278,7 @@ Dialogue-driven conversation turn handling. Phase 1 (2026-10-08): the dead menu 
 - no_feature_cut: every existing conversation feature remains reachable — mapped, not removed (code: DIALOGUE_FEATURE_MAP, Steve 2026-10-06)
 - subject_change_explicit: the topic grab-bag lives behind "talk about something else", never as the default (code: buildMenu, Steve 2026-10-06)
 - thread_dry_collapse: "tell me more" is offered only while the thread has beats — once dry, the option disappears and the menu winds down instead of looping the admission line (code: buildMenu + dlg:more/dlg:react, 2026-10-06)
-- substantive_light_set: bare acknowledgments (goon/leave/recap/dlg:react/dlg:more/agree/joke/silence/nv:nod/nv:smile/nv:pointself) never flip c.substantive — only real engagement earns endConvo's uncapped mood residue (code: convoTurn wrapper, break-it 2026-10-09)
+- substantive_light_set: bare acknowledgments (goon/leave/recap/dlg:react/dlg:more/agree/joke/silence/nv:nod/nv:smile/nv:pointself) never flip c.substantive — only real engagement earns endConvo's mood residue, talk-capped at 40 (code: convoTurn wrapper + convoMarkSubstantive, break-it 2026-10-09 r8)
 - soft_probe_mounts_evidence: "That doesn't add up" is a real verb, not flavor — it mounts 'prodded' evidence on the first open doubt and the NPC visibly rattles with repeated prods (code: dlg:doubt handler, Steve 2026-10-06)
 
 **Consumes:** village.villagers, state.convos, convoGet(vid), buildMenu(vid) / convoChoices(vid) (conversation.js — the single menu pipeline), playerVoice()
@@ -294,7 +294,7 @@ Per-conversation emotional state (rapport). Warmth and tension shift as you talk
 - warmth_from_trust: answer warmth derives from the sign of its trust delta — no separate data (code: conversation.js react: branches)
 - band_beats: crossing a band boundary queues one stage-direction beat in c.heldBeats; the continuer reveals it after the turn's line (code: convo-mood.js, convoMoodShift/convoMoodFlush; Steve 2026-10-05 one-beat turns)
 - receptivity: recent lived events (memory) decide guard/grace — guarded people absorb the first warming move, shown kindness absorbs the first cooling one (code: convo-mood.js, convoMoodReceptivity)
-- mood_lingers: ending warm/tense nudges trust by the final mood value — but ONLY on a substantive conversation (c.substantive: at least one non-acknowledgment choice); agree-spam ("yeah" x3 + warm goodbye) earns the capped stipend, never the uncapped residue (code: conversation.js, endConvo; flag: convo-dialogue.js convoTurn wrapper; socialite break-it 2026-10-08)
+- mood_lingers: ending warm/tense nudges trust by the final mood value — but ONLY on a substantive conversation (c.substantive: at least one non-acknowledgment choice), and the nudge obeys the 40 words cap like the stipend (r8 2026-10-09: the uncapped residue was a words→trust farm, 40->69 measured); agree-spam ("yeah" x3 + warm goodbye) earns the capped stipend, never the residue (code: conversation.js, endConvo; flag: convo-dialogue.js convoTurn wrapper + convoMarkSubstantive; socialite break-it 2026-10-08)
 
 **Consumes:** state.village.conv (c.mood, per-conversation only), village.trust, village.memory, npcMood, npcTemper
 

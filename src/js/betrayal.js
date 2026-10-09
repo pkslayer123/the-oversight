@@ -4021,6 +4021,10 @@
     try {
       if (typeof choiceId === 'string' && (choiceId.indexOf('betrayal:') === 0 ||
           (this.convoGet(vid).thread === 'ambush' && ['betrayal:run','betrayal:talk','betrayal:fight'].includes(choiceId)))) {
+        // SUBSTANCE (socialite r8 2026-10-09): this early return never
+        // reaches convo-dialogue.js's choke-point wrapper. A betrayal
+        // confrontation is substantive engagement — mark it here.
+        try { this.convoMarkSubstantive(vid, choiceId); } catch (e) {}
         return this.betrayalTurn(vid, choiceId);
       }
     } catch (e) {}
