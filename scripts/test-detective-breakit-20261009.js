@@ -208,7 +208,14 @@ function gossipNamingPlayer() {
   check('S1a no throw on dead target', !threw, r && r.err);
   check('S1b dead target refuses cleanly (no confession from a corpse)', r && r.ok === false,
     JSON.stringify(r && { ok: r.ok, outcome: r.outcome }));
-  check('S1c doubt stays open, not resolved by the void', d && !d.resolved, 'doubt resolved=' + (d && d.resolved));
+  // S1c (SUPERSEDED 2026-10-09e): the old expectation was "doubt stays open,
+  // not resolved by the void". That was precisely the softlock — an open
+  // doubt on a gone villager has no resolution path (confront refuses
+  // forever, no convo can exist) and the codex promises "confront them,
+  // watch them, or ask around" about a corpse. Design call, documented in
+  // scripts/test-detective-breakit-20261009e.js: removal closes open doubts
+  // as UNANSWERED — the question outlives them, honestly.
+  check('S1c doubt closes as unanswered on removal (supersedes old open-forever)', d && d.resolved && /unanswered/i.test(d.resolution || ''), 'doubt resolved=' + (d && d.resolved) + ' res=' + (d && d.resolution));
 })();
 
 // ============ S2: confront choice with no active conversation ============

@@ -52,6 +52,11 @@ accusation that lands empty costs the accuser (rep dent, village gossip names
 them). Tentative questions — behavior doubts, gossip leads formed before you
 heard their story — clear neutrally: no accusation was made.
 
+**Gone closes the thread.** If they're dead, exiled, or fled, open doubts
+resolve as *unanswered* — the journal says so honestly. The dead can't
+confess, and the question outlives them. The codex never promises you can
+confront someone who's gone.
+
 ## Design notes
 
 - This is a contradiction-noticer, not a lie detector. The player decides.

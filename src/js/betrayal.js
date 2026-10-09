@@ -763,6 +763,11 @@
     for (const gr of (v.groups || [])) gr.members = (gr.members || []).filter(m => m !== vid);
     v.exiles = v.exiles || [];
     if (how !== 'killed') v.exiles.push({ vid, day: this.state.scholar.day, how: how || 'left' });
+    // DOUBT CLOSURE (detective 2026-10-09e): open doubts about the removed
+    // die with them — resolved as UNANSWERED, never silently dropped or
+    // left open with no resolution path. Truth module owns the closer;
+    // removeVillager is the one removal choke point.
+    try { if (this.closeDoubtsForGone) this.closeDoubtsForGone(vid, how); } catch (e) {}
     // DEAD IS DEAD (2026-10-08): 'killed' removals must mark the villager
     // record — vpOf(vid).dead is read by game code (party skips, System
     // fragments, record filters) and must not lie about a corpse.

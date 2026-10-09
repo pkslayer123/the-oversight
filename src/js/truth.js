@@ -10,6 +10,7 @@
 //   - addDoubt(doubt)
 //   - getDoubts()
 //   - resolveDoubt(id)
+//   - closeDoubtsForGone(vid, how)
 //   - confrontDoubt(vid)
 //   - npcGossipAbout(vid)
 //   - doubtIsLead(doubt)
@@ -25,6 +26,8 @@
 //   - accuser_pays: deflected/attacked/cleared dent the accuser's rep; attacked/cleared seed village gossip naming the accuser; being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
 //   - refusal_cooldown: a counter-attack refuses further confrontation for 2 days — no reopen-and-re-accuse grind (code: confrontDoubt, confrontTheft, convoChoices wrapper)
 //   - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
+//   - gone_closes_doubts: removing a villager resolves their open doubts as unanswered — the question outlives them, never a permanently open thread (code: closeDoubtsForGone, removeVillager hook)
+//   - contradiction_dedupe_pair: a re-flipped claim pair doesn't plant a second open contradiction doubt; the aha beat still fires (code: trackClaim)
 //   - lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
 //   - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 //   - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
@@ -520,10 +523,23 @@
           : [`❓ Wait — ${first} told you "${oldW}" before. Now it's "${nowW}".`,
              `❓ That's not what ${first} said last time. "${oldW}" then, "${nowW}" now.`];
         try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
-        this.addDoubt(vid, 'contradiction',
-          this.doubtText(vid, 'contradiction', { field, old: last.claim, now: claim, oldDay: last.day }),
-          [`said "${oldW}" (day ${last.day})`, `now says "${nowW}" (day ${day()})`],
-          { field });
+        // CONTRADICTION DEDUPE (detective break-it 2026-10-09e): a trust
+        // oscillation (cover at trust 10 → truth at 65 → cover at 10)
+        // re-flips the same pair. The aha beat above still fires — they
+        // really did flip again — but the journal must not carry two ❓
+        // notes for one flip-flop: the doubtText variants are random, so
+        // addDoubt's text-keyed dedupe misses. An open contradiction doubt
+        // covering the same (field, old↔now) pair is the same thread.
+        const pairOpen = (this.state.codex.doubts || []).some(d =>
+          !d.resolved && d.vid === vid && d.kind === 'contradiction' && d.field === field &&
+          (d.evidence || []).some(e => String(e).includes(String(last.claim)) || String(e).includes(String(oldW))) &&
+          (d.evidence || []).some(e => String(e).includes(String(claim)) || String(e).includes(String(nowW))));
+        if (!pairOpen) {
+          this.addDoubt(vid, 'contradiction',
+            this.doubtText(vid, 'contradiction', { field, old: last.claim, now: claim, oldDay: last.day }),
+            [`said "${oldW}" (day ${last.day})`, `now says "${nowW}" (day ${day()})`],
+            { field });
+        }
       }
       arr.push({ claim, day: day(), via: 'talk' });
       if (arr.length > 6) arr.shift();
@@ -606,6 +622,38 @@
           ? `✓ DOUBT RESOLVED — ${who}: ${resolutionText}`
           : `✓ You figured it out — ${who}: ${resolutionText}`);
       } catch (e) {}
+    },
+
+    // closeDoubtsForGone(vid, how): a villager removed from the roster
+    // (killed, exiled, fled, ambushed) leaves their open doubts with NO
+    // resolution path — confrontDoubt's gone guard refuses forever, no convo
+    // can exist, the journal's ❓ notes sit unresolved permanently
+    // (detective break-it 2026-10-09e S1: a softlocked detective thread plus
+    // a UI promise — "confront them, watch them, or ask around" — that can
+    // never be kept). The honest close: resolve each open doubt as
+    // UNANSWERED. The player did not figure it out; the question outlives
+    // them. Called from removeVillager (betrayal.js), the one removal
+    // choke point.
+    closeDoubtsForGone(vid, how) {
+      try {
+        const open = this.getDoubts(vid).filter(d => !d.resolved);
+        if (!open.length) return 0;
+        const goneWord = (how === 'killed' || how === 'ambushed') ? 'dead' : 'gone';
+        const name = this.displayName(vid);
+        const dayN = (this.state.scholar || {}).day || 0;
+        for (const d of open) {
+          d.resolved = true;
+          d.resolution = `${name} is ${goneWord} — the question goes unanswered`;
+          d.resolvedDay = dayN;
+          try { this.journalLearn(vid, 'note', `❓✕ ${d.text} — ${name} is ${goneWord}. Unanswered.`, { via: 'gone', quiet: true }); } catch (e) {}
+        }
+        // said once, honestly: not "you figured it out" — you didn't.
+        const line = sysUp()
+          ? `${name.toUpperCase()} — GONE. ${open.length} open question${open.length > 1 ? 's' : ''} closed unanswered.`
+          : `${name} is ${goneWord}. ${open.length === 1 ? 'One question you never got to ask' : 'Questions you never got to ask'} — closed, unanswered.`;
+        try { this.say(line); } catch (e) {}
+        return open.length;
+      } catch (e) { return 0; }
     },
 
     doubtText(vid, kind, detail) {

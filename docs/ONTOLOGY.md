@@ -785,7 +785,7 @@ Composes each world-map tile as a miniature auto-composed SVG scene: terrain bas
 ### truth (`truth.js`)
 Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip distorts per retelling (code: game.js seedGossip).
 
-**Provides:** trackClaim(vid, topic, claim), getClaims(vid), lieLive(vid, lie), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), confrontDoubt(vid), npcGossipAbout(vid), doubtIsLead(doubt)
+**Provides:** trackClaim(vid, topic, claim), getClaims(vid), lieLive(vid, lie), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), closeDoubtsForGone(vid, how), confrontDoubt(vid), npcGossipAbout(vid), doubtIsLead(doubt)
 
 **Rules:**
 - claim_gossip_shares_truth_no_distortion: true (code: npcGossipAbout)
@@ -799,6 +799,8 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - accuser_pays: deflected/attacked/cleared dent the accuser's rep; attacked/cleared seed village gossip naming the accuser; being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
 - refusal_cooldown: a counter-attack refuses further confrontation for 2 days — no reopen-and-re-accuse grind (code: confrontDoubt, confrontTheft, convoChoices wrapper)
 - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
+- gone_closes_doubts: removing a villager resolves their open doubts as unanswered — the question outlives them, never a permanently open thread (code: closeDoubtsForGone, removeVillager hook)
+- contradiction_dedupe_pair: a re-flipped claim pair doesn't plant a second open contradiction doubt; the aha beat still fires (code: trackClaim)
 - lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
 - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
