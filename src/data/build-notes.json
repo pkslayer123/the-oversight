@@ -2,6 +2,14 @@
   {
     "date": "2026-10-09",
     "notes": [
+      "Gristlefit rage can lash out at allies mid-fight — and now they remember it. Trust drops, and it haunts you.",
+      "Trying to strike an ally in a fight gets an honest refusal instead of silence."
+    ],
+    "version": "4bb5cc7e-20261009-165604"
+  },
+  {
+    "date": "2026-10-09",
+    "notes": [
       "Boiling water now honestly costs time and energy — bulk purification was free on the action clock.",
       "Storms wrecking your camp wake you with a start — no more sleeping through the destruction in tent-quality comfort.",
       "Rain and storm water now respect your carry limit."
