@@ -24544,16 +24544,40 @@
         // Math.min(dmg, prot) — the RAW incoming number — but union-rep
         // solidarity (+3) and pack-leader (+2) inflate final before armor.
         // State what the armor actually absorbed.
-        if (prot > 0) { const _pre = final; final = Math.max(0, final - prot); this.say(`Armor absorbs ${Math.min(_pre, prot)}.`); }
+        // ARMOR (Steve 2026-10-09): diminishing-returns curve — pieces stay
+        // additive into prot, then r = prot/(prot+20) maps it to reduction.
+        // Every point of protection always does something; full immunity is
+        // unreachable (prot=20 halves what gets through, prot=100 ~83%).
+        // At least 1 of any real blow lands.
+        // ARMOR-PIERCE (Steve 2026-10-09): higher monster classes can ignore
+        // a fraction of protection (mdef.pierce, 0 = none). Hook only — no
+        // monster has pierce yet; wave-3+ design will assign it.
+        if (prot > 0 && final > 0) {
+          let pierce = 0;
+          try { const atk = this.tbFighter(sourceKey); pierce = (atk && atk.mdef && atk.mdef.pierce) || 0; } catch (e) {}
+          const effP = prot * (1 - Math.min(0.9, Math.max(0, pierce)));
+          const r = effP / (effP + 20);
+          const absorb = Math.min(final - 1, Math.round(final * r));
+          final = final - absorb;
+          this.say(`Armor absorbs ${absorb}.`);
+        }
       }
       // EQUIPMENT (Steve 2026-10-06): villagers' worn armor absorbs too.
       // HONESTY (break-it combat r6 2026-10-09): same class as the player
       // block — state the post-modifier absorbed number, not the raw input.
       if (t.kind === 'villager' && (t.varmor || 0) > 0) {
         const prot = t.varmor;
-        const _vpre = final;
-        final = Math.max(0, final - prot);
-        this.say(`${t.name}'s gear absorbs ${Math.min(_vpre, prot)}.`);
+        // ARMOR (Steve 2026-10-09): same diminishing-returns curve as the
+        // player block — no immunity cliff. Same pierce hook.
+        if (final > 0) {
+          let pierce = 0;
+          try { const atk = this.tbFighter(sourceKey); pierce = (atk && atk.mdef && atk.mdef.pierce) || 0; } catch (e) {}
+          const effP = prot * (1 - Math.min(0.9, Math.max(0, pierce)));
+          const r = effP / (effP + 20);
+          const absorb = Math.min(final - 1, Math.round(final * r));
+          final = final - absorb;
+          this.say(`${t.name}'s gear absorbs ${absorb}.`);
+        }
       }
       // PHASE BLADE (alien loot): ignores armor — the sealed shell might as
       // well not be there. Checked the same way as the torch-vs-golem rule.

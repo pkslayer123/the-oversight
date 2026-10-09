@@ -13,7 +13,7 @@
 //   - alreadyDead: a world-monster entity with hp<=0 is a corpse, not a fight — early exit, no rewards. (code: fieldFight)
 //   - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
 //   - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
-//   - gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs flat per hit, mirroring the tactical engine (final = max(0, final - prot)). (code: fieldFight, 2026-10-09)
+//   - gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs via diminishing returns (r = P/(P+20); absorb = round(hit*r), at least 1 gets through) — mirroring the tactical engine, never full immunity. (code: fieldFight, 2026-10-09)
 // consumes:
 //   - Scattering.combat.roll
 //   - village health, agency xp, equipment, monsters data
@@ -130,7 +130,7 @@
           wb = Math.round(((S.equipment.weaponBonusOf(vp, this.data.items, 'melee') || 0) +
                            (S.equipment.weaponBonusOf(vp, this.data.items, 'ranged') || 0)) / 2);
         // ARMOR (Steve 2026-10-09): equipped armor absorbs, mirroring the
-        // tactical engine's flat reduction (final = max(0, final - prot)).
+        // tactical engine's diminishing-returns curve (r = P/(P+20)).
         // Villagers wear armor now — the fight must respect it.
         if (S.equipment && S.equipment.armorOf)
           varmor = S.equipment.armorOf(vp, this.data.items) || 0;
@@ -236,8 +236,16 @@
               // in is exposed (no armor) and draws some of the hits.
               var hittingAlly = allyIn && allyHp > 0 && RR() < 0.4;
               if (!hittingAlly && varmor > 0 && total > 0) {
-                var absorbed = Math.min(total, varmor);
-                total = Math.max(0, total - varmor);
+                // ARMOR (Steve 2026-10-09): diminishing-returns curve,
+                // mirroring the tactical engine — every point of protection
+                // matters, full immunity unreachable, at least 1 lands.
+                // Same pierce hook (mdef.pierce, 0 = none).
+                var pierce = 0;
+                try { pierce = (mdef && mdef.pierce) || 0; } catch (e) {}
+                var effP = varmor * (1 - Math.min(0.9, Math.max(0, pierce)));
+                var r = effP / (effP + 20);
+                var absorbed = Math.min(total - 1, Math.round(total * r));
+                total = total - absorbed;
                 rec.log.push(vName + "'s gear absorbs " + absorbed + '.');
               }
               if (hittingAlly) {

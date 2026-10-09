@@ -488,7 +488,7 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 - alreadyDead: a world-monster entity with hp<=0 is a corpse, not a fight — early exit, no rewards. (code: fieldFight)
 - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
 - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
-- gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs flat per hit, mirroring the tactical engine (final = max(0, final - prot)). (code: fieldFight, 2026-10-09)
+- gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs via diminishing returns (r = P/(P+20); absorb = round(hit*r), at least 1 gets through) — mirroring the tactical engine, never full immunity. (code: fieldFight, 2026-10-09)
 
 **Consumes:** Scattering.combat.roll, village health, agency xp, equipment, monsters data
 
