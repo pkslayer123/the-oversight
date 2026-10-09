@@ -30053,7 +30053,13 @@
           return d > Math.max(2, this.tbMonsterReach(m));
         });
         if (allGone) {
-          p.fled = true;
+          // HONEST (brawler loop 2026-10-09 r7): the old code marked the
+          // PLAYER fled — but the player didn't run; the monsters disengaged
+          // (they can't chase). Routing to 'fled' fed witnesses the "Coward's
+          // move" line for a retreat nobody made. Mark the disengaging
+          // monsters fled instead: the recursive check routes to 'routed'
+          // ("no meat, no trophy"), which is what actually happened.
+          for (const m of monstersFighting) m.fled = true;
           // HONEST (break-it combat-2): wild-encounter monsters are removed
           // from the world at fight start (removeWorldMonster) and never
           // restored — "they're still out there, if you want them" was a
