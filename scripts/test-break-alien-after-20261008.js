@@ -50,13 +50,17 @@ async function main() {
     try { grp = Game.apRollGroupEncounter(); } catch (e) {}
     Math.random = realNext;
     assert(grp && grp.length >= 2, 'seed ' + seed + ': apRollGroupEncounter returns a group when forced (got ' + JSON.stringify(grp) + ')');
-    assert(Game.apState().lastGroupDay === 50, 'seed ' + seed + ': group roll consumes the 14-day cooldown');
+    // HONEST (break-it 2026-10-08 r4): the roll no longer burns the cooldown —
+    // a refused start used to waste the 14 days with no fight. Recorded on
+    // successful start instead.
+    assert(Game.apState().lastGroupDay === -999, 'seed ' + seed + ': group roll does NOT burn the 14-day cooldown');
 
     // Start the group encounter for real
     H.clearLog();
     let ok = false;
     try { ok = Game.apStartGroupEncounter(['vex_marlowe', 'countess_sable']); } catch (e) { console.log('  start threw: ' + e.message); }
     assert(ok === true, 'seed ' + seed + ': apStartGroupEncounter returns true');
+    assert(Game.apState().lastGroupDay === 50, 'seed ' + seed + ': successful group start records the 14-day cooldown');
     assert(/step out together/.test(H.allText()), 'seed ' + seed + ': inter-alien banter fires');
     assert(Game.inCombat() === true, 'seed ' + seed + ': first group fight starts');
     const f1 = (Game.tbfight.fighters || []).find(f => f.alienPid);
