@@ -139,7 +139,10 @@
         villagerId: opts.villagerId || null,
         monsterId: opts.monsterId || null,
         descriptor: opts.descriptor || null,
-        node: { x: this.map.px, y: this.map.py },
+        // NODE OVERRIDE (break-it 2026-10-09): deaths off the player's tile
+        // (villager-vs-monster field fights) register where they happened,
+        // not where the player stands — corpses are node-scoped (corpseAt).
+        node: opts.node || { x: this.map.px, y: this.map.py },
         mx: opts.mx != null ? opts.mx : (s.mx || 4),
         my: opts.my != null ? opts.my : (s.my || 4),
         dayDied: s.day || 0,

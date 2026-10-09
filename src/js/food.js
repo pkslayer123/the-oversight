@@ -888,15 +888,25 @@
           }
           it.rawKcal = null; it.safe = true;
         } else if (it.foodKind === 'meat' && it.foodState === 'cleaned') {
-          // hiddenKcal is TOTAL; kcalEach is per unit.
+          // DIGESTIBILITY HONESTY (break-it 2026-10-09): the cleaned total
+          // (kcalEach×units) is the honest raw net — hiddenKcal is the RAW
+          // GROSS, and cooking from it resurrected the ~60% the butchering
+          // took away (phantom calories: a 1280-kcal cleaned bulldozer
+          // cooked at 3200+). The specialist's skill buys a better cut of
+          // the gross via the class digestibility the player's fire uses —
+          // never more than the gross.
           // MONSTER FOOD SAFETY: the specialist's fire doesn't teach either.
           const sMeatId = (it.plantId || '').replace(/^meat_/, '');
           const sIsMonster = (this.data.monsters || []).some(m => m.id === sMeatId);
           const sFoodSafe = !sIsMonster || this.monsterFoodSafe(sMeatId);
           const units = it.units || 1;
-          const total = it.hiddenKcal || it.kcalEach * 2.5 * units;
-          it.kcalEach = sFoodSafe ? Math.round(total * mult / units) : 0;
-          it.hiddenKcal = sFoodSafe ? null : total;
+          const cleanedTotal = (it.kcalEach || 0) * units;
+          const sCls = this.cookClassFor(it) || {};
+          const sRaw = sCls.raw || 1, sCooked = sCls.cooked || 1;
+          const sGross = sRaw > 0 ? cleanedTotal / sRaw : cleanedTotal;
+          const sCookedTotal = Math.min(sGross, sGross * sCooked * mult);
+          it.kcalEach = sFoodSafe ? Math.round(sCookedTotal / units) : 0;
+          it.hiddenKcal = sFoodSafe ? null : (it.hiddenKcal || Math.round(cleanedTotal / sRaw));
           it.foodState = 'cooked'; it.diseaseRisk = null; it.safe = sFoodSafe;
           it.spoilDay = day + 5;
           it.name = it.name.replace(' (cleaned)', '') + ' (cooked)';
