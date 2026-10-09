@@ -8,15 +8,17 @@
 //   - newCodex()
 //   - newState()
 //   - saveKey(state)
-//   - save(state) -> true/false: honest save status; false on quota/blocked/unserializable (break-it 2026-10-09)
+//   - save(state) -> true | 'tombstoned' | false: honest save status; false on quota/blocked/unserializable, 'tombstoned' when the run's key was wiped (break-it 2026-10-09 r5)
 //   - listSaves(opts): opts.includeStale surfaces version-mismatched saves flagged {stale:true} (break-it 2026-10-09)
 //   - load(key)
-//   - wipe(key)
+//   - wipe(key, reason?): leaves a per-key tombstone so a wiped run stays dead (break-it 2026-10-09 r5)
 //   - wipeAll()
+//   - quarantineKey(key): move corrupt save data to a capped dated quarantine key (break-it 2026-10-09 r5)
 // rules:
 //   - save_honest_status: save() returns false on any failure; callers (autosave) surface it, never mistake silence for success (code: save, break-it 2026-10-09)
 //   - corrupt_quarantined: unparseable save data moves to a capped dated quarantine key before pruning — never destroyed on sight (code: quarantineKey, break-it 2026-10-09)
 //   - stale_version_visible: version-mismatched saves are kept and surfaced flagged, never silently hidden (code: listSaves, break-it 2026-10-09)
+//   - dead_runs_stay_dead: wipe() leaves a per-key tombstone; save() refuses tombstoned keys with a distinct 'tombstoned' signal (never the quota-false), so a stale tab's autosave can't resurrect a wiped run (code: save/wipe, break-it 2026-10-09 r5)
 // consumes:
 //   - (none documented)
 /* Game state: factory, save/load (versioned), sub-objects separable.
@@ -84,11 +86,18 @@
     // save (and index) actually persisted, false on ANY failure (quota,
     // blocked storage, unserializable state). Callers must not mistake a
     // silent no-op for success — the autosave surfaces false to the player.
+    // TOMBSTONE (break-it persistence r5 2026-10-09): returns the string
+    // 'tombstoned' when this run's key was wiped (death/win/delete, possibly
+    // in another tab). A stale tab's autosave must not re-create a dead run —
+    // the exact two-tab resurrection of the class pass 2 killed single-tab.
+    // Checked before any write; 'tombstoned' is deliberately distinct from
+    // the quota-false so the UI can say so honestly.
     try {
       if (!state.startedAt) state.startedAt = Date.now();
       // pin the key on first save so it can't drift mid-run (mantle transfer)
       if (!state.runKey) state.runKey = saveKey(state);
       const key = saveKey(state);
+      if (isTombstoned(key)) return 'tombstoned';
       localStorage.setItem(key, JSON.stringify(state));
       // upsert the index every save: name, day, last-played stay fresh.
       // includeStale: rebuilding from the default list would silently drop
@@ -115,13 +124,48 @@
       return true;
     } catch (e) { /* storage full/blocked/unserializable */ return false; }
   }
+  // Tombstone: a wiped save stays dead. Written by wipe() for keys that
+  // actually existed; read by save(). Per-runKey, so new runs (new keys)
+  // are never blocked. Capped at 100, oldest pruned — tombstones are bytes,
+  // but bytes accumulate over a long season of dead runs.
+  const TOMBSTONE_PREFIX = 'scattering-save-tombstone-';
+  function tombstoneKey(key) { return TOMBSTONE_PREFIX + key; }
+  function isTombstoned(key) {
+    try { return localStorage.getItem(tombstoneKey(key)) !== null; } catch (e) { return false; }
+  }
+  function writeTombstone(key, reason) {
+    try {
+      if (!key) return;
+      localStorage.setItem(tombstoneKey(key), JSON.stringify({ t: Date.now(), reason: reason || 'wiped' }));
+      const tk = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf(TOMBSTONE_PREFIX) === 0) tk.push(k);
+        }
+      } catch (e2) {}
+      if (tk.length > 100) {
+        const aged = tk.map(k => {
+          let t = 0;
+          try { t = (JSON.parse(localStorage.getItem(k)) || {}).t || 0; } catch (e3) {}
+          return { k, t };
+        });
+        aged.sort((a, b) => a.t - b.t);
+        for (const e of aged.slice(0, aged.length - 100)) { try { localStorage.removeItem(e.k); } catch (e4) {} }
+      }
+    } catch (e) {}
+  }
   // Quarantine: preserve corrupt save data under a capped, dated key instead
   // of destroying it. A future migrator (or a human) can still recover it.
   function quarantineKey(key) {
     try {
       const d = localStorage.getItem(key);
       if (!d) return;
-      const stamp = Date.now().toString(36);
+      // RANDOM SUFFIX (break-it persistence r5 2026-10-09): the old
+      // Date.now()-only stamp collided when two quarantines landed in the
+      // same millisecond — the second silently overwrote the first and one
+      // snapshot of corrupt data was lost, defeating the quarantine.
+      const stamp = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
       localStorage.setItem('scattering-save-quarantine-' + key + '-' + stamp, d);
       localStorage.removeItem(key);
       // cap: keep the 3 most recent quarantine snapshots per key
@@ -201,9 +245,15 @@
       return s;
     } catch (e) { return null; }
   }
-  function wipe(key) {
+  function wipe(key, reason) {
     try {
-      localStorage.removeItem(key || SAVE_KEY);
+      const k = key || SAVE_KEY;
+      // TOMBSTONE (break-it persistence r5 2026-10-09): only mark keys that
+      // actually existed — newGame wipes a never-written key and must not
+      // leave a tombstone behind for a run that never was.
+      const existed = localStorage.getItem(k) !== null;
+      localStorage.removeItem(k);
+      if (existed) writeTombstone(k, reason);
       // remove from index (preserve stale entries — see save())
       if (key) {
         const idx = listSaves({ includeStale: true }).filter(i => i.key !== key);
@@ -220,5 +270,5 @@
   } catch (e) {} }
 
   global.Scattering = global.Scattering || {};
-  global.Scattering.state = { newState, newVillage, newScholar, newCodex, save, load, wipe, wipeAll, listSaves, saveKey, SAVE_VERSION };
+  global.Scattering.state = { newState, newVillage, newScholar, newCodex, save, load, wipe, wipeAll, listSaves, saveKey, quarantineKey, SAVE_VERSION };
 })(typeof window !== 'undefined' ? window : globalThis);

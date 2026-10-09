@@ -12160,15 +12160,21 @@
   // when the save didn't persist (quota, blocked storage, unserializable
   // state). A silent no-op here means the player believes they're saved and
   // they're not — say so once, then stay quiet until a save succeeds again.
+  // TOMBSTONE (break-it persistence r5 2026-10-09): it can also return
+  // 'tombstoned' — this run's key was wiped elsewhere (death/win/delete, most
+  // likely in another tab). Same once-then-quiet treatment, but the message
+  // names the real reason: blaming "storage may be full" would be a lie.
   let __saveFailToasted = false;
   setInterval(() => {
     try {
       const r = Game.save();
-      if (r === false && !__saveFailToasted) {
-        __saveFailToasted = true;
-        toast('Could not save — storage may be full. Progress since your last save is at risk.');
-      } else if (r === true) {
+      if (r === true) {
         __saveFailToasted = false;
+      } else if ((r === false || r === 'tombstoned') && !__saveFailToasted) {
+        __saveFailToasted = true;
+        toast(r === 'tombstoned'
+          ? "This expedition's save was ended somewhere else (another tab?) — progress since your last save is at risk."
+          : 'Could not save — storage may be full. Progress since your last save is at risk.');
       }
     } catch (e) {}
   }, 30000);

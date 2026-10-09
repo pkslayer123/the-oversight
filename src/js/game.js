@@ -78,6 +78,7 @@
 //   - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
+//   - load_resets_session_death: load() clears villageLost (session state of a dead run, not save data) — a Continued living run always has a home (code: load, break-it persistence r5 2026-10-09)
 //   - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
@@ -5159,6 +5160,9 @@
       // SAVE STATUS (break-it persistence 2026-10-09): S.state.save returns
       // true/false — a quota-full or stringify failure must be an honest
       // signal, not a silent no-op the autosave mistakes for success.
+      // TOMBSTONE (break-it persistence r5 2026-10-09): it can also return
+      // 'tombstoned' when this run's key was wiped elsewhere — propagated
+      // verbatim so the autosave can name the real reason.
       return S.state.save(this.state);
     },
     // Where the save-list entry says you are. Haven by name; anywhere else is
@@ -5184,7 +5188,11 @@
       // Game in a half-built state (recomputeActiveSynergies, expeditionScreen
       // and half the UI dereference scholar). Reject it so the title screen
       // takes the honest "could not be loaded" path instead.
-      if (!s || !s.run || !s.scholar) return false;
+      // MAP GUARD (break-it persistence r5 2026-10-09): same class — a save
+      // without its map loaded "fine" and then broke everywhere at once
+      // (playerTile and the whole world dereference map). Not a loadable
+      // expedition either.
+      if (!s || !s.run || !s.scholar || !s.run.map) return false;
       this.state = s;
       const r = s.run;
       this.map = r.map; this.dayPart = r.dayPart; this.location = r.location;
@@ -5215,6 +5223,13 @@
         if (!this.data.villagers.find(v => v.id === id)) this.data.villagers.push(rc[id]);
       }
       this.over = false; this.won = false;
+      // VILLAGELOST RESET (break-it persistence r5 2026-10-09): villageLost
+      // is session state of a dead run, not save data — newGame resets it,
+      // load() didn't. Continuing another save in-session after a
+      // village-lost game-over kept villageLost=true, which silently
+      // disabled the dawn home-return ("no home to return to") in a run
+      // that HAS a home. A loadable save is a living run by definition.
+      this.villageLost = false;
       // SYNERGIES: recompute on load (saves predate the resonance system).
       // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
       this.recomputeActiveSynergies();
@@ -5345,14 +5360,16 @@
     },
     wipe() {
       // remove this run's keyed save (dead/finished runs don't continue)
+      // TOMBSTONE (break-it persistence r5 2026-10-09): a wiped run stays
+      // dead — the tombstone stops a stale tab's autosave resurrecting it.
       try {
         if (this.state) {
           if (!this.state.startedAt) this.state.startedAt = Date.now();
-          S.state.wipe(S.state.saveKey(this.state));
+          S.state.wipe(S.state.saveKey(this.state), 'ended');
         } else S.state.wipe();
       } catch (e) {}
     },
-    deleteSave(key) { S.state.wipe(key); },
+    deleteSave(key) { S.state.wipe(key, 'deleted'); },
     // Debug-panel "wipe all saves" (break-it persistence 2026-10-08): S.state.wipeAll
     // existed but had zero callers — dead code. Now reachable from the debug panel.
     wipeAllSaves() { S.state.wipeAll(); },

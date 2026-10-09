@@ -197,6 +197,10 @@ function buildRich() {
   Game.wanderer = { id: 'w1', name: 'Stray' };
   Game.pendingEncounter = true; Game.pendingMonsterId = 'gallowdeer'; Game.pendingInTent = false;
   Game.over = false; Game.won = false;
+  // r5: villageLost is session-death state reset by load() — model the
+  // normalized session here (same as over/won above); the bleed case
+  // (villageLost=true across Continue) is covered by pass-5 R1.
+  Game.villageLost = false;
   // mid-fight: player + monster, mid-round, terraformed ground, chorus inbound
   Game.tbfight = {
     id: 'fB4midfight', turnIdx: 1, round: 3, over: false, result: null,
