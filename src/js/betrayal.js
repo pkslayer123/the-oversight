@@ -1463,6 +1463,23 @@
     s.exiled = true;
     s.exileStartDay = s.day; // the solo clock starts now — founding takes 7+ days alone
     s.founding = null; // any previous founding project is gone with the old life
+    // EXILE ENDS THE JOIN (drifter break-it r4 2026-10-08): exilePlayer used
+    // to leave a live join in place — the exiled bearer kept another fire's
+    // seat (phantom mouth in every simVillageDay), kept their probation, and
+    // a later foundHaven() forked a "hard reset" new haven whose founder was
+    // still joined elsewhere, so the estranged meal gate refused them their
+    // own pantry. Exile, like death (ledger.js r3), lapses the join: seat
+    // released, join state cleared. What crosses the road with you: yourself,
+    // your Codex, your pack. Nothing else.
+    try {
+      const jvId = s.joinedVillage;
+      if (jvId) {
+        const jv = (this.state.otherVillages || []).find(x => x.id === jvId);
+        if (jv) jv.population = Math.max(0, (jv.population || 1) - 1);
+        s.joinedVillage = null;
+      }
+      s.probation = null;
+    } catch (e) {}
     try { this.recordTrauma('exile'); } catch (e) {}
     return true;
   },
@@ -2110,6 +2127,18 @@
     try {
       const t = this.tileAt(px, py);
       if (t) { t.type = 'haven'; t.isHaven = true; t.stock = 0; }
+    } catch (e) {}
+    // the old site is not your haven anymore. It stays a lived-in village —
+    // the archived village continues there — but it must never read as YOUR
+    // fire: travelTo PINs map coords on any 'haven' tile via returnToVillage,
+    // which used to snap the founder across the map when they walked back
+    // onto the abandoned site (free teleport). Retag it; the estranged
+    // return beat (returnToOldVillage) fires there instead of the PIN.
+    try {
+      const ot = this.tileAt(old.px, old.py);
+      if (ot && (old.px !== px || old.py !== py)) {
+        ot.type = 'oldhaven'; ot.isHaven = false; ot.pastVillage = old.name;
+      }
     } catch (e) {}
     const v = {
       name, day: 1, season: old.season || 'spring',

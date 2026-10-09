@@ -4785,6 +4785,51 @@
       return this.status();
     },
 
+    // returnToOldVillage: you walked back onto a haven you abandoned (fork).
+    // The old village still lives here — but you don't. No PIN (your feet
+    // stay where they walked — this is the anti-teleport half of the
+    // 'oldhaven' retag), no homecoming beat, no fireside, no pantry: exile
+    // severed the membership. The haul still pools into their pantry — a
+    // donation toward amends stays allowed (r3 doctrine) — keeping a day's
+    // food for the road, same honest split as the home return.
+    returnToOldVillage(tile) {
+      const s = this.state.scholar;
+      const ov = (this.state.pastVillages || []).find(v => v && v.name === (tile && tile.pastVillage));
+      const oname = (ov && ov.name) || (tile && tile.pastVillage) || 'the old village';
+      if (!this.over) {
+        this.say(`You walk the old paths to ${oname}'s fire. Nobody meets your eyes. The pantry is closed to you — exile means exile. What you carry is still yours to give, if you want to start earning your way back.`);
+      }
+      if (!ov) return;
+      ov.pantry = ov.pantry || [];
+      const KEEP_KCAL = 2000;
+      let kept = 0;
+      const give = [];
+      for (const item of (s.inventory || [])) {
+        if (!((item.kcalEach || 0) > 0 && (item.units || 0) > 0)) continue;
+        const itemKcal = (item.kcalEach || 0) * (item.units || 0);
+        if (kept >= KEEP_KCAL) { give.push(item); continue; }
+        const room = KEEP_KCAL - kept;
+        if (itemKcal <= room) { kept += itemKcal; continue; }
+        const keepUnits = Math.floor(room / (item.kcalEach || 1));
+        if (keepUnits > 0) {
+          kept += keepUnits * (item.kcalEach || 0);
+          give.push(Object.assign({}, item, { units: (item.units || 0) - keepUnits }));
+          item.units = keepUnits;
+        } else { give.push(item); }
+      }
+      const giveSet = new Set(give);
+      for (const item of give) {
+        ov.pantry.push({ name: item.name || 'Foraged food', kcalEach: item.kcalEach,
+          units: item.units, spoilDay: item.spoilDay || 9999, unit: item.unit,
+          safe: item.safe !== false, kg: item.kg || 0.2 });
+      }
+      s.inventory = (s.inventory || []).filter(i => !giveSet.has(i));
+      const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
+      if (givenKcal > 0) {
+        this.say(`You keep a day's food for the road and leave ${givenKcal} kcal at ${oname}'s fire. A start, maybe.`);
+      }
+    },
+
     // --- autosave: one writer, one format. run data lives in state.run ---
     // the phone kills background tabs; an expedition must survive a refresh.
     syncRun() {
@@ -6920,7 +6965,13 @@
       // (Animal parking happens BEFORE the position update above — the live
       // animal stays on the tile you left, and any animal parked on the
       // arrival tile is picked up into a live encounter. Nothing to do here.)
+      // DRIFTER BREAK-IT r4 2026-10-08: after a fork the abandoned haven site
+      // is retagged 'oldhaven' (_forkNewHaven) — the old village still lives
+      // there, but it isn't YOUR fire. returnToVillage PINs map coords to the
+      // current village, so it must only fire on the live haven tile; the old
+      // site gets the estranged return beat, never the PIN.
       if (tile.type === 'haven') this.returnToVillage();
+      else if (tile.type === 'oldhaven') this.returnToOldVillage(tile);
       this.checkEncounter();
       this.checkAnimals();
       this.checkQuest('travel');
