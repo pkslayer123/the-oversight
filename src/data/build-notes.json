@@ -7,7 +7,7 @@
       "You can seal an understanding with a village, sealed with a feast — no tribute, no bowing. Their fire opens to your people: a guest's meal, once a day.",
       "Diplomacy is knowledge-gated now: villages you've never heard of don't show up as proposals. Travelers' rumors actually reach you."
     ],
-    "version": "pending-ship"
+    "version": "db5a862c-20261009-232417"
   },
   {
     "version": "c69c1beb-20261009-171111",
@@ -27,7 +27,7 @@
       "The wild things hit harder and take more killing than before. Armor is the answer: a geared fighter barely feels what flattens an unarmored one.",
       "Fixed: your wielded weapon's damage bonus wasn't being applied at all — spears (and every other weapon) hit properly again."
     ],
-    "version": "pending-ship"
+    "version": "db5a862c-20261009-232417"
   },
   {
     "date": "2026-10-09",
