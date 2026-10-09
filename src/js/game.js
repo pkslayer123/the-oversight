@@ -2513,6 +2513,15 @@
       for (const [mat, need] of Object.entries(recipe.materials)) {
         const have = inv.filter(i => matMatches(i, mat)).reduce((t, i) => t + i.units, 0);
         if (have < need) {
+          // BLIND HONESTY (break-it knowledge 2026-10-09): at L1 the materials
+          // list is L2 knowledge — naming the missing material here printed the
+          // recipe's secrets one free probe at a time (this check runs before
+          // any cost: no ticks, no consumption). A blind attempt stays blind.
+          // At L2+ the materials are known, so the detailed line is honest.
+          if (blind) {
+            this.say(`You don't know what a ${recipe.name} is made of — not really. Bring your best guess and try.`);
+            return null;
+          }
           this.say(mat === 'bait'
             ? `Need ${need} bait — berries, nuts, any food (have ${have}).`
             : `Need ${need} ${mat} (have ${have}).`);

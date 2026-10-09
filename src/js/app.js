@@ -1194,11 +1194,18 @@
         }
       }
     } else if (isMon) {
-      // AMBIGUITY: name hidden until the Codex knows it.
+      // AMBIGUITY (break-it knowledge 2026-10-09): the popup calls it what
+      // the UI calls it — monsterDisplayName. Village-agreed name wins; else
+      // the System's true name once it arrives; else the strange descriptor.
+      // The old code keyed on monsterKnown ('observed' in the codex) and
+      // printed mdef.name — surviving a single telegraph leaked the true
+      // name before the village ever named it.
       const mdef = (Game.data.monsters || []).find(m => m.id === mon.id) || {};
-      const known = Game.monsterKnown(mon.id);
-      desc = known ? `${mdef.name}. ${mdef.vibe || ''} It sees you.`
-        : `${mdef.unknown ? mdef.unknown[0].toUpperCase() + mdef.unknown.slice(1) : 'Something big'}. It sees you. You don't know what it is.`;
+      const disp = (Game.monsterDisplayName ? Game.monsterDisplayName(mon.id) : null) || mdef.unknown || 'something big';
+      const cap = disp.charAt(0).toUpperCase() + disp.slice(1);
+      const named = !!((((Game.state || {}).codex || {}).monsters || {})[mon.id] || {}).villageName || !!Game.state.systemArrived;
+      desc = named ? `${cap}. ${mdef.vibe || ''} It sees you.`
+        : `${cap}. It sees you. You don't know what it is.`;
       if (dist <= 1) actions.push(['Fight', () => Game.startCombat(mon.id)]);
       actions.push(['Back away', () => {}]);
     } else if (isAni) {
@@ -12576,7 +12583,13 @@
     const inv = st.inventory;
     const tools = Game.state.scholar.tools || [];
     const recipes = Game.data.recipes || [];
-    const knownRecipes = recipes.filter(r => (Game.state.codex.recipes || {})[r.id] && Game.state.codex.recipes[r.id].level >= 3);
+    // BLIND CRAFT (break-it knowledge 2026-10-09): recipes at L1+ reach the
+    // Craft UI with honest attempt buttons. The old filter hid everything
+    // below L3, stranding the gear-discovery L1 grants (noteGearHandled):
+    // the engine's blind path (35%/85%, materials at risk) had no button and
+    // L2 was unreachable at runtime. Materials stay hidden at L1 — that list
+    // is L2 knowledge. The button names the odds; blind is never "disabled".
+    const craftableRecipes = recipes.filter(r => ((Game.state.codex.recipes || {})[r.id] || {}).level >= 1);
     const bodyHtml = `
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small" style="margin:8px 0;padding:8px;background:#1a2a3a;border-radius:6px"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''} <button class="btn ghost sm" data-pourwater="1" title="Pour out 1L, risky first. Water is heavy.">Pour out 1L</button></p>`; })()}
         <h3 style="margin:12px 0 6px">🎒 Carried <span style="opacity:.6;font-weight:normal;font-size:13px">(${inv.length} items)</span></h3>
@@ -12644,7 +12657,14 @@
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${tools.length ? `<h3 style="margin-top:12px">🔧 Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
-        ${knownRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${knownRecipes.map(r => `<p class="small"><b>${r.name}</b> \u2014 ${Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ')} <button class="btn ghost sm" data-craft="${r.id}">Make</button></p>`).join('')}` : ''}`;
+        ${craftableRecipes.length ? `<h3 style="margin-top:12px">Craft</h3>${craftableRecipes.map(r => {
+          const rlvl = ((Game.state.codex.recipes || {})[r.id] || {}).level || 0;
+          const matStr = rlvl >= 2 ? Object.entries(r.materials).map(([m, n]) => n + ' ' + m).join(', ') : 'materials unknown \u2014 bring your best guess';
+          const btn = rlvl >= 3 ? `<button class="btn ghost sm" data-craft="${r.id}">Make</button>`
+            : rlvl === 2 ? `<button class="btn ghost sm" data-craft="${r.id}" title="You know what it takes. 85% \u2014 the woods keep the rest.">Try (85%)</button>`
+            : `<button class="btn ghost sm" data-craft="${r.id}" title="You've only seen one. 35% \u2014 and the materials are at risk.">Try blind (35%)</button>`;
+          return `<p class="small"><b>${r.name}</b> \u2014 ${matStr} ${btn}</p>`;
+        }).join('')}` : ''}`;
 
     slot.innerHTML = `<div class="inlinecard">
       ${inlineHead('\uD83C\uDF92 Pack (' + st.invCount + ' items)')}
