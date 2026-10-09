@@ -202,9 +202,6 @@
   }
   function esc(s) { return String(s).replace(/</g, '&lt;'); }
 
-  // TWO-CLICK TRAVEL: first tap selects, second tap confirms. Travel is deliberate.
-  let pendingTravel = null;
-
   // ---------- shared ----------
   function statRow(label, val, pct, low, cls, clickable) {
     const clickAttr = clickable ? ` data-statclick="${clickable}" style="cursor:pointer"` : '';
@@ -713,7 +710,7 @@
         if (act === 'cut' || act === 'clear') { Game.clearBlockage(x, y); }
         else if (act === 'bridge') { if (!Game.buildBridge(x, y)) { refresh(); return; } }
         else if (act === 'swim') { Game.state.scholar.kcal = Math.max(0, Game.state.scholar.kcal - 20); Game.say('You swim across, cold and grinning.'); Game.travelTo(x, y, true); refresh(); return; }
-        else { pendingTravel = null; refresh(); return; } // go around: just close
+        else { refresh(); return; } // go around: just close
         // after clearing/building, travel through
         const res = Game.travelTo(x, y);
         if (res && res.kind === 'blockage') { showBlockage(res); return; }
