@@ -58,8 +58,8 @@ function freshGame() {
   Game.state.village.trust = Game.state.village.trust || {};
   Game.state.village.severed = {};
   Game.state.otherVillages = [
-    { id: 'vtest', name: 'Test Village', population: 10, day: 5, pantryKcal: 5000, viewership: 5, opinion: 40 },
-    { id: 'vother', name: 'Other Village', population: 9, day: 5, pantryKcal: 6000, viewership: 5, opinion: 40 },
+    { id: 'vtest', name: 'Test Village', population: 10, day: 5, pantryKcal: 5000, viewership: 5, opinion: 40, generated: true },
+    { id: 'vother', name: 'Other Village', population: 9, day: 5, pantryKcal: 6000, viewership: 5, opinion: 40, generated: true },
   ];
   return s;
 }
