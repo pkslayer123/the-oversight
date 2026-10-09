@@ -4,19 +4,31 @@
 // provides:
 //   - hierarchyState()
 //   - linkWith(vid, other)
+//   - knowsVillage(v)
 //   - linkStanding(a, b)
 //   - breakLink(a, b)
 //   - judgeLink(a, b)
 //   - proposeLink(a, b)
+//   - answerCounter(how)
 //   - answerDemand(a, b)
 //   - payTribute(a, b)
 //   - hierarchyDaily()
 //   - linkTick(a, b)
 //   - onLeaderDeath(vid)
+//   - theirLeaderDied(linkId)
+//   - stageFirstAccord(link)
+//   - answerAccord(how)
+//   - deliverVillageRumors()
+//   - kingdomEndingEligible()
 //   - _nudgeOpinion(villageId, delta)
 // rules:
 //   - courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually decline (judgeLink base 38) — the climb is earned. (code: hierarchy.js)
 //   - join_surfaces_village_news: joining a village reads up to 3 recent village.news entries (named catch-up deaths/births) at their fire. (code: hierarchy.js)
+//   - negotiation_is_played: proposeLink scores the courtship; >=55 accepts, 35-54 counters with the village's own terms (accept/sweeten/walk away — played, never rolled), <35 declines. (code: hierarchy.js)
+//   - regional_dawn: Haven's first-ever link stages a played beat, not a threshold flip — the System overlay grows into coordination (networkLive) and the player chooses Haven's first gesture (gift/visit/cold), each with real costs. (code: hierarchy.js)
+//   - speaker_is_named: theirSpeaker is a named person from the sim's roster; when the sim kills them, theirLeaderDied fires the mirror succession beat. (code: hierarchy.js)
+//   - rumors_are_delivered: queued village rumors are spoken one per day at the day boundary — "heard of them" is reachable. (code: hierarchy.js)
+//   - diplomacy_is_knowledge_gated: proposeLink/proposeAlliance refuse villages the player never heard of or visited (knowsVillage). (code: hierarchy.js)
 // consumes:
 //   - state.otherVillages
 /* INTER-VILLAGE HIERARCHY — src/js/hierarchy.js
@@ -96,6 +108,17 @@
       try {
         return (this.state.otherVillages || []).find(function (x) { return x.id === id; }) || null;
       } catch (e) { return null; }
+    },
+
+    // knowsVillage: the knowledge gate for diplomacy. You've HEARD of them
+    // (a traveler's rumor reached you — rumored) or you've BEEN there
+    // (approach runs the catch-up sim and sets generated). Broadcast-deed
+    // opinion from afar does NOT count — a name you never heard is not
+    // knowledge, and never a button. (Regional audit 2026-10-09: the Haven
+    // panel used to list every village on the map, met or not.)
+    knowsVillage(v) {
+      if (!v || v.id === 'haven') return true;
+      return !!(v.generated || v.rumored);
     },
 
     // ---------- OPINION (the courtship currency) ----------
@@ -184,37 +207,200 @@
 
     // proposeLink: negotiate one organization, primary/subordinate.
     // opts: {asSubordinate: bool, tributeKcalPerWeek}
+    // PLAYED, NOT ROLLED (regional audit 2026-10-09): judgeLink scores the
+    // courtship, but the middle band is a negotiation, not a coin flip.
+    // score >= 55: earned — they accept. 35-54: they COUNTER with their terms
+    // (played: accept / sweeten / walk away). Below 35: declined — do the
+    // climb first (join them, study their book, deeds on the broadcast).
     proposeLink(targetId, opts) {
       opts = opts || {};
       var ov = this._otherVillage(targetId);
-      if (!ov) { this.say('You don\'t know them well enough to propose anything.'); return null; }
+      if (!ov || !this.knowsVillage(ov)) { this.say('You don\'t know them well enough to propose anything.'); return null; }
       if (this.linkWith(targetId)) { this.say('There is already a link. One organization, one link — tend it.'); return null; }
+      if (this.state.pendingCounter) { this.say('There is already an offer on the table — answer it first.'); return 'counter'; }
       var j = this.judgeLink(targetId, opts);
       var nm = ov.name || 'them';
-      if (j.score >= 45) {
-        var link = {
-          id: 'link_' + Date.now().toString(36) + Math.floor(R() * 999),
-          primary: opts.asSubordinate ? targetId : HOME,
-          subordinate: opts.asSubordinate ? HOME : targetId,
-          trust: 30,
-          tributeKcalPerWeek: opts.tributeKcalPerWeek || 4000,
-          tributePaidWeek: -1, arrears: 0,
-          obligations: ['tribute', 'aid'],
-          history: [], status: 'active',
-          day: (this.state.scholar || {}).day || 0,
-          pendingDemand: null,
-        };
-        this.hierarchyState().push(link);
-        this._linkNote(link, 'formed',
-          opts.asSubordinate ? 'Haven joined ' + nm + ' as subordinate.' : nm + ' joined Haven as subordinate.');
-        var rn = j.rep ? String(this.displayName(j.rep.id)).split(' ')[0] : 'Someone';
-        this.say(`⛓️ ${rn} brings it home: ${opts.asSubordinate ? 'Haven bows to ' + nm + ' — one organization, them primary.' : nm + ' bows to Haven — one organization, us primary.'} Tribute: ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. The relationship starts at trust 30. Everything from here is earned.`);
-        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'linked:' + targetId + ':' + (opts.asSubordinate ? 'sub' : 'prim')); } catch (e) {}
-        return link;
+      var opinion = ov.opinion || 0;
+      // Active dislike isn't a negotiation — it's a closed door. The climb
+      // (join, study, deeds) has to come before the table.
+      if (opinion <= -20) {
+        this.say(`${nm} declines. ${j.reasons.join(' ')} The door isn't shut forever — but it is shut today.`);
+        try { if (this._nudgeOpinion) this._nudgeOpinion(targetId, -5); else ov.opinion = (ov.opinion || 0) - 5; } catch (e) {}
+        return null;
       }
+      if (j.score >= 55) return this._formLink(targetId, opts, j);
+      if (j.score >= 35) return this._stageCounter(targetId, opts, j);
       this.say(`${nm} declines. ${j.reasons.join(' ')} The door isn't shut — just not today.`);
       try { if (this._nudgeOpinion) this._nudgeOpinion(targetId, -5); else ov.opinion = (ov.opinion || 0) - 5; } catch (e) {}
       return null;
+    },
+
+    // _stageCounter: the middle band. They don't say no — they name their
+    // price. The negotiation is played: accept their terms, sweeten the offer
+    // with real food, or walk away from the table.
+    _stageCounter(targetId, opts, j) {
+      var ov = this._otherVillage(targetId);
+      var nm = (ov && ov.name) || 'them';
+      var offered = opts.tributeKcalPerWeek || 4000;
+      var c = {
+        targetId: targetId, opts: opts,
+        asSubordinate: true,
+        tributeKcalPerWeek: opts.asSubordinate ? Math.max(offered, 6000) : 5000,
+        day: (this.state.scholar || {}).day || 0,
+      };
+      c.terms = opts.asSubordinate
+        ? `They'll take Haven — but the tribute is ${c.tributeKcalPerWeek.toLocaleString()} kcal/week, not ${offered.toLocaleString()}. Take it or leave it.`
+        : `They won't bow to Haven. But they'll TAKE Haven — ${c.tributeKcalPerWeek.toLocaleString()} kcal/week, them primary. That's the offer.`;
+      this.state.pendingCounter = c;
+      this.say(`⛓️ ${nm} doesn't say no. They say: "${c.terms}" The table is set — accept their terms, sweeten the offer, or walk away.`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'counter:' + targetId); } catch (e) {}
+      return 'counter';
+    },
+
+    // answerCounter: resolve the pending counter-offer. 'accept' forms the
+    // link on their terms; 'sweeten' spends real food for a re-judgment at
+    // your terms (the gift is kept either way — that's what sweeteners
+    // risk); 'walk' leaves the table, and opinion remembers.
+    answerCounter(how) {
+      var c = this.state.pendingCounter;
+      if (!c) return null;
+      var ov = this._otherVillage(c.targetId);
+      var nm = (ov && ov.name) || 'them';
+      if (how === 'accept') {
+        this.state.pendingCounter = null;
+        return this._formLink(c.targetId, { asSubordinate: c.asSubordinate, tributeKcalPerWeek: c.tributeKcalPerWeek }, null);
+      }
+      if (how === 'sweeten') {
+        var paid = this._removePantryKcal(1500);
+        if (paid < 1500) {
+          this.say(`The pantry can't cover the sweetener — only ${paid.toLocaleString()} kcal to hand. They watch you count. The offer stands; the table waits.`);
+          return 'counter';
+        }
+        var j2 = this.judgeLink(c.targetId, c.opts);
+        if (j2.score + 12 >= 45) {
+          this.state.pendingCounter = null;
+          this.say(`The gift talks. ${nm} reconsiders — at YOUR terms.`);
+          return this._formLink(c.targetId, c.opts, j2);
+        }
+        this._nudgeOpinion(c.targetId, -5);
+        this.state.pendingCounter = null;
+        this.say(`They take the food — all 1,500 kcal of it — and turn you away anyway. "${j2.reasons.join(' ')}" The gift is gone. That's what sweeteners risk.`);
+        return null;
+      }
+      // walk away
+      this.state.pendingCounter = null;
+      this._nudgeOpinion(c.targetId, -3);
+      this.say(`You walk away from ${nm}'s table. They'll remember you came — and what you wouldn't pay.`);
+      return null;
+    },
+
+    // _formLink: the single place links are born. Designates their speaker
+    // (a named person from the sim's roster — deaths detonate hierarchies),
+    // and stages the REGIONAL DAWN on Haven's first-ever link: the moment the
+    // village becomes regional is played, never a threshold flip.
+    _formLink(targetId, opts, j) {
+      opts = opts || {};
+      var ov = this._otherVillage(targetId);
+      var nm = (ov && ov.name) || 'them';
+      var link = {
+        id: 'link_' + Date.now().toString(36) + Math.floor(R() * 999),
+        primary: opts.asSubordinate ? targetId : HOME,
+        subordinate: opts.asSubordinate ? HOME : targetId,
+        trust: 30,
+        tributeKcalPerWeek: opts.tributeKcalPerWeek || 4000,
+        tributePaidWeek: -1, arrears: 0,
+        obligations: ['tribute', 'aid'],
+        history: [], status: 'active',
+        day: (this.state.scholar || {}).day || 0,
+        pendingDemand: null,
+        theirSpeaker: null,
+      };
+      this.hierarchyState().push(link);
+      this._designateSpeaker(link);
+      this._linkNote(link, 'formed',
+        opts.asSubordinate ? 'Haven joined ' + nm + ' as subordinate.' : nm + ' joined Haven as subordinate.');
+      var rep = (j && j.rep) ? j.rep : null;
+      try { if (!rep) rep = this.representative(); } catch (e) {}
+      var rn = 'Someone';
+      try { rn = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
+      this.say(`⛓️ ${rn} brings it home: ${opts.asSubordinate ? 'Haven bows to ' + nm + ' — one organization, them primary.' : nm + ' bows to Haven — one organization, us primary.'} Tribute: ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. The relationship starts at trust 30. Everything from here is earned.`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'linked:' + targetId + ':' + (opts.asSubordinate ? 'sub' : 'prim')); } catch (e) {}
+      if (!this.state.networkLive) this.stageFirstAccord(link);
+      return link;
+    },
+
+    // ---------- THE REGIONAL DAWN ----------
+
+    // stageFirstAccord: THE MOMENT the village becomes regional. Not a stat
+    // threshold — a played beat. The System overlay visibly grows into
+    // coordination (networkLive), the village feels it, and the player
+    // decides Haven's FIRST GESTURE toward the other fire: a real gift of
+    // food, the representative's three days, or cold ink. They watch what
+    // you do first.
+    stageFirstAccord(link) {
+      if (!link || this.state.networkLive) return null;
+      this.state.networkLive = true;
+      var other = link.subordinate === HOME ? link.primary : link.subordinate;
+      this.state.pendingAccord = { linkId: link.id, day: (this.state.scholar || {}).day || 0 };
+      var rep = null;
+      try { rep = this.representative(); } catch (e) {}
+      var rn = 'Someone';
+      try { rn = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
+      this.say(`◈ SYSTEM: "One fire was a village. Two fires is a NETWORK. Coordination layer: online — tribute, demands, the long climb, all tracked now. Try not to starve twice as fast."`);
+      this.say(`The village feels it before they understand it: Haven isn't just Haven anymore. ${rn} speaks at ${this._ovName(other)}'s table now — earned, not appointed. And the other fire is watching what Haven does FIRST.`);
+      try { if (this.journalNote) this.journalNote('village', 'accord', 'First link formed with ' + this._ovName(other) + '. Haven is regional now — the System tracks the network.'); } catch (e) {}
+      return true;
+    },
+
+    // answerAccord: Haven's first gesture. Real costs, real consequences —
+    // the other village's first impression of the network, priced honestly.
+    answerAccord(how) {
+      var pa = this.state.pendingAccord;
+      if (!pa) return null;
+      var link = null;
+      var links = this.hierarchyState();
+      for (var i = 0; i < links.length; i++) if (links[i].id === pa.linkId) { link = links[i]; break; }
+      if (!link || link.status !== 'active') { this.state.pendingAccord = null; return null; }
+      var other = link.subordinate === HOME ? link.primary : link.subordinate;
+      var onm = this._ovName(other);
+      this.state.pendingAccord = null;
+      if (how === 'gift') {
+        var paid = this._removePantryKcal(2000);
+        var gain = paid >= 2000 ? 10 : Math.max(2, Math.round(10 * paid / 2000));
+        link.trust = Math.min(100, link.trust + gain);
+        this._nudgeOpinion(other, paid >= 2000 ? 5 : 2);
+        this._linkNote(link, 'accord', 'First gesture: gift of ' + paid.toLocaleString() + ' kcal.');
+        try { this.seedGossip('accord_' + link.id, { generous: 5 }, (this.npcIds ? this.npcIds().slice(0, 4) : [])); } catch (e) {}
+        if (paid <= 0) {
+          this.say(`🎁 Haven would send a gift — the pantry is bare. An empty-handed promise. They note the empty hands, and the hoping. (Trust +${gain}.)`);
+        } else if (paid >= 2000) {
+          this.say(`🎁 Haven's first gesture: 2,000 kcal walks to ${onm}'s fire — a gift, no strings. They count it, and they remember who sent it. (Trust +${gain}.)`);
+        } else {
+          this.say(`🎁 Haven sends ${paid.toLocaleString()} kcal — all it can spare. Not the feast they hoped for, but an honest one. They count it anyway. (Trust +${gain}.)`);
+        }
+        return true;
+      }
+      if (how === 'visit') {
+        var rep = null;
+        try { rep = this.representative(); } catch (e) {}
+        var rnm = 'Someone';
+        try { rnm = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
+        link.trust = Math.min(100, link.trust + 8);
+        this._linkNote(link, 'accord', 'First gesture: ' + rnm + ' sits at their fire.');
+        if (rep && rep.id !== this.villagerId) {
+          var m = this.mshipState();
+          m.loaned = { vid: rep.id, untilDay: ((this.state.scholar || {}).day || 0) + 3, to: other };
+          this.say(`🚶 ${rnm} walks out to sit at ${onm}'s fire for three days — Haven's face, their time. Still ours; membership needs no presence. (Trust +8.)`);
+        } else {
+          this.say(`🚶 You go yourself — days of your life at a stranger's fire. That's the price of being the face Haven earned. (Trust +8.)`);
+        }
+        return true;
+      }
+      // cold: send nothing. The ink dries on its own.
+      this._nudgeOpinion(other, -3);
+      this._linkNote(link, 'accord', 'First gesture: nothing. Cold ink.');
+      this.say(`Haven sends nothing. The ink dries on its own. ${onm} notes the coldness — first gestures are remembered longest.`);
+      return true;
     },
 
     // ---------- TRIBUTE (food is real) ----------
@@ -270,6 +456,25 @@
       return (ov && ov.name) || 'them';
     },
 
+    // _designateSpeaker: their speaker is a NAMED PERSON from the catch-up
+    // sim's roster — not a title. When the sim's hunger takes them, the
+    // mirror succession beat (theirLeaderDied) fires for real. Backfills
+    // links formed before this existed.
+    _designateSpeaker(link) {
+      try {
+        var other = link.subordinate === HOME ? link.primary : link.subordinate;
+        if (!other || other === HOME) return;
+        var ov = this._otherVillage(other);
+        var roster = (ov && ov.roster) || [];
+        for (var i = 0; i < roster.length; i++) {
+          if (roster[i] && roster[i].alive) {
+            link.theirSpeaker = { id: roster[i].id, name: roster[i].name };
+            return;
+          }
+        }
+      } catch (e) {}
+    },
+
     // linkTick: weekly accounting. Paid → the relationship deepens; unpaid →
     // arrears, and the primary notices. Runs inside membershipDaily.
     linkTick() {
@@ -305,6 +510,31 @@
                   if (R() < 0.35) self.say(`⚠️ ${self._ovName(link.subordinate)} is late with tribute. The air changes.`);
                 }
               }
+              // THEIR SPEAKER LIVES OR DIES IN THE SIM (regional audit
+              // 2026-10-09): the catch-up sim kills named people. If the
+              // designated speaker is dead, the mirror succession beat fires
+              // — this is what theirLeaderDied was built for, and nothing
+              // ever called it. Backfills older links, then watches.
+              try {
+                var _other = link.subordinate === HOME ? link.primary : link.subordinate;
+                if (_other && _other !== HOME) {
+                  if (!link.theirSpeaker) {
+                    self._designateSpeaker(link);
+                  } else {
+                    var _ov = self._otherVillage(_other);
+                    var _ros = (_ov && _ov.roster) || [];
+                    var _sp = null;
+                    for (var _si = 0; _si < _ros.length; _si++) {
+                      if (_ros[_si] && _ros[_si].id === link.theirSpeaker.id) { _sp = _ros[_si]; break; }
+                    }
+                    if (_sp && !_sp.alive) {
+                      link.theirSpeaker = null;
+                      self.theirLeaderDied(link.id);
+                      if (link.status === 'active') self._designateSpeaker(link);
+                    }
+                  }
+                }
+              } catch (_e2) {}
             } catch (e) {}
           })(this, links[i]);
         }
@@ -563,8 +793,31 @@
 
     // ---------- DAILY ----------
 
+    // deliverVillageRumors: the traveler's word, actually delivered. The
+    // rumor queue (scholar.rumors, type 'village') was write-only —
+    // maybeVillageRumor queued "a village to the north called X" and nobody
+    // ever spoke it, so "heard of them" could never become true. One per
+    // day, at the day boundary, with a journal line.
+    deliverVillageRumors() {
+      try {
+        var s = this.state.scholar || {};
+        var rumors = s.rumors || [];
+        for (var i = 0; i < rumors.length; i++) {
+          var r = rumors[i];
+          if (r && r.type === 'village' && !r.delivered) {
+            r.delivered = true;
+            this.say(`🧳 ${r.text} The region is bigger than your fire.`);
+            try { if (this.journalNote) this.journalNote('village', 'rumor', r.text); } catch (e) {}
+            return true;
+          }
+        }
+      } catch (e) {}
+      return false;
+    },
+
     hierarchyDaily() {
       try { this.linkTick(); } catch (e) {}
+      try { this.deliverVillageRumors(); } catch (e) {}
     },
   };
 
@@ -601,15 +854,19 @@
     };
   }
 
-  // COURTSHIP (drifter loop 2026-10-08): joining a village and honoring their
-  // knowledge moves their opinion of Haven — once per village, no farming.
-  // Joining also surfaces their catch-up history: the sim records named
-  // deaths and births in village.news, but nothing ever READ it to the
-  // player. Around their fire, they tell you what the years did.
-  var _joinVillageH = G.joinVillage;
-  if (_joinVillageH) {
-    G.joinVillage = function (villageId) {
-      var r = _joinVillageH.apply(this, arguments);
+  // COURTSHIP (drifter loop 2026-10-08; retargeted regional audit 2026-10-09):
+  // joining a village and honoring their knowledge moves their opinion of
+  // Haven — once per village, no farming. Joining also surfaces their
+  // catch-up history: the sim records named deaths and births in
+  // village.news, but nothing ever READ it to the player. Around their fire,
+  // they tell you what the years did.
+  // RETARGET (2026-10-09): the old wrap sat on G.joinVillage (game.js),
+  // which has NO callers — the real join path is joinVillageReal
+  // (betrayal.js, via petition). The courtship never fired. Now it does.
+  var _joinVillageRealH = G.joinVillageReal;
+  if (_joinVillageRealH) {
+    G.joinVillageReal = function (villageId) {
+      var r = _joinVillageRealH.apply(this, arguments);
       try {
         var ov = (this.state.otherVillages || []).find(function (x) { return x.id === villageId; });
         if (ov && !ov._joinOpinionGiven) {

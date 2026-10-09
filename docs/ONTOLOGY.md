@@ -557,11 +557,16 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 ### hierarchy (`hierarchy.js`)
 Inter-village hierarchy. Villages have relationships, rivalries, trade.
 
-**Provides:** hierarchyState(), linkWith(vid, other), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerDemand(a, b), payTribute(a, b), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid), _nudgeOpinion(villageId, delta)
+**Provides:** hierarchyState(), linkWith(vid, other), knowsVillage(v), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerCounter(how), answerDemand(a, b), payTribute(a, b), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid), theirLeaderDied(linkId), stageFirstAccord(link), answerAccord(how), deliverVillageRumors(), kingdomEndingEligible(), _nudgeOpinion(villageId, delta)
 
 **Rules:**
 - courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually decline (judgeLink base 38) — the climb is earned. (code: hierarchy.js)
 - join_surfaces_village_news: joining a village reads up to 3 recent village.news entries (named catch-up deaths/births) at their fire. (code: hierarchy.js)
+- negotiation_is_played: proposeLink scores the courtship; >=55 accepts, 35-54 counters with the village's own terms (accept/sweeten/walk away — played, never rolled), <35 declines. (code: hierarchy.js)
+- regional_dawn: Haven's first-ever link stages a played beat, not a threshold flip — the System overlay grows into coordination (networkLive) and the player chooses Haven's first gesture (gift/visit/cold), each with real costs. (code: hierarchy.js)
+- speaker_is_named: theirSpeaker is a named person from the sim's roster; when the sim kills them, theirLeaderDied fires the mirror succession beat. (code: hierarchy.js)
+- rumors_are_delivered: queued village rumors are spoken one per day at the day boundary — "heard of them" is reachable. (code: hierarchy.js)
+- diplomacy_is_knowledge_gated: proposeLink/proposeAlliance refuse villages the player never heard of or visited (knowsVillage). (code: hierarchy.js)
 
 **Consumes:** state.otherVillages
 
@@ -626,10 +631,12 @@ Procedural foundation. Procedural depth before more systems.
 ### membership (`membership.js`)
 Village membership. Joining, leaving, exile status.
 
-**Provides:** isMember(vid), mshipState(), acceptApplication(app), refuseApplication(app), genApplicant(), judgeApplication(app), considerApplications(), rejoinMembership(), severMembership(vid), housingCap(), foodSupports(n)
+**Provides:** isMember(vid), mshipState(), memberBenefits(vid), awayMembers(), acceptApplication(app), refuseApplication(app), genApplicant(), judgeApplication(app), considerApplications(), debateIntake(app), rejoinMembership(), severMembership(vid), housingCap(), buildShelter(), foodSupports(n), growthStatus(), regionalStanding(village), villageStandingOf(villageId), formAlliance(villageId), proposeAlliance(villageId), isAllied(aId, bId), recognizedAbroad(vid, otherVillage), memberReputationAbroad(vid), guestMeal(villageId), loanedReturnTick(), membershipDaily()
 
 **Rules:**
-- (none documented)
+- membership_needs_no_presence: on the roster, alive, not severed = member, wherever they are; exile is the one severing. (code: membership.js)
+- alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once a day, real food from their pantry. (code: membership.js)
+- the_loaned_come_home: m.loaned is surfaced in awayMembers and the return is said aloud by loanedReturnTick. (code: membership.js)
 
 **Consumes:** village.members
 
