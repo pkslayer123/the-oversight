@@ -235,18 +235,18 @@ sec('B7 — TV never kills: show damage clamps at 1 HP');
 {
   freshGame(16);
   const show = Game.showPool().find(s => s.id === 'mouth_race'); // has dmg [0,4] choice
-  // force player pull
-  const origRandom = Math.random;
-  Math.random = () => 0.1;
-  try { Game.fireShow(show); } finally { Math.random = origRandom; }
+  // notability-first casting: make the scholar the star, suppress the whim
+  Game.addNotability('player', 'contestWin');
+  Game.addNotability('player', 'wave2Kill');
+  Game.addNotability('player', 'survivedMoot');
+  const _r = Math.random; Math.random = () => 0.5;
+  try { Game.fireShow(show); } finally { Math.random = _r; }
   const ac = Game.state.activeContest;
+  ok('star scholar pulled (notability-first, whim suppressed)', !!ac && ac.participant === 'player');
   if (ac && ac.participant === 'player') {
     Game.state.scholar.health = 2;
     Game.contestChoose(0); // 'Speed, no fear' — dmg [0,4]
     ok('show damage leaves >= 1 HP', (Game.state.scholar.health || 0) >= 1);
-    ok('frame does not imply lethal stakes', true);
-  } else {
-    ok('show damage leaves >= 1 HP (pull landed elsewhere this seed — clamp verified in code)', true);
   }
   // clean up: end the show if still running
   let guard = 0;
