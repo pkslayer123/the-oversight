@@ -523,6 +523,7 @@ Food reality system. Food must be known-edible AND in edible state. Processing c
 **Rules:**
 - raw_penalty: true (code: food.js)
 - processing_required: true (code: food.js)
+- no_creation: true (code: food.js — processing never nets kcal; specialist preserve capped at 1.00x)
 
 **Consumes:** scholar.inventory, state.codex.plants
 
