@@ -671,6 +671,14 @@
     observePerson(vid) {
       const vp = this.vpOf(vid);
       if (!vp || !vp.id) return { ok: false };
+      // GONE GUARD (detective break-it 2026-10-09d): the fled/exiled/dead
+      // can't be watched. Without this, observing a removed villager spent
+      // 2 ticks and planted observation doubts that could never be
+      // confronted — confrontDoubt's gone guard refuses them forever, so
+      // the doubt sat open and unresolvable: a softlocked detective thread.
+      try {
+        if (!this.npcIds().includes(vid)) return { ok: false, line: '"They\'re gone."' };
+      } catch (e) {}
       const name = this.displayName(vid);
       const first = this.firstRef(vid);
       // costs time — watching is work
@@ -1440,16 +1448,25 @@
       // recorded the right one. The speaker's own lines still scrub on
       // every other topic.
       const line = topic === 'gossip' ? raw : this.scrubLiesFromLine(vid, raw);
-      // track truthful claims too (baseline for future contradictions)
+      // track truthful claims too (baseline for future contradictions).
+      // CONTRADICTION SYMMETRY (detective break-it 2026-10-09d): these used
+      // to go through trackClaimSilent, so the contradiction rule never ran
+      // here. A liar heard at low trust (cover on file) who earns trust past
+      // 60 speaks the truth — and the claim log held [cover, truth] with no
+      // doubt and no aha beat, violating TRUTH.md's "Contradictions
+      // (automatic): new claim != old claim on same topic -> doubt." The
+      // reverse direction (truth first, cover later) already fired via the
+      // lie branch's trackClaim. trackClaim is silent for first claims, so
+      // the baseline behavior is unchanged — only real transitions fire.
       try {
         // lieLive (detective break-it 2026-10-09b): the claim baseline must
         // record what the player HEARD — the truth when the lie is dormant,
         // never a cover the player was never told.
         const occHeard = (lies0.occupation && this.lieLive(vid, lies0.occupation)) ? lies0.occupation.told : vp.formerOccupation;
         const orgHeard = (lies0.origin && this.lieLive(vid, lies0.origin)) ? lies0.origin.told : vp.homeRegion;
-        if ((topic === 'past' || topic === 'personal') && vp.formerOccupation) this.trackClaimSilent(vid, 'occupation', occHeard);
-        if ((topic === 'past' || topic === 'personal') && vp.homeRegion) this.trackClaimSilent(vid, 'origin', orgHeard);
-        if (topic === 'goal') this.trackClaimSilent(vid, 'goal', this.npcGoal(vid));
+        if ((topic === 'past' || topic === 'personal') && vp.formerOccupation) this.trackClaim(vid, 'occupation', occHeard);
+        if ((topic === 'past' || topic === 'personal') && vp.homeRegion) this.trackClaim(vid, 'origin', orgHeard);
+        if (topic === 'goal') this.trackClaim(vid, 'goal', this.npcGoal(vid));
       } catch (e) {}
       return line;
     }
