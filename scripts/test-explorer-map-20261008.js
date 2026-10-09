@@ -12,8 +12,11 @@
 // Run: node scripts/test-explorer-map-20261008.js [SEED]
 const fs = require('fs');
 const path = require('path');
-const WS = '/home/hatch/workspace/the-scattering';
-const ROOT = '/tmp/explorer-head-1008';
+// STALE-PATH FIX (explorer break-it 2026-10-08): this test hardcoded a
+// deleted /tmp worktree as ROOT and the main tree as WS. Point both at the
+// script's own tree so the test runs against the code being tested.
+const WS = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..');
 const SEED = parseInt(process.argv[2] || process.env.SEED || '20261008', 10);
 (function seed() {
   let a = SEED >>> 0;

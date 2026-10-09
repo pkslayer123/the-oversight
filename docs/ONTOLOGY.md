@@ -489,6 +489,7 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 - map_is_seen_only: world map displays only visited + map-shared tiles; unvisited renders blank (code: mapSeen, Steve 2026-10-06)
 - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
+- scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
 - day_parts: 4 nested (code: TIME)
 - ticks_per_day: defined in TIME (code: tickAction)
 - sleep_heal_bunk: 35 (code: sleepPreview)
