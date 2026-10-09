@@ -951,6 +951,11 @@
       var kcal = 300 + Math.floor(Math.random() * 400) + favor * 5;
 
       this.say('📦 A care package drops from the sky with a little parachute. There\'s a note: "WE LOVE YOU! — your fans."');
+      // AUDIO (break-it 2026-10-09, sibling of the silent alien beam): the
+      // fanPackageDrop voice was built for exactly this beat (descent
+      // whistle, silk flutter, thump) but only the fan-package unboxing
+      // fired it — the alien care package fell silently.
+      try { this.audioEvent('fanPackageDrop'); } catch (e) {}
       if (gift) {
         this.say('Inside: ' + (gift.name || gift.id) + (gift.desc ? ' — ' + gift.desc : ''));
         // HONEST (break-it 2026-10-08): the gift used to land in
@@ -2111,6 +2116,11 @@
       try { for (var k in (opts || {})) newOpts[k] = opts[k]; } catch (e) {}
       newOpts._beamFinal = true; // tbDamage wrap checks this to skip armor
       // We can't easily re-enter tbDamage, so apply directly:
+      // AUDIO (break-it 2026-10-09): the beam DISCHARGES here — the resolve
+      // sounds like any machine beam (droneBeam via the impact dispatcher),
+      // whether or not the target is still standing to take it. Was: the
+      // game's most devastating attack played nothing.
+      try { this.audioEvent('impact', { pattern: 'beam' }); } catch (e) {}
       try {
         var t = this.tbFighter(engineKey);
         if (t && t.alive) {
@@ -2218,6 +2228,11 @@
         };
         var beamName = beamNames[pid] || (per.name + '\'s beam weapon');
         this.say('🔆 ' + per.name + ' raises ' + beamName + '. The air tastes like copper.');
+        // AUDIO (break-it 2026-10-09): the beam is the aliens' signature
+        // weapon — the raise is the "oh shit" telegraph and it was silent.
+        // Machine-beam windup (beamTechWindup via the telegraph dispatcher),
+        // not the deer's beamCharge — other beams are machines.
+        try { this.audioEvent('telegraph', { pattern: 'beam', urgency: 1 }); } catch (e) {}
         // Player is the target (beam weapons are for the player)
         this.apBeamHit('player', 0, beamName, { damageType: 'alien_beam' });
         return true;
