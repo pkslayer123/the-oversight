@@ -711,6 +711,7 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
+- observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 
 **Consumes:** village.gossip
 
