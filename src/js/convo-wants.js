@@ -430,8 +430,8 @@
     },
 
     // convoWant: the dialogue layer's read of the current want (id string).
-    // dialogueBeatKind references this; it was never defined, so the
-    // want-aware classification silently never fired (rethink 2026-10-07).
+    // (The old dialogueBeatKind consumer was removed in the Phase 1 rethink;
+    // kept as the public read for want-aware dialogue tooling + tests.)
     convoWant(vid) {
       try { const c = this.convoGet(vid); return (c.want && c.want.id) || null; }
       catch (e) { return null; }

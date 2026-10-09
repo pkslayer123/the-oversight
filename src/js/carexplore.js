@@ -291,14 +291,25 @@
     n.social = Math.max(0, (n.social || 0) - 15);
     // PROGRESSIVE TRUST (break-it social 2026-10-08): the flat deltas paid
     // full rate at any trust level — same class as the promiseHelp farm.
-    // Comfort is a real act (no 40 talk cap), but devotion isn't a grind.
-    const appliedDelta = (typeof this.trustGainProgressive === 'function' && trustDelta > 0)
-      ? this.trustGainProgressive(vid, trustDelta) : trustDelta;
-    setTrust.call(this, vid, trust + appliedDelta);
+    // BREAK-IT (social r2 2026-10-08): comfort is words and presence, not a
+    // deed — the old direct setTrust bypassed resolveConsequence entirely
+    // (no 40 talk cap), so a chronically hungry villager farmed 10->100 in
+    // 40 free comforts (measured), plus +4 more per comfort from the
+    // observe() rep-drift below. Words cap at 40 through the resolver; only
+    // 'share' (real vulnerability, already gated at trust>=40) is a real act.
+    // The observe() call below carries noTrust now that trust moves here.
+    const isRealAct = approach === 'share';
+    if (typeof this.resolveConsequence === 'function') {
+      this.resolveConsequence(vid, { trust: trustDelta, temper: isRealAct ? 'honest-hard' : 'kind', talk: isRealAct ? false : true, name: 'comfort:' + approach });
+    } else {
+      const appliedDelta = (typeof this.trustGainProgressive === 'function' && trustDelta > 0)
+        ? this.trustGainProgressive(vid, trustDelta) : trustDelta;
+      setTrust.call(this, vid, trust + appliedDelta);
+    }
 
     this.say(line);
     this.remember(vid, 'comforted', `via ${approach} when ${mood}`);
-    this.observe('comfort', { target: vid });
+    this.observe('comfort', { target: vid, noTrust: true });
     this.notePlaystyle('social');
     try { this.checkPromises('heal', vid); } catch (e) {}
     this.socialTick(vid);

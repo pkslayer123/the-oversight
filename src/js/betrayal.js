@@ -3690,8 +3690,16 @@
       return null;
     }
     c.toldSide[vid] = true;
-    const t = this.state.village.trust || {};
-    t[vid] = Math.min(100, ((t[vid]) || 10) + 6);
+    // BREAK-IT (social r2 2026-10-08): telling your side is words ("no
+    // performance, just the sequence") — the old direct +6 bypassed the 40
+    // talk cap and progressive scaling entirely (measured 38->44). Through
+    // the resolver like every other word; the belief shift stays direct.
+    if (typeof this.resolveConsequence === 'function') {
+      this.resolveConsequence(vid, { trust: 6, temper: 'honest-hard', name: 'tellSide' });
+    } else {
+      const t = this.state.village.trust || {};
+      t[vid] = Math.min(100, ((t[vid]) || 10) + 6);
+    }
     c.belief[vid] = clamp(((c.belief[vid]) || 0) + 10, -100, 100);
     this.say(`You tell ${this.whoTag(vid)} what actually happened — no performance, just the sequence. They listen. Whether it lands is in the pause after.`);
     this.notePlayerEvidence(c, `Told ${this.displayName(vid)} your side.`);

@@ -13251,6 +13251,10 @@
     document.querySelectorAll('[data-link-propose-prim]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposePrim, { asSubordinate: false, tributeKcalPerWeek: 4000 }); refresh(); });
     document.querySelectorAll('[data-demand-yes]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandYes, true); refresh(); });
     document.querySelectorAll('[data-demand-no]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandNo, false); refresh(); });
+    // Hierarchy: the climb (break-it social r2 2026-10-08 — were engine-only).
+    document.querySelectorAll('[data-link-reneg]').forEach(b => b.onclick = () => { Game.renegotiateLink(b.dataset.linkReneg); refresh(); });
+    document.querySelectorAll('[data-link-bid]').forEach(b => b.onclick = () => { Game.bidForPrimacy(b.dataset.linkBid); refresh(); });
+    document.querySelectorAll('[data-link-break]').forEach(b => b.onclick = () => { Game.breakLink(b.dataset.linkBreak, 'gambit'); refresh(); });
     wirePanel(st, n);
     wireContextBar();
     wireSelfBar();
@@ -13595,6 +13599,11 @@
                   const paid = (l.tributePaidWeek >= Math.floor(Game.state.scholar.day / 7));
                   let h = `<p class="small">⛓️ ${sub ? 'Bows to ' + nm : nm + ' bows to Haven'} · trust ${l.trust} · tribute ${l.tributeKcalPerWeek.toLocaleString()} kcal/wk${sub ? (paid ? ' (paid ✓)' : ' (DUE ⚠)') : ''}`;
                   if (sub && !paid) h += ` <button class="btn sm" data-link-pay="${l.id}">Pay tribute</button>`;
+                  // BREAK-IT (social r2 2026-10-08): renegotiateLink /
+                  // bidForPrimacy / breakLink were engine-only — a
+                  // subordinate could never climb or break away (same class
+                  // as the proposeLink gap the drifter loop wired).
+                  if (sub) h += ` <button class="btn sm ghost" data-link-reneg="${l.id}">Renegotiate</button> <button class="btn sm ghost" data-link-bid="${l.id}">Bid for primacy</button> <button class="btn sm ghost" data-link-break="${l.id}">🗡️ Break away</button>`;
                   if (l.pendingDemand) h += `<br>📯 ${l.pendingDemand.detail}<br><button class="btn sm" data-demand-yes="${l.id}">Honor it</button> <button class="btn sm ghost" data-demand-no="${l.id}">Refuse</button>`;
                   return h + '</p>';
                 }).join('') + '</div>';

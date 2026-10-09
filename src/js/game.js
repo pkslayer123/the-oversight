@@ -3082,7 +3082,7 @@
       const line = lines[goal] || `"This matters. You know it does."`;
       if (trust < 40 && Math.random() < 0.3) {
         this.say(`${first} considers it. ${line} "...Not enough. Sorry."`);
-        this.observe('appeal', { target: vid, refused: true });
+        this.observe('appeal', { target: vid, refused: true, noTrust: true }); // words: opinion forms, no trust drift (break-it social r2)
         return { ok: false };
       }
       const t = this.state.village.trust || (this.state.village.trust = {});
@@ -3092,7 +3092,7 @@
       vv.assignments[vid] = { task, assignedDay: this.state.scholar.day, assignedPart: this.dayPart, via: 'appeal' };
       this.say(`${first} nods slowly. ${line} "Alright. For that reason — alright."`);
       this.remember(vid, 'appeal', 'moved by appeal to goal: ' + goal);
-      this.observe('appeal', { target: vid, task });
+      this.observe('appeal', { target: vid, task, noTrust: true }); // words: opinion forms, no trust drift (break-it social r2)
       this.notePlaystyle('leader'); this.notePlaystyle('social');
       this.socialTick(vid);
       this.save();
@@ -3361,8 +3361,17 @@
       const n = this.npcNeeds(vid);
       n.fear = Math.max(0, (n.fear || 0) - 40);
       n.social = Math.max(0, (n.social || 0) - 20);
-      const t = this.state.village.trust || (this.state.village.trust = {});
-      t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 8));
+      // BREAK-IT (social r2 2026-10-08): comfort is words and presence, not
+      // a deed — the old direct write bypassed resolveConsequence entirely
+      // (no 40 talk cap, no mediation halving), so a hungry villager farmed
+      // 10->100 trust in 40 free comforts (measured). Words cap at 40; the
+      // resolver keeps progressive scaling. Beyond that, do something real.
+      if (typeof this.resolveConsequence === 'function') {
+        this.resolveConsequence(vid, { trust: 8, temper: 'kind', name: 'comfort' });
+      } else {
+        const t = this.state.village.trust || (this.state.village.trust = {});
+        t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 8));
+      }
       const lines = [
         `You sit with ${first} for a while. Don't say much. Sometimes that's the whole thing.`,
         `"Hey. You're okay. We're okay." ${first} breathes out, shaky. "Yeah. Yeah, okay."`,
@@ -3370,7 +3379,7 @@
       ];
       this.say(lines[Math.floor(Math.random() * lines.length)]);
       this.remember(vid, 'comforted', 'sat with them when scared');
-      this.observe('comfort', { target: vid });
+      this.observe('comfort', { target: vid, noTrust: true }); // trust moved via resolver (break-it social r2)
       this.notePlaystyle('social');
       try { this.checkPromises('heal', vid); } catch (e) {}
       this.socialTick(vid);
@@ -3398,11 +3407,20 @@
       };
       const r = this.repOf(vid);
       r[w.axis] = Math.min(0, r[w.axis] + 12); // partial — deeds finish the job
-      const t = this.state.village.trust || (this.state.village.trust = {});
-      t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 4));
+      // BREAK-IT (social r2 2026-10-08): amends are words ("words aren't
+      // deeds, but they're a start") — route through the resolver so the 40
+      // talk cap applies like every other word. Same bug class as comfort.
+      if (typeof this.resolveConsequence === 'function') {
+        this.resolveConsequence(vid, { trust: 4, temper: 'kind', name: 'makeAmends' });
+      } else {
+        const t = this.state.village.trust || (this.state.village.trust = {});
+        t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 4));
+      }
       this.say(`You find ${first}. ${axisLines[w.axis]} They study you for a long moment, then nod once.`);
       this.remember(vid, 'amends', 'apologized for ' + w.axis);
-      this.observe('amends', { target: vid });
+      // trust already moved through the resolver above — the village forms an
+      // opinion (rep dims), but trust doesn't double-dip (break-it social r2).
+      this.observe('amends', { target: vid, noTrust: true });
       this.notePlaystyle('social');
       this.socialTick(vid);
       this.save();
@@ -3658,9 +3676,16 @@
         for (const k of Object.keys(neg.dims || {})) if (neg.dims[k] < 0) neg.dims[k] = Math.round(neg.dims[k] * 0.4);
         this.say(`You pull ${first} aside. "I heard what you've been saying." They flush — then, slowly, nod. "Yeah. That wasn't fair. I'm sorry." The story loses its teeth.`);
         this.remember(vid, 'confronted', 'cleared the air about gossip');
-        const t = this.state.village.trust || (this.state.village.trust = {});
-        t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 4));
-        this.observe('confront', { target: vid, resolved: true });
+        // BREAK-IT (social r2 2026-10-08): clearing the air is words — route
+        // through the resolver so the 40 talk cap applies. Same bug class as
+        // comfort/makeAmends (direct write, no cap).
+        if (typeof this.resolveConsequence === 'function') {
+          this.resolveConsequence(vid, { trust: 4, temper: 'honest-hard', name: 'confrontGossip:cleared' });
+        } else {
+          const t = this.state.village.trust || (this.state.village.trust = {});
+          t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 4));
+        }
+        this.observe('confront', { target: vid, resolved: true, noTrust: true }); // trust moved via resolver (break-it social r2)
       } else {
         for (const k of Object.keys(neg.dims || {})) if (neg.dims[k] < 0) neg.dims[k] = Math.round(neg.dims[k] * 1.3);
         this.say(`${first} goes cold. "So now you're interrogating people? That tells me everything." The story gets worse.`);
