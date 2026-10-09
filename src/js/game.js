@@ -8374,7 +8374,11 @@
           if (cell === 'tent') {
             const t = this.playerTile();
             const sec = t.secrets && t.secrets[(px + dx) + ',' + (py + dy)];
-            if (sec && sec.yours) return true;
+            // (break-it camps-5 2026-10-08: wreckage is not a tent. A
+            // beam-shredded tent nearby must not offer "Set up camp" — the
+            // camp's body would be ribbons, and the setup copy says
+            // "Tent up". Same condition-respect class as packTent.)
+            if (sec && sec.yours && sec.condition !== 'shredded') return true;
           }
         }
       }
@@ -8515,6 +8519,17 @@
         if (cell !== 'tent' || !sec || !sec.yours) {
           s.insideTent = null;
           this.say('The tent you were in is gone — wrecked while you were away. You pick yourself up from the dirt.');
+        } else if (sec.condition === 'shredded') {
+          // BREAK-IT CAMPS-5 (2026-10-08): shredded counts as gone. The beam
+          // (scorchCells) shreds tents without evicting the room — the old
+          // check let you live, sleep (quality 'tent'), and cook inside a
+          // tent every label calls useless ("Shredded. Useless.", "No
+          // shelter in that."). You can't enter a shredded tent; you can't
+          // stay in one either. This is the every-status() choke point, so
+          // it covers scorchCells and any future shred path.
+          s.insideTent = null;
+          s.tentSmoke = 0;
+          this.say('The tent shreds around you — canvas coming apart in ribbons. No shelter in that. You crawl out into the open.');
         }
       } catch (e) { s.insideTent = null; }
     },
@@ -8662,6 +8677,14 @@
       const t = this.playerTile();
       const sec = t.secrets && t.secrets[cx + ',' + cy];
       if (!sec || !sec.yours) { this.say("That's not yours to pack."); return null; }
+      // BREAK-IT CAMPS-5 (2026-10-08): a shredded tent is wreckage, not
+      // shelter. packTent used to pack it anyway, and pitchTent always
+      // rewrites condition:'good' — a free full repair (16+48 ticks, 50
+      // kcal) contradicting every label ("Shredded. Useless.", "Not usable.
+      // You leave it.", "No shelter in that.") and the found-tent rule
+      // (found shredded tents can't be taken at all). Shredded is terminal:
+      // the canvas is ribbons. Pack it and you'd be packing ribbons.
+      if (sec.condition === 'shredded') { this.say('The canvas is shredded — ribbons, not shelter. Not worth packing. You leave the wreckage.'); return null; }
       // TENT ROOMS: you can't pack the tent you're standing inside.
       const ins = s.insideTent;
       if (ins && ins.tx === this.map.px && ins.ty === this.map.py && ins.cx === cx && ins.cy === cy) {
@@ -12254,11 +12277,24 @@
       let detail = null;
       try { detail = this.genDetail(this.map.px, this.map.py); } catch (e) {}
       const mx = s.mx ?? 4, my = s.my ?? 4;
+      let tile = null;
+      try { tile = this.playerTile(); } catch (e) {}
       const near = (type) => {
         if (!detail) return false;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const row = detail[my + dy];
-          if (row && row[mx + dx] === type) return true;
+          if (row && row[mx + dx] === type) {
+            // (break-it camps-5 2026-10-08: wreckage is not shelter. Sleeping
+            // next to a shredded tent used to rate 'tent' (+25, "Sheltered.
+            // Decent rest.") while every label says it's useless. Only an
+            // explicitly-shredded secret is excluded — unexamined tents
+            // still count, as before.)
+            if (type === 'tent') {
+              const sec = tile && tile.secrets && tile.secrets[(mx + dx) + ',' + (my + dy)];
+              if (sec && sec.condition === 'shredded') continue;
+            }
+            return true;
+          }
         }
         return false;
       };
@@ -12908,7 +12944,10 @@
         else if (cell === 'tent') {
           actions.push(sec.condition === 'good' ? 'Rest (a while)' : 'Use');
           // Your own pitched tent can be struck and carried again.
-          if (sec.yours) actions.push('Pack up tent');
+          // (break-it camps-5 2026-10-08: not a shredded one — packing
+          // wreckage is refused by packTent, so the button hides too.
+          // Honest buttons: impossible actions never render.)
+          if (sec.yours && sec.condition !== 'shredded') actions.push('Pack up tent');
           // TENT ROOMS: your own intact tent is enterable — a room, not furniture.
           if (sec.yours && sec.condition !== 'shredded' && !this.state.scholar.insideTent) actions.push('Enter tent');
         }
