@@ -203,8 +203,10 @@
     setTrust.call(this, vid, trust + appliedTrust);
     // PUBLIC: the village watches. Generosity is visible — and it creates
     // expectation. Feed people publicly and the hungry will come asking.
+    // trustMoved (socialite r5): the recipient's trust already moved through
+    // the deed gain above — observe warms the CROWD, not double-warms them.
     if (pub) {
-      this.observe('give_food', { target: vid });
+      this.observe('give_food', { target: vid, trustMoved: true });
       if ((amount === 'meal' || amount === 'full')) {
         this.state.village.foodExpectation = true;
       }
@@ -242,6 +244,7 @@
     const grieving = mood === 'grieving';
 
     let fearDelta = 0, trustDelta = 0, line = '';
+    let shareRepeated = false; // set by the 'share' branch (repetition gate)
 
     if (approach === 'silent') {
       // always safe. Presence is the whole thing.
@@ -275,9 +278,21 @@
     } else if (approach === 'share') {
       // vulnerable. Deep if it lands, awkward if it doesn't.
       if (trust >= 40) {
-        fearDelta = -30; trustDelta = 10;
-        line = `You tell ${first} about the time you were truly afraid — the real version, not the brave one. Something unclenches in them. "Me too," they whisper. And just like that, you're not alone in it.`;
-        this.remember(vid, 'shared_fear', 'you were honest about being afraid');
+        // REPETITION GATE (break-it socialite r5 2026-10-09): baring the same
+        // wound twenty times in a row isn't vulnerability, it's a script —
+        // share-spam farmed 40->97 in 20 ticks (measured). One real share per
+        // villager per day; repeats are just words (talk:true below).
+        const mems = ((this.state.village.memory || {})[vid]) || [];
+        const today = this.state.scholar.day;
+        shareRepeated = mems.some(m => m.t === 'shared_fear' && m.day === today);
+        if (shareRepeated) {
+          fearDelta = -5; trustDelta = 2;
+          line = `You start to tell ${first} about being afraid again — and catch yourself. You've already bared that wound today. ${first} squeezes your hand anyway. "I know. You told me."`;
+        } else {
+          fearDelta = -30; trustDelta = 10;
+          line = `You tell ${first} about the time you were truly afraid — the real version, not the brave one. Something unclenches in them. "Me too," they whisper. And just like that, you're not alone in it.`;
+          this.remember(vid, 'shared_fear', 'you were honest about being afraid');
+        }
       } else {
         fearDelta = -15; trustDelta = 2;
         line = `You try to share something real, but the trust isn't there yet — it comes out wrong, too soon. ${first} looks away. The moment passes, a little bruised.`;
@@ -300,7 +315,7 @@
     // observe() rep-drift below. Words cap at 40 through the resolver; only
     // 'share' (real vulnerability, already gated at trust>=40) is a real act.
     // The observe() call below carries noTrust now that trust moves here.
-    const isRealAct = approach === 'share';
+    const isRealAct = approach === 'share' && !shareRepeated;
     if (typeof this.resolveConsequence === 'function') {
       this.resolveConsequence(vid, { trust: trustDelta, temper: isRealAct ? 'honest-hard' : 'kind', talk: isRealAct ? false : true, name: 'comfort:' + approach });
     } else {

@@ -3564,10 +3564,20 @@
         v.challenge.age = Math.max(0, (v.challenge.age || 0) - 2);
       }
       v.cheer = Math.max(v.cheer || 0, 2);
-      const t = v.trust || (v.trust = {});
+      // BREAK-IT (socialite r5 2026-10-09): the old flat +3 to everyone
+      // bypassed progressive scaling AND the 40 words-cap — rally-spam
+      // farmed the village 10->82 in 3 days (measured), plus +3 more per
+      // rally from the observe() drift below. A speech is words, not a
+      // deed: through the resolver like every other word. The opinion
+      // still forms via observe (noTrust: trust moves only via resolver).
       for (const id of (v.roster || [])) {
         if (id === this.villagerId) continue;
-        t[id] = Math.min(100, (t[id] || 10) + 3);
+        if (typeof this.resolveConsequence === 'function') {
+          this.resolveConsequence(id, { trust: 3, temper: 'neutral', name: 'rally' });
+        } else {
+          const t = v.trust || (v.trust = {});
+          t[id] = Math.min(100, (t[id] === undefined ? 10 : t[id]) + this.trustGainProgressive(id, 3));
+        }
       }
       const lines = [
         `You stand up by the fire. "Listen. I don't have answers. But I have us — and that's more than we had yesterday." People look at each other. Someone nods. It's a start.`,
@@ -3575,7 +3585,7 @@
         `You talk about what you've built together. Not perfectly, not easily — together. A few people stand a little straighter.`,
       ];
       this.say(lines[Math.floor(Math.random() * lines.length)]);
-      this.observe('rally', {});
+      this.observe('rally', { noTrust: true }); // trust moved via resolver (socialite r5)
       this.remember(this.villagerId, 'rally', 'gave a speech');
       this.notePlaystyle('leader'); this.notePlaystyle('social');
       this.socialTick();
@@ -10296,6 +10306,12 @@
     },
     observe(action, opts) {
       opts = opts || {};
+      // BREAK-IT (socialite r5 2026-10-09): trustMoved — the target's trust
+      // already moved through the deed path (e.g. giveFood's direct
+      // trustGainProgressive gain). The old code drifted them AGAIN as a
+      // "witness" of their own gift (+7 flat, uncapped), double-paying every
+      // public gift. Opinion (rep) still forms for everyone; trust drift
+      // lands on witnesses only.
       const AX = {
         give_food: { generous: 6, competent: 1 },
         donate: { generous: 5, competent: 2 },
@@ -10377,7 +10393,8 @@
           const md = this.murderDims(opts.target);
           for (const k of Object.keys(md)) dims[k] = md[k];
         }
-        this.applyRep(vid, dims, isTarget ? 1 : 0.8, opts.noTrust);
+        const skipTrust = opts.noTrust || (isTarget && opts.trustMoved);
+        this.applyRep(vid, dims, isTarget ? 1 : 0.8, skipTrust);
       }
     },
     // witnesses: who was close enough to SEE it. Information follows eyes,
@@ -10546,7 +10563,15 @@
           const subject = dims.who || this.villagerId;
           const repDims = this.gossipActionDims(g.action, dims);
           if (Object.keys(repDims).length) {
-            this.applyRep(subject, repDims, 0.4, g.noTrust);
+            // BREAK-IT (socialite r5 2026-10-09): player-action gossip has rep
+            // dims but no 'who' — the old code applied them to repOf(player),
+            // the player's view of THEMSELVES, so hearsay never moved any
+            // villager's opinion of the player (measured: distant villagers
+            // stayed at 0 rep after a public gift traveled the full gossip
+            // chain). Secondhand reputation lands on the hearer — per-hearer
+            // accounting, like the witness loop in observe().
+            const repTarget = dims.who ? subject : listener;
+            this.applyRep(repTarget, repDims, 0.4, g.noTrust);
           }
           // TRACING: the subject might figure out who started this.
           // Higher distortion = harder to trace. Direct witness = easy.
@@ -10671,7 +10696,18 @@
         // their trust back to 9 via the snap's observe() call). Same fix as
         // bumpTrust.
         const cur = t[vid] === undefined ? 10 : t[vid];
-        t[vid] = Math.max(0, Math.min(100, cur + Math.round(dTrust)));
+        // BREAK-IT (socialite r5 2026-10-09): the old flat drift paid full
+        // rate at any trust level — every public gift double-paid (direct
+        // deed gain + uncapped drift to the recipient), and every witness
+        // farmed +4/bite forever (measured 10 bites: recipient 10->100,
+        // bystanders 10->50). Positive drift now goes through
+        // trustGainProgressive like every other gain. Penalties land whole.
+        let adj = Math.round(dTrust);
+        if (adj > 0 && typeof this.trustGainProgressive === 'function') {
+          adj = this.trustGainProgressive(vid, adj);
+        }
+        t[vid] = Math.max(0, Math.min(100, cur + adj));
+        dTrust = adj; // the ripple below scales from the scaled value
       }
       // RIPPLES: their circle feels it too, at 40%.
       for (const g of (this.state.village.groups || [])) {
