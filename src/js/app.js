@@ -715,7 +715,17 @@
         if (Game.inCombat()) { Game.say('Not mid-fight — the barrier is the way out.'); refresh(); return; }
         if (act === 'cut' || act === 'clear') { Game.clearBlockage(x, y); }
         else if (act === 'bridge') { if (!Game.buildBridge(x, y)) { refresh(); return; } }
-        else if (act === 'swim') { Game.state.scholar.kcal = Math.max(0, Game.state.scholar.kcal - 20); Game.say('You swim across, cold and grinning.'); Game.travelTo(x, y, true); refresh(); return; }
+        else if (act === 'swim') {
+          // HONESTY (break-it travel 2026-10-09): travel first, charge after.
+          // The old order spent the 20 kcal and announced the crossing, then
+          // travelTo could refuse (dead with the card open) — charged for a
+          // swim that never happened, and the log lied about it.
+          const swam = Game.travelTo(x, y, true);
+          if (swam === null) { refresh(); return; }
+          Game.state.scholar.kcal = Math.max(0, Game.state.scholar.kcal - 20);
+          Game.say('You swim across, cold and grinning.');
+          refresh(); return;
+        }
         else { refresh(); return; } // go around: just close
         // after clearing/building, travel through
         const res = Game.travelTo(x, y);
@@ -13152,7 +13162,11 @@
         if (!info) return;
         if (x === st.px && y === st.py) { info.innerHTML = ''; return; }
         // another village on this tile? it's a door, not scenery.
-        const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
+        // FOG (break-it travel 2026-10-09): only on seen tiles — an unseen
+        // tile with a generated village reads "Unexplored" below, never the
+        // village's name. (villageCard also holds this line at the engine.)
+        const _seenTile = Game.mapSeen ? Game.mapSeen(x, y) : null;
+        const otherV = _seenTile && (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
         if (otherV && Game.villageCard) {
           const card = Game.villageCard(otherV.id);
           if (card) {

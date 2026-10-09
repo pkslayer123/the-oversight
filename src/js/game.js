@@ -7030,8 +7030,10 @@
       }
       const block = this.travelBlockage(nx, ny);
       if (block) return { blocked: block, dir: ex.dir };
-      this.travelTo(nx, ny);
-      return { moved: true, dir: ex.dir };
+      const res = this.travelTo(nx, ny);
+      // HONESTY (break-it travel 2026-10-09): travelTo can still refuse
+      // (this.over) — don't report a crossing that never happened.
+      return { moved: res !== null, dir: ex.dir };
     },
     // findWalkableEntry: nearest walkable cell to a desired entry point.
     // The edge you want might be water, trees, or wall — BFS outward to

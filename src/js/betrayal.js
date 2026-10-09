@@ -1510,6 +1510,19 @@
     opts = opts || {};
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
+    // FACE TO FACE (break-it travel 2026-10-09): "Approach & petition" means
+    // approach. The card used to offer petition to exiles from across the
+    // map — a tap on a seen-but-distant tile joined a village you'd never
+    // walked to (no travel, no danger, and the probation clock only ticks at
+    // their fire, so you'd be "in" while standing miles away). Every other
+    // village action already gates on proximity (villageTalk, villageShareFood
+    // at dist<=1; studyVillageCodex at dist<=2) — petition was the outlier.
+    const pdist = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0)) +
+                  Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
+    if (pdist > 1) {
+      this.say(`You're not at ${ov.name} yet — walk to their fire first. Petition happens face to face.`);
+      return false;
+    }
     // CAPACITY FIRST: a full village can't take you, no matter the plea.
     // It's not judgment. It's arithmetic.
     if (this.villageRoom(ov) <= 0) {
@@ -1717,7 +1730,20 @@
   villageCard(villageId) {
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
+    // FOG (break-it travel 2026-10-09): the card names the village, its size,
+    // and its focus — that's earned knowledge. The map tap handler used to
+    // call this for any generated village on the tapped tile, so tapping
+    // fogged tiles leaked undiscovered villages by name. renderMap already
+    // gates the 🏘️ icon on seenTiles; the card holds the same line.
+    try {
+      const seenHow = (typeof this.mapSeen === 'function') ? this.mapSeen(ov.x, ov.y) : null;
+      if (!seenHow) return null;
+    } catch (e) { return null; }
     const s = this.state.scholar;
+    // proximity, computed once: every action on this card is face to face.
+    const vpdx = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0));
+    const vpdy = Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
+    const atFire = (vpdx + vpdy) <= 1;
     const prof = ov.knowledgeProfile || {};
     const focusWord = { fisher: 'fishing folk', forager: 'foragers', farmer: 'farmers', scavenger: 'scavengers' }[prof.focus] || 'survivors';
     // trust is legible: you can see where you stand with them.
@@ -1737,17 +1763,21 @@
       actions: [],
     };
     if (s.exiled) {
-      let pack = 0;
-      try { pack = this.playerPackKcal(); } catch (e) {}
-      card.actions.push({ id: 'petition', label: '🙏 Approach & petition', hint: `They've heard the gossip. (You carry ~${pack} kcal of food — offering some helps.)`, giftKcal: 0 });
-      if (pack >= 700) card.actions.push({ id: 'petition', label: '🙏 Petition + offer food (700 kcal)', hint: 'A real offering. Costs you.', giftKcal: 700 });
-      if (pack >= 1500) card.actions.push({ id: 'petition', label: '🙏 Petition + offer a feast (1500 kcal)', hint: 'More than a day\'s food. Hard to refuse.', giftKcal: 1500 });
+      // "Approach & petition" is honest only at their fire — petitionVillage
+      // refuses from afar, so the button must not promise it from afar.
+      if (atFire) {
+        let pack = 0;
+        try { pack = this.playerPackKcal(); } catch (e) {}
+        card.actions.push({ id: 'petition', label: '🙏 Approach & petition', hint: `They've heard the gossip. (You carry ~${pack} kcal of food — offering some helps.)`, giftKcal: 0 });
+        if (pack >= 700) card.actions.push({ id: 'petition', label: '🙏 Petition + offer food (700 kcal)', hint: 'A real offering. Costs you.', giftKcal: 700 });
+        if (pack >= 1500) card.actions.push({ id: 'petition', label: '🙏 Petition + offer a feast (1500 kcal)', hint: 'More than a day\'s food. Hard to refuse.', giftKcal: 1500 });
+      } else {
+        card.hint = 'Walk to the edge of the map to travel there — petition happens face to face.';
+      }
     } else {
       // DRIFTER: you're a traveler, not an exile. If you're AT their fire,
       // you can sit and talk. From across the map, all you get is the smoke.
-      const pdx = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0));
-      const pdy = Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
-      if (pdx + pdy <= 1) {
+      if (atFire) {
         const talkHint = (ov.trust || 0) >= 10
           ? 'Trade news and plant knowledge. Takes time — stories aren\'t fast.'
           : 'Trade news. They\'ll share real knowledge once they know your face — come back.';
