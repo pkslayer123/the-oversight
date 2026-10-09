@@ -10,6 +10,15 @@
 // (5) union_rep picket-line dissolve, (6) nevermore post-strafe window,
 // (7) telegraphs: hushwolf silence-before-rush, bulldozer charge, bright_idea.
 // Harness: scripts/combat-r3-harness.js. Run with SEED=N for more seeds.
+//
+// BEFORE/AFTER CONTRACT (coordinator note, 2026-10-08): this file is the
+// BEFORE proof — it asserts the pre-fix lies (marked "LIE DOCUMENTED") and
+// goes 52/52 on pre-fix code. Once the fixes land, exactly 4 assertions flip
+// red BY DESIGN — that is the fix working, not a regression:
+//   B1.6 (shout now breaks the chorus — fix: chorusBrokenUntil),
+//   B5.1, B5.4, B5.7 (write-only urDmgBonus/urBuffed purged; rep death now
+//   dissolves the line). The AFTER proof is
+//   scripts/test-break-monsters4-counters-fix-20261008.js (14/14 x3 seeds).
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
