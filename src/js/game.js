@@ -16756,11 +16756,25 @@
         }
         this._packFullStreak = 0;
         t.stock = Math.max(0, (t.stock || 0) - harvested.length);
+        // PRESSURE (forager break-it 2026-10-09): the player's sweep works the
+        // land exactly like a villager's nibble — the land remembers.
+        // foragePressure>=5 => wornPath + half regrow (see regrowTiles). Same
+        // granularity as villagerDepleteTiles (+1/tile/press), and pressure
+        // doesn't decay on days the tile is worked.
+        t.foragePressure = (t.foragePressure || 0) + 1;
+        t.foragedToday = true;
         // harvest each cell: deplete it (3-day regrow), accrue familiarity,
         // aggregate by species. Familiarity NEVER identifies — the camp ritual
         // names; handling only teaches your hands.
         const bySpecies = {};
         const famNotes = [];
+        // PER-SWEEP KNOWLEDGE PACING (forager break-it 2026-10-09): one sweep
+        // is one handling session, not 9. Familiarity encounters and harvest
+        // depth count ONCE per species per sweep — before this, a single
+        // 9-cell sweep maxed field-click (solo sortBag identified everything
+        // in the bag) and granted L2 in one press, L4 in two. Thresholds
+        // 3/5/15 are field visits, not cell touches.
+        const sweepBumps = {};
         let woodSticks = 0, woodFiber = 0;
         for (const h of harvested) {
           detail[h.y][h.x] = (h.cell === 'plant') ? 'dirt' : h.cell;
@@ -16778,7 +16792,7 @@
             }
             continue;
           }
-          const fam = this.bumpPlantFamiliarity(h.plantId, h.plant);
+          const fam = sweepBumps[h.plantId] || (sweepBumps[h.plantId] = this.bumpPlantFamiliarity(h.plantId, h.plant));
           // EXAMINE-RECOGNITION (Steve 2026-10-06): handling teaches. Every
           // harvest records an observation — foraging is the expensive way to
           // learn what examining teaches cheaply.
@@ -16793,8 +16807,10 @@
           const toolMult = this.hasItem('multitool') ? 1.25 : 1.0;
           units = Math.ceil(units * levelMult * thumbMult * toolMult);
           // deeper knowledge accrues only for identified plants — handling
-          // unknowns teaches care, not parts.
-          if (entry && fam.familiar) {
+          // unknowns teaches care, not parts. Depth is per handling SESSION
+          // (see PER-SWEEP KNOWLEDGE PACING above), not per cell.
+          if (entry && fam.familiar && !sweepBumps[h.plantId + ':depth']) {
+            sweepBumps[h.plantId + ':depth'] = 1;
             entry.harvests = (entry.harvests || 0) + 1;
             if (entry.level === 1 && entry.harvests >= 5) {
               entry.level = 2;
