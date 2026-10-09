@@ -280,6 +280,15 @@
       return avg >= 50 ? 'open' : avg >= 25 ? 'wary' : 'closed';
     },
     donateMaterial(mat, n) {
+      // PHYSICAL STORES (miser break-it 2026-10-08): the stash is in the hall —
+      // takeMaterial already refuses remote hands ("The stash is in the hall.
+      // Your hands are not."). Donating had no gate: the pack UI's Stash button
+      // teleported materials into the hall from anywhere in the wilds. Same
+      // gate, same honesty. 'remote' (Full Integration) still works.
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The stash is in the hall. Your hands are not.');
+        return null;
+      }
       const def = MAT_DEFS[mat];
       if (!def) return null;
       n = Math.min(Math.floor(n || 0), this.materialCount(mat));
@@ -373,6 +382,12 @@
     // donateTool / takeTool: spare tools live in the stash for anyone to use.
     // (Borrowing is trust-neutral in an open village; in a closed one it's noticed.)
     donateTool(idx) {
+      // PHYSICAL STORES (miser break-it 2026-10-08): same gate as donateMaterial
+      // — tools don't teleport into the hall either.
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The stash is in the hall. Your hands are not.');
+        return null;
+      }
       const inv = this.state.scholar.inventory || [];
       const item = inv[idx];
       if (!item) return null;

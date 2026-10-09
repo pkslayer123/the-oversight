@@ -8850,6 +8850,14 @@
     // donateToPantry: give food to the village. Builds trust.
     // Generosity is remembered. This is how you earn your place.
     donateToPantry(idx) {
+      // PHYSICAL STORES (miser break-it 2026-10-08): the pantry is in the hall —
+      // the take paths already refuse remote hands. Donating had no gate: the
+      // pack UI's Donate button teleported food into the hall from anywhere.
+      // Same gate, same honesty. 'remote' (Full Integration) still works.
+      if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
+        this.say('The pantry is in the hall. Your hands are not.');
+        return null;
+      }
       const item = this.state.scholar.inventory[idx];
       if (!item || (item.kcalEach || 0) <= 0) { this.say('That\'s not food.'); return null; }
       // MONSTER FOOD SAFETY: untested flesh is not a gift. The village doesn't
@@ -8893,8 +8901,20 @@
       this.observe('donate');
       if (this.state.scholar.week1) this.state.scholar.week1.donate++;
       // GENEROUS XP needs a REAL gift (>= 200 kcal). token 1-kcal donations don't count.
-      // (prevents donate-take-back XP farming)
-      if (kcal >= 200) this.gainAbilityXP('generous', 1);
+      // XP LEDGER (miser break-it 2026-10-08): the XP is owed against the gift,
+      // like giveTrust. Donate-200/take-back-200 cycles printed +1 generous XP
+      // per cycle at zero food cost (measured L1->L2 in 10 cycles, trust pinned
+      // at 0). The take-back sting revokes it via loseAbilityXP.
+      if (kcal >= 200) {
+        const sch = this.state.scholar;
+        const gab = (sch.backgroundAbilities || []).find(a => a.id === 'generous') ||
+                    (sch.abilities || []).find(a => a.id === 'generous');
+        this.gainAbilityXP('generous', 1);
+        if (gab && gab.level < 3) {
+          v.giveXP = v.giveXP || {};
+          v.giveXP[vid] = (v.giveXP[vid] || 0) + 1;
+        }
+      }
       // PLAYSTYLE: the game notices generosity. Not the stat — the pattern.
       if (kcal >= 200) this.notePlaystyle('generous');
       return null;
@@ -9110,6 +9130,11 @@
           v.giveTrust[vid] = 0;
           this.say(`They take back the trust your gift earned. (Trust -${owedB}.)`);
         }
+        // XP REVOKE (miser break-it 2026-10-08): bulk path mirrors the single
+        // path — the gift is gone, so is the generous XP it printed.
+        v.giveXP = v.giveXP || {};
+        const owedXB = v.giveXP[vid] || 0;
+        if (owedXB > 0) { this.loseAbilityXP('generous', owedXB); v.giveXP[vid] = 0; }
         const curB = v.trust[vid] === undefined ? 15 : v.trust[vid];
         v.trust[vid] = Math.max(0, curB - 5);
         this.say('You took back what you gave. They noticed. Trust -5.');
@@ -9187,6 +9212,11 @@
           v.giveTrust[vid] = 0;
           this.say(`They take back the trust your gift earned. (Trust -${owed}.)`);
         }
+        // XP REVOKE (miser break-it 2026-10-08): the gift is gone, so is the
+        // generous XP it printed. Donate/take-back XP farming nets zero.
+        v.giveXP = v.giveXP || {};
+        const owedXP = v.giveXP[vid] || 0;
+        if (owedXP > 0) { this.loseAbilityXP('generous', owedXP); v.giveXP[vid] = 0; }
         const cur = v.trust[vid] === undefined ? 15 : v.trust[vid];
         v.trust[vid] = Math.max(0, cur - 5);
         this.say('You took back what you gave. They noticed. Trust -5.');
@@ -15120,6 +15150,22 @@
         this.say(insights[Math.floor(Math.random() * insights.length)]);
         // SYNERGIES: a deepened ability might wake a new resonance.
         this.recomputeActiveSynergies();
+      }
+    },
+    // loseAbilityXP: unwind XP granted for a gift the player took back (miser
+    // break-it 2026-10-08). Eats current-level XP first; excess drops levels
+    // (xp 0) down to a floor of level 1, then stops. Blunt like the trust
+    // revoke — the gift is gone, so is what it earned.
+    loseAbilityXP(abilityId, n) {
+      const s = this.state.scholar;
+      const ab = (s.backgroundAbilities || []).find(a => a.id === abilityId) ||
+                 (s.abilities || []).find(a => a.id === abilityId);
+      if (!ab || !(n > 0)) return;
+      let left = Math.floor(n);
+      while (left > 0 && ab.level >= 1) {
+        const cur = ab.xp || 0;
+        if (cur >= left) { ab.xp = cur - left; left = 0; }
+        else { left -= cur; ab.xp = 0; if (ab.level > 1) ab.level--; else left = 0; }
       }
     },
     // buildArchetype: are you a SPECIALIST or GENERALIST?
