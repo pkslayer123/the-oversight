@@ -1067,6 +1067,62 @@
       if (kin === 'daughter' || kin === 'spouse') return age >= 20;
       return true;
     },
+    // villagerCuriousExamine(vid): curiosity as inclination. Villagers with a
+    // curious/hungry-to-learn streak examine unknown plants as they work —
+    // attention is cheap, knowledge isn't free. Three good looks at one
+    // species and they know it by sight; the village learns what its curious
+    // members stare at. Teaching stays the fast path. Called from the assigned
+    // forage resolution AND the ambient villageLives loop (policy-independent).
+    villagerCuriousExamine(vid) {
+      const v = this.state.village;
+      if (!v || !vid) return;
+      let personC = null;
+      try { personC = this.getPerson ? this.getPerson(vid) : null; } catch (e) {}
+      const curC = personC && personC.personality && personC.personality.curiosity;
+      if (!(curC === 'curious' || curC === 'hungry-to-learn')) return;
+      if (!(this.data.plants || []).length) return;
+      v.fieldNotes = v.fieldNotes || {};
+      v.sharedKnowledge = v.sharedKnowledge || {};
+      const fn = v.fieldNotes[vid] = v.fieldNotes[vid] || {};
+      const fresh = this.data.plants.filter(pl =>
+        !((v.taught[vid] || []).includes(pl.id)) &&
+        !(v.sharedKnowledge[pl.id]) &&
+        !((this.state.codex.plants || {})[pl.id]));
+      if (!fresh.length) return;
+      // CONTINUATION (not uniform random): a curious mind finishes what it
+      // starts — 70% of looks continue a plant already under observation.
+      // Uniform picks would take ~80 days to land 3 looks on one species.
+      const fnKeys = Object.keys(fn).filter(pid =>
+        !((v.taught[vid] || []).includes(pid)) &&
+        !(v.sharedKnowledge[pid]) &&
+        !((this.state.codex.plants || {})[pid]) &&
+        fresh.some(pl => pl.id === pid));
+      let pl = null;
+      if (fnKeys.length && Math.random() < 0.7) {
+        const pid = fnKeys[Math.floor(Math.random() * fnKeys.length)];
+        pl = this.data.plants.find(p => p.id === pid) || null;
+      }
+      if (!pl) pl = fresh[Math.floor(Math.random() * fresh.length)];
+      fn[pl.id] = (fn[pl.id] || 0) + 1;
+      const looks = fn[pl.id];
+      let first = 'Someone';
+      try { first = this.displayName(vid).split(' ')[0]; } catch (e) {}
+      const pname2 = this.plantKnown(pl.id) ? pl.name : (pl.description || 'an unfamiliar plant');
+      const present2 = this.playerAtHaven();
+      if (looks >= 3) {
+        delete fn[pl.id];
+        if (this.villagerLearnsPlant(vid, pl.id, 'fieldwork')) {
+          v.sharedKnowledge[pl.id] = { discoveredBy: vid, day: this.state.scholar.day, level: 1 };
+          if (!v.plantRumors) v.plantRumors = {};
+          if (!v.plantRumors[pl.id]) v.plantRumors[pl.id] = { day: this.state.scholar.day };
+          if (present2 && Math.random() < 0.7) {
+            this.say(`🔍 ${first} has been turning over ${pname2} for days — today it clicked. "I know this one now. Look — see the leaves?"`);
+          }
+        }
+      } else if (present2 && Math.random() < 0.35) {
+        this.say(`🔍 ${first} crouches over ${pname2}, studying it a moment before moving on. (${looks}/3 looks)`);
+      }
+    },
     genKinPerson(char, kin) {
       const age = char.age || 30;
       if (!this.kinAgeOk(kin, age)) return null;
@@ -4502,6 +4558,9 @@
             if (this.state.systemArrived) this.flowVillageKnowledge();
           }
         }
+        // CURIOSITY (Steve 2026-10-09): curious foragers examine as they work.
+        // See villagerCuriousExamine — attention is cheap, knowledge isn't free.
+        try { this.villagerCuriousExamine(vid); } catch (e) {}
         this.say(`🌿 ${first} returns with foraged food: +${kcal} kcal to the pantry.${landNote}${learned}`);
         this.bumpTrust(vid, 2);
       } else if (a.task === 'hunt') {
@@ -12152,20 +12211,28 @@
         const learners = roster.filter(rid => !knows(rid) && canLearn(rid));
         if (!learners.length) { delete v.plantRumors[pid]; continue; }
         if (!knowers.length) continue;
-        if (Math.random() < 0.35) {
+        // WORD OF MOUTH, BRISK (Steve 2026-10-09): two teaching chances per
+        // day-part — knowledge percolates the village in days, not weeks.
+        // Still not instant: a dozen mouths take a few days.
+        for (let w = 0; w < 2; w++) {
+          const knowersW = roster.filter(knows);
+          const learnersW = roster.filter(rid => !knows(rid) && canLearn(rid));
+          if (!learnersW.length || !knowersW.length) break;
+          if (Math.random() < 0.5) {
           // DISTRUSTED (break-it 2026-10-09): an exposed liar's word carries
           // no weight — the village doesn't pass on what they "taught." This
           // is the mechanic the public-callout copy promises ("the village
           // now discounts their word") — it used to be a dead write.
-          const teachers = knowers.filter(rid => !((v.distrusted || {})[rid]));
+          const teachers = knowersW.filter(rid => !((v.distrusted || {})[rid]));
           if (!teachers.length) continue;
           const teacher = teachers[Math.floor(Math.random() * teachers.length)];
-          const learner = learners[Math.floor(Math.random() * learners.length)];
+          const learner = learnersW[Math.floor(Math.random() * learnersW.length)];
           if (this.villagerLearnsPlant(learner, pid, 'word of mouth')) {
             const p = (this.data.plants || []).find(x => x.id === pid);
             if (p && Math.random() < 0.3) {
-              this.say(`${this.displayName(teacher)} showed ${this.displayName(learner)} the ${p.name} — "remember it." Word gets around. Slowly.`);
+              this.say(`${this.displayName(teacher)} showed ${this.displayName(learner)} the ${p.name} — "remember it." Word gets around.`);
             }
+          }
           }
         }
       }
@@ -12876,7 +12943,11 @@
       // how the village bootstraps: knowledgeFactor is the long game.
       const atHaven = (v.roster || []).filter(rid => !(v.away && v.away[rid])).length;
       const fireGate = atHaven >= 3 ? 0.75 : 0.35;
-      if (!v.roster || (!homecoming && Math.random() > fireGate)) return; // not every part
+      // EARLY FLOW (Steve 2026-10-09): days 1–5, the fire teaches every time
+      // there is something to teach. The bottleneck is the first two weeks —
+      // guarantee flow there; after that it stays event-driven.
+      const earlyDays = this.state.scholar.day <= 5;
+      if (!v.roster || (!homecoming && !earlyDays && Math.random() > fireGate)) return; // not every part
       // the lesson is spoken at the fire — you only hear it if you're there.
       const present = isPresent === undefined ? this.playerAtHaven() : isPresent;
       const shared = v.sharedKnowledge || {};
@@ -12889,6 +12960,21 @@
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return;
       const pname = this.plantKnown(pid) ? p.name : (p.description || 'a plant');
+      // CURIOSITY ASK (Steve 2026-10-09): the curious prompt the lesson — a
+      // real beat, never silent. Someone has been wondering about this one.
+      let askBead = '';
+      try {
+        const rosterA = (this.state.village.roster || []).filter(rid => rid !== entry.discoveredBy);
+        const askers = rosterA.filter(rid => {
+          const pp = this.getPerson ? this.getPerson(rid) : null;
+          const cc = pp && pp.personality && pp.personality.curiosity;
+          return (cc === 'curious' || cc === 'hungry-to-learn') && !((this.state.village.taught[rid] || []).includes(pid));
+        });
+        if (askers.length && present && Math.random() < 0.5) {
+          const asker = this.displayName(askers[Math.floor(Math.random() * askers.length)]);
+          askBead = `${asker} has been asking about the strange leaves all week — "but what IS it?" Tonight, an answer. `;
+        }
+      } catch (e) {}
       // mark it shared — the village knows now, human-to-human
       entry.taughtAround = true;
       entry.taughtDay = this.state.scholar.day;
@@ -12938,7 +13024,7 @@
         `Fireside lesson: ${teacher} passes around ${pname}. Someone asks a dumb question. Nobody minds. That's how you learn.`,
         `${teacher} drew ${pname} in the dirt for the others. It'll wash away. The knowledge won't.`,
       ];
-      if (present) this.say(lines[Math.floor(Math.random() * lines.length)]);
+      if (present) this.say(askBead + lines[Math.floor(Math.random() * lines.length)]);
       // YOU can learn by being there. If you don't know it yet, this is your chance.
       // (Presence-gated: no learning from a fire five nodes away.)
       if (present && !this.plantKnown(pid) && Math.random() < 0.6) {
@@ -19473,6 +19559,10 @@
         const id = free[Math.floor(Math.random() * free.length)];
         const person = this.getPerson(id);
         if (!person) continue;
+        // CURIOSITY (Steve 2026-10-09): the curious examine as they live their
+        // day — policy-independent. Assignments aren't the only way villagers
+        // work, so the ambient loop carries it too.
+        try { this.villagerCuriousExamine(id); } catch (e) {}
         const first = person.name.split(' ')[0];
         const r = Math.random();
         const pers = person.personality || { sharing: 'pragmatic', temperament: 'steady' };

@@ -1267,8 +1267,18 @@
       if (!p) return null;
       if (this.plantKnown(pid)) { this.say('You already know this one — no need to test.'); return null; }
       const ed = p.edibility || 'safe';
+      // FIELDWORK (Steve 2026-10-09): three good examinations of one species
+      // means you know it by sight. The inspection half of the protocol is
+      // already done — only the taste remains. Cheaper, safer, same-day.
+      // Teaching stays instant and free; this is the earned parallel path.
+      let fieldwork = false;
+      try {
+        const ExF = (typeof globalThis !== 'undefined' && globalThis.Scattering && globalThis.Scattering.Examine) || null;
+        const obsF = ExF && ExF.observationOf ? ExF.observationOf(pid) : null;
+        fieldwork = !!(obsF && obsF.count >= 3);
+      } catch (e) {}
       const hint = lump.hint;
-      let riskMult = 1;
+      let riskMult = fieldwork ? 0.6 : 1;
       if (hint) {
         const correct = (hint.kind === 'safe' && (ed === 'safe' || ed === 'caution')) ||
                         (hint.kind === 'avoid' && (ed === 'avoid' || ed === 'cook'));
@@ -1287,9 +1297,9 @@
           ? 'By evening you are thoroughly, educationally sick. The lesson is learned the hard way. (-40 energy, -200 kcal)'
           : 'Your stomach knots an hour later. Not dangerous — educational. (-20 energy)');
       };
-      const identifyAs = (verdict) => {
+      const identifyAs = (verdict, src) => {
         // verdict: 'safe' | 'caution' | 'cook' | 'avoid'
-        this.identifyPlant(pid, 'tested');
+        this.identifyPlant(pid, src || 'tested');
         const entry = this.state.codex.plants[pid];
         if (entry) entry.tested = verdict;
         const item = this.splitLumpOut(lump, pid, cont);
@@ -1300,6 +1310,26 @@
         }
         return item;
       };
+
+      // FIELDWORK SHORT PROTOCOL: three examinations did the inspect/skin/lips
+      // work across days. One careful taste + wait settles it — the slow,
+      // earned way to name a plant yourself. Costs less than the full
+      // protocol because the fieldwork already happened.
+      if (fieldwork && !rush) {
+        this.say('You know this one by sight — three good looks. The inspection is done; only the taste remains. Small bite, then wait.');
+        this.tickAction(8);
+        if ((ed === 'avoid' || ed === 'cook') && R(0.3)) {
+          queasy(false);
+          this.say(ed === 'avoid'
+            ? 'Lips tingle, wrongly. You spit it out — NOT food, and your fieldwork just saved you worse.'
+            : 'Raw sits wrong. Cooked, it might be fine — your gut is fairly sure.');
+          identifyAs(ed, 'fieldwork');
+          return null;
+        }
+        this.say(`An hour, no reaction. Then the careful bite. ${ed === 'safe' ? 'It sits fine. Food — and you earned the name the slow way.' : ed === 'cook' ? 'Edible — but your gut says cook it first.' : ed === 'caution' ? 'Edible, in care.' : 'You feel off. Not food.'}`);
+        identifyAs(ed === 'avoid' ? 'avoid' : ed, 'fieldwork');
+        return null;
+      }
 
       if (rush) {
         this.say('You skip the waits — impatience with a side of hubris. Straight to tasting.');
