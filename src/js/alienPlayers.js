@@ -447,6 +447,14 @@
         try { this.apState().lastHuntDay[pid] = (this.state.scholar || {}).day || 1; } catch (e2c) {}
         return true;
       } catch (e) {
+        // HONEST (break-it 2026-10-09): the two inner failure paths clear
+        // state.alienEncounter, but this outer catch didn't — any throw
+        // between the state write and the guarded paths (combat intro,
+        // beam readout, startAlienCombat itself) left a PHANTOM
+        // alienEncounter. The next unrelated tbEnd then read it as this
+        // fight's persona and recorded a phantom encounter (favor,
+        // met-count, armor strip) for combat that never began.
+        try { delete this.state.alienEncounter; } catch (e2e) {}
         return false;
       }
     },
@@ -1824,6 +1832,13 @@
       }
       if (roll >= 0.60) {
         // TRUST SABOTAGE: turn villagers against you
+        // TRUST≠REP (break-it 2026-10-09, canon): gossip/rumors move REP
+        // only, never trust. The old code wrote v.trust[target] -= 15
+        // directly — an off-screen rumor campaign bypassing the entire
+        // social resolver. Now it seeds a REAL rumor: the village's OPINION
+        // of you sours (rep dims, which spread via spreadGossip), and trust
+        // is untouched. The social damage is real — it just lands where
+        // talk lands.
         try {
           var v2 = this.state.village || {};
           var roster = (v2.roster || []).filter(function (rid) {
@@ -1831,8 +1846,9 @@
           }, this);
           if (roster.length) {
             var target = roster[Math.floor(Math.random() * roster.length)];
-            v2.trust = v2.trust || {};
-            v2.trust[target] = Math.max(-100, (v2.trust[target] || 0) - 15);
+            if (typeof this.seedGossip === 'function') {
+              this.seedGossip('alien_smear', { honest: -8, generous: -5, who: this.villagerId }, [target], true);
+            }
             ap.lastRaidDay = day;
             didSomething = true;
             var tname = this.displayName ? this.displayName(target) : 'Someone';
