@@ -2406,7 +2406,7 @@
         }
       }
       this.state.scholar.inventory = inv.filter(i => i.units > 0);
-      // steady_hands/taught_hands: fine work under pressure. Base 85% success —
+      // steady_hands: fine work under pressure. Base 85% success —
       // fail and the materials are already consumed above. The woods keep them.
       // Blind (L1) attempts: 35%. You've seen one; your hands haven't.
       const baseRate = blind ? 0.35 : 0.85;
@@ -16507,7 +16507,7 @@
             this.say('A squirrel drops nuts at your feet and vanishes. A gift. (squirrel_friend: +200 kcal)');
           }
         }
-        // pattern_recognition: the sharp-eyed find the odd one.
+        // eagle_eye/third_eye: the sharp-eyed find the odd one.
         const rareChance = S.modifiers.resolve(0, 'forage.rare_find_chance', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
         if (rareChance > 0 && Math.random() < rareChance) {
           const rp = this.data.plants.find(pp => pp.id === 'rare_herb');
@@ -16562,7 +16562,6 @@
         // SYNERGY passives: photosynthesis works in daylight; third_eye/pattern see patterns.
         if (this.dayPart === 1 || this.dayPart === 2) this.noteAbilityUse('photosynthesis');
         this.noteAbilityUse('third_eye');
-        this.noteAbilityUse('pattern_recognition');
       } else if (kind === 'rest') {
         // BREAK-IT R3 (sibling sweep): resting "through most of the day part"
         // is fiction-breaking mid-fight — and the heal below wrote

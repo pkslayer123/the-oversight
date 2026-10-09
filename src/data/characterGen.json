@@ -1041,7 +1041,7 @@
       "kcalPerDay": 1900,
       "plantsKnown": 3,
       "granted": [
-        "forage_identification",
+        "herbal_remedy",
         "open_book"
       ],
       "itemBias": {
@@ -1084,7 +1084,7 @@
       "plantsKnown": 2,
       "granted": [
         "field_dressing",
-        "taught_hands"
+        "field_medicine"
       ],
       "itemBias": {
         "tool": [
@@ -1125,7 +1125,7 @@
       "kcalPerDay": 2100,
       "plantsKnown": 1,
       "granted": [
-        "taught_hands",
+        "field_medicine",
         "second_wind"
       ],
       "itemBias": {
@@ -1245,7 +1245,7 @@
       "kcalPerDay": 1900,
       "plantsKnown": 0,
       "granted": [
-        "pattern_recognition",
+        "eagle_eye",
         "open_book"
       ],
       "itemBias": {
@@ -1368,7 +1368,7 @@
       "backstory": "{first} was the plumber everyone called when the other plumbers gave up. {They} have a sixth sense for where water goes when it shouldn't.",
       "granted": [
         "dowsing",
-        "taught_hands"
+        "steady_hands"
       ],
       "id": "plumber",
       "itemBias": {
@@ -1407,8 +1407,8 @@
       ],
       "backstory": "{first} the locksmith could open anything except a conversation about fees. {They} have a feather touch and a shop full of key blanks older than {their} customers.",
       "granted": [
-        "taught_hands",
-        "pattern_recognition"
+        "steady_hands",
+        "eagle_eye"
       ],
       "id": "locksmith",
       "itemBias": {
@@ -1527,7 +1527,7 @@
       ],
       "backstory": "{first} was a mason — stone, brick, block, in that order of love. {They} have laid walls that will outlive {their} grandchildren.",
       "granted": [
-        "taught_hands",
+        "second_wind",
         "steady_hands"
       ],
       "id": "mason",
@@ -1567,7 +1567,7 @@
       ],
       "backstory": "{first} was an HVAC tech — summers on rooftops, winters in crawlspaces. {They} have heard every noise a compressor can make, and {they} know what each one costs.",
       "granted": [
-        "pattern_recognition",
+        "eagle_eye",
         "scrounger"
       ],
       "id": "hvac_tech",
@@ -1607,7 +1607,7 @@
       ],
       "backstory": "{first} was an appliance repair tech — washers, dryers, the sad symphony of dying compressors. {They} have fixed machines other techs wrote off as corpses.",
       "granted": [
-        "pattern_recognition",
+        "eagle_eye",
         "steady_hands"
       ],
       "id": "appliance_repair",
@@ -1647,7 +1647,7 @@
       ],
       "backstory": "{first} was a blacksmith — real forge, real anvil, weekends at the Renaissance fair and weekdays fixing plows. {They} have the forearms of a statue and the patience of a river.",
       "granted": [
-        "taught_hands",
+        "steady_hands",
         "adrenaline_control"
       ],
       "id": "blacksmith",
@@ -1767,8 +1767,8 @@
       "kcalPerDay": 2100,
       "plantsKnown": 2,
       "granted": [
-        "taught_hands",
-        "pattern_recognition"
+        "soft_step",
+        "animal_ken"
       ],
       "itemBias": {
         "tool": [
@@ -1852,7 +1852,7 @@
       "plantsKnown": 2,
       "granted": [
         "camp_cook",
-        "taught_hands"
+        "steady_hands"
       ],
       "itemBias": {
         "tool": [
@@ -2019,7 +2019,7 @@
       "kcalPerDay": 2200,
       "plantsKnown": 3,
       "granted": [
-        "forage_identification",
+        "green_thumb",
         "scrounger"
       ],
       "itemBias": {
@@ -2062,7 +2062,7 @@
       "plantsKnown": 2,
       "granted": [
         "preservation_instinct",
-        "taught_hands"
+        "taste_vision"
       ],
       "itemBias": {
         "tool": [
@@ -2103,7 +2103,7 @@
       "kcalPerDay": 2000,
       "plantsKnown": 3,
       "granted": [
-        "forage_identification",
+        "green_thumb",
         "compost_king"
       ],
       "itemBias": {
@@ -2190,7 +2190,7 @@
       ],
       "backstory": "{first} spent nine years writing routing software for a freight company. {They} know how logistics chains fail, which is exactly why {they} have no illusions about rescue.",
       "granted": [
-        "pattern_recognition",
+        "third_eye",
         "time_skip"
       ],
       "id": "programmer",
@@ -2436,7 +2436,7 @@
       ],
       "backstory": "{first} ran a dry-cleaner and alteration shop for twenty years. {They} know how to take in a jacket, let out a waist, and hide a stain with a seam.",
       "granted": [
-        "taught_hands",
+        "eagle_eye",
         "steady_hands"
       ],
       "id": "tailor",

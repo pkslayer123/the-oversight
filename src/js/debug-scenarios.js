@@ -1430,7 +1430,7 @@
         const s = Game.state.scholar;
         s.inventory = []; s.equipped = {};
         s.strength = 12; s.agility = 14; s.toughness = 12;
-        s.abilities = [{ id: 'game_sense' }, { id: 'forage_identification' }, { id: 'soft_step' }];
+        s.abilities = [{ id: 'game_sense' }, { id: 'green_thumb' }, { id: 'soft_step' }];
       }
     },
   };

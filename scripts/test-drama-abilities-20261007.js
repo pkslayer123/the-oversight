@@ -64,7 +64,7 @@ const Drama = globalThis.Scattering.Drama;
 
 console.log('== drama-abilities D1 proof, seed ' + SEED + ' ==');
 
-const TEN = ['triage', 'forage_identification', 'brawler_instinct', 'patient_aim',
+const TEN = ['triage', 'green_thumb', 'brawler_instinct', 'patient_aim',
   'silver_tongue', 'diplomat', 'pathfinder', 'eagle_eye', 'lie_detector', 'game_sense'];
 
 // record Game.drama calls
@@ -132,7 +132,7 @@ async function main() {
   // === 4. dispatcher routes to unique methods (spy) ===
   const seen = {};
   const spies = {};
-  ['sigTriage', 'sigForageId', 'sigBrawler', 'sigPatientAim', 'sigSilverTongue',
+  ['sigTriage', 'sigGreenThumb', 'sigBrawler', 'sigPatientAim', 'sigSilverTongue',
    'sigDiplomat', 'sigPathfinder', 'sigEagleEye', 'sigLieDetector', 'sigGameSense'].forEach(m => {
     spies[m] = Drama[m];
     Drama[m] = function (...a) { seen[m] = (seen[m] || 0) + 1; return spies[m].apply(this, a); };

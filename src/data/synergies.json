@@ -249,7 +249,7 @@
     "name": "Sees the Weave",
     "requires": [
       "third_eye",
-      "pattern_recognition"
+      "eagle_eye"
     ],
     "discovery_method": {
       "type": "sustained",
@@ -989,7 +989,7 @@
     "name": "String Wall",
     "requires": [
       "evidence_board",
-      "pattern_recognition"
+      "eagle_eye"
     ],
     "minLevel": 1,
     "flavor": "Pin it up. Connect it. Step back.",
@@ -1183,7 +1183,7 @@
     "requires": [
       "tech:plant_tracking",
       "skill:foraging",
-      "forage_identification"
+      "green_thumb"
     ],
     "minLevel": 2,
     "flavor": "Track the plant. Know the plant. Take only the patch.",
@@ -1203,7 +1203,7 @@
     "discovery_method": {
       "type": "sequential",
       "order": [
-        "forage_identification",
+        "green_thumb",
         "foraging"
       ],
       "hint": "Know the plant. Then follow its signs.",

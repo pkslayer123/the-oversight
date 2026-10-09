@@ -68,7 +68,7 @@
     // compost_king: buried food feeds the tile. +10% here.
     if (tile.compost) units = Math.round(units * 1.1);
     units = Math.max(1, units);
-    // pattern_recognition: sometimes you see what others miss. A rare find.
+    // eagle_eye: sometimes you see what others miss. A rare find.
     let rareFind = null;
     const rareChance = S.modifiers.resolve(0, 'forage.rare_find_chance', mods, ctx);
     if (rareChance > 0 && Math.random() < rareChance) {

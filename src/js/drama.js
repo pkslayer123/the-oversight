@@ -1184,7 +1184,7 @@
       color = color || '#4df3ff';
       const MAP = {
         triage: 'sigTriage',
-        forage_identification: 'sigForageId',
+        green_thumb: 'sigGreenThumb',
         brawler_instinct: 'sigBrawler',
         patient_aim: 'sigPatientAim',
         silver_tongue: 'sigSilverTongue',
@@ -1570,6 +1570,24 @@
         `position:absolute;left:${cx}px;top:${cy + 44}px;`,
         'drama-float', 1100
       );
+    },
+
+    // sigGreenThumb: a sprout unfurls — leaves open in sequence, roots reach down.
+    // The grower's touch: what you tend, thrives.
+    sigGreenThumb(x, y, color, integration) {
+      integration = integration || 0;
+      color = '#7cfc9a';
+      const { cx, cy } = this._sigXY(x, y);
+      const leaves = integration >= 2 ? 5 : 3;
+      for (let i = 0; i < leaves; i++) {
+        const ang = -90 + (i - (leaves - 1) / 2) * 28;
+        this.spawn(
+          `<div style="font-size:${22 - i}px;transform:rotate(${ang}deg);">\u{1F33F}</div>`,
+          `position:absolute;left:${cx}px;top:${cy}px;`,
+          'drama-sig-pop', 700 + i * 140
+        );
+      }
+      if (integration >= 3) this.flash('rgba(124,252,154,0.12)', 300);
     },
 
     // plantIdentified: a leaf unfurls, the name blooms. Learning you can see.
