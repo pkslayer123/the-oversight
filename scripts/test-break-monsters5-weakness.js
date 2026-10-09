@@ -91,10 +91,24 @@ check('voice_mimic coaching: honest reveal line present',
 // Generic guards: the lie class can't return under new wording.
 const LIE_TOKENS = [/\bHARRY\b/, /overcast/i, /ordinary cats/i,
   /fire scrambles it/, /fire scatters it/, /fire breaks its concentration/,
-  /cannot moderate what it cannot see/, /loud noises scatter the pack/];
+  /cannot moderate what it cannot see/, /loud noises scatter the pack/,
+  /fire scrambles the signal/i, /fire scrambles the broadcast/i];
 for (const t of LIE_TOKENS) {
   const hit = allWeaknesses().find(x => t.test(x.w));
   check(`no weakness matches ${t}`, !hit);
+}
+// Sibling sweep: codex earned-knowledge texts must not carry the same lies.
+const codexTexts = () => monsters.flatMap(m => {
+  const out = [];
+  const cs = m.codexStages || {};
+  for (const k of Object.keys(cs)) out.push({ id: m.id, where: 'codexStages.' + k, t: cs[k] });
+  const enc = m.encounter || {};
+  if (enc.knownTactics) out.push({ id: m.id, where: 'encounter.knownTactics', t: enc.knownTactics });
+  return out;
+});
+for (const t of LIE_TOKENS) {
+  const hit = codexTexts().find(x => t.test(x.t || ''));
+  check(`no codex text matches ${t}${hit ? ' (' + hit.id + ' ' + hit.where + ')' : ''}`, !hit);
 }
 // SHOUT is a real player verb (the new lines lean on it).
 check('tbPlayerShout exists (SHOUT is a real verb)', /tbPlayerShout\(\)/.test(gameJs));

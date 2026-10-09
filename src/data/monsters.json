@@ -1099,7 +1099,7 @@
     "codexStages": {
       "unknown": "Someone was crying in the woods last night. Everyone was accounted for in the morning.",
       "observed": "Voice-mimic predator. The System watched humans run toward crying and concluded distress is bait. It plays the voices of people you know. The voices are always crying. It never learned any other emotion.",
-      "slain": "Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Fire scrambles the signal. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours. Break the act \u2014 don't go to the crying, twice \u2014 and it drops the voice and RUSHES, no telegraph at all. Back off then; don't stand in reach of the replay."
+      "slain": "Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Break the act \u2014 exposed, the signal scrambles. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours. Break the act \u2014 don't go to the crying, twice \u2014 and it drops the voice and RUSHES, no telegraph at all. Back off then; don't stand in reach of the replay."
     },
     "systemDesignation": "Acoustic lure unit (audience-tested)",
     "encounter": {
@@ -1126,7 +1126,7 @@
       },
       "comment": "Encounter framework client. THE LURE: call (holds its ground, cries in a voice you know \u2014 walking toward it feeds the lure and it creeps to meet you) \u2192 approach (voice sharpens, commits) \u2192 reveal (resist 2 turns: the act breaks, honest fight, exposed, takes hits badly). Distress Call is direct/range 3, undodgeable once declared.",
       "knownCue": "The voice is bait. It wants you to come closer \u2014 don't.",
-      "knownTactics": "The first cry is always someone you know \u2014 the second is static wearing their shape. Move TOWARD the cry once and the mimic drops the voice; it can\u2019t hold the shape under attention. Fire scrambles the broadcast."
+      "knownTactics": "The first cry is always someone you know \u2014 the second is static wearing their shape. Move TOWARD the cry once and the mimic drops the voice; it can\u2019t hold the shape under attention. Break the act and the broadcast scrambles."
     },
     "loot": {
       "chance": 0.15,
