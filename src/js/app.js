@@ -1727,6 +1727,7 @@
   //   heronStrike()  — Spearfish Strike resolves
   //   turtleSnap()   — Snap Decision (no warning, by design)
   //   turtleBunker() — the shell seals like a door closing
+  //   turtleFlip()   — the flip lands: heave, then shell-on-dirt crash
   //   stagMirror()   — mirror / confront beat (glass harmonics, wrong)
   //   HUMMICE (Steve 2026-10-04) — the swarm is one instrument:
   //   humNotice()    — fight opens: the grass starts humming, low, unsettled
@@ -6531,6 +6532,37 @@
       e.connect(eg); eg.connect(sfxBus);
       e.start(t + 0.25); e.stop(t + 0.7);
     }
+    function turtleFlip() {
+      // TURTLE FLIP (break-it 2026-10-08): the heave and the crash — effort
+      // rising, then shell on dirt. The codex weakness made audible.
+      // (Was: tbPlayerFlip fired audioEvent('turtleFlip') with no handler —
+      // fired-but-silent since the flip commit c00b92f.)
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // The heave: effort rising
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(90, t);
+      o.frequency.exponentialRampToValueAtTime(220, t + 0.25);
+      g.gain.setValueAtTime(0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.32);
+      // The crash: shell hits dirt
+      const nz = noise(0.4), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 900;
+        ng.gain.setValueAtTime(0.5, t + 0.28);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.28); nz.stop(t + 0.72);
+      }
+      // A dull stone thud underneath
+      const th = ctx.createOscillator(), thg = ctx.createGain();
+      th.type = 'sine'; th.frequency.setValueAtTime(140, t + 0.28);
+      th.frequency.exponentialRampToValueAtTime(50, t + 0.5);
+      thg.gain.setValueAtTime(0.35, t + 0.28);
+      thg.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      th.connect(thg); thg.connect(sfxBus); th.start(t + 0.28); th.stop(t + 0.62);
+    }
     function wolfBreak() {
       // PACK BREAKS: the coordination shatters — a howl that fractures.
       // (deepened Steve 2026-10-06): now it actually fractures — a second
@@ -10624,6 +10656,7 @@
       duckScreech() { duckScreech(); },
       stagConfused() { stagConfused(); },
       turtleBunker() { turtleBunker(); },
+      turtleFlip() { turtleFlip(); }, // speedbump_turtle flip (break-it 2026-10-08)
       wolfBreak() { wolfBreak(); },
       toadSwell() { toadSwell(); },
       // Wave 2 gaps

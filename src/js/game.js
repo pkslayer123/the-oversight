@@ -20890,8 +20890,8 @@
         // FLIPPED (speedbump, Steve 2026-10-08): upside down — the shell
         // isn't between you and the soft parts. Armor doesn't apply.
         const flippedTurtle = this.turtleIs(t) && (t.turtleFlipped || 0) > 0;
-        if (flippedTurtle && wType === 'physical' && mdef.armor > 0) {
-          this.say(`(Upside down — the shell isn't in the way.)`);
+        if (flippedTurtle && wType === 'physical' && (mdef.armor > 0 || ((mdef.resistances || {}).physical || 0) !== 0)) {
+          this.say(`(Upside down — the shell isn't in the way. No armor, no resistance.)`);
         } else if (wType === 'physical' && mdef.armor > 0 && !ignoreArmor) {
           const absorbed = Math.min(d, mdef.armor);
           d -= absorbed;
@@ -20901,6 +20901,13 @@
         }
         // Resistances: percentage reduction per type (negative = vulnerability)
         let res = (mdef.resistances || {})[wType] || 0;
+        // FLIPPED (break-it 2026-10-08): "no armor" means no armor — the
+        // shell's percentage resist is shell defense too. Upside down, the
+        // shell isn't between you and the soft parts, so the physical
+        // resist doesn't apply either. (Was: armor zeroed but the 0.5
+        // physical resist silently halved every flipped strike — the
+        // promise "no armor" was a lie by omission.)
+        if (flippedTurtle && wType === 'physical') res = 0;
         // EMBER PUNISH (Steve 2026-10-06): a guttering bright_idea is just
         // cooling light — the physical resist doesn't apply while it's an
         // ember. The ember is the kill window; without this the coaching
@@ -21247,6 +21254,8 @@
       } else {
         this.say('🐢 You lunge for the shell\u2019s edge — the head is suddenly somewhere else.');
         const atk = (t.mdef || {}).attack || {};
+        // BREAK-IT 2026-10-08: the fail IS a Snap Decision — play its audio.
+        try { this.audioEvent('turtleSnap'); } catch (e) {}
         this.tbDamage('p', S.combat.roll(atk.damage || [20, 30]), t.name || 'the turtle');
       }
       this.tbAfterPlayerAction();
