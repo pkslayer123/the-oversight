@@ -9,13 +9,13 @@
 //    0.65x blind (one attempt teaches the technique).
 // 4. Pemmican: 2 preserved meat + 1 rendered fat + 2 berries -> 3 bars,
 //    600 kcal each, 120-day shelf life. Top preservation tier.
-// 5. Preservation ladder honest: raw(500/2d/risky) < cooked < smoked(8 ticks,
+// 5. Preservation ladder honest: raw(500/2d/risky) < cooked < smoked(16 ticks,
 //    0.95x, 30d) < rendered fat(12 ticks, 0.90x, 90d) < pemmican(20 ticks,
 //    ~full retention, 120d). No path destroys calories senselessly.
 // 6. Sibling sweep: fat is animal-specific (bear 6, boar 3, javelina 2;
 //    deer/rabbit/turkey = none); killTexts gutted of how-tos; obscure
 //    disease vectors gated at L4 across the pattern family.
-// 7. Smoking pacing: 8 ticks, copy sells a spare-moment action, not hours.
+// 7. Smoking pacing: 16 ticks = 1/8 day-part (Steve 2026-10-09).
 //
 // Harness: mulberry32, SEED env override (default 20261009), full src/js
 // module list in index.html order minus DOM-only files and drama.js, window
@@ -196,7 +196,7 @@ function check(name, cond, detail) {
   check('smoked: 0.95x retention (known)', raw.kcalEach === 475, `500 -> ${raw.kcalEach}`);
   check('smoked: 30-day shelf (known)', raw.spoilDay === s.day + 30, `day+${raw.spoilDay - s.day}`);
   check('smoked: safe now', raw.safe === true && !raw.diseaseRisk, '');
-  check('smoking costs 8 ticks (spare-moment, not hours)', tickLog[tickLog.length - 1] === 8, `cost ${tickLog[tickLog.length - 1]} ticks`);
+  check('smoking costs 16 ticks (1/8 day-part, Steve 2026-10-09)', tickLog[tickLog.length - 1] === 16, `cost ${tickLog[tickLog.length - 1]} ticks`);
   // Blind smoke: 0.80x.
   delete Game.techniques().preserve;
   const raw2 = { plantId: 'meat_x', foodKind: 'meat', foodState: 'cleaned', edible: true, units: 1, kcalEach: 500, hiddenKcal: 500, name: 'Meat (cleaned)', spoilDay: s.day + 2 };

@@ -570,10 +570,12 @@
           if (it._messyPreserves >= 2) this.learnTechnique('preserve', 'trial');
         }
       }
-      this.tickAction(8);
+      // SMOKING PACE (Steve 2026-10-09): 16 ticks = 1/8 of a day-part.
+      // "1/8 of a day seems about correct. That's all fine." A real job, not a spare moment.
+      this.tickAction(16);
       this.say(knows
-        ? `Smoked ${n} batch${n > 1 ? 'es' : ''} over the fire. Quick work — this keeps. (8 ticks)`
-        : `You rig a smoky fire and hope. It sort of works — drier, safer, but you know a real preserver would do better. (8 ticks)`);
+        ? `Smoked ${n} batch${n > 1 ? 'es' : ''} over the fire. Slow smoke, honest work — this keeps. (16 ticks)`
+        : `You rig a smoky fire and tend it a good while. It sort of works — drier, safer, but you know a real preserver would do better. (16 ticks)`);
       return null;
     },
 
