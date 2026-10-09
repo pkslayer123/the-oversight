@@ -4,7 +4,7 @@
 // provides:
 //   - perceptionHints()
 // rules:
-//   - (none documented)
+//   - danger_hint_derives_from_tile: the danger hint reads the player-tile monster via playerMonster(), never the possibly-stale scholar.monster alias (code: perceptionHints, explorer break-it 2026-10-09)
 // consumes:
 //   - scholar.perception
 // ============ PERCEPTION HINTS ============
@@ -60,7 +60,10 @@
 
     // ---- DANGER: monster close by (knowledge-gated name) ----
     try {
-      const mon = s.monster;
+      // STALE-ALIAS HARDENING (explorer break-it 2026-10-09): derive from the
+      // tile, like every other render path — teleports that bypass travelTo
+      // (returnToVillage PIN, exile pins, debug) don't re-sync scholar.monster.
+      const mon = (typeof this.playerMonster === 'function') ? this.playerMonster() : s.monster;
       if (mon) {
         const mx = mon.mx ?? mon.x, my = mon.my ?? mon.y;
         if (mx >= 0 && mx <= 8 && my >= 0 && my <= 8) {

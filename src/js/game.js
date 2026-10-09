@@ -65,6 +65,7 @@
 //   - map_depletion_fog: tile depletion styling requires seen (visited or shared); a fogged tile never renders picked-clean/barren (code: renderMap, break-it travel r4 2026-10-09)
 //   - codex_maps_are_shared: the codex MAPS section shows only shared ground — your seen tiles plus villagers who actually compared maps with you (code: villageMapKnown, break-it travel r4 2026-10-09)
 //   - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
+//   - monster_alias_resyncs_on_travel: scholar.monster mirrors the player-tile monster — travelTo re-syncs on arrival so the monster left behind can't haunt perceptionHints as a phantom (code: travelTo, explorer break-it 2026-10-09)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
@@ -7152,6 +7153,10 @@
       this.state.scholar.facing = { x: odx || 0, y: ody || 1 };
       this.reveal(x, y);
       this.markSeen(x, y, 'visited');
+      // STALE-ALIAS (explorer break-it 2026-10-09): scholar.monster mirrors
+      // the player-tile monster — re-derive after the move, or the monster
+      // left behind on the old tile keeps haunting perceptionHints here.
+      this.syncMonsterAlias();
       const tile = this.playerTile();
       // ANIMAL CONTINUITY: if you left an animal here, it's still here.
       try {

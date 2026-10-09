@@ -121,7 +121,8 @@ Care and exploration decisions. Care was a vending machine — now it requires r
 **Provides:** giveFood(vid, amount), comfort(vid, approach), giveFoodOptions(), comfortOptions(vid), examineCell(cx, cy), tileFeature(nx, ny, cx, cy, cell)
 
 **Rules:**
-- (none documented)
+- examine_farm_cap: one cell teaches a skill at most 2 encounters' worth (surface + first deep study); the 4-encounter pattern counts distinct ground (code: feedKnowledge, explorer break-it 2026-10-09)
+- no_post_death_examine: examineCell refuses when this.over — the dead don't narrate, advance the world, or save (code: examineCell, explorer break-it 2026-10-09)
 
 **Consumes:** scholar.energy, village.needs
 
@@ -498,6 +499,7 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 - map_depletion_fog: tile depletion styling requires seen (visited or shared); a fogged tile never renders picked-clean/barren (code: renderMap, break-it travel r4 2026-10-09)
 - codex_maps_are_shared: the codex MAPS section shows only shared ground — your seen tiles plus villagers who actually compared maps with you (code: villageMapKnown, break-it travel r4 2026-10-09)
 - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
+- monster_alias_resyncs_on_travel: scholar.monster mirrors the player-tile monster — travelTo re-syncs on arrival so the monster left behind can't haunt perceptionHints as a phantom (code: travelTo, explorer break-it 2026-10-09)
 - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
@@ -644,7 +646,7 @@ Perception system. Proximity hints, spotting.
 **Provides:** perceptionHints()
 
 **Rules:**
-- (none documented)
+- danger_hint_derives_from_tile: the danger hint reads the player-tile monster via playerMonster(), never the possibly-stale scholar.monster alias (code: perceptionHints, explorer break-it 2026-10-09)
 
 **Consumes:** scholar.perception
 

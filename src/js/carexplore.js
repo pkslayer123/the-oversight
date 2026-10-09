@@ -9,7 +9,8 @@
 //   - examineCell(cx, cy)
 //   - tileFeature(nx, ny, cx, cy, cell)
 // rules:
-//   - (none documented)
+//   - examine_farm_cap: one cell teaches a skill at most 2 encounters' worth (surface + first deep study); the 4-encounter pattern counts distinct ground (code: feedKnowledge, explorer break-it 2026-10-09)
+//   - no_post_death_examine: examineCell refuses when this.over — the dead don't narrate, advance the world, or save (code: examineCell, explorer break-it 2026-10-09)
 // consumes:
 //   - scholar.energy
 //   - village.needs
@@ -351,6 +352,10 @@
   };
 
   Game.examineCell = function (cx, cy) {
+    // POST-DEATH (explorer break-it 2026-10-09): the dead don't examine. The
+    // old code narrated, advanced the world (npcBatchTurn/monsterTurn via
+    // tickAction) and saved — for a corpse.
+    if (this.over) return null;
     const s = this.state.scholar;
     const px = s.mx ?? 4, py = s.my ?? 4;
     const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));
@@ -373,10 +378,20 @@
 
     // knowledge feeding helper
     const feedKnowledge = (skillId, amt) => {
+      // SAME-CELL FARM CAP (explorer break-it 2026-10-09): one cell teaches a
+      // skill at most 2 encounters' worth — the surface look and the first
+      // deep study. Staring at the same tree all morning is not four
+      // "encounters"; the 4-encounter pattern counts distinct ground.
+      // (Species study is a separate counter, unaffected.)
+      const fedKey = key + ':fed:' + skillId;
+      const already = (this.state.codex.examined[fedKey] || 0);
+      const give = Math.min(amt, Math.max(0, 2 - already));
+      this.state.codex.examined[fedKey] = already + give;
+      if (give <= 0) return;
       this.state.codex.encounters = this.state.codex.encounters || {};
       const cur = (this.state.codex.skills || {})[skillId];
       if (cur && (cur.level || 0) >= 1) return;
-      this.state.codex.encounters[skillId] = (this.state.codex.encounters[skillId] || 0) + amt;
+      this.state.codex.encounters[skillId] = (this.state.codex.encounters[skillId] || 0) + give;
       const enc = this.state.codex.encounters[skillId];
       if (enc >= 4 && this.learnSkill) {
         this.learnSkill(skillId, 1, 'examining');
