@@ -17,6 +17,8 @@
 //   - tbAfterPlayerAction()
 //   - tbPlayerFlip(targetKey) (speedbump turtle: strength-check flip — 3 turns armor 0, no snap, no bunker; fail eats a snap)
 //   - tbMonsterReach(m) -> tiles (honest striking distance of a monster's attack; disengage gate)
+//   - tbBarrierExit(dx, dy) (barrier flee, no coin flip — the chase plays out on the grid; per-monster persistence via chasePersistence, speed sets distance, the relentless hushwolf ends only at Haven or by kill)
+//   - chasePersistence(mdef) -> barriers a chaser crosses before giving up
 //   - contestTick() (delegates to contests.js)
 //   - fireShow(event) -> show (delegates to contests.js)
 //   - triggerEvent(ev) (event engine: generic dispatcher reading events.json; checks once/cooldown, calls named handler)
@@ -73,6 +75,7 @@
 //   - map_depletion_fog: tile depletion styling requires seen (visited or shared); a fogged tile never renders picked-clean/barren (code: renderMap, break-it travel r4 2026-10-09)
 //   - codex_maps_are_shared: the codex MAPS section shows only shared ground — your seen tiles plus villagers who actually compared maps with you (code: villageMapKnown, break-it travel r4 2026-10-09)
 //   - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
+//   - chase_not_roll: barrier flight never coin-flips — chasers pursue across nodes with per-monster persistence (code: chasePersistence); speed differential sets re-entry distance; the hushwolf is relentless until Haven or kill; every chase stage is narrated (Steve 2026-10-09)
 //   - monster_alias_resyncs_on_travel: scholar.monster mirrors the player-tile monster — travelTo re-syncs on arrival so the monster left behind can't haunt perceptionHints as a phantom (code: travelTo, explorer break-it 2026-10-09)
 //   - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding, clearBlockage, buildBridge) refuse when over — the corpse walks nothing, builds nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
 //   - no_mid_fight_interact: _cellInteract refuses inCombat — interacting runs monster/animal/villager turns while tickAction(1) no-ops mid-fight, so a stale tile card could grant free interacts AND free monster turns; same class as the examineCell guard (code: _cellInteract, explorer break-it 2026-10-09)
@@ -10943,12 +10946,17 @@
     // WEAPON RANGE: melee=1, spear=2, sling=4, bow=5. You can't knife someone
     // across the clearing. Range is real and the grid enforces it.
     equippedWeapon() {
-      const eq = (this.state.scholar.equipped || {}).weapon;
-      if (!eq) return { name: 'your hands', bonus: 0, type: 'melee', range: 1, ammo: null, unarmed: true };
-      const def = this.data.items.find(i => i.id === eq.itemId);
+      const eq = (this.state.scholar.equipped || {});
+      // SLOT MIGRATION (fix 2026-10-09): the 2026-10-07 gear slot system moved
+      // weapons to melee/ranged and deleted the legacy .weapon slot — but this
+      // reader never followed, so every player strike since has been unarmed
+      // (spear bonus silently zero). Read the modern slots, legacy fallback.
+      const wslot = eq.melee || eq.ranged || eq.weapon;
+      if (!wslot) return { name: 'your hands', bonus: 0, type: 'melee', range: 1, ammo: null, unarmed: true };
+      const def = this.data.items.find(i => i.id === wslot.itemId);
       const w = (def && def.weapon) || {};
       return {
-        name: eq.name || (def && def.name) || 'weapon',
+        name: wslot.name || (def && def.name) || 'weapon',
         bonus: w.bonus || 0,
         type: w.type || 'melee',
         range: w.range || 1,
@@ -23170,6 +23178,21 @@
     // otherwise they follow. Walking ALONG the edge or landing on an edge
     // tile does NOT trigger this — only a deliberate exit attempt.
     // (Don't bring a highbeam deer back to camp.)
+    // CHASE PERSISTENCE (Steve 2026-10-09): how many barrier crossings a
+    // chaser will follow you through before giving up. Fiction-derived:
+    //   belltoad 1 — speed 2, slower than you (3): you pull away at once.
+    //   bulldozer 2 — speed 3, matches your pace; charges hard, tires.
+    //   lockpick_raccoon 3 — speed 5, a clever thief that wants your things.
+    //   default 2 — middle ground for the other chasers.
+    // The relentless (hushwolf, mdef.relentless) never rolls this — it
+    // follows until Haven or death.
+    chasePersistence(mdef) {
+      const id = (mdef || {}).id;
+      if (id === 'belltoad') return 1;
+      if (id === 'bulldozer') return 2;
+      if (id === 'lockpick_raccoon') return 3;
+      return 2;
+    },
     tbBarrierExit(dx, dy) {
       const f = this.tbfight;
       if (!f || f.over || !this.tbIsPlayerTurn()) return false;
@@ -23244,27 +23267,66 @@
         this.tbEnd('fled');
         return true;
       }
-      if (Math.random() < 0.5) {
-        this.say('🚪 BARRIER CROSSED — you crash through the treeline to a new area. The barrier shimmers. They lose your trail. (You fled the fight by leaving the area.)');
+      // CHASE (Steve 2026-10-09): no coin flip, no parting damage roll. The
+      // chase PLAYS OUT on the grid: every barrier crossing continues the
+      // pursuit on the new node. Each chaser has pursuit stamina (barriers it
+      // will cross before giving up); speed differential sets how close it
+      // stays — a faster monster gains on you, a slower one falls behind.
+      // The relentless (hushwolf, mdef.relentless) never gives up: only
+      // Haven's walls or a kill ends it. Every stage is narrated — the
+      // player can always read the chase.
+      const destTile = this.tileAt(nx, ny);
+      const destIsHaven = !!(destTile && (destTile.type === 'haven' || destTile.isHaven));
+      const pSpeed = (typeof this.playerSpeed === 'function' ? this.playerSpeed() : 3) || 3;
+      let relentlessHere = false;
+      const stillChasing = [];
+      const gaveUp = [];
+      for (const m of chasers) {
+        const md = m.mdef || {};
+        if (md.relentless) { relentlessHere = true; stillChasing.push(m); continue; }
+        if (m._pursuit === undefined || m._pursuit === null) m._pursuit = this.chasePersistence(md);
+        m._pursuit -= 1;
+        if (m._pursuit <= 0) { m.fled = true; gaveUp.push(m); }
+        else stillChasing.push(m);
+      }
+      for (const m of stayers) { m.fled = true; }
+      if (destIsHaven) {
+        // HAVEN IS SAFE (design): the chase ends at the walls — even the
+        // relentless will not follow you through Haven's gate.
+        for (const m of stillChasing) m.fled = true;
+        this.say('🚪 BARRIER CROSSED — you crash through into Haven. The gate shuts behind you. The wild goes quiet. (Haven is safe — nothing follows you here.)');
         p.fled = true;
-        // FLEE TRUTH (brawler loop 2026-10-08): betrayal fights bypass the
-        // party.js tbEndCheck wrapper — flag the player's flight here too.
         if (f.betrayal) f.playerFled = true;
         this.tbEnd('fled');
         return true;
       }
-      this.say('🚪 BARRIER CROSSED — you stumble into a new area, but they\'re right behind you — through the barrier! The fight continues here. (The edge of the grid is an exit. They followed you.)');
-      // They follow: reposition CHASERS near the entry edge on the new node
-      // (combat continues; the node changed under the fight). Stayers
-      // (can't chase) are left behind — marked fled, out of the fight.
-      // (They do NOT persist as world monsters on the old node: wild
-      // encounter monsters are removed from the world at fight start and
-      // melt back into the wilds at fight end, like every other flee.)
-      for (const m of chasers) {
-        m.mx = Math.max(0, Math.min(8, 4 - dx * 3 + Math.floor(Math.random() * 3) - 1));
-        m.my = Math.max(0, Math.min(8, 4 - dy * 3 + Math.floor(Math.random() * 3) - 1));
+      if (!stillChasing.length) {
+        // Every chaser gave up at the barrier.
+        this.say('🚪 BARRIER CROSSED — you crash through to a new area. The pursuit falters behind you — they give up the chase. (You fled the fight by leaving the area.)');
+        p.fled = true;
+        if (f.betrayal) f.playerFled = true;
+        this.tbEnd('fled');
+        return true;
       }
-      for (const m of stayers) { m.fled = true; }
+      this.say('🚪 BARRIER CROSSED — you crash through to a new area, but they\'re right behind you — through the barrier! (The edge of the grid is an exit. The chase continues.)');
+      let toldRelentless = false;
+      try { toldRelentless = !!f._relentlessTold; } catch (e) {}
+      if (relentlessHere && !toldRelentless) {
+        try { f._relentlessTold = true; } catch (e) {}
+        this.say("They're still coming — and they won't stop. They'll follow you across every barrier. Only Haven's walls or a kill ends this.");
+      }
+      for (const m of stillChasing) {
+        const md = m.mdef || {};
+        const mSpeed = m.speed || md.speed || 3;
+        const shift = Math.max(-2, Math.min(2, mSpeed - pSpeed)); // +: gained on you
+        m.mx = Math.max(0, Math.min(8, 4 - dx * 3 + dx * shift + Math.floor(Math.random() * 3) - 1));
+        m.my = Math.max(0, Math.min(8, 4 - dy * 3 + dy * shift + Math.floor(Math.random() * 3) - 1));
+        const subj = this.encSubject(m);
+        if ((m._pursuit || 99) === 1) this.say(`${subj} is flagging — it won't follow much further.`);
+        else if (shift > 0) this.say(`${subj} is gaining on you.`);
+        else if (shift < 0) this.say(`You're pulling away from ${subj.charAt(0).toLowerCase() + subj.slice(1)}.`);
+      }
+      for (const m of gaveUp) this.say(`${this.encSubject(m)} gives up the chase, melting back into the treeline.`);
       if (stayers.length) this.say('The slow ones are left behind.');
       // Player enters from the opposite edge
       p.mx = Math.max(0, Math.min(8, 4 + dx * 3));
@@ -25804,12 +25866,14 @@
     // LOCKPICK STEAL: equipped weapon first (it's in your hands — that's the
     // point), else the most valuable pack item. Returns the taken name, or
     // null when there's nothing worth taking.
+    // (Slot fix 2026-10-09: reads the modern melee slot, not the deleted
+    // legacy .weapon slot — the lockpick could never steal a wielded weapon.)
     tbLockpickSteal(m) {
       const s = this.state.scholar;
-      const eq = (s.equipped || {}).weapon;
+      const eq = ((s.equipped || {}).melee || (s.equipped || {}).weapon);
       if (eq && eq.itemId && !eq.unarmed) {
         m.stolen = { kind: 'weapon', itemId: eq.itemId, name: eq.name || 'weapon' };
-        s.equipped.weapon = null;
+        if (s.equipped.melee) s.equipped.melee = null; else s.equipped.weapon = null;
         return m.stolen.name;
       }
       const inv = s.inventory || [];
@@ -25831,7 +25895,7 @@
       if (!st) return 'nothing';
       if (st.kind === 'weapon') {
         s.equipped = s.equipped || {};
-        s.equipped.weapon = { itemId: st.itemId, name: st.name };
+        s.equipped.melee = { itemId: st.itemId, name: st.name };
       } else {
         s.inventory = s.inventory || [];
         s.inventory.push(st.item);

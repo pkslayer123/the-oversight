@@ -7,14 +7,14 @@
       "se_woodlands"
     ],
     "hp": [
-      40,
-      55
+      70,
+      90
     ],
     "attack": {
       "name": "China-Shop Charge",
       "damage": [
-        18,
-        26
+        20,
+        28
       ],
       "telegraph": "Lowers its head, paws the earth. Dust rises. It is not going around the tree. It has never gone around anything.",
       "pattern": {
@@ -123,14 +123,14 @@
       "se_woodlands"
     ],
     "hp": [
-      25,
-      35
+      50,
+      65
     ],
     "attack": {
       "name": "Silent Rush",
       "damage": [
-        12,
-        18
+        14,
+        20
       ],
       "telegraph": "No telegraph you can hear. Watch the birds \u2014 when they go quiet, the pack is already moving.",
       "pattern": {
@@ -153,7 +153,7 @@
     "behavior": "pack",
     "codexStages": {
       "unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.",
-      "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you.",
+      "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you. They run prey down over miles \u2014 once they've decided, they do not stop. If you run, run for Haven's walls or turn and kill the lead.",
       "slain": "Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
     },
     "systemDesignation": "Canis familiaris (standard)",
@@ -214,7 +214,8 @@
       "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
     },
     "armor": 2,
-    "resistances": {}
+    "resistances": {},
+    "relentless": true
   },
   {
     "id": "gallowdeer",
@@ -433,14 +434,14 @@
     ],
     "waterAffinity": "near",
     "hp": [
-      20,
-      30
+      45,
+      60
     ],
     "attack": {
       "name": "Resonant Croak",
       "damage": [
-        10,
-        16
+        12,
+        18
       ],
       "telegraph": "Its throat swells. The air goes thick. Every frog for a mile answers at once.",
       "pattern": {
@@ -536,14 +537,14 @@
       "se_woodlands"
     ],
     "hp": [
-      18,
-      26
+      40,
+      55
     ],
     "attack": {
       "name": "Disassemble",
       "damage": [
-        10,
-        15
+        12,
+        18
       ],
       "telegraph": "It sits up. Its hands move too fast to follow. Something you own is suddenly in its hands.",
       "pattern": {
