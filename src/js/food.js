@@ -5,7 +5,9 @@
 //   - foodMarker()
 //   - cleanCarcass()
 //   - cookFood()
-//   - preserveFood()
+//   - renderFat()
+//   - pemmicanSets()
+//   - makePemmican()
 //   - cookTransform()
 //   - cookClassFor()
 //   - cookOutcome()
@@ -31,8 +33,14 @@
  * 2. FOOD STATES — raw < cleaned < cooked < preserved. Each step costs time,
  *    tools, knowledge; each step changes net calories and disease risk.
  *    - nuts: in-shell (not food) -> shelled (net < gross; shells weigh)
- *    - game: carcass (not food, spoils fast) -> cleaned raw (40% kcal, risky)
- *      -> cooked (100%, safe) -> preserved (90%, keeps ~a month)
+ *    - game: carcass (not food, spoils fast) -> cleaned raw (40% kcal, risky,
+ *      portions capped ~500 kcal — no 30k slabs) -> cooked (100%, safe)
+ *      -> preserved (90%, keeps ~a month)
+ *    - fat: raw slabs (inedible) -> rendered tallow (90%, keeps ~3 months)
+ *    - pemmican: dried meat + rendered fat + berries -> 600-kcal bars,
+ *      keeps ~4 months. The top preservation tier — the long road pays best.
+ *    PRESERVATION TIERS (Steve 2026-10-09): longer/more-involved = better.
+ *    cleaned 2d < cooked 5d < smoked 30d < rendered fat 90d < pemmican 120d.
  * 3. TECHNIQUE KNOWLEDGE — cleaning/cooking/preserving require knowing how.
  *    Backgrounds grant it; specialists teach by example (watch twice, learn);
  *    attempting blind works but messy — and teaches.
@@ -97,7 +105,7 @@
     shell: null, // everyone knows: crack and pick. Obvious.
   };
 
-  const TECHNIQUE_NAMES = { clean: 'cleaning game', cook: 'cooking', preserve: 'preserving food', shell: 'shelling nuts' };
+  const TECHNIQUE_NAMES = { clean: 'cleaning game', cook: 'cooking', preserve: 'preserving food', shell: 'shelling nuts', render: 'rendering fat' };
 
   // Disease profiles.
   const RISK = {
@@ -121,7 +129,7 @@
     techniques() {
       const c = this.state.codex;
       if (!c.techniques) {
-        c.techniques = { clean: false, cook: false, preserve: false, shell: true };
+        c.techniques = { clean: false, cook: false, preserve: false, shell: true, render: false };
         // background grants: your old life taught you.
         const v = (this.data.villagers || []).find(x => x.id === this.villagerId);
         const occ = String((v && v.formerOccupation) || '').toLowerCase();
@@ -408,9 +416,15 @@
       for (const i of targets) {
         const it = inv[i];
         const gross = it.hiddenKcal || 0;
-        // yield: known 40%, blind-messy 30%. 4 portions.
+        // yield: known 40%, blind-messy 30%.
+        // PORTION LAW (Steve 2026-10-09, bear rework): no 30k-kcal slabs.
+        // Portions cap at ~500 kcal — a 2000-kcal day takes four 500s. Big
+        // game becomes many honest pieces, not one lump. (Engine-wide: deer,
+        // elk, moose, bison all chunk the same way.)
         const yfrac = knows ? 0.40 : 0.30;
-        const per = Math.round(gross * yfrac / 4);
+        const net = Math.round(gross * yfrac);
+        const units = Math.max(1, Math.round(net / 500));
+        const per = Math.round(net / units);
         // MONSTER MEAT (Steve 2026-10-05): if you don't know it's safe, it doesn't show.
         // Weight is honest (kg always visible). Edibility and calories stay hidden
         // until you've learned this creature is food — via cautious testing,
@@ -420,7 +434,7 @@
         const foodSafe = !isMonsterMeat || this.monsterFoodSafe(meatId);
         it.foodKind = 'meat'; it.foodState = 'cleaned';
         it.edible = foodSafe;
-        it.units = 4; it.unit = 'portion';
+        it.units = units; it.unit = 'portion';
         // Calories hidden until known-safe. The gross is remembered for when you learn.
         it.kcalEach = foodSafe ? per : 0;
         it.hiddenKcal = gross; // full gross remembered for cooking
@@ -444,7 +458,29 @@
           const matName = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell', quill: 'Quill', tusk: 'Tusk' };
           const matKg = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0, quill: 0.02, tusk: 0.3 };
           const got = [];
+          // FAT (Steve 2026-10-09, bear rework): fat is food, not a material.
+          // Raw slabs — rich calories, but inedible until rendered over fire.
+          // ~20% of the gross lives in the fat. Knowledge-gated: the prep is
+          // honest-blind until you know rendering.
+          if ((by.fat || 0) > 0) {
+            const fatUnits = by.fat;
+            const fatKcal = Math.max(1, Math.round(gross * 0.20 / fatUnits));
+            const knowRender = this.knowsTechnique('render');
+            inv.push({
+              plantId: 'fat_' + aid, foodKind: 'fat', foodState: 'raw',
+              edible: false, units: fatUnits, unit: 'slab',
+              kcalEach: 0, hiddenKcal: fatKcal,
+              spoilDay: this.state.scholar.day + 3,
+              kg: Math.max(0.2, fatKcal * fatUnits / 900),
+              name: (adef.name || 'Animal') + ' fat (raw)',
+              prep: knowRender
+                ? 'Thick white slabs. Render low and slow over fire — liquid gold, and it keeps.'
+                : 'Thick white slabs of fat. Rich calories locked inside — if you knew how to render it.',
+            });
+            got.push(fatUnits + ' slabs of raw fat');
+          }
           for (const mk of Object.keys(by)) {
+            if (mk === 'fat') continue; // handled above — fat is food
             const n2 = by[mk] || 0;
             if (n2 <= 0) continue;
             // ROUTING (hunter break-it 2026-10-09): the hide/bones go where
@@ -468,7 +504,7 @@
       }
       this.tickAction(8 * n);
       this.say(knows
-        ? `Cleaned ${n} carcass${n > 1 ? 'es' : ''} — quick, practiced cuts. 4 portions each, raw. (${8 * n} ticks)`
+        ? `Cleaned ${n} carcass${n > 1 ? 'es' : ''} — quick, practiced cuts. Honest portions, ~500 kcal each. (${8 * n} ticks)`
         : `You hack at it clumsily — it takes a while and you waste some. But it worked, and your hands learned. (${8 * n} ticks)`);
       // AUDIO (Steve 2026-10-06): the butcher's beat — wet work, done.
       try { this.audioEvent('animalButcher'); } catch (e) {}
@@ -523,10 +559,108 @@
           if (it._messyPreserves >= 2) this.learnTechnique('preserve', 'trial');
         }
       }
-      this.tickAction(16);
+      this.tickAction(8);
       this.say(knows
-        ? `Smoked ${n} batch${n > 1 ? 'es' : ''} low and slow. This keeps. (16 ticks)`
-        : `You rig a smoky fire and hope. It sort of works — drier, safer, but you know a real preserver would do better. (16 ticks)`);
+        ? `Smoked ${n} batch${n > 1 ? 'es' : ''} over the fire. Quick work — this keeps. (8 ticks)`
+        : `You rig a smoky fire and hope. It sort of works — drier, safer, but you know a real preserver would do better. (8 ticks)`);
+      return null;
+    },
+
+    // RENDER FAT (Steve 2026-10-09, bear rework): raw fat -> rendered tallow.
+    // Needs fire. Deep knowledge, honestly blind: knowing 'render' gives full
+    // yield; a blind attempt scorches half of it — but your hands learn, and
+    // the technique is earned. Rendered fat keeps ~3 months and is the key
+    // to pemmican. Preservation tiers: cleaned (2d) < cooked (5d) < smoked
+    // (30d) < rendered fat (90d) < pemmican (120d). Longer road, better payoff.
+    renderFat(idx, container) {
+      if (!this.nearFire()) { this.say('Need a fire to render fat.'); return null; }
+      const inv = container || this.state.scholar.inventory;
+      const day = this.state.scholar.day;
+      const targets = (idx === undefined ? inv.map((it, i) => i) : [idx])
+        .filter(i => inv[i] && inv[i].foodKind === 'fat' && inv[i].foodState === 'raw' && !this.isSpoiled(inv[i]));
+      if (!targets.length) { this.say('No raw fat to render.'); return null; }
+      const knows = this.knowsTechnique('render');
+      let n = 0;
+      for (const i of targets) {
+        const it = inv[i];
+        // BLIND PENALTY (Steve 2026-10-09): first-timers scorch some — 0.65,
+        // in line with the other blind penalties (clean 0.75x, smoke 0.84x).
+        // The attempt teaches; the sting is one-time, never stupid-making.
+        const per = Math.max(1, Math.round((it.hiddenKcal || it.kcalEach || 0) * (knows ? 0.9 : 0.65)));
+        it.foodState = 'rendered';
+        it.edible = true;
+        it.kcalEach = per; it.hiddenKcal = per;
+        it.spoilDay = day + 90;
+        it.diseaseRisk = null; it.safe = true;
+        it.kg = Math.max(0.1, per * (it.units || 1) / 900);
+        it.name = String(it.name).replace(' (raw)', '') + ' (rendered)';
+        it.prep = 'Liquid gold, set firm. Keeps for months. Dried meat + berries + this is pemmican — the food that outlasts winter.';
+        n++;
+        if (!knows) this.learnTechnique('render', 'trial');
+      }
+      this.tickAction(12);
+      this.say(knows
+        ? `Rendered ${n} batch${n > 1 ? 'es' : ''} low and slow. Clear and golden — this keeps. (12 ticks)`
+        : `You work the fat over the fire by instinct. Some of it scorches — but your hands learned something real. (12 ticks)`);
+      return null;
+    },
+
+    // PEMMICAN SETS: how many full pemmican batches the container supports.
+    // One set = 2 preserved meat portions + 1 rendered fat + 2 berry units
+    // -> 3 bars. ~97% kcal retention on the meat+fat: the reward is real.
+    pemmicanSets(container) {
+      const inv = container || this.state.scholar.inventory;
+      const sum = (pred) => inv.reduce((a, it) => a + ((it && pred(it) && !this.isSpoiled(it)) ? (it.units || 1) : 0), 0);
+      const meatU = sum(i => i.foodKind === 'meat' && i.foodState === 'preserved');
+      const fatU = sum(i => i.foodKind === 'fat' && i.foodState === 'rendered');
+      const berryU = sum(i => i.foodKind === 'plant' && /berr/i.test(String(i.plantId || '')) && i.edible !== false);
+      return Math.min(Math.floor(meatU / 2), fatU, Math.floor(berryU / 2));
+    },
+
+    // PEMMICAN (Steve 2026-10-09, bear rework): the top preservation tier.
+    // Dried/smoked meat + rendered fat + berries -> pemmican bars.
+    // Gated on knowing rendering — the old way is earned, never dumped.
+    // 120-day shelf life, ~97% kcal retention, compact and portable.
+    // The ladder: raw < cooked < smoked < pemmican. Longest road, best payoff.
+    makePemmican(container) {
+      if (!this.knowsTechnique('render')) {
+        this.say("You don't know this craft — the old way of keeping meat past winter. Someone would have to teach you, or you'd have to find it written down.");
+        return null;
+      }
+      const inv = container || this.state.scholar.inventory;
+      const day = this.state.scholar.day;
+      const sets = this.pemmicanSets(inv);
+      if (!sets) { this.say('Pemmican needs three things: dried meat (2), rendered fat, and berries (2).'); return null; }
+      const takeUnits = (pred, need) => {
+        let left = need;
+        for (let i = inv.length - 1; i >= 0 && left > 0; i--) {
+          const it = inv[i];
+          if (!it || !pred(it) || this.isSpoiled(it)) continue;
+          const u = it.units || 1;
+          const take = Math.min(u, left);
+          it.units = u - take; left -= take;
+          if (it.units <= 0) inv.splice(i, 1);
+        }
+        return need - left;
+      };
+      const meatGot = takeUnits(i => i.foodKind === 'meat' && i.foodState === 'preserved', sets * 2);
+      const fatGot = takeUnits(i => i.foodKind === 'fat' && i.foodState === 'rendered', sets);
+      const berryGot = takeUnits(i => i.foodKind === 'plant' && /berr/i.test(String(i.plantId || '')) && i.edible !== false, sets * 2);
+      if (meatGot < sets * 2 || fatGot < sets || berryGot < sets * 2) {
+        this.say('The ingredients slipped away mid-making — not enough of everything.');
+        return null;
+      }
+      const bars = sets * 3;
+      inv.push({
+        itemId: 'pemmican', plantId: null, foodKind: 'meat', foodState: 'pemmican',
+        edible: true, units: bars, unit: 'bar', kcalEach: 600,
+        spoilDay: day + 120, kg: 0.3 * bars, safe: true,
+        name: 'Pemmican',
+        prep: 'Dried meat pounded with rendered fat and berries. The original energy bar. Nearly indestructible.',
+      });
+      this.tickAction(20);
+      this.say(`You pound, mix, and pack — ${bars} bars of pemmican. This will keep till spring and beyond. (20 ticks)`);
+      try { this.audioEvent('animalButcher'); } catch (e) {}
       return null;
     },
 
@@ -545,6 +679,9 @@
       }
       else if (it.diseaseRisk) m = '\u26A0\uFE0F Risky: ' + (it.diseaseRisk.note || 'raw');
       else if (it.foodState === 'preserved') m = 'smoked \u2713';
+      else if (it.foodState === 'pemmican') m = 'pemmican \u2713';
+      else if (it.foodKind === 'fat' && it.foodState === 'raw') m = 'needs rendering';
+      else if (it.foodKind === 'fat' && it.foodState === 'rendered') m = 'rendered \u2713';
       else if (it.foodState === 'cooked') m = 'cooked';
       else if (it.needsCooking) m = '\uD83C\uDF73 needs cooking';
       else m = '';
@@ -653,14 +790,18 @@
         if (it.foodState !== 'carcass') { this.say('That\'s already cleaned.'); return null; }
         const gross = it.hiddenKcal || 0;
         const yfrac = 0.40 + 0.04 * spec.skill; // 44/48/52% — better hands, more meat
-        const per = Math.round(gross * yfrac / 4);
+        // PORTION LAW (Steve 2026-10-09, bear rework): same chunking as
+        // self-clean — no 30k slabs from anyone's knife.
+        const net2 = Math.round(gross * yfrac);
+        const units2 = Math.max(1, Math.round(net2 / 500));
+        const per = Math.round(net2 / units2);
         // MONSTER FOOD SAFETY: the specialist's knife doesn't grant knowledge —
         // same gate as self-clean. Unknown flesh stays unknown until tested.
         const meatId = (it.plantId || '').replace(/^meat_/, '');
         const isMonsterMeat = (this.data.monsters || []).some(m => m.id === meatId);
         const foodSafe = !isMonsterMeat || this.monsterFoodSafe(meatId);
         it.foodKind = 'meat'; it.foodState = 'cleaned'; it.edible = foodSafe;
-        it.units = 4; it.unit = 'portion';
+        it.units = units2; it.unit = 'portion';
         it.kcalEach = foodSafe ? per : 0; it.hiddenKcal = gross;
         it.diseaseRisk = Object.assign({}, RISK.rawMeat);
         it.spoilDay = day + 2;
@@ -675,7 +816,26 @@
           const matName2 = { hide: 'Hide', bone: 'Bone', feather: 'Feather', antler: 'Antler', shell: 'Shell', quill: 'Quill', tusk: 'Tusk' };
           const matKg2 = { hide: 0.8, bone: 0.2, feather: 0.05, antler: 0.4, shell: 1.0, quill: 0.02, tusk: 0.3 };
           const got2 = [];
+          // FAT (Steve 2026-10-09, bear rework): same separation as self-clean.
+          if ((by2.fat || 0) > 0) {
+            const fatUnits2 = by2.fat;
+            const fatKcal2 = Math.max(1, Math.round(gross * 0.20 / fatUnits2));
+            const knowRender2 = this.knowsTechnique('render');
+            inv.push({
+              plantId: 'fat_' + aid2, foodKind: 'fat', foodState: 'raw',
+              edible: false, units: fatUnits2, unit: 'slab',
+              kcalEach: 0, hiddenKcal: fatKcal2,
+              spoilDay: day + 3,
+              kg: Math.max(0.2, fatKcal2 * fatUnits2 / 900),
+              name: (adef2.name || 'Animal') + ' fat (raw)',
+              prep: knowRender2
+                ? 'Thick white slabs. Render low and slow over fire — liquid gold, and it keeps.'
+                : 'Thick white slabs of fat. Rich calories locked inside — if you knew how to render it.',
+            });
+            got2.push(fatUnits2 + ' slabs of raw fat');
+          }
           for (const mk of Object.keys(by2)) {
+            if (mk === 'fat') continue; // handled above — fat is food
             const n3 = by2[mk] || 0;
             if (n3 <= 0) continue;
             // ROUTING (hunter break-it 2026-10-09): same container rule as
@@ -690,7 +850,7 @@
           if (got2.length) this.say('Butchering yields: ' + got2.join(', ') + '.');
         }
         this.say(foodSafe
-          ? `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. ${4 * per} kcal of raw portions. You watch closely.`
+          ? `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. ${units2 * per} kcal in honest portions. You watch closely.`
           : `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. But they won't vouch for the flesh: "Never seen its like. Test it before you trust it."`);
         // AUDIO (Steve 2026-10-06): the specialist's knife work — same beat as self-clean.
         try { this.audioEvent('animalButcher'); } catch (e) {}
@@ -735,7 +895,7 @@
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
         it.prep = 'Smoked by knowing hands. Keeps well over a month.';
         it.wellMade = true; // a specialist made this — it burns hotter as fuel
-        this.say(`${spec.name} (${spec.occupation}) smokes it low and slow. This will keep for weeks.`);
+        this.say(`${spec.name} (${spec.occupation}) smokes it over the fire — quick work. This will keep for weeks.`);
       }
       // practice makes the specialist better; watching teaches you.
       if (src) {
@@ -1845,7 +2005,7 @@
         opts.push({
           id: 'smoke',
           label: this.knowsTechnique('preserve') ? 'Smoke it' : 'Smoke it (you\'re learning)',
-          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}16 ticks · safe · ~${smokeKcal}/portion · keeps ~${this.knowsTechnique('preserve') ? 30 : 15}d`,
+          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}8 ticks · safe · ~${smokeKcal}/portion · keeps ~${this.knowsTechnique('preserve') ? 30 : 15}d`,
           blocked: !this.nearFire() ? 'needs fire' : null,
         });
       } else if (it.needsCooking) {
@@ -1896,7 +2056,7 @@
         opts.push({
           id: 'you',
           label: `${verb} yourself`,
-          detail: `${task === 'cook' ? '32' : '16'} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
+          detail: `${task === 'cook' ? '32' : '8'} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
           blocked: !this.nearFire() ? 'needs fire' : null,
         });
         if (spec) {

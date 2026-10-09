@@ -347,7 +347,7 @@ Drama overlay — loosely-bound animation layer for emphasis.
 ### encounters (`encounters.js`)
 Encounter framework. Every animal and monster follows the same pattern.
 
-**Provides:** encAnimalKnown(id), encDescribeAnimal(adef), encIdentifyAnimal(id), encDescribeMonster(mdef), encQueueOf(m), encPickCue(known, rawCue, knownCue), encPhase(ent, phase, beats), encAudio(name, data), encKillLine(animal, kcal), encButcherHonesty(kcal, animal), encReleaseAnimal(a), feedback(msg), feedbackLines(), feedbackMark(), startAlienCombat(fighter), tbAlienTurn(m)
+**Provides:** encAnimalKnown(id), encAnimalLevel(id)     (codex depth 0-4; deep vectors gate on it), encWeaponMethod()      (bow > spear > hands — spear is a real method), encDescribeAnimal(adef), encIdentifyAnimal(id), encDescribeMonster(mdef), encQueueOf(m), encPickCue(known, rawCue, knownCue), encPhase(ent, phase, beats), encAudio(name, data), encKillLine(animal, kcal), encButcherHonesty(kcal, animal), encReleaseAnimal(a), feedback(msg), feedbackLines(), feedbackMark(), startAlienCombat(fighter), tbAlienTurn(m)
 
 **Rules:**
 - knowledge_gated: true (code: encounters.js)
@@ -471,7 +471,7 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 ### food (`food.js`)
 Food reality system. Food must be known-edible AND in edible state. Processing changes net calories.
 
-**Provides:** foodMarker(), cleanCarcass(), cookFood(), preserveFood(), cookTransform(), cookClassFor(), cookOutcome(), consumeCookFire(), downgradeOutcome(), stacksMatch()       (fungibility gate for stack merging), spoilBonusDays()    (preservation_instinct shelf-life bonus), isSpoiled()         (bonus-aware spoilage boundary)
+**Provides:** foodMarker(), cleanCarcass(), cookFood(), renderFat(), pemmicanSets(), makePemmican(), cookTransform(), cookClassFor(), cookOutcome(), consumeCookFire(), downgradeOutcome(), stacksMatch()       (fungibility gate for stack merging), spoilBonusDays()    (preservation_instinct shelf-life bonus), isSpoiled()         (bonus-aware spoilage boundary)
 
 **Rules:**
 - raw_penalty: true (code: food.js)

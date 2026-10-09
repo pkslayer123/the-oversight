@@ -11726,6 +11726,14 @@
         learnedFrom: src.by || null,
         via: src.type,
       };
+      // MASTER TECHNIQUE (Steve 2026-10-09, bear rework): reaching L4 on an
+      // animal whose def carries masterTechnique teaches the craft itself
+      // (bear L4 -> rendering fat). Deep knowledge, earned — never dumped.
+      try {
+        if (level >= 4 && animal.masterTechnique) {
+          this.grantKnowledge('technique', animal.masterTechnique, 1, { type: 'mastery', by: animal.name });
+        }
+      } catch (e) {}
       this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
       this.state.codex.animalEncounters[aid] = Math.max(this.state.codex.animalEncounters[aid] || 0, 99);
       this.say(`\uD83D\uDC3E Learned: ${animal.name} (Level ${level}).`);
@@ -11884,6 +11892,11 @@
           this.say(`🌟 LEGENDARY KNOWLEDGE: This book contains secrets almost no one knows.`);
           learned++;
         }
+      }
+      // techniques (Steve 2026-10-09, bear rework): books can teach crafts
+      // like rendering fat — deep knowledge, found written down.
+      for (const tid of (unlocks.techniques || [])) {
+        if (this.grantKnowledge('technique', tid, 1, { type: 'read', by: book.name })) learned++;
       }
       return learned > 0;
     },

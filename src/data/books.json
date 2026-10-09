@@ -508,5 +508,20 @@
       "level": 3
     },
     "flavor": "'Counted, not collected. Some pages stay blank on purpose.'"
+  },
+  {
+    "id": "tallow_and_keeping",
+    "name": "Tallow & Keeping",
+    "description": "a grease-darkened pamphlet on rendering fat and making pemmican",
+    "unlocks": {
+      "techniques": [
+        "render"
+      ],
+      "animals": [
+        "black_bear"
+      ],
+      "level": 4
+    },
+    "flavor": "'Low heat. Patience. The fat gives up its water and goes clear — that's when it's done. Dried meat, pounded. Berries, crushed. Fat, poured hot. It'll keep till spring.'"
   }
 ]

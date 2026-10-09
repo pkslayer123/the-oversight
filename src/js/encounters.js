@@ -3,6 +3,8 @@
 // description: Encounter framework. Every animal and monster follows the same pattern.
 // provides:
 //   - encAnimalKnown(id)
+//   - encAnimalLevel(id)     (codex depth 0-4; deep vectors gate on it)
+//   - encWeaponMethod()      (bow > spear > hands — spear is a real method)
 //   - encDescribeAnimal(adef)
 //   - encIdentifyAnimal(id)
 //   - encDescribeMonster(mdef)
@@ -97,6 +99,15 @@
     // The region + encounter logic lives in Game.canShow('animal', ...).
     try { return this.canShow('animal', id, 'name'); }
     catch (e) { return false; }
+  };
+  // Animal knowledge depth (Steve 2026-10-09, bear rework): codex.animals
+  // levels 1-4. Deep truths (trichinosis, fat rendering) live at L4 — the
+  // name alone (L1) must never leak them.
+  G.encAnimalLevel = function (id) {
+    try {
+      var e = (this.state.codex.animals || {})[id];
+      return (e && e.level) || 0;
+    } catch (err) { return 0; }
   };
   G.encDescribeAnimal = function (adef) {
     if (!adef) return 'an animal';
@@ -709,11 +720,21 @@
     try { knowsClean = !!this.knowsTechnique('clean'); } catch (e) {}
     try { hasKnife = !!this.hasCuttingTool(); } catch (e) {}
     try {
-      if (animal && animal.diseaseVector && this.encAnimalKnown(animal.id)) vec = animal.diseaseVector;
+      // DEEP VECTORS (Steve 2026-10-09, bear rework): some disease truths are
+      // L4 knowledge (trichinosis, trichinella). The name alone must never
+      // leak them — animals.json vectorLevel (default: shown at L1 like before).
+      if (animal && animal.diseaseVector && this.encAnimalKnown(animal.id)) {
+        var needLvl = animal.vectorLevel || 1;
+        if (this.encAnimalLevel(animal.id) >= needLvl) vec = animal.diseaseVector;
+      }
     } catch (e) {}
     var frac = knowsClean ? 0.40 : 0.30;
-    var per = Math.round((kcal || 0) * frac / 4);
-    var line = 'Cleans to ~' + per + ' kcal × 4 raw portions' +
+    // PORTION LAW (Steve 2026-10-09, bear rework): portions are honest —
+    // ~500 kcal each, so big game becomes many pieces, never one slab.
+    var net = Math.round((kcal || 0) * frac);
+    var units = Math.max(1, Math.round(net / 500));
+    var per = Math.round(net / units);
+    var line = 'Cleans to ~' + per + ' kcal × ' + units + ' raw portions' +
       (knowsClean ? ' (you know the cuts)' : ' (your hands are learning — technique keeps more)') +
       '. Raw is a gamble — about 1-in-3 sickens you: fever by nightfall, logged as disease. Herbal Remedy cures it (plant knowledge, once a day) — no remedy, no cure.' +
       (vec ? ' ' + vec : '') +
@@ -762,15 +783,21 @@
     return BADGE[p] || p;
   };
   // Weapon -> hunt method. Spears are hand tools; slings and bows are 'bow'.
+  // SPEAR LADDER (Steve 2026-10-09, bear rework): bow > spear > knife/hands.
+  // A spear is a real hunting weapon with reach — the method system can now
+  // tell it apart from a knife. Knives and bare hands stay 'hands'.
   G.encWeaponMethod = function () {
     var w = null;
     try { w = this.equippedWeapon(); } catch (e) {}
     if (!w || w.unarmed) return 'hands';
     if (w.type === 'ranged' || (w.range || 1) >= 3) return 'bow';
+    var wname = '';
+    try { wname = String(w.name || '') + ' ' + String(w.itemId || '') + ' ' + String(w.recipeId || ''); } catch (e) {}
+    if (/spear/i.test(wname)) return 'spear';
     return 'hands';
   };
   G.encMethodWords = function (m) {
-    return { snare: 'a snare', chase: 'running it down', trap: 'a trap', bow: 'a bow', hands: 'your hands', line: 'a fishing line', stick: 'a forked stick' }[m] || m;
+    return { snare: 'a snare', chase: 'running it down', trap: 'a trap', bow: 'a bow', spear: 'a spear', hands: 'your hands', line: 'a fishing line', stick: 'a forked stick' }[m] || m;
   };
   // TOOL READINESS (Steve 2026-10-06): tool-gated hunting. Each hunt method
   // names what it needs: snare -> snare wire in the pack; trap -> the
@@ -792,6 +819,9 @@
       return false;
     }
     if (m === 'snare') return has(/snare/i);
+    if (m === 'spear') {
+      try { return this.encWeaponMethod() === 'spear'; } catch (e) { return false; }
+    }
     if (m === 'line') return has(/fishing[ _]?line|fishing[ _]?pole/i);
     if (m === 'trap') {
       var sk = false;
@@ -801,7 +831,7 @@
     return true;
   };
   G.encMethodToolName = function (m) {
-    return { snare: 'snare wire', trap: 'the trapping skill or a cage', line: 'a fishing line', bow: 'a bow or sling', hands: 'your hands', chase: 'running it down', stick: 'a forked stick' }[m] || m;
+    return { snare: 'snare wire', trap: 'the trapping skill or a cage', line: 'a fishing line', bow: 'a bow or sling', spear: 'a spear', hands: 'your hands', chase: 'running it down', stick: 'a forked stick' }[m] || m;
   };
   // The flop. Shared by the strike path and the awareness path — one text,
   // one fiction. Pre-knowledge the player sees a dead opossum; post, they
@@ -1968,6 +1998,17 @@
       try { this.audioEvent('animalSplash'); } catch (e) {}
       return false;
     }
+    // BEAR (Steve 2026-10-09): a missed strike doesn't rout a bear — it
+    // answers. The fight continues on the bear's terms: mauling damage, and
+    // it stays. This is the non-monster monster fight.
+    if (animal && animal.id === 'black_bear') {
+      var bDmg = 6 + Math.floor(Math.random() * 8);
+      try { s.health = Math.max(0, (s.health || 100) - bDmg); } catch (e) {}
+      a.pstate = 'advancing'; a.aware = 1;
+      this.feedback(this.encCap(this.encAnimalLabel(a)) + ' does not run. It ROARS — the sound goes through your ribs — and comes at you. (-' + bDmg + ' HP) This is a fight now.');
+      try { this.audioEvent('animalBite'); } catch (e) {}
+      return false; // stays — animalTurn runs, and the bear is still here
+    }
     if (b === 'charger' && Math.random() < 0.6) {
       a.pstate = 'charging'; a.aware = 1;
       this.feedback(this.encCap(this.encAnimalLabel(a)) + ' drops its head and COMES — your miss was the invitation.');
@@ -2265,6 +2306,26 @@
           return true;
         }
       }
+    }
+    // BEAR MAUL (Steve 2026-10-09): a black bear is not a deer — it's a
+    // non-monster monster fight. Striking one inside mauling range turns the
+    // hunt into a fight. Bow hunters at range get a clean shot; a spear is a
+    // dangerous second choice (reach halves the mauling); a knife or bare
+    // hands this close is answered in full. Fierce, not a stat-check.
+    if (a.id === 'black_bear' && dist <= 2 && !a._mauled) {
+      a._mauled = true;
+      var maulMethod = 'hands';
+      try { maulMethod = this.encWeaponMethod(); } catch (e) {}
+      var maulDmg = 8 + Math.floor(Math.random() * 10);
+      if (maulMethod === 'spear') maulDmg = Math.ceil(maulDmg / 2);
+      try { s.health = Math.max(0, (s.health || 100) - maulDmg); } catch (e) {}
+      this.feedback(maulMethod === 'bow'
+        ? 'It closes the distance before your shot lands — claws rake across your arm as you loose. (-' + maulDmg + ' HP) Too close for a bow.'
+        : maulMethod === 'spear'
+        ? 'The bear is ON you — you set the spear and it takes the point, but four hundred pounds does not stop politely. Claws find you anyway. (-' + maulDmg + ' HP)'
+        : 'The bear is ON you — no reach, no plan, just claws and teeth and four hundred pounds of NO. (-' + maulDmg + ' HP)');
+      try { this.audioEvent('animalBite'); } catch (e) {}
+      chance *= (maulMethod === 'bow' ? 0.85 : maulMethod === 'spear' ? 0.6 : 0.4);
     }
     var roll = Math.random();
     if (roll < chance) {

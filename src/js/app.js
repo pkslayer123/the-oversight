@@ -1311,6 +1311,15 @@
           // Smoke/preserve: cleaned or cooked meat, low and slow.
           const smokable = Game.state.scholar.inventory.filter(i => i.foodKind === 'meat' && (i.foodState === 'cleaned' || i.foodState === 'cooked'));
           if (smokable.length) actions.push([`Smoke ${smokable.length} (preserve)`, () => { Game.preserveFood(); refresh(); }]);
+          // RENDER FAT (Steve 2026-10-09, bear rework): raw fat + fire.
+          const rawFat = Game.state.scholar.inventory.filter(i => i.foodKind === 'fat' && i.foodState === 'raw');
+          if (rawFat.length) actions.push([`Render ${rawFat.length} fat`, () => { Game.renderFat(); refresh(); }]);
+          // PEMMICAN (Steve 2026-10-09, bear rework): the old way — dried
+          // meat + rendered fat + berries. The top preservation tier, earned.
+          if (Game.knowsTechnique && Game.knowsTechnique('render') && Game.pemmicanSets) {
+            const sets = Game.pemmicanSets();
+            if (sets > 0) actions.push([`Make pemmican (${sets * 3} bars)`, () => { Game.makePemmican(); refresh(); }]);
+          }
           // Boil risky water -> clean (kills bacteria, not chemicals).
           const risky = (Game.state.scholar.water || []).filter(b => b.quality === 'risky').length;
           if (risky) actions.push([`Boil ${risky}L water`, () => { Game.boilWater(); refresh(); }]);
@@ -12455,6 +12464,10 @@
             if (i.foodKind === 'meat' && (i.foodState === 'cleaned' || i.foodState === 'cooked') && Game.nearFire()) {
               foodBtns += ` <button class="btn ghost sm" data-preserve="${idx}">Smoke</button>`;
             }
+            // RENDER FAT (Steve 2026-10-09, bear rework): raw fat + fire.
+            if (i.foodKind === 'fat' && i.foodState === 'raw' && Game.nearFire()) {
+              foodBtns += ` <button class="btn ghost sm" data-render="${idx}">Render</button>`;
+            }
             // note: data-cook below covers cookable via the extended condition
             i._cookable = cookable;
           } catch (e) {}
@@ -12503,6 +12516,8 @@
     slot.querySelectorAll('[data-watch]').forEach(b => b.onclick = rewire(() => Game.watchFauna(+b.dataset.watch, packOf()), 'Watched.'));
     slot.querySelectorAll('[data-clean]').forEach(b => b.onclick = rewire(() => Game.cleanCarcass(+b.dataset.clean), 'Cleaned.'));
     slot.querySelectorAll('[data-preserve]').forEach(b => b.onclick = rewire(() => Game.preserveFood(+b.dataset.preserve), 'Smoked.'));
+    // RENDER FAT (Steve 2026-10-09, bear rework).
+    slot.querySelectorAll('[data-render]').forEach(b => b.onclick = rewire(() => Game.renderFat(+b.dataset.render), 'Rendered.'));
     slot.querySelectorAll('[data-ask]').forEach(b => b.onclick = rewire(() => Game.askSpecialist(b.dataset.vid, +b.dataset.ask), 'A specialist handles it.'));
     // PREP STASH: the kitchen counter. Every action confirms, panel re-renders.
     const stashOf = () => Game.prepStash();

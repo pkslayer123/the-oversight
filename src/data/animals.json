@@ -34,7 +34,7 @@
       "bone": 1
     },
     "diseaseVector": "Rabbits carry tularemia \u2014 wear gloves gutting, and cook it through. Ticks ride them too.",
-    "common": true,
+    "vectorLevel": 4,    "common": true,
     "regions": [
       "north_america"
     ]
@@ -388,7 +388,7 @@
       "shell": 1
     },
     "diseaseVector": "Raw crayfish can carry lung fluke. Boil them.",
-    "common": true,
+    "vectorLevel": 4,    "common": true,
     "regions": [
       "north_america"
     ]
@@ -540,7 +540,7 @@
     "behaviorDesc": "Ambles after grubs, waddles through your trapline, and does not run from you. It has exactly one argument and it wins every argument.",
     "fleeDifficulty": "trivial",
     "huntText": "It turns its back on you. That is not surrender \u2014 the tail goes up like a flag, and you have about one second to reconsider your life.",
-    "killText": "About {kcal} kcal \u2014 the meat\u2019s fine. The musk glands are the whole job: cut wide around them, never nick. Everything you own will remember if you do.",
+    "killText": "About {kcal} kcal \u2014 the meat's fine. Mind the musk glands; everything you own will remember if you get it wrong.",
     "tell": "a white stripe lifting into the air, tail high; the calm before the chemistry.",
     "butcher": {
       "hide": 1,
@@ -587,7 +587,7 @@
       "bone": 1
     },
     "diseaseVector": "Muskrats can carry tularemia. Cook through.",
-    "common": true,
+    "vectorLevel": 4,    "common": true,
     "regions": [
       "north_america"
     ]
@@ -625,9 +625,11 @@
     "butcher": {
       "hide": 1,
       "bone": 3,
-      "tusk": 2
+      "tusk": 2,
+      "fat": 3
     },
     "diseaseVector": "Wild pork can carry trichinella \u2014 cook it through, no exceptions. No pink, ever.",
+    "vectorLevel": 4,
     "common": true,
     "regions": [
       "north_america"
@@ -708,7 +710,7 @@
       "bone": 1
     },
     "diseaseVector": "Groundhogs carry ticks and can carry tularemia. Cook through.",
-    "common": true,
+    "vectorLevel": 4,    "common": true,
     "regions": [
       "north_america"
     ]
@@ -823,7 +825,7 @@
       "bone": 2
     },
     "diseaseVector": "Beavers swim in giardia water and can carry tularemia. Cook the meat through.",
-    "common": true,
+    "vectorLevel": 4,    "common": true,
     "regions": [
       "north_america"
     ]
@@ -1053,12 +1055,14 @@
     "behaviorDesc": "Travels in noisy herds. Poor eyesight, excellent nose. Mothers defend young aggressively.",
     "fleeDifficulty": "medium",
     "huntText": "The herd grunts and shifts \u2014 a wall of bristly backs. The big sow turns to face you, head low.",
-    "killText": "About {kcal} kcal. Cut out the musk gland FIRST (on the back) or the meat is ruined. Pork is pork \u2014 smoke it.",
+    "killText": "About {kcal} kcal. Pork is pork \u2014 gut it fast and smoke it.",
     "tell": "a sharp musky smell on the wind \u2014 then grunting.",
     "diseaseVector": "Javelinas carry brucellosis and ticks. Cook the meat through; wear gloves when gutting.",
+    "vectorLevel": 4,
     "butcher": {
       "hide": 1,
-      "bone": 2
+      "bone": 2,
+      "fat": 2
     },
     "common": true,
     "regions": [
@@ -1172,7 +1176,7 @@
     "killText": "About {kcal} kcal \u2014 this is a village-feeding animal. Work fast: gut, quarter, hang. The organs go first. Don't waste anything.",
     "tell": "a bugle in the mist \u2014 high, wild, unmistakable.",
     "diseaseVector": "Elk carry ticks and chronic wasting disease. Cook through; check the hide for ticks.",
-    "butcher": {
+    "vectorLevel": 4,    "butcher": {
       "hide": 3,
       "bone": 6,
       "antler": 2
@@ -1195,13 +1199,14 @@
     "calories": 30000,
     "difficulty": "hard",
     "method": [
-      "bow"
+      "bow",
+      "spear"
     ],
     "knowledgeLevels": {
       "1": "Black bear. Strong, smart, fast. Don't corner it. Don't get between it and cubs.",
-      "2": "Parts: rich meat, thick fat (excellent), hide (warm). The fat is the real prize \u2014 calories for winter.",
-      "3": "Uses: bear fat is the best cooking fat in the woods. Meat must be cooked through (trichinosis).",
-      "4": "Mastery: they're food-motivated, not aggressive. Secure your camp and they'll usually move on. If you must hunt one, it's a serious undertaking \u2014 bring a real weapon and a real plan."
+      "2": "Parts: meat (a lot of it \u2014 butcher into small cuts, it spoils fast), thick fat, hide (warm), bones. The fat is the real prize \u2014 calories for winter.",
+      "3": "Uses: bear fat is the best cooking fat in the woods \u2014 if you know how to render it. Cook bear meat through; something in it punishes the careless. Old-timers won't say more until you've earned it.",
+      "4": "Mastery: trichinosis \u2014 cook bear meat to 160\u00b0F internal, no exceptions. Render the fat low and slow over fire; rendered fat keeps for months. Dried meat + rendered fat + berries = pemmican, the food that outlasts winter. If you must hunt one: a bow at range, a spear as a dangerous second choice. Never a knife. Never your hands."
     },
     "unknown": "a dark shape that resolves into shoulders, a dish-faced head, intelligent eyes",
     "emoji": "\ud83d\udc3b",
@@ -1209,13 +1214,16 @@
     "behaviorDesc": "Moves with surprising quiet for its size. Stands to look at you \u2014 assessing, not threatening. Usually.",
     "fleeDifficulty": "medium",
     "huntText": "It rises on its hind legs, sniffing the air \u2014 two hundred pounds of muscle deciding what you are.",
-    "killText": "About {kcal} kcal. Render the fat FIRST (it's liquid gold). Cook all meat thoroughly. The hide makes a winter coat.",
+    "killText": "About {kcal} kcal on the bone. A serious animal \u2014 this was a fight, not a harvest. Gut it fast, butcher it into small cuts, and don't let the meat sit.",
     "tell": "a deep huffing sound, and the smell of wet fur.",
     "butcher": {
       "hide": 2,
-      "bone": 4
+      "bone": 4,
+      "fat": 6
     },
     "diseaseVector": "Trichinosis \u2014 cook bear meat to 160\u00b0F internal. No exceptions.",
+    "vectorLevel": 4,
+    "masterTechnique": "render",
     "common": true,
     "regions": [
       "pacific_northwest",
@@ -1331,7 +1339,7 @@
     "killText": "About {kcal} kcal. Swamp rabbit, basically. The fur is usable if you need it.",
     "tell": "a splashing grunt from the cattails.",
     "diseaseVector": "Nutria carry tularemia and leptospirosis. Cook through; wash after gutting.",
-    "butcher": {
+    "vectorLevel": 4,    "butcher": {
       "hide": 1,
       "bone": 1
     },
@@ -1403,10 +1411,10 @@
     "behaviorDesc": "Grazes placidly, tail swishing \u2014 then the head comes up and the whole ton of it is looking at you.",
     "fleeDifficulty": "hard",
     "huntText": "The herd shifts. A big bull turns broadside, pawing the dirt \u2014 the universal sign for 'reconsider.'",
-    "killText": "About {kcal} kcal. This is the big one. Work for days: butcher, dry, smoke, render. The hide is a winter coat. Nothing wasted.",
+    "killText": "About {kcal} kcal. This is the big one. Work for days: butcher, dry, smoke. The hide is a winter coat. Nothing wasted.",
     "tell": "a deep grunt that rolls across the prairie, and the thud of heavy hooves.",
     "diseaseVector": "Bison carry brucellosis. Cook the meat through; handle the hide with care.",
-    "butcher": {
+    "vectorLevel": 4,    "butcher": {
       "hide": 3,
       "bone": 8,
       "horn": 2
@@ -1523,7 +1531,7 @@
     "killText": "About {kcal} kcal. The biggest animal in these woods. This is a village event \u2014 butcher fast, share widely.",
     "tell": "a deep grunt and the sound of something very large moving through willows.",
     "diseaseVector": "Moose carry ticks and chronic wasting disease. Cook through; check the hide.",
-    "butcher": {
+    "vectorLevel": 4,    "butcher": {
       "hide": 3,
       "bone": 6,
       "antler": 2
@@ -1564,7 +1572,7 @@
     "killText": "About {kcal} kcal. Northern rabbit. Same rules \u2014 lean meat, need fat alongside.",
     "tell": "a soft thumping in the underbrush, then silence.",
     "diseaseVector": "Rabbits carry tularemia. Cook through; wear gloves when gutting.",
-    "butcher": {
+    "vectorLevel": 4,    "butcher": {
       "hide": 1,
       "bone": 1
     },
@@ -1684,7 +1692,7 @@
       "hide": 1
     },
     "diseaseVector": "Can carry tularemia. Cook meat through, handle pelt with care.",
-    "common": true,
+    "vectorLevel": 4,    "common": true,
     "regions": [
       "north_america"
     ]
