@@ -2857,7 +2857,19 @@
           // ponds read as creek for fish (no pond biome in the animal data)
           const _wl = t.wildlife || this.backfillWildlife(t, x, y, t.type === 'pond' ? 'creek' : t.type);
           const fishHere = FISH_IDS.filter(id => (_wl[id] || 0) > 0);
-          if (!fishHere.length) continue;
+          const _npx = this.map.px, _npy = this.map.py;
+          const _nwhere = (x === _npx && y === _npy) ? 'here' : 'elsewhere';
+          if (!fishHere.length) {
+            // FISHED OUT (hunter playtest 2026-10-09): an empty net used to
+            // sit silent forever — indistinguishable from bad luck, and uses
+            // never decay on a miss so the net was immortal. Said once,
+            // like the trapline's quietTold.
+            if (!net.quietTold) {
+              net.quietTold = true;
+              this.say(`Your gill net ${_nwhere} sits empty — fished out, or nothing moving in this water. Try another creek.`);
+            }
+            continue;
+          }
           if (net.uses == null) net.uses = 12; // backfill pre-fix nets
           // SYNERGY (fix 2026-10-09): tidecaller grants fishing.yield and
           // fishing.rare_chance — wire them into the net check.
@@ -2867,12 +2879,17 @@
           if (Math.random() < 0.35 + fishRare) {
             const fid = fishHere[Math.floor(Math.random() * fishHere.length)];
             _wl[fid]--; if (_wl[fid] <= 0) delete _wl[fid];
-            const kcal = Math.round((300 + Math.floor(Math.random() * 300)) * fishYield);
-            const animal = (this.data.animals || []).find(a => a.id === 'fish') || { id: 'fish', name: 'fish', calories: kcal };
-            this.state.scholar.inventory.push(this.foodCarcass(animal, kcal, this.state.scholar.day, 'netted'));
-            const px = this.map.px, py = this.map.py;
-            const where = (x === px && y === py) ? 'here' : 'elsewhere';
-            this.say(`Your gill net ${where} caught a fish! About ${kcal} kcal — clean it quickly (knife).`);
+            // REAL FISH, REAL KCAL (hunter playtest 2026-10-09): the net used
+            // to pay a flat 300-600 kcal gross for ANY fish — up to 4x a
+            // bluegill's 150-kcal chemical energy — and named it a generic
+            // "fish". The net fishes the tile's own stock; the catch keeps
+            // its species' real gross. fishing.yield is the skill channel.
+            const adef = (this.data.animals || []).find(a => a.id === fid) || { id: fid, name: 'fish', calories: 200 };
+            const kcal = Math.round((adef.calories || 200) * fishYield);
+            this.state.scholar.inventory.push(this.foodCarcass(adef, kcal, this.state.scholar.day, 'netted'));
+            // a body in hand teaches you what it was — same as a trap catch.
+            try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(fid); } catch (e) {}
+            this.say(`Your gill net ${_nwhere} caught a ${(adef.name || 'fish').toLowerCase()}! About ${kcal} kcal — clean it quickly (knife).`);
             net.uses -= 1;
             if (net.uses <= 0) {
               this.say('The gill net is torn to shreds — it fished its last. You haul in the rags.');
