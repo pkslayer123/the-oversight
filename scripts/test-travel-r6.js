@@ -191,6 +191,42 @@ function farTarget(minLen) {
   Game.over = false;
 }
 
+// ---- T1c. SIBLING SWEEP: blockage work while dead (clearBlockage/buildBridge) ----
+{
+  setup(); onGrounds();
+  const s = Game.state.scholar;
+  const hx = Game.map.px, hy = Game.map.py;
+  const nx = hx + 1, ny = hy; // east neighbor
+  const dest = Game.tileAt(nx, ny);
+  // plant a fallen-tree blockage on the approach from the west
+  dest.blockFrom = { dx: -1, dy: 0, type: 'fallen_tree' };
+  const kcal0 = s.kcal;
+  Game.over = true;
+  const r1 = Game.clearBlockage(nx, ny);
+  if (BEFORE) {
+    ok('BEFORE: clearBlockage dead -> works the corpse (break real)', r1 !== false && !dest.blockFrom, `kcal ${Math.round(kcal0)} -> ${Math.round(s.kcal)}`);
+  } else {
+    ok('AFTER: clearBlockage dead -> refused', r1 === false);
+    ok('AFTER: clearBlockage dead -> no kcal spent, blockage intact', s.kcal === kcal0 && !!dest.blockFrom);
+  }
+  // buildBridge: washed-out approach + wood in hand
+  dest.blockFrom = { dx: -1, dy: 0, type: 'washed_out' };
+  delete dest.bridged;
+  Game.over = false;
+  Game.addWood(4);
+  const wood0 = Game.woodCount();
+  Game.over = true;
+  const r2 = Game.buildBridge(nx, ny);
+  if (BEFORE) {
+    ok('BEFORE: buildBridge dead -> builds (break real)', r2 !== false && !!dest.bridged);
+  } else {
+    ok('AFTER: buildBridge dead -> refused', r2 === false);
+    ok('AFTER: buildBridge dead -> wood kept, no bridge', Game.woodCount() === wood0 && !dest.bridged);
+  }
+  Game.over = false;
+  delete dest.blockFrom; delete dest.bridged;
+}
+
 // ---- T2. PREPAID WALK: interruption must not bill squares never walked ----
 {
   setup(); onGrounds();

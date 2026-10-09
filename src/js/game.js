@@ -74,7 +74,7 @@
 //   - codex_maps_are_shared: the codex MAPS section shows only shared ground — your seen tiles plus villagers who actually compared maps with you (code: villageMapKnown, break-it travel r4 2026-10-09)
 //   - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
 //   - monster_alias_resyncs_on_travel: scholar.monster mirrors the player-tile monster — travelTo re-syncs on arrival so the monster left behind can't haunt perceptionHints as a phantom (code: travelTo, explorer break-it 2026-10-09)
-//   - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding) refuse when over — the corpse walks nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
+//   - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding, clearBlockage, buildBridge) refuse when over — the corpse walks nothing, builds nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
 //   - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
@@ -6974,6 +6974,10 @@
     // clear a blockage by work. fallen_tree -> cut (yields wood!), rubble -> clear.
     // costs a day-part. the path stays clear.
     clearBlockage(x, y) {
+      // DEAD (break-it travel r6 2026-10-09, sibling sweep): the corpse does
+      // no roadwork — same class as the beginPathWalk post-death fix. A stale
+      // blockage card can sit open at death (cf. the round-5 swim fix).
+      if (this.over) return false;
       // MID-FIGHT (break-it travel r4 2026-10-09): clearing is work with a
       // real time cost (tickAction no-ops in combat). Without this guard a
       // stale blockage card could clear a path mid-fight — kcal spent, no
@@ -7022,6 +7026,9 @@
     },
     // build a bridge: 4 wood, permanent. for washed-out paths and hard creeks.
     buildBridge(x, y) {
+      // DEAD (break-it travel r6 2026-10-09, sibling sweep): same class as
+      // clearBlockage — the corpse builds nothing.
+      if (this.over) return false;
       // MID-FIGHT (break-it travel r4 2026-10-09): same class as
       // clearBlockage — construction is work, fights are not workshops.
       if (this.inCombat()) { this.say('Not mid-fight — the barrier is the way out.'); return false; }
