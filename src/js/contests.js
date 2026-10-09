@@ -825,6 +825,10 @@
 
   G.ratingsSummonsPhases = function() {
     return [{
+      // SILENT ENTRANCE (break-it audio r5): the summons phase declared no
+      // beat — its entrance played nothing while every show pull got one.
+      // It's a TV appearance like any show pull: the call + cameras.
+      beat: 'showDeclare',
       text: `📺 The brief: a promo stunt, live, sixty seconds, for the ratings. The System suggests interpretive dance about the food supply. The chat suggests worse.\n\nYour body is the budget. Your dignity is the marketing spend.`,
       choices: [
         { label: 'Do the stunt', sub: '200 kcal, full commitment', do: { kcal: -200, trauma: 4, note: 'You commit completely — dance, pratfall, a speech about turnips that somehow lands. The numbers tick UP while you\'re still moving. The System is delighted in seventeen languages.', prize: true }, next: 'WIN' },
@@ -1616,6 +1620,18 @@
   // which is AFTER contests.js. Phases declare beat:'name'; the first
   // presentation registers the composition, then fires it.
   const CX_BEAT_DEFS = {
+    // SHOWS (audit-shows 2026-10-09, break-it audio r5): the show phase
+    // builders declared showDeclare/showWatchDeclare/showTogetherDeclare
+    // beats that didn't exist in CX_BEAT_DEFS — the show's entrance played
+    // nothing (_cxBeat returns silently on unknown names). Composed from
+    // registered voices, like every other beat:
+    // the call + cameras rolling (you're ON); the call + relief's shadow
+    // (someone else is on — you're glad, and it's your person); the call
+    // alone for the communal watch (no cameras on you, no dread — just
+    // the show starting while the village settles in).
+    showDeclare: ['contestCall', 'paparazzoShutter'],
+    showWatchDeclare: ['contestCall', 'contestSpared'],
+    showTogetherDeclare: ['contestCall'],
     // The Sorting: televised judgment — game-show jingle curdles into a verdict.
     contestSort: ['contestCall', 'justiceVerdict'],
     // The Witness: the fabrication reveal — a scream of wrongness under relief's shadow.
@@ -1966,8 +1982,16 @@
   // earned. Standing your ground is riskier than running, always.
   // Render a phase for display.
   G._contestRenderPhase = function(ac, phase, idx) {
-  // BEAT AUDIO (Steve 2026-10-06): phases may declare beat:'name' — fired
     if (!phase) return phase;
+    // IDEMPOTENT (break-it audio r5, Steve 2026-10-09): _cxRendered was READ
+    // but never SET — the guard was dead code, and it sat AFTER the audio
+    // fire anyway, so a re-rendered phase re-fired its beat. Check BEFORE
+    // the beat fires, set on first render. Safe: phase objects are built
+    // fresh per contest run (contestPlayable builders return new arrays;
+    // the choice path Object.assign-copies), and contestChoose only moves
+    // forward — the flag only ever suppresses a genuine re-render.
+    if (phase._cxRendered) return phase;
+    phase._cxRendered = true;
     // BEAT AUDIO (Steve 2026-10-06): phases may declare beat:'name' — fired
     // when the phase is presented (phase 0 goes through here in both the
     // grabbed and choice paths, and contestChoose routes advances here too).
@@ -1979,10 +2003,6 @@
         this.broadcastBeat(phase.beat, this.state.activeContest || {});
       }
     } catch (e) {}
-    // Idempotent: the rendered phase is stored back into ac.phases (the
-    // choice box renders phases directly), so a second render must not
-    // stack another readout onto the text (Steve 2026-10-06).
-    if (phase._cxRendered) return phase;
     return phase;
   };
 

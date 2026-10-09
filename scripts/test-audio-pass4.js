@@ -118,7 +118,7 @@ try {
 // CX_BEAT_DEFS: beat names + parts
 const cxSrc = fs.readFileSync(path.join(ROOT, 'src/js/contests.js'), 'utf8');
 const beatBlock = cxSrc.match(/const CX_BEAT_DEFS = \{([\s\S]*?)\n  \};/)[1];
-const beatNames = [...beatBlock.matchAll(/^\s*(contest[A-Za-z0-9_]+):/gm)].map(m => m[1]);
+const beatNames = [...beatBlock.matchAll(/^\s*((?:contest|show)[A-Za-z0-9_]+):/gm)].map(m => m[1]);
 for (const b of beatNames) fired.add(b);
 for (const m of beatBlock.matchAll(/'([a-zA-Z0-9_]+)'/g)) { if (!beatNames.includes(m[1])) fired.add(m[1]); }
 // DRAMA_AUDIO_MATES values (scoped to the block — drama.js also has visual maps)
@@ -295,7 +295,7 @@ const cx = cxRaw.split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
 const legacy = new Set(['contestSort','contestWitness','contestCache','contestDice','contestLock','contestMap','contestPrice','contestImpress','contestExchange','contestAuction','contestTide','contestWind','contestAlibi','contestEcho']);
 // 1. Every beat:'x' phase literal must resolve in CX_BEAT_DEFS
 const beatBlock = cx.match(/const CX_BEAT_DEFS = \{([\s\S]*?)\n  \};/)[1];
-const beatNames = new Set([...beatBlock.matchAll(/^\s*(contest[A-Za-z0-9_]+):/gm)].map(m => m[1]));
+const beatNames = new Set([...beatBlock.matchAll(/^\s*((?:contest|show)[A-Za-z0-9_]+):/gm)].map(m => m[1]));
 const phaseBeats = [...cx.matchAll(/beat:\s*'([a-zA-Z0-9_]+)'/g)].map(m => m[1]);
 const missing = phaseBeats.filter(b => !beatNames.has(b));
 ok('H3: every phase-declared beat exists in CX_BEAT_DEFS', missing.length === 0,
@@ -350,6 +350,10 @@ let incomplete = [];
 for (const id of declared) {
   for (const k of ['Declare', 'Escalate', 'Climax', 'Resolve']) {
     if (id === 'contestChoice' || id === 'contestGeneric' || legacy.has(id)) continue;
+    // SHOWS (audit-shows 2026-10-09, break-it audio r5): single-phase by
+    // design — one phase, three choices, terminal WIN/LOSE/MIXED. No
+    // escalate/climax arc; the arc rule doesn't apply.
+    if (/^show/.test(id)) continue;
     if (!beatNames.has(id + k)) incomplete.push(id + k);
   }
 }

@@ -6631,6 +6631,53 @@
       o.connect(g); g.connect(sfxBus);
       o.start(t); o.stop(t + 0.25);
     }
+    function phoenix() {
+      // THE PHOENIX (break-it audio r5, Steve 2026-10-09): the link-bearer's
+      // death trade — you come up out of someone's ashes, gasping, 1 HP.
+      // Ash-hush (a filtered noise wash collapsing), then the flare rises in
+      // three crackling licks and breaks into a fragile held tone with a
+      // waver — rebirth at 1 HP is not triumph. Fired by the godhood worker
+      // with no registry voice (silent no-op) — same bug class as r4's D4.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      // ash: a low wash that dies down
+      const nz = noise(1.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass';
+        nf.frequency.setValueAtTime(900, t);
+        nf.frequency.exponentialRampToValueAtTime(120, t + 1.0);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.28, t + 0.08);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 1.1);
+      }
+      // flare: three crackling licks climbing out of the ash
+      for (let i = 0; i < 3; i++) {
+        const dt = t + 0.25 + i * 0.22;
+        const o = ctx.createOscillator(), of = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(160 + i * 90, dt);
+        o.frequency.exponentialRampToValueAtTime(320 + i * 160, dt + 0.2);
+        of.type = 'bandpass'; of.frequency.value = 1200; of.Q.value = 2;
+        g.gain.setValueAtTime(0.0001, dt);
+        g.gain.exponentialRampToValueAtTime(0.12, dt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, dt + 0.24);
+        o.connect(of); of.connect(g); g.connect(sfxBus);
+        o.start(dt); o.stop(dt + 0.26);
+      }
+      // the gasp: a fragile held tone, wavering — 1 HP, not triumph
+      const h = ctx.createOscillator(), hg = ctx.createGain(), wob = ctx.createOscillator(), wg = ctx.createGain();
+      h.type = 'sine'; h.frequency.value = 440;
+      wob.type = 'sine'; wob.frequency.value = 5.5;
+      wg.gain.value = 6; // vibrato depth — the waver
+      wob.connect(wg); wg.connect(h.frequency);
+      hg.gain.setValueAtTime(0.0001, t + 0.9);
+      hg.gain.exponentialRampToValueAtTime(0.14, t + 1.1);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+      h.connect(hg); hg.connect(sfxBus);
+      h.start(t + 0.9); h.stop(t + 2.25); wob.start(t + 0.9); wob.stop(t + 2.25);
+    }
     function snakeSplit() {
       // THE SPLIT: wet tearing — one becomes two. Deeply wrong.
       if (!ensure()) return;
@@ -10887,6 +10934,10 @@
       tickClick() { tickClick(); },         // questing — legs waving, fishing
       tickLatch() { tickLatch(); },         // the latch — mouthparts in
       tickRelease() { tickRelease(); },     // the release — lets go with a pop
+      // GODHOOD (break-it audio r5, Steve 2026-10-09): the phoenix link fired
+      // audioEvent('phoenix') with no registry voice — the rebirth played
+      // nothing. Ash-hush, flare, fragile held tone.
+      phoenix() { phoenix(); },
       // Ducks in a row: the formation's voice (Steve 2026-10-06)
       ducksQuack() { ducksQuack(); },
       ducksQuackCut() { ducksQuackCut(); },
