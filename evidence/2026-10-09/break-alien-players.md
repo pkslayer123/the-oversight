@@ -27,3 +27,45 @@ Bug classes don't reproduce elsewhere: no other `this.giveItem`/`this.bumpBond` 
 
 ## Proof
 `scripts/test-break-alien.js` 15/15 × 4 seeds. Regression green: test-alien4-copy (57), test-alien3-honesty (13), test-codex-aliens-20261008 (ALL GREEN), test-break-alien-20261008 (52/52).
+
+---
+
+# Break-it: alien players r5 (2026-10-09, afternoon)
+
+Target index 7 again this run. Commit `bf13f9ac` — "break-it alien r5: beam replaces strike (not bonus), salvage kill-only, feed naming reveals [needs-eyes]" (merged locally to master via rebase + --ff-only, pending ship; do NOT push — ship loop owns it).
+
+## Canon note
+No dedicated canon doc exists for alien players (docs/CANON.md registers none). Load-bearing rules used: docs/ONTOLOGY.md ("alien players are HUMANS, exclusive pool"), docs/DIRECTIVES.md, the module's own @ontology header. Nothing invented from scratch.
+
+## Catches (3, all fixed + proven)
+
+**B1. HONESTY — the beam was a BONUS attack, not a replacement.**
+`apMaybeBeamAttack` fired from a `tbAfterPlayerAction` wrap that ran AFTER the original hook had already advanced the turn — the alien struck normally via `tbAlienTurn`, then got a free 90–110%-max-HP beam on top. The code comment claimed "(replaces their normal attack this turn)". The beam is a design pillar (kill them → take their armor → survive beams) and a free bonus strike broke its honesty.
+Fix: the roll moved into `tbAlienTurn` (encounters.js, new §6b) where a fired beam ends the turn instead of the strike; the wrap was deleted; the cooldown tick moved with the roll. Same function: the telegraph named the persona pre-reveal ("Vex raises Vex's phase lance") while the fighter card says "Stranger" — now knowledge-gated.
+Mid-run catch during the fix: moving the roll naively let the beam fire on `startAlienCombat`'s opening `tbAdvance` — one-shotting the player before their first move (the old post-action beam could never do that; it also broke the prior group-encounter suite). Added an `apTurns > 1` gate: no beam on the opening turn, every fight.
+
+**B2. HONESTY/EXPLOIT — armor salvage fired on FLED opponents.**
+A broke persona retreating ends the fight `'won'` (encounters.js `tbEndCheck` treats fled hostiles as defeated), and `apOnCombatEnd` then salvaged alien armor 60% of the time with copy claiming "from their body. It's warm." — stripping a body that ran away. Sibling honesty: monster `'routed'` gives "no meat, no trophy".
+Fix: the `tbEnd` wrap now detects killed (`!f.alive`) vs fled and passes `{killed}`; `apOnCombatEnd(pid, outcome, opts)` gates salvage on `opts.killed`. New ontology rule `(salvage_kill_only)`; docs/ONTOLOGY.md regenerated (validator 52/52 pass).
+
+**B3. HONESTY — feed naming vs "Stranger" gap.**
+The System feed named a sadistic rival ("VEX MARLOWE was overheard…") but only *revealed* them 30% of the time — the other 70% you heard the name while the system still called them "Stranger".
+Fix: `msgPids[]` tracks which message names whom; naming on the feed IS the reveal path, firing whenever the naming message is actually heard.
+
+## Proof
+`scripts/test-break-alien-20261009.js` — **91/91 assertions across 3 seeds** (beam placement + unit fire + knowledge gating + no opening-turn beam + kill-only salvage incl. 30 drove-off wins → zero armor + feed reveal honesty + source regression pins). Before/after verified: pre-fix code scores 60/91 (31 failures); post-fix 91/91. Ontology validator: 52/52 systems pass.
+
+## Sibling sweep
+- Contests `fled` → `_contestEnd(ac,'lost',false)` (no prize — honest).
+- Monster `routed` → "no meat, no trophy" (honest) — the alien module was the outlier.
+- All alienPlayers cooldowns record on success only.
+- Audio voices (`fanPackageDrop`, `stasisBlock`, `alienRetreat`) all defined — no fired-but-silent.
+- Dead-code check: all 60+ module functions have callers (wraps live in-module). Dead *data* note: persona `rivalry`/`voice` fields in `alienPlayers.json` are never read anywhere — flagged, not changed.
+
+## Notes / caveats
+- `scripts/test-break-alien-20261008.js` has 2 failures that are pre-existing on pristine code (test arithmetic ignores the `Math.max(0,…)` clamp on 101/107 beam damage vs 100 HP) — stale test from an earlier run, not touched here.
+- Landing: master moved mid-run (sibling `5c5e0e8c` forager break-it r2, which regenerated docs/ONTOLOGY.md). Worker branch rebased cleanly (single commit, no overlap — sibling's ONTOLOGY changes were in broadcast/contests/food/game/party sections); proof re-verified 91/91 × 3 seeds on the rebased tree before `--ff-only` merge.
+- `[needs-eyes]` included: beam is now strike-replacing and never fires turn 0 — combat feel Steve should playtest.
+
+## Process note
+safe-commit.sh REFUSED the commit (61 src deletions > 50-line guard). Coordinator verified the full diff by hand: the deletions were the removed broken beam wrap (legitimate restructure, net +28 lines, no sibling files) and approved `--force-delete` explicitly. Guard worked as designed — it forced a human diff read, not a dodge.
