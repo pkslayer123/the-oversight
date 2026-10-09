@@ -2218,6 +2218,30 @@
       try { this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${wname} (${source || 'taught'}).`); } catch (e) {}
       return 'taught-wrong';
     },
+    // resolveWrongName(pid, how): the truth arrived through a trustworthy
+    // path — a village codex, a book, a trade, a tasting that clicked. The
+    // false label falls off, same beat as the harvest path, without the
+    // harvest requirement. (break-it 2026-10-09: wrongAs was sticky forever
+    // on every grant path — the codex card kept leading with the false name,
+    // trade currency stayed blocked, teach flows kept speaking the lie.)
+    // The disagreement is marked contested (unresolved) so the player still
+    // gets the callout beat — one correction per wrongness.
+    resolveWrongName(pid, how) {
+      const e = (this.state.codex.plants || {})[pid];
+      if (!e || !e.wrongAs) return false;
+      const who = e.taughtByName || 'someone';
+      const p = (this.data.plants || []).find(x => x.id === pid) || {};
+      let deliberate = false;
+      try {
+        const wb = ((this.state.village || {}).wrongAbout || {})[e.taughtBy] || {};
+        deliberate = !!((wb[pid] || {}).deliberate);
+      } catch (err) {}
+      this.say(`\u2605 The record corrects itself: this was never ${e.wrongAs} — it's ${p.name || pid}. ${who} taught you wrong${how ? ` (${how})` : ''}. (The Codex marks the disagreement. You can call them out in conversation.)`);
+      e.contested = { by: e.taughtBy, byName: who, claim: e.wrongAs,
+        claimPid: e.wrongPid, deliberate, day: (this.state.scholar || {}).day || 0 };
+      delete e.wrongAs; delete e.wrongPid;
+      return true;
+    },
     // hasContestedWith(vid): unresolved contested claims by this person.
     hasContestedWith(vid) {
       const out = [];
@@ -2281,6 +2305,15 @@
         }
         try { this.journalNote && this.journalNote('village', 'person', `Called out ${tname} publicly re ${p.name || pid} (${liar ? 'deliberate lie' : 'honest mistake'}). Witnesses split.`); } catch (err) {}
       }
+      // RESOLVED MEANS RESOLVED (break-it 2026-10-09): a corrected teacher
+      // stops teaching the lie. Without this, the same false lesson re-fires
+      // every teach and the callout becomes an infinite trust farm (+2 per
+      // quiet correction, witness bumps per public one). The copy already
+      // promises it: "they don't lie to you again."
+      try {
+        const wa = (this.state.village || {}).wrongAbout || {};
+        if (wa[vid]) delete wa[vid][pid];
+      } catch (err) {}
       try { this.state.scholar.calloutsDone = (this.state.scholar.calloutsDone || 0) + 1; } catch (err) {}
       return true;
     },
@@ -10407,7 +10440,13 @@
         if (!learners.length) { delete v.plantRumors[pid]; continue; }
         if (!knowers.length) continue;
         if (Math.random() < 0.35) {
-          const teacher = knowers[Math.floor(Math.random() * knowers.length)];
+          // DISTRUSTED (break-it 2026-10-09): an exposed liar's word carries
+          // no weight — the village doesn't pass on what they "taught." This
+          // is the mechanic the public-callout copy promises ("the village
+          // now discounts their word") — it used to be a dead write.
+          const teachers = knowers.filter(rid => !((v.distrusted || {})[rid]));
+          if (!teachers.length) continue;
+          const teacher = teachers[Math.floor(Math.random() * teachers.length)];
           const learner = learners[Math.floor(Math.random() * learners.length)];
           if (this.villagerLearnsPlant(learner, pid, 'word of mouth')) {
             const p = (this.data.plants || []).find(x => x.id === pid);
@@ -11288,6 +11327,8 @@
       this.state.codex.plants[pid] = this.state.codex.plants[pid] || {};
       this.state.codex.plants[pid].level = Math.max(this.state.codex.plants[pid].level || 1, newLevel);
       this.state.codex.plants[pid].viaTrade = vid;
+      // a bought truth clears a false label (break-it 2026-10-09)
+      try { this.resolveWrongName(pid, 'traded'); } catch (err) {}
       this.say(`📚 TRADED KNOWLEDGE: ${p.name} — Level ${newLevel}. ${first} knew it deep. ${p.knowledgeLevels[String(newLevel)] || ''}`);
       this.bumpTrust(vid, 3);
       // combination: their depth + your experience might unlock more
@@ -11347,6 +11388,8 @@
         const newLevel = Math.min(4, deepestOther);
         mine.level = newLevel;
         mine.combinedFrom = sources;
+        // combined truth clears a false label (break-it 2026-10-09)
+        try { this.resolveWrongName(pid, 'combined'); } catch (err) {}
         this.say(`💡 KNOWLEDGE COMBINES: ${p.name} — Level ${newLevel}. You knew it was safe. ${sources.join(' and ')} knew the rest. Together, it's deeper. ${p.knowledgeLevels[String(newLevel)] || ''}`);
         // JACKPOT: combining knowledge can trigger sudden insight.
         // "Everything you've learned suddenly connects."
@@ -11471,7 +11514,9 @@
         learnedFrom: src.by || (fresh.learnedFrom || null),
         via: src.type,
       });
+      // a deeper truth clears a false label (break-it 2026-10-09)
       this.say(`\u2605 ${p.name} — deeper understanding (Level ${level}).`);
+      try { this.resolveWrongName(pid, src.type); } catch (err) {}
       this.audioEvent('knowledgeReveal', { kind: 'plant', id: pid, level: level });
       return true;
     },
@@ -16622,8 +16667,15 @@
               if (entry.wrongAs) {
                 const who = entry.taughtByName || 'someone';
                 this.say(`\u2605 Wait. This isn't ${entry.wrongAs} — handling it yourself, the leaves, the smell, it's obvious now. ${who} taught you wrong. (The Codex corrects the record. You can call them out in conversation.)`);
+                // deliberate liars are marked as such — the callout beat
+                // treats them differently (break-it 2026-10-09: was hardcoded false)
+                let wasDeliberate = false;
+                try {
+                  const wb2 = ((this.state.village || {}).wrongAbout || {})[entry.taughtBy] || {};
+                  wasDeliberate = !!((wb2[pid] || {}).deliberate);
+                } catch (err) {}
                 entry.contested = { by: entry.taughtBy, byName: who, claim: entry.wrongAs,
-                  claimPid: entry.wrongPid, deliberate: false, day: (this.state.scholar || {}).day || 0 };
+                  claimPid: entry.wrongPid, deliberate: wasDeliberate, day: (this.state.scholar || {}).day || 0 };
                 delete entry.wrongAs; delete entry.wrongPid;
               }
               this.say(`\u2605 Deeper knowledge: ${h.plant.name}. ${h.plant.knowledgeLevels['2']} (Yield +50%). Use unlocked: ${this.plantUsesText(h.plantId) || 'not yet'}.`);
@@ -16998,6 +17050,8 @@
           entry.tastings = (entry.tastings || 0) + count;
           if (entry.tastings >= 3) {
             entry.level = 3;
+            // tasting the truth clears a false label (break-it 2026-10-09)
+            try { this.resolveWrongName(pid, 'tasted'); } catch (err) {}
             const plant = this.data.plants.find(p => p.id === pid);
             this.say(`Deeper knowledge: ${plant.name}. ${plant.knowledgeLevels['3']} (+5 health when eaten). All uses known: ${this.plantUsesText(pid) || '—'}.`);
             // level 3 benefit: eating gives health
@@ -17213,6 +17267,8 @@
             entry.tastings = (entry.tastings || 0) + 1;
             if (entry.tastings >= 3) {
               entry.level = 3;
+              // tasting the truth clears a false label (break-it 2026-10-09)
+              try { this.resolveWrongName(it.plantId, 'tasted'); } catch (err) {}
               const p3 = this.data.plants.find(x => x.id === it.plantId);
               this.say(`Deeper knowledge: ${p3.name}. ${p3.knowledgeLevels['3']} (+5 health when eaten). All uses known: ${this.plantUsesText(it.plantId) || '—'}.`);
               scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
