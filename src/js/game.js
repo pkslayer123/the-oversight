@@ -3036,7 +3036,13 @@
         this.say(`🤏 Your hand is in ${dname}'s pack when their eyes find it. The silence that follows is worse than shouting.`);
         try { this.remember(vid, 'caught_you_stealing', 'hands in their pack'); } catch (e) {}
         this.bumpTrust(vid, -35);
-        try { this.observe('theft', { target: vid }); } catch (e) {}
+        // BREAK-IT (social r7 2026-10-09): trustMoved — the victim's trust
+        // already moved through the direct -35 above. The old call drifted
+        // them AGAIN as a "witness" of their own robbery (-26 more: measured
+        // 60 -> 0 instead of 25). Same class as the r5 giveFood double-pay.
+        // Opinion (rep) still forms for everyone; trust drift lands on
+        // witnesses only.
+        try { this.observe('theft', { target: vid, trustMoved: true }); } catch (e) {}
         try { this.recordCrime('theft', { victim: vid, caught: true }); } catch (e) {}
         this.say('You let go. Whatever you were reaching for stays where it was.');
         return 'caught';
@@ -3103,7 +3109,11 @@
         this.npcNeeds(vid).hunger = Math.min(100, (this.npcNeeds(vid).hunger || 0) + Math.round(demand / 25));
       };
       const markBully = () => {
-        try { this.observe('intimidation', { target: vid }); } catch (e) {}
+        // BREAK-IT (social r7 2026-10-09): trustMoved — the target's trust
+        // already moved through the direct bumpTrust above (-40/-25/-20).
+        // The old call drifted them AGAIN as a witness of their own
+        // shakedown (-12 more). Same class as the r5 giveFood double-pay.
+        try { this.observe('intimidation', { target: vid, trustMoved: true }); } catch (e) {}
         try { this.recordCrime('intimidation', { victim: vid }); } catch (e) {}
         try { this.remember(vid, 'you_threatened', 'demanded their food'); } catch (e) {}
       };
@@ -3681,11 +3691,23 @@
         const t = v.trust || (v.trust = {});
         t[vid] = Math.min(100, (t[vid] || 10) + this.trustGainProgressive(vid, 6)); t[other] = Math.min(100, (t[other] || 10) + this.trustGainProgressive(other, 6));
         this.remember(vid, 'mediated', 'helped ease conflict with ' + other);
-        this.observe('mediate', { target: vid });
+        // BREAK-IT (social r7 2026-10-09): the old call drifted trust AGAIN
+        // through applyRep on top of the direct +6/+6 above (measured: target
+        // 40 -> 51 instead of 46) — the r5 trustMoved double-pay class.
+        // Trust moved through the direct writes; opinion still forms via
+        // observe (same pattern as askSupport/confrontGossip's noTrust).
+        this.observe('mediate', { target: vid, noTrust: true });
       } else {
         c.tension = Math.min(100, (c.tension || 50) + 10);
         this.say(`It goes badly. ${first} shuts down halfway through. "${oname} sent you, didn't they?" Nothing is clearer than before. It's worse.`);
-        this.observe('mediate', { target: vid, failed: true });
+        // BREAK-IT (social r7 2026-10-09): the old failure branch called
+        // observe('mediate') — the SUCCESS dims — so a botched mediation paid
+        // +5 trust and +5 honest/+3 competent rep for making things worse.
+        // The copy says "it's worse"; now the engine agrees: no trust gain,
+        // a small trust cost to both principals who let you in, and the
+        // village reads the competence hit.
+        this.bumpTrust(vid, -3); this.bumpTrust(other, -3);
+        this.observe('mediate_failed', { target: vid, noTrust: true });
       }
       this.notePlaystyle('social'); this.notePlaystyle('leader');
       this.socialTick(vid);
@@ -3815,11 +3837,32 @@
       return { ok: true, result: 'You held your ground.' };
     },
 
+    // promiseKeepKind(goal): the checkPromises kind whose action keeps a promise
+    // for this goal, or null when no action can keep it.
+    // BREAK-IT (social r7 2026-10-09): the old match table covered 5 of 18
+    // goals — promises for the rest could never be kept and auto-broke after
+    // 7 days (-15 trust), punishing a vow the engine never let you keep.
+    // family: "I'll watch the roads" is kept by walking them (travel).
+    // understand: "we'll figure out what happened, together" is kept by
+    // talking it through (social). survive: "we make it, all of us" is kept
+    // by keeping them fed (food). Goals with no mapping get an honest
+    // deflection in promiseHelp, never a doomed tracked promise.
+    promiseKeepKind(goal) {
+      return ({ feed: 'food', protect: 'fight', heal: 'heal', prove: 'task', belong: 'social', family: 'travel', understand: 'social', survive: 'food' })[goal] || null;
+    },
     // promiseHelp: commit to their goal. Tracked. If you follow through
     // (via related actions), big trust. If you ignore it, they remember.
     promiseHelp(vid) {
       const goal = this.npcGoal(vid);
       if (!goal) { this.say("You don't know what they want yet."); return null; }
+      // BREAK-IT (social r7 2026-10-09): an unkeepable vow is a trap, not a
+      // mechanic. Only goals with a real keep path get a formal tracked
+      // promise; the rest get honesty instead of a commitment the engine
+      // would auto-break in 7 days.
+      if (!this.promiseKeepKind(goal)) {
+        this.say(`You open your mouth to promise — and stop. "I want to help with that. I do. But I won't make you a promise I don't know how to keep."`);
+        return { ok: false, deflected: true };
+      }
       const v = this.state.village;
       v.promises = v.promises || {};
       // SETTLED PROMISES (socialite r4 2026-10-09): kept/broken promises are
@@ -3884,11 +3927,9 @@
       for (const [pid, p] of targets) {
         if (p.kept) continue;
         const age = this.state.scholar.day - (p.day || 0);
-        const match = (p.goal === 'feed' && kind === 'food') ||
-          (p.goal === 'protect' && kind === 'fight') ||
-          (p.goal === 'heal' && kind === 'heal') ||
-          (p.goal === 'prove' && kind === 'task') ||
-          (p.goal === 'belong' && kind === 'social');
+        // BREAK-IT (social r7 2026-10-09): keep mapping is data-driven via
+        // promiseKeepKind — the old inline table covered 5 of 18 goals.
+        const match = this.promiseKeepKind(p.goal) === kind;
         if (match) {
           p.kept = true;
           // KEEPING is a real act, not words: talk:false (no 40 cap), but
@@ -7899,6 +7940,10 @@
       this.checkEncounter();
       this.checkAnimals();
       this.checkQuest('travel');
+      // PROMISES (break-it social r7 2026-10-09): "I'll watch the roads. If
+      // anyone comes through, you'll know." — a family-goal promise is kept
+      // by walking the roads. Traveling keeps family promises.
+      try { this.checkPromises('travel'); } catch (e) {}
       // DRIFTER: arriving near another village announces it NOW — not whenever
       // the day-part happens to turn. You walked up to their smoke; you see it.
       // (checkVillageProximity also runs on part turns; the generated flag
@@ -11596,6 +11641,9 @@
         amends: { honest: 5 },
         rally: { brave: 3, competent: 4 },
         mediate: { honest: 5, competent: 3 },
+        // MEDIATE_FAILED (break-it social r7 2026-10-09): a botched mediation
+        // is not the success dims. The village reads the competence hit.
+        mediate_failed: { competent: -5 },
         promise: { honest: 2, generous: 1 },
         coalition: { competent: 2, honest: -1 },
         confront: { brave: 2, honest: 1 },

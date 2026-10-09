@@ -900,15 +900,36 @@
       mkInc('place', 'the creek', 'near the ridge', a2),
     ];
     try {
-      this.seedGossip('ambush_cover_' + c.id, st.dims, [plot.leader, ...plot.accomplices]);
+      // BREAK-IT (social r7 2026-10-09): the cover story is third-party WORDS
+      // about the target — rep only, never trust (r6 canon). The old
+      // seed-time applyRep drifted the target's trust -3..-8 from a story the
+      // plotters told. The who-dim marks the NPC subject so propagation
+      // routes to their record (r6 KILL-2 pattern); when the TARGET is the
+      // player the dims already route to listeners' view of the player, so
+      // no who-dim is needed — only the trust silence.
+      const targetIsPlayer = this.isPlayer(c.target);
+      const targetId = targetIsPlayer ? this.villagerId : c.target;
+      const dims = targetIsPlayer ? Object.assign({}, st.dims) : Object.assign({ who: targetId }, st.dims);
+      this.seedGossip('ambush_cover_' + c.id, dims, [plot.leader, ...plot.accomplices], true);
       // their version names the target as the problem
-      this.applyRep(this.isPlayer(c.target) ? this.villagerId : c.target, st.dims, 0.8);
+      this.applyRep(targetId, st.dims, 0.8, true);
     } catch (e) {}
   },
   seedTargetStory(c) {
     // the target's version, when they get to tell it
+    // BREAK-IT (social r7 2026-10-09): trust-silent (noTrust). The old seed
+    // had no who-dim and no noTrust, so the target telling their side raised
+    // every listener's TRUST of the player (+3/hop) — the r6 KILL-1
+    // positive-words trust farm class. The who-dim marks an NPC subject (r6
+    // KILL-2 pattern); when the target is the player the dims already route
+    // to listeners' view of the player, so only the trust silence is added.
     try {
-      this.seedGossip('ambush_target_' + c.id, { trustworthy: 6, honest: 6 }, [this.isPlayer(c.target) ? this.villagerId : c.target]);
+      const targetIsPlayer = this.isPlayer(c.target);
+      const targetId = targetIsPlayer ? this.villagerId : c.target;
+      const dims = targetIsPlayer
+        ? { trustworthy: 6, honest: 6 }
+        : { who: targetId, trustworthy: 6, honest: 6 };
+      this.seedGossip('ambush_target_' + c.id, dims, [targetId], true);
     } catch (e) {}
     this.moveBelief(c, -8, 'the target told their version');
   },
@@ -3583,8 +3604,17 @@
     };
     c.accuserStory = `${aname} says you ${lines[c.charge] || 'wronged the village'}.`;
     try {
-      this.seedGossip('accuse_' + c.id, { trustworthy: -12, honest: -4 }, [c.accuser]);
-      this.applyRep(this.villagerId, { trustworthy: -10 }, 0.8);
+      // BREAK-IT (social r7 2026-10-09): an accusation is WORDS — rep only,
+      // never trust (r6 canon). The old seed drifted every listener's trust
+      // -4/hop as it spread, and the seed-time applyRep wrote the immediate
+      // rep hit to the player's DEAD self-record (r4: repOf(player) is never
+      // read) while drifting the trustInPlayer aggregate -5. The author's
+      // intent was an immediate public rep hit — now it lands where intended:
+      // every villager's live view of the player, trust-silent. The gossip
+      // still travels from the accuser, rep-only.
+      this.seedGossip('accuse_' + c.id, { trustworthy: -12, honest: -4 }, [c.accuser], true);
+      const roster = (this.state.village.roster || []).filter(id => id !== this.villagerId);
+      for (const rid of roster) this.applyRep(rid, { trustworthy: -10 }, 0.8, true);
     } catch (e) {}
     if (c.fabricated) {
       // the lie has seams — planted inconsistencies the player can find

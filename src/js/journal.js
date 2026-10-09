@@ -1106,7 +1106,10 @@
   if (origPromise) Game.promiseHelp = function (vid) {
     const r = origPromise.call(this, vid);
     try {
-      if (r) {
+      // BREAK-IT (social r7 2026-10-09): only a real promise is journaled —
+      // an honest deflection ("I won't promise what I can't keep") made no
+      // vow, so there is nothing to track.
+      if (r && r.ok) {
         const want = this.goalWant(vid) || 'something';
         this.journalLearn(vid, 'promise', { text: `Help them ${want}` }, {});
       }

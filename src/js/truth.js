@@ -1164,7 +1164,11 @@
             heard: [],
           });
           // Their reputation for honesty drops village-wide
-          this.applyRep(vid, { honest: repHit }, 1);
+          // BREAK-IT (social r7 2026-10-09): subject-targeted gossip moves REP
+          // only, never trust (r6 canon) — the trust consequence of this
+          // confrontation already moved through bumpTrust above. The old
+          // call's drift skimmed -2 off the confession's trust.
+          this.applyRep(vid, { honest: repHit }, 1, true);
         } catch (e) {}
       } else if (roll < confessP + 0.35) {
         // DEFLECTION — smooth or clumsy depending on who they are
@@ -1184,7 +1188,9 @@
         doubt.refusedUntil = day() + 2;
         try {
           this.bumpTrust(vid, -8);
-          this.applyRep(vid, { honest: -4 }, 1);
+          // BREAK-IT (social r7 2026-10-09): rep only — the -8 trust already
+          // moved above; the old drift double-charged the counter-attack.
+          this.applyRep(vid, { honest: -4 }, 1, true);
           this.remember(vid, 'hostile', 'turned on you when questioned');
         } catch (e) {}
       }
@@ -1260,7 +1266,9 @@
         doubt.refusedUntil = day() + 2;
         try {
           this.bumpTrust(vid, -8);
-          this.applyRep(vid, { honest: -4 }, 1);
+          // BREAK-IT (social r7 2026-10-09): rep only — the -8 trust already
+          // moved above; the old drift double-charged the counter-attack.
+          this.applyRep(vid, { honest: -4 }, 1, true);
           this.remember(vid, 'hostile', 'turned on you when accused of theft');
         } catch (e) {}
       }

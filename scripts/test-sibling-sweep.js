@@ -56,6 +56,10 @@ const DEAD = [
   ['membership.js', 'formAlliance'], ['membership.js', 'memberBenefits'],
   ['hierarchy.js', 'bidForPrimacy'], ['hierarchy.js', 'renegotiateLink'],
   ['party-formal.js', 'disbandParty'],
+  // BREAK-IT (social r7 2026-10-09): roleBonus (trivial PARTY_ROLES accessor)
+  // and clearRole (no UI path clears a role — assignRole reassigns) have zero
+  // callers anywhere. Tracked dead, not deleted.
+  ['party-formal.js', 'roleBonus'], ['party-formal.js', 'clearRole'],
 ];
 let resurrected = [];
 const rawSrc = ORDER.map(f => { try { return read(f); } catch (e) { return ''; } }).join('\n')

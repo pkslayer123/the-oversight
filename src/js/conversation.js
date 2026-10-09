@@ -3628,11 +3628,16 @@
         if (pr && pr.ok) {
           done('"...Thank you. Really."', '"I could help with that."');
         } else {
-          const l = this.convoPick(vid, 'offerhelp', [
+          // BREAK-IT (social r7 2026-10-09): promiseHelp deflects honestly for
+          // goals with no keep path ("I won't promise what I can't keep") —
+          // the NPC hears the honesty, not a broken vow in waiting.
+          const l = (pr && pr.deflected)
+            ? `"Fair." A slow nod. "Most people just say the words."`
+            : (this.convoPick(vid, 'offerhelp', [
             '"You\'d do that? ...Thank you. Really."',
             '"I won\'t forget you said that."',
             '"Okay. Okay — that means something, you know that?"',
-          ]) || '"Thank you."';
+          ]) || '"Thank you."');
           // SCENE (Phase 2): through the resolver.
           this.resolveConsequence(vid, { trust: 2, temper: 'kind', name: 'offer_help' });
           done(l, '"I could help with that."');
