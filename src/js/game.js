@@ -15504,7 +15504,7 @@
         peacemaker: { 2: 'You can stop any fight.', 3: 'Warring villages ask you to mediate.', 4: 'Your presence prevents violence.', 5: 'MASTER: Peace follows you like weather.' },
         // EXPLORATION (Steve 2026-10-07)
         pathfinder: { 2: 'You travel 50% faster.', 3: 'You never get lost. Ever.', 4: 'You find shortcuts no one else sees.', 5: 'MASTER: Distance is a suggestion.' },
-        eagle_eye: { 2: 'You spot from 3 tiles away.', 3: 'You see through fog. The System is impressed.', 4: 'You can see a village\'s smoke from across the map.', 5: 'MASTER: Nothing hides. Nowhere.' },
+        eagle_eye: { 2: 'Rare finds catch your eye while foraging.', 3: 'The odd one out finds you more often now.', 4: 'You almost never walk past the unusual.', 5: 'MASTER: Nothing unusual escapes your eye.' },
         // INVESTIGATION (Steve 2026-10-07)
         lie_detector: { 2: 'You catch 50% of lies.', 3: 'You know WHY they\'re lying.', 4: 'You can see the truth they\'re hiding.', 5: 'MASTER: No one lies to you. Ever.' },
         evidence_board: { 2: 'Contradictions glow.', 3: 'You reconstruct events from fragments.', 4: 'You can prove guilt with whispers.', 5: 'MASTER: Truth is your weapon.' },

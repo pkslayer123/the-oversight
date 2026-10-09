@@ -1620,9 +1620,9 @@
     "description": "You see the ruin on the horizon. The smoke. The movement. Before anyone else.",
     "modifiers": [
       {
-        "target": "explore.spot_chance",
+        "target": "forage.rare_find_chance",
         "op": "add",
-        "value": 0.25,
+        "value": 0.05,
         "scale": "level"
       }
     ],
