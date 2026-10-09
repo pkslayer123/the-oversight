@@ -7639,7 +7639,11 @@
       // heals below wrote scholar.health directly — erased at fight end, so a
       // mid-fight first-aid kit printed "+30 health" and delivered nothing.
       const _useInCombat = this.inCombat();
-      const name = item.name.toLowerCase();
+      // HONEST (break-it 2026-10-08 r4, alien players): inventory entries
+      // built without a name (bare {itemId,id} package gifts) crashed here
+      // on undefined.toLowerCase(). Entries should carry names (apGrantItem
+      // does), but useItem must never throw on a malformed one.
+      const name = (item.name || '').toLowerCase();
       const def0 = (this.data.items || []).find(i => i.id === (item.itemId || item.id));
       // DICE (Steve 2026-10-05): roll with the village. Fast decisions, random
       // blame, real laughter. +cheer, once per day.
@@ -7669,7 +7673,7 @@
             this.say('(The stethoscope finds the real problem first.)');
           }
           this.addHealth(amt);
-          this.say(`You use the ${item.name}. +${amt} health.`);
+          this.say(`You use the ${item.name || (def && def.name) || 'item'}. +${amt} health.`);
         }
       }
       // ALIEN LOOT REVEAL (Steve 2026-10-06): first use teaches you what the

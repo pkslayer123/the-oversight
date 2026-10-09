@@ -888,6 +888,35 @@
       }
     },
 
+    // Grant a real inventory entry for an item id (package gifts). Builds the
+    // entry from the item def — name, units, kg — so the thing is actually
+    // usable: useItem reads item.name and decrements item.units, and a bare
+    // {itemId,id} entry crashed the first and NaN'd the second (break-it
+    // 2026-10-08 r4: the "beautiful alien medkit" was an unusable brick).
+    apGrantItem: function (itemId) {
+      var def = null;
+      try {
+        var items = this.data.items || [];
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].id === itemId) { def = items[i]; break; }
+        }
+      } catch (e) {}
+      var entry = {
+        itemId: itemId,
+        id: itemId + '_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 9999),
+        name: (def && def.name) || itemId,
+        units: 1,
+      };
+      if (def && def.kg != null) entry.kg = def.kg;
+      if (def && def.kcalEach != null) entry.kcalEach = def.kcalEach;
+      try {
+        var s = this.state.scholar;
+        s.inventory = s.inventory || [];
+        s.inventory.push(entry);
+      } catch (e2) {}
+      return entry;
+    },
+
     // Care package: the fan club sends supplies. Quality and frequency scale
     // with favor. Deepens the existing "wacky and available, not core" rule.
     apCarePackage: function () {
@@ -919,11 +948,11 @@
         // HONEST (break-it 2026-10-08): the gift used to land in
         // state.scholar.pack — an array no system reads, so the item was
         // invisible and unusable. Inventory is what equipping reads.
-        try {
-          var s = this.state.scholar;
-          s.inventory = s.inventory || [];
-          s.inventory.push({ itemId: gift.id, id: gift.id });
-        } catch (e) {}
+        // HONEST (break-it 2026-10-08 r4): the bare {itemId,id} entry had no
+        // name and no units — useItem crashed on item.name.toLowerCase()
+        // (TypeError) and item.units-- went NaN, so the "gift" was a brick.
+        // apGrantItem builds a real, usable entry from the item def.
+        try { this.apGrantItem(gift.id); } catch (e) {}
       }
       this.say('Plus ' + kcal + ' kcal of fan-approved snacks.');
       try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + kcal); } catch (e) {}
@@ -959,6 +988,21 @@
       this.say(line);
       this.say('(' + kcal + ' kcal of dried meat and clean water. Nothing traceable.)');
       try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + kcal); } catch (e) {}
+      // WREN (break-it 2026-10-08 r4): she never fights, so she had no
+      // encounters and no reveal path — apKnowsAlien('wren') was forever
+      // false and her introLines/signature were dead content. Her data says
+      // "eventually Wren risks direct contact": after repeated drops you may
+      // spot her at the cache, and then you know.
+      try {
+        if (helper.id === 'wren') {
+          ap.wrenDrops = (ap.wrenDrops || 0) + 1;
+          if (ap.wrenDrops >= 3 && !ap.known.wren && Math.random() < 0.25) {
+            var wIntro = (helper.introLines && helper.introLines[0]) || '"...don\'t react."';
+            this.say('👁 ' + wIntro);
+            this.apRevealAlien('wren', 'you spotted her leaving a cache');
+          }
+        }
+      } catch (e2w) {}
       return true;
     },
 
@@ -1148,11 +1192,10 @@
         // (The old "smash it or keep it" choice was never implemented; the
         // copy no longer promises one. The tracking cost is real: trackedBy
         // triples their encounter weight in apRollEncounter.)
-        try {
-          var _s2 = this.state.scholar;
-          _s2.inventory = _s2.inventory || [];
-          _s2.inventory.push({ itemId: 'medfoam_canister', id: 'medfoam_canister' });
-        } catch (e) {}
+        // HONEST (break-it 2026-10-08 r4): granted via apGrantItem — a bare
+        // {itemId,id} entry crashed useItem (no name) and never consumed
+        // (no units). The medkit must actually heal when used.
+        try { this.apGrantItem('medfoam_canister'); } catch (e) {}
         this.say('(It\'s a tracker. ' + per.name + ' now knows where you sleep. The medkit is real, though — out here you don\'t throw those away.)');
         // Player choice would go here — for now, knowledge-gated warning
         try {
