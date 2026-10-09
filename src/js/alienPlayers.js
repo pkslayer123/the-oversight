@@ -721,7 +721,9 @@
       var size = Math.min(candidates.length, Math.random() < 0.3 ? 3 : 2);
       var group = candidates.slice(0, size);
 
-      ap.lastGroupDay = (this.state.scholar || {}).day || 1;
+      // HONEST (break-it 2026-10-08 r4): the 14-day cooldown used to burn at
+      // ROLL time — a refused start (fight already active) wasted it with no
+      // fight. Recorded in apStartGroupEncounter on success instead.
       return group;
     },
 
@@ -770,21 +772,25 @@
     // Start a group encounter with 2-3 alien players
     apStartGroupEncounter: function (pids) {
       if (!pids || pids.length < 2) return false;
-      this.apGroupBanter(pids);
       // Build fighters for each (they'll be added to the encounter)
       // They join the fight IN TURN: the tbEnd wrap chains the next persona
       // via state.alienGroup when the current fight is won (fleeing or
       // losing disperses the group). Break-it 2026-10-08: state.alienGroup
       // was written here and never read — "they'll join in turn" was a lie.
       var first = pids[0];
-      this.say('(The others are circling. They\'ll join the fight in turn.)');
       try {
         this.state.alienGroup = { pids: pids, current: 0 };
       } catch (e) {}
       var ok = false;
       try { ok = !!this.apStartEncounter(first); } catch (e2) { ok = false; }
-      if (!ok) { try { delete this.state.alienGroup; } catch (e3) {} }
-      return ok;
+      if (!ok) { try { delete this.state.alienGroup; } catch (e3) {} return false; }
+      // HONEST (break-it 2026-10-08 r4): the 14-day cooldown burned at roll
+      // time, so a refused start wasted it. Record on success only — and the
+      // banter plays for a fight that actually begins, not a phantom one.
+      try { this.apState().lastGroupDay = (this.state.scholar || {}).day || 1; } catch (e4) {}
+      this.apGroupBanter(pids);
+      this.say('(The others are circling. They\'ll join the fight in turn.)');
+      return true;
     },
 
 
@@ -1235,8 +1241,11 @@
       var day = s.day || 1;
       if (day - ap.lastFeedDay < 1) return false;
       if (Math.random() > 0.35) return false;
-      ap.lastFeedDay = day;
-
+      // HONEST (break-it 2026-10-08 r4): the cooldown burned even when msgs
+      // came up empty (early game: no rivals, small village) — and it shares
+      // lastFeedDay with apFeedMessage, which ALWAYS has something to say.
+      // An empty event feed must not eat the day's feed slot. Record only
+      // when a message actually goes out.
       var msgs = [];
       var wins = this.state.combatWins || 0;
       var losses = this.state.combatLosses || 0;
@@ -1266,6 +1275,7 @@
       }
 
       if (msgs.length) {
+        ap.lastFeedDay = day;
         this.sysSay(msgs[Math.floor(Math.random() * msgs.length)]);
         return true;
       }
