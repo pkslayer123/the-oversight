@@ -162,7 +162,7 @@
       {
         "id": "crystal_lattice",
         "name": "Crystal Lattice",
-        "desc": "Stores your fear as damage. The more scared you are, the harder she hits."
+        "desc": "A crystal lattice that drinks in dread. Her strikes land harder on an Afraid target — fear in, damage out."
       }
     ],
     "combat": true
@@ -487,7 +487,7 @@
       {
         "id": "specimen_scanner",
         "name": "Specimen Scanner",
-        "desc": "Analyzes your fighting style mid-combat. Fenwick adapts — the longer you fight one way, the better he reads you."
+        "desc": "A specimen scanner, always humming. Fenwick catalogues everything — wingspan, stride, the way you favor your left. For the collection, he says. Probably."
       }
     ],
     "combat": true
