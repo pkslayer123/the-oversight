@@ -1966,6 +1966,7 @@
         "context": "combat",
         "name": "Shake It Off",
         "cost": {
+          "turn": true,
           "kcal": 50
         },
         "effect": "Clear stun, slow, and bleed. Once per fight. Costs 50 kcal \u2014 your body burns fuel to keep going."

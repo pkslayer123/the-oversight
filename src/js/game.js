@@ -13,6 +13,7 @@
 //   - fighterSize(f), fighterTiles(f) (multi-tile occupancy)
 //   - tbCanOccupy(f, nx, ny), tbMoveFighter(f, nx, ny) (validated movement)
 //   - tbAdvance()
+//   - tbRoundWrap(f) (shared round wrap: order re-sort, ROUND call, belltoad chorus arrivals — sync + stepped-async)
 //   - tbAfterPlayerAction()
 //   - contestTick() (delegates to contests.js)
 //   - fireShow(event) -> show (delegates to contests.js)
@@ -4779,6 +4780,12 @@
             }),
             turnIdx: f.turnIdx || 0, round: f.round || 1,
             terraform: f.terraform || {},
+            // BELLTOAD CHORUS (break-it r3): the delayed pack is per-fight
+            // state — dropping it on save let a mid-fight reload save-scum
+            // the chorus away (free 'won' while reinforcements were inbound).
+            // mdef reattaches by id on load; only id+count persist.
+            pendingPack: this._pendingPack && this._pendingPack.count > 0
+              ? { id: this._pendingPack.id, count: this._pendingPack.count } : null,
           };
         }
       } catch (e) {}
@@ -4893,6 +4900,12 @@
             over: false, result: null,
             terraform: tbS.terraform || {},
           };
+          // BELLTOAD CHORUS (break-it r3): restore the delayed pack — a save
+          // mid-chorus must not evaporate the reinforcements (see syncRun).
+          if (tbS.pendingPack && tbS.pendingPack.count > 0) {
+            const pmdef = (this.data.monsters || []).find(m => m.id === tbS.pendingPack.id);
+            if (pmdef) this._pendingPack = { id: pmdef.id, count: tbS.pendingPack.count, mdef: pmdef };
+          }
         }
       } catch (e) {}
       return true;
@@ -14943,7 +14956,12 @@
         const effMax = this.maxHealth();
         const actual = Math.max(0, Math.min(heal, effMax - (s.health || 0)));
         s.kcal -= healCost;
-        s.health = Math.min(effMax, (s.health || 0) + actual);
+        // COMBAT HP ROUTING (break-it r2, re-fixed r3): the wound-gate commit
+        // rewrote this block and dropped the addHealth routing — the +20 HP
+        // went to scholar.health and was erased at tbEnd (phantom heal). The
+        // wound-aware cap is preserved via `actual` (maxHealth is wound-aware);
+        // addHealth lands it on the fighter mid-fight.
+        this.addHealth(actual);
         if (actual <= 0) this.say(`Field medicine: clean the wound, poultice it, bind it. But the Blood Price's cuts are missing mass — dressings can't close them; they knit ~10 a night. (+0 HP, -${healCost} kcal.)`);
         else this.say(`Field medicine: clean the wound, poultice it, bind it. +${actual} HP, -${healCost} kcal.${(s.bloodPriceWound || 0) > 0 ? " (The Price's cuts stay open — they knit on their own.)" : ''}`);
       } else if (id === 'herbal_remedy') {
@@ -16342,6 +16360,11 @@
         this.noteAbilityUse('third_eye');
         this.noteAbilityUse('pattern_recognition');
       } else if (kind === 'rest') {
+        // BREAK-IT R3 (sibling sweep): resting "through most of the day part"
+        // is fiction-breaking mid-fight — and the heal below wrote
+        // scholar.health directly (phantom mid-fight, erased at tbEnd).
+        // Sleep already refuses mid-fight; rest does too.
+        if (this.inCombat && this.inCombat()) { this.say('Not in the middle of a fight.'); return false; }
         // RELIC — second_skin: no blisters, no misery. Energy returns faster.
         const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities), {});
         const restGain = Math.round(30 * restMult);
@@ -20996,6 +21019,116 @@
       else this.tbRefreshTelegraphUI();
     },
 
+    // ROUND WRAP (break-it r3): shared by the sync tbAdvance and the stepped
+    // async path. The async path was missing this ENTIRE block — belltoad
+    // chorus reinforcements never arrived in the browser, and the orderDirty
+    // re-sort never ran there either. Called after turnIdx=0, round++.
+    tbRoundWrap(f) {
+      // READ THE FIGHT (Steve 2026-10-07): speed changed mid-fight —
+      // re-sort the order from the new round. Nobody gains or loses a
+      // turn mid-round; the new speed bites next round.
+      if (f.orderDirty) {
+        try {
+          const SC = globalThis.Scattering;
+          if (SC && SC.combat && SC.combat.turnOrder) f.order = SC.combat.turnOrder(f.fighters);
+        } catch (e) {}
+        f.orderDirty = false;
+      }
+      this.sysSay(`ROUND ${f.round}!`);
+      this.audioEvent('round', { round: f.round });
+      // BELLTOAD CHORUS (Steve 2026-10-05): the sound IS the mechanic.
+      // Every 2 rounds, another answers the call (up to 4), even if the
+      // original is dead. The croak carries for miles.
+      // The resonance builds: 1 toad = base, 2 = +50%, 3 = +100%, 4 = +150%.
+      // SHOUT breaks the chorus for a round. Killing drops the harmony.
+      // CHORUS CALL (Steve 2026-10-05): each alive toad, each round, has a
+      // 25% chance to call another. More toads = more croaking = higher chance.
+      // 1 toad: 25%/round, 2 toads: 44%/round. Up to 3 max. The chorus builds.
+      if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
+        // Each PENDING toad rolls: 40% chance to answer the call (Steve 2026-10-05: bump up to reduce dead air).
+        // The chorus continues even if all alive toads are dead.
+        const pendingCount = this._pendingPack.count;
+        let called = false;
+        for (let i = 0; i < pendingCount && !called; i++) {
+          if (Math.random() < 0.40) called = true;
+        }
+        if (called) {
+        const pp = this._pendingPack;
+        pp.count--;
+        if (pp.count <= 0) this._pendingPack = null;
+        this.say('Another throat joins the chorus — the pack answers the call.');
+        this.audioEvent('belltoadChorus');
+        // UNIQUE SPAWN KEYS (Steve 2026-10-05): Date.now() collides when
+        // two arrivals land in the same millisecond — the live duplicate
+        // shared a key with a corpse, couldn't be targeted, and the fight
+        // soft-locked forever. Per-fight monotonic counter instead.
+        f.spawnSeq = (f.spawnSeq || 0) + 1;
+        const spawnKey = 'm_spawn_' + f.spawnSeq;
+        // Spawn the delayed pack members near the existing toad
+        const existing = f.fighters.find(x => x.kind === 'monster' && x.mdef && x.mdef.id === pp.id);
+        if (existing) {
+          // Spawn just 1 per round (trickle, not swarm)
+          for (let i = 0; i < 1; i++) {
+            const nx = Math.max(0, Math.min(8, existing.mx + (i % 2 === 0 ? 1 : -1)));
+            const ny = Math.max(0, Math.min(8, existing.my + 1));
+            // Roll HP properly (mdef.hp is [min,max], not a number)
+            const hpDef = pp.mdef.hp;
+            const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
+            const hpInt = Math.round(hpRoll);
+            const newFighter = {
+              key: spawnKey,
+              kind: 'monster',
+              mdef: pp.mdef,
+              id: pp.id,
+              name: this.monsterDisplayName(pp.id),
+              emoji: pp.mdef.emoji || '🐸',
+              mx: nx, my: ny,
+              hp: hpInt,
+              maxHp: hpInt,
+              alive: true,
+              speed: pp.mdef.speed || 3,
+              moveLeft: 3,
+              acted: false,
+              stunned: 0,
+              threatQueue: [],
+            };
+            f.fighters.push(newFighter);
+            f.order.push(newFighter.key);
+          }
+        } else {
+          // No living toad to anchor to — spawn near the player instead
+          // (the chorus answers even when the pack is wiped)
+          const p = this.tbFighter('p');
+          const px = p ? p.mx : 4, py = p ? p.my : 4;
+          const nx = Math.max(0, Math.min(8, px + 2));
+          const ny = Math.max(0, Math.min(8, py));
+          const hpDef = pp.mdef.hp;
+          const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
+          const hpInt = Math.round(hpRoll);
+          const newFighter = {
+            key: spawnKey + '_solo',
+            kind: 'monster',
+            mdef: pp.mdef,
+            id: pp.id,
+            name: this.monsterDisplayName(pp.id),
+            emoji: pp.mdef.emoji || '🐸',
+            mx: nx, my: ny,
+            hp: hpInt,
+            maxHp: hpInt,
+            alive: true,
+            speed: pp.mdef.speed || 3,
+            moveLeft: 3,
+            acted: false,
+            stunned: 0,
+            threatQueue: [],
+          };
+          f.fighters.push(newFighter);
+          f.order.push(newFighter.key);
+        }
+        }
+      }
+    },
+
     // --- turn advancement: run AI turns until it's the player's turn ---
     tbAdvance() {
       const f = this.tbfight;
@@ -21005,109 +21138,7 @@
         f.turnIdx++;
         if (f.turnIdx >= f.order.length) {
           f.turnIdx = 0; f.round++;
-          // READ THE FIGHT (Steve 2026-10-07): speed changed mid-fight —
-          // re-sort the order from the new round. Nobody gains or loses a
-          // turn mid-round; the new speed bites next round.
-          if (f.orderDirty) {
-            try {
-              const SC = globalThis.Scattering;
-              if (SC && SC.combat && SC.combat.turnOrder) f.order = SC.combat.turnOrder(f.fighters);
-            } catch (e) {}
-            f.orderDirty = false;
-          }
-          this.sysSay(`ROUND ${f.round}!`);
-          this.audioEvent('round', { round: f.round });
-          // BELLTOAD CHORUS (Steve 2026-10-05): the sound IS the mechanic.
-          // Every 2 rounds, another answers the call (up to 4), even if the
-          // original is dead. The croak carries for miles.
-          // The resonance builds: 1 toad = base, 2 = +50%, 3 = +100%, 4 = +150%.
-          // SHOUT breaks the chorus for a round. Killing drops the harmony.
-          // CHORUS CALL (Steve 2026-10-05): each alive toad, each round, has a
-          // 25% chance to call another. More toads = more croaking = higher chance.
-          // 1 toad: 25%/round, 2 toads: 44%/round. Up to 3 max. The chorus builds.
-          if (f.round >= 2 && this._pendingPack && this._pendingPack.count > 0) {
-            // Each PENDING toad rolls: 40% chance to answer the call (Steve 2026-10-05: bump up to reduce dead air).
-            // The chorus continues even if all alive toads are dead.
-            const pendingCount = this._pendingPack.count;
-            let called = false;
-            for (let i = 0; i < pendingCount && !called; i++) {
-              if (Math.random() < 0.40) called = true;
-            }
-            if (called) {
-            const pp = this._pendingPack;
-            pp.count--;
-            if (pp.count <= 0) this._pendingPack = null;
-            this.say('Another throat joins the chorus — the pack answers the call.');
-            this.audioEvent('belltoadChorus');
-            // UNIQUE SPAWN KEYS (Steve 2026-10-05): Date.now() collides when
-            // two arrivals land in the same millisecond — the live duplicate
-            // shared a key with a corpse, couldn't be targeted, and the fight
-            // soft-locked forever. Per-fight monotonic counter instead.
-            f.spawnSeq = (f.spawnSeq || 0) + 1;
-            const spawnKey = 'm_spawn_' + f.spawnSeq;
-            // Spawn the delayed pack members near the existing toad
-            const existing = f.fighters.find(x => x.kind === 'monster' && x.mdef && x.mdef.id === pp.id);
-            if (existing) {
-              // Spawn just 1 per round (trickle, not swarm)
-              for (let i = 0; i < 1; i++) {
-                const nx = Math.max(0, Math.min(8, existing.mx + (i % 2 === 0 ? 1 : -1)));
-                const ny = Math.max(0, Math.min(8, existing.my + 1));
-                // Roll HP properly (mdef.hp is [min,max], not a number)
-                const hpDef = pp.mdef.hp;
-                const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
-                const hpInt = Math.round(hpRoll);
-                const newFighter = {
-                  key: spawnKey,
-                  kind: 'monster',
-                  mdef: pp.mdef,
-                  id: pp.id,
-                  name: this.monsterDisplayName(pp.id),
-                  emoji: pp.mdef.emoji || '🐸',
-                  mx: nx, my: ny,
-                  hp: hpInt,
-                  maxHp: hpInt,
-                  alive: true,
-                  speed: pp.mdef.speed || 3,
-                  moveLeft: 3,
-                  acted: false,
-                  stunned: 0,
-                  threatQueue: [],
-                };
-                f.fighters.push(newFighter);
-                f.order.push(newFighter.key);
-              }
-            } else {
-              // No living toad to anchor to — spawn near the player instead
-              // (the chorus answers even when the pack is wiped)
-              const p = this.tbFighter('p');
-              const px = p ? p.mx : 4, py = p ? p.my : 4;
-              const nx = Math.max(0, Math.min(8, px + 2));
-              const ny = Math.max(0, Math.min(8, py));
-              const hpDef = pp.mdef.hp;
-              const hpRoll = Array.isArray(hpDef) ? hpDef[0] + Math.random() * (hpDef[1] - hpDef[0]) : (hpDef || 20);
-              const hpInt = Math.round(hpRoll);
-              const newFighter = {
-                key: spawnKey + '_solo',
-                kind: 'monster',
-                mdef: pp.mdef,
-                id: pp.id,
-                name: this.monsterDisplayName(pp.id),
-                emoji: pp.mdef.emoji || '🐸',
-                mx: nx, my: ny,
-                hp: hpInt,
-                maxHp: hpInt,
-                alive: true,
-                speed: pp.mdef.speed || 3,
-                moveLeft: 3,
-                acted: false,
-                stunned: 0,
-                threatQueue: [],
-              };
-              f.fighters.push(newFighter);
-              f.order.push(newFighter.key);
-            }
-            }
-          }
+          this.tbRoundWrap(f);
         }
         const c = this.tbFighter(f.order[f.turnIdx]);
         if (!c || !c.alive || c.fled) continue;
@@ -21133,53 +21164,84 @@
     // STEPPED COMBAT (Steve 2026-10-06): async turn pacing for dramatic cadence.
     // Each monster gets a visible beat (550ms) with highlight. Prevents
     // instantaneous grid jumps that cause motion sickness.
+    // BREAK-IT R3: the old entry no-op'd when it was the player's turn —
+    // which is ALWAYS true at the moment the player's turn ends — so every
+    // action-driven turn end (strike/wait/ability with 0 moves) stranded the
+    // fight in the browser: 0 moves, acted, no legal moves, no end-turn
+    // button. The entry must START the chain, not refuse it. asyncRunning
+    // guards against double-scheduling (the chain is re-entrant-safe).
     tbAdvanceAsync() {
       const f = this.tbfight;
       if (!f || f.over) return;
-      if (this.tbIsPlayerTurn()) { f.actingKey = null; return; }
-      this.tbAdvanceOneAsync();
+      if (f.asyncRunning) return;
+      f.asyncRunning = true;
+      // GENERATION GUARD (break-it r3): a save/load (or any second chain)
+      // must invalidate in-flight ticks — two steppers interleaving would
+      // double-advance turns and double-act monsters. Each chain captures
+      // its generation; a tick from a stale generation aborts.
+      f.asyncGen = (f.asyncGen || 0) + 1;
+      this.tbAdvanceOneAsync(f.asyncGen);
     },
-    tbAdvanceOneAsync() {
+    tbAdvanceOneAsync(gen) {
       const f = this.tbfight;
-      if (!f || f.over) return;
-      f.turnIdx++;
-      if (f.turnIdx >= f.order.length) {
-        f.turnIdx = 0; f.round++;
-        try { this.sysSay(`ROUND ${f.round}!`); } catch (e) {}
-        try { this.audioEvent('round', { round: f.round }); } catch (e) {}
-      }
-      const key = f.order[f.turnIdx];
-      const c = this.tbFighter(key);
-      if (!c || !c.alive || c.fled) { this.tbAdvanceOneAsync(); return; }
-      if (key === 'p') {
-        f.actingKey = null;
-        try { this.tbRefreshTelegraphUI(); } catch (e) {}
+      if (!f || f.over) { if (f) f.asyncRunning = false; return; }
+      if (gen !== undefined && (f.asyncGen || 0) !== gen) return; // stale chain — a newer one (or a load) superseded it
+      // DEAD-SKIP CAP (break-it r3): skipping dead/fled fighters used to
+      // recurse with no bound — a fight held open with no live fighters
+      // (belltoad chorus) overflowed the stack. Walk at most one full round
+      // per tick; if nobody can act, schedule another tick — the round wrap
+      // already ran, so chorus rolls and spawns proceed on their own.
+      let skips = 0;
+      while (skips++ <= f.order.length) {
+        f.turnIdx++;
+        if (f.turnIdx >= f.order.length) {
+          f.turnIdx = 0; f.round++;
+          this.tbRoundWrap(f);
+          if (!this.tbfight || this.tbfight.over) { f.asyncRunning = false; return; }
+        }
+        const key = f.order[f.turnIdx];
+        const c = this.tbFighter(key);
+        if (!c || !c.alive || c.fled) continue;
+        if (key === 'p') {
+          // PLAYER ARRIVAL (break-it r3): the old async path never ran
+          // tbBeginTurn here — moves/acted never reset, stuns never
+          // consumed, player status ticks skipped. The sync path does all
+          // of this; the stepped path must too.
+          this.tbBeginTurn();
+          f.actingKey = null;
+          f.asyncRunning = false;
+          try { this.tbRefreshTelegraphUI(); } catch (e) {}
+          try {
+            if (typeof window !== 'undefined')
+              window.dispatchEvent(new CustomEvent('tb-turn', { detail: { phase: 'player' } }));
+          } catch (e) {}
+          return;
+        }
+        // Monster's turn: highlight, act, pause for drama
+        f.actingKey = key;
         try {
+          // Record start position for movement trail
+          c._turnStartMx = c.mx; c._turnStartMy = c.my;
           if (typeof window !== 'undefined')
-            window.dispatchEvent(new CustomEvent('tb-turn', { detail: { phase: 'player' } }));
+            window.dispatchEvent(new CustomEvent('tb-turn', {
+              detail: {
+                phase: 'monster', key,
+                name: c.name || 'Monster',
+                speed: c.speed || 3,
+                // Turn order position for "X acts next" display
+                turnPos: f.turnIdx + 1,
+                turnTotal: f.order.length,
+              }
+            }));
         } catch (e) {}
+        try { this.tbMonsterTurn(c); } catch (e) {}
+        if (this.tbEndCheck()) { f.actingKey = null; f.asyncRunning = false; return; }
+        setTimeout(() => { this.tbAdvanceOneAsync(gen); }, 550);
         return;
       }
-      // Monster's turn: highlight, act, pause for drama
-      f.actingKey = key;
-      try {
-        // Record start position for movement trail
-        c._turnStartMx = c.mx; c._turnStartMy = c.my;
-        if (typeof window !== 'undefined')
-          window.dispatchEvent(new CustomEvent('tb-turn', {
-            detail: {
-              phase: 'monster', key,
-              name: c.name || 'Monster',
-              speed: c.speed || 3,
-              // Turn order position for "X acts next" display
-              turnPos: f.turnIdx + 1,
-              turnTotal: f.order.length,
-            }
-          }));
-      } catch (e) {}
-      try { this.tbMonsterTurn(c); } catch (e) {}
-      if (this.tbEndCheck()) { f.actingKey = null; return; }
-      setTimeout(() => { this.tbAdvanceOneAsync(); }, 550);
+      // A full round with nobody able to act (chorus hold): tick again.
+      if (!this.tbEndCheck()) setTimeout(() => { this.tbAdvanceOneAsync(gen); }, 550);
+      else { f.actingKey = null; f.asyncRunning = false; }
     },
 // SNAKE MOVEMENT (Steve 2026-10-05): ducks in a row.
     // Head moves toward player (speed 5, scary fast). Segments follow the
@@ -22934,6 +22996,11 @@
       }
       this.say(n ? `The well opens — space folds. ${n} ${n === 1 ? 'monster' : 'monsters'} held fast, can't move for 2 turns.`
         : 'The well opens on empty ground. Nothing caught.');
+      // BREAK-IT R3: every other combat verb ends the turn here. The well set
+      // acted=true but never called tbAfterPlayerAction — using it with 0
+      // moves left stranded the turn (no advance, no legal moves).
+      this.tbRefreshTelegraphUI();
+      this.tbAfterPlayerAction();
       return true;
     },
     tbPlayerShout() {

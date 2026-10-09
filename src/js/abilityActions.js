@@ -11,6 +11,7 @@
 //   - single_entry: all ability action invocations go through useAbility — no direct impl calls (code: useAbility)
 //   - never_silent: every action narrates via say(), even on failure (code: useAbility)
 //   - honest_costs: costs are paid before effects; insufficient resources block with explanation (code: payActionCost)
+//   - precheck_before_payment: per-fight refusals (used-up, no target) run BEFORE costs are paid — a refused tap never eats the turn (code: ABILITY_ACTION_PRECHECKS, useAbility)
 //   - context_gated: combat actions only in combat, camp actions only at camp/haven (code: actionContextValid)
 // consumes:
 //   - hasAbility, abilityLevel, say, tickAction, spendCombatAction, inCombat
@@ -217,6 +218,19 @@
         return false;
       }
       // Cost check + payment (atomic)
+      // PER-FIGHT PRECHECK (break-it r3): refuse BEFORE payment. Several
+      // impls refused after costs were paid (used-up shake_off / read_stance /
+      // settle_debt, targetless calm_beast) — the tap ate the turn on a
+      // known no-op. Same class as round-1's unwired turn-eaters.
+      var preKey2 = abilityId + '.' + actionId;
+      var preFn2 = ABILITY_ACTION_PRECHECKS[preKey2];
+      if (preFn2) {
+        var preR2 = preFn2(this, target);
+        if (!preR2.ok) {
+          this.say(preR2.why + ' (' + (def.action.name || actionId) + ')');
+          return false;
+        }
+      }
       var costCheck = this.payActionCost(def.action.cost);
       if (!costCheck.ok) {
         this.say(costCheck.why + ' (' + (def.action.name || actionId) + ')');
@@ -333,6 +347,14 @@
       }
       // Per-action cooldown/usage checks are in the impls via state flags.
       // Here we do a generic "once per fight" check if the action declares it.
+      // BREAK-IT R3: prechecks run here (button disabled state) AND in
+      // useAbility before payment — a refused tap must never cost the turn.
+      var preKey = abilityId + '.' + (action.id || '');
+      var preFn = ABILITY_ACTION_PRECHECKS[preKey];
+      if (preFn) {
+        var preR = preFn(this, null);
+        if (!preR.ok) return preR;
+      }
       return { ok: true };
     },
 
@@ -596,6 +618,40 @@
   // Must narrate via game.say(). Return true on success, false on failure.
   // Costs are already paid by useAbility() before dispatch.
   // =========================================================================
+  // PER-FIGHT PRECHECKS (break-it r3): several combat actions refuse when
+  // already used (or unusable) this fight — but the refusal lived INSIDE the
+  // impl, AFTER payActionCost, so the tap spent the turn (and kcal/hp) on a
+  // known no-op. Same class as round-1's unwired turn-eaters. Prechecks run
+  // BEFORE payment in useAbility, and drive the button's disabled state via
+  // _actionAvailable. Each receives (game, target); returns {ok, why}.
+  var ABILITY_ACTION_PRECHECKS = {
+    'game_sense.read_stance': function (game) {
+      var fid = game.tbfight ? game.tbfight.id : null;
+      if (fid != null && game.state.scholar.stanceReadFight === fid)
+        return { ok: false, why: 'Already read this fight.' };
+      return { ok: true };
+    },
+    'trade_of_blows.settle_debt': function (game) {
+      if (game.state.scholar.debtSettled)
+        return { ok: false, why: 'Debt already settled this fight.' };
+      if ((game.state.scholar.fightDamageTaken || 0) <= 0)
+        return { ok: false, why: 'No damage taken this fight — nothing to cash in.' };
+      return { ok: true };
+    },
+    'unbreakable.shake_off': function (game) {
+      if (game.state.scholar.shakeOffUsed)
+        return { ok: false, why: 'Already shaken off this fight.' };
+      return { ok: true };
+    },
+    'animal_ken.calm_beast': function (game, target) {
+      // The bar passes no target (self/none actions); the impl needs a live
+      // non-monster fighter key. Refuse before the turn is spent, not after.
+      var m = game.tbFighter ? game.tbFighter(target) : null;
+      if (!m || !m.alive || m.kind === 'monster' || m.kind === 'player' || m.kind === 'villager')
+        return { ok: false, why: 'Nothing here to calm.' };
+      return { ok: true };
+    },
+  };
   var ABILITY_ACTION_IMPLS = {
 
     // ---- HUNTER ----
@@ -1159,5 +1215,6 @@
 
   // Exposed for tests.
   _g.AbilityActionImpls = ABILITY_ACTION_IMPLS;
+  _g.AbilityActionPrechecks = ABILITY_ACTION_PRECHECKS;
   _g.AbilityCostHandlers = COST_HANDLERS;
 })(typeof window !== 'undefined' ? window : global);
