@@ -669,7 +669,8 @@ Village membership. Joining, leaving, exile status.
 
 **Rules:**
 - membership_needs_no_presence: on the roster, alive, not severed = member, wherever they are; exile is the one severing. (code: membership.js)
-- alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once a day, real food from their pantry. (code: membership.js)
+- alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once per village per day, real food from their pantry. (code: membership.js)
+- guest_meal_face_to_face: the guest's meal is eaten at their fire (dist<=1, like villageTalk) and costs tickAction(32) — no menu magic from afar, no free instant lunch. (code: membership.js)
 - the_loaned_come_home: m.loaned is surfaced in awayMembers and the return is said aloud by loanedReturnTick. (code: membership.js)
 - guest_meal_wastes_nothing: a full player is not served — the ally's pantry is never charged for zero gain. (code: membership.js)
 

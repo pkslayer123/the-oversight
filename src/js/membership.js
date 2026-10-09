@@ -30,7 +30,8 @@
 //   - membershipDaily()
 // rules:
 //   - membership_needs_no_presence: on the roster, alive, not severed = member, wherever they are; exile is the one severing. (code: membership.js)
-//   - alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once a day, real food from their pantry. (code: membership.js)
+//   - alliance_is_played: proposeAlliance is opinion-gated and feast-priced; the guest's meal (guestMeal) is the alliance made playable — once per village per day, real food from their pantry. (code: membership.js)
+//   - guest_meal_face_to_face: the guest's meal is eaten at their fire (dist<=1, like villageTalk) and costs tickAction(32) — no menu magic from afar, no free instant lunch. (code: membership.js)
 //   - the_loaned_come_home: m.loaned is surfaced in awayMembers and the return is said aloud by loanedReturnTick. (code: membership.js)
 //   - guest_meal_wastes_nothing: a full player is not served — the ally's pantry is never charged for zero gain. (code: membership.js)
 // consumes:
@@ -673,9 +674,20 @@
     },
 
     // guestMeal: the alliance, played. An allied village's fire is open —
-    // a guest's meal, once a day. Real food from THEIR pantry (they feel
-    // it), honest when the pot is empty. Guests, not locusts.
+    // a guest's meal, once per village per day. Real food from THEIR pantry
+    // (they feel it), honest when the pot is empty. Guests, not locusts.
     // (Regional audit 2026-10-09: recognizedAbroad had no callers.)
+    // DRIFTER BREAK-IT 2026-10-09: three holes closed —
+    //  (1) FACE-TO-FACE: the meal had no distance gate while every sibling
+    //      verb (talk, study, petition) refuses from afar — a guest's meal
+    //      was eatable from across the map. Now dist>1 refuses, same voice
+    //      as villageTalk.
+    //  (2) TIME COST: the meal charged zero ticks (talk charges 64) — an
+    //      instant 1500 kcal, violating "everything costs time, time and
+    //      calories, or just calories" (DIRECTIVES). Now tickAction(32):
+    //      a meal takes a while; you're a guest, you sit.
+    //  (3) catchUpSim first (like villageTalk): they've lived since you
+    //      last looked — the pantry you eat from is today's, not genesis.
     guestMeal(villageId) {
       var ov = null;
       try { ov = (this.state.otherVillages || []).find(function (x) { return x.id === villageId; }); } catch (e) {}
@@ -685,6 +697,16 @@
         this.say('Their fire is not open to you. Earn an understanding first.');
         return null;
       }
+      // FACE-TO-FACE (drifter break-it 2026-10-09): a guest's meal is eaten
+      // at their fire, not ordered from across the map. Same gate as talk.
+      var pdx = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0));
+      var pdy = Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
+      if (pdx + pdy > 1) {
+        this.say('You\'re not at ' + nm + '. Walk there first — a guest\'s meal happens face to face.');
+        return null;
+      }
+      // they've lived since you last looked (same as villageTalk)
+      try { this.catchUpSim(ov); } catch (e) {}
       var day = (this.state.scholar || {}).day || 0;
       var m = this.mshipState();
       m.lastGuestMeal = m.lastGuestMeal || {};
@@ -715,6 +737,9 @@
       var gained = serve;
       m.lastGuestMeal[villageId] = day;
       if (this._nudgeOpinion) this._nudgeOpinion(villageId, 2);
+      // TIME COST (drifter break-it 2026-10-09): a guest's meal takes a
+      // while — you sit, you eat, you're company. Named cost, no free lunch.
+      try { this.tickAction(32); } catch (e) {}
       this.say(`🍲 ${nm} feeds you from their pot — a guest's meal, +${gained.toLocaleString()} kcal. "Eat. You're one of the understood." Their pantry feels it; so does their regard.`);
       return gained;
     },

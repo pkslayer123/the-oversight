@@ -1875,7 +1875,7 @@
         // open to our people — recognizedAbroad, played as a guest's meal.
         // (formAlliance/recognizedAbroad were engine-only with no callers.)
         if (this.recognizedAbroad && this.recognizedAbroad(this.villagerId, ov)) {
-          card.actions.push({ id: 'guestmeal', label: '🍲 Ask for a guest meal (allied)', hint: 'Their fire is open to our people. Once a day — guests, not locusts.' });
+          card.actions.push({ id: 'guestmeal', label: '🍲 Ask for a guest meal (allied)', hint: 'Their fire is open to our people. One guest meal per village per day — guests, not locusts.' });
         }
       } else {
         card.hint = 'Walk to the edge of the map to travel there.';

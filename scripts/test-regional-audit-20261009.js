@@ -292,8 +292,15 @@ const saidHas = (re) => SAID.some((t) => re.test(t));
     const v = mkVillage('v1', 'Emberhold', { generated: true, opinion: 15 });
     stockPantry(5000);
     Game.proposeAlliance('v1');
+    // FACE-TO-FACE (drifter break-it 2026-10-09): the meal is eaten at
+    // their fire — from across the map it refuses, like villageTalk.
+    const farMeal = Game.guestMeal('v1');
+    ok('V4e2. guest meal from afar refused (face to face)', farMeal === null && saidHas(/face to face/i));
     Game.state.scholar.kcal = 1000;
     v.pantryKcal = 20000;
+    // DRIFTER BREAK-IT 2026-10-09: the guest's meal is face-to-face now
+    // (dist<=1, like villageTalk) — stand at their fire to be served.
+    Game.map.px = v.x; Game.map.py = v.y;
     const cap = Game.kcalCap ? Game.kcalCap() : 3000;
     const gained = Game.guestMeal('v1');
     ok('V4f. guest meal feeds (capped honestly)', gained === Math.min(1500, cap - 1000) && Game.state.scholar.kcal === Math.min(cap, 2500), `gained=${gained} kcal=${Game.state.scholar.kcal} cap=${cap}`);
