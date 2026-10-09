@@ -10098,11 +10098,22 @@
       }
       if (fc.knack) p = 1;
       if (autoFire) p = 1;
+      // PYROKINESIS / FIRE_RAIN (break-it abilities 2026-10-09): the
+      // fire.success modifier existed in data (pyrokinesis, fire_rain
+      // knowledge) but nothing read it — "catch easier" was a lie told by
+      // the card. fire.success is additive on the friction lottery, same
+      // language as the practice curve above.
+      p += this.modTarget('fire.success', 0);
       if (Math.random() < p) {
         fc.successes++;
         this.spendFireFuel(fuel);
         detail[cy][cx] = 'fire';
-        const till = this._absTick() + fuel.burn;
+        // fire.heat: same audit, same lie ("burn hotter"). Each heat point
+        // banks +25% of the fuel's burn — "hotter" has to mean something
+        // measurable, and burn duration is the fire's only heat-adjacent
+        // mechanic. Documented here, not hidden in data.
+        const heat = this.modTarget('fire.heat', 0);
+        const till = this._absTick() + Math.round(fuel.burn * (1 + 0.25 * heat));
         (this.state.fires = this.state.fires || []).push({ tx: this.map.px, ty: this.map.py, cx, cy, till });
         let msg = moss
           ? 'The beard-moss tinder takes the first real spark. You feed it twigs — fire. Yours.'
@@ -10150,7 +10161,8 @@
       if (!fuel) { this.say('Nothing to feed it with — gather fallen branches, or cut a log.'); return null; }
       this.spendFireFuel(fuel);
       const f = (this.state.fires || []).find(f => f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy);
-      if (f) f.till += fuel.burn;
+      // fire.heat (break-it abilities 2026-10-09): +25% burn per heat point.
+      if (f) f.till += Math.round(fuel.burn * (1 + 0.25 * this.modTarget('fire.heat', 0)));
       this.tickAction(8);
       this.say(fuel.kind === 'wood'
         ? 'You lay another log on. The fire settles in — hours more flame.'
@@ -10459,7 +10471,10 @@
       this.tickAction(16);
       this.spendFireFuel(fuel);
       const ins = s.insideTent;
-      const burn = Math.round(fuel.burn * 0.6);
+      // fire.heat (break-it abilities 2026-10-09): pyrokinesis/fire_rain make
+      // tended fires burn hotter — +25% burn per heat point, same as makeFire.
+      const tentHeat = this.modTarget('fire.heat', 0);
+      const burn = Math.round(fuel.burn * 0.6 * (1 + 0.25 * tentHeat));
       const now = this._absTick();
       (this.state.fires = this.state.fires || []).push({ tx: ins.tx, ty: ins.ty, cx: ins.cx, cy: ins.cy, till: now + burn, burn0: burn, inside: true, lastTax: now });
       this.say('A small fire catches in the fire pan. It throws dancing light on the canvas — and no rain in the world can touch it in here.');
@@ -10477,7 +10492,9 @@
       if (!fuel) { this.say('Nothing to feed it with — gather fallen branches, or cut a log.'); return null; }
       this.spendFireFuel(fuel);
       // Small fire, small capacity: it can't hold a bonfire's worth of fuel.
-      const add = Math.round(fuel.burn * 0.6);
+      // fire.heat (break-it abilities 2026-10-09): +25% burn per heat point.
+      const feedHeat = this.modTarget('fire.heat', 0);
+      const add = Math.round(fuel.burn * 0.6 * (1 + 0.25 * feedHeat));
       f.till = Math.min(f.till + add, this._absTick() + (f.burn0 || add) * 2);
       this.tickAction(8);
       this.say('You feed the little fire. It takes it — a while more light and warmth.');
@@ -16887,7 +16904,8 @@
         generous: (w.donate || 0) >= 2,
         scrounger: (w.scavenge || 0) >= 3,
         // previously unreachable first picks — now wired to sensible actions
-        ant_trail: (w.scavenge || 0) >= 2,   // ants know where the sugar is; ruins have sugar
+        // (break-it abilities 2026-10-09: ant_trail removed — no such ability
+        // in abilities.json; the cond key was dead.)
         cold_blooded: (w.forage || 0) >= 4,  // cold mornings outdoors teach efficiency
         echo_location: (w.hunt || 0) >= 3,   // tracking hones your senses
         // FRICTION INSPIRES AUGMENTATION: a week of miming and pointing
@@ -17187,12 +17205,22 @@
           const a = this.data.abilities.find(x => x.id === ((e && e.id) || e));
           return a && a.tier === 'utility';
         });
-        if (ops.length) {
+        // BREAK-IT abilities 2026-10-09: the Static's gift pushed with no slot
+        // check — taking pact at 5/6 with no utility ability held landed at
+        // 7/6, breaking the 6-slot law. The give and the take are one
+        // transaction: the gift lands only if the post-take count fits the
+        // cap; otherwise the Static offers, finds no room, and takes nothing.
+        const maxSlots = this.abilitySlots();
+        const giftFits = !ops.length || (s.abilities.length + 1 - (utils.length ? 1 : 0)) <= maxSlots;
+        if (ops.length && giftFits) {
           const gain = ops[Math.floor(Math.random() * ops.length)];
           s.abilities.push({ id: gain.id, name: gain.name, desc: gain.description, level: 1, xp: 0 });
           this.say(`PACT: the Static gives — ${gain.name}.`);
+        } else if (ops.length) {
+          const gain = ops[Math.floor(Math.random() * ops.length)];
+          this.say(`PACT: the Static offers ${gain.name} — but there is nowhere to put it (${s.abilities.length}/${maxSlots} slots). The gift finds no purchase and dissolves. The Static takes nothing. (pact: slot cap held)`);
         }
-        if (utils.length) {
+        if (utils.length && giftFits) {
           const lose = utils[Math.floor(Math.random() * utils.length)];
           const lid = (lose && lose.id) || lose;
           s.abilities = s.abilities.filter(e => ((e && e.id) || e) !== lid);
@@ -17685,26 +17713,29 @@
       };
     },
     // abilityLevelBonus: what does leveling up give? (Per ability.)
+    // (break-it abilities 2026-10-09: L4/L5 blurbs trimmed — gainAbilityXP
+    // caps at L3, so evolution copy was unreachable dead text. Re-add with
+    // evolution if the cap ever lifts.)
     abilityLevelBonus(id, level) {
       const bonuses = {
-        green_thumb: { 2: '+100% yield (was +50%).', 3: 'You sense rich ground. Forage spots glow.', 4: '+150% yield. You can smell ripeness.', 5: 'MASTER: Plants yield double. The green recognizes you.' },
-        tracker: { 2: '+50% hunt success (was +30%).', 3: 'You see tracks from 2 tiles away.', 4: 'You read age, weight, and mood from tracks.', 5: 'MASTER: The wild tells you where everything is.' },
-        diplomat: { 2: 'Trust builds 3x (was 2x).', 3: 'Villagers tell you secrets unprompted.', 4: 'You can end feuds with a conversation.', 5: 'MASTER: Your word is law. Villages follow you.' },
-        camp_cook: { 2: 'No water needed for cooking.', 3: '+25% kcal (was +10%).', 4: '+40% kcal. You can cook for 20.', 5: 'MASTER: Your food heals wounds. People travel for your fire.' },
+        green_thumb: { 2: '+100% yield (was +50%).', 3: 'You sense rich ground. Forage spots glow.' },
+        tracker: { 2: '+50% hunt success (was +30%).', 3: 'You see tracks from 2 tiles away.' },
+        diplomat: { 2: 'Trust builds 3x (was 2x).', 3: 'Villagers tell you secrets unprompted.' },
+        camp_cook: { 2: 'No water needed for cooking.', 3: '+25% kcal (was +10%).' },
         // BRAWLER (Steve 2026-10-07): mid/late game fighter progression
-        brawler_instinct: { 2: 'You act first in every fight.', 3: 'You see the killing blow before they do.', 4: 'Fights end before they start. You choose.', 5: 'MASTER: You are the fight. Others just attend.' },
-        adrenaline_control: { 2: '+60% damage (was +30%).', 3: 'You fight through pain. Wounds don\'t slow you.', 4: 'You can take a killing blow and keep standing.', 5: 'MASTER: Death has to ask permission.' },
-        intimidating_presence: { 2: 'Most back down. Some join you.', 3: 'Monsters hesitate. They feel you.', 4: 'You can rout a pack with a look.', 5: 'MASTER: Your name ends fights.' },
+        brawler_instinct: { 2: 'You act first in every fight.', 3: 'You see the killing blow before they do.' },
+        adrenaline_control: { 2: '+60% damage (was +30%).', 3: 'You fight through pain. Wounds don\'t slow you.' },
+        intimidating_presence: { 2: 'Most back down. Some join you.', 3: 'Monsters hesitate. They feel you.' },
         // SOCIAL (Steve 2026-10-07)
-        silver_tongue: { 2: 'You can talk your way out of anything.', 3: 'People believe you. Even when they shouldn\'t.', 4: 'You can turn enemies into allies mid-fight.', 5: 'MASTER: Your words reshape villages.' },
-        gossip_network: { 2: 'You hear everything. Nothing is secret.', 3: 'Travelers seek you out with news.', 4: 'You know things before they happen.', 5: 'MASTER: The world whispers to you.' },
-        peacemaker: { 2: 'You can stop any fight.', 3: 'Warring villages ask you to mediate.', 4: 'Your presence prevents violence.', 5: 'MASTER: Peace follows you like weather.' },
+        silver_tongue: { 2: 'You can talk your way out of anything.', 3: 'People believe you. Even when they shouldn\'t.' },
+        gossip_network: { 2: 'You hear everything. Nothing is secret.', 3: 'Travelers seek you out with news.' },
+        peacemaker: { 2: 'You can stop any fight.', 3: 'Warring villages ask you to mediate.' },
         // EXPLORATION (Steve 2026-10-07)
-        pathfinder: { 2: 'You travel 50% faster.', 3: 'You never get lost. Ever.', 4: 'You find shortcuts no one else sees.', 5: 'MASTER: Distance is a suggestion.' },
-        eagle_eye: { 2: 'Rare finds catch your eye while foraging.', 3: 'The odd one out finds you more often now.', 4: 'You almost never walk past the unusual.', 5: 'MASTER: Nothing unusual escapes your eye.' },
+        pathfinder: { 2: 'You travel 50% faster.', 3: 'You never get lost. Ever.' },
+        eagle_eye: { 2: 'Rare finds catch your eye while foraging.', 3: 'The odd one out finds you more often now.' },
         // INVESTIGATION (Steve 2026-10-07)
-        lie_detector: { 2: 'You catch 50% of lies.', 3: 'You know WHY they\'re lying.', 4: 'You can see the truth they\'re hiding.', 5: 'MASTER: No one lies to you. Ever.' },
-        evidence_board: { 2: 'Contradictions glow.', 3: 'You reconstruct events from fragments.', 4: 'You can prove guilt with whispers.', 5: 'MASTER: Truth is your weapon.' },
+        lie_detector: { 2: 'You catch 50% of lies.', 3: 'You know WHY they\'re lying.' },
+        evidence_board: { 2: 'Contradictions glow.', 3: 'You reconstruct events from fragments.' },
         // CARE / HEALER PATH (Steve 2026-10-09, disease rework): disease cure
         // is EARNED through deepening. L2 unlocks working on others; L3
         // transcends the diagnosis gate per ability; Fever's End (synergy)
@@ -20322,24 +20353,15 @@
       } catch (e) { return []; }
     },
 
-    // synergyMods: passive synergy effects, fed into the modifier pipeline.
-    synergyMods() {
-      const out = [];
-      const syns = this.data.synergies || [];
-      for (const sid of (this.state.scholar.activeSynergies || [])) {
-        const syn = syns.find(x => x.id === sid);
-        if (!syn || !syn.modifiers) continue;
-        for (const m of syn.modifiers) {
-          out.push(Object.assign({ source: 'synergy:' + sid }, m));
-        }
-      }
-      return out;
-    },
-
     // mods: all active ability modifiers for the scholar (system + background + synergies).
+    // BREAK-IT abilities 2026-10-09: collectModifiers already gathers ACTIVE
+    // synergy modifiers (see engine/modifiers.js) — the old code ALSO
+    // concatenated this.synergyMods() (deleted), so every active synergy's
+    // modifiers applied TWICE (crimson_circuit's healing x1.3 fired as x1.69).
+    // The double-count arrived with the af62f4a5 wiring and hid behind the
+    // 6-slot cap. One collection path now.
     mods() {
-      const base = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies);
-      const mods = base.concat(this.synergyMods());
+      const mods = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies);
       // BUILD BONUS (Steve 2026-10-07): specialists and generalists both get
       // rewarded. The bonus applies as a modifier so it stacks with everything.
       try {
@@ -21798,7 +21820,11 @@
         if (scholar.skunkScent === 0) this.say('The skunk smell finally washes out. You can breathe through your nose again.');
       }
       // ant_trail: ants know where the water is. 30% chance they lead you to some.
-      if (this.hasAbility('ant_trail') && Math.random() < 0.3) {
+      // (break-it abilities 2026-10-09: moved from ability to KNOWLEDGE SKILL
+      // by 725a49c7 — the old hasAbility() check could never be true, so the
+      // seep-finding died silently. The skill gates it now.)
+      const antLvl = (((this.state.codex || {}).skills || {}).ant_trail || {}).level || 0;
+      if (antLvl >= 1 && Math.random() < 0.3) {
         const got = this.addWater(1, 'risky', 'ant-trail seep');
         this.say(got > 0 ? 'Ants march past your boot, laden. You follow them to a seep. +1L water (risky). (ant_trail)' : "Ants march past your boot, laden. You follow them to a seep — but your pack can't hold another liter. (ant_trail)");
       }

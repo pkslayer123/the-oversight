@@ -82,7 +82,15 @@
     // synergy modifiers were never collected — every synergy reward was dead.)
     const synById = {};
     (synergiesData || []).forEach(s => { synById[s.id] = s; });
-    for (const sid of (scholar.synergies || [])) {
+    // BREAK-IT abilities 2026-10-09: only ACTIVE synergies (discovered AND
+    // currently held) grant modifiers. The old code read scholar.synergies
+    // (discovered), so a synergy stayed mechanically live after you lost a
+    // leg — pact's Static taking a leg ability, loseAbilityXP dropping a leg
+    // below minLevel — while the card promised "active only while held".
+    // activeSynergies is recomputed on load/equip/level-up/discovery; states
+    // that predate it fall back to discovered (identical to the old behavior).
+    const liveSyns = Array.isArray(scholar.activeSynergies) ? scholar.activeSynergies : (scholar.synergies || []);
+    for (const sid of liveSyns) {
       const s = synById[sid];
       if (s && s.modifiers) {
         for (const m of s.modifiers) {
@@ -113,19 +121,19 @@
     efficient_action: [{ target: 'forage.yield', op: 'multiply', value: 1.25 }],
     never_fails: [{ target: 'hunt.success', op: 'add', value: 0.10 }],
     impossible_edge: [{ target: 'cook.kcal', op: 'multiply', value: 1.10 }],
-    weatherproof: [{ target: 'travel.kcal', op: 'multiply', value: 0.9 }],
+    weatherproof: [{ target: 'travel.cost_mult', op: 'multiply', value: 0.9 }],
     second_skin: [{ target: 'rest.energy', op: 'multiply', value: 1.3 }],
     ghost_weave: [{ target: 'travel.encounter', op: 'multiply', value: 0.6 }],
     quiet_luck: [{ target: 'forage.yield', op: 'multiply', value: 1.1 }],
     // --- variability expansion: hidden/rare, affinity, and secret evolutions ---
     whisper_edge: [{ target: 'travel.encounter', op: 'multiply', value: 0.7 }],
-    storm_cloth: [{ target: 'travel.kcal', op: 'multiply', value: 0.85 }],
+    storm_cloth: [{ target: 'travel.cost_mult', op: 'multiply', value: 0.85 }],
     unseen_hand: [{ target: 'forage.yield', op: 'multiply', value: 1.15 }],
     careful_hands: [{ target: 'forage.yield', op: 'multiply', value: 1.2 }],
     blood_remembers: [{ target: 'hunt.success', op: 'add', value: 0.15 }],
     quick_spark: [{ target: 'forage.yield', op: 'multiply', value: 1.15 }],
     trail_ghost: [{ target: 'travel.encounter', op: 'multiply', value: 0.6 }],
-    steady_ground: [{ target: 'travel.kcal', op: 'multiply', value: 0.9 }],
+    steady_ground: [{ target: 'travel.cost_mult', op: 'multiply', value: 0.9 }],
     open_hearth: [{ target: 'trust.gain_mult', op: 'multiply', value: 1.25 }],
     unbreakable: [{ target: 'rest.energy', op: 'multiply', value: 1.2 }],
     her_handwriting: [{ target: 'trust.gain_mult', op: 'multiply', value: 1.5 }],
@@ -157,7 +165,10 @@
     'fuel_save': (v) => [{ target: 'fire.fuel', op: 'multiply', value: 1 - v }],
     'fire_success': (v) => [{ target: 'fire.success', op: 'add', value: v }],
     'fire_heat': (v) => [{ target: 'fire.heat', op: 'add', value: v }],
-    'heal_bonus': (v) => [{ target: 'heal.amount', op: 'add', value: v }],
+    // BREAK-IT abilities 2026-10-09: was 'heal.amount' — a target nothing
+    // reads (the engine's healing target is 'healing.amount'). Every
+    // knowledge skill granting heal_bonus was silently doing nothing.
+    'heal_bonus': (v) => [{ target: 'healing.amount', op: 'add', value: v }],
     'hunt_find': (v) => [{ target: 'hunt.find', op: 'add', value: v }],
     'hunt_success': (v) => [{ target: 'hunt.success', op: 'add', value: v }],
     'trap_success': (v) => [{ target: 'trap.success', op: 'add', value: v }],
