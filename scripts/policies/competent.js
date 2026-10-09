@@ -142,6 +142,16 @@ const competent = {
     } catch (e) {}
     teachRound(Game, ctx);
     talkRound(Game, ctx);
+    // TAKE THE SYSTEM'S OFFER (coverage 2026-10-09): an experienced player
+    // chooses an ability when offered — the sim never did, so ability_granted
+    // never fired. Pick the first offer (a competent player takes the gift).
+    try {
+      const ch = (Game.state.scholar || {}).abilityChoices;
+      if (ch && ch.length && Game.chooseAbility) {
+        Game.chooseAbility(ch[0].id);
+        ctx.choseAbility = (ctx.choseAbility || 0) + 1;
+      }
+    } catch (e) {}
     const known = Object.keys((Game.state.codex || {}).plants || {}).length;
     ctx.knownPlants = known;
   },
@@ -153,22 +163,58 @@ const competent = {
       if (!f || f.over || !Game.tbIsPlayerTurn()) return false;
       const p = Game.tbFighter('p');
       const hpPct = (p.hp || 0) / Math.max(1, p.maxHp || p.hp || 1);
-      if (hpPct < 0.35) {
-        // retreat toward the nearest edge — the barrier ends pursuit honestly
-        const px = p.mx != null ? p.mx : 4, py = p.my != null ? p.my : 4;
-        const tx = px <= 4 ? 0 : 8;
-        try { Game.tbPlayerMove(tx, py); ctx.fled = (ctx.fled || 0) + 1; } catch (e) {}
+      const endTurn = () => {
         try {
           const q = Game.tbFighter('p');
           q.moveLeft = 0; q.acted = true;
           Game.tbAfterPlayerAction();
         } catch (e) {}
+      };
+      if (hpPct < 0.35) {
+        // retreat toward the nearest edge — the barrier ends pursuit honestly
+        const px = p.mx != null ? p.mx : 4, py = p.my != null ? p.my : 4;
+        const tx = px <= 4 ? 0 : 8;
+        try { Game.tbPlayerMove(tx, py); ctx.fled = (ctx.fled || 0) + 1; } catch (e) {}
+        endTurn();
         return true;
       }
       const alive = f.fighters.filter(x => x.kind === 'monster' && (x.hp || 0) > 0);
       if (!alive.length) return false;
       alive.sort((a, b) => (a.hp || 0) - (b.hp || 0));
-      try { Game.tbPlayerStrike(alive[0].key); ctx.struck = (ctx.struck || 0) + 1; } catch (e) {}
+      const tgt = alive[0];
+      const px = p.mx != null ? p.mx : 4, py = p.my != null ? p.my : 4;
+      const tmx = tgt.mx != null ? tgt.mx : 4, tmy = tgt.my != null ? tgt.my : 4;
+      // CLOSE THE DISTANCE (coverage 2026-10-09): striking out of range is a
+      // no-op that never advances the turn. Move adjacent first, then strike.
+      // (Grid is 0..8; skip off-grid and monster-occupied tiles.)
+      try {
+        const w = (Game.equippedWeapon && Game.equippedWeapon()) || { range: 1 };
+        const d0 = Math.max(Math.abs(tmx - px), Math.abs(tmy - py));
+        if (d0 > (w.range || 1)) {
+          const occupied = new Set(
+            f.fighters.filter(x => x.alive && x.key !== 'p').map(x => x.mx + ',' + x.my));
+          let bx = null, by = null, bd = 1e9;
+          for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+            if (!dx && !dy) continue;
+            const cx = tmx + dx, cy = tmy + dy;
+            if (cx < 0 || cx > 8 || cy < 0 || cy > 8) continue;
+            if (occupied.has(cx + ',' + cy)) continue;
+            const dd = Math.max(Math.abs(cx - px), Math.abs(cy - py));
+            if (dd < bd) { bd = dd; bx = cx; by = cy; }
+          }
+          if (bx != null) {
+            try { Game.tbPlayerMove(bx, by); } catch (e) {}
+            ctx.closed = (ctx.closed || 0) + 1;
+          }
+          endTurn();
+          return true;
+        }
+      } catch (e) {}
+      // STRIKE THEN END TURN (coverage 2026-10-09): tbPlayerStrike leaves
+      // moveLeft > 0, so the turn never auto-advances — the policy spun on
+      // "Already acted" forever, freezing the game clock. End explicitly.
+      try { Game.tbPlayerStrike(tgt.key); ctx.struck = (ctx.struck || 0) + 1; } catch (e) {}
+      endTurn();
       return true;
     } catch (e) { return false; }
   },

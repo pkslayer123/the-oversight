@@ -109,7 +109,32 @@ async function runDays(Game, policy, opts) {
   const ctx = { policyId: policy.id, notes: [] };
   const t0 = Date.now();
 
-  const samples = { pop: [], pantry: [], knowledge: [], trust: [], deaths: [] };
+  const samples = { pop: [], pantry: [], knowledge: [], trust: [], deaths: [], villagers: [] };
+  // VILLAGER SNAPSHOT (coverage 2026-10-09): per-villager differentiation —
+  // are villagers becoming different people? Captured every 30 loop-days:
+  // occupation/profile, held abilities, agency XP tracks, key life stats.
+  const villagerSnapshot = () => {
+    try {
+      const v = Game.state.village || {};
+      const out = [];
+      for (const vid of (v.roster || [])) {
+        let person = null, ag = null;
+        try { person = Game.getPerson ? Game.getPerson(vid) : null; } catch (e) {}
+        try { ag = Game.agencyOf ? Game.agencyOf(vid) : null; } catch (e) {}
+        const axp = ((ag || {}).xp || {})[vid] || {};
+        const astats = ((ag || {}).stats || {})[vid] || {};
+        out.push({
+          vid: String(vid).slice(0, 12),
+          occ: (person && (person.occupationId || person.formerOccupation)) || '?',
+          profile: ((ag && ag.profiles && ag.profiles[vid]) || '?'),
+          abilities: ((v.npcAbilities || {})[vid] || []).slice(),
+          xp: { t: axp.tracking || 0, s: axp.survival || 0, b: axp.bravery || 0 },
+          kills: astats.monsterKills || 0, exped: astats.expeditions || 0,
+        });
+      }
+      return out;
+    } catch (e) { return []; }
+  };
   const pop = () => ((Game.state.village || {}).roster || []).length;
   const pantryKcal = () => {
     try {
@@ -153,6 +178,7 @@ async function runDays(Game, policy, opts) {
       samples.knowledge.push([day, knownPlants()]);
       const ts = trustStats();
       samples.trust.push([day, ts ? ts.mean : null]);
+      if (day % 30 === 0) samples.villagers.push([day, villagerSnapshot()]);
     }
     if (pop() === 0) break;
   }
@@ -163,16 +189,29 @@ async function runDays(Game, policy, opts) {
       if (ev.type === 'death') samples.deaths.push({ day: ev.day, kind: ev.kind, who: ev.who, cause: ev.cause });
     }
   } catch (e) {}
+  // Final villager snapshot (coverage 2026-10-09): short runs never reach
+  // the 30-day cadence — always capture the end state for differentiation.
+  try { samples.villagers.push([day > days ? days : day, villagerSnapshot()]); } catch (e) {}
 
   const endReason = Game.over
     ? (Game.villageLost ? 'village-lost' : 'over-other')
     : (day > days ? 'survived' : 'pop-zero');
 
+  // End-state learned sets (coverage 2026-10-09): unioned across runs, these
+  // answer "which skills/plants were NEVER learned". Cheaper than tele events.
+  let learnedPlants = [], learnedSkills = [];
+  try { learnedPlants = Object.keys((Game.state.codex || {}).plants || {}); } catch (e) {}
+  try { learnedSkills = Object.keys((Game.state.codex || {}).skills || {}); } catch (e) {}
+  let gameDays = 0;
+  try { gameDays = Game.state.scholar.day || 0; } catch (e) {}
+
   return {
     days: day > days ? days : day,
+    gameDays,
     endReason,
     telemetry: Game.state.telemetry || [],
     samples,
+    learnedPlants, learnedSkills,
     ms: Date.now() - t0,
     manifest: opts.manifest || manifest('?', policy.id),
     policyId: policy.id,
@@ -183,7 +222,17 @@ async function runDays(Game, policy, opts) {
 // Default fight driver: strike nearest live monster on the player's turn.
 // Policies override via policy.fight(Game, ctx) returning true when handled.
 function driveFights(Game, policy, ctx) {
-  let guard = 0;
+  let guard = 0, still = 0, lastSig = '';
+  // NO-PROGRESS BREAK (coverage 2026-10-09): a policy no-op that never
+  // advances the fight (e.g. out-of-range strikes) used to spin 200× while
+  // the game clock froze. Break when the fight state stops changing.
+  const sig = () => {
+    try {
+      const f = Game.tbfight;
+      if (!f) return 'none';
+      return f.turnIdx + ':' + f.fighters.map(x => Math.round(x.hp || 0)).join(',') + ':' + (f.over ? 1 : 0);
+    } catch (e) { return 'err'; }
+  };
   while (Game.tbfight && !Game.tbfight.over && guard++ < 200) {
     if (Game.over) break;
     if (policy.fight) {
@@ -203,6 +252,9 @@ function driveFights(Game, policy, ctx) {
         Game.tbAfterPlayerAction();
       } catch (e) { break; }
     } else break;
+    const s = sig();
+    if (s === lastSig) { if (++still > 10) { ctx.notes.push('driveFights: no progress for 10 rounds, breaking'); break; } }
+    else { still = 0; lastSig = s; }
   }
 }
 

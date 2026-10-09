@@ -404,6 +404,7 @@
         inv.push(carried);
       }
       it.units = 0;
+      try { this.tele('loot_taken', { id: it.itemId || it.plantId || '?', alien: !!it.alienLoot }); } catch (e) {}
       // GEAR DISCOVERY (Steve 2026-10-09): looting a gear item teaches its
       // recipe L1 — you've held one. (Sapient dead carry their real gear.)
       try { if (it.itemId) this.noteGearHandled(it.itemId); } catch (e) {}

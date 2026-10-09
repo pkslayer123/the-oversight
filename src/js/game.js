@@ -17024,6 +17024,7 @@
         return null;
       }
       s.abilities.push({ id: choice.id, name: choice.name, desc: choice.description || choice.desc, level: 1, xp: 0 });
+      try { this.tele('ability_granted', { id: choice.id, who: 'player' }); } catch (e) {}
       // ON-ACQUIRE: some abilities change the world the moment you take them.
       this.abilityOnAcquire(choice.id);
       // SYNERGIES: new ability might resonate with something you already hold.
@@ -29972,6 +29973,7 @@
       const entry = { itemId: def.id, name: def.name, units: 1,
         kcalEach: def.kcalEach || 0, spoilDay: def.spoilDay || 9999,
         unit: 'piece', kg: def.kg || 0.3, alienLoot: true, alienEffectHidden: true };
+      try { this.tele('loot_dropped', { id: def.id, tier: def.lootTier || '?', to: (toCorpse && toCorpse.items) ? 'corpse' : 'player' }); } catch (e) {}
       // LOOT-AS-ACTION (Steve 2026-10-06): monster-kill loot goes on the
       // corpse, not the pack. Contest prizes still go direct (no corpse).
       if (toCorpse && toCorpse.items) { toCorpse.items.push(entry); return { def, entry }; }
@@ -30405,6 +30407,7 @@
         const v = this.state.village; v.npcAbilities = v.npcAbilities || {};
         v.npcAbilities[vid] = v.npcAbilities[vid] || [];
         if (!v.npcAbilities[vid].includes(id)) v.npcAbilities[vid].push(id);
+        try { this.tele('ability_granted', { id: id, who: 'villager:' + vid }); } catch (e) {}
       } catch (e) {}
     },
     npcRevokeAbility(vid, id) {
