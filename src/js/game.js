@@ -6648,7 +6648,7 @@
       }
       return { x: 4, y: 4 }; // unreachable in practice — every detail has walkable cells
     },
-    travelTo(x, y, force) {
+    travelTo(x, y, force, combatExit) {
       // WORLD EDGE (explorer loop 2026-10-06): the 9x9 map is the whole
       // known world. A rim tap on a border node passes out-of-bounds coords
       // (e.g. (-1,3)) — tileAt is undefined there, and the old order crashed
@@ -6657,10 +6657,20 @@
       // offers a travel button into the void; tryNodeExit tells the player
       // the world ends here.)
       if (this.over) return null;
+      // COMBAT (break-it travel 2026-10-08): node travel mid-fight is the
+      // barrier exit's job (tbBarrierExit — 50% flee roll, honest narration,
+      // monsters follow through). A raw travelTo here teleports off the node
+      // with the fight still live: free flee with no roll, no consequences,
+      // and a desynced fight whose fighters reference a node you left.
+      // Refuse, loudly. tbBarrierExit is the one legitimate mid-combat
+      // caller — it passes combatExit.
+      if (this.inCombat() && !combatExit) {
+        this.say('Not mid-fight — the barrier is the way out.');
+        return null;
+      }
       const t = this.travelTargets().find(t => t.x === x && t.y === y);
       if (!t) return null;
       const dest = this.tileAt(x, y);
-      const wasUnknown = !dest.revealed;
       // blocked? don't travel — return the blockage so the UI can offer solutions.
       // (force bypasses: swimming doesn't fix the path, it just gets you across.)
       if (!force) {
@@ -6909,6 +6919,11 @@
     // micro-move: step to an adjacent cell in the 9x9. 1 tick of time, no effort.
     // this is how you reach the plant, the water, the monster. the world is physical.
     microMove(cx, cy) {
+      // COMBAT (break-it travel 2026-10-08, sibling sweep): same class as the
+      // travelTo combat-escape — a raw microMove mid-fight slides scholar.mx/my
+      // without moving the tb fighter, desyncing the fight. Combat movement is
+      // tbPlayerMove's job (dpad/taps route there). Refuse here.
+      if (this.inCombat()) return false;
       const s = this.state.scholar;
       const px = s.mx ?? 4, py = s.my ?? 4;
       const dx = Math.abs(cx - px), dy = Math.abs(cy - py);
@@ -7638,6 +7653,9 @@
     // step-by-step via pathStep. Returns the path ([[x,y],...]) or null.
     // The UI animates the FULL path — tap-to-move never teleports.
     beginPathWalk(tx, ty) {
+      // COMBAT (break-it travel 2026-10-08, sibling sweep): no committed walks
+      // mid-fight — same desync class as travelTo/microMove. Say so, loudly.
+      if (this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       const s = this.state.scholar;
       const sx = s.mx ?? 4, sy = s.my ?? 4;
       if (tx === sx && ty === sy) return [];
@@ -7667,6 +7685,9 @@
     // the tile — the world may have changed mid-walk. Returns true if the
     // step landed, false if the walk must stop here (caller purges the rest).
     pathStep(tx, ty) {
+      // COMBAT (break-it travel 2026-10-08, sibling sweep): same desync class
+      // as travelTo/microMove — steps mid-fight belong to tbPlayerMove.
+      if (this.inCombat()) return false;
       const s = this.state.scholar;
       const px = s.mx ?? 4, py = s.my ?? 4;
       if (Math.abs(tx - px) > 1 || Math.abs(ty - py) > 1 || (tx === px && ty === py)) return false;
@@ -20283,7 +20304,7 @@
       // positions on the node you never left. Attempt the crossing FIRST;
       // only celebrate (or end the fight) when it actually lands.
       let crossed = null;
-      try { crossed = this.travelTo(nx, ny); } catch (e) {}
+      try { crossed = this.travelTo(nx, ny, false, true); } catch (e) {} // combatExit: the barrier is the legitimate mid-fight crossing
       if (crossed && crossed.kind === 'blockage') {
         // travelTo already named the blockage. The push is spent; the fight
         // is not — you hit a wall, not an exit.

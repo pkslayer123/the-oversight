@@ -966,14 +966,23 @@
   };
 
   const origTravelTo = Game.travelTo;
-  Game.travelTo = function (x, y, force) {
-    const r = origTravelTo.call(this, x, y, force);
+  Game.travelTo = function (x, y, force, combatExit) {
+    const r = origTravelTo.call(this, x, y, force, combatExit);
     try {
-      // Party travels WITH you. They're at your new node, near you.
-      this.placePartyAtPlayer();
-      this.partyBanter('travel');
-      // Arrival at a new node: betrayal math runs.
-      this.betrayalSweep();
+      // ARRIVAL-ONLY (break-it travel 2026-10-08): the engine can refuse
+      // (null: game over / mid-combat / invalid target) or return a blockage
+      // object, and a pit trap can kill mid-arrival (over). The old wrapper
+      // ran the party side effects on EVERY call — so blocked-travel taps
+      // farmed betrayal rolls for free (betrayalSweep's 50% strike roll) and
+      // travel banter fired without moving. Side effects only on a real
+      // arrival: standing on the destination node, alive.
+      if (this.map.px === x && this.map.py === y && !this.over) {
+        // Party travels WITH you. They're at your new node, near you.
+        this.placePartyAtPlayer();
+        this.partyBanter('travel');
+        // Arrival at a new node: betrayal math runs.
+        this.betrayalSweep();
+      }
     } catch (e) {}
     return r;
   };
