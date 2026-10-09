@@ -19007,6 +19007,10 @@
         const foodIdx = scholar.inventory.findIndex(i => (i.kcalEach || 0) > 0 && i.units > 0 && i.edible !== false && !isSpoiled(i));
         if (foodIdx === -1) break; // no food left
         const it = scholar.inventory[foodIdx];
+        // CANNIBALISM (break-it disease r10): human meat is never a normal
+        // meal. The bulk Eat path used to eat it silently — no trauma, no
+        // corruption, no prion roll. It routes through the act now.
+        if (it.plantId === 'meat_human') { this.eatCannibal(foodIdx); continue; }
         let kcal = it.kcalEach;
         // symbiote: it tastes your food first. Warns you of poison.
         if (it.safe === false && this.hasAbility('symbiote') && !it.symWarned) {
@@ -19038,7 +19042,11 @@
         }
         // TRICHINOSIS (disease rework 2026-10-09): bear/boar meat not cooked
         // through. Only a real cooking (foodState 'cooked') kills it.
-        if (it.parasiteRisk && !shellgut && it.foodState !== 'cooked' && Math.random() < (it.parasiteRisk.p || 0.25)) {
+        // TRICHINOSIS HONESTY (break-it disease r10): undercooked counts as
+        // not-cooked — the worms survive a bad fire. Cooked-through meat has
+        // parasiteRisk deleted at the fire (see cookFood), so this is the
+        // undercooked/smoked-raw case.
+        if (it.parasiteRisk && !shellgut && (it.foodState !== 'cooked' || it.undercooked) && Math.random() < (it.parasiteRisk.p || 0.25)) {
           this.contractDisease(it.parasiteRisk.id || 'trichinosis', { source: 'the ' + it.name });
         }
         // POISON: belltoad throat sac, etc. Purify cures it.
@@ -19215,7 +19223,7 @@
       }
       // TRICHINOSIS (disease rework 2026-10-09): bear/boar meat not cooked
       // through. Only a real cooking (foodState 'cooked') kills it.
-      if (it.parasiteRisk && !shellgut1 && it.foodState !== 'cooked' && Math.random() < (it.parasiteRisk.p || 0.25)) {
+      if (it.parasiteRisk && !shellgut1 && (it.foodState !== 'cooked' || it.undercooked) && Math.random() < (it.parasiteRisk.p || 0.25)) {
         this.contractDisease(it.parasiteRisk.id || 'trichinosis', { source: 'the ' + it.name });
       }
       if (it.poisonRisk && !shellgut1 && Math.random() < it.poisonRisk.p) {
@@ -26429,10 +26437,7 @@
           const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Drink'));
           this.say(`It lands on you \u2014 the proboscis slides in. (${landed} damage)`);
           this.audioEvent('mosquitoDrink');
-          if (landed > 0 && foe.kind === 'player' && !this.hasStatus('scholar', 'eurika') && !this.hasStatus('scholar', 'east_nile')) {
-            const vid = Math.random() < 0.5 ? 'eurika' : 'east_nile';
-            this.applyStatus('scholar', vid, { source: 'the mosquito\u2019s bite' });
-          }
+          if (landed > 0 && foe.kind === 'player') this.mosquitoBiteVirus();
           m.mosqPhase = 'heavy'; m.mosqHeavyTurns = 2; setP('heavy');
           this.say('It lifts off heavy and slow, drunk on blood. Now \u2014 while it\'s heavy!');
           this.tbLearnPattern(m);
@@ -26462,6 +26467,18 @@
     // latch. Counters, all honest: (1) keep 2+ squares away and it\'s harmless;
     // (2) a torch\'s flame drives it off; (3) after 4 feeds it\'s engorged and
     // drops off fat and slow.
+    // mosquitoBiteVirus(): 50/50 which alien virus per landed bite. A
+    // bearer holding one can still catch the other on a later bite
+    // (break-it disease r10: the old guard blocked the second virus
+    // outright — min-maxers seek both, and the per-bite framing promised it).
+    // Returns the virus id applied, or null if both are already held.
+    mosquitoBiteVirus() {
+      const cands = ['eurika', 'east_nile'].filter(v => !this.hasStatus('scholar', v));
+      if (!cands.length) return null;
+      const vid = cands[Math.floor(Math.random() * cands.length)];
+      this.applyStatus('scholar', vid, { source: 'the mosquito\u2019s bite' });
+      return vid;
+    },
     tbTickTurn(m) {
       const f = this.tbfight;
       const useFifo = this.encUsesFifo(m);

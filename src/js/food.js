@@ -579,6 +579,11 @@
         it.kcalEach = Math.round(it.kcalEach * eff);
         it.foodState = 'preserved';
         it.diseaseRisk = null; it.safe = true;
+        // TRICHINOSIS HONESTY (break-it disease r10): smoking never kills the
+        // worms — but it must not resurrect them either. Properly cooked meat
+        // had them deleted at the fire; make sure smoking can't bring back a
+        // stale parasiteRisk from a pre-fix cook.
+        if (wasCooked && !it.undercooked) { delete it.parasiteRisk; }
         it.spoilDay = this.state.scholar.day + (knows ? 30 : 15);
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
         // HONESTY (break-it food 2026-10-09 layer 2): the old prep always
@@ -957,7 +962,7 @@
             it.kcalEach = Math.round(it.rawKcal * (1 + 0.05 * spec.skill));
           }
           it.rawKcal = null; it.safe = true;
-        } else if (it.foodKind === 'meat' && it.foodState === 'cleaned') {
+        } else if (it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.undercooked)) {
           // DIGESTIBILITY HONESTY (break-it 2026-10-09): the cleaned total
           // (kcalEach×units) is the honest raw net — hiddenKcal is the RAW
           // GROSS, and cooking from it resurrected the ~60% the butchering
@@ -978,6 +983,7 @@
           it.kcalEach = sFoodSafe ? Math.round(sCookedTotal / units) : 0;
           it.hiddenKcal = sFoodSafe ? null : (it.hiddenKcal || Math.round(cleanedTotal / sRaw));
           it.foodState = 'cooked'; it.diseaseRisk = null; it.safe = sFoodSafe;
+          it.undercooked = false; delete it.parasiteRisk; // specialist cooks it through
           it.spoilDay = day + 5;
           it.name = it.name.replace(' (cleaned)', '') + ' (cooked)';
           it.prep = sFoodSafe ? 'Cooked through. Safe.'
@@ -994,6 +1000,9 @@
         // PRINT calories — 0.95+0.02*skill hit 1.01 at skill 3. Energy is
         // never created (PRESERVATION.md).
         it.kcalEach = Math.round(it.kcalEach * Math.min(1.0, 0.95 + 0.02 * spec.skill));
+        // TRICHINOSIS HONESTY (break-it disease r10): smoking can't resurrect
+        // worms a proper cooking already killed.
+        if (it.foodState === 'cooked' && !it.undercooked) delete it.parasiteRisk;
         it.foodState = 'preserved'; it.diseaseRisk = null; it.safe = true;
         it.spoilDay = day + 30 + 5 * spec.skill;
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
@@ -2268,7 +2277,7 @@
     // but never reveals it; the batch path shouldn't touch it at all.)
     let n = 0, nUnknown = 0;
     for (const item of (this.state.scholar.inventory || [])) {
-      if (item.foodKind === 'meat' && item.foodState === 'cleaned') {
+      if (item.foodKind === 'meat' && (item.foodState === 'cleaned' || item.undercooked)) {
         const mId = (item.plantId || '').replace(/^meat_/, '');
         const isMon = (this.data.monsters || []).some(m => m.id === mId);
         if (isMon && !this.monsterFoodSafe(mId)) { nUnknown++; continue; }
@@ -2279,11 +2288,15 @@
           item.kcalEach = rB.kcalEach;
           if (rB.outcome.key === 'burnt') item.burnt = true;
           if (!rB.outcome.riskStays) item.diseaseRisk = null;
+          // TRICHINOSIS HONESTY (break-it disease r10): same as cookFood —
+          // undercooked keeps the worms (flagged), cooked-through deletes them.
+          if (rB.outcome.riskStays) { item.undercooked = true; }
+          else { item.undercooked = false; delete item.parasiteRisk; }
         }
         item.hiddenKcal = null;
         item.foodState = 'cooked'; item.safe = true;
         item.spoilDay = this.state.scholar.day + 5;
-        item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
+        item.name = item.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (cooked)';
         item.prep = 'Cooked ' + (rB ? this.cookOutcomePhrase(rB.outcome, rB.cls) : 'through') + '. Better smoked for the long haul.';
         n++;
       } else if (item.needsCooking && item.diseaseRisk && item.foodKind === 'plant') {
@@ -2426,7 +2439,9 @@
       inv.splice(idx, 1);
       return null;
     }
-    if (item && item.foodKind === 'meat' && item.foodState === 'cleaned') {
+    // UNDERCOOKED RE-COOK (break-it disease r10): undercooked meat can go
+    // back on the fire to finish the job — otherwise it's a dead-end item.
+    if (item && item.foodKind === 'meat' && (item.foodState === 'cleaned' || item.undercooked)) {
       if (!this.nearFire()) { this.say('Need a fire to cook.'); return null; }
       const units = item.units || 1;
       const knows = this.knowsTechnique('cook');
@@ -2451,10 +2466,19 @@
         if (r.outcome.key === 'burnt') item.burnt = true;
         // Undercooked: the normal parasites survive. Cooked through: dead.
         // (Monster weirdness is NOT cured by fire \u2014 that's an eat-time roll.)
+        // TRICHINOSIS HONESTY (break-it disease r10): the old code set
+        // foodState 'cooked' even when undercooked, so the eat-path's
+        // foodState check silently skipped the worm roll — the prep text
+        // said "still risky" while the engine disagreed. Undercooked meat
+        // keeps parasiteRisk + an undercooked flag (the eat-path rolls on
+        // it); cooked-through meat has the worms deleted outright, so a
+        // later smoking can't resurrect them.
         if (!r.outcome.riskStays) item.diseaseRisk = null;
+        if (r.outcome.riskStays) { item.undercooked = true; }
+        else { item.undercooked = false; delete item.parasiteRisk; }
         item.foodState = 'cooked'; item.safe = cFoodSafe;
         item.spoilDay = this.state.scholar.day + 5;
-        item.name = item.name.replace(' (cleaned)', '') + ' (cooked)';
+        item.name = item.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (cooked)';
         item.prep = 'Cooked ' + this.cookOutcomePhrase(r.outcome, r.cls) + '.';
       } else {
         item.hiddenKcal = item.hiddenKcal || Math.round(item.kcalEach * 2.5 * units);

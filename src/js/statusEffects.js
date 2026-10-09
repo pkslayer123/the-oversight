@@ -272,7 +272,28 @@
         var key = (scope === 'dayPart') ? 'dayPartsLeft' : 'turnsLeft';
         if (st[key] != null) {
           st[key] -= 1;
+          // TREMBLES LATE WARNING (break-it disease r10): ~2 days left.
+          // Agency: settle what matters — the mantle is about to pass.
+          if (isScholar && st.id === 'trembles' && st[key] === 8) {
+            self.say('The tremor is moving inward now \u2014 hands, arms, the throat. Days, not weeks. Settle what matters. (the trembles: ~2 days left)');
+          }
           if (st[key] <= 0) {
+            // TREMBLES CERTAINTY (Steve 2026-10-09, break-it disease r10):
+            // prion disease — no cure at any tier; slow (40 day-parts) and
+            // CERTAIN. The old code just expired it like a cold, and the
+            // expireText ("it never lets go") lied about the engine. When the
+            // clock runs out the bearer dies; the mantle passes. Death-cheats
+            // (phoenix) still hold at the threshold — the disease killed you,
+            // the cheat is a separate system. (docs/DISEASES.md)
+            if (isScholar && st.id === 'trembles') {
+              try {
+                self.seRemove(target, st);
+                self.say('The tremor reaches all the way in and does not come back out. Your hands still first. Then everything else. It never lets go \u2014 it was never going to. (the trembles)');
+                if (self.maybeCheatDeath && !self.maybeCheatDeath()) self.playerDeath('the trembles');
+                else if (!self.maybeCheatDeath) self.playerDeath('the trembles');
+              } catch (e) {}
+              return;
+            }
             // LEMONS CHRONIC: untreated, it can settle into the joints.
             try {
               if (isScholar && def.chronic && Math.random() < (def.chronic.chance || 0)) {
