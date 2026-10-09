@@ -720,6 +720,11 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
+- accuser_pays: deflected/attacked/cleared dent the accuser's rep; attacked/cleared seed village gossip naming the accuser; being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
+- refusal_cooldown: a counter-attack refuses further confrontation for 2 days — no reopen-and-re-accuse grind (code: confrontDoubt, confrontTheft, convoChoices wrapper)
+- dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
+- lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
+- confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 - observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 
 **Consumes:** village.gossip

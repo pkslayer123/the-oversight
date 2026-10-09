@@ -20,6 +20,11 @@
 //   - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 //   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 //   - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
+//   - accuser_pays: deflected/attacked/cleared dent the accuser's rep; attacked/cleared seed village gossip naming the accuser; being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
+//   - refusal_cooldown: a counter-attack refuses further confrontation for 2 days — no reopen-and-re-accuse grind (code: confrontDoubt, confrontTheft, convoChoices wrapper)
+//   - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
+//   - lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
+//   - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 //   - observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 // consumes:
 //   - village.gossip
@@ -884,7 +889,14 @@
       } else if (kind === 'contradiction') {
         spoken = `"You told me one thing, then another.${claimBit} ${ev}"`;
       } else if (kind === 'gossip') {
-        spoken = `"Someone told me something about you that doesn't match what you told me.${claimBit} ${ev}"`;
+        // LEAD vs CONTRADICTION (detective break-it 2026-10-09): a gossip
+        // lead formed before you heard their story must not claim a mismatch
+        // with "what you told me" — they told you nothing. Tentative until
+        // the contradiction is earned.
+        const isLead = (doubt.evidence || []).some(e => /haven't heard/.test(String(e)));
+        spoken = isLead
+          ? `"Someone said something about you, ${first}.${claimBit} ${ev} — I wanted to hear your side."`
+          : `"Someone told me something about you that doesn't match what you told me.${claimBit} ${ev}"`;
       } else if (kind === 'slip') {
         spoken = `"You let something slip.${claimBit} ${ev}"`;
       } else {
@@ -925,6 +937,38 @@
       return beats;
     },
 
+    // accuserPays(vid, outcome): ACCUSATIONS STICK TO THE ACCUSER
+    // (detective break-it 2026-10-09). The game says it itself ("Accusations
+    // have a way of sticking to the accuser"), but confrontDoubt used to move
+    // only the VICTIM's trust/standing — the player paid nothing for any
+    // accusation, true or false, and could grind a villager's trust to zero
+    // across repeated confrontations. Now: a dodge stains you a little, a
+    // public blowup or a proven-baseless accusation stains you publicly —
+    // village gossip names you, and your honest/competent rep takes the hit.
+    // Being RIGHT (confessed) costs nothing. Design call, documented in
+    // scripts/test-detective-breakit-20261009.js.
+    accuserPays(vid, outcome) {
+      const me = this.villagerId;
+      const name = this.displayName(vid);
+      let hearers = [];
+      try { hearers = this.npcIds().filter(id => id !== vid).slice(0, 3); } catch (e) {}
+      let afterSay = null;
+      try {
+        if (outcome === 'deflected') {
+          this.applyRep(me, { honest: -2 }, 1, true);
+        } else if (outcome === 'attacked') {
+          this.applyRep(me, { honest: -3, competent: -3 }, 1, true);
+          this.seedGossip('confrontation', { who: me, honest: -6, competent: -4 }, hearers);
+          afterSay = `Word gets around the fire: you pushed ${name} hard, and ${name} pushed back. People file that away.`;
+        } else if (outcome === 'cleared') {
+          this.applyRep(me, { honest: -5 }, 1, true);
+          this.seedGossip('false_accusation', { who: me, honest: -8 }, hearers);
+          afterSay = `Word gets around: you called ${name} a liar, and you were wrong. That sticks to you, not them.`;
+        }
+      } catch (e) {}
+      return afterSay;
+    },
+
     // confrontDoubt(vid, doubtId): "You told me X, but [evidence]."
     // Personality-driven. Can resolve (truth) or deepen (better lies).
     confrontDoubt(vid, doubtId) {
@@ -937,6 +981,20 @@
       // "Never mind." forever), and the theft path made an INNOCENT villager
       // confess to B's crime, on the record, in the journal.
       if (doubt.vid !== vid) return { ok: false, line: '"Never mind."' };
+      // GONE GUARD (detective break-it 2026-10-09): the dead/exiled/removed
+      // can't be confronted. Without this, a theft doubt outlived its robber
+      // and the corpse "turned hostile" — on the record, in the journal.
+      try {
+        if (!this.npcIds().includes(vid)) return { ok: false, line: '"Never mind."' };
+      } catch (e) {}
+      // REFUSAL (detective break-it 2026-10-09): after a counter-attack they
+      // won't entertain another confrontation for 2 days. Without this, the
+      // player could reopen the conversation and re-accuse immediately — an
+      // infinite grief loop, since the doubt stays open after 'attacked'.
+      if (doubt.refusedUntil && day() < doubt.refusedUntil) {
+        const first = this.firstRef(vid);
+        return { ok: false, outcome: 'refused', line: `"Not this again." ${first} turns away. "We're done with that."` };
+      }
       const vp = this.vpOf(vid);
       const temp = this.npcTemper(vid);
       const dark = vp && vp.personality && vp.personality.dark;
@@ -999,13 +1057,14 @@
         outcome = 'cleared';
         this.resolveDoubt(doubtId, 'misunderstanding — they explained it');
         this.noteSocialLesson('cleared');
+        const clearedAfterSay = this.accuserPays(vid, outcome);
         try {
           if (doubt.kind !== 'behavior') {
             this.bumpTrust(vid, -2);
             this.remember(vid, 'wrongly_accused', 'you called them a liar and were wrong');
           }
         } catch (e) {}
-        return { ok: true, line, outcome };
+        return { ok: true, line, outcome, afterSay: clearedAfterSay };
       }
 
       // there IS a lie. How do they handle being caught?
@@ -1091,6 +1150,10 @@
         outcome = 'attacked';
         line = this.drawTruthLine('attacks', vid);
         doubt.evidence.push(`confronted (day ${day()}) — turned hostile`);
+        // REFUSAL (detective break-it 2026-10-09): they walk away from the
+        // topic for 2 days. Set here, read by the guard at the top and by
+        // the convoChoices wrapper.
+        doubt.refusedUntil = day() + 2;
         try {
           this.bumpTrust(vid, -8);
           this.applyRep(vid, { honest: -4 }, 1);
@@ -1099,7 +1162,8 @@
       }
       this.noteSocialLesson(outcome);
       try { this.audioEvent('liarConfront', { outcome }); } catch (e) {}
-      return { ok: true, line, outcome };
+      const afterSay = this.accuserPays(vid, outcome);
+      return { ok: true, line, outcome, afterSay };
     },
 
     // confrontTheft(vid, doubtId): "I know you dug up my cache."
@@ -1113,6 +1177,14 @@
       // IDENTITY GUARD (detective playtest 2026-10-08): see confrontDoubt.
       // The accused must be the doubt's subject — never a bystander.
       if (doubt.vid !== vid) return { ok: false, line: '"Never mind."' };
+      // GONE GUARD + REFUSAL (detective break-it 2026-10-09): see confrontDoubt.
+      try {
+        if (!this.npcIds().includes(vid)) return { ok: false, line: '"Never mind."' };
+      } catch (e) {}
+      if (doubt.refusedUntil && day() < doubt.refusedUntil) {
+        const first = this.firstRef(vid);
+        return { ok: false, outcome: 'refused', line: `"Not this again." ${first} turns away. "We're done with that."` };
+      }
       // the accusation lands first (windup owns the tension beat) — then the reaction.
       this.confrontWindup(vid, doubt, null);
       const t = doubt.theft;
@@ -1156,6 +1228,8 @@
         outcome = 'attacked';
         line = this.drawTruthLine('attacks', vid);
         doubt.evidence.push(`confronted (day ${day()}) — turned hostile`);
+        // REFUSAL (detective break-it 2026-10-09): see confrontDoubt.
+        doubt.refusedUntil = day() + 2;
         try {
           this.bumpTrust(vid, -8);
           this.applyRep(vid, { honest: -4 }, 1);
@@ -1164,7 +1238,8 @@
       }
       this.noteSocialLesson(outcome);
       try { this.audioEvent('liarConfront', { outcome }); } catch (e) {}
-      return { ok: true, line, outcome };
+      const afterSay = this.accuserPays(vid, outcome);
+      return { ok: true, line, outcome, afterSay };
     },
     truthSlip(vid, lie) {
       if (!lie || lie.confessed) return;
@@ -1391,7 +1466,11 @@
       const nonverbal = c.thread === 'nonverbal';
       const bridged = nonverbal && !!c.interpreter;
       if (!c.pendingQ && (!nonverbal || bridged)) {
-        const doubts = this.getDoubts(vid);
+        // REFUSAL (detective break-it 2026-10-09): doubts in the post-
+        // counter-attack cooldown don't offer confrontation — they walked
+        // away from the topic, and the menu respects that.
+        const nowDay = (this.state.scholar || {}).day || 0;
+        const doubts = this.getDoubts(vid).filter(d => !(d.refusedUntil && nowDay < d.refusedUntil));
         if (doubts.length && !choices.some(ch => String(ch.id).indexOf('confront:') === 0)) {
           const d = doubts[0];
           const first = this.firstRef(vid);
@@ -1424,6 +1503,11 @@
     if (typeof choiceId === 'string' && choiceId.indexOf('confront:') === 0) {
       const doubtId = choiceId.slice('confront:'.length);
       const c = this.convoGet(vid);
+      // CONFRONT-NEEDS-CONVO (detective break-it 2026-10-09): the choice only
+      // exists inside an active conversation. Without this, the turn applied
+      // the whole confrontation (doubt resolution, trust moves, transcript
+      // writes) to an inactive convo object — effects with no scene.
+      if (!c.active) return { line: '"Not now — go talk to them first."', choices: [], ended: true, transcript: [] };
       const r = this.confrontDoubt(vid, doubtId);
       const youSaid = '"I need to ask you something."';
       c.transcript.push({ who: 'you', text: youSaid });
@@ -1432,6 +1516,8 @@
       c.exchanges++;
       try { this.tickAction(1); } catch (e) {} // confrontation takes a moment
       this.sayLine(vid, r.line);
+      // the village-hears-about-it beat lands AFTER their reaction, not before.
+      if (r.afterSay) { try { this.say(r.afterSay); } catch (e) {} }
       if (r.outcome === 'attacked') { try { this.endConvo(vid, 'left'); return { line: r.line, choices: [], ended: true, transcript: c.transcript.slice() }; } catch (e) {} }
       return { line: r.line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
     }
