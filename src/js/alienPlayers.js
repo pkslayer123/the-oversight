@@ -1053,7 +1053,12 @@
       var gift = cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
 
       // Plus some practical supplies (the fans know you need to eat)
-      var kcal = 300 + Math.floor(Math.random() * 400) + favor * 5;
+      // WACKY, NEVER DINNER (canon; break-it shows 2026-10-09): the old
+      // formula (300 + rand*400 + favor*5) handed over up to ~800+ kcal — a
+      // free day of food every 4 days, and a kcal-positive loop with the
+      // ratings stunt (200 kcal cost, 400+ back). The package is the wacky
+      // gift; the snacks are a taste, not a meal.
+      var kcal = 30 + Math.floor(Math.random() * 40);
 
       this.say('📦 A care package drops from the sky with a little parachute. There\'s a note: "WE LOVE YOU!' + this.apPackageClubLine() + '"');
       // AUDIO (break-it 2026-10-09, sibling of the silent alien beam): the

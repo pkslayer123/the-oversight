@@ -102,7 +102,7 @@
 //   - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
-//   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, wacky gift, showbiz favor, shakes a care package loose), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09)
+//   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
 //   - summons_budget: ratings summons consume the shared 2/week TV budget like contests and shows (code: contestTick)
 //   - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
 //   - win_tax_announced: the -5 hp winner's mark is said out loud, never silent — a hidden HP tax is a lie (code: _contestEnd, Steve 2026-10-08)
@@ -746,14 +746,23 @@
         try { this.leadShift('unity', 1); } catch (e) {}
       }
       // The stunt shakes a care package loose (canon: summons tie to care
-      // packages). Rate-limited inside apCarePackage — may whiff honestly.
-      if (isSummons) { try { if (this.apCarePackage) this.apCarePackage(); } catch (e) {} }
+      // packages). Rate-limited inside apCarePackage — a whiff is said out
+      // loud, never silent (break-it shows 2026-10-09).
+      if (isSummons) {
+        let pkg = false;
+        try { if (this.apCarePackage) pkg = !!this.apCarePackage(); } catch (e) {}
+        if (!pkg) this.sysSay(`📺 The fans aren't organized enough yet — no care package this time. The stunt still counted.`);
+      }
     } else if (outcome === 'lost') {
-      this.sysSay('📺 ' + (isSummons ? `You phoned it in and seventeen systems could tell. The numbers don't move. The System makes a note.`
+      this.sysSay('📺 ' + (isSummons ? `You phoned it in and seventeen systems could tell. The numbers don't move up. The System makes a note — you were there, and being there counts, somehow.`
         : (beat.lose || `It went badly. The clip will outlive you. But the galaxy loves a trainwreck — the shame comes with fans attached.`)));
       if (isPlayer || isSummons) {
         this.addNotability('player', 'showmanship');
         sayFavor(1, 'beautiful disaster: ' + showName);
+        // HONEST (break-it shows 2026-10-09): the old copy said "the numbers
+        // don't move" while this +1 favor landed silently. The note is real
+        // and now said out loud.
+        if (isSummons) this.sysSay(`📺 The System files it under: showed up. (+1 showbiz favor, quietly.)`);
       }
     } else if (outcome === 'mixed') {
       this.sysSay('📺 ' + (beat.mixed || `Both. Fans AND shame, in the same broadcast. The chat can't decide whether to crown you or roast you, so it does both.`));
@@ -773,11 +782,15 @@
     // actual result, never a generic line.
     try { this.broadcastBeat('SHOW_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     // Prize: a wacky alien curio, real and usable (apGrantItem), never
-    // dinner. If the vault is shy, say so — never a silent pocket.
+    // dinner (canon). Edible items are filtered OUT — the "Can labeled
+    // BEANS" (350 kcal) used to be grantable here, which is dinner wearing a
+    // joke label (break-it shows 2026-10-09). If the vault is shy, say so —
+    // never a silent pocket.
     if (prize && (isPlayer || isSummons)) {
       try {
         const items = this.data.items || [];
-        const cands = items.filter(it => it.origin === 'alien' && (it.tier || 1) <= 1);
+        const cands = items.filter(it => it.origin === 'alien' && (it.tier || 1) <= 1
+          && !it.kcalEach && it.class !== 'food');
         const gift = cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
         if (gift && this.apGrantItem) {
           this.apGrantItem(gift.id);
@@ -796,7 +809,8 @@
   // the OVERSIGHT design (Steve 2026-10-04: "Ratings summons (promos/stunts,
   // small gifts, ties to care packages)") — no doc covers it, so this is
   // noted, not invented silently. Played, not announced: do the stunt (real
-  // cost, real gift, showbiz favor, shakes a care package loose), phone it
+  // cost, showbiz favor, shakes a care package loose — the prize, singular;
+  // break-it shows 2026-10-09 removed the extra curio double-dip), phone it
   // in, or refuse on camera (a sequence, with consequences).
   G.fireRatingsSummons = function() {
     this.sysSay(`📺 RATINGS SUMMONS — the numbers are soft and the System is nervous.`);
@@ -830,9 +844,16 @@
       // It's a TV appearance like any show pull: the call + cameras.
       beat: 'showDeclare',
       text: `📺 The brief: a promo stunt, live, sixty seconds, for the ratings. The System suggests interpretive dance about the food supply. The chat suggests worse.\n\nYour body is the budget. Your dignity is the marketing spend.`,
+      // BREAK-IT shows 2026-10-09: the stunt's prize IS the fan care package
+      // (canon: "ratings summons stunt wins a care package" — singular). The
+      // old `prize: true` here ALSO fired the alien-curio grant in _showEnd,
+      // so one stunt paid twice (curio + package). Removed: one stunt, one
+      // prize. The reqKcal gate is honest cost: "your body is the budget" —
+      // at an empty tank the 200 kcal would silently floor to 0 and the
+      // prize would be free (contestChoose refuses, says why, no advance).
       choices: [
-        { label: 'Do the stunt', sub: '200 kcal, full commitment', do: { kcal: -200, trauma: 4, note: 'You commit completely — dance, pratfall, a speech about turnips that somehow lands. The numbers tick UP while you\'re still moving. The System is delighted in seventeen languages.', prize: true }, next: 'WIN' },
-        { label: 'Phone it in', sub: 'minimum viable effort', do: { trauma: 2, note: 'You do the smallest possible version. A wave. A nod. The chat clocks it instantly — "HE\'S PHONING IT IN" trends in four systems.' }, next: 'LOSE' },
+        { label: 'Do the stunt', sub: '200 kcal, 4 trauma — full commitment', do: { reqKcal: 200, kcal: -200, trauma: 4, note: 'You commit completely — dance, pratfall, a speech about turnips that somehow lands. The numbers tick UP while you\'re still moving. The System is delighted in seventeen languages.' }, next: 'WIN' },
+        { label: 'Phone it in', sub: '2 trauma, minimum viable effort', do: { trauma: 2, note: 'You do the smallest possible version. A wave. A nod. The chat clocks it instantly — "HE\'S PHONING IT IN" trends in four systems.' }, next: 'LOSE' },
         { label: 'Refuse on camera', sub: 'the no is the content', do: { note: 'You look straight into the lens and say no. The silence that follows is the most-watched nine seconds of the week.' }, next: 'REFUSE' },
       ],
     }];
@@ -1501,10 +1522,12 @@
         this.sysSay(`📺 The System was going to take ${goneName}. There is no one left to take instead — the show is cancelled. The galaxy boos.`);
         continue;
       }
-      // Recast honors the same ratings bias as casting (Steve 2026-10-08).
+      // Recast honors the same ratings bias as casting (Steve 2026-10-08) —
+      // the ONE shared notabilityWeight (depth + impact), not a second
+      // formula (break-it shows 2026-10-09: the old 1 + notes*2 diverged).
       let totalW = 0;
       const weights = candidates.map(e => {
-        const w = 1 + ((e.notability || []).length * 2);
+        const w = this.notabilityWeight(e.id);
         totalW += w;
         return w;
       });
@@ -3284,6 +3307,16 @@
 
     // Apply effects
     const d = choice.do || {};
+    // COST HONESTY (break-it shows 2026-10-09): a choice that requires a
+    // kcal reserve (the ratings stunt's "your body is the budget") cannot be
+    // taken on an empty tank — the negative delta would silently floor at 0
+    // and the prize would be free. Refused out loud, no phase advance, no
+    // costs, no prize. The button stays honest instead of disabled.
+    if (d.reqKcal && (s.kcal || 0) < d.reqKcal) {
+      this.sysSay(`📺 You don't have the body for that — it takes ${d.reqKcal} kcal and you've got ${Math.max(0, Math.round(s.kcal || 0))}. Eat first. The cameras wait.`);
+      log.push('refused: not enough kcal');
+      return { blocked: true, log };
+    }
     // ARENA WEAPON (Steve 2026-10-08): the System's "choose your weapon" is
     // a real grant — a real item, equipped, yours to keep. The System
     // doesn't reclaim props.
