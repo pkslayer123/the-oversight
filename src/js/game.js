@@ -11510,6 +11510,9 @@
         intimidation: { honest: -15, generous: -8, brave: 3, competent: 0 },
         bully: { honest: -12, generous: -10, brave: 2, competent: 0 },
         honor_dead: { honest: 4, generous: 3, brave: 0, competent: 0 },
+        // LASH OUT: an involuntary strike at a friend (gristlefit). The village
+        // reads it as dangerous, not evil — but it reads it.
+        lash_out: { honest: -8, generous: -6, brave: 0, competent: -2 },
         bury_dead: { honest: 5, generous: 4, brave: 2, competent: 1 },
       }[action];
       if (!AX) return;
@@ -23170,7 +23173,14 @@
       // that no longer fights back, and a killing blow that contradicted
       // the rout. No striking at backs.
       if (t && t.fled && (t.kind === 'monster' || t.kind === 'hostile')) { this.say("They're gone — fled the fight. No striking at backs."); return false; }
-      if (!t || (t.kind !== 'monster' && t.kind !== 'hostile')) return false;
+      if (!t || (t.kind !== 'monster' && t.kind !== 'hostile')) {
+        // HONEST TARGETING (brawler loop 2026-10-09): striking an ally or a
+        // non-combatant was a silent no-op. No silent actions — name the
+        // refusal. (If you WANT to hurt a person, that's betrayal, not a
+        // mis-tap: playerAttacks exists for that, with its own consequences.)
+        if (t && t.kind === 'villager') this.say(`${t.name} is on your side. If you mean to turn on them, that's not a strike — that's betrayal.`);
+        return false;
+      }
       // THE MODERATOR (Steve 2026-10-06): muted verbs inside its suppression
       // field are violations — the attempt spends the turn (modVerbBlocked).
       if (this.modVerbBlocked('strike')) return true;
@@ -23539,6 +23549,19 @@
             let vName = v.name || 'it';
             try { vName = this.encShortLabel(v) || this.encTheName(v) || vName; } catch (e) {}
             this.say(`GRISTLEFIT: your shoulders move on their own — a backhanded lash catches ${vName}!`);
+            // FRIENDLY FIRE (brawler loop 2026-10-09): the lash doesn't aim, and it
+            // doesn't care who it hits. Hurting a villager ally is narrated —
+            // but the old code left zero record: no trauma, no trust, no memory.
+            // Violence is traumatic and socially punished, even the involuntary
+            // kind. Half the usual hurt-trauma (your body did it, not your
+            // intent), a real memory for the victim, a trust dent, and the
+            // village reads it through the 'lash_out' lens (dangerous, not evil).
+            if (v.kind === 'villager' && v.villagerId) {
+              try { this.addTrauma(Math.max(1, Math.round(this.traumaForHurt(v.villagerId) / 2))); } catch (e) {}
+              try { this.remember(v.villagerId, 'you_lashed_out', 'your gristlefit caught them mid-fight'); } catch (e) {}
+              try { this.bumpTrust(v.villagerId, -10); } catch (e) {}
+              try { this.observe('lash_out', { target: v.villagerId }); } catch (e) {}
+            }
             this.tbDamage(v.key, lash, 'your gristlefit', 'p', { quiet: true });
           }
         }
