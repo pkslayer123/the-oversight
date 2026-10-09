@@ -4710,12 +4710,16 @@
         }
         const giveSet = new Set(give);
         for (const item of give) {
+          // FULL PROCESSING STATE (break-it food 2026-10-09): same toxin-
+          // laundering class as pantryAdd — poisonRisk/wellMade/burnt were
+          // silently washed. Same field contract as takeFromPantry's takenStack.
           vv.pantry.push({ name: item.name || 'Foraged food', plantId: item.plantId,
             kcalEach: item.kcalEach, units: item.units,
             spoilDay: item.spoilDay || 9999, unit: item.unit,
             safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep,
             foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
             hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk,
+            poisonRisk: item.poisonRisk, wellMade: item.wellMade, burnt: item.burnt,
             needsCooking: item.needsCooking, rawKcal: item.rawKcal, cookedKcal: item.cookedKcal });
         }
         // first return: someone explains the pooling. after that, it's understood.
@@ -4834,9 +4838,18 @@
       }
       const giveSet = new Set(give);
       for (const item of give) {
-        ov.pantry.push({ name: item.name || 'Foraged food', kcalEach: item.kcalEach,
-          units: item.units, spoilDay: item.spoilDay || 9999, unit: item.unit,
-          safe: item.safe !== false, kg: item.kg || 0.2 });
+        // FULL PROCESSING STATE (break-it food 2026-10-09): the old subset-push
+        // was the same toxin-laundering class as pantryAdd — poisonRisk,
+        // diseaseRisk and the rest silently washed on the way into the old
+        // village's pantry. Same field contract as takeFromPantry's takenStack.
+        ov.pantry.push({ name: item.name || 'Foraged food', plantId: item.plantId,
+          kcalEach: item.kcalEach, units: item.units, spoilDay: item.spoilDay || 9999,
+          unit: item.unit, safe: item.safe !== false, kg: item.kg || 0.2,
+          foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
+          diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk,
+          needsCooking: item.needsCooking, wellMade: item.wellMade,
+          hiddenKcal: item.hiddenKcal, rawKcal: item.rawKcal,
+          cookedKcal: item.cookedKcal, burnt: item.burnt, prep: item.prep });
       }
       s.inventory = (s.inventory || []).filter(i => !giveSet.has(i));
       const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
@@ -16094,7 +16107,12 @@
         this.say('📓 You file it away: whatever it is, it fears fire. You haven\'t seen it yourself — but now you know what to watch for.');
         s.riverNews = { topic: 'silent dogs', tactics: 'It circled the fire and wouldn\'t come closer — it fears flame.' };
         s.inventory = s.inventory || [];
-        s.inventory.push({ name: 'Smoked fish (downriver)', units: 2, kcalEach: 100, kg: 0.3, prep: 'Downriver smoke. A thank-you gift.' });
+        s.inventory.push({ name: 'Smoked fish (downriver)', units: 2, kcalEach: 100, kg: 0.3,
+          // SPOILAGE (break-it food 2026-10-09): the old push had no spoilDay —
+          // immortal food. Smoked keeps ~a month, like everything else smoked.
+          spoilDay: this.state.scholar.day + 30, safe: true, unit: 'fish',
+          foodKind: 'meat', foodState: 'preserved', edible: true,
+          prep: 'Downriver smoke. A thank-you gift.' });
         this.say('🎁 They press two smoked fish into your hands on the way out. "For the road you haven\'t walked yet." (+200 kcal. Traders remember kindness too.)');
       } else {
         this.say(`You scrape together ${total} kcal — not the feast they hoped for, but honest food. The trader eats it all the same, and nods like someone who expected exactly this.`);

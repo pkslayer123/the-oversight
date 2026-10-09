@@ -2409,7 +2409,10 @@
     const day = (this.state.scholar || {}).day || 0;
     const name = it.name || 'it';
     const base = Math.max(0, Math.round(it.kcalEach || 0));
-    const spoiled = it.spoilDay != null && it.spoilDay <= day;
+    // BONUS-AWARE (break-it food 2026-10-09): one spoil boundary everywhere.
+    // The raw check called bonus-alive food rotten — the trader refused goods
+    // your own pack calls edible. He smells the same food you stored right.
+    const spoiled = this.isSpoiled ? this.isSpoiled(it) : (it.spoilDay != null && it.spoilDay <= day);
     const key = this.traderItemKey(it);
     // Obviously spoiled meat: refused outright. He smells it — common knowledge.
     if (it.foodKind === 'meat' && spoiled) {

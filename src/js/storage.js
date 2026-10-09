@@ -629,10 +629,12 @@
       // a buried cache just like in your pack — you find out when you dig, at
       // the hole, not the morning after. Materials never rot. The lesson is
       // the loop: bury dried and smoked goods; eat the fresh stuff fast.
-      const today = day();
+      // BONUS-AWARE (break-it food 2026-10-09): the old raw `spoilDay <= today`
+      // check destroyed food the pack would still call edible when the scholar
+      // has preservation_instinct. One boundary everywhere: isSpoiled().
       const good = [], bad = [];
       for (const it of c.items) {
-        const spoiled = !it.material && it.spoilDay !== undefined && it.spoilDay !== null && it.spoilDay <= today;
+        const spoiled = !it.material && this.isSpoiled(it);
         (spoiled ? bad : good).push(it);
       }
       const badNames = bad.map(it => `${it.units || 1}× ${it.name}`).join(', ');
@@ -710,9 +712,10 @@
       qty = Math.min(Math.floor(qty || 0), it.units || 1);
       if (qty <= 0) { this.say('Take how many?'); return null; }
       // SPOILAGE UNDERGROUND: same rule as digUpCache — the rotted portion
-      // goes to the worms, the rest stays buried.
-      const today = day();
-      if (!it.material && it.spoilDay !== undefined && it.spoilDay !== null && it.spoilDay <= today) {
+      // goes to the worms, the rest stays buried. Bonus-aware (break-it food
+      // 2026-10-09): preservation_instinct applies underground too — the pack
+      // rule and the cache rule are the same rule.
+      if (!it.material && this.isSpoiled(it)) {
         this.say(`${qty}× ${it.name} went bad underground — left for the worms.`);
         it.units -= qty;
         if (it.units <= 0) c.items.splice(itemIdx, 1);

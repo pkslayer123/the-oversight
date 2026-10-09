@@ -70,11 +70,12 @@
 
   // ---- helpers ----
   function edibleStacks() {
-    const day = Game.state.scholar.day;
+    // BONUS-AWARE (break-it food 2026-10-09): one spoil boundary everywhere.
+    // The raw check hid bonus-alive food from the edible list. (Also drops a
+    // dead `spillDay` clause — a typo'd field that could never be set.)
     return (Game.state.scholar.inventory || []).filter(i =>
       (i.kcalEach || 0) > 0 && (i.units || 0) > 0 && !i.bonded &&
-      !(i.spillDay !== undefined && i.spillDay <= day) &&
-      !(i.spoilDay !== undefined && i.spoilDay <= day));
+      !(Game.isSpoiled ? Game.isSpoiled(i) : (i.spoilDay !== undefined && i.spoilDay <= Game.state.scholar.day)));
   }
   function npcTemper(vid) {
     try { return Game.npcTemper ? Game.npcTemper(vid) : 'steady'; }

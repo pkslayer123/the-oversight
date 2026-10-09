@@ -1785,6 +1785,14 @@
         foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
         diseaseRisk: item.diseaseRisk, needsCooking: item.needsCooking,
         wellMade: item.wellMade,
+        // FULL PROCESSING STATE (break-it food 2026-10-09): the old subset-push
+        // silently stripped poisonRisk — toxin laundering: poisoned meat came
+        // back from the pantry clean, and trackMealExposure saw nothing, so
+        // villagers ate it risk-free. It also dropped hiddenKcal (broke the
+        // cautious-test reveal math), rawKcal, and burnt. Same field contract
+        // as takeFromPantry's takenStack.
+        poisonRisk: item.poisonRisk, hiddenKcal: item.hiddenKcal,
+        rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, burnt: item.burnt,
       });
       vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
       return true;
