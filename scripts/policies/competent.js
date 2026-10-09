@@ -165,6 +165,37 @@ function needTrip(Game) {
   } catch (e) { return false; }
 }
 
+// WORK THE WATER (food-early 2026-10-09): a competent leader keeps the
+// cistern filled. Villagers drink 2L/day each; nobody fetches water
+// autonomously, so without assignments the village dies of thirst while
+// food is still on the table — 11/49 baseline deaths. Runs in upkeep (per
+// part); the already-assigned guard keeps it to one worker per need.
+// Assign in person (assignTask refuses remote).
+function workWater(Game, ctx) {
+  try {
+    if (!Game.playerAtHaven || !Game.playerAtHaven()) return;
+    const v = Game.state.village || {};
+    const vw = v.water || { clean: 0, dirty: 0 };
+    const stored = (vw.clean || 0) + (vw.dirty || 0);
+    const mouths = (v.roster || []).length;
+    const asg = v.assignments || {};
+    const onTask = (t) => Object.values(asg).some(a => a && a.task === t);
+    const free = (v.roster || []).filter(id => {
+      if (id === Game.villagerId) return false;
+      if (asg[id]) return false;
+      try { const p = Game.getPerson(id); return p && !p.dead; } catch (e) { return true; }
+    });
+    let fi = 0;
+    const assignOne = (task) => {
+      if (fi >= free.length) return false;
+      try { Game.assignTask(free[fi++], task, { via: 'in-person' }); return true; }
+      catch (e) { return false; }
+    };
+    if (stored < mouths * 4 && !onTask('water')) assignOne('water');
+    if ((v.wood || 0) < 8 && !onTask('wood')) assignOne('wood');
+  } catch (e) {}
+}
+
 const competent = {
   id: 'competent',
   desc: 'aware experienced player: learns, teaches, cooks, avoids vectors, fights with advantage',
@@ -176,6 +207,7 @@ const competent = {
     competentEat(Game);
     drinkSafe(Game, ctx);
     checkTicks(Game, ctx);
+    workWater(Game, ctx);
   },
   daily(Game, ctx) {
     if (needTrip(Game)) idle.forageTrip(Game, ctx);

@@ -20748,7 +20748,17 @@
     villagerKnowledgeFactor(vid, v) {
       const vv = v || this.state.village || {};
       const known = (vv.taught && vv.taught[vid]) ? vv.taught[vid].length : 0;
-      return Math.min(1.8, 1 + known * 0.10);
+      // FOOD BALANCE (Steve 2026-10-09): 0.10/plant was too shallow to beat
+      // the pantry clock — villages died at day ~13 while production was still
+      // climbing. 0.13/plant (cap 2.0): a knowledgeable local feeds ~2x the
+      // stranger (real-world anchor: experienced foragers vs novices), the
+      // breakeven (~2.5 known plants) lands ~day 5-8 for a working village,
+      // while a passive village (0-1 plants, kf 1.0-1.13) still starves.
+      // BALANCING.md Q1: the 2.0 cap is the anchor. Q2: too high = trivial —
+      // 2.0 needs ~8 plants and yields 3000 vs 2000 need (50% surplus, shared
+      // at the trust rate, not hoarded). Pressure stays; the cliff is now a
+      // slope knowledge can climb.
+      return Math.min(2.0, 1 + known * 0.13);
     },
     villagerExpectedDaily(person, vid, v) {
       // what THIS person should produce today: capacity × knowledge ×
