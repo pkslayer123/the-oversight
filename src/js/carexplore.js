@@ -11,6 +11,7 @@
 // rules:
 //   - examine_farm_cap: one cell teaches a skill at most 2 encounters' worth (surface + first deep study); the 4-encounter pattern counts distinct ground (code: feedKnowledge, explorer break-it 2026-10-09)
 //   - no_post_death_examine: examineCell refuses when this.over — the dead don't narrate, advance the world, or save (code: examineCell, explorer break-it 2026-10-09)
+//   - no_mid_fight_examine: examineCell refuses inCombat — examining is time-only (2 ticks) and tickAction no-ops mid-fight, so a stale card could farm knowledge for free while the world stands still; same class as the clearBlockage/beginPathWalk guards (code: examineCell, explorer break-it 2026-10-09)
 // consumes:
 //   - scholar.energy
 //   - village.needs
@@ -379,6 +380,12 @@
     // old code narrated, advanced the world (npcBatchTurn/monsterTurn via
     // tickAction) and saved — for a corpse.
     if (this.over) return null;
+    // MID-FIGHT (explorer break-it 2026-10-09): examining is time-only — 2
+    // ticks of looking. Mid-fight tickAction no-ops, so a stale "Examine
+    // closely" card (or a hostile player) could farm knowledge/skills for
+    // free while the world stands still. Same class as the clearBlockage /
+    // beginPathWalk / travelTo combat guards: refuse, loudly.
+    if (this.inCombat()) { this.say('Not mid-fight — eyes on the threat.'); return null; }
     const s = this.state.scholar;
     const px = s.mx ?? 4, py = s.my ?? 4;
     const dist = Math.max(Math.abs(cx - px), Math.abs(cy - py));

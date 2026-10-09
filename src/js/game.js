@@ -75,6 +75,7 @@
 //   - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
 //   - monster_alias_resyncs_on_travel: scholar.monster mirrors the player-tile monster — travelTo re-syncs on arrival so the monster left behind can't haunt perceptionHints as a phantom (code: travelTo, explorer break-it 2026-10-09)
 //   - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding, clearBlockage, buildBridge) refuse when over — the corpse walks nothing, builds nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
+//   - no_mid_fight_interact: _cellInteract refuses inCombat — interacting runs monster/animal/villager turns while tickAction(1) no-ops mid-fight, so a stale tile card could grant free interacts AND free monster turns; same class as the examineCell guard (code: _cellInteract, explorer break-it 2026-10-09)
 //   - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
@@ -7670,6 +7671,12 @@
       // DEAD (break-it travel r6 2026-10-09): no interacting past death —
       // the old code ran monster/animal/villager turns for a corpse.
       if (this.over) return null;
+      // MID-FIGHT (explorer break-it 2026-10-09): interacting runs monster/
+      // animal/villager turns and then tickAction(1) no-ops mid-fight — a
+      // stale tile card could grant the interaction (secret reveal, drink,
+      // forage...) for free AND hand monsters extra turns. Same class as the
+      // examineCell/beginPathWalk/travelTo combat guards: refuse, loudly.
+      if (this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       // ACTIONS move the world. Steps don't.
       this.monsterTurn();
       this.animalTurn();

@@ -123,6 +123,7 @@ Care and exploration decisions. Care was a vending machine — now it requires r
 **Rules:**
 - examine_farm_cap: one cell teaches a skill at most 2 encounters' worth (surface + first deep study); the 4-encounter pattern counts distinct ground (code: feedKnowledge, explorer break-it 2026-10-09)
 - no_post_death_examine: examineCell refuses when this.over — the dead don't narrate, advance the world, or save (code: examineCell, explorer break-it 2026-10-09)
+- no_mid_fight_examine: examineCell refuses inCombat — examining is time-only (2 ticks) and tickAction no-ops mid-fight, so a stale card could farm knowledge for free while the world stands still; same class as the clearBlockage/beginPathWalk guards (code: examineCell, explorer break-it 2026-10-09)
 
 **Consumes:** scholar.energy, village.needs
 
@@ -504,6 +505,7 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
 - monster_alias_resyncs_on_travel: scholar.monster mirrors the player-tile monster — travelTo re-syncs on arrival so the monster left behind can't haunt perceptionHints as a phantom (code: travelTo, explorer break-it 2026-10-09)
 - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding, clearBlockage, buildBridge) refuse when over — the corpse walks nothing, builds nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
+- no_mid_fight_interact: _cellInteract refuses inCombat — interacting runs monster/animal/villager turns while tickAction(1) no-ops mid-fight, so a stale tile card could grant free interacts AND free monster turns; same class as the examineCell guard (code: _cellInteract, explorer break-it 2026-10-09)
 - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
 - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
