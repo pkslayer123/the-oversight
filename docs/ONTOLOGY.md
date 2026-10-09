@@ -473,7 +473,7 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 ### food (`food.js`)
 Food reality system. Food must be known-edible AND in edible state. Processing changes net calories.
 
-**Provides:** foodMarker(), cleanCarcass(), cookFood(), renderFat(), pemmicanSets(), makePemmican(), cookTransform(), cookClassFor(), cookOutcome(), consumeCookFire(), downgradeOutcome(), stacksMatch()       (fungibility gate for stack merging), spoilBonusDays()    (preservation_instinct shelf-life bonus), isSpoiled()         (bonus-aware spoilage boundary)
+**Provides:** foodMarker(), cleanCarcass(), cookFood(), renderFat(), pemmicanSets(), pemmicanPlan()     (per-set picks + honest bar counts, no consumption), pemmicanPreview()  (honest {sets, bars} for the UI label), makePemmican(), cookTransform(), cookClassFor(), cookOutcome(), consumeCookFire(), downgradeOutcome(), stacksMatch()       (fungibility gate for stack merging), spoilBonusDays()    (preservation_instinct shelf-life bonus), isSpoiled()         (bonus-aware spoilage boundary)
 
 **Rules:**
 - raw_penalty: true (code: food.js)
