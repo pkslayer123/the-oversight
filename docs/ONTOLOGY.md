@@ -746,7 +746,7 @@ Composes each world-map tile as a miniature auto-composed SVG scene: terrain bas
 ### truth (`truth.js`)
 Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip distorts per retelling (code: game.js seedGossip).
 
-**Provides:** trackClaim(vid, topic, claim), getClaims(vid), lieLive(vid, lie), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), confrontDoubt(vid), npcGossipAbout(vid)
+**Provides:** trackClaim(vid, topic, claim), getClaims(vid), lieLive(vid, lie), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), confrontDoubt(vid), npcGossipAbout(vid), doubtIsLead(doubt)
 
 **Rules:**
 - claim_gossip_shares_truth_no_distortion: true (code: npcGossipAbout)
@@ -764,6 +764,9 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
 - tentative_clears_neutral: behavior doubts and gossip leads resolve with no false-accusation cost (code: confrontDoubt)
+- lead_expiry: a gossip lead stops being tentative once the story is heard — doubtIsLead checks the story-heard stamp, not just the stale "haven't heard" marker (code: doubtIsLead, confrontWindup, confrontDoubt, convoChoices)
+- slip_crack_only: slip lines name the cover's crack, never the truth — origin/goal slips match the occupation discipline (code: truthLinePools slipOrigin/slipGoal)
+- stale_before_field_fallback: a confessed lie matching the doubt's evidence resolves as already-confessed before any fallback; the fallback matches the doubt's own field only, never a kind-guess (code: confrontDoubt)
 - observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 
 **Consumes:** village.gossip

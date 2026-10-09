@@ -226,7 +226,9 @@
           const was = e.occupation && e.occupation.value;
           e.occupation = { value, sure: !!opts.sure, day: day() };
           isNew = !was || was !== value || (!e.occupation.sure && opts.sure);
-          label = opts.sure ? `learned what ${e.name ? e.name.value : 'they'} does` : `a guess about what they do`;
+          label = opts.sure
+            ? (e.name ? `learned what ${e.name.value} does` : `learned what they do`)
+            : `a guess about what they do`;
         }
       } else if (field === 'goal') {
         const gid = value && value.id ? value.id : value;

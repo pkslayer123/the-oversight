@@ -12,6 +12,7 @@
 //   - resolveDoubt(id)
 //   - confrontDoubt(vid)
 //   - npcGossipAbout(vid)
+//   - doubtIsLead(doubt)
 // rules:
 //   - claim_gossip_shares_truth_no_distortion: true (code: npcGossipAbout)
 //   - min_liars_per_village: 1 (code: newGame wrapper)
@@ -28,6 +29,9 @@
 //   - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 //   - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
 //   - tentative_clears_neutral: behavior doubts and gossip leads resolve with no false-accusation cost (code: confrontDoubt)
+//   - lead_expiry: a gossip lead stops being tentative once the story is heard — doubtIsLead checks the story-heard stamp, not just the stale "haven't heard" marker (code: doubtIsLead, confrontWindup, confrontDoubt, convoChoices)
+//   - slip_crack_only: slip lines name the cover's crack, never the truth — origin/goal slips match the occupation discipline (code: truthLinePools slipOrigin/slipGoal)
+//   - stale_before_field_fallback: a confessed lie matching the doubt's evidence resolves as already-confessed before any fallback; the fallback matches the doubt's own field only, never a kind-guess (code: confrontDoubt)
 //   - observe_wariness_bites: true (code: observePerson — 'observed' memories (14d, hit or miss) cut detectChance 0.08 each, floor 0.05; observer's own intellect drives the bonus, not the target's)
 // consumes:
 //   - village.gossip
@@ -228,14 +232,20 @@
         `Someone asks {first} a shop-talk question about {told} work. The pause before the answer is long enough to hear.`,
       ],
       slipOrigin: [
-        `{first} mentions "{truth}" like it's home — then says "I mean, {told}." The pause is doing a lot of work.`,
-        `{first} names a street, a diner, a high school — all in {truth}. Then catches your eye and goes very quiet.`,
+        // CRACK ONLY (detective break-it 2026-10-09c): these used to name
+        // the TRUE origin outright ("mentions '{truth}' like it's home") —
+        // handing the player a truth they hadn't earned, and short-circuiting
+        // the confrontation that should extract it. Same discipline as the
+        // occupation slips: the cover breaks, the truth stays hidden until
+        // gossip, observation, or a confession earns it.
+        `{first} was talking about home — then stopped mid-sentence, recalibrated, and said "{told}" just a fraction too deliberately. Whatever home is, it isn't where that sentence started.`,
+        `{first} let a place-name slip — somewhere that isn't {told} — then covered it with "{told}" so fast the cover was louder than the slip.`,
+        `Someone mentioned {told} and {first} answered to it a beat late — like responding to a name that isn't quite yours.`,
       ],
       slipGoal: [
-        // goal ids are raw ("belong") — truthSlip maps them through
-        // goalWantText first, so these read as English, not ids.
-        `{first} says they want {told}. But everything they DO says they want {truth}.`,
-        `{first} claims {told} — then spends the whole evening doing the exact thing someone who wants {truth} would do.`,
+        // same gating as origin: the wanting shows, the word for it doesn't.
+        `{first} says they want {told}. But they keep doing the exact thing someone who wants something else would do — and going quiet when anyone notices.`,
+        `{first} claims {told} — then spends the whole evening oriented around something they won't name. The wanting is real. The word for it isn't "{told}".`,
       ],
       // cache-theft confessions: the robber admits it. {what} = what was stolen.
       // Per-game no-repeat applies here too — thieves don't share a script.
@@ -512,7 +522,8 @@
         try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
         this.addDoubt(vid, 'contradiction',
           this.doubtText(vid, 'contradiction', { field, old: last.claim, now: claim, oldDay: last.day }),
-          [`said "${oldW}" (day ${last.day})`, `now says "${nowW}" (day ${day()})`]);
+          [`said "${oldW}" (day ${last.day})`, `now says "${nowW}" (day ${day()})`],
+          { field });
       }
       arr.push({ claim, day: day(), via: 'talk' });
       if (arr.length > 6) arr.shift();
@@ -639,6 +650,19 @@
         return detail.text;
       }
       return `Something about ${first} doesn't add up.`;
+    },
+
+    // doubtIsLead(doubt): is this gossip doubt still a LEAD (tentative)?
+    // A lead forms before the player's heard their story ("you haven't heard
+    // X's own story yet"). Once stampHeardStory records the hearing, the
+    // contradiction is earned — the stale "haven't heard" marker must not
+    // keep the doubt tentative forever, or the windup stays soft and clears
+    // stay neutral for earned contradictions (detective break-it 2026-10-09c).
+    doubtIsLead(doubt) {
+      const ev = (doubt && doubt.evidence) || [];
+      const marked = ev.some(e => /haven't heard/.test(String(e)));
+      const heard = ev.some(e => /own story \(day/.test(String(e)));
+      return marked && !heard;
     },
 
     // ---- observation ----
@@ -776,7 +800,8 @@
         try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
         this.addDoubt(vid, 'gossip',
           this.doubtText(vid, 'gossip', { heard: heardValue, source, field }),
-          [`${source}: the truth is "${heardValue}"`, `you haven't heard ${first}'s own story yet`]);
+          [`${source}: the truth is "${heardValue}"`, `you haven't heard ${first}'s own story yet`],
+          { field });
         return;
       }
       const lastClaim = claims[claims.length - 1].claim;
@@ -791,7 +816,8 @@
       try { this.say(beats[Math.floor(Math.random() * beats.length)]); } catch (e) {}
       this.addDoubt(vid, 'gossip',
         this.doubtText(vid, 'gossip', { claimed: lastClaim, heard: heardValue, source }),
-        [`${name} claimed "${lastClaim}"`, `${source} says "${heardValue}"`]);
+        [`${name} claimed "${lastClaim}"`, `${source} says "${heardValue}"`],
+        { field });
     },
 
     // NPCs talk about each other. Sometimes what they say contradicts a claim.
@@ -897,11 +923,14 @@
       // the crack — never the truth behind it.
       let spoken;
       // the cover claim is always fair game — they told it to you themselves
-      // (goal ids render as the human phrase, never the id).
+      // (goal ids render as the human phrase, never the id). For a gossip
+      // LEAD they didn't tell it to you — village talk did — so the windup
+      // attributes it to talk, not to their mouth (detective 2026-10-09c).
+      const isLeadForClaim = this.doubtIsLead(doubt);
       const claimBit = (lie && lie.told)
         ? (lie.field === 'goal'
-          ? ` You said you wanted ${this.goalWantText(lie.told)}.`
-          : ` You said you were ${/^[aeiou]/i.test(String(lie.told)) ? 'an' : 'a'} ${lie.told}.`)
+          ? (isLeadForClaim ? ` Word is you wanted ${this.goalWantText(lie.told)}.` : ` You said you wanted ${this.goalWantText(lie.told)}.`)
+          : (isLeadForClaim ? ` Word is you were ${/^[aeiou]/i.test(String(lie.told)) ? 'an' : 'a'} ${lie.told}.` : ` You said you were ${/^[aeiou]/i.test(String(lie.told)) ? 'an' : 'a'} ${lie.told}.`))
         : '';
       if (doubt.theft) {
         const t = doubt.theft;
@@ -914,8 +943,10 @@
         // LEAD vs CONTRADICTION (detective break-it 2026-10-09): a gossip
         // lead formed before you heard their story must not claim a mismatch
         // with "what you told me" — they told you nothing. Tentative until
-        // the contradiction is earned.
-        const isLead = (doubt.evidence || []).some(e => /haven't heard/.test(String(e)));
+        // the contradiction is earned. doubtIsLead (2026-10-09c) expires the
+        // lead once the story is heard — the stale "haven't heard" marker
+        // no longer keeps it tentative forever.
+        const isLead = this.doubtIsLead(doubt);
         spoken = isLead
           ? `"Someone said something about you, ${first}.${claimBit} ${ev} — I wanted to hear your side."`
           : `"Someone told me something about you that doesn't match what you told me.${claimBit} ${ev}"`;
@@ -1030,17 +1061,6 @@
       if (lies) for (const [f, l] of Object.entries(lies)) {
         if (!l.confessed && doubt.evidence.some(e => String(e).includes(l.told))) { lie = l; lieField = f; break; }
       }
-      // fallback: match by kind (live lies only — confessed ones are handled below)
-      const liveLie = (f) => (lies && lies[f] && !lies[f].confessed) ? lies[f] : null;
-      if (!lie && lies) {
-        if (doubt.kind === 'contradiction' || doubt.kind === 'observation') {
-          lie = liveLie('occupation') || liveLie('origin');
-          lieField = lie ? lie.field : null;
-        } else if (doubt.kind === 'gossip') {
-          lie = liveLie('occupation') || liveLie('origin') || liveLie('goal');
-          lieField = lie ? lie.field : null;
-        }
-      }
 
       let line, outcome;
 
@@ -1051,6 +1071,9 @@
 
       // The lie behind this doubt was already confessed: the doubt is stale.
       // They don't confess the same thing twice — they point that out.
+      // (Checked BEFORE the fallback: the old order let the by-kind guess
+      // confess a DIFFERENT live lie under a stale doubt's banner —
+      // detective break-it 2026-10-09c C4.)
       if (!lie && lies) {
         let stale = null;
         for (const [f, l] of Object.entries(lies)) {
@@ -1063,6 +1086,15 @@
           try { this.bumpTrust(vid, -1); } catch (e) {}
           return { ok: true, line, outcome };
         }
+      }
+
+      // fallback: the doubt's evidence names no live cover. For gossip leads
+      // that's by design (you haven't heard their story yet) — match the
+      // live lie on the doubt's own field, if any. Field-blind guessing is
+      // gone: it confessed unrelated lies (detective break-it 2026-10-09c C4).
+      if (!lie && lies && doubt.field) {
+        const lf = lies[doubt.field];
+        if (lf && !lf.confessed && lf.told) { lie = lf; lieField = doubt.field; }
       }
 
       if (!lie) {
@@ -1079,8 +1111,7 @@
         // "baseless accusation" — the observation was real.)
         // Real accusations (contradiction/slip/observation/gossip-with-claim
         // doubts with nothing behind them) still sting: that WAS an offense.
-        const tentative = doubt.kind === 'behavior' ||
-          (doubt.evidence || []).some(e => /haven't heard/.test(String(e)));
+        const tentative = doubt.kind === 'behavior' || this.doubtIsLead(doubt);
         this.confrontWindup(vid, doubt, null);
         line = this.drawTruthLine('clears', vid);
         outcome = 'cleared';
@@ -1295,7 +1326,8 @@
       });
       this.say(`👀 ${text}`);
       this.addDoubt(vid, 'slip', this.doubtText(vid, 'slip', { text }),
-        [`claimed "${toldW}"`, `slipped: ${text.slice(0, 80)}...`]);
+        [`claimed "${toldW}"`, `slipped: ${text.slice(0, 80)}...`],
+        { field: lie.field });
       try { this.remember(vid, 'slip', 'said something revealing'); } catch (e) {}
     },
 
@@ -1472,7 +1504,8 @@
       // this IS a contradiction: they just undermined their own claim
       this.addDoubt(vid, 'slip',
         this.doubtText(vid, 'slip', { text: first + ' told you "' + lie.told + '" \u2014 but something they just said doesn\u2019t fit. A wrong detail, a bad correction.' }),
-        ['claimed "' + lie.told + '"', 'slipped mid-conversation (day ' + day() + ')']);
+        ['claimed "' + lie.told + '"', 'slipped mid-conversation (day ' + day() + ')'],
+        { field: lie.field });
       try { this.remember(vid, 'slip', 'said something revealing'); } catch (e) {}
       return line;
     }
@@ -1525,7 +1558,11 @@
             : d.kind === 'contradiction'
             ? `"You told me one thing, then another. What's going on?"`
             : d.kind === 'gossip'
-            ? `"Someone told me something about you that doesn't match. Explain."`
+            // a LEAD has no mismatch yet — the menu must not promise one
+            // (detective break-it 2026-10-09c C2; the windup already knew).
+            ? (this.doubtIsLead(d)
+              ? `"Someone said something about you. I wanted to hear your side."`
+              : `"Someone told me something about you that doesn't match. Explain."`)
             : `"I've been watching. Things don't add up. Talk to me."`;
           const item = { id: 'confront:' + d.id, label };
           // insert before 'leave'; if at cap, drop a topic ask to make room
