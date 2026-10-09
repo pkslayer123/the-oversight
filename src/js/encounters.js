@@ -162,12 +162,12 @@
     return phase;
   };
   // ================= 4b. HUNT AUDIO RESOLUTION =================
-  // AUDIO FALLBACK (Steve 2026-10-06): Game.audioEvent silently no-ops when
-  // the CombatAudio registry (app.js) has no such synth — and 'animalPanic'
-  // (cornered-prey detonation, fired in the cornered branch) has no
-  // registry entry. A cornered deer screaming cannot be silent. encAudio
-  // keeps the hook-name contract: if app.js ever ships a real animalPanic
-  // synth it wins automatically; until then the panic composes from
+  // AUDIO FALLBACK (Steve 2026-10-06; contract fulfilled 2026-10-07): Game.audioEvent
+  // silently no-ops when the CombatAudio registry (app.js) has no such synth.
+  // 'animalPanic' (cornered-prey detonation, fired in the cornered branch) NOW
+  // has a real registry synth (app.js animalPanic, break-it audio r2/r3 audit),
+  // so the hook resolves directly; encAudio keeps the fallback map anyway —
+  // if a future hook name lacks a synth, the panic still composes from
   // registered freaks (bolt-thrash + brush-rustle, plus the bite-snap the
   // cornered branch already fires on top). Zero silent beats.
   var ENC_AUDIO_FALLBACK = {

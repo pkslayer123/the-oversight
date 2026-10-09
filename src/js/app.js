@@ -1868,6 +1868,22 @@
     let noiseBuf = null;
 
     function ensure() {
+      // CONTEXT DEATH (break-it audio r3, Steve 2026-10-09): the OS can close
+      // the AudioContext mid-session (iOS memory pressure, audio route torn
+      // down by a call/bluetooth). A closed context never recovers on its own:
+      // without this guard every voice kept building nodes on the dead
+      // context — silent forever, no error, no recovery. Drop the corpse and
+      // rebuild below. The cached noise buffer dies with the context (its
+      // AudioBuffer belongs to the dead one); sustained handles are stopped.
+      let dead = false;
+      try { dead = !!(ctx && ctx.state === 'closed'); } catch (e) { dead = !!ctx; }
+      if (dead) {
+        try { stopHeartbeat(); } catch (e) {}
+        try { if (charge) charge(); } catch (e) {}
+        try { if (sweep) sweep.stop(); } catch (e) {}
+        charge = null; sweep = null;
+        ctx = null; master = null; hbBus = null; sfxBus = null; noiseBuf = null;
+      }
       if (!ctx) {
         try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return false; }
         const comp = ctx.createDynamicsCompressor();
