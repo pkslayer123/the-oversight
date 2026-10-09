@@ -60,7 +60,10 @@
   }
 
   function newCodex() {
-    return { plants: {}, monsters: {}, recipes: [], terrain: {}, skills: {}, trees: {} };
+    return { plants: {}, monsters: {}, recipes: {}, terrain: {}, skills: {}, trees: {} };
+    // RECIPE KNOWLEDGE (fix 2026-10-09): recipes was briefly initialized as
+    // an array — named props don't survive JSON.stringify, so recipe
+    // knowledge silently wiped on every save/load. It's a string-keyed object.
     // plants: {plantId: {identifiedDay, survivedEating: bool, notes}}
     // trees: {species: {level, learnedDay}} — tree species knowledge (Steve 2026-10-05)
     // skills: {skillId: {level, learnedDay, via}} — knowledge about ANYTHING, not just plants

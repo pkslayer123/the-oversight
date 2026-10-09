@@ -626,16 +626,43 @@
       const oldChar = (this.data.villagers || []).find(x => x.id === oldId) || {};
       const oldName = oldChar.name || 'the scholar';
       const oldFirst = oldName.split(' ')[0];
-      // the body remains: the keepsakes go with it. Grief is fuel — whoever
-      // comes next can pick them up from the corpse.
-      let keepsakes = [];
+      // DEATH PACK (Steve 2026-10-09): the body keeps what it carried.
+      // Non-sentimental inventory + equipped gear goes on the corpse as the
+      // lootable death pack (take, leave, or use per item — nothing
+      // auto-transfers). SENTIMENTALS DIE WITH THE OWNER: bonded keepsakes
+      // are buried with the body — never placed on the corpse, never lootable.
+      let gearPack = [];
       try {
-        const inv = s.inventory || [];
-        keepsakes = inv.filter(i => i && (i.bonded || i.sentimental));
-        s.inventory = inv.filter(i => !(i && (i.bonded || i.sentimental)));
+        const defs = {}; (this.data.items || []).forEach(i => { defs[i.id] = i; });
+        const carried = (s.inventory || []).slice();
+        const worn = [];
+        try {
+          const eq = s.equipped || {};
+          for (const slot of Object.keys(eq)) {
+            const e = eq[slot];
+            if (e && (e.itemId || e.id)) worn.push(e);
+          }
+        } catch (e2) {}
+        const seen = new Set();
+        for (const it of carried.concat(worn)) {
+          if (!it) continue;
+          const gid = it.itemId || it.id;
+          if (gid) { if (seen.has(gid)) continue; seen.add(gid); }
+          const def = (gid && defs[gid]) || {};
+          if (it.bonded || it.sentimental || def.class === 'sentimental') continue; // dies with them
+          gearPack.push({
+            itemId: gid || it.name, name: it.name || def.name || gid || 'something',
+            units: it.units || 1,
+            kg: it.kg != null ? it.kg : (def.kg != null ? def.kg : 0.3),
+            kcalEach: 0, spoilDay: 9999,
+            prep: 'Theirs. Take it, leave it, or use it — the village watches.',
+          });
+        }
+        s.inventory = [];
+        s.equipped = {};
       } catch (e) {}
       try {
-        this.registerDeath({ kind: 'villager', villagerId: oldId, name: oldName, mx: s.mx, my: s.my, cause: cause || 'the wild', killerId: null, items: keepsakes });
+        this.registerDeath({ kind: 'villager', villagerId: oldId, name: oldName, mx: s.mx, my: s.my, cause: cause || 'the wild', killerId: null, items: gearPack });
       } catch (e) {}
       // MEMORIALIZED (Steve 2026-10-05): the death is narrated AND recorded.
       // registerDeath makes the corpse; village.fallen is the memorial roll —
@@ -742,6 +769,25 @@
         this.say(`${newFirst} picks up the Codex. Their hands shake. Then they open it, and keep writing.`);
       }
       this.villagerId = newId;
+      // SUCCESSOR'S OWN KIT (Steve 2026-10-09): the dead bearer's gear stays
+      // on the corpse — the new bearer starts from their own belongings, not
+      // an auto-transfer of the old inventory.
+      try {
+        const sdef = {}; (this.data.items || []).forEach(i => { sdef[i.id] = i; });
+        const kit = (newChar.items || []).slice(0, 5);
+        s.inventory = kit.map(id => {
+          const def = sdef[id] || {};
+          const personal = (newChar.itemPersonal || {})[id];
+          return {
+            itemId: id, units: 1, kcalEach: 0,
+            kg: def.kg != null ? def.kg : 0.2,
+            name: personal ? personal.name : (def.name || id),
+            flavor: personal ? personal.flavor : def.flavor, owner: newId,
+            bonded: true, bond: 0, bondOffered: [], enhancements: [],
+          };
+        });
+        s.equipped = {};
+      } catch (e) {}
       // MANTLE IDENTITY SYNC (break-it persistence 2026-10-08): the scholar
       // record kept the DEAD bearer's id — the save index then listed the dead
       // villager as the expedition's scholar, saveKey drifted, and Light

@@ -12694,6 +12694,7 @@
           return `<p class="small"><b>${r.name}</b> \u2014 ${matStr} ${btn}</p>`;
         }).join('')}` : ''}`;
 
+
     slot.innerHTML = `<div class="inlinecard">
       ${inlineHead('\uD83C\uDF92 Pack (' + st.invCount + ' items)')}
       ${view.result ? `<p class="inline-result">✓ ${esc(view.result)}</p>` : ''}

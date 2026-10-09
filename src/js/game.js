@@ -4341,6 +4341,15 @@
     // executes. Results reported. Danger is real.
     resolveAssignments() {
       const v = this.state.village;
+      // OUTDOOR CREW (Steve 2026-10-09): villagers on outdoor tasks are out in
+      // the wild together this part — a patroller who gets jumped can call to
+      // the crew instead of fleeing alone. Snapshot before resolution (entries
+      // are deleted from assignments as they resolve).
+      try {
+        const asg0 = v.assignments || {};
+        this._outdoorCrew = Object.keys(asg0).filter(rid =>
+          ['patrol', 'scout', 'hunt', 'forage'].includes((asg0[rid] || {}).task));
+      } catch (e) { this._outdoorCrew = []; }
       // TASK LEADS: domains you yielded run themselves. The lead works their
       // domain every part — building their own power base, on your behalf.
       // That's the trade you made.
@@ -4572,6 +4581,33 @@
       try { person = this.getPerson ? this.getPerson(vid) : null; } catch (e) {}
       if (!person || !S.equipment) return;
       try { S.equipment.autoEquip(person, this.data.items); } catch (e) {}
+      // ARMOR FROM OWN STASH (Steve 2026-10-09): mirror the weapon logic —
+      // before ranging out they fetch the best armor they personally own.
+      // Nobody else's stash is touched. (Armor isn't a depositable stash
+      // section — weapons/medicine only — so there's no communal armor pile.)
+      if (acquire) {
+        try {
+          const stash = person.stashed || [];
+          let best = null, bestP = -1, bestIdx = -1;
+          for (let i = 0; i < stash.length; i++) {
+            const gid = (stash[i] && (stash[i].itemId || stash[i].id)) || stash[i];
+            const def = (this.data.items || []).find(d => d.id === gid);
+            if (def && def.armor && (def.armor.protection || 0) > bestP) {
+              bestP = def.armor.protection; best = gid; bestIdx = i;
+            }
+          }
+          if (best) {
+            let cur = 0;
+            try { cur = S.equipment.armorOf(person, this.data.items) || 0; } catch (e2) {}
+            if (bestP > cur) {
+              stash.splice(bestIdx, 1);
+              person.items = person.items || [];
+              person.items.push(best);
+              S.equipment.autoEquip(person, this.data.items);
+            }
+          }
+        } catch (e) {}
+      }
       let wb = 0;
       try { wb = S.equipment.weaponBonusOf(person, this.data.items) || 0; } catch (e) {}
       if (wb > 0 || !acquire) return;
@@ -4667,6 +4703,36 @@
       const cur = (v.health[vid] !== undefined) ? v.health[vid] : 100;
       if (cur >= 70) return false;
       const nm = first || 'Someone';
+      // PHARMACY (Steve 2026-10-09): before bothering the healer, a hurt
+      // villager uses deposited medicine when it's appropriate — the smallest
+      // dose that covers the hurt, so nobody wastes a surgeon's kit on a
+      // scratch. Falls back to healer, then rest.
+      try {
+        const st = (this.stashState) ? this.stashState() : null;
+        const pile = (st && st.medicine) || [];
+        if (pile.length) {
+          const defs = {}; (this.data.items || []).forEach(i => { defs[i.id] = i; });
+          const deficit = 100 - cur;
+          let bestFit = null, bestFitAmt = 0, biggest = null, biggestAmt = 0;
+          for (const e of pile) {
+            const amt = (defs[e.itemId || e.id] || {}).healAmount || 0;
+            if (amt <= 0) continue;
+            if (amt > biggestAmt) { biggest = e; biggestAmt = amt; }
+            if (amt >= deficit && (bestFitAmt === 0 || amt < bestFitAmt)) { bestFit = e; bestFitAmt = amt; }
+          }
+          const pick = bestFit || biggest;
+          if (pick) {
+            const idx = pile.indexOf(pick);
+            if (idx >= 0) pile.splice(idx, 1);
+            try { if (this.stashLog) this.stashLog('take', pick.name || pick.itemId, 1, vid); } catch (e2) {}
+            v.health[vid] = Math.min(100, cur + (bestFit ? bestFitAmt : biggestAmt));
+            try {
+              this.say(`🩹 ${nm} is hurting (${cur} HP) — takes ${pick.name || 'medicine'} from the pharmacy before heading out. (${cur} → ${v.health[vid]} HP)`);
+            } catch (e2) {}
+            return false;
+          }
+        }
+      } catch (e) {}
       let healer = null;
       try { healer = this.campHealerName ? this.campHealerName() : null; } catch (e) {}
       if (healer) {
@@ -4721,7 +4787,18 @@
       // KNOWLEDGE-GATED: the patrol report names what the village calls it —
       // descriptor until named, never the System's true name for free.
       const mName = this.monsterNoun(mdef.id);
-      const rec = this.fieldFight(vid, mdef, m, {});
+      // PARTY-UP (Steve 2026-10-09): the outdoor crew is out there together —
+      // a jumped patroller can call for help instead of fleeing alone.
+      let pAllies = 0; const pAllyVids = [];
+      try {
+        for (const rid of (this._outdoorCrew || [])) {
+          if (rid !== vid && (this.state.village.roster || []).includes(rid)) {
+            pAllies++;
+            if (pAllyVids.length < 2) pAllyVids.push(rid);
+          }
+        }
+      } catch (e) {}
+      const rec = this.fieldFight(vid, mdef, m, { allies: pAllies, allyVids: pAllyVids });
       const summary = this.fieldFightSummary ? this.fieldFightSummary(rec, first, mName) : `${first} fought the ${mName}`;
       const killCorpse = () => {
         // the carcass stays where it died — same as your kills, same as the
@@ -5486,6 +5563,19 @@
       // expedition either.
       if (!s || !s.run || !s.scholar || !s.run.map) return false;
       this.state = s;
+      // RECIPE KNOWLEDGE MIGRATION (2026-10-09): codex.recipes was briefly an
+      // array — named props don't survive JSON.stringify, so old saves load
+      // with recipe knowledge silently wiped. Copy any named props over and
+      // normalize to an object.
+      try {
+        const cx = (this.state || {}).codex;
+        if (cx && Array.isArray(cx.recipes)) {
+          const fixed = {};
+          for (const k of Object.keys(cx.recipes)) fixed[k] = cx.recipes[k];
+          cx.recipes = fixed;
+        }
+        if (cx && !cx.recipes) cx.recipes = {};
+      } catch (e) {}
       const r = s.run;
       this.map = r.map; this.dayPart = r.dayPart; this.location = r.location;
       this.departed = r.departed; this.log = r.log || [];
@@ -13594,7 +13684,18 @@
       };
       let mdef = {};
       try { mdef = (this.data.monsters || []).find(x => x.id === m.id) || {}; } catch (e) {}
-      const rec = this.fieldFight(vid, mdef, m, {});
+      // PARTY-UP (Steve 2026-10-09): same outdoor-crew rule as patrols — a
+      // villager jumped in the wild can call to whoever's out there with them.
+      let wAllies = 0; const wAllyVids = [];
+      try {
+        for (const rid of (this._outdoorCrew || [])) {
+          if (rid !== vid && (this.state.village.roster || []).includes(rid)) {
+            wAllies++;
+            if (wAllyVids.length < 2) wAllyVids.push(rid);
+          }
+        }
+      } catch (e) {}
+      const rec = this.fieldFight(vid, mdef, m, { allies: wAllies, allyVids: wAllyVids });
       const summary = this.fieldFightSummary(rec, name, mName);
       if (rec.outcome === 'alreadyDead') {
         // BREAK-IT combat 2026-10-09: the world kept a 0-hp monster (vFlee

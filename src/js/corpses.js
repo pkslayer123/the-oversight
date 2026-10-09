@@ -274,6 +274,11 @@
             }
           }
         } catch (e) {}
+        // EMPTY SAPIENT DEATH PACK (Steve 2026-10-09): a sapient corpse with
+        // no transferable gear carries nothing — never invent practical props
+        // or a keepsake for a person. The generic pools below are for
+        // non-sapient dead only.
+        return items;
       }
       const practical = [
         { name: 'Worn knife', kg: 0.4, note: 'Still sharp.' },

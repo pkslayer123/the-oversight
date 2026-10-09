@@ -93,6 +93,8 @@
       var rec = {
         outcome: null, rounds: 0, vTaken: 0, mDealt: 0,
         vHpLeft: 0, mHpLeft: 0, packCount: 1, log: [],
+        allyDealt: 0, calledHelp: false, fleeHopeless: null, fleeHpFrac: null,
+        everWinning: false, everHopeless: false, minHpFrac: 1,
       };
       // GEAR-UP (Steve 2026-10-09): re-equip only, never acquisition — a
       // fighter doesn't whittle a spear mid-fight. Deterministic (autoEquip
@@ -193,7 +195,27 @@
       }
 
       // ---- rounds ----
+      // RISK TOLERANCE (Steve 2026-10-09): flee is a SITUATIONAL decision, not
+      // a flat HP line. "Maybe die today or definitely die tomorrow" — after
+      // day 7 the System taught them the waves only get harder, so they hold
+      // longer. Armed villagers trust their gear; allies nearby steady them.
+      // Nobody's damage or stats change — hand to hand is supposed to be hard.
+      // Death packs are just where gear logically ends up, never a goal.
       var vBreak = clamp(0.5 - Math.min(0.3, bravery * 0.015) - (temper === 'bold' ? 0.1 : 0) + (temper === 'cautious' ? 0.1 : 0), 0.15, 0.6);
+      var holdBonus = 0;
+      if (wb > 0) holdBonus += 0.08;                        // armed: trust the gear
+      var allies = Math.max(0, opts.allies || 0);
+      var allyVids = (opts.allyVids || []).slice(0, 2);
+      holdBonus += Math.min(0.12, allies * 0.04);            // allies nearby steady them
+      var day = 0;
+      try { day = (this.state.scholar || {}).day || 0; } catch (e) {}
+      if (day >= 7) holdBonus += 0.08;                       // post-System desperation
+      vBreak = clamp(vBreak - holdBonus, 0.05, 0.6);
+      // PARTY-UP (Steve 2026-10-09): when the trajectory turns hopeless and
+      // help is near, they shout instead of scattering. One ally answers per
+      // fight — a second pair of hands, off-balance, exposed (no armor).
+      var helpCalled = false, allyIn = false, allyHp = 0;
+      var allyMax = 70, allyVid = null, allyName = 'Someone';
       for (var round = 1; round <= MAX_ROUNDS; round++) {
         rec.rounds = round;
         var mInit = mSpeed + RR() * 2, vInit = 3 + RR() * 2;
@@ -210,15 +232,26 @@
               var thrash = 0;
               if (mdef.id === 'gallowdeer') thrash = lroll([10, 16]);
               var total = d + thrash;
-              // ARMOR: flat reduction, same as the tactical engine. The log
-              // states what the armor actually absorbed (honesty).
-              if (varmor > 0 && total > 0) {
+              // PARTY-UP: the pack splits its attention — the ally who rushed
+              // in is exposed (no armor) and draws some of the hits.
+              var hittingAlly = allyIn && allyHp > 0 && RR() < 0.4;
+              if (!hittingAlly && varmor > 0 && total > 0) {
                 var absorbed = Math.min(total, varmor);
                 total = Math.max(0, total - varmor);
                 rec.log.push(vName + "'s gear absorbs " + absorbed + '.');
               }
-              vHp -= total; rec.vTaken += total;
-              rec.log.push('R' + round + ': ' + atkName + ' hits ' + vName + ' for ' + total + ' (' + Math.max(0, vHp) + ' left)');
+              if (hittingAlly) {
+                allyHp -= total;
+                rec.log.push('R' + round + ': ' + atkName + ' hits ' + allyName + ' for ' + total + ' (' + Math.max(0, allyHp) + ' left)');
+                if (allyHp <= 0) {
+                  allyIn = false;
+                  rec.log.push(allyName + ' goes down!');
+                  try { if (allyVid && this.hurtVillager) this.hurtVillager(allyVid, 30, 'monster'); } catch (e) {}
+                }
+              } else {
+                vHp -= total; rec.vTaken += total;
+                rec.log.push('R' + round + ': ' + atkName + ' hits ' + vName + ' for ' + total + ' (' + Math.max(0, vHp) + ' left)');
+              }
             }
           } else {
             if (!vAlive) continue;
@@ -229,11 +262,51 @@
             lead.hp -= vd; rec.mDealt += vd;
             if (lead.hp <= 0) lead.alive = false;
             rec.log.push('R' + round + ': ' + vName + ' strikes for ' + vd + ' (' + Math.max(0, lead.hp) + ' left)');
+            // the ally fights too — a second pair of hands, off-balance from
+            // rushing in. A new combatant, not a buff to anyone's stats.
+            if (allyIn && allyHp > 0 && lead.hp > 0) {
+              var ad = lroll([3, 6]);
+              lead.hp -= ad; rec.mDealt += ad; rec.allyDealt += ad;
+              if (lead.hp <= 0) lead.alive = false;
+              rec.log.push('R' + round + ': ' + allyName + ' strikes for ' + ad + ' (' + Math.max(0, lead.hp) + ' left)');
+            }
           }
         }
-        // ---- morale: wounds drive it, never a flat roll ----
+        // ---- morale: situational, never a flat roll ----
         if (vHp <= 0) { vAlive = false; rec.outcome = 'vDie'; break; }
-        if ((vHp / vHpMax) < vBreak) { rec.outcome = 'vFlee'; break; }
+        if (vHp / vHpMax < rec.minHpFrac) rec.minHpFrac = vHp / vHpMax;
+        // SITUATIONAL MORALE (Steve 2026-10-09): after a couple of rounds the
+        // trajectory is legible. Winning -> commit (only the floor breaks
+        // them). Hopeless and alone -> believable flight. Hopeless with help
+        // near -> shout instead of scattering.
+        var fleeAt = vBreak, hopeless = false, winning = false;
+        if (round >= 2) {
+          var mlead = null;
+          for (var lj = 0; lj < members.length; lj++) { if (members[lj].hp > 0) { mlead = members[lj]; break; } }
+          if (mlead) {
+            var vDpr = rec.mDealt / round, mDpr = rec.vTaken / round;
+            var rtk = mlead.hp / Math.max(1, vDpr);  // rounds to drop the lead
+            var rtd = vHp / Math.max(1, mDpr);       // rounds until the villager drops
+            hopeless = rtd < rtk * 0.6;              // drops long before the lead falls
+            winning = rtk <= rtd * 1.1;              // drops the lead first (or trades)
+            if (winning) rec.everWinning = true;
+            if (hopeless) rec.everHopeless = true;
+          }
+        }
+        if (winning) {
+          fleeAt = 0.05;
+        } else if (hopeless && !helpCalled && allies > 0 && allyVids.length) {
+          helpCalled = true; allyIn = true; allyHp = allyMax;
+          allyVid = allyVids.shift(); allies--;
+          try { allyName = (this.displayName ? this.displayName(allyVid).split(' ')[0] : 'Someone'); } catch (e) {}
+          rec.calledHelp = true;
+          rec.log.push(vName + ' is losing — shouts for help! ' + allyName + ' charges in!');
+          try { if (this.bumpTrust) this.bumpTrust(allyVid, 1); } catch (e) {}
+        } else if (hopeless && helpCalled && !allyIn) {
+          // help came and went down — now it's truly hopeless
+          rec.outcome = 'vFlee'; rec.fleeHopeless = true; rec.fleeHpFrac = vHp / vHpMax; break;
+        }
+        if ((vHp / vHpMax) < fleeAt) { rec.outcome = 'vFlee'; rec.fleeHopeless = hopeless; rec.fleeHpFrac = vHp / vHpMax; break; }
         // THE LEAD FALLS: the pack coordinates through the lead animal —
         // the world-monster entity IS members[0]. Wound it below the break
         // line and the pack breaks (mFlee); kill it and the pack dies or
