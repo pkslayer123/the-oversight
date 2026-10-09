@@ -29,20 +29,31 @@ function ledgerNet(Game) {
 
 // Honest forage trip: travel to nearest stocked wild tile, forage, donate
 // ONLY the new haul, travel back. (Haven grounds have no stock — by design.)
+// BLOCKAGE-AWARE (gap triage 2026-10-09): travelTargets() lists tiles the
+// player cannot actually reach (creek/fallen tree/rubble/washout). The old
+// code picked the nearest stocked tile blind — usually a creek-blocked one —
+// so travelTo returned a blockage and the "trip" foraged at Haven for 0 kcal.
+// Now: skip blocked tiles; swim (force) only if nothing else is reachable.
 function forageTrip(Game, ctx) {
   const s = Game.state.scholar;
   try {
     const before = new Map((s.inventory || []).map(i => [(i.name + '|' + (i.plantId || '')), (i.units || 0)]));
-    let bx = null, by = null, bd = 99;
+    const cands = [];
     for (const tt of (Game.travelTargets() || [])) {
       const t = Game.tileAt(tt.x, tt.y);
       if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
-      if (tt.d < bd) { bd = tt.d; bx = tt.x; by = tt.y; }
+      let blocked = false;
+      try { blocked = !!Game.travelBlockage(tt.x, tt.y); } catch (e) {}
+      cands.push({ x: tt.x, y: tt.y, d: tt.d, blocked });
     }
-    if (bx === null) return 0;
+    cands.sort((a, b) => (a.blocked - b.blocked) || (a.d - b.d));
+    if (!cands.length) return 0;
+    const pick = cands[0];
+    const bx = pick.x, by = pick.y;
     const hx = Game.map.px, hy = Game.map.py;
-    Game.travelTo(bx, by);
+    const res = Game.travelTo(bx, by, pick.blocked); // force = swim the creek
     if (Game.over || Game.tbfight) { try { Game.travelTo(hx, hy); } catch (e) {} return 0; }
+    if (Game.map.px !== bx || Game.map.py !== by) return 0; // didn't arrive
     try { Game.doAction('forage', {}); } catch (e) {}
     let haul = 0;
     const inv = s.inventory || [];

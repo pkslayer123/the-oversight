@@ -204,10 +204,17 @@ async function runDays(Game, policy, opts) {
   try { learnedSkills = Object.keys((Game.state.codex || {}).skills || {}); } catch (e) {}
   let gameDays = 0;
   try { gameDays = Game.state.scholar.day || 0; } catch (e) {}
+  // WAVE UNLOCK STATE (gap triage 2026-10-09): "not reached in N seeds"
+  // should say whether the wave even unlocked — trigger vs reachability.
+  let maxWaveUnlocked = 1;
+  try { maxWaveUnlocked = Game.unlockedWave ? Game.unlockedWave() : 1; } catch (e) {}
+  let waveKills = {};
+  try { waveKills = Object.assign({}, Game.state.waveKills || {}); } catch (e) {}
 
   return {
     days: day > days ? days : day,
     gameDays,
+    maxWaveUnlocked, waveKills,
     endReason,
     telemetry: Game.state.telemetry || [],
     samples,

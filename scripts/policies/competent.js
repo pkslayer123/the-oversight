@@ -5,6 +5,58 @@
 'use strict';
 const idle = require('./idle');
 
+// Eat like someone who knows the disease roster (DISEASES.md): cooked/safe
+// food first, never human meat (trembles — cooking doesn't kill prions),
+// never raw meat (trichinosis/gutrot). Re-scans each take since indices shift.
+function competentEat(Game) {
+  const s = Game.state.scholar, vv = Game.state.village;
+  try {
+    if (s.kcal >= Game.kcalCap() * 0.85) return;
+    let guard = 0;
+    while (s.kcal < Game.kcalCap() * 0.95 && guard++ < 20) {
+      const pantry = vv.pantry || [];
+      let best = -1, bestScore = -99;
+      for (let i = 0; i < pantry.length; i++) {
+        const it = pantry[i];
+        if (!it || (it.kcalEach || 0) <= 0) continue;
+        if (it.plantId === 'meat_human') continue; // trembles: no cure, ever
+        let score = 1;
+        const fs = it.foodState || '';
+        if (fs === 'cooked' || fs === 'smoked' || fs === 'preserved' || fs === 'rendered') score = 10;
+        else if (fs === 'raw') score = (it.plantId || '').startsWith('meat_') ? -10 : 2;
+        if (score > bestScore) { bestScore = score; best = i; }
+      }
+      if (best < 0 || bestScore < 0) break;
+      try { Game.takeFromPantry(best); } catch (e) { break; }
+    }
+    try { Game.eat(); } catch (e) {}
+  } catch (e) {}
+}
+
+// Loot the dead: an experienced player strips corpses (take, don't leave
+// meat to rot — but never human meat). Range-checked inside corpseTakeItem.
+function lootCorpses(Game, ctx) {
+  try {
+    if (!Game.corpses) return 0;
+    let took = 0;
+    for (const c of Game.corpses()) {
+      if (!c || c.looted || c.buried) continue;
+      const items = c.items || [];
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (!it || (it.units == null ? 1 : it.units) <= 0) continue;
+        if (it.plantId === 'meat_human') continue; // trembles
+        try {
+          const r = Game.corpseTakeItem(c.id, i);
+          if (r) { took++; ctx.looted = (ctx.looted || 0) + 1; }
+        } catch (e) {}
+      }
+      if (took >= 12) break; // don't spend the whole day-part
+    }
+    return took;
+  } catch (e) { return 0; }
+}
+
 function nearFire(Game) {
   try { return Game.nearFire(); } catch (e) { return false; }
 }
@@ -121,7 +173,7 @@ const competent = {
   },
   upkeep(Game, ctx) {
     cookPack(Game, ctx);
-    idle.playerEat(Game);
+    competentEat(Game);
     drinkSafe(Game, ctx);
     checkTicks(Game, ctx);
   },
@@ -141,7 +193,14 @@ const competent = {
       }
     } catch (e) {}
     teachRound(Game, ctx);
+    // LEARN FIRST: knowledge is the food economy. Until we know 5 plants,
+    // triple the conversations — gratitude teaches, and taught plants feed.
+    try {
+      const known = Object.keys((Game.state.codex || {}).plants || {}).length;
+      if (known < 5) { talkRound(Game, ctx); talkRound(Game, ctx); }
+    } catch (e) {}
     talkRound(Game, ctx);
+    lootCorpses(Game, ctx); // strip the dead after fights
     // TAKE THE SYSTEM'S OFFER (coverage 2026-10-09): an experienced player
     // chooses an ability when offered — the sim never did, so ability_granted
     // never fired. Pick the first offer (a competent player takes the gift).
@@ -155,8 +214,9 @@ const competent = {
     const known = Object.keys((Game.state.codex || {}).plants || {}).length;
     ctx.knownPlants = known;
   },
-  // Fight only with advantage: below 35% HP, walk to the edge (flee-by-barrier).
-  // Otherwise strike the weakest live monster.
+  // Fight only with advantage: assess at fight START and walk away from bad
+  // ones (an experienced player doesn't take 3:1 fights). Below 35% HP,
+  // walk to the edge (flee-by-barrier). Otherwise strike the weakest.
   fight(Game, ctx) {
     try {
       const f = Game.tbfight;
@@ -170,13 +230,39 @@ const competent = {
           Game.tbAfterPlayerAction();
         } catch (e) {}
       };
-      if (hpPct < 0.35) {
-        // retreat toward the nearest edge — the barrier ends pursuit honestly
-        const px = p.mx != null ? p.mx : 4, py = p.my != null ? p.my : 4;
-        const tx = px <= 4 ? 0 : 8;
-        try { Game.tbPlayerMove(tx, py); ctx.fled = (ctx.fled || 0) + 1; } catch (e) {}
+      const flee = () => {
+        try {
+          const px = p.mx != null ? p.mx : 4, py = p.my != null ? p.my : 4;
+          const tx = px <= 4 ? 0 : 8;
+          try { Game.tbPlayerMove(tx, py); ctx.fled = (ctx.fled || 0) + 1; } catch (e) {}
+        } catch (e) {}
         endTurn();
         return true;
+      };
+      // NEW-FIGHT ASSESSMENT: don't start fights you can't win.
+      if (ctx._fightObj !== f) {
+        ctx._fightObj = f;
+        try {
+          const monsters = f.fighters.filter(x => x.kind === 'monster' && (x.hp || 0) > 0);
+          let totalMhp = 0, maxWave = 1;
+          for (const m of monsters) {
+            totalMhp += m.maxHp || m.hp || 0;
+            const md = ((Game.data || {}).monsters || []).find(d => d.id === m.monsterId);
+            if (md && md.wave) maxWave = Math.max(maxWave, md.wave);
+          }
+          const pmax = p.maxHp || 100;
+          const outmatched = totalMhp > 2.5 * pmax ||
+            (maxWave >= 2 && hpPct < 0.7) ||
+            hpPct < 0.5;
+          if (outmatched && monsters.length) {
+            ctx.fledBad = (ctx.fledBad || 0) + 1;
+            return flee();
+          }
+        } catch (e) {}
+      }
+      if (hpPct < 0.35) {
+        // retreat toward the nearest edge — the barrier ends pursuit honestly
+        return flee();
       }
       const alive = f.fighters.filter(x => x.kind === 'monster' && (x.hp || 0) > 0);
       if (!alive.length) return false;
