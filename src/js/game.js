@@ -7668,11 +7668,26 @@
     },
     // HAVEN DOORS: the building has an inside and an outside. Doors are real.
     // Step through and you're on the Haven grounds — tents, fire pit, the world beyond.
-    exitBuilding() {
+    exitBuilding(doorFlee) {
       // DEAD (break-it travel r6 2026-10-09): the corpse walks through no
       // doors — same class as the examineCell post-death fix (round 5).
       if (this.over) return false;
       const s = this.state.scholar;
+      // MID-FIGHT (explorer break-it 2026-10-09): the missing guard. Every
+      // sibling movement verb (travelTo, examineCell, clearBlockage,
+      // buildBridge, tryNodeExit) refuses mid-fight at the engine level —
+      // these two didn't. A raw exitBuilding() mid-combat teleported the
+      // player outside with the fight still live: free flee with no barrier
+      // roll and a desynced fight. The flee-by-door branch (tbPlayerMove)
+      // is the one sanctioned mid-combat caller — it passes doorFlee.
+      if (this.inCombat() && !doorFlee) {
+        this.say('Not mid-fight — the barrier is the way out.');
+        return false;
+      }
+      // NO-OP (explorer break-it 2026-10-09): the old code repositioned to
+      // (4,2) even when already outside — a free teleport on the haven
+      // grounds (or worse, off-haven). Refuse honestly instead.
+      if (!s.insideHaven) { this.say("You're already outside."); return false; }
       s.insideHaven = false;
       // invalidate the cached detail — the grounds are a different place than the hall
       const t = this.tileAt(this.map.px, this.map.py);
@@ -7710,10 +7725,22 @@
       }
       return true;
     },
-    enterBuilding() {
+    enterBuilding(doorFlee) {
       // DEAD (break-it travel r6 2026-10-09): same class as exitBuilding.
       if (this.over) return false;
       const s = this.state.scholar;
+      // MID-FIGHT (explorer break-it 2026-10-09): same class as the
+      // exitBuilding guard above — raw enterBuilding() mid-combat was a
+      // free flee: player teleported to the hall with the fight live,
+      // monsters AI-acting against a ghost. Only the flee-by-door branch
+      // may pass doorFlee.
+      if (this.inCombat() && !doorFlee) {
+        this.say('Not mid-fight — the barrier is the way out.');
+        return false;
+      }
+      // NO-OP (explorer break-it 2026-10-09): re-entering while inside
+      // repositioned to (4,7) — a free in-hall teleport. Refuse honestly.
+      if (s.insideHaven) { this.say("You're already inside."); return false; }
       // STATE INTEGRITY: the hall is at Haven. Going "inside" from a
       // thicket six tiles out would desync inside/outside (and with it the
       // pantry/stash gate). Refuse anywhere but the haven node.
@@ -23335,10 +23362,10 @@
           .map(m => ({ id: m.monsterId, mx: m.mx, my: m.my, hp: m.hp }));
         if (s.insideHaven) {
           this.say('You dive through the doors — outside! The fight is behind you.');
-          this.exitBuilding();
+          this.exitBuilding(true); // doorFlee: the sanctioned mid-combat door use
         } else {
           this.say('You duck through the doors — inside! The fight is behind you.');
-          this.enterBuilding();
+          this.enterBuilding(true); // doorFlee: the sanctioned mid-combat door use
         }
         // Escaping through a door ends combat FOR THE PLAYER
         const p2 = this.tbFighter('p');

@@ -99,10 +99,13 @@ function setup() {
   return s;
 }
 function onGrounds() {
-  // walkable open area for long paths: haven grounds, outside the hall
+  // walkable open area for long paths: haven grounds, outside the hall.
+  // Use the API honestly: exitBuilding() moves inside->outside and emerges
+  // at the doorstep (4,2). (Do NOT hand-set insideHaven=false first and
+  // then call it expecting a teleport — redundant calls are refused.)
   const s = Game.state.scholar;
+  if (s.insideHaven) Game.exitBuilding();
   s.insideHaven = false;
-  Game.exitBuilding();
   return s;
 }
 function farTarget(minLen) {
