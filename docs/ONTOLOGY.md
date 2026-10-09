@@ -138,15 +138,15 @@ Every villager is a living codex entry. Deepens while they live.
 ### contest-engine (`contestEngine.js`)
 Real off-screen contest resolution for villager contestants. Every category resolves through a real process with the contestant's real stats — fights are fought (fieldFights.js), moots are argued (social stats, rounds), ordeals are endured (costs paid from real reserves). Never a single outcome table. (Steve 2026-10-08: "contests are to be played, not as RNG.")
 
-**Provides:** contestResolveVillager(pid, contest, opts) -> {outcome, detail, log[]}, duelFight(a, b) -> villager-vs-villager rounds, contestBeastFor(wave, targetHp)
+**Provides:** contestResolveVillager(pid, contest, opts) -> {outcome, detail, log[]}, contestResolveGroup(pids, contest, opts) -> {pid: {outcome, detail, log[]}}, duelFight(a, b, opts) -> villager-vs-villager rounds, contestBeastFor(wave, targetHp)
 
 **Rules:**
-- blood: pit/gauntlet/siege via fieldFight (real rounds, real stats); duel via duelFight (to the yield — death only on massive overkill); tithe/price via bleeding measures (demand vs health pool, temperament decides the rest). (code: bloodResolve)
+- blood: pit/gauntlet/siege via fieldFight (real rounds, real stats); duel via duelFight (to the yield — death only on massive overkill); tithe via bleeding measures (demand vs health pool, temperament decides the rest). (code: bloodResolve)
 - moot: caseScore = notability*2 + trust/10 + bravery/10 + temperament; p1 vs risk demand, p2 head-to-head with trust/notability tiebreaks. (code: mootResolve)
 - endurance: ordeals with honest costs — starve (health/day), drop (legs/speed/stamina), maw (nerve vs demand), vigil (bravery vs fear), exchange (team relay). (code: enduranceResolve)
 - other: stat-driven structured resolution, documented per category; chance is rigged theater (ratings-driven, deterministic). (code: otherResolve)
-- deterministic: same villager + same contest = same fate. No hidden rolls. The process is real; the player can't see the stats anyway (knowledge-gating). (code: contestResolveVillager, Steve 2026-10-08)
-- cheer: watcher's cheer is a real performance modifier (braveryBonus in blood, case lift in moot), capped as before. (code: contestResolveGroup, Steve 2026-10-08)
+- deterministic: same villager + same contest + same state = same fate — ENFORCED, not aspirational. Every top-level resolution reseeds a private stream from (day, contest id, participants, stat snapshot) via _cxSeed/_cxWithSeed; roll() bypasses Scattering.combat.roll while _det is set; fieldFight draws from opts.rng. No Math.random anywhere in the resolution path — no hidden rolls, no save-scum (reloading replays the identical fate). The process is real; the player can't see the stats anyway (knowledge-gating). (code: _cxSeed, _cxWithSeed, Steve 2026-10-08; break-it 2026-10-08)
+- cheer: watcher's cheer is a real performance modifier (braveryBonus in blood incl. duelFight, case lift in moot); the cheer input is capped at 0.15 as before (alien winMod applies after, as its own meddling). (code: contestResolveGroup, Steve 2026-10-08; break-it 2026-10-08)
 
 **Consumes:** fieldFight (fieldFights.js), monsterWavePool, unlockedWave, Game.agencyOf, Game.npcTemper, village health, scholar trust, hurtVillager, displayName
 
@@ -457,6 +457,7 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 - record: every fight returns rounds, wounds both ways, and outcome — feeds deeds, gossip, scars. (code: fieldFight)
 - cheap: round cap 15, no grid, no UI. (code: fieldFight)
 - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
+- determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
 
 **Consumes:** Scattering.combat.roll, village health, agency xp, equipment, monsters data
 

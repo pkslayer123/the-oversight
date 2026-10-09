@@ -3,15 +3,16 @@
 // description: Real off-screen contest resolution for villager contestants. Every category resolves through a real process with the contestant's real stats — fights are fought (fieldFights.js), moots are argued (social stats, rounds), ordeals are endured (costs paid from real reserves). Never a single outcome table. (Steve 2026-10-08: "contests are to be played, not as RNG.")
 // provides:
 //   - contestResolveVillager(pid, contest, opts) -> {outcome, detail, log[]}
-//   - duelFight(a, b) -> villager-vs-villager rounds
+//   - contestResolveGroup(pids, contest, opts) -> {pid: {outcome, detail, log[]}}
+//   - duelFight(a, b, opts) -> villager-vs-villager rounds
 //   - contestBeastFor(wave, targetHp)
 // rules:
-//   - blood: pit/gauntlet/siege via fieldFight (real rounds, real stats); duel via duelFight (to the yield — death only on massive overkill); tithe/price via bleeding measures (demand vs health pool, temperament decides the rest). (code: bloodResolve)
+//   - blood: pit/gauntlet/siege via fieldFight (real rounds, real stats); duel via duelFight (to the yield — death only on massive overkill); tithe via bleeding measures (demand vs health pool, temperament decides the rest). (code: bloodResolve)
 //   - moot: caseScore = notability*2 + trust/10 + bravery/10 + temperament; p1 vs risk demand, p2 head-to-head with trust/notability tiebreaks. (code: mootResolve)
 //   - endurance: ordeals with honest costs — starve (health/day), drop (legs/speed/stamina), maw (nerve vs demand), vigil (bravery vs fear), exchange (team relay). (code: enduranceResolve)
 //   - other: stat-driven structured resolution, documented per category; chance is rigged theater (ratings-driven, deterministic). (code: otherResolve)
-//   - deterministic: same villager + same contest = same fate. No hidden rolls. The process is real; the player can't see the stats anyway (knowledge-gating). (code: contestResolveVillager, Steve 2026-10-08)
-//   - cheer: watcher's cheer is a real performance modifier (braveryBonus in blood, case lift in moot), capped as before. (code: contestResolveGroup, Steve 2026-10-08)
+//   - deterministic: same villager + same contest + same state = same fate — ENFORCED, not aspirational. Every top-level resolution reseeds a private stream from (day, contest id, participants, stat snapshot) via _cxSeed/_cxWithSeed; roll() bypasses Scattering.combat.roll while _det is set; fieldFight draws from opts.rng. No Math.random anywhere in the resolution path — no hidden rolls, no save-scum (reloading replays the identical fate). The process is real; the player can't see the stats anyway (knowledge-gating). (code: _cxSeed, _cxWithSeed, Steve 2026-10-08; break-it 2026-10-08)
+//   - cheer: watcher's cheer is a real performance modifier (braveryBonus in blood incl. duelFight, case lift in moot); the cheer input is capped at 0.15 as before (alien winMod applies after, as its own meddling). (code: contestResolveGroup, Steve 2026-10-08; break-it 2026-10-08)
 // consumes:
 //   - fieldFight (fieldFights.js), monsterWavePool, unlockedWave
 //   - Game.agencyOf, Game.npcTemper, village health, scholar trust
@@ -37,6 +38,12 @@
 
   // Seeded-at-load RNG like the other sim modules (deterministic per load).
   var _s = 0xC0E7E5;
+  // DETERMINISM ENFORCEMENT (break-it 2026-10-08): _det is true while a
+  // top-level resolution runs under _cxWithSeed. roll() then draws only from
+  // the seeded stream — never from Scattering.combat.roll (Math.random).
+  // Same villager + same contest + same state = same fate. No hidden rolls,
+  // no save-scum: reloading and re-resolving replays the identical fate.
+  var _det = false;
   var R = function() {
     _s |= 0; _s = (_s + 0x6D2B79F5) | 0;
     var t = Math.imul(_s ^ (_s >>> 15), 1 | _s);
@@ -44,6 +51,7 @@
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
   var roll = function(range) {
+    if (_det) return range[0] + Math.floor(R() * (range[1] - range[0] + 1));
     try {
       const _g = typeof window !== 'undefined' ? window : global;
       if (_g.Scattering && _g.Scattering.combat && _g.Scattering.combat.roll)
@@ -90,9 +98,40 @@
       return { hp: Math.max(1, hp), maxHp: 100, bravery, tracking, survival, trust, nota, temper, wb, clever, name };
     },
 
+    // ---- determinism: seed from stable, save-persistent state ----
+    // The seed is day + contest + participants + their stat snapshot. Same
+    // state in, same fate out — across reloads, which is what closes the
+    // save-scum vector (re-resolving after a reload replays the same fate).
+    _cxSeed: function(pids, contest) {
+      var day = 1;
+      try { day = (this.state.scholar || {}).day || 1; } catch (e) {}
+      var parts = [day, (contest && contest.id) || '?', pids.slice().sort().join('+')];
+      for (const pid of pids.slice().sort()) {
+        try {
+          const s = this._cxStats(pid);
+          parts.push([pid, s.hp, s.bravery, s.tracking, s.survival, s.trust, s.nota, s.temper, s.wb, s.clever ? 1 : 0].join(':'));
+        } catch (e) { parts.push(String(pid)); }
+      }
+      var str = parts.join('|'), h = 2166136261;
+      for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    },
+    // Run fn with the module RNG reseeded from the resolution's seed and
+    // _det set so roll() bypasses combat.roll. Restores prior state after —
+    // nesting (duel inside group) is safe.
+    _cxWithSeed: function(pids, contest, fn) {
+      const seed = this._cxSeed(pids, contest);
+      const prevS = _s, prevDet = _det;
+      _s = seed; _det = true;
+      try { return fn(); } finally { _s = prevS; _det = prevDet; }
+    },
+
     // ---- wave-appropriate beast, System-matched ----
     // The System wants a fair fight for ratings: the beast's HP is matched
-    // closest to the target. Gauntlet/siege escalate by wave.
+    // closest to the target. Wave-scoping comes from monsterWavePool()
+    // (unlocked waves only); gauntlet/siege escalation comes from the
+    // caller's targetHp scaling (0.7 + w*0.3) — not from the wave param,
+    // which is kept for the documented signature.
     contestBeastFor: function(wave, targetHp) {
       var pool = [];
       try { pool = this.monsterWavePool ? this.monsterWavePool() : (this.data.monsters || []); }
@@ -112,12 +151,18 @@
     // sides, morale breaks driven by wounds. "Not to the death — to the
     // yield": hitting 0 means yield (lost), unless the blow was massive
     // (≥60% of maxHp in one strike) — "accidents happen."
-    duelFight: function(a, b) {
+    // opts.braveryBonus (watcher's cheer / alien rigging) steadies or
+    // shakes both duelists' arms — duels are blood, and blood gets the
+    // cheer. Self-seeding: deterministic from the duelists and the day.
+    duelFight: function(a, b, opts) {
+      opts = opts || {};
+      return this._cxWithSeed([a, b], { id: 'duel' }, () => {
+      const bravBonus = opts.braveryBonus || 0;
       const sa = this._cxStats(a), sb = this._cxStats(b);
       var ha = sa.hp, hb = sb.hp;
       const rec = { rounds: 0, aTaken: 0, bTaken: 0, log: [] };
       const vBreak = function(s) {
-        return clamp(0.5 - Math.min(0.3, s.bravery * 0.015)
+        return clamp(0.5 - Math.min(0.3, (s.bravery + bravBonus) * 0.015)
           - (s.temper === 'bold' ? 0.1 : 0) + (s.temper === 'cautious' ? 0.1 : 0), 0.15, 0.6);
       };
       const ba = vBreak(sa), bb = vBreak(sb);
@@ -152,6 +197,7 @@
       // round cap: the less-hurt takes it
       const out = (ha / sa.maxHp) >= (hb / sb.maxHp) ? 'aWon' : 'bWon';
       return Object.assign(rec, { outcome: out, log: rec.log.concat(['Fifteen rounds, no yield — the judges give it to the less-bloodied.']) });
+      });
     },
 
     // ---- BLOOD ----
@@ -159,8 +205,12 @@
       opts = opts || {};
       const id = contest.id;
       const log = [];
-      // tithe/price: the altar demands measures. 10% maxHp each.
-      if (id === 'tithe' || id === 'price') {
+      // tithe: the altar demands measures. 10% maxHp each.
+      // (break-it 2026-10-08: the old 'price' arm was dead code — price is a
+      // moot-cat contest per data ("one villager, for the season"), so
+      // cat-dispatch never routed it here, and the altar-bleeding fiction
+      // contradicted the data fiction. Removed.)
+      if (id === 'tithe') {
         const st = this._cxStats(pid);
         const demand = contest.risk === 'extreme' ? 6 : 4;
         const measure = Math.max(1, Math.round(st.maxHp * 0.10));
@@ -188,7 +238,9 @@
         const beast = this.contestBeastFor(wave, st.hp * (0.7 + w * 0.3));
         if (!beast) return { outcome: 'lost', detail: 'no beast', log };
         let rec;
-        try { rec = this.fieldFight(pid, beast, null, { braveryBonus: opts.cheerBonus || 0 }); }
+        // rng: R draws from the seeded resolution stream under _cxWithSeed
+        // (deterministic); fieldFight bypasses combat.roll when rng is set.
+        try { rec = this.fieldFight(pid, beast, null, { braveryBonus: opts.cheerBonus || 0, rng: R }); }
         catch (e) { return { outcome: 'lost', detail: 'fight failed', log }; }
         log.push(`Wave ${w}: ${rec.log[rec.log.length - 1] || rec.outcome} (${rec.rounds} rounds, ${rec.vTaken} taken)`);
         if (rec.vTaken > 0) { try { this.hurtVillager(pid, rec.vTaken, 'contest'); } catch (e) {} }
@@ -264,10 +316,14 @@
         }
         return results;
       }
-      if (id === 'drop' || id === 'fetch') {
-        // 3 legs (drop) / 1 leg (fetch). speed = 1 + survival/25. 10 hp/leg.
+      // (break-it 2026-10-08: the old 'fetch' arm was dead code — fetch is a
+      // weird-cat contest per data ("Bring Us Something Interesting"), so
+      // cat-dispatch routes it to _cxOther, never here; the race-legs
+      // fiction contradicted the data fiction. Removed.)
+      if (id === 'drop') {
+        // 3 legs. speed = 1 + survival/25. 10 hp/leg.
         // Collapse below 20 → lost. Fastest finisher wins.
-        const legs = id === 'drop' ? 3 : 1;
+        const legs = 3;
         const time = {};
         for (const pid of pids) {
           const st = stats[pid];
@@ -408,7 +464,7 @@
               caught = true;
               log.push(`${st.name} is found on round ${r + 1}.`);
               let rec = null;
-              try { rec = this.fieldFight(pid, seeker, null, {}); } catch (e) {}
+              try { rec = this.fieldFight(pid, seeker, null, { rng: R }); } catch (e) {}
               if (rec) {
                 if (rec.vTaken > 0) { try { this.hurtVillager(pid, rec.vTaken, 'contest'); } catch (e2) {} }
                 if (rec.outcome === 'vDie') results[pid] = { outcome: 'died', detail: 'found and killed', log };
@@ -425,7 +481,7 @@
         for (const pid of pids) {
           const beast = this.contestBeastFor(1, 50);
           let rec = null;
-          try { rec = this.fieldFight(pid, beast, null, {}); } catch (e) {}
+          try { rec = this.fieldFight(pid, beast, null, { rng: R }); } catch (e) {}
           const st = stats[pid];
           if (!rec) { results[pid] = { outcome: 'lost', detail: 'no fight', log: [] }; continue; }
           if (rec.vTaken > 0) { try { this.hurtVillager(pid, rec.vTaken, 'contest'); } catch (e2) {} }
@@ -507,8 +563,9 @@
     // opts: { cheerBonus } (blood bravery), { cheerLift } (moot case)
     contestResolveVillager: function(pid, contest, opts) {
       opts = opts || {};
-      const cat = contest.cat;
+      return this._cxWithSeed([pid], contest, () => {
       try {
+        const cat = (contest || {}).cat;
         if (cat === 'blood') {
           // duel is head-to-head — needs the group; handled by resolveGroup.
           if (contest.id === 'duel') return { outcome: 'lost', detail: 'duel needs a partner', log: [] };
@@ -526,37 +583,63 @@
           const r = this._cxChance([pid], contest);
           return r[pid];
         }
-        const r = this._cxOther([pid], contest);
+        const r = this._cxOther([pid], contest || {});
         return r[pid];
       } catch (e) {
         return { outcome: 'lost', detail: 'resolution failed: ' + e.message, log: [] };
       }
+      });
     },
 
     // Group resolution for head-to-head / team contests.
     contestResolveGroup: function(pids, contest, opts) {
       opts = opts || {};
+      return this._cxWithSeed(pids, contest || {}, () => {
       try {
-        if (contest.id === 'duel' && pids.length >= 2) {
-          const rec = this.duelFight(pids[0], pids[1]);
+        const cid = (contest || {}).id, cat = (contest || {}).cat;
+        if (cid === 'duel') {
+          if (pids.length >= 2) {
+            // opts carry the watcher's cheer / alien rigging (braveryBonus)
+            // — duels are blood, and blood gets the cheer (break-it 2026-10-08:
+            // cheer previously never reached duelFight).
+            const rec = this.duelFight(pids[0], pids[1], opts);
+            const results = {};
+            const apply = (pid, took) => { if (took > 0) { try { this.hurtVillager(pid, took, 'contest'); } catch (e) {} } };
+            // Wounds are real in EVERY duel ending (break-it 2026-10-08:
+            // death/double-yield previously applied no damage — the survivor
+            // of a fatal duel walked away unwounded).
+            apply(pids[0], rec.aTaken); apply(pids[1], rec.bTaken);
+            if (rec.outcome === 'aWon') { results[pids[0]] = { outcome: 'won', detail: rec.rounds + ' rounds', log: rec.log }; results[pids[1]] = { outcome: 'lost', detail: 'yielded', log: [] }; }
+            else if (rec.outcome === 'bWon') { results[pids[1]] = { outcome: 'won', detail: rec.rounds + ' rounds', log: rec.log }; results[pids[0]] = { outcome: 'lost', detail: 'yielded', log: [] }; }
+            else if (rec.outcome === 'aDied') { results[pids[0]] = { outcome: 'died', detail: 'terrible blow', log: rec.log }; results[pids[1]] = { outcome: 'won', detail: 'accident', log: [] }; }
+            else if (rec.outcome === 'bDied') { results[pids[1]] = { outcome: 'died', detail: 'terrible blow', log: rec.log }; results[pids[0]] = { outcome: 'won', detail: 'accident', log: [] }; }
+            else { results[pids[0]] = { outcome: 'lost', detail: 'double yield', log: rec.log }; results[pids[1]] = { outcome: 'lost', detail: 'double yield', log: [] }; }
+            return results;
+          }
+          // A duel needs a partner — matches the single-participant path.
+          const r = {};
+          for (const pid of pids) r[pid] = { outcome: 'lost', detail: 'duel needs a partner', log: [] };
+          return r;
+        }
+        // (break-it 2026-10-08: group blood contests previously fell through
+        // to _cxOther's generic "making" resolution — a multi-villager Pit
+        // resolved as a cookfight ("makes something the aliens have never
+        // felt"). Blood resolves per-villager through real fights.)
+        if (cat === 'blood') {
           const results = {};
-          const apply = (pid, took) => { if (took > 0) { try { this.hurtVillager(pid, took, 'contest'); } catch (e) {} } };
-          if (rec.outcome === 'aWon') { results[pids[0]] = { outcome: 'won', detail: rec.rounds + ' rounds', log: rec.log }; results[pids[1]] = { outcome: 'lost', detail: 'yielded', log: [] }; apply(pids[0], rec.aTaken); apply(pids[1], rec.bTaken); }
-          else if (rec.outcome === 'bWon') { results[pids[1]] = { outcome: 'won', detail: rec.rounds + ' rounds', log: rec.log }; results[pids[0]] = { outcome: 'lost', detail: 'yielded', log: [] }; apply(pids[0], rec.aTaken); apply(pids[1], rec.bTaken); }
-          else if (rec.outcome === 'aDied') { results[pids[0]] = { outcome: 'died', detail: 'terrible blow', log: rec.log }; results[pids[1]] = { outcome: 'won', detail: 'accident', log: [] }; }
-          else if (rec.outcome === 'bDied') { results[pids[1]] = { outcome: 'died', detail: 'terrible blow', log: rec.log }; results[pids[0]] = { outcome: 'won', detail: 'accident', log: [] }; }
-          else { results[pids[0]] = { outcome: 'lost', detail: 'double yield', log: rec.log }; results[pids[1]] = { outcome: 'lost', detail: 'double yield', log: [] }; }
+          for (const pid of pids) results[pid] = this._cxBlood(pid, contest, opts);
           return results;
         }
-        if (contest.cat === 'moot') return this._cxMoot(pids, contest, opts);
-        if (contest.cat === 'endurance') return this._cxEndurance(pids, contest);
-        if (contest.cat === 'chance') return this._cxChance(pids, contest);
-        return this._cxOther(pids, contest);
+        if (cat === 'moot') return this._cxMoot(pids, contest, opts);
+        if (cat === 'endurance') return this._cxEndurance(pids, contest);
+        if (cat === 'chance') return this._cxChance(pids, contest);
+        return this._cxOther(pids, contest || {});
       } catch (e) {
         const r = {};
         for (const pid of pids) r[pid] = { outcome: 'lost', detail: 'group resolution failed', log: [] };
         return r;
       }
+      });
     },
   };
   Object.assign(G, methods);

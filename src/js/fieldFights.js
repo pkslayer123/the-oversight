@@ -11,6 +11,7 @@
 //   - record: every fight returns rounds, wounds both ways, and outcome — feeds deeds, gossip, scars. (code: fieldFight)
 //   - cheap: round cap 15, no grid, no UI. (code: fieldFight)
 //   - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
+//   - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
 // consumes:
 //   - Scattering.combat.roll
 //   - village health, agency xp, equipment, monsters data
@@ -79,6 +80,13 @@
     fieldFight: function (vid, mdef, m, opts) {
       opts = opts || {};
       mdef = mdef || {};
+      // DETERMINISM (contest engine, break-it 2026-10-08): off-screen
+      // contest resolution must be deterministic (same state -> same fate,
+      // no hidden rolls, no save-scum). opts.rng supplies EVERY random draw
+      // in the fight; without it the live path is untouched (module R /
+      // combat.roll, i.e. Math.random, exactly as before).
+      var RR = opts.rng || R;
+      var lroll = opts.rng ? function (range) { return range[0] + Math.floor(RR() * (range[1] - range[0] + 1)); } : roll;
       var rec = {
         outcome: null, rounds: 0, vTaken: 0, mDealt: 0,
         vHpLeft: 0, mHpLeft: 0, packCount: 1, log: [],
@@ -114,7 +122,7 @@
       var hpDef = mdef.hp || [20, 20];
       var members = [];
       for (var pi = 0; pi < packN; pi++) {
-        var php = (m && pi === 0 && m.hp !== undefined && m.hp !== null) ? m.hp : roll(hpDef);
+        var php = (m && pi === 0 && m.hp !== undefined && m.hp !== null) ? m.hp : lroll(hpDef);
         var pmax = (m && pi === 0 && m.maxHp) ? m.maxHp : Math.max(php, hpDef[1] || hpDef[0]);
         members.push({ hp: php, maxHp: pmax, alive: php > 0 });
       }
@@ -146,7 +154,7 @@
           - 0.02 * mSpeed - 0.03 * mNotice + 0.05 * mSize
           + (potential ? 0.05 : 0);
         evade = clamp(evade, 0.05, 0.90);
-        if (R() < evade) {
+        if (RR() < evade) {
           rec.outcome = 'evade';
           rec.vHpLeft = vHp; rec.mHpLeft = members[0].hp;
           rec.log.push(vName + ' saw the ' + mName + ' in time and gave it room.');
@@ -159,7 +167,7 @@
       var vBreak = clamp(0.5 - Math.min(0.3, bravery * 0.015) - (temper === 'bold' ? 0.1 : 0) + (temper === 'cautious' ? 0.1 : 0), 0.15, 0.6);
       for (var round = 1; round <= MAX_ROUNDS; round++) {
         rec.rounds = round;
-        var mInit = mSpeed + R() * 2, vInit = 3 + R() * 2;
+        var mInit = mSpeed + RR() * 2, vInit = 3 + RR() * 2;
         var mFirst = mInit >= vInit;
         var acted = [mFirst ? 'm' : 'v', mFirst ? 'v' : 'm'];
         for (var ai = 0; ai < 2; ai++) {
@@ -167,11 +175,11 @@
             // every live pack member acts — pack hunters hunt as a pack
             for (var mi = 0; mi < members.length; mi++) {
               if (members[mi].hp <= 0 || !vAlive) continue;
-              var d = roll(dmgRange);
+              var d = lroll(dmgRange);
               // HIGHBEAM (verbatim behavior): the antlers thrash anyone
               // adjacent IN ADDITION to the beam. Closing in has a price.
               var thrash = 0;
-              if (mdef.id === 'gallowdeer') thrash = roll([10, 16]);
+              if (mdef.id === 'gallowdeer') thrash = lroll([10, 16]);
               var total = d + thrash;
               vHp -= total; rec.vTaken += total;
               rec.log.push('R' + round + ': ' + atkName + ' hits ' + vName + ' for ' + total + ' (' + Math.max(0, vHp) + ' left)');
@@ -181,7 +189,7 @@
             var lead = null;
             for (var li = 0; li < members.length; li++) { if (members[li].hp > 0) { lead = members[li]; break; } }
             if (!lead) break;
-            var vd = roll([4 + wb, 8 + wb]); // tactical formula, verbatim
+            var vd = lroll([4 + wb, 8 + wb]); // tactical formula, verbatim
             lead.hp -= vd; rec.mDealt += vd;
             if (lead.hp <= 0) lead.alive = false;
             rec.log.push('R' + round + ': ' + vName + ' strikes for ' + vd + ' (' + Math.max(0, lead.hp) + ' left)');

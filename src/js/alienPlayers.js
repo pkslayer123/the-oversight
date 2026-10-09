@@ -1047,9 +1047,9 @@
       // have the player as a participant, so the benevolent lifeline below
       // was unreachable in real play. contestChoose calls with
       // {forPlayer:true} at the player's death roll — sadistic rigging and
-      // fan favor are verdict-only fiction (they bend verdict win odds, which
-      // don't exist on the playable path), so they're skipped here; only the
-      // lifeline is evaluated.
+      // fan favor are verdict-only fiction (they bend verdict performance,
+      // which doesn't exist on the playable path), so they're skipped here;
+      // only the lifeline is evaluated.
       var forPlayer = !!(opts && opts.forPlayer);
 
       // SADISTIC RIGGING: a rival who's met you may rig the contest
@@ -1066,7 +1066,7 @@
           if (this.apKnowsAlien(pid)) {
             this.say(result.note + ' "' + (per.taunts[0] || 'Enjoy the show.') + '"');
           } else {
-            this.say('📺 One of the judges is smiling too widely. The odds just shifted.');
+            this.say('📺 One of the judges is smiling too widely. Your people just felt the room turn against them.');
           }
           break;
         }
@@ -1103,16 +1103,16 @@
       }
 
       // FAN FAVOR: the crowd's love is real (stacks with existing cheer).
-      // Verdict-only: it bends verdict win odds, which don't exist on the
-      // playable path (break-it 2026-10-08).
+      // Verdict-only: it bends verdict performance, which doesn't exist on
+      // the playable path (break-it 2026-10-08).
       if (!forPlayer) {
       var favor = this.apFavor(); // wired (break-it 2026-10-08)
       if (favor >= 40) {
         result.winMod += 0.08;
-        this.sysSay('📺 The crowd is CHANTING your name. The judges can hear it. (+8% — the people love you)');
+        this.sysSay('📺 The crowd is CHANTING your name. The judges can hear it. (the people love you — it steadies them)');
       } else if (favor <= -40) {
         result.winMod -= 0.08;
-        this.sysSay('📺 The crowd is BOOING. Someone threw something. The judges look nervous. (-8% — the crowd wants blood)');
+        this.sysSay('📺 The crowd is BOOING. Someone threw something. The judges look nervous. (the crowd wants blood — it shakes them)');
       }
       }
 

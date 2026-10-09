@@ -2558,11 +2558,11 @@
       this.addNotability('player', d.notability);
       log.push(`noted: ${d.notability}`);
     }
-    // WATCHER AGENCY (Steve 2026-10-06): watcher choices move the odds.
+    // WATCHER AGENCY (Steve 2026-10-06): watcher choices move performance.
     // Cheering is real support — capped, and the cameras notice.
     if (d.cheer) {
       ac.cheer = Math.min(0.15, (ac.cheer || 0) + d.cheer);
-      log.push(`cheer +${Math.round(d.cheer * 100)}% win odds`);
+      log.push(`cheer +${Math.round(d.cheer * 100)} — they heard you`);
       // DRAMA (Steve 2026-10-07): cheering gets gold sparkles — the audience sees you
       try {
         let integ = 0;
@@ -2966,7 +2966,7 @@
   // === WATCH MODE (villager participant) ===
   // When someone else is taken, you watch. The show plays out as
   // narrated beats with choices that MATTER (Steve 2026-10-06): cheering
-  // moves the win odds for your people (capped, cameras notice), studying
+  // steadies your people (capped, cameras notice), studying
   // the pattern teaches without bleeding, bets are real kcal, and going to
   // them after lands as trust or mourning. The VERDICT roll is scaled by
   // contest risk plus your cheer. Villagers CAN die on camera (Steve
@@ -3284,7 +3284,7 @@
     return out;
   };
   // WATCHER AGENCY (Steve 2026-10-06): watching is not passive. Cheering
-  // moves the win odds for your people — but the cameras notice loud
+  // steadies your people — but the cameras notice loud
   // supporters (showmanship notability: the System files you under
   // *interesting*). Studying the pattern teaches without bleeding
   // (knowledge progression for watchers). Betting is real kcal with real
