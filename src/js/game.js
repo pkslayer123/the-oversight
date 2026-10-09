@@ -15,6 +15,7 @@
 //   - tbAdvance()
 //   - tbRoundWrap(f) (shared round wrap: order re-sort, ROUND call, belltoad chorus arrivals — sync + stepped-async)
 //   - tbAfterPlayerAction()
+//   - tbMonsterReach(m) -> tiles (honest striking distance of a monster's attack; disengage gate)
 //   - contestTick() (delegates to contests.js)
 //   - fireShow(event) -> show (delegates to contests.js)
 //   - triggerEvent(ev) (event engine: generic dispatcher reading events.json; checks once/cooldown, calls named handler)
@@ -20530,7 +20531,10 @@
       const chasers = mons.filter(m => (m.mdef || {}).follows !== false);
       const stayers = mons.filter(m => (m.mdef || {}).follows === false);
       if (!chasers.length) {
-        this.say('🚪 BARRIER CROSSED — you crash through to a new area. It can\'t follow. (You left the fight — it\'s still back there, if you want it.)');
+        // HONEST (break-it combat-2): the monster was removed from the world
+        // at fight start and is never restored — no "still back there"
+        // promise. It melts back into the wilds, like every other flee.
+        this.say('🚪 BARRIER CROSSED — you crash through to a new area. It can\'t follow. (You left the fight — it melts back into the wilds.)');
         p.fled = true;
         if (f.betrayal) f.playerFled = true;
         this.tbEnd('fled');
@@ -20548,8 +20552,10 @@
       this.say('🚪 BARRIER CROSSED — you stumble into a new area, but they\'re right behind you — through the barrier! The fight continues here. (The edge of the grid is an exit. They followed you.)');
       // They follow: reposition CHASERS near the entry edge on the new node
       // (combat continues; the node changed under the fight). Stayers
-      // (can't chase) are left behind — out of the fight, still on the old
-      // node as world monsters.
+      // (can't chase) are left behind — marked fled, out of the fight.
+      // (They do NOT persist as world monsters on the old node: wild
+      // encounter monsters are removed from the world at fight start and
+      // melt back into the wilds at fight end, like every other flee.)
       for (const m of chasers) {
         m.mx = Math.max(0, Math.min(8, 4 - dx * 3 + Math.floor(Math.random() * 3) - 1));
         m.my = Math.max(0, Math.min(8, 4 - dy * 3 + Math.floor(Math.random() * 3) - 1));
@@ -26463,6 +26469,24 @@
       this.tbEndCheck();
     },
 
+    // tbMonsterReach(m): honest striking distance of a monster's attack, in
+    // chebyshev tiles. The disengage rule ("you walked clear") is only true
+    // past every monster's ACTUAL reach — a flat 3-tile rule lies about a
+    // 9-tile beam (break-it combat-2 2026-10-08: walking 3 tiles from a
+    // gallowdeer ended the fight while Ocular Discharge could still hit from
+    // 9 away, and deleted wound-up telegraphs). Defaults mirror the engine's
+    // own gates: beam/line/charge length (patternCells: length||5), direct
+    // range (declare gate: range||3), single range (data), burst/ambush
+    // radius (patternCells: radius||1).
+    tbMonsterReach(m) {
+      const pat = (((m || {}).mdef || {}).attack || {}).pattern || {};
+      const t = pat.type || 'single';
+      if (t === 'beam' || t === 'line' || t === 'charge') return pat.length || 5;
+      if (t === 'direct' || t === 'single' || t === 'lockon') return pat.range || 3;
+      if (t === 'burst' || t === 'ambush') return pat.radius || 1;
+      return 2;
+    },
+
     tbEndCheck() {
       const f = this.tbfight;
       if (!f || f.over) return f ? f.over : false;
@@ -26496,24 +26520,43 @@
         return false;
       }
       if (!monstersFighting.length) { this.tbEnd(monstersAlive ? 'routed' : 'won'); return true; }
-      // DISENGAGE (break-it turtle 2026-10-08): you walked away from things
-      // that can't/won't chase. If every living monster is beyond striking
-      // distance (3+ tiles, chebyshev) and none of them chases
-      // (follows:false — territorial, ambush, drifter), the fight is over:
-      // you're not fighting, you're leaving. (The turtle's own weakness:
-      // "it cannot chase (it is a turtle)", "just walk around".) Chasers
-      // (follows !== false) always hold the fight — a hushwolf at 5 tiles
-      // is still hunting you. The chorus check above runs first, so
-      // incoming reinforcements still hold the fight open.
+      // DISENGAGE (break-it turtle 2026-10-08; reach-hardened break-it
+      // combat-2 2026-10-08): you walked away from things that can't/won't
+      // chase. If every living monster is beyond ITS OWN striking distance
+      // and none of them chases (follows:false — territorial, ambush,
+      // drifter), the fight is over: you're not fighting, you're leaving.
+      // (The turtle's own weakness: "it cannot chase (it is a turtle)",
+      // "just walk around".) Chasers (follows !== false) always hold the
+      // fight — a hushwolf at 5 tiles is still hunting you. Two honesty
+      // guards the flat 3-tile rule missed:
+      //  (1) REACH: "beyond striking distance" means beyond THIS monster's
+      //      reach (tbMonsterReach — a gallowdeer beams 9 tiles). The floor
+      //      stays 2: a melee monster shambling closer still holds the fight
+      //      at distance 2. Walking 3 tiles from a 9-tile beam is not walking
+      //      clear — that's a free escape from the wave-1 apex.
+      //  (2) COMMITTED ATTACKS: a monster with an active telegraph holds the
+      //      fight. The windup is committed — stepping back doesn't un-throw
+      //      it (the sunbasker's bite says "no dodging it" and means it).
+      //      The telegraph resolves (and misses, out of its cells), THEN you
+      //      walk clear. No softlock: telegraphs always resolve or cancel
+      //      (stun cancels; bunker only delays), and the barrier exit stays
+      //      available throughout.
+      // The chorus check above runs first, so incoming reinforcements still
+      // hold the fight open.
       if (p && p.alive && !p.fled) {
         const allGone = monstersFighting.every(m => {
           if ((m.mdef || {}).follows !== false) return false;
+          if (m.telegraph) return false;
           const d = Math.max(Math.abs((m.mx || 0) - (p.mx || 0)), Math.abs((m.my || 0) - (p.my || 0)));
-          return d > 2;
+          return d > Math.max(2, this.tbMonsterReach(m));
         });
         if (allGone) {
           p.fled = true;
-          this.say('You walk clear of them. Nothing follows. The fight ends — they\'re still out there, if you want them.');
+          // HONEST (break-it combat-2): wild-encounter monsters are removed
+          // from the world at fight start (removeWorldMonster) and never
+          // restored — "they're still out there, if you want them" was a
+          // lie. They melt back into the wilds, like every other flee.
+          this.say('You walk clear of them. Nothing follows. The fight ends — they melt back into the wilds.');
           return this.tbEndCheck();
         }
       }
