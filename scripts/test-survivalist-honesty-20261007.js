@@ -95,10 +95,13 @@ const s = () => Game.state.scholar;
   s().water = [{ liters: 1, quality: 'risky', source: 'Creek (unknown)' }];
   s().kcal = 2000;
   says.splice(0);
+  const dtB = s().dayTicks || 0;
   Game.boilWater();
   // SCALED COST (survivalist loop 2026-10-08): 30 + 5/L — 1L = 35 kcal.
-  check('boil names -35 kcal', /-35 kcal tending the fire/.test(lastSay(2)), lastSay(2).slice(0, 150));
+  // TIME COST (survivalist loop 2026-10-09): canon TIME-ECONOMY = 32 ticks/batch.
+  check('boil names -35 kcal + 32 ticks', /-35 kcal, 32 ticks tending the fire/.test(lastSay(2)), lastSay(2).slice(0, 150));
   check('boil charged 35', Math.round(s().kcal) === 1965, `kcal=${Math.round(s().kcal)}`);
+  check('boil charged 32 ticks', (s().dayTicks || 0) - dtB === 32, `ticks=${(s().dayTicks || 0) - dtB}`);
   // moss path: no fire anywhere
   for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) if (detail[y] && detail[y][x] === 'fire') detail[y][x] = 'dirt';
   try { Game.state.fires = (Game.state.fires || []).filter(f => !(f.tx === Game.map.px && f.ty === Game.map.py)); } catch (e) {}
@@ -106,7 +109,7 @@ const s = () => Game.state.scholar;
   s().water = [{ liters: 1, quality: 'risky', source: 'Creek (unknown)' }];
   says.splice(0);
   Game.boilWater();
-  check('moss boil names its cost', /-35 kcal coaxing your moss-tinder/.test(lastSay(2)), lastSay(2).slice(0, 150));
+  check('moss boil names its cost', /-35 kcal, 32 ticks coaxing your moss-tinder/.test(lastSay(2)), lastSay(2).slice(0, 150));
   check('moss boil cleaned the water', (s().water || []).every(b => b.quality === 'clean'), '');
 
   console.log(`\npass=${pass} fail=${fail}`);

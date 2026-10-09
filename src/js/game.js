@@ -9439,7 +9439,19 @@
     addWater(liters, quality, source) {
       const s = this.state.scholar;
       s.water = s.water || [];
-      for (let i = 0; i < liters; i++) s.water.push({ liters: 1, quality, source });
+      // CARRY IS REAL (survivalist loop 2026-10-09): water has mass — 1L =
+      // 1kg against the carry limit, enforced by fillWater and the pantry UI.
+      // Event and ability water (storm, rain_dancer, ant_trail) bypassed it:
+      // a storm at a full pack pushed weight over capacity with no refusal.
+      // Clamp to what fits; callers name the actual take from the return.
+      let room = liters;
+      try {
+        const cap = this.carryCapacity ? this.carryCapacity() : 99;
+        const wt = this.packWeight ? this.packWeight() : 0;
+        room = Math.max(0, Math.min(liters, Math.floor(cap - wt)));
+      } catch (e) { room = liters; }
+      for (let i = 0; i < room; i++) s.water.push({ liters: 1, quality, source });
+      return room;
     },
 
     // boilWater: at a fire, make risky water clean (kills bacteria).
@@ -9447,6 +9459,10 @@
     // beard_moss: you always have tinder. Boil anywhere.
     boilWater() {
       const s = this.state.scholar;
+      // MID-FIGHT (survivalist loop 2026-10-09): tickAction no-ops in combat,
+      // so boiling mid-fight purified for kcal only with the clock frozen —
+      // same class as the examineCell/_cellInteract mid-fight guards.
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       // NEED FIRE. you can't boil water with wishes.
       // (beard_moss: moss in your beard is always tinder. Anywhere works.)
       // TENT FIRE COUNTS (survivalist loop 2026-10-09): nearFire() only sees
@@ -9468,15 +9484,20 @@
       // labor: heating, watching, pouring. (survivalist loop 2026-10-08: the
       // old flat 30 kcal purified 10L as cheaply as 1L, so the "prevents free
       // infinite purification" note was only true for small pots.)
+      // TIME IS REAL TOO (survivalist loop 2026-10-09): canon TIME-ECONOMY
+      // prices boiling at 1 chunk (32 ticks) — the old code charged zero, so
+      // bulk purification was free on the one clock that governs everything.
       const boilCost = 30 + 5 * n;
+      const boilTicks = 32;
       if (n > 0) {
         s.kcal = Math.max(0, (s.kcal || 0) - boilCost);
+        this.tickAction(boilTicks);
       }
       // COST HONESTY (survivalist loop 2026-10-07): the charge was silent.
       // Name it. Moss-tinder boiling (no fire) still costs the work —
       // coaxing damp moss into enough heat to boil a liter is real labor.
       const mossBoil = n > 0 && !fireHere && this.hasAbility('beard_moss');
-      this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal, ${boilTicks} ticks ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       return null;
     },
     // gatherCharcoal: rake charcoal from a campfire's ashes. Wood fires make
@@ -14015,6 +14036,14 @@
       // transient flag (not saved): suppresses NPC initiative while you're out.
       this._sleeping = { quality: prev.quality };
       this.say(`You settle into ${prev.name}. Sleep takes you.`);
+      // SHELTER CAN DIE MID-SLEEP (survivalist loop 2026-10-09): a storm at
+      // the dusk transition wrecks your camp (breakCamp dumps insideTent)
+      // while you're asleep in the tent — the old loop only woke on fight/
+      // encounter/contest, so you slept on in wreckage with stale 'tent'
+      // quality: tent-grade rest plus the cold-snap shelter the dead tent no
+      // longer gives. The System's interruption interrupts — wake with a
+      // start, no dawn accounting, same as a fight or an encounter.
+      const tentAtStart = !!s.insideTent;
       let woke = false, guard = 0;
       // CONTEST GRAB (survivalist loop 2026-10-09): the dawn briefing inside
       // endDay can resolve a pending contest MID-SLEEP — contestInterruption
@@ -14030,7 +14059,7 @@
         // batch-sized chunks: part transitions, NPC nights, and endDay all fire
         // naturally — and we check for danger between chunks.
         this.tickAction(Math.min(T.TICKS_PER_BATCH, remaining));
-        if (this.tbfight || this.pendingEncounter || this.over || grabbed()) { woke = true; break; }
+        if (this.tbfight || this.pendingEncounter || this.over || grabbed() || (tentAtStart && !s.insideTent)) { woke = true; break; }
       }
       this._sleeping = null;
       if (woke || this.tbfight || this.pendingEncounter || this.over || grabbed()) {
@@ -17873,8 +17902,9 @@
       const elder = this._evElderName();
       if (sheltered) {
         this.say('🌧️ The storm rolls over Haven like a held breath let go — rain hammering the tarps, the wind testing every knot ' + elder + ' tied. Inside, it\'s almost cozy. Almost.');
-        try { this.addWater(3, 'clean', 'storm'); } catch (e) {}
-        this.say('You set out every pot and skin — the storm fills them. (+3 clean water. The storm provides, the old-timers say, whether you ask or not.)');
+        let stormGot = 0;
+        try { stormGot = this.addWater(3, 'clean', 'storm'); } catch (e) {}
+        this.say(`You set out every pot and skin — the storm fills them. (+${stormGot} clean water${stormGot < 3 ? " — your pack couldn't hold it all" : ''}. The storm provides, the old-timers say, whether you ask or not.)`);
         this.say('The dusk forage goes un-walked: 400–800 kcal you\'ll never see, out there getting rained on instead of gathered. ' + elder + ' nods at the bruised sky, satisfied: "Worth it."');
         // CAMP (survivalist loop 2026-10-08): the storm takes player camps —
         // "a shitty breakable version of a haven", wind included. You chose
@@ -21195,8 +21225,8 @@
       if (this.state.weather === 'rain') {
         const catchL = Math.round(this.modTarget('water.rain_catch', 0));
         if (catchL > 0) {
-          this.addWater(catchL, 'clean', 'rain');
-          this.say(`Rain. You dance. It works. +${catchL}L clean water. (rain_dancer)`);
+          const got = this.addWater(catchL, 'clean', 'rain');
+          this.say(got > 0 ? `Rain. You dance. It works. +${got}L clean water. (rain_dancer)` : 'Rain. You dance — but your pack is already full of water. (rain_dancer)');
         } else this.say('Rain. Steady, cold, honest rain.');
       } else if (this.state.weather === 'cold') {
         this.say('A cold snap. Breath smokes. The woods go quiet.');
@@ -21234,8 +21264,8 @@
       }
       // ant_trail: ants know where the water is. 30% chance they lead you to some.
       if (this.hasAbility('ant_trail') && Math.random() < 0.3) {
-        this.addWater(1, 'risky', 'ant-trail seep');
-        this.say('Ants march past your boot, laden. You follow them to a seep. +1L water (risky). (ant_trail)');
+        const got = this.addWater(1, 'risky', 'ant-trail seep');
+        this.say(got > 0 ? 'Ants march past your boot, laden. You follow them to a seep. +1L water (risky). (ant_trail)' : "Ants march past your boot, laden. You follow them to a seep — but your pack can't hold another liter. (ant_trail)");
       }
       // symbiote: it eats 200 kcal/day (in its metabolic cost) but purifies 1L of risky water daily.
       if (this.hasAbility('symbiote')) {

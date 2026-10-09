@@ -1340,8 +1340,10 @@
             if (prev.sets > 0) actions.push([`Make pemmican (${prev.bars} bar${prev.bars === 1 ? '' : 's'})`, () => { Game.makePemmican(); refresh(); }]);
           }
           // Boil risky water -> clean (kills bacteria, not chemicals).
+          // COST HONESTY (survivalist loop 2026-10-09): quote the real price
+          // the way walk buttons do — 32 ticks + the batch kcal, not just "Boil".
           const risky = (Game.state.scholar.water || []).filter(b => b.quality === 'risky').length;
-          if (risky) actions.push([`Boil ${risky}L water`, () => { Game.boilWater(); refresh(); }]);
+          if (risky) { const bc = 30 + 5 * risky; actions.push([`Boil ${risky}L water (${bc} kcal, 32 ticks)`, () => { Game.boilWater(); refresh(); }]); }
           // Filter risky water -> clean (no fire needed, strips chemicals).
           const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0);
           if (risky && hasFilter) actions.push([`Filter ${risky}L water`, () => { Game.filterWater(); refresh(); }]);
