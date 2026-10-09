@@ -1723,6 +1723,14 @@
           ? 'Trade news and plant knowledge. Takes time — stories aren\'t fast.'
           : 'Trade news. They\'ll share real knowledge once they know your face — come back.';
         card.actions.push({ id: 'talk', label: '💬 Sit & talk (a while)', hint: talkHint });
+        // STUDY THEIR CODEX (break-it knowledge 2026-10-08): studyVillageCodex
+        // was engine-only — no UI ever called it, so systemIntegrationLevel
+        // could never grow past 0 while the HUD promised "study 1 more
+        // village codex". Same face-to-face gate as talk, same trust bar as
+        // real teaching (10+): strangers get stories, not the book.
+        if ((ov.trust || 0) >= 10) {
+          card.actions.push({ id: 'study', label: '📚 Study their codex', hint: 'Link their knowledge to yours — plants, techniques, recipes, animal lore. Takes a while. They notice the respect.' });
+        }
         // DRIFTER GENEROSITY (Steve 2026-10-05): the smoke line promises "food
         // would talk here" — now it can. A traveler at their fire can open
         // their pack. Costs you real food; trust remembers. Named costs, no
@@ -1741,6 +1749,7 @@
   villageCardAction(villageId, actionId, opts) {
     if (actionId === 'petition') return this.petitionVillage(villageId, opts);
     if (actionId === 'talk') return this.villageTalk(villageId);
+    if (actionId === 'study') return this.studyVillageCodex(villageId);
     if (actionId === 'sharefood') return this.villageShareFood(villageId, opts);
     return null;
   },
@@ -1823,7 +1832,12 @@
       ov.codex = ov.codex || { plants: {} };
       ov.codex.plants[pid] = { level: 1, identifiedDay: s.day };
       if (prof.plants) prof.plants[pid] = { level: 1, learnedDay: s.day };
-      this.say(`In return you show them ${(p && p.name) || pid}. Someone sketches it in the dirt, memorizing. ${ov.name} knows a little more because you came.`);
+      // WRONG-KNOWLEDGE HONESTY (break-it knowledge 2026-10-08): you show
+      // them the name YOU believe — the true name you never learned doesn't
+      // come out of your mouth here either (same class as the conversation
+      // teach handler).
+      const myKnown = (mine[pid] || {}).wrongAs || ((p && p.name) || pid);
+      this.say(`In return you show them ${myKnown}. Someone sketches it in the dirt, memorizing. ${ov.name} knows a little more because you came.`);
       ov.trust = Math.min(100, ov.trust + 4);
     }
     // showing up, sitting down, staying a while: that's how faces get known.

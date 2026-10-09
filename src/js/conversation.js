@@ -3738,7 +3738,18 @@
           // teaching any plant connects without a bridge.)
           this.state.village.taught[vid] = this.state.village.taught[vid] || [];
           this.state.village.taught[vid].push(pid);
-          const pname = ((this.data.plants || []).find(p => p.id === pid) || {}).name || pid;
+          // WRONG-KNOWLEDGE HONESTY (break-it knowledge 2026-10-08): you teach
+          // the name YOU believe (wrongAs), never the true name you never
+          // learned — and the false name travels with the lesson, like the
+          // fireside wrong-branch (deliberate:false).
+          const _pe = (this.state.codex.plants || {})[pid] || {};
+          const pname = _pe.wrongAs || (((this.data.plants || []).find(p => p.id === pid) || {}).name) || pid;
+          if (_pe.wrongAs && _pe.wrongPid) {
+            try {
+              const _lw = this.villagerWrongAbout ? (this.villagerWrongAbout(vid) || {}) : {};
+              _lw[pid] = { wrongPid: _pe.wrongPid, deliberate: false };
+            } catch (e) {}
+          }
           this.discover('teach');
           // SCENE (Phase 2): teaching is a real act — through the resolver, no talk cap.
           this.resolveConsequence(vid, { trust: 2, talk: false, temper: 'kind', name: 'teach' });
