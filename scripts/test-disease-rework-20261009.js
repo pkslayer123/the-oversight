@@ -54,7 +54,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   const s = Game.state.scholar;
   console.log(`seed=${SEED}`);
 
-  const TRUE_NAMES = ['gut rot', 'trichinosis', 'lemons', 'lockjaw', 'wound fever']; // mundane only — alien viruses (Eurika, East Nile) show true names by design
+  const TRUE_NAMES = ['gut rot', 'trichinosis', 'lockjaw', 'wound fever']; // mundane only — alien diseases (Eurika, East Nile, Lemons) show true names by design
 
   // ---- 1. contraction is symptom-only ----
   clearSick(); clearSaid();
@@ -67,7 +67,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   ok('legacy mirror stores symptom label, not true name', (s.diseases || [])[0] && s.diseases[0].name === 'Nauseous', JSON.stringify(s.diseases));
   // every disease def: apply/tick/expire text is name-free
   let leak = [];
-  for (const id of ['gutrot', 'trichinosis', 'lemons', 'lockjaw', 'wound_fever']) {
+  for (const id of ['gutrot', 'trichinosis', 'lockjaw', 'wound_fever']) {
     const d = Game.seDef(id);
     for (const k of ['applyText', 'tickText', 'expireText', 'description']) {
       const t = (d[k] || '').toLowerCase();
@@ -76,7 +76,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   }
   ok('no disease def names itself in symptom text', leak.length === 0, leak.join(','));
   // other diseases' chips
-  for (const [id, label] of [['trichinosis', 'Aching'], ['lemons', 'Achy'], ['lockjaw', 'Stiffening']]) {
+  for (const [id, label] of [['trichinosis', 'Aching'], ['lockjaw', 'Stiffening']]) {
     clearSick(); Game.contractDisease(id, { source: 'test' });
     const c = Game.afflictionChips();
     ok(`${id} chip symptom-labeled ("${label}")`, c.length === 1 && c[0].label === label, JSON.stringify(c));
@@ -103,7 +103,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   // stethoscope alone can diagnose
   clearSick(); s.abilities = [];
   s.inventory.push({ itemId: 'stethoscope', name: 'Stethoscope', units: 1, kg: 0.15 });
-  Game.contractDisease('lemons', { source: 'test' });
+  Game.contractDisease('trichinosis', { source: 'test' });
   ok('canDiagnose with stethoscope only', Game.canDiagnose());
   s.inventory = s.inventory.filter(i => i.itemId !== 'stethoscope');
 
@@ -253,7 +253,7 @@ function saidNames(names) { return said.filter(m => names.some(n => m.toLowerCas
   ok('treating others refused when starving', !!Game.state.village.sick[vid]);
   s.kcal = 1000;
   // villagerDiseaseId mapping
-  ok('vector maps to disease id', Game.villagerDiseaseId({ name: 'gut rot' }) === 'gutrot' && Game.villagerDiseaseId({ name: 'tick fever' }) === 'lemons');
+  ok('vector maps to disease id', Game.villagerDiseaseId({ name: 'gut rot' }) === 'gutrot' && Game.villagerDiseaseId({ name: 'tick fever' }) === 'disease');
 
   // ---- 8. herbal_remedy ability button path (legacy activatable) ----
   clearSick(); grant('herbal_remedy', 1);

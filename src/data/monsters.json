@@ -2855,5 +2855,201 @@
       "psychic": 0.5,
       "sonic": 0.5
     }
+  },
+  {
+    "id": "giant_mosquito",
+    "activity": "crepuscular",
+    "name": "mosquito",
+    "systemDesignation": "Culicidae gigas (field expedient)",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      30,
+      42
+    ],
+    "attack": {
+      "name": "The Drink",
+      "damage": [
+        10,
+        16
+      ],
+      "telegraph": "The whine climbs an octave and steadies \u2014 it\u2019s lining up the dive.",
+      "pattern": {
+        "type": "rush"
+      },
+      "damageType": "piercing"
+    },
+    "weaknesses": [
+      "smoke and fire (it hunts by heat \u2014 a smoky fire blinds it)",
+      "its own thirst (after it drinks it\u2019s heavy and slow \u2014 that\u2019s the window)"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "Nothing in it but blood \u2014 most of it yours, given back. Not food."
+    },
+    "parts": [
+      "proboscis (trade)"
+    ],
+    "behavior": "ambush",
+    "aggression": "hungry",
+    "follows": true,
+    "fear": "fire",
+    "speed": 6,
+    "flight": true,
+    "emoji": "\ud83e\udd9f",
+    "unknown": "a mosquito the size of your thumb, hanging in the air like it owns it",
+    "vibe": "a whine with a body count",
+    "cues": {
+      "curious": [
+        "A whine, circling \u2014 high, then higher. It\u2019s tasting the air for you."
+      ],
+      "warn": [
+        "The whine steadies on one note. It\u2019s picked its line."
+      ],
+      "fearful": [
+        "The whine breaks up, dopplering away. It\u2019s had enough."
+      ]
+    },
+    "wave": 2,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 7,
+      "phases": [
+        "circle",
+        "dive",
+        "drink",
+        "heavy"
+      ],
+      "phaseBadges": {
+        "circle": " \ud83e\udd9f CIRCLING",
+        "dive": " \ud83c\udfaf DIVING",
+        "drink": " \ud83e\ude78 DRINKING",
+        "heavy": " \ud83d\udc0c HEAVY"
+      },
+      "phaseMap": {
+        "declare": "circle",
+        "windup": "dive",
+        "resolve": "drink",
+        "idle": "circle"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "mosquito",
+      "noticeAudio": "mosquitoWhine",
+      "aggroAudio": "mosquitoDive",
+      "knownCue": "The whine steadies before the dive. When it goes heavy and slow after drinking, that\u2019s your window.",
+      "knownTactics": "Keep your distance during the dive \u2014 it only drinks adjacent. After it drinks it\u2019s heavy and slow: that\u2019s when you hit it. Smoke and fire ruin its aim.",
+      "comment": "Hit-and-run drinker. Bite may carry Eurika or East Nile (50/50, if not already carrying one)."
+    },
+    "codexStages": {
+      "unknown": "The whine found you before anything else did. Then the size of it \u2014 a mosquito the size of your thumb, hanging in the air like it owns it.",
+      "observed": "It hunts by heat, circling until the whine steadies \u2014 that\u2019s the dive lining up. The bite isn\u2019t the worst of it: something rides in with the blood. After it drinks it\u2019s heavy, slow, clumsy. Smoke blinds it.",
+      "slain": "Moves: Circle (whining, closing), Dive (telegraphed \u2014 the whine steadies), Drink (the bite; may carry Eurika or East Nile), Heavy (engorged, slow \u2014 the punish window). Keep distance on the dive, hit it heavy, fight it near smoke."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 0,
+    "resistances": {}
+  },
+  {
+    "id": "alien_tick",
+    "activity": "both",
+    "name": "tick",
+    "systemDesignation": "Ixodida enormis (field expedient)",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      45,
+      60
+    ],
+    "attack": {
+      "name": "The Latch",
+      "damage": [
+        6,
+        10
+      ],
+      "telegraph": "It doesn\u2019t telegraph. It\u2019s already on you \u2014 that\u2019s the telegraph.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "piercing"
+    },
+    "weaknesses": [
+      "fire and heat (burn it and it lets go)",
+      "distance (it can\u2019t chase \u2014 a slow thing with a patient plan)",
+      "its own appetite (feed it full and it drops off, fat and slow)"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "A bag of other people\u2019s blood with legs. Not food. Never food."
+    },
+    "parts": [
+      "mandibles (trade)"
+    ],
+    "behavior": "ambush",
+    "aggression": "hungry",
+    "follows": false,
+    "fear": "fire",
+    "speed": 1,
+    "emoji": "\ud83d\udd77\ufe0f",
+    "unknown": "a tick the size of a thumbnail, legs waving slow in the grass",
+    "vibe": "patience with mouthparts",
+    "cues": {
+      "curious": [
+        "In the grass: legs waving, slow. Questing. Waiting for something warm to walk by."
+      ],
+      "warn": [
+        "It\u2019s found your heat. The legs stop waving and point."
+      ],
+      "fearful": [
+        "It curls tight, legs tucked. Playing dead is its whole plan B."
+      ]
+    },
+    "wave": 2,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 4,
+      "phases": [
+        "quest",
+        "latch",
+        "feed",
+        "engorged"
+      ],
+      "phaseBadges": {
+        "quest": " \ud83c\udf31 QUESTING",
+        "latch": " \ud83e\ude9d LATCHED",
+        "feed": " \ud83e\ude78 FEEDING",
+        "engorged": " \ud83d\udc0c ENGORGED"
+      },
+      "phaseMap": {
+        "declare": "quest",
+        "windup": "quest",
+        "resolve": "latch",
+        "idle": "quest"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "tick",
+      "noticeAudio": "tickClick",
+      "aggroAudio": "tickLatch",
+      "knownCue": "It can\u2019t chase. The questing legs are the tell \u2014 don\u2019t walk up to it. If it latches, fire drives it off; fed full, it drops on its own.",
+      "knownTactics": "Keep 2+ squares away and it\u2019s harmless. Latched: it drains 3/turn and may give you Lemons \u2014 burn it off with fire damage, or outlast it until it\u2019s engorged, slow, and easy.",
+      "comment": "Questing ambush predator. Latch is undodgeable at adjacency; feed drains 3/turn and rolls 50% for Lemons once per latch."
+    },
+    "codexStages": {
+      "unknown": "Legs waving slow in the grass. A tick the size of a thumbnail. It isn\u2019t hiding \u2014 it\u2019s fishing, and you\u2019re warm.",
+      "observed": "It doesn\u2019t chase; it quests, legs waving, and latches onto whatever warm thing steps close. Once latched it feeds \u2014 and it doesn\u2019t let go. Fire drives it off. Fed full, it drops off fat and slow.",
+      "slain": "Moves: Quest (waiting, the tell), Latch (adjacent = attached, no dodge), Feed (3/turn drain, may carry Lemons), Engorged (drops off fat and slow \u2014 the kill window). Never let it latch: keep distance. Latched: fire damage releases it."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 1,
+    "resistances": {}
   }
 ]

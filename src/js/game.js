@@ -46,6 +46,13 @@
 //   - worldMonsterCap() -> int (3 base, 5 arrived, 8 deep, +1 night)
 //   - maintainWorldMonsters(), wanderWorldMonsters(), villagerMonsterTick(), worldTick() (living-world step on tile entry)
 //   - villageSicknessTick() (villager disease: same vectors as the player — wounds, dirty water, ticks)
+//   - diseaseVectorTick() (ambient vectors: mosquitoes at dusk in wetlands, attached-tick fever escalation)
+//   - mosquitoIs(m), tickIs(m) (vector-monster id gates: giant mosquito, alien tick)
+//   - tbMosquitoTurn(m) (hit-and-run drinker: circle, dive, drink, heavy phases; bite may carry eurika or east_nile)
+//   - tbTickTurn(m) (questing ambusher: quest, latch, feed, engorged phases; latch may carry lemons)
+//   - removeTick() (attached ambient tick removal: technique/ability-gated, blind attempt with botch risk)
+//   - villagerTickTeachTick() (camp healer teaches tick_removal within a couple days)
+//   - campHealerName() -> name | null
 //   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
 //   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge; records the sharing for the codex MAPS gate)
 //   - villageMapKnown() -> {"x,y":1} (codex MAPS: your seen tiles + visited tiles of villagers who actually shared via compareMaps; unshared seed tiles are never shown)
@@ -8085,7 +8092,7 @@
       let first = 'They';
       try { const p = this.getPerson(vid); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
       if (rec.diagnosed) { this.say(`${first} is still down with ${rec.diagnosed}. Rest and fluids.`); return null; }
-      const vecMap = { 'wound fever': 'wound_fever', 'gut rot': 'gutrot', 'tick fever': 'lemons' };
+      const vecMap = { 'wound fever': 'wound_fever', 'gut rot': 'gutrot', 'tick fever': 'disease' };
       const did = vecMap[rec.name] || null;
       if (did && Math.random() < this.diagnoseOdds()) {
         const ddef = this.seDef(did);
@@ -8324,19 +8331,37 @@
           wet = !!(t && (t.type === 'wetland' || t.type === 'swamp'));
         } catch (e) {}
         if (wet && this.dayPart >= 2) {
-          // MOSQUITOES (Steve 2026-10-06/2026-10-09): plain ones are just
-          // mosquitoes — the shock is that they're just bugs. Rarely, one
-          // lands with real weight: a giant, freakish thing, still plainly a
-          // mosquito. Its bite carries the alien viruses (Eurika, East Nile).
+          // AMBIENT MOSQUITOES (Steve 2026-10-09): plain ones are just
+          // mosquitoes — itchy, whining, nothing more. The GIANT mosquito
+          // is a map-visible monster with a real fight (giant_mosquito);
+          // background ticks never carry alien viruses. A rare bite may
+          // still raise the mild generic Fever (1.5%).
           const mr = Math.random();
-          if (mr < 0.02) {
-            const avid = Math.random() < 0.5 ? 'eurika' : 'east_nile';
-            this.say('Something lands on your neck with real weight \u2014 a mosquito the size of your thumb. It drinks long.');
-            this.applyStatus('scholar', avid, { source: 'the giant mosquito' });
+          if (mr < 0.015) {
+            this.say('A mosquito bite swells hot and angry — by nightfall you\u2019re feverish.');
+            this.contractDisease('disease', { source: 'a mosquito bite' });
           } else if (mr < 0.12) {
             this.say('Mosquitoes. Just mosquitoes \u2014 itchy, whining, nothing more.');
           }
         }
+        // AMBIENT TICKS (Steve 2026-10-09): the tiny ones. Each day one stays
+        // attached, the fever roll climbs (3%, 6%, 9%, 12%, capped 15%) —
+        // never guaranteed. The disease is the mild generic Fever, NOT
+        // Lemons (alien now — the alien tick MONSTER's bite only).
+        try {
+          const ticks = this.seList('scholar').filter(e => e.id === 'tick_attached');
+          const day = (this.state.scholar || {}).day || 0;
+          for (const te of ticks) {
+            if (te.lastRollDay === day) continue; // one roll per day, not per part
+            te.lastRollDay = day;
+            const daysOn = Math.max(1, day - (te.day || day) + 1);
+            const chance = Math.min(0.03 + 0.03 * (daysOn - 1), 0.15);
+            if (!this.hasStatus('scholar', 'disease') && Math.random() < chance) {
+              this.say(`The tick\u2019s been on you ${daysOn === 1 ? 'a day' : daysOn + ' days'} now. You wake up feverish, aching all over.`);
+              this.contractDisease('disease', { source: 'a tick bite' });
+            }
+          }
+        } catch (e) {}
         // WOUNDS: low health means open cuts \u2014 they infect.
         if ((s.health || 100) < 40 && !this.hasStatus('scholar', 'wound_fever') && !this.hasStatus('scholar', 'lockjaw')) {
           const r = Math.random();
@@ -8366,7 +8391,7 @@
         try { const p = this.getPerson(med); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
         const e = und[0];
         const def = this.seDef(e.id);
-        const tell = def.id === 'lemons' ? ', the ringed rash' : def.id === 'lockjaw' ? ', the jaw' : '';
+        const tell = def.id === 'lockjaw' ? ', the jaw' : '';
         this.say(`${first} takes one look at you and frowns. "Let me see." Pulse, eyes, tongue${tell}. "${def.name}. I've seen it."`);
         this.diagnoseDisease('scholar', e.id, { by: first });
         this.markDiseaseKnown(e.id);
@@ -8426,9 +8451,50 @@
       return null;
     },
 
+    // removeTick(): get an attached ambient tick off. Gated on the
+    // tick_removal technique or real medical ability (triage, field_medicine,
+    // herbal_remedy). Without knowledge it's honest — and you can still try
+    // blind, with a botch risk (head stays in -> wound_fever). Steve 2026-10-09.
+    removeTick() {
+      const entry = (this.seList('scholar') || []).find(e => e.id === 'tick_attached');
+      if (!entry) { this.say('No tick on you.'); return; }
+      const knows = !!((this.state.codex || {}).techniques || {}).tick_removal ||
+        this.hasAbility('triage') || this.hasAbility('field_medicine') || this.hasAbility('herbal_remedy');
+      if (knows) {
+        this.seRemove('scholar', entry);
+        this.say('Tweezers at the head, steady pull, no twist \u2014 it comes away clean, head and all. The welt will fade.');
+        return;
+      }
+      this.say('You don\u2019t know how to get it off cleanly \u2014 yank it and the head stays in, and that\u2019s how bites turn bad. No healer\u2019s hands here. You try blind.');
+      if (Math.random() < 0.6) {
+        this.seRemove('scholar', entry);
+        this.say('You yank it \u2014 and get lucky. The whole tick comes away, head and all.');
+      } else {
+        this.seRemove('scholar', entry);
+        this.say('You yank it. The body comes; the head stays in, a black dot in the welt. By nightfall the bite is hot and angry.');
+        this.contractDisease('wound_fever', { source: 'a botched tick removal' });
+      }
+    },
+
+    // villagerTickTeachTick(): a camp healer shows you tick removal. A camp
+    // WITH a healer teaches it within a couple days — word of mouth,
+    // hands-on. Called from the daily medical-villager block. Steve 2026-10-09.
+    villagerTickTeachTick() {
+      try {
+        if (((this.state.codex || {}).techniques || {}).tick_removal) return;
+        if (this.hasAbility('triage') || this.hasAbility('field_medicine') || this.hasAbility('herbal_remedy')) return;
+        if (!this.playerAtHaven || !this.playerAtHaven()) return;
+        const hn = this.campHealerName();
+        if (!hn || hn === 'You') return;
+        if (Math.random() > 0.5) return; // ~a couple days
+        this.grantKnowledge('technique', 'tick_removal', 1, { type: 'taught', by: hn });
+        this.say(`${hn} watches you scratch at your ankle and shakes their head. \u201CHere \u2014 tweezers at the head, steady pull, don\u2019t twist. Like this.\u201D (You learned tick removal.)`);
+      } catch (e) {}
+    },
+
     // villagerDiseaseId(rec): map the light-sim vector to a real disease id.
     villagerDiseaseId(rec) {
-      const m = { 'wound fever': 'wound_fever', 'gut rot': 'gutrot', 'tick fever': 'lemons' };
+      const m = { 'wound fever': 'wound_fever', 'gut rot': 'gutrot', 'tick fever': 'disease' };
       return (rec && m[rec.name]) || null;
     },
 
@@ -8694,6 +8760,18 @@
       this.ensureVillagerPositions();
       // ACTION CLOCK: one step = 1 tick. The beat you feel per step IS the cost.
       this.tickAction(1);
+      // AMBIENT TICKS (Steve 2026-10-09): tiny per-step attach chance in
+      // woods/thicket. Narrated + a visible status — never silent. The tiny
+      // ones are atmosphere; the map-visible alien tick is the monster fight.
+      try {
+        const tt = this.playerTile();
+        const ttype = tt && tt.type;
+        if ((ttype === 'forest' || ttype === 'grove' || ttype === 'thicket') &&
+            !this.hasStatus('scholar', 'tick_attached') && Math.random() < 0.02) {
+          this.applyStatus('scholar', 'tick_attached', { source: 'brushing through the brush' });
+          this.say('Something itches at your ankle \u2014 you look down: a tick, latched on. (Tick attached \u2014 get it off cleanly; each day it stays, the fever risk climbs.)');
+        }
+      } catch (e) {}
       return true;
     },
 
@@ -17811,7 +17889,7 @@
       // DISEASE (Steve 2026-10-09): gut sickness steals absorption — the
       // food goes in, the body can't keep it.
       const disKcalMult = this.diseaseDebuffs ? this.diseaseDebuffs('scholar').kcalAbsorbMult : 1;
-      let shellgutLoss = 0;
+      let shellgutLoss = 0, engorgeGain = 0;
       const tasted = {}; // plantId -> units eaten (for knowledge level 3)
       let medAte = 0, medName = null; // medicinal plant units eaten (herb skill hook)
       // Eat only food (kcalEach > 0). Gear is skipped, NOT deleted.
@@ -17868,6 +17946,9 @@
         }
         this.maybeMonsterWeirdness(it);
         if (shellgut) { const lost = kcal - Math.round(kcal * 0.75); shellgutLoss += lost; kcal = Math.round(kcal * 0.75); }
+        // LEMONS ENGORGE (Steve 2026-10-09): the occupied joints drink deeper —
+        // +20% kcal absorption. Symmetric opposite of shellgut's -25%.
+        if (this.hasStatus && this.hasStatus('scholar', 'lemons')) { const gained = Math.round(kcal * 1.2) - kcal; kcal = Math.round(kcal * 1.2); if (gained > 0) engorgeGain += gained; }
         if (disKcalMult < 1) kcal = Math.round(kcal * disKcalMult);
         scholar.kcal += kcal; ate += kcal;
         // MEDICINE (Steve): chewing medicinal plants is a skill. Track it —
@@ -17907,6 +17988,7 @@
       }
       const bankNote = bankedNow > 0 ? ` Past full — the bank takes it. (+${bankedNow} banked. ${this.feastLine ? this.feastLine() : ''})` : '';
       if (shellgutLoss > 0) this.say(`Your armored gut takes its cut — food moves slow through shell. (-${shellgutLoss} kcal absorbed)`);
+      if (engorgeGain > 0) this.say(`Your occupied joints drink deeper — the food goes further. (+${engorgeGain} kcal, Lemons engorge)`);
       // LEVEL 3: Uses. Eat it 3 times, you learn what it does to you.
       // Vitamin C, medicine, energy. "Have you tasted it?" Yes. Now you know.
       for (const [pid, count] of Object.entries(tasted)) {
@@ -18041,6 +18123,8 @@
       this.maybeMonsterWeirdness(it);
       let kcal = it.kcalEach;
       if (shellgut1) kcal = Math.round(kcal * 0.75); // armor takes its cut
+      // LEMONS ENGORGE (Steve 2026-10-09): +20% kcal absorption.
+      if (this.hasStatus && this.hasStatus('scholar', 'lemons')) kcal = Math.round(kcal * 1.2);
       // DISEASE (Steve 2026-10-09): gut sickness steals absorption.
       const dkMult1 = this.diseaseDebuffs ? this.diseaseDebuffs('scholar').kcalAbsorbMult : 1;
       if (dkMult1 < 1) kcal = Math.round(kcal * dkMult1);
@@ -19944,6 +20028,8 @@
       try { this.villagerDiagnosisTick(); } catch (e) {}
       // A medical villager may treat you, not just name it.
       try { this.villagerTreatTick(); } catch (e) {}
+      // A camp healer teaches tick removal within a couple days.
+      try { this.villagerTickTeachTick(); } catch (e) {}
     },
 
     // villagerCareTick(nm): medical villagers tend the sick — the division of
@@ -20785,6 +20871,14 @@
             mo.beamPhase = 'lure'; mo.catfishDark = 0; mo.lureSaid = false;
             this.say('A soft green glow pulses in the dark water. Pretty. That\'s the problem — it\'s pretty.');
             this.audioEvent('catfishLure');
+          } else if (this.mosquitoIs(mo)) {
+            mo.mosqPhase = 'circle'; mo.mosqWhined = false; mo.mosqHeavyTurns = 2; mo.altitude = 'high';
+            this.say('A whine, circling — high, then higher. Too loud for anything that small. Way too loud.');
+            this.audioEvent('mosquitoWhine');
+          } else if (this.tickIs(mo)) {
+            mo.tickPhase = 'quest'; mo.tickLatched = false; mo.tickFeeds = 0; mo.tickRolled = false;
+            this.say('In the grass: legs waving, slow. Questing. It\'s not hiding — it\'s fishing, and you\'re warm.');
+            this.audioEvent('tickClick');
           } else if (this.humiceIs(mo) && !f0.humNoticed) {
             // HUMMICE (Steve 2026-10-05): first contact is dread, not a
             // lecture. The tactical read only appears once the pattern is
@@ -22119,6 +22213,14 @@
       if (this.hasAbility('cornered_rat') && hpFrac < 0.3) { d *= 2; this.say('CORNERED RAT: desperation is a weapon.'); }
       // GRISTLEFIT (Steve 2026-10-08): the rage in your shoulders lands harder.
       if (this.hasStatus && this.hasStatus('scholar', 'gristlefit')) { d = Math.round(d * 1.25); this.say('GRISTLEFIT: your knotted shoulders put everything behind it. (+25% damage)'); }
+      // LEMONS BLOOD-SENSE (Steve 2026-10-09): you feel heartbeats. A bleeding
+      // enemy can't hide where its blood is — your strike finds it. (+2)
+      try {
+        if (this.hasStatus && this.hasStatus('scholar', 'lemons') && t && this.hasStatus(t, 'bleed')) {
+          d += 2;
+          this.say('BLOOD-SENSE: you feel its heartbeat stutter — your strike finds exactly where the blood is. (+2)');
+        }
+      } catch (e) {}
       let wasCrit = false; // DRAMA B1: crits get the full spectacle
       if (p.aimed) { d = Math.round(d * 2.5); p.aimed = false; wasCrit = true; this.say('DEAD AIM: patience, then thunder. Critical ×2.5.'); }
       // ABILITY ACTIONS (Steve 2026-10-07): consume take_aim, ambush, haymaker,
@@ -23736,6 +23838,8 @@
     lockpickIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'lockpick_raccoon')); },
     humiceIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'hummice')); },
     catfishIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'nightlight_catfish')); },
+    mosquitoIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'giant_mosquito')); },
+    tickIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'alien_tick')); },
     glasswingIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'glasswing')); },
     sunbaskerIs(m) { return !!(m && m.kind === 'monster' && ((m.mdef || {}).id === 'sunbasker')); },
     // FLYERS (Steve 2026-10-06): monsters with flight:true in monsters.json.
@@ -24628,6 +24732,146 @@
         }
       }
       this.tbEndCheck();
+    },
+
+    // GIANT MOSQUITO (Steve 2026-10-09): hit-and-run drinker. circle -> dive
+    // -> drink -> heavy. It hunts by heat from high altitude (out of melee
+    // reach — bow/sling can still touch it); it MUST descend to drink, and
+    // after drinking it's heavy and slow. The bite may carry Eurika or East
+    // Nile (50/50, only if not already carrying one). The counter is the
+    // rhythm: keep distance on the dive, punish the heavy.
+    tbMosquitoTurn(m) {
+      const f = this.tbfight;
+      const useFifo = this.encUsesFifo(m);
+      const setP = (ph) => { if (useFifo) this.encSetPhase(m, ph); };
+      const foe = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
+      if (!foe || !foe.alive) { this.tbEndCheck(); return; }
+      const dist = () => Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my));
+      const atk = (m.mdef || {}).attack || {};
+      const phase = m.mosqPhase || 'circle';
+      const stepToward = () => {
+        const dx = Math.sign(foe.mx - m.mx), dy = Math.sign(foe.my - m.my);
+        if ((dx || dy) && this.tbCanOccupy(m, m.mx + dx, m.my + dy)) { m.mx += dx; m.my += dy; }
+      };
+      if (phase === 'circle') {
+        setP('circle'); m.altitude = 'high';
+        if (!m.mosqWhined) {
+          m.mosqWhined = true;
+          this.say('A whine, circling \u2014 high, then higher. It\'s tasting the air for you.');
+          this.audioEvent('mosquitoWhine');
+        }
+        if (dist() > 1) stepToward();
+        if (dist() <= 3) {
+          m.mosqPhase = 'dive'; setP('dive');
+          this.say('The whine climbs an octave and steadies \u2014 it\'s lining up the dive! (it only drinks adjacent \u2014 keep your distance)');
+          this.audioEvent('mosquitoDive');
+          this.tbLearnPattern(m);
+        }
+      } else if (phase === 'dive') {
+        setP('dive'); m.altitude = 'low';
+        if (dist() > 1) stepToward();
+        if (dist() <= 1) {
+          m.mosqPhase = 'drink'; setP('drink');
+          const dmg = S.combat.roll(atk.damage || [10, 16]);
+          const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Drink'));
+          this.say(`It lands on you \u2014 the proboscis slides in. (${landed} damage)`);
+          this.audioEvent('mosquitoDrink');
+          if (landed > 0 && foe.kind === 'player' && !this.hasStatus('scholar', 'eurika') && !this.hasStatus('scholar', 'east_nile')) {
+            const vid = Math.random() < 0.5 ? 'eurika' : 'east_nile';
+            this.applyStatus('scholar', vid, { source: 'the mosquito\u2019s bite' });
+          }
+          m.mosqPhase = 'heavy'; m.mosqHeavyTurns = 2; setP('heavy');
+          this.say('It lifts off heavy and slow, drunk on blood. Now \u2014 while it\'s heavy!');
+          this.tbLearnPattern(m);
+        } else {
+          m.mosqPhase = 'circle'; setP('circle');
+          this.say('The dive wobbles wide \u2014 it lost the line. The whine climbs again, circling.');
+        }
+      } else { // heavy: engorged, slow, clumsy — the punish window
+        setP('heavy'); m.altitude = 'low';
+        m.mosqHeavyTurns = (m.mosqHeavyTurns == null ? 2 : m.mosqHeavyTurns) - 1;
+        if (dist() <= 1) {
+          const landed = this.tbDamage(foe.key, S.combat.roll([3, 6]), this.encDamageSource(m, 'Heavy Blunder'));
+          if (landed > 0) this.say(`It blunders into you, drunk and clumsy. (${landed})`);
+          else this.say('It wallows in the air, heavy with blood \u2014 slow, clumsy, close.');
+        } else {
+          this.say('It wallows in the air, heavy with blood \u2014 slow, clumsy, close.');
+        }
+        if (m.mosqHeavyTurns <= 0) { m.mosqPhase = 'circle'; m.mosqHeavyTurns = 2; m.mosqWhined = false; setP('circle'); }
+      }
+      this.tbLearnPattern(m);
+    },
+
+    // ALIEN TICK (Steve 2026-10-09): questing ambush predator. quest -> latch
+    // -> feed -> engorged. It cannot chase (speed 1); the latch is the fight.
+    // Latch is undodgeable at adjacency — it was already on you. While
+    // latched it feeds 3/turn (undodgeable) and rolls 50% for Lemons ONCE per
+    // latch. Counters, all honest: (1) keep 2+ squares away and it\'s harmless;
+    // (2) a torch\'s flame drives it off; (3) after 4 feeds it\'s engorged and
+    // drops off fat and slow.
+    tbTickTurn(m) {
+      const f = this.tbfight;
+      const useFifo = this.encUsesFifo(m);
+      const setP = (ph) => { if (useFifo) this.encSetPhase(m, ph); };
+      const foe = (useFifo && this.encCurrentTarget(m)) || this.tbFighter('p');
+      if (!foe || !foe.alive) { this.tbEndCheck(); return; }
+      const dist = () => Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my));
+      const atk = (m.mdef || {}).attack || {};
+      const release = (why) => {
+        m.tickLatched = false; m.tickFeeds = 0; m.tickRolled = false;
+        m.tickPhase = 'engorged'; setP('engorged');
+        this.say(why);
+        this.audioEvent('tickRelease');
+        this.tbLearnPattern(m);
+      };
+      // LATCHED: feeding.
+      if (m.tickLatched) {
+        setP('feed');
+        // TORCH: flame drives it off. Real tick removal is heat.
+        let hasTorch = false;
+        try { hasTorch = !!(this.hasItem && this.hasItem('torch')); } catch (e) {}
+        if (hasTorch) {
+          release('You press the torch\u2019s flame to it \u2014 it lets go with a pop, curling tight. (tick burned off)');
+          return;
+        }
+        m.tickFeeds = (m.tickFeeds || 0) + 1;
+        const landed = this.tbDamage(foe.key, 3, this.encDamageSource(m, 'Feeding'), null, { undodgeable: true });
+        if (landed > 0) this.say(`It drinks \u2014 a slow pull from somewhere deep. (${landed})`);
+        if (m.tickFeeds >= 4) {
+          release('Fed full, it drops off \u2014 fat, slow, shining. Now, while it can barely move.');
+          return;
+        }
+        return;
+      }
+      // QUESTING: it waits. Legs waving is the tell.
+      setP('quest');
+      if (!m.tickQuestSaid) {
+        m.tickQuestSaid = true;
+        this.say('In the grass: legs waving, slow. Questing. Don\u2019t walk up to it.');
+        this.audioEvent('tickClick');
+      }
+      if (dist() <= 1) {
+        // LATCH — undodgeable at adjacency. It was already on you.
+        m.tickLatched = true; m.tickFeeds = 0; m.tickRolled = false;
+        m.tickPhase = 'latch'; setP('latch');
+        const dmg = S.combat.roll(atk.damage || [6, 10]);
+        const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Latch'), null, { undodgeable: true });
+        this.say(`It\u2019s on you \u2014 mouthparts in before you can move. (${landed}) LATCHED. (torch burns it off; it feeds 4 turns then drops)`);
+        this.audioEvent('tickLatch');
+        if (foe.kind === 'player' && !this.hasStatus('scholar', 'lemons') && Math.random() < 0.5) {
+          this.applyStatus('scholar', 'lemons', { source: 'the tick\u2019s bite' });
+        }
+        this.tbLearnPattern(m);
+      } else if (dist() === 2) {
+        // It wants you close. It barely moves — speed 1, one square, and only
+        // sometimes. It does not chase; it hopes.
+        if (Math.random() < 0.5) {
+          const dx = Math.sign(foe.mx - m.mx), dy = Math.sign(foe.my - m.my);
+          if ((dx || dy) && this.tbCanOccupy(m, m.mx + dx, m.my + dy)) { m.mx += dx; m.my += dy; }
+        }
+      }
+      // farther than 2: it just quests. Patience is its whole plan.
+      this.tbLearnPattern(m);
     },
 
     // CATFISH TELL CELLS (Steve 2026-10-06): the lure's one fair tell, made
@@ -25829,6 +26073,10 @@
       // through to the generic engine (it fights for real now).
       if (this.lockpickIs(m) && this.tbLockpickTurn(m)) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
       if (this.catfishIs(m)) { this.tbCatfishTurn(m); this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+      // VECTOR MONSTERS (Steve 2026-10-09): the giant mosquito and the alien
+      // tick are real fights, not background ticks. Bespoke turns below.
+      if (this.mosquitoIs(m)) { this.tbMosquitoTurn(m); this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
+      if (this.tickIs(m)) { this.tbTickTurn(m); this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
       // HIGHBEAM: the deer doesn't chase the nearest — it works the list,
       // first in first out. Movement, declaration, and aim all follow it.
       if (useFifo) {

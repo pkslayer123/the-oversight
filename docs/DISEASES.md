@@ -24,9 +24,9 @@ or diagnosis code. (Established 2026-10-06, reworked 2026-10-09, corrected 2026-
 |----|------|---------------|--------|
 | gutrot | Gut Rot | gut parasite | raw food, risky water, dirty hands |
 | trichinosis | Trichinosis | trichinosis | undercooked bear/boar meat (only `cooked` clears it; smoking doesn't) |
-| lemons | Lemons | Lyme disease | tick bites (ringed rash tell; can go chronic in joints) |
+| disease | Fever | generic fever | mild: bad food/water/luck; ambient mosquito bites (1.5%); ambient tick bites (escalating) |
 | lockjaw | Lockjaw | tetanus | dirty wounds, rust (spasms; lethal untreated) |
-| wound_fever | Wound Fever | infected wound | open cuts left dirty |
+| wound_fever | Wound Fever | infected wound | open cuts left dirty; botched tick removal |
 
 Diseases never announce their names — only symptoms. Diagnosis (triage /
 field_medicine / herbal_remedy, herb lore, stethoscope, or a medical villager)
@@ -34,7 +34,7 @@ unlocks the true name, class, and cure direction. Cure tiers per disease:
 folk remedies (anyone, uncertain) → occupation medicine → specific ruin
 medicine → earned healer deepenings → the Fever's End synergy (true cures).
 
-## Alien pool (8) — alien effects
+## Alien pool (9) — alien effects
 
 | id | Name | Vector | Drawback | Ability | Transformation |
 |----|------|--------|----------|---------|----------------|
@@ -44,15 +44,38 @@ medicine → earned healer deepenings → the Fever's End synergy (true cures).
 | shellgut | Shellgut | speedbump meat | -25% kcal absorbed | immune to ingested poison/food-borne disease | chitin plates under the skin |
 | witness_maw | Witness Maw | grief counselor meat | people decide you're possessed (-trust) | night half as dark | black tear ducts, reflective eyes |
 | flockmind | Flockmind | duck-line meat | quack when startled, no surprise | duck-lines won't start anything | down feathers on the forearms |
-| eurika | Eurika | **giant mosquito bite** | sensory static (1 HP/part, world never turns down) | mosquito-sense: ambushes announce themselves | faceted eye patches, sensory hairs |
-| east_nile | East Nile | **giant mosquito bite** | fever dreams (2 HP/part) | the crows warn you: directional danger sense | hollow bones, black pinfeathers |
+| eurika | Eurika | **giant mosquito bite** (monster fight) | sensory static (1 HP/part, world never turns down) | mosquito-sense: ambushes announce themselves | faceted eye patches, sensory hairs |
+| east_nile | East Nile | **giant mosquito bite** (monster fight) | fever dreams (2 HP/part) | the crows warn you: directional danger sense | hollow bones, black pinfeathers |
+| lemons | Lemons | **alien tick bite** (monster fight) | achy joints (1 HP/part, energy x0.85) | engorge (+20% kcal); blood-sense (+2 vs bleeding) | ringed rashes at every joint, waxy grey skin |
 
 Eurika and East Nile are the original alien diseases (Steve 2026-10-06/09):
 unhinged virus versions that cause **permanent biological warping** — they do
-not expire on their own. Low contraction chance (~2% per dusk/night part in
-wetlands, 50/50 which virus). Plain mosquitoes are just mosquitoes (itchy,
-nothing more) — the shock is that they're just bugs; the giant ones are
-"massive freakish" but still called plainly "mosquitoes."
+not expire on their own. They come from the GIANT mosquito MONSTER FIGHT
+(50/50 which virus on a landed bite) — never from background ticks. Plain
+mosquitoes are just mosquitoes (itchy, nothing more) — the shock is that
+they're just bugs; the giant ones are "massive freakish" but still called
+plainly "mosquitoes."
+
+**Lemons** moved to the alien pool (Steve 2026-10-09): it was the playful
+Lyme name, but Steve's correction puts it on the ALIEN tick — a map-visible
+monster fight, plainly called a "tick." Drawback: achy joints (1 HP/part +
+energy x0.85). Abilities: engorge (+20% kcal absorbed — the tick drinks
+deep) and blood-sense (+2 strike damage vs bleeding enemies — you feel
+heartbeats). Transformation: ringed rashes at every joint that never fade,
+waxy grey skin between. Permanent warping, like eurika/east_nile.
+
+**Two tiers, side by side** (Steve 2026-10-09): ambient ticks/mosquitoes are
+background flavor — tiny per-step attach chance in woods/thicket (narrated,
+visible as "Tick attached," never silent), ambient mosquito bites at
+dusk/night in wetlands. They carry only the mild generic Fever: mosquitoes
+1.5% per part; an attached tick rolls once per day with an ESCALATING chance
+(day 1: 3%, +3%/day, capped 15% — never guaranteed). Removal needs light
+medical knowledge: the `tick_removal` technique (taught by a camp healer
+within a couple days), or triage/field_medicine/herbal_remedy. Blind removal
+is allowed but 40% botches (head stays in → wound_fever). A mundane deer tick
+attaches an ambient tick — it NEVER gives Lemons. The map-visible giants
+(giant_mosquito, alien_tick) are the monster fights that carry the alien
+viruses.
 
 Min-maxing is welcome: some players will avoid these at all costs, others
 will seek infection to boost their build.
@@ -63,3 +86,13 @@ will seek infection to boost their build.
   misclassified as mundane mosquito viruses by the disease-rework worker, which
   had not read the 2026-10-06 design). This doc created as the single source
   of truth so the roster is never reinvented from scratch again.
+- 2026-10-09: Lemons moved to the alien pool (Steve: "Lemons disease is
+  supposed to be from an alien tick. Both are supposed to be monster fights").
+  Rewritten as alien: achy-joint drawback + engorge/blood-sense abilities +
+  ringed-rash-at-every-joint transformation, permanent warping. Giant mosquito
+  + alien tick built as real map-visible monster fights (sprites, bespoke
+  combat turns, wave-2 spawn). Ambient tier added side by side: tiny
+  ticks/mosquitoes as narrated flavor carrying only the mild generic Fever
+  (escalating daily roll 3%→15%, never guaranteed; technique-gated removal
+  taught by camp healers; blind removal botch → wound_fever). All
+  'tick fever'→lemons mappings remapped to the generic 'disease'.

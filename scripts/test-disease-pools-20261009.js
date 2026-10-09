@@ -28,8 +28,8 @@ function ok(name, cond, extra) {
   else { fail++; console.log(`  FAIL ${name}${extra ? ' — ' + extra : ''}`); }
 }
 
-const MUNDANE = ['gutrot','trichinosis','lemons','lockjaw','wound_fever']; // real diseases only
-const ALIEN = ['howlbelly','gristlefit','croakbelly','shellgut','witness_maw','flockmind','eurika','east_nile']; // alien effects
+const MUNDANE = ['gutrot','trichinosis','disease','lockjaw','wound_fever']; // real diseases only (lemons is alien now)
+const ALIEN = ['howlbelly','gristlefit','croakbelly','shellgut','witness_maw','flockmind','eurika','east_nile','lemons']; // alien effects
 
 (async () => {
   await Game.init();

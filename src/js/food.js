@@ -447,11 +447,14 @@
         if (['black_bear', 'wild_boar', 'javelina'].includes(meatId)) {
           it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25 };
         }
-        // TICKS (disease rework 2026-10-09): deer carry them — Lyme is real.
-        // Check the hide before you wear it.
-        if (meatId === 'white_tailed_deer' && Math.random() < 0.15) {
-          this.say('Something tiny and dark was in the hide \u2014 a tick, buried in. You pick it off, but it was feeding.');
-          if (Math.random() < 0.3) this.contractDisease('lemons', { source: 'a tick from the deer hide' });
+        // TICKS (Steve 2026-10-09): deer carry them — but these are the tiny
+        // ambient kind, not the alien monster. One may latch on (the attached-
+        // tick system: narrated, removable, mild fever at worst). Lemons is
+        // alien now — the alien tick MONSTER's bite only. Never from a deer.
+        if (meatId === 'white_tailed_deer' && Math.random() < 0.15 &&
+            !this.hasStatus('scholar', 'tick_attached')) {
+          this.say('Something tiny and dark was in the hide \u2014 a tick, buried in. It\u2019s on you now, latched at the wrist.');
+          this.applyStatus('scholar', 'tick_attached', { source: 'the deer hide' });
         }
         it.spoilDay = this.state.scholar.day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';

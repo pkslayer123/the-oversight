@@ -456,12 +456,6 @@
           if (db.healMult) out.healMult *= db.healMult;
           if (db.energyMult) out.energyMult *= (list[i].severe ? Math.min(db.energyMult, 0.5) : db.energyMult);
         }
-        // LEMONS CHRONIC: the joints remember.
-        if (target === 'scholar') {
-          var s = this.state.scholar || {};
-          var pIdx = this.partIdx();
-          if (s.chronicAchesUntil && pIdx < s.chronicAchesUntil) out.energyMult *= 0.9;
-        }
       } catch (e) {}
       return out;
     },

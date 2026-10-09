@@ -12608,7 +12608,8 @@
       const sick = (Game.sickDiseases && Game.sickDiseases()) || [];
       const v = (Game.state && Game.state.village) || {};
       const sickVillagers = Object.keys(v.sick || {});
-      if (!sick.length && !sickVillagers.length) return '';
+      const hasTick = !!(Game.hasStatus && Game.hasStatus('scholar', 'tick_attached'));
+      if (!sick.length && !sickVillagers.length && !hasTick) return '';
       let html = `<details open style="margin:8px 0"><summary style="cursor:pointer;font-size:15px;font-weight:bold">🤒 Afflictions <span style="opacity:.6;font-weight:normal">(${sick.length + sickVillagers.length})</span></summary><div style="margin-top:6px">`;
       for (const e of sick) {
         const def = Game.seDef(e.id) || {};
@@ -12631,6 +12632,14 @@
           for (const m of meds) html += `<button class="btn ghost sm" data-aff="med:${m.medType}">${esc(m.name)} (${m.doses})</button> `;
           html += `</p>`;
         }
+      }
+      // AMBIENT TICK (Steve 2026-10-09): attached tick gets its own row —
+      // narrated, visible, removable. Never silent.
+      if (hasTick) {
+        const knowsTick = !!(((Game.state.codex || {}).techniques || {}).tick_removal) ||
+          Game.hasAbility('triage') || Game.hasAbility('field_medicine') || Game.hasAbility('herbal_remedy');
+        html += `<p class="small">🪲 <b>Tick attached</b><br><span style="opacity:.75">Something itches at your ankle — a tick, latched on. Each day it stays, the fever risk climbs.</span></p>`;
+        html += `<p class="small"><button class="btn ghost sm" data-aff="removetick">🪲 ${knowsTick ? 'Remove tick' : 'Remove tick (blind — risky)'}</button></p>`;
       }
       for (const vid of sickVillagers) {
         const rec = v.sick[vid] || {};
@@ -12707,6 +12716,7 @@
       else if (k.indexOf('vexamine:') === 0) Game.examineSick(k.slice(9));
       else if (k.indexOf('vtend:') === 0) Game.tendVillager(k.slice(6));
       else if (k.indexOf('vtreat:') === 0) { const parts = k.split(':'); Game.treatVillager(parts[1], parts[2]); }
+      else if (k === 'removetick') Game.removeTick();
     }, 'Done.'));
   }
 
