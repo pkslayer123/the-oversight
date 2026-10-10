@@ -361,9 +361,18 @@ async function main() {
       check('7a. AFTER: Game.wipeAllSaves exists and clears everything', hasWipeAll);
       if (hasWipeAll) {
         Game.wipeAllSaves();
-        check('7b. AFTER: all saves + index gone',
-          S.state.listSaves().length === 0 && globalThis.localStorage._keys().length === 0,
-          `keys=${globalThis.localStorage._keys().length}`);
+        // R8 UPDATE (2026-10-10): r7's wipeAll writes a tombstone per removed
+        // key (dead runs stay dead vs stale tabs) — zero keys is no longer the
+        // contract. The contract now: no save blobs, no index entries; the only
+        // keys left are tombstones, and a stale tab still can't resurrect.
+        const keys = globalThis.localStorage._keys();
+        const blobs = keys.filter(k => k.indexOf('scattering-save-v1-') === 0);
+        const idxGone = globalThis.localStorage.getItem('scattering-saves-index') === null ||
+          JSON.parse(globalThis.localStorage.getItem('scattering-saves-index')).length === 0;
+        const tombOnly = keys.every(k => k.indexOf('scattering-save-tombstone-') === 0);
+        check('7b. AFTER: save blobs + index gone, tombstones remain by design (r7)',
+          S.state.listSaves().length === 0 && blobs.length === 0 && idxGone && tombOnly,
+          `keys=${keys.length} blobs=${blobs.length}`);
       }
     }
   }

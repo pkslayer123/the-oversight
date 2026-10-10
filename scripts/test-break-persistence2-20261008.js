@@ -383,6 +383,11 @@ async function main() {
     const key = S.state.listSaves()[0] && S.state.listSaves()[0].key;
     check('A2. save() actually writes (player belief is honest)', !!key && globalThis.localStorage.getItem(key) !== null);
     // hazard demonstration (both modes): IF junk lands in state, save() fails SILENTLY
+    // R8 UPDATE (2026-10-10): clear storage first — r7's self-healing listSaves
+    // scans insertion order, so listSaves()[0] could pick the previous block's
+    // (day-9, different-key) save instead of this block's. The hazard
+    // demonstration needs an unambiguous key.
+    globalThis.localStorage._clear();
     const st2 = freshState(['v1']);
     wireGame(st2, ['v1']);
     Game.save();

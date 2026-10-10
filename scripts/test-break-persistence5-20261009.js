@@ -289,7 +289,11 @@ function buildLoadable(vid, extra) {
       store.setItem('scattering-save-v1-qa', 'corrupt-B{{{');
       S.state.quarantineKey('scattering-save-v1-qa');
     } finally { Date.now = realNow; }
-    const qk = store._keys().filter(k => k.indexOf('scattering-save-quarantine-') === 0);
+    const qk = store._keys().filter(k => k.indexOf('scattering-save-quarantine-') === 0 &&
+      k !== 'scattering-save-quarantine-manifest' && k !== 'scattering-save-quarantine-notice');
+    // R8 UPDATE (2026-10-10): r7's T5 made quarantineKey() also write the
+    // restore manifest + one-shot player notice, both under the quarantine
+    // prefix. Count snapshot keys only.
     check('R7. same-ms quarantines both survive (random stamp suffix)',
       qk.length === 2, `quarantine keys=${qk.length}`);
   }

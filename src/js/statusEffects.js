@@ -159,6 +159,37 @@
         // two — the herbal_remedy button then read "Not sick" while a disease
         // was still active (the mirror is the ability gate). Mirrors are now
         // removed by seq match, never by position.
+        // SEQ RESEED (break-it persistence r8 2026-10-10): _seSeq is a
+        // Game-level counter — it does NOT survive save/load (Game props are
+        // deliberately unpersisted, pass-4). A fresh load reset it to
+        // undefined, so the first post-load applyStatus re-minted seq 1 and
+        // COLLIDED with a pre-load entry's seq — seDropMirror then removed
+        // the WRONG legacy mirror (cure trichinosis, lose gutrot's mirror:
+        // engine and the herbal_remedy/purify gate disagreed in both
+        // directions). Reseed from the max live _seq (scholar + any live
+        // fight fighters, whose statuses persist mid-fight) before minting,
+        // so seqs stay unique across loads.
+        if (this._seSeq == null) {
+          var _mx = 0;
+          try {
+            var _lists = [];
+            try { _lists.push(this.seList('scholar')); } catch (e0rs) {}
+            if (this.tbfight && this.tbfight.fighters) {
+              for (var _fi = 0; _fi < this.tbfight.fighters.length; _fi++) {
+                var _ff = this.tbfight.fighters[_fi];
+                if (_ff && Array.isArray(_ff.statuses)) _lists.push(_ff.statuses);
+              }
+            }
+            for (var _li = 0; _li < _lists.length; _li++) {
+              var _L = _lists[_li] || [];
+              for (var _ei = 0; _ei < _L.length; _ei++) {
+                var _sq = _L[_ei] && _L[_ei]._seq;
+                if (typeof _sq === 'number' && _sq > _mx) _mx = _sq;
+              }
+            }
+          } catch (e1rs) {}
+          this._seSeq = _mx;
+        }
         entry._seq = (this._seSeq = (this._seSeq || 0) + 1);
         list.push(entry);
       }
