@@ -102,7 +102,7 @@
 //   - show_playable: shows are PLAYED beats, not announcements — the pull can land on the player (showPhases), a villager (showWatchPhases + deterministic showResolveVillager), or the village together (showTogetherPhases); every pool show has an authored beat in SHOW_BEATS, with _showGenericBeat as fallback (code: fireShow, SHOW_BEATS, audit-shows 2026-10-09)
 //   - show_casting: notability-first — the pull goes to the notable (ONE shared notabilityWeight: depth + impact, Steve 2026-10-09); zero-deed villagers never pulled while notables exist; NO default-together — with nobody notable the pull goes to the SCHOLAR ("the cameras don't know these people yet"); together episodes fire ONLY on triggers (viewership milestone +5); 10% whim announced and constrained to notables; exact ties share the top band (code: showCastPull, showEligible, notabilityWeight, Steve 2026-10-09)
 //   - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
-//   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
+//   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + min(showmanship,3)*2 fame bonus + stable per-villager hash + player cheer, -2 heckle, -2/deed overexposure beyond 5 deeds), fans>=7, shame<=3, else both; fame has a lifecycle (debut risky -> celebrity -> overexposed), never a permanent ratchet (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09; lifecycle playtest fame-seeker 2026-10-10)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
 //   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
 //   - ratings_drift: audience drift — weekly, viewership sags 10% (min 2.5, floor 12); hype must outpace the leak. This is what lets the dip-gate arm: without it viewership only ratcheted up and the summons was dead content (0/120 runs). Dip = falling week-over-week OR low (<15) and not rising — a rising week coasts even when low (parity audit 2026-10-10; reconciles break-it r13's pinned rising-coast). (code: contestTick, util audit 2026-10-10)
@@ -758,21 +758,34 @@
     }];
   };
 
-  // SHOW RESOLVE VILLAGER (audit-shows 2026-10-09): the pulled villager's
-  // fate — DETERMINISTIC, documented, no outcome table. Score = 2 base +
-  // 2 per showmanship notability (the gossip lane has its own celebrities —
-  // fame is the skill here) + a stable per-villager hash 0..2 (some people
-  // are just good TV) + player cheer (0..6, capped like contest cheer).
-  // fans >= 7, shame <= 3, else both. The village talks about it either way.
+  // SHOW RESOLVE VILLAGER (audit-shows 2026-10-09; fame lifecycle playtest
+  // fame-seeker 2026-10-10): the pulled villager's fate — DETERMINISTIC,
+  // documented, no outcome table. Fame is the skill here, but fame has a
+  // LIFECYCLE, not a ratchet. The old formula (+2 per showmanship deed,
+  // uncapped) made shame mathematically impossible after a single TV
+  // appearance and guaranteed fans forever at 3+ deeds — the documented
+  // promise "fans or shame, sometimes both" died the moment a villager got
+  // famous, and shows became risk-free for celebrities. Now:
+  //   score = 2 base + min(showmanship,3)*2 (fame caps: the skill plateaus)
+  //         + stable per-villager hash 0..2 (some people are just good TV)
+  //         + player cheer (0..6, capped) + heckle (-2)
+  //         - max(0, showmanship-5)*2 (OVEREXPOSURE: the galaxy gets bored)
+  // Career arc: debut (shame/both) -> rising (both) -> celebrity at 3-5
+  // deeds (fans) -> overexposed at 6+ (both, then shame returns at 8+).
+  // Heckling (-2) can always dethrone a celebrity — the village tears down
+  // its idols on camera. fans >= 7, shame <= 3, else both.
   G.showResolveVillager = function(pid, show, opts) {
     opts = opts || {};
     let hash = 0;
     const key = String(pid) + ':' + String((show && show.id) || show);
     for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 997;
     const deeds = ((this.state.notability || {})[pid]) || {};
+    const n = deeds.showmanship || 0;
     const cheer = Math.round((opts.cheer || 0) * 40);
     const heckle = opts.heckle ? -2 : 0;
-    const score = 2 + (deeds.showmanship || 0) * 2 + (hash % 3) + cheer + heckle;
+    const fameBonus = Math.min(n, 3) * 2;
+    const overexposure = Math.max(0, n - 5) * 2;
+    const score = 2 + fameBonus + (hash % 3) + cheer + heckle - overexposure;
     const outcome = score >= 7 ? 'fans' : (score <= 3 ? 'shame' : 'both');
     return { outcome, score };
   };
