@@ -71,6 +71,13 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
 - **Anti-speedrun:** the climb is paced in weeks (the table is a weekly verb), trust is
   deed-earned, tribute is real food, foreign polities grow off-screen slowly. No pure
   calendar path exists.
+- **National is a live state, not a title (2026-10-10, break-it r4):** when the realm
+  dissolves — no qualifying polity and no pending beat — `nationalLive` and `globalLive`
+  clear and any pending global summons dies, all said aloud. A polity is a live
+  relationship; burning the realm after the court sits keeps nothing (this closed a real
+  exploit: dodging BELONG-road tribute upkeep while keeping wave-5/`scaleRank`). The
+  oath's trust is proportional to the kcal actually sealed, like the feast-court and the
+  accord gift.
 
 ### 4. GLOBAL — the pre-table beat
 - **Definition:** the world/audience scale — NOT the table scene (the table is the

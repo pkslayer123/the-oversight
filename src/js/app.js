@@ -13903,6 +13903,11 @@
     document.querySelectorAll('[data-accord-gift]').forEach(b => b.onclick = () => { Game.answerAccord('gift'); refresh(); });
     document.querySelectorAll('[data-accord-visit]').forEach(b => b.onclick = () => { Game.answerAccord('visit'); refresh(); });
     document.querySelectorAll('[data-accord-cold]').forEach(b => b.onclick = () => { Game.answerAccord('cold'); refresh(); });
+    // Scale ladder: the national/global beats, played (break-it regional r4
+    // 2026-10-10 — were engine-only, no answer path). Same pattern as the
+    // accord: the state drives the panel, the buttons drive the answer.
+    document.querySelectorAll('[data-national]').forEach(b => b.onclick = () => { Game.answerNationalChoice(b.dataset.national); refresh(); });
+    document.querySelectorAll('[data-global]').forEach(b => b.onclick = () => { Game.answerGlobalChoice(b.dataset.global); refresh(); });
     // Alliance: the understanding (regional audit 2026-10-09 — was engine-only).
     document.querySelectorAll('[data-ally-propose]').forEach(b => b.onclick = () => { Game.proposeAlliance(b.dataset.allyPropose); refresh(); });
     document.querySelectorAll('[data-demand-yes]').forEach(b => b.onclick = () => { Game.answerDemand(b.dataset.demandYes, true); refresh(); });
@@ -14258,6 +14263,24 @@
             try {
               const links = Game.villageLinks('haven');
               let html = '';
+              // SCALE LADDER (break-it regional r4 2026-10-10): the national
+              // and global beats staged with NO way to answer — engine-only,
+              // same class as the proposeLink gap. State-driven like the
+              // Regional Dawn accord: buttons call the answer functions.
+              // Rendered outside the links gate so the beats are answerable
+              // even when the link list is empty.
+              if (Game.state.pendingNational) {
+                const pn = Game.state.pendingNational;
+                if (pn.led) {
+                  html += `<div style="margin-top:4px"><p class="small">👑 <b>The First Court:</b> the subordinate speakers ride in — Haven sets the terms of its realm.<br><button class="btn sm" data-national="feast">🍲 Feast the realm (5,000 kcal)</button> <button class="btn sm ghost" data-national="host">🏕️ Host the court (7 days)</button> <button class="btn sm ghost" data-national="cold">⚖️ Cold ink (tribute +10%)</button></p></div>`;
+                } else {
+                  let pnm = 'them'; try { pnm = Game._ovName(pn.primary); } catch (e) {}
+                  html += `<div style="margin-top:4px"><p class="small">📯 <b>The Binding:</b> ${esc(pnm)}'s court summons Haven's oath.<br><button class="btn sm" data-national="swear">🤝 Swear the oath (3,000 kcal)</button> <button class="btn sm ghost" data-national="serve">🚶 Serve at their court (7 days)</button> <button class="btn sm ghost" data-national="walk">🚶 Walk away</button></p></div>`;
+                }
+              }
+              if (Game.state.pendingGlobal) {
+                html += `<div style="margin-top:4px"><p class="small">📡 <b>The Watchers:</b> the world feed wants Haven.<br><button class="btn sm" data-global="champion">📡 Send the champion (7 days)</button> <button class="btn sm ghost" data-global="feast">🍲 Feast the cameras (5,000 kcal)</button> <button class="btn sm ghost" data-global="decline">Decline on camera</button></p></div>`;
+              }
               if (links.length) {
                 // REGIONAL DAWN (2026-10-09): once the first link forms, the
                 // System's coordination layer is visibly online — the header

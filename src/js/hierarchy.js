@@ -56,6 +56,7 @@
 //   - scale_is_a_ladder: scaleRank() returns village/regional/national/global from the nationalLive/globalLive/networkLive flags — global implies national implies regional, never a skip. Read it defensively; it never throws. (code: hierarchy.js)
 //   - national_is_a_polity: a polity is one primary with >=3 active subordinates (four fires is a realm; two is a pact). Haven reaches national by LEADING (primary of >=3) or BELONGING (valued subordinate: trust >=60, arrears 0, link >=21 days to a primary whose realm holds >=4 villages). Both are deed-reactive and take seasons — no calendar path. (code: hierarchy.js)
 //   - the_court_is_played: national and global transitions stage played beats with real-cost choices (feast/host/cold; swear/serve/walk; champion/feast/decline). Walking away from the Binding refuses the scale; the court dies aloud if the realm dissolves mid-beat. (code: hierarchy.js)
+//   - national_is_a_live_state: national/global are live, not titles — when the realm dissolves (no qualifying polity, no pending beat) nationalLive and globalLive clear, the pending global summons dies, and every loss is said aloud. The oath's trust is proportional to the kcal sealed (like the feast-court and accord gift) — a 0-kcal oath buys token trust, never the full +12. (code: hierarchy.js)
 //   - foreign_fires_climb_too: known, unlinked villages bind among themselves off-screen (~seasonal); Haven hears through traders — delayed, possibly wrong, never omniscience. (code: hierarchy.js)
 //   - the_world_watches: global = national + deed-reactive viewership >= 40, staged as the played pre-table beat "The Watchers". The table itself is the ending, not this. (code: hierarchy.js)
 //   - national_routes_tribute: when national, subordinate tribute grain arrives at x1.25 via the System's logistics layer — and the arrival line says the true amount. Copy and engine agree. (code: hierarchy.js)
@@ -1128,8 +1129,29 @@
     // that earned it, like rumor delivery at the day boundary.
     _checkNational() {
       try {
-        if (this.state.nationalLive || this.state.pendingNational) return;
         var p = this._havenPolity();
+        if ((this.state.nationalLive || this.state.globalLive) && !this.state.pendingNational && !p) {
+          // THE REALM CAME APART (break-it regional r4 2026-10-10): national
+          // was sticky — burn the realm after the court sat and keep
+          // wave-5/scaleRank forever, dodging BELONG-road tribute upkeep. A
+          // polity is a live relationship, not a title (docs/SCALE.md: "try
+          // not to lose it the way you found it" — loss is possible); when
+          // the realm dies the rank dies with it — aloud, like the mid-beat
+          // death. Global goes with it: the audience came for a world power,
+          // and the ladder never skips (global implies national).
+          var hadGlobal = !!this.state.globalLive;
+          this.state.nationalLive = false;
+          this.state.globalLive = false;
+          if (this.state.pendingGlobal) {
+            this.state.pendingGlobal = null;
+            this.say('📡 The world feed goes quiet — the summons dies with the realm that earned it. The galaxy watched a fire that is out.');
+          }
+          this.say('◈ The realm came apart — no polity answers to Haven now, and Haven is a free fire again. National' + (hadGlobal ? ' and global' : '') + ' no longer describe this village. The climb starts over.');
+          try { if (this.journalNote) this.journalNote('village', 'national', 'The realm came apart — Haven is no longer national.'); } catch (e) {}
+          try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'national-lost'); } catch (e) {}
+          return;
+        }
+        if (this.state.nationalLive || this.state.pendingNational) return;
         if (p) this.stageNationalBeat(p);
       } catch (e) {}
     },
@@ -1252,10 +1274,15 @@
         }
         if (how === 'swear') {
           var oath = this._removePantryKcal(3000);
-          link.trust = Math.min(100, link.trust + 12);
-          this._nudgeOpinion(pn.primary, 5);
+          // HONOR IS PROPORTIONAL (break-it regional r4 2026-10-10): a 0-kcal
+          // oath on an empty pantry used to buy the full +12 trust — free
+          // honor. The feast-court path and the accord gift already scale;
+          // the oath does too. The copy always says the true amount.
+          var ogain = oath >= 3000 ? 12 : Math.max(2, Math.round(12 * oath / 3000));
+          link.trust = Math.min(100, link.trust + ogain);
+          this._nudgeOpinion(pn.primary, oath >= 3000 ? 5 : 2);
           this._linkNote(link, 'binding', 'Swore the oath of the realm (' + oath.toLocaleString() + ' kcal gift).');
-          this.say(`🤝 ${rnm} kneels at ${onm}'s court and swears the oath — sealed with ${oath.toLocaleString()} kcal of Haven's harvest. The realm has its fires now, and one of them is yours. (Trust +12.)`);
+          this.say(`🤝 ${rnm} kneels at ${onm}'s court and swears the oath — sealed with ${oath.toLocaleString()} kcal of Haven's harvest. The realm has its fires now, and one of them is yours. (Trust +${ogain}.)`);
         } else {
           var mm = this.mshipState();
           if (rep && rep.id !== this.villagerId && !(mm.loaned && day < (mm.loaned.untilDay || 0))) {

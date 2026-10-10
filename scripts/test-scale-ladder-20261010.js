@@ -172,6 +172,9 @@ function ok(cond, label) {
 
   // ---------- F: global — the pre-table beat ----------
   console.log('F: global (viewership threshold + played beat)');
+  // (break-it r4: national is a live state, not a flag — the rung below must
+  // be a real realm; faking nationalLive with no polity is now revoked aloud)
+  mkLink(vA.id, false); mkLink(vB.id, false); mkLink(vC.id, false);
   Game.state.nationalLive = true; // setup: the ladder rung below is earned
   Game.state.village.viewership = 45; // deed-earned attention (recordMoment/showmanship)
   says.length = 0;
@@ -197,6 +200,10 @@ function ok(cond, label) {
 
   // ---------- H: foreign sim works (deterministic setup, stochastic fire) ----------
   console.log('H: foreign polity sim');
+  // (break-it r4: section F built a real realm — break it so the foreign sim
+  // has unlinked villages to work with; Haven's business is Haven's)
+  Game.hierarchyState().filter(l => l.status === 'active').forEach(l => Game.breakLink(l.id, 'severed'));
+  Game.state.nationalLive = false; Game.state.pendingNational = null;
   Game.state.foreignPolities = [];
   says.length = 0;
   let formed = false;
