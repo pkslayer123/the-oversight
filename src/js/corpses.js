@@ -306,7 +306,7 @@
         { name: 'Worn knife', kg: 0.4, note: 'Still sharp.' },
         { name: 'Lighter', kg: 0.1, note: 'Half full.' },
         { name: 'Coil of rope', kg: 0.8, note: 'Good rope.' },
-        { name: 'Dried meat', kg: 0.3, kcalEach: 400, units: 2, note: 'Their last meal, uneaten.' },
+        { name: 'Dried meat', kg: 0.3, kcalEach: 400, units: 2, note: 'Their last meal, uneaten.', spoilDays: 30 },
         { name: 'Water bottle', kg: 0.5, note: 'Still sealed.' },
         { name: 'Bandages', kg: 0.2, note: 'Clean. They were careful.' },
         { name: 'Work gloves', kg: 0.3, note: 'Broken in.' },
@@ -322,7 +322,11 @@
       const n = 2 + Math.floor(R() * 2);
       for (let i = 0; i < n && i < shuffled.length; i++) {
         const p = shuffled[i];
-        items.push({ plantId: 'effect_' + i, name: p.name, units: p.units || 1, kg: p.kg, kcalEach: p.kcalEach || 0, spoilDay: 9999, prep: p.note });
+        // HONEST CLOCKS (break-it food r4): the old push stamped spoilDay
+        // 9999 on everything — corpse-looted dried meat was immortal food.
+        // Dried meat keeps ~a month (PRESERVATION.md); gear doesn't rot.
+        const cd0 = ((this.state || {}).scholar || {}).day || 0;
+        items.push({ plantId: 'effect_' + i, name: p.name, units: p.units || 1, kg: p.kg, kcalEach: p.kcalEach || 0, spoilDay: (p.kcalEach || 0) > 0 ? cd0 + (p.spoilDays || 30) : 9999, prep: p.note });
       }
       items.push({ plantId: 'keepsake', name: keepsakes[Math.floor(R() * keepsakes.length)], units: 1, kg: 0.1, kcalEach: 0, spoilDay: 9999, keepsake: true, prep: 'Not useful. Not yours. Take it or leave it with them.' });
       return items;

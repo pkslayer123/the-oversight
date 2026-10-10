@@ -257,6 +257,15 @@
       if (!it || it.plantId !== 'meat_human' || (it.units || 0) <= 0) {
         this.say('Nothing edible there.'); return false;
       }
+      // SPOILAGE (break-it food r4): rot isn't food. eatOne routes meat_human
+      // here BEFORE its own rot check, and the old eatCannibal never checked —
+      // rotten human meat ate at full 550 kcal/portion. Same bonus-aware
+      // boundary as eatOne; refuse honestly, leave the rot for the dawn sweep.
+      const spoilBonus = Math.round(this.modTarget('food.spoilage_days', 0));
+      if (this.isSpoiled && this.isSpoiled(it, spoilBonus)) {
+        this.say(`The ${it.name} went bad — beyond eating. You leave it for the flies.`);
+        return false;
+      }
       const meals = s.cannibalMeals || 0;
       const first = meals === 0;
       // trauma desensitizes; corruption accelerates. That's the horror.

@@ -1589,12 +1589,18 @@
       // stretches it; a knowledgeable village never looks back. The scarcity
       // comes fast — that's the point. (Was ~94k: neglect-proof for 20 days,
       // which taught nothing.)
+      // HONEST CLOCKS (break-it food r4): these were spoilDay 9999 — immortal
+      // food. The village's own sweep would never clear them, and a hoarder
+      // could sit on the starting stock for months. Long, not forever: dry
+      // staples/cans keep ~a year, dried meat ~a month (PRESERVATION.md), the
+      // quick snacks ~two months. The two-week design window is untouched.
+      const d0 = (this.state.scholar && this.state.scholar.day) || 1;
       const staples = [
-        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 80, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
-        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 65, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
-        { name: 'Canned soup', kcalEach: 250, units: 30, spoilDay: 9999, safe: true, kg: 0.4, unit: 'can' },
-        { name: 'Dried meat', kcalEach: 400, units: 22, spoilDay: 9999, safe: true, kg: 0.3, unit: 'strip' },
-        { name: 'Peanuts', kcalEach: 170, units: 35, spoilDay: 9999, safe: true, kg: 0.1, unit: 'handful' },
+        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 80, spoilDay: d0 + 365, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+        { name: 'Rice', rawKcal: 200, cookedKcal: 350, kcalEach: 200, units: 65, spoilDay: d0 + 365, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+        { name: 'Canned soup', kcalEach: 250, units: 30, spoilDay: d0 + 365, safe: true, kg: 0.4, unit: 'can' },
+        { name: 'Dried meat', kcalEach: 400, units: 22, spoilDay: d0 + 30, safe: true, kg: 0.3, unit: 'strip' },
+        { name: 'Peanuts', kcalEach: 170, units: 35, spoilDay: d0 + 60, safe: true, kg: 0.1, unit: 'handful' },
       ];
       let kcal = 0;
       for (const s of staples) {
@@ -1940,9 +1946,13 @@
       });
       scholar.relicUse = {}; // per-day record of meaningful relic use
       // Start with a day's food. You're not starving on arrival (that's day 3).
+      // HONEST CLOCKS (break-it food r4): the trail mix was spoilDay 9999
+      // (immortal) while the dried meat right below it honestly said 30 days.
+      // Same class — long, not forever.
+      const d0p = (this.state.scholar && this.state.scholar.day) || 1;
       scholar.inventory.push(
-        { name: 'Trail mix', kcalEach: 400, units: 2, spoilDay: 9999, safe: true, kg: 0.3, unit: 'bag' },
-        { name: 'Dried meat', kcalEach: 300, units: 2, spoilDay: 30, safe: true, kg: 0.2, unit: 'strip' },
+        { name: 'Trail mix', kcalEach: 400, units: 2, spoilDay: d0p + 60, safe: true, kg: 0.3, unit: 'bag' },
+        { name: 'Dried meat', kcalEach: 300, units: 2, spoilDay: d0p + 30, safe: true, kg: 0.2, unit: 'strip' },
       );
       // granted abilities from villager data (2 each, defined here for slice 1)
       // BACKGROUND ABILITIES: separate from System slots. This is YOU — your past.
@@ -19367,10 +19377,13 @@
             this._noteAnimalDepth(meatAid, 4, { type: 'tasted' });
             scholar.kcal = Math.min(scholar.kcal + 50, this.kcalCap ? this.kcalCap() : 3000); // nourished
           }
-          if (mentry.deepKnown) {
-            this.addHealth(5);
-          }
+          // MASTERY HONESTY (break-it food r4): the mastery copy promises "+5
+          // health every time you eat it" — the deep-known +5 already delivers
+          // that. The old double-grant paid +10/bite with no promise backing
+          // it. Mastery keeps the +5; it doesn't stack a second one.
           if (mentry.masterKnown) {
+            this.addHealth(5);
+          } else if (mentry.deepKnown) {
             this.addHealth(5);
           }
         } else {

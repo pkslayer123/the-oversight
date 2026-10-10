@@ -989,8 +989,21 @@
           it.prep = sFoodSafe ? 'Cooked through. Safe.'
             : '\u26A0\uFE0F Cooked, but still unknown flesh. Test it cautiously before trusting it.';
         } else if (it.needsCooking && it.diseaseRisk) {
-          it.diseaseRisk = null; it.safe = true; it.needsCooking = false;
-          it.prep = (it.prep || '').replace(/\u26A0\uFE0F Risky raw \u2014 cook it\./, '').trim();
+          // DIGESTIBILITY HONESTY (break-it food r4): the old branch just
+          // cleared the risk and left kcalEach untouched — the specialist's
+          // fire granted ZERO digestibility while the copy promised "better
+          // than you could do" (your own fire runs cookTransform and gains
+          // real net kcal). Same honest math as the rawKcal branch above and
+          // the player's fire: skill buys outcome, never phantom energy.
+          const sRP = this.cookTransform(it, { knows: true, skillMult: 1 + 0.05 * spec.skill });
+          if (sRP) {
+            it.kcalEach = sRP.kcalEach;
+            if (sRP.outcome.key === 'burnt') it.burnt = true;
+          }
+          if (!sRP || !sRP.outcome.riskStays) { it.diseaseRisk = null; it.safe = true; it.needsCooking = false; }
+          it.foodState = 'cooked';
+          it.prep = 'Cooked ' + this.cookOutcomePhrase(sRP ? sRP.outcome : { key: 'decent' }, sRP ? sRP.cls : null) + '.';
+          it.spoilDay = day + 5;
         }
         it.wellMade = true; // a specialist made this — it burns hotter as fuel
         this.say(`${spec.name} (${spec.occupation}) takes it to the fire. It comes back transformed — better than you could do.`);
@@ -2035,15 +2048,34 @@
       if (!it || (it.kcalEach || 0) <= 0 || it.edible === false
           || this.isSpoiled(it)) { this.say('Nothing edible there.'); return null; }
       const s = this.state.scholar;
-      if (it.diseaseRisk && Math.random() < it.diseaseRisk.p) {
+      // SHELLGUT (Steve 2026-10-08): armor gut — nothing ingested touches you.
+      const shellgut3 = this.hasStatus && this.hasStatus('scholar', 'shellgut');
+      if (it.diseaseRisk && !shellgut3 && Math.random() < it.diseaseRisk.p) {
         s.health = Math.max(0, (s.health || 100) - it.diseaseRisk.dmg);
         this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
+      }
+      // TRICHINOSIS / POISON (break-it food r4): the old counter bite rolled
+      // diseaseRisk ONLY — eating raw bear meat off the prep counter skipped
+      // the worm roll AND the poison roll that eatOne performs. Same risks,
+      // same rolls; the counter is fast, not safe.
+      if (it.parasiteRisk && !shellgut3 && (it.foodState !== 'cooked' || it.undercooked) && Math.random() < (it.parasiteRisk.p || 0.25)) {
+        this.contractDisease(it.parasiteRisk.id || 'trichinosis', { source: 'the ' + it.name });
+      }
+      if (it.poisonRisk && !shellgut3 && Math.random() < it.poisonRisk.p) {
+        this.addHealth(-10);
+        this.applyStatus('scholar', 'poison', { name: it.poisonRisk.note || 'toxin', source: 'the ' + it.name });
+        this.say(`The ${it.name} was poisoned — ${it.poisonRisk.note}. Your veins burn. (-10 health, poisoned)`);
       }
       const kcal = it.kcalEach;
       if (this.blendKcalQuality) this.blendKcalQuality(kcal, this.mealQuality ? this.mealQuality(it) : 1);
       s.kcal = Math.min(this.kcalCap(), (s.kcal || 0) + kcal);
       it.units -= 1;
-      this.say(`You eat it raw, fast. ${kcal} kcal.${it.diseaseRisk ? ' Risky — you knew the odds.' : ''} (2 ticks)`);
+      // HONESTY (break-it food r4): the old copy always said "You eat it raw"
+      // even for cooked/smoked/pemmican bites off the counter.
+      const rawBite = it.foodState === 'cleaned' || it.foodState === 'raw' || it.foodState === 'unknown';
+      this.say(rawBite
+        ? `You eat it raw, fast. ${kcal} kcal.${it.diseaseRisk ? ' Risky — you knew the odds.' : ''} (2 ticks)`
+        : `You eat the ${it.name}. (+${kcal} kcal) (2 ticks)`);
       if (it.units <= 0) stash.splice(idx, 1);
       this.tickAction(2);
       return null;
@@ -2199,7 +2231,12 @@
         opts.push({
           id: 'you',
           label: `${verb} yourself`,
-          detail: `${task === 'cook' ? '32' : '8'} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
+          detail: `${task === 'cook' ? '32' : task === 'preserver' ? '16' : '8'} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
+          // HONESTY (break-it food r4): the old preserver line said 8 ticks —
+          // smoking costs 16 (Steve 2026-10-09: "1/8 of a day seems about
+          // correct"). These cook/preserver/shell branches are unwired from
+          // the UI today (only 'butcher' renders) — the copy must be true if
+          // they ever get wired.
           blocked: !this.nearFire() ? 'needs fire' : null,
         });
         if (spec) {

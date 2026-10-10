@@ -2278,15 +2278,19 @@
         ot.type = 'oldhaven'; ot.isHaven = false; ot.pastVillage = old.name;
       }
     } catch (e) {}
+    // HONEST CLOCKS (break-it food r4): the founder's cache was spoilDay 9999
+    // — immortal food in a fresh pantry. Long, not forever: dried meat ~a
+    // month (PRESERVATION.md), dry beans ~a year.
+    const fd0 = (s.day || 1);
     const v = {
       name, day: 1, season: old.season || 'spring',
       px, py,
       // founder's cache: a few days for one person, cached along the road out.
       // not a village stockpile — the scarcity starts now.
       pantry: [
-        { name: 'Dried meat', kcalEach: 400, units: 6, spoilDay: 9999, safe: true, kg: 0.3, unit: 'strip' },
-        { name: 'Trail mix', kcalEach: 400, units: 4, spoilDay: 9999, safe: true, kg: 0.3, unit: 'bag' },
-        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 20, spoilDay: 9999, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
+        { name: 'Dried meat', kcalEach: 400, units: 6, spoilDay: fd0 + 30, safe: true, kg: 0.3, unit: 'strip' },
+        { name: 'Trail mix', kcalEach: 400, units: 4, spoilDay: fd0 + 60, safe: true, kg: 0.3, unit: 'bag' },
+        { name: 'Dried beans', rawKcal: 150, cookedKcal: 300, kcalEach: 150, units: 20, spoilDay: fd0 + 365, safe: false, kg: 0.5, needsCooking: true, unit: 'scoop' },
       ],
       pantryKcal: 0, // (kept for compat, computed from pantry)
       water: { clean: 6, dirty: 0 },
