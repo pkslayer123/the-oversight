@@ -27193,8 +27193,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // unreachable (prot=20 halves what gets through, prot=100 ~83%).
         // At least 1 of any real blow lands.
         // ARMOR-PIERCE (Steve 2026-10-09): higher monster classes can ignore
-        // a fraction of protection (mdef.pierce, 0 = none). Hook only — no
-        // monster has pierce yet; wave-3+ design will assign it.
+        // a fraction of protection (mdef.pierce, 0 = none). Wave-3+ monsters
+        // carry real pierce values (0.1-0.75); the attacker key MUST be
+        // passed (4th arg) or pierce silently reads 0 (break-it r14).
         if (prot > 0 && final > 0) {
           let pierce = 0;
           try { const atk = this.tbFighter(sourceKey); pierce = (atk && atk.mdef && atk.mdef.pierce) || 0; } catch (e) {}
