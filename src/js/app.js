@@ -13740,6 +13740,8 @@
     if (pantryBtn) pantryBtn.onclick = () => pantrySheet();
     const cachesBtn = document.getElementById('x-caches');
     if (cachesBtn) cachesBtn.onclick = () => cachesSheet();
+    // FEAST (pacing build 2026-10-10): player-hosted feast from the Haven panel.
+    document.querySelectorAll('[data-feast]').forEach(b => b.onclick = () => { Game.hostFeast(); refresh(); });
     // Village stash buttons (Haven panel). Give = all you carry; Take = 5.
     document.querySelectorAll('[data-stash-give]').forEach(b => b.onclick = () => { Game.donateMaterial(b.dataset.stashGive, 9999); refresh(); });
     document.querySelectorAll('[data-stash-take]').forEach(b => b.onclick = () => { Game.takeMaterial(b.dataset.stashTake, 5); refresh(); });
@@ -14094,6 +14096,16 @@
         ${Game.visitorHtml ? Game.visitorHtml() : ''}`;
       })()}
       <button class="btn sm ghost" id="x-caches">📍 Caches</button>
+      ${(() => {
+        // FEAST (pacing build 2026-10-10): the player-hosted feast — a real
+        // positive social engine. Cost shown honestly; the engine refuses
+        // when the pantry can't carry it.
+        try {
+          const rosterN = (Game.villageRoster ? Game.villageRoster().length : 12) || 12;
+          const cost = Math.max(1500, 400 * rosterN);
+          return `<button class="btn sm" data-feast title="Open the pantry wide: ${cost.toLocaleString()} kcal, one evening, everyone eats together">🍖 Host a feast (${cost.toLocaleString()} kcal)</button>`;
+        } catch (e) { return ''; }
+      })()}
       ${sleepHintHTML()}
       ${(() => {
         try {

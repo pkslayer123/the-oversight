@@ -8,8 +8,10 @@
 //   - lifeseedKin(vid)
 //   - lifeseedText(vid)
 //   - resolveKeepsakeText(item)
+//   - recordLifeseedEvent(vid, kind)
 // rules:
 //   - (none documented)
+//   - lived_events_written: true (code: lifeseed.js — recordLifeseedEvent writes vp.lifeseed.lived; convoDrift reads it)
 // consumes:
 //   - state.seed
 // ============ LIFESEEDS: the procedural foundation ============
@@ -420,6 +422,23 @@
         if (/\{[a-z]+\}/.test(ch.backstory || '')) errors.push(`${ch.name}: unreplaced placeholder in backstory`);
       }
       return { errors: errors.slice(0, 40), total: errors.length, checked: n || 50 };
+    },
+    // recordLifeseedEvent(vid, kind): the LIVED-EVENT writer. convoDrift reads
+    // vp.lifeseed.lived to bend temperaments by what happened TO a villager —
+    // but nothing ever wrote it (pacing audit 2026-10-09: the writer was dead,
+    // so drift could never see feast_shared, kindness, etc.). Now it can.
+    // Capped at 40 events; kinds are the drift vocabulary.
+    recordLifeseedEvent(vid, kind) {
+      if (!vid || !kind) return false;
+      try {
+        const vp = this.vpOf ? this.vpOf(vid) : null;
+        if (!vp) return false;
+        vp.lifeseed = vp.lifeseed || {};
+        vp.lifeseed.lived = vp.lifeseed.lived || [];
+        vp.lifeseed.lived.push({ kind, day: (this.state.scholar || {}).day || 1 });
+        if (vp.lifeseed.lived.length > 40) vp.lifeseed.lived.splice(0, vp.lifeseed.lived.length - 40);
+        return true;
+      } catch (e) { return false; }
     },
   };
 

@@ -18,6 +18,7 @@
 //   - whoTag(vid)
 //   - isPlayer(vid)
 //   - pairAffinity(a, b)
+//   - bondKey(a, b), bondGet(a, b), bondAdd(a, b, dv, reason)
 //   - visitorWares(vis)
 //   - traderPay(kcal)
 //   - visitorBuyWare(visId, idx)
@@ -40,6 +41,7 @@
 //   - visitorDaily()
 // rules:
 //   - betrayal_requires_motive: true (code: betrayal.js)
+//   - bonds_form_in_run: true (code: betrayal.js — bondAdd; meals/visits/feasts build, grievances decay, +6/pair/day cap, no bonds with the dead/gone)
 // consumes:
 //   - village.relationships
 //   - scholar.reputation
@@ -97,7 +99,54 @@
       for (const c of (this.state.village.conflicts || [])) {
         if ((c.a === a && c.b === b) || (c.a === b && c.b === a)) s -= (c.tension || 10);
       }
+      // BONDS (pacing build 2026-10-10): relationships formed DURING the run.
+      const bnd = this.bondGet ? this.bondGet(a, b) : null;
+      if (bnd) s += Math.max(-30, Math.min(30, (bnd.v || 0) / 2)) + ((bnd.depth || 0) * 2);
       return clamp(s, -60, 60);
+    },
+    // ---------- 2b. BONDS: the village befriends itself ----------
+    // The audit found the social graph frozen at gen time — trust-of-player
+    // was the only persistent relationship number, villagers never became
+    // friends mid-run. v.bonds["a|b"] = {v, depth, day, dayGain}: v is the
+    // living warmth (-100..100), depth is sediment (-3..3) so sustained
+    // warmth leaves a permanent point and long relationships survive a quiet
+    // fortnight. pairAffinity reads them above.
+    bondKey(a, b) { return a < b ? a + '|' + b : b + '|' + a; },
+    bondGet(a, b) {
+      const v = this.state.village || {};
+      v.bonds = v.bonds || {};
+      return v.bonds[this.bondKey(a, b)] || null;
+    },
+    bondAdd(a, b, dv, reason) {
+      // no self-bonds; no bonds with the dead or the gone (break-it: the
+      // first grave must not leave phantom friendships behind).
+      if (!a || !b || a === b) return false;
+      try {
+        const roster = (this.state.village || {}).roster || [];
+        if (roster.indexOf(a) === -1 || roster.indexOf(b) === -1) return false;
+      } catch (e) { return false; }
+      const v = this.state.village;
+      v.bonds = v.bonds || {};
+      const k = this.bondKey(a, b);
+      const day = (this.state.scholar || {}).day || 1;
+      const bnd = v.bonds[k] || { v: 0, depth: 0, day: 0, dayGain: 0 };
+      // no same-day inflation: at most +6 per pair per day.
+      let add = dv;
+      if (dv > 0) {
+        if (bnd.day !== day) { bnd.day = day; bnd.dayGain = 0; }
+        const room = Math.max(0, 6 - (bnd.dayGain || 0));
+        add = Math.min(dv, room);
+        bnd.dayGain = (bnd.dayGain || 0) + add;
+      }
+      const before = bnd.v || 0;
+      bnd.v = Math.max(-100, Math.min(100, before + add));
+      // DRIFT SEDIMENT: crossing a 25-multiple banks a permanent point of
+      // depth, up or down. Depth -3..+3.
+      const crossed = (th) => (before < th && bnd.v >= th) || (before > th && bnd.v <= th);
+      if (crossed(25) || crossed(50) || crossed(75)) bnd.depth = Math.min(3, (bnd.depth || 0) + 1);
+      if (crossed(-25) || crossed(-50) || crossed(-75)) bnd.depth = Math.max(-3, (bnd.depth || 0) - 1);
+      v.bonds[k] = bnd;
+      return true;
     },
     // grievance: 0..100. Why A might want B hurt. Symmetric-capable.
     grievanceBetween(a, b) {
@@ -128,6 +177,9 @@
       const bs = this.betrayalState();
       bs.grievances = bs.grievances || [];
       bs.grievances.push({ by, against, kind, severity: severity || 15, day: this.state.scholar.day });
+      // CRUELTY DECAYS (pacing build 2026-10-10): a recorded grievance eats
+      // the bond between the two — warmth built over weeks can crack.
+      try { if (this.bondAdd) this.bondAdd(by, against, -Math.min(12, (severity || 15) / 2), 'grievance'); } catch (e) {}
     },
     // motive for A to move against B: grievance + ambition + fear + envy
     motiveBetween(a, b) {

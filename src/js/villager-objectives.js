@@ -706,13 +706,17 @@
       } else if (purpose === 'visit' || purpose === 'guard') {
         if (playerAtHaven) {
           var withLine = '';
+          var withId = null;
           try {
             var o = this.objOf(vid);
-            if (o.companion) withLine = ' with ' + this.displayName(o.companion);
-            else if (o.targetVid) withLine = ' — found ' + this.displayName(o.targetVid).split(' ')[0];
+            if (o.companion) { withLine = ' with ' + this.displayName(o.companion); withId = o.companion; }
+            else if (o.targetVid) { withLine = ' — found ' + this.displayName(o.targetVid).split(' ')[0]; withId = o.targetVid; }
           } catch (e) {}
           this.say(`🚶 ${nm} is back${withLine}.`);
         }
+        // BONDS (pacing build 2026-10-10): a completed visit with someone —
+        // miles walked together, stories traded. +4.
+        try { if (withId && this.bondAdd) this.bondAdd(vid, withId, 4, 'visit'); } catch (e) {}
         try { this.seedGossip('return', { who: vid }, []); } catch (e) {}
       }
       // objective complete

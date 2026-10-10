@@ -14,6 +14,11 @@
 // rules:
 //   - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
 //   - ability_cap: 6 (code: progression.js)
+//   - feast_surge_gate: 3 abilities at L3 (code: progression.js — channelSentiment; was all-maxed, unwalkable per 2026-10-09 audit)
+//   - arc2_deed: true (code: progression.js — checkArc requires breadth>=6 or a held contest; the beat text is honest again)
+//   - arc3_crucible: 2 crisis kinds (code: progression.js — checkArc; grave-first runs get the acknowledgment line)
+//   - sentiment_at_60: true (code: progression.js — slotMoment(60); was 80)
+//   - audience_encore: true (code: progression.js — checkAudienceEncore, recurring post-40 trials)
 // consumes:
 //   - scholar.xp
 //   - scholar.abilities
@@ -22,6 +27,9 @@
 //
 // 1. ABILITY SLOT LADDER: 6 slots. Each unlock is a MOMENT — discovery (20),
 //    mentorship (40), audience trial (60), neural creep (70), the grant (80).
+//    Slot GRANULARITY (pacing build 2026-10-10): 20->2, 35->3, 50->4, 65->5,
+//    80->6 — the beats stay, the ladder fills between them. abilitySlots()
+//    in game.js is the authority.
 //    NPCs climb the same ladder visibly (gossip).
 // 2. SYSTEM INTEGRATION STAGES: 0 journal (pre-Day 7) / 1 overlay / 2 neural
 //    creep / 3 full integration. The interface IS the story (body class).

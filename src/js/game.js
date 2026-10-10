@@ -8,6 +8,7 @@
 //   - sleep()
 //   - eat()
 //   - eatOne(idx)
+//   - hostFeast()
 //   - spendCombatAction(kind)
 //   - tbFighter(id)
 //   - fighterSize(f), fighterTiles(f) (multi-tile occupancy)
@@ -21368,6 +21369,54 @@
       return { ate, gave, drawn: pile.taken };
     },
 
+    // hostFeast(): the player hosts a real feast from the pantry. (pacing
+    // build 2026-10-10, Steve: "Continue all proposed" — the audit found
+    // feastSurge was a combat multiplier with no actual feast behind it, and
+    // the village had no positive social engine.)
+    // Cost: 400 kcal x roster (min 1,500), drawn as REAL pantry items via
+    // pantryDraw — the pantry gets lighter, honestly. 1/day, at the haven,
+    // costs an evening (48 ticks).
+    // Every attendee gets: a feast_shared memory (remember) + the lifeseed
+    // lived event (the writer drift reads — it was dead before this), trust
+    // through the capped deed path (bumpTrust), and the feast seeds gossip.
+    hostFeast() {
+      const s = this.state.scholar, v = this.state.village;
+      if (this.over) return 'The game is over.';
+      if (!this.playerAtHaven || !this.playerAtHaven()) return 'You need to be at the haven to host a feast.';
+      const day = s.day || 1;
+      if (s.feastDay === day) return 'One feast a day. The fire needs to rest too.';
+      const roster = (v.roster || []).filter(id => id !== this.villagerId);
+      const present = roster.filter(id => !(v.away && v.away[id]));
+      if (!present.length) return 'Nobody is here to feast with.';
+      const cost = Math.max(1500, 400 * (present.length + 1));
+      let have = 0;
+      try { have = this.pantryKcalLive ? this.pantryKcalLive(v) : 0; } catch (e) {}
+      if (have < cost) return `The pantry holds about ${Math.round(have).toLocaleString()} kcal — a feast for ${present.length + 1} needs ${cost.toLocaleString()}. Not today.`;
+      // the cost is real: draw actual items out of the pantry.
+      const drawn = this.pantryDraw(v, cost, {});
+      const spent = Math.round(drawn.taken || 0);
+      s.feastDay = day;
+      const hostName = (() => { try { return this.displayName(this.villagerId).split(' ')[0]; } catch (e) { return 'you'; } })();
+      for (const vid of present) {
+        try { this.remember(vid, 'feast', `${hostName} hosted a feast — real food, firelight, laughing.`); } catch (e) {}
+        try { if (this.recordLifeseedEvent) this.recordLifeseedEvent(vid, 'feast_shared'); } catch (e) {}
+        try { this.bumpTrust(vid, 3, 'feast'); } catch (e) {}
+        try { const n = this.npcNeeds(vid); n.hunger = Math.max(0, (n.hunger || 0) - 30); n.social = Math.min(100, (n.social || 0) + 10); } catch (e) {}
+      }
+      // the feast is communal: everyone who ate together warms to each other.
+      try {
+        for (let i = 0; i < present.length; i++) for (let j = i + 1; j < present.length; j++) {
+          if (this.bondAdd) this.bondAdd(present[i], present[j], 1, 'feast');
+        }
+      } catch (e) {}
+      try { this.seedGossip('feast', { host: this.villagerId }, present); } catch (e) {}
+      try { if (this.tickAction) this.tickAction(48); } catch (e) {}
+      const names = present.slice(0, 4).map(id => { try { return this.displayName(id).split(' ')[0]; } catch (e) { return 'someone'; } });
+      const more = present.length > 4 ? ` and ${present.length - 4} more` : '';
+      this.say(`🍖 FEAST — ${hostName} opens the pantry wide. ${names.join(', ')}${more} eat until the fire burns low. Somebody laughs so hard they cry. For one evening, nobody is surviving — they're just together. (−${spent.toLocaleString()} kcal from the pantry)`);
+      try { this.save(); } catch (e) {}
+      return 'The feast is held.';
+    },
     // logSitting(v, vid, part): one sitting at the fire. Company isn't
     // scheduled (Steve 2026-10-08: no big daily communal feast) — but when
     // villagers land at the same fire at the same part of day, some linger.
@@ -21386,6 +21435,9 @@
         n.social = Math.min(100, (n.social || 0) + 3);
         this.remember(vid, 'meal', 'ate with ' + oname);
         try { this.remember(o.vid, 'meal', 'ate with ' + nm); } catch (e) {}
+        // BONDS (pacing build 2026-10-10): lingering over the fire together
+        // builds villager↔villager warmth. +2 per shared lingering meal.
+        try { if (this.bondAdd) this.bondAdd(vid, o.vid, 2, 'lingering meal'); } catch (e) {}
         if (Math.random() < 0.3 && this.playerAtHaven())
           this.say(`${nm} and ${oname} lingered over the fire together.`);
       }
