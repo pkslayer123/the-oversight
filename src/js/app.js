@@ -15708,9 +15708,16 @@
   function codexAliensSection(aliens) {
     const list = Object.entries(aliens || {});
     if (!list.length) return '';
+    // KNOWLEDGE GATE (break-it 2026-10-10): the word "alien" IS the alien
+    // truth (canon) — it never appears in player-facing copy pre-reveal. The
+    // old header read ALIENS the moment you'd met one stranger. Pre-reveal
+    // the section reads STRANGERS, matching the entry titles.
+    const anyTruth = list.some(([, a]) => a.species && a.species !== 'unknown');
     const STAGE = { encountered: 'encountered', identified: 'identified', understood: 'understood' };
-    return '<h1 class="title" style="font-size:18px">ALIENS</h1>' +
-      '<p class="small"><i>not everyone out there is a person. the book keeps what you have learned about them — and nothing you have not.</i></p>' +
+    return '<h1 class="title" style="font-size:18px">' + (anyTruth ? 'ALIENS' : 'STRANGERS') + '</h1>' +
+      '<p class="small"><i>' + (anyTruth
+        ? 'not everyone out there is a person. the book keeps what you have learned about them — and nothing you have not.'
+        : 'some people you meet move wrong. the book keeps what you have seen — and nothing you have not.') + '</i></p>' +
       list.map(([pid, a]) => {
         const truth = a.species && a.species !== 'unknown';
         return `<div class="card codex"><h3>${esc(a.name || 'someone')} <span class="small" style="opacity:.7">${esc(a.title || 'stranger')}</span></h3>` +

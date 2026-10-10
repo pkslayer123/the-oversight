@@ -1465,7 +1465,13 @@
         var rec = ap.met[pid];
         if (!per || rec.encounters < 2) continue;
         if (per.disposition === 'sadistic') {
-          msgs.push('"' + per.name + ' has requested you specifically for the next exhibition. That\'s... not good."');
+          // KNOWLEDGE GATE (break-it 2026-10-10): the old line named the
+          // rival with no gate and no reveal — the same class r7 fixed in
+          // apFeedMessage. Naming on the feed IS the reveal path.
+          var _rknown = false;
+          try { _rknown = !!this.apKnowsAlien(pid); } catch (e0rk) {}
+          if (_rknown) { msgs.push('"' + per.name + ' has requested you specifically for the next exhibition. That\'s... not good."'); }
+          else { msgs.push('"Someone out there has requested you specifically for the next exhibition. That\'s... not good."'); }
         } else if (per.disposition === 'benevolent' && rec.bond > 1) {
           msgs.push('"Someone in the audience keeps voting for you. The System can\'t trace the votes. Curious."');
         }
@@ -1495,11 +1501,14 @@
       var ap = this.apState();
       var rec = ap.met[pid] || { encounters: 0 };
 
-      entry.name = p.name; // the human persona's name — safe pre-reveal
-      // KNOWLEDGE GATE (Steve 2026-10-08): title/species/disposition name the
-      // alien truth. Pre-reveal the entry reads as the human persona only —
-      // "if you don't know, it doesn't show."
       var known = !!ap.known[pid];
+      // KNOWLEDGE GATE (break-it 2026-10-10): the old line stored the
+      // persona's true name ungated ("safe pre-reveal") — but the fighter
+      // card, combat intro, feed lines, and reveal message all treat p.name
+      // as the alien truth, and the codex renderer prints entry.name
+      // verbatim. Pre-reveal the entry is filed under "someone"; the reveal
+      // re-runs this entry and the name lands then.
+      entry.name = known ? p.name : 'someone';
       entry.title = known ? p.title : 'stranger';
       entry.species = known ? p.species : 'unknown';
       entry.disposition = known ? p.disposition : 'unknown';
@@ -1683,7 +1692,13 @@
         // HONEST (break-it 2026-10-08 r4): "the odds just got interesting"
         // was the same stale odds register (see apFeedMessage fix above) —
         // broadcast color, not a mechanical claim.
-        this.sysSay('◈ The System feed flickers: "' + per.name + ' has entered the game. The feed just got a lot more interesting."');
+        // KNOWLEDGE GATE (break-it 2026-10-10): the old line named the
+        // persona outright on first entry — every other naming site gates on
+        // apKnowsAlien (the r7 feed-naming precedent), and this naming never
+        // registered a reveal. Pre-reveal they're "a stranger".
+        var _aknown = false;
+        try { _aknown = !!this.apKnowsAlien(chosen); } catch (e0ak) {}
+        this.sysSay('◈ The System feed flickers: "' + (_aknown ? per.name : 'A stranger') + ' has entered the game. The feed just got a lot more interesting."');
       }
       return chosen;
     },
@@ -1707,7 +1722,11 @@
       if (daysIn >= maxStay || bored) {
         delete active[pid];
         if (per && this.state.systemArrived && Math.random() < 0.5) {
-          this.sysSay('◈ "' + per.name + ' has left the game. ' +
+          // KNOWLEDGE GATE (break-it 2026-10-10): sibling of the activation
+          // leak — the exit announcement named the persona pre-reveal.
+          var _dknown = false;
+          try { _dknown = !!this.apKnowsAlien(pid); } catch (e0dk) {}
+          this.sysSay('◈ "' + (_dknown ? per.name : 'A stranger') + ' has left the game. ' +
             (bored ? 'Said something about dinner reservations.' : 'The feed goes quiet.') + '"');
         }
       }
@@ -1809,7 +1828,9 @@
           return rid !== this.villagerId && !(this.vpOf(rid) || {}).dead;
         }, this);
         if (!roster.length) return false;
-        // Don't kill too often — max 1 villager per 5 days per alien
+        // Don't kill too often — max 1 villager per 5 days TOTAL (shared
+        // cooldown, not per-alien; break-it 2026-10-10: the old comment said
+        // "per alien" but the engine has always used one shared key).
         if (day - (ap.lastVillagerKillDay || -999) < 5) return false;
 
         var victim = roster[Math.floor(Math.random() * roster.length)];
@@ -2268,7 +2289,10 @@
     },
 
     // apBeamResistLevel: none (0), partial (1-2), substantial (3-4), full (5+).
-    // 5 armor slots; bonded keepsakes in inventory can push beyond 5.
+    // 5 armor slots; a full set on torso counts per covered slot, so 5 is the
+    // practical max. Only EQUIPPED armor counts (break-it 2026-10-10: the old
+    // comment claimed bonded keepsakes in inventory could push beyond 5 —
+    // the engine only scans equipped slots, so the comment was the lie).
     apBeamResistLevel: function () {
       var n = this.apBeamResistPieces().length;
       if (n <= 0) return 'none';
@@ -2374,11 +2398,11 @@
         this.say('◈ Your full resistant set sings — the beam breaks across it like water on stone. You can fight them now. It\'s still going to hurt.');
       }
       // Apply the damage via the normal path (bypassing armor since we
-      // already calculated final — pass a flag to skip armor reduction)
-      var newOpts = {};
-      try { for (var k in (opts || {})) newOpts[k] = opts[k]; } catch (e) {}
-      newOpts._beamFinal = true; // tbDamage wrap checks this to skip armor
-      // We can't easily re-enter tbDamage, so apply directly:
+      // already calculated final — damage is applied directly below).
+      // DEAD CODE (break-it 2026-10-10): an orphaned flag object used to be
+      // built here and marked "beam final", but nothing ever read it — the
+      // tbDamage wrap's matching branch was removed (break-it 2026-10-08)
+      // and apBeamHit never re-enters tbDamage.
       // AUDIO (break-it 2026-10-09): the beam DISCHARGES here — the resolve
       // sounds like any machine beam (droneBeam via the impact dispatcher),
       // whether or not the target is still standing to take it. Was: the
@@ -2680,7 +2704,7 @@
     // VETERAN PLATE (break-it 2026-10-08): Sarge's tech "reduces all damage
     // by 2" was pure copy — no reduction existed in the damage path. Applied
     // here, on the target fighter's alien tech (base or upgraded id).
-    // DEAD CODE (break-it 2026-10-08): the old `opts._beamFinal` branch below
+    // DEAD CODE (break-it 2026-10-08): the old "beam final" opts branch below
     // is removed — apBeamHit applies beam damage directly and never re-enters
     // tbDamage, so no caller could ever set that flag.
     var _tbDamage = G.tbDamage;
