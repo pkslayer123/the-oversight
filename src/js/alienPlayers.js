@@ -85,6 +85,7 @@
 //   - (club_boons_vote) a lane at 50+ may vote a small favor — fight: +10 health, survival: +300 kcal pantry, social: +1 unity, showbiz: wacky curio — max 1 per 5 days, always announced (code: apClubBoon, audit-shows 2026-10-09)
 //   - (package_club_credit) care packages name the loudest club; feed messages get per-lane lines at 50+ (code: apCarePackage, apPackageClubLine, apFeedMessage, audit-shows 2026-10-09)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
+//   - (knowledge_alien_word) the word "alien" IS the alien truth and never appears in player-facing copy pre-reveal — the beam-horror lesson, sadistic package, contact establishment, duel feed, and Pip's rookie mistakes all gate on apKnowsAlien; stripping alien armor off a body reveals the persona on the spot (the item is literally named "Alien <piece>") — same class as the gated "MULTIPLE alien players" line (break-it 2026-10-09 r7) (code: alienPlayers.js)
 //   - (lifeline_player_only) the benevolent lifeline fires only at the player's own death roll — apContestInterference(ac, {forPlayer:true}) from contestChoose's killing-blow check and from tbEnd's arena-loss branch (break-it 2026-10-08: arena deaths never checked the lifeline). The save converts death into 'lost' and leaves the player barely alive (break-it 2026-10-08: 0-HP saves died at the next endDay). The verdict call never passes forPlayer, so deathSave is always false there — a villager's played death is never converted by a hidden roll (break-it 2026-10-08: the old playerIn-only gate fired the lifeline at VERDICT, wasting the 7-day cooldown on a non-death and erasing a villager's earned death) (code: apContestInterference, contestChoose, tbEnd)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
@@ -902,6 +903,12 @@
               // their armor, survive beams — never actually worked.
               try { this.apGrantItem(dropId); } catch (e) {}
               this.say('◈ You strip ' + dropDef.name.toLowerCase() + ' from their body. It\'s warm. It\'s still humming. This will stop beam weapons.');
+              // HONEST (break-it 2026-10-09 r7): the armor is literally named
+              // "Alien <piece>" — holding humming alien hardware off a warm
+              // body IS learning the truth firsthand. The strip reveals them,
+              // so the item name never precedes the knowledge. (A kill with
+              // no salvage still follows the normal reveal paths.)
+              try { if (!this.apKnowsAlien(pid)) this.apRevealAlien(pid, 'you stripped their armor'); } catch (e) {}
             }
           } else if (available.length === 0) {
             this.say('◈ They were wearing standard gear — nothing you don\'t already have.');
@@ -1388,7 +1395,13 @@
       if (per.disposition === 'sadistic') {
         // CRUEL GIFT: looks helpful, isn't — it's real AND it's a tracker.
         this.say('📦 A package arrives, wrapped in black ribbon. The card reads: "With love, ' + per.name + '."');
-        this.say('Inside: a beautiful alien medkit. It\'s... ticking? No — it\'s humming. It\'s humming your name.');
+        // KNOWLEDGE GATE (break-it 2026-10-09 r7): "alien medkit" names the
+        // alien truth — the word "alien" is gated like "MULTIPLE alien
+        // players" above. Pre-reveal it's advanced tech from a sender you
+        // can't place yet. (The signed cover name stays: they signed it.)
+        var _pkgKnown = false;
+        try { _pkgKnown = !!this.apKnowsAlien(pid); } catch (e0p) {}
+        this.say('Inside: a beautiful ' + (_pkgKnown ? 'alien ' : '') + 'medkit. It\'s... ticking? No — it\'s humming. It\'s humming your name.');
         // HONEST (break-it 2026-10-08): the copy promised a medkit but none
         // was ever given. The medkit is real and usable — and it's a tracker.
         // (The old "smash it or keep it" choice was never implemented; the
@@ -1577,7 +1590,13 @@
       var vname = 'Someone';
       try { vname = this.displayName(vid) || 'Someone'; } catch (e) {}
       this.say('💬 ' + vname + ' pulls you aside. "I need to tell you something. Last night I... dreamed? No. I was AWAKE. And something spoke to me. Not the System — something else. It said: \'Tell the human to watch the northern treeline.\' Then it was gone."');
-      this.say('(' + vname + ' has been contacted by an alien player. They don\'t understand what happened. But they\'ll warn you when they dream again.)');
+      // KNOWLEDGE GATE (break-it 2026-10-09 r7): the parenthetical is
+      // narrator voice — "alien player" names the alien truth to a player
+      // who may never have earned it. Gate on knowing ANY alien; otherwise
+      // the contact is just "something".
+      var _anyKnown = false;
+      try { for (var _ck in (this.apState().known || {})) { _anyKnown = true; break; } } catch (e0c) {}
+      this.say('(' + vname + ' has been contacted by ' + (_anyKnown ? 'an alien player' : 'something') + '. They don\'t understand what happened. But they\'ll warn you when they dream again.)');
       return vid;
     },
 
@@ -2027,10 +2046,15 @@
       var per = this.apPersona(pid);
       if (!per || pid !== 'pip_quindle') return false;
 
+      // KNOWLEDGE GATE (break-it 2026-10-09 r7): "alien currency" names the
+      // alien truth on the System feed. Pre-reveal it's coins that chime
+      // wrong — the joke lands either way.
+      var _pipKnown = false;
+      try { _pipKnown = !!this.apKnowsAlien('pip_quindle'); } catch (e0m) {}
       var mistakes = [
         '◈ "Pip just tried to pet a monster. It did not go well. Pip is fine. The monster is confused."',
         '◈ "Pip set up camp in a monster den. By accident. They\'re having a great time. The monster left."',
-        '◈ "Pip tried to trade with a villager using alien currency. The villager now thinks Pip is a god. Pip is delighted."',
+        '◈ "Pip tried to trade with a villager using ' + (_pipKnown ? 'alien currency' : 'coins that chime wrong') + '. The villager now thinks Pip is a god. Pip is delighted."',
         '◈ "Pip got lost. Again. The System had to give them directions. The feed is laughing WITH them, not at them. Mostly."',
       ];
       if (this.state.systemArrived && Math.random() < 0.6) {
@@ -2083,7 +2107,12 @@
           if (lw !== 'rich' || Math.random() < 0.5) {
             delete active[loser];
             if (this.state.systemArrived && Math.random() < 0.5) {
-              this.sysSay('◈ "' + (this.apKnowsAlien(loser) ? pl.name : 'The loser') + ' has left the game. Even aliens have limits. Well, some of them."');
+              // KNOWLEDGE GATE (break-it 2026-10-09 r7): the old line gated
+              // the NAME but still said "aliens" to a player who never earned
+              // the truth. The whole sentence follows the gate now.
+              var _duelKnown = false;
+              try { _duelKnown = !!this.apKnowsAlien(loser); } catch (e0d) {}
+              this.sysSay('◈ "' + (_duelKnown ? pl.name : 'The loser') + ' has left the game. ' + (_duelKnown ? 'Even aliens have limits.' : 'Even they have limits.') + ' Well, some of them."');
             }
           }
         }
@@ -2316,7 +2345,13 @@
       if (n === 0 && !s._beamHorrorSeen) {
         s._beamHorrorSeen = true;
         this.say('💀 The beam doesn\'t care about your armor. It goes through like it isn\'t there.');
-        this.say('💀 Your ' + this.apArmorName() + ' might as well be paper. You need alien armor — or something you love enough to resonate.');
+        // KNOWLEDGE GATE (break-it 2026-10-09 r7): "alien armor" names the
+        // alien truth. Pre-reveal the lesson is wordless: their armor stops
+        // it, yours doesn't. (The raise above already gates "The stranger" /
+        // "a beam weapon" the same way.)
+        var _beamKnown = false;
+        try { _beamKnown = !!((opts && opts.pid) && this.apKnowsAlien(opts.pid)); } catch (e0b) {}
+        this.say('💀 Your ' + this.apArmorName() + ' might as well be paper. ' + (_beamKnown ? 'You need alien armor — or something you love enough to resonate.' : 'Whatever they\'re wearing stops this. Yours doesn\'t.'));
         this.say('💀 THIS IS NOT A FAIR FIGHT. Run, or find resistant gear.');
         try { this.drama('beamHorror', s.mx, s.my); } catch (e) {}
       } else if (n > 0 && n < 5 && !s._beamPartialSeen) {
@@ -2465,7 +2500,7 @@
         // not the deer's beamCharge — other beams are machines.
         try { this.audioEvent('telegraph', { pattern: 'beam', urgency: 1 }); } catch (e) {}
         // Player is the target (beam weapons are for the player)
-        this.apBeamHit('player', 0, beamName, { damageType: 'alien_beam' });
+        this.apBeamHit('player', 0, beamName, { damageType: 'alien_beam', pid: pid });
         return true;
       } catch (e) { return false; }
     },

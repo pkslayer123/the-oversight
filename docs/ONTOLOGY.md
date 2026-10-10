@@ -72,6 +72,7 @@ Late-game sentient aliens impersonating humans in an exclusive encounter pool. S
 - (club_boons_vote) a lane at 50+ may vote a small favor — fight: +10 health, survival: +300 kcal pantry, social: +1 unity, showbiz: wacky curio — max 1 per 5 days, always announced (code: apClubBoon, audit-shows 2026-10-09)
 - (package_club_credit) care packages name the loudest club; feed messages get per-lane lines at 50+ (code: apCarePackage, apPackageClubLine, apFeedMessage, audit-shows 2026-10-09)
 - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
+- (knowledge_alien_word) the word "alien" IS the alien truth and never appears in player-facing copy pre-reveal — the beam-horror lesson, sadistic package, contact establishment, duel feed, and Pip's rookie mistakes all gate on apKnowsAlien; stripping alien armor off a body reveals the persona on the spot (the item is literally named "Alien <piece>") — same class as the gated "MULTIPLE alien players" line (break-it 2026-10-09 r7) (code: alienPlayers.js)
 - (lifeline_player_only) the benevolent lifeline fires only at the player's own death roll — apContestInterference(ac, {forPlayer:true}) from contestChoose's killing-blow check and from tbEnd's arena-loss branch (break-it 2026-10-08: arena deaths never checked the lifeline). The save converts death into 'lost' and leaves the player barely alive (break-it 2026-10-08: 0-HP saves died at the next endDay). The verdict call never passes forPlayer, so deathSave is always false there — a villager's played death is never converted by a hidden roll (break-it 2026-10-08: the old playerIn-only gate fired the lifeline at VERDICT, wasting the 7-day cooldown on a non-death and erasing a villager's earned death) (code: apContestInterference, contestChoose, tbEnd)
 - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
@@ -738,9 +739,10 @@ Perception system. Proximity hints, spotting.
 ### progression (`progression.js`)
 Character progression. XP, levels, abilities.
 
-**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), progState(), progDaily(), slotMoment()
+**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), progState(), fireCrisis(kind, ctx), progDaily(), slotMoment()
 
 **Rules:**
+- crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
 - ability_cap: 6 (code: progression.js)
 
 **Consumes:** scholar.xp, scholar.abilities
