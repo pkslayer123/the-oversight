@@ -121,6 +121,11 @@ function setPack(pid, kcal) {
   const full = ovs[0];
   full.capacity = full.population; // no room
   ok('villageRoom reports 0 when full', Game.villageRoom(full) === 0);
+  // FOG (break-it travel 2026-10-09): the card gates on seen tiles, and
+  // petition refuses from afar — walk up first so both asserts test the
+  // CAPACITY reason, not distance/fog.
+  Game.map.px = full.x; Game.map.py = full.y;
+  try { Game.checkVillageProximity(); } catch (e) {}
   const cardFull = Game.villageCard(full.id);
   ok('card shows no room to an exile', /no room/.test(cardFull.sub));
   ok('petition at a full village refused', Game.petitionVillage(full.id) === false);
@@ -128,6 +133,8 @@ function setPack(pid, kcal) {
   console.log('== 5. JOIN ARC: petition accepted -> probation ==');
   const home = ovs[1];
   home.capacity = (home.population || 8) + 2;
+  Game.map.px = home.x; Game.map.py = home.y; // petition happens face to face
+  try { Game.checkVillageProximity(); } catch (e) {}
   Game.state.village.gossip = [];
   Game.state.codex.skills = { read_people: { level: 3 } };
   setPack(pid2, 2000);

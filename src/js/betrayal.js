@@ -2234,6 +2234,15 @@
     if (!f.siteClaimed) missing.push('a claimed campsite');
     if (f.shelterTier < RQ.shelterTier) missing.push(`a hut or better (shelter tier ${f.shelterTier}/${RQ.shelterTier})`);
     if (Math.round(f.stockpileKcal) < RQ.stockpileKcal) missing.push(`cached food (${Math.round(f.stockpileKcal)}/${RQ.stockpileKcal} kcal)`);
+    // THE CAIRN IS A PLACE (drifter break-it 2026-10-10): _forkNewHaven used
+    // to snap the player to the claimed site from anywhere on the map — claim
+    // at one corner, walk to the other, found: a free cross-map teleport that
+    // skipped the walk, the monsters, and the time. Founding happens where
+    // you stand: walk back to your cairn first.
+    if (f.siteClaimed && f.claimX != null && f.claimY != null && this.map) {
+      const d = Math.abs((this.map.px || 0) - f.claimX) + Math.abs((this.map.py || 0) - f.claimY);
+      if (d > 1) missing.push(`walk back to your cairn (${d} tiles away — founding happens where you stand)`);
+    }
     return missing;
   },
   exileSelfActions() {
@@ -2285,6 +2294,18 @@
     if (!s.exiled) return null;
     const f = this.foundingState();
     if (f.siteClaimed) return null;
+    // INHABITED GROUND (drifter break-it 2026-10-10): another village's tile
+    // is their home, not empty wilderness — claiming it let the fork plant a
+    // 'haven' tile on top of their record (two villages, one tile; the map
+    // tap showed their card while returnToVillage PINed your fire). A haven
+    // starts on empty ground, not on top of the neighbors.
+    try {
+      const px = this.map ? this.map.px : null, py = this.map ? this.map.py : null;
+      if ((this.state.otherVillages || []).some(v => v.x === px && v.y === py)) {
+        this.say(`People already live here — smoke, voices, somebody else's fire. A haven starts on empty ground, not on top of your neighbors. Walk on and claim somewhere wild.`);
+        return null;
+      }
+    } catch (e) {}
     f.siteClaimed = true;
     // the claim is a PLACE, not a flag — the haven rises here, not wherever
     // you happen to be standing when you found (drifter loop 2026-10-07:
