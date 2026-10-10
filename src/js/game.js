@@ -21086,8 +21086,22 @@
       // voice, its job).
       // BEST-FIT draw, shared with the village's own meals (see pantryDraw):
       // smallest pieces first, spoiled skipped, never a slab for a small need.
-      const taken = this.pantryDraw(v, want, {}).taken;
+      // VILLAGE-COOKED (playtest forager 2026-10-10): the communal meal is
+      // cooked by the village cook, not grabbed raw — the draw runs the same
+      // cook:true abstraction the villagers' meals use (rawKcal staples
+      // valued cooked, needsCooking counted safe), and the player's share
+      // carries the same consequences the villagers face: monster-meat
+      // weirdness survives the fire (cooked chance), poison and genuinely
+      // unsafe food survive it too. Before, the player drew raw values with
+      // zero rolls — weird meat laundered through the pantry was free
+      // calories for you and a 20% lottery for everyone else.
+      const exposure = this.freshExposure();
+      const drawn = this.pantryDraw(v, want, { cook: true, exposure });
+      const taken = drawn.taken;
       scholar.kcal = Math.min((scholar.kcal || 0) + taken, bankCap);
+      // The player's body faces what the draw exposed it to — the same
+      // contract as eating the same food yourself at a perfect village cook.
+      if (drawn.items.length) this.playerMealConsequences(drawn.items);
       // HONEST BURN (2026-10-08): the player's meal burns the pantry but the
       // player is not in villageEats' collective loop (parity) — record the
       // draw so the pantry clock counts it.
@@ -21116,6 +21130,57 @@
         this.say(`Village meal: +${Math.round(taken)} kcal${gotWater ? ', +1L water' : ''} from the communal pantry.${trust < 30 ? ' (Half ration — they don\'t trust you yet.)' : ''}`);
       } else {
         this.say(`No food in the pantry. The village is hungry.${gotWater ? ' You still get your 1L water.' : ''}`);
+      }
+    },
+
+    // playerMealConsequences(items): the player's body faces what the
+    // communal draw exposed it to — the same contract as eating the same
+    // food yourself at a perfect village cook. Parasites and raw-food
+    // disease die at the village fire (no roll — the cook:true draw already
+    // priced the safety in); monster-meat weirdness, poison, and genuinely
+    // unsafe food survive the fire, exactly like your own cooking.
+    // Mirrors villagerFoodPoisoning's exposure semantics (see
+    // trackMealExposure): village-cooked needsCooking staples count as
+    // cooked-safe, the same way your own fire clears safe on them.
+    playerMealConsequences(items) {
+      const scholar = this.state.scholar;
+      if (!scholar || !items || !items.length || this.over) return;
+      const shellgut = !!(this.hasStatus && this.hasStatus('scholar', 'shellgut'));
+      for (const entry of items) {
+        const item = entry && entry.item;
+        if (!item) continue;
+        // Village-cooked for consequence purposes — same cooked flag the
+        // villagers' exposure ledger uses (see trackMealExposure).
+        const cookedLike = !!(entry.cooked || item.foodState === 'cooked');
+        // MONSTER WEIRDNESS: cooking is not a cure — same roll as your own
+        // fire, at the same cooked chance. No shellgut carve-out: the
+        // villagers face it armored too (villagerFoodPoisoning rolls
+        // weirdness before the armored checks).
+        const mid = (item.plantId && item.plantId.startsWith('meat_')) ? item.plantId.slice(5) : null;
+        if (mid) {
+          try {
+            this.maybeMonsterWeirdness({
+              plantId: item.plantId,
+              foodState: cookedLike ? 'cooked' : (item.foodState || 'raw'),
+              name: item.name,
+            });
+          } catch (e) {}
+        }
+        if (shellgut) continue;
+        // POISON survives the fire (same as eating it yourself).
+        if (item.poisonRisk && Math.random() < (item.poisonRisk.p || 0.2)) {
+          scholar.health = Math.max(0, (scholar.health || 100) - 10);
+          try { this.applyStatus('scholar', 'poison', { name: (item.poisonRisk.note || 'toxin'), source: 'the communal ' + item.name }); } catch (e) {}
+          this.say(`The communal ${item.name} was poisoned — ${item.poisonRisk.note || 'something toxic in the meal'}. Your veins burn. (-10 health, poisoned)`);
+        }
+        // UNSAFE: the 20% you face on suspect food. Village-cooked
+        // needsCooking staples are cooked-safe (your own fire clears safe
+        // the same way) — only genuinely suspect food rolls.
+        const cookedSafe = cookedLike && (item.rawKcal || item.needsCooking);
+        if (item.safe === false && !cookedSafe && Math.random() < 0.2) {
+          scholar.health = Math.max(0, (scholar.health || 100) - 5);
+          this.say(`The communal ${item.name} was off. Your stomach knots. (-5 health)`);
+        }
       }
     },
 
@@ -21201,7 +21266,12 @@
       if (!exposure || !item) return;
       if (item.diseaseRisk && !cookedByVillage && item.foodState !== 'cooked')
         exposure.raw.push(item.diseaseRisk);
-      if (item.safe === false) exposure.unsafe += 1;
+      // VILLAGE-COOKED NEEDS-COOKING (playtest forager 2026-10-10): the
+      // player's own fire clears safe on cooked rawKcal items ("cooking
+      // kills the risk (mostly)"); the village cook's abstraction clears it
+      // too — otherwise cooked beans/rice roll bad-belly forever.
+      const cookedSafe = cookedByVillage && (item.rawKcal || item.needsCooking);
+      if (item.safe === false && !cookedSafe) exposure.unsafe += 1;
       if (item.poisonRisk) exposure.poison.push(item.poisonRisk);
       const mid = (item.plantId && item.plantId.startsWith('meat_')) ? item.plantId.slice(5) : null;
       if (mid) {
