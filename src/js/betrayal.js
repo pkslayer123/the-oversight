@@ -858,6 +858,26 @@
     // left open with no resolution path. Truth module owns the closer;
     // removeVillager is the one removal choke point.
     try { if (this.closeDoubtsForGone) this.closeDoubtsForGone(vid, how); } catch (e) {}
+    // GHOST-TRIAL CLOSURE (break-it social r11 2026-10-10): an open or
+    // dormant case naming the removed as ACCUSED dies with them — the moot
+    // doesn't try the dead. The old code let an accused killed mid-case be
+    // convened, voted on, and sentenced (exile, for a corpse). Death only
+    // ('killed'/'ambushed'): an EXILED accused is still tried in absentia
+    // (r9 design — the fire can condemn someone who's gone). Cases where
+    // the removed was the TARGET or the accuser stand — the crime happened;
+    // the village can still name it. Same class as doubt closure above.
+    try {
+      const bs = this.betrayalState ? this.betrayalState() : null;
+      const dead = how === 'killed' || how === 'ambushed';
+      if (dead) for (const c of ((bs && bs.cases) || [])) {
+        if ((c.status === 'open' || c.status === 'dormant') && (c.accused || []).includes(vid)) {
+          c.status = 'resolved'; c.resolution = 'accused_died';
+          const nm = (() => { try { return this.displayName(vid); } catch (e) { return 'They'; } })();
+          this.say(`${nm} is gone — the moot doesn't try the dead. The case dies with the accused; the fire remembers the rest.`);
+          try { this.journalNote && this.journalNote('village', 'trial', `Case against ${nm} closed: the accused is dead.`); } catch (e) {}
+        }
+      }
+    } catch (e) {}
     // GHOST-QUEST CLOSURE (break-it social r9 2026-10-09): a quest anchored to
     // a removed giver completed posthumously — the dead "took" the dandelions
     // and the pantry got paid. The debt dies with the leaving: lapse it aloud.
@@ -1249,6 +1269,11 @@
     let pantry = 0;
     try { pantry = (typeof this.pantryKcalLive === 'function') ? (this.pantryKcalLive(this.state.village) || 0) : 0; } catch (e) {}
     if (!pantry) pantry = (this.state.village && this.state.village.pantryKcal) || 0; // compat fallback
+    // EXILE (break-it social r11 2026-10-10): pantry funds are the village's
+    // hands, not yours — havenStoresAccess() is 'none' while exiled. An
+    // exile can't buy votes with the fire's own food (sibling sweep of the
+    // exile pantry-drain class).
+    try { if (this.havenStoresAccess && this.havenStoresAccess() === 'none') pantry = 0; } catch (e) {}
     return pack + pantry >= price;
   },
   // pay for a player's bribe: carried food first, then the pantry stockpile.
@@ -1272,8 +1297,11 @@
         // feeds the same takes/gives bookkeeping as a pantry withdrawal —
         // theft allowed, socially punished.
         let removed = 0;
-        if (typeof this._removePantryKcal === 'function') removed = this._removePantryKcal(rest) || 0;
-        else {
+        // PANTRY GATE (break-it social r11 2026-10-10): see canAffordBribe —
+        // the exiled can't reach the hall's stores even for a bribe.
+        const pantryOpen = (() => { try { return !(this.havenStoresAccess && this.havenStoresAccess() === 'none'); } catch (e) { return true; } })();
+        if (pantryOpen && typeof this._removePantryKcal === 'function') removed = this._removePantryKcal(rest) || 0;
+        else if (pantryOpen) {
           this.state.village.pantryKcal = Math.max(0, (this.state.village.pantryKcal || 0) - rest);
           removed = rest;
         }
@@ -1654,8 +1682,18 @@
         v.groups = v.groups || [];
         const a = c.accused.filter(id => !this.isPlayer(id));
         const b = this.npcIds().filter(id => !c.accused.includes(id)).slice(0, 4);
-        if (a.length) v.groups.push({ id: 'feud_a', kind: 'feud', members: a });
-        if (b.length) v.groups.push({ id: 'feud_b', kind: 'feud', members: b });
+        // SCHISM RE-TRIGGER (break-it social r11 2026-10-10): a second
+        // schism used to push a second 'feud_a'/'feud_b' — duplicate ids,
+        // and the group ripple (resolveConsequence) then hit shared members
+        // twice (40% x2). Feuds merge; members dedupe.
+        const mergeFeud = (gid, members) => {
+          if (!members.length) return;
+          let g = v.groups.find(x => x && x.id === gid);
+          if (!g) { g = { id: gid, kind: 'feud', members: [] }; v.groups.push(g); }
+          for (const m of members) if (!g.members.includes(m)) g.members.push(m);
+        };
+        mergeFeud('feud_a', a);
+        mergeFeud('feud_b', b);
         if (c.accused.includes(this.villagerId)) {
           const t = v.trust || {};
           t[this.villagerId] = Math.max(0, ((t[this.villagerId]) || 10) - 15);
@@ -1733,6 +1771,12 @@
       }
       this.pendingEncounter = false; this.pendingMonsterId = null; this.pendingInTent = false;
     } catch (e) {}
+    // EXILE LEAVES THE HALL (break-it social r11 2026-10-10): exilePlayer
+    // never cleared s.insideHaven — an exiled player kept 'inside' pantry
+    // access to the hall they'd been walked out of ("The pantry is in the
+    // hall. Your hands are not" — but their hands were). The walk-out is
+    // physical too.
+    try { if (s.insideHaven) s.insideHaven = null; } catch (e) {}
     try { this.recordTrauma('exile'); } catch (e) {}
     return true;
   },

@@ -8030,6 +8030,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     havenStoresAccess() {
       try {
         const s = this.state.scholar;
+        // EXILE (break-it social r11 2026-10-10): an exile has no hands in
+        // the hall — not physically, and not through the System. The old
+        // code returned 'remote' at integration stage 3 for an exiled
+        // player, so the cast-out could drain the old village's pantry
+        // from anywhere forever. "You leave with what you carry — nothing
+        // more" (exilePlayer). Hard reset: self, Codex, pack.
+        if (s && s.exiled) return 'none';
         if (s && s.insideHaven && this.playerTile().type === 'haven') return 'inside';
         if (typeof this.integrationStage === 'function' && this.integrationStage() >= 3) return 'remote';
       } catch (e) {}
@@ -22776,6 +22783,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     hostFeast() {
       const s = this.state.scholar, v = this.state.village;
       if (this.over) return 'The game is over.';
+      // EXILE (break-it social r11 2026-10-10): the feast draws from the
+      // VILLAGE pantry — an exiled player can't open a fire that isn't
+      // theirs and spend the stores of people who walked them out. The
+      // engine used to let an exile standing on the old haven tile burn
+      // 1500+ kcal of village food for +3 trust each.
+      if (s.exiled) return 'Exile means exile. The fire isn\'t yours to open.';
       if (!this.playerAtHaven || !this.playerAtHaven()) return 'You need to be at the haven to host a feast.';
       const day = s.day || 1;
       if (s.feastDay === day) return 'One feast a day. The fire needs to rest too.';
