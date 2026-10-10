@@ -73,8 +73,7 @@
 //   - apKnowsAlien(pid)
 //   - apRevealAlien(pid, how)
 //   - apCarePackage()
-//   - apWackyGift(tier) -> alien curio def or null (wacky, never dinner — the
-//     BEANS exclusion, shared by apCarePackage + apClubBoon's showbiz curio)
+//   - apWackyGift(tier) -> alien curio def or null (wacky, never dinner; shared by apCarePackage + apClubBoon)
 //   - apGrantItem(itemId)
 //   - apDousePlayerFire()
 // rules:
