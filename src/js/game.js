@@ -2831,6 +2831,34 @@
                 : `The skunk is in the box — and the box is in your hands. You fumble it open and it gets you full in the face. Your eyes are on fire, and the smell will follow you for days. Everything with a nose knows where you've been.`);
               try { this.audioEvent('animalSpray'); } catch (e) {}
             }
+            // TIMBER RATTLESNAKE (hunter break-it 2026-10-10): a box trap is
+            // a live cage, not a kill jar — the recipe's own L3 text warns
+            // "a rattlesnake in the box means the weave held and your luck
+            // did too — pin it before you reach in." The old code handed you
+            // a free dead snake: no handling risk, no pinning, the warning
+            // a lie. Opening the box is the bite moment, same class as the
+            // skunk's spray. L3 recipe readers pin it behind the head with
+            // the forked stick like the text says (small risk); the careless
+            // reach in and take fangs (damage + venom, same as the field
+            // bite in encounters.js). Either way the snake is killed and
+            // cleaned after — the carcass below is honest.
+            if (catchId === 'timber_rattlesnake') {
+              const careful = ((this.state.codex.recipes || {})['box_trap'] || {}).level >= 3;
+              const biteP = careful ? 0.15 : 0.6;
+              if (Math.random() < biteP) {
+                const vDmg = 8 + Math.floor(Math.random() * 7);
+                this.state.scholar.health = Math.max(0, (this.state.scholar.health || 100) - vDmg);
+                try { (this.state.scholar.poisons = this.state.scholar.poisons || []).push({ name: 'rattlesnake venom', day: this.state.scholar.day }); } catch (e) {}
+                this.say(careful
+                  ? `You pin it behind the head with the forked stick before you reach in — like the recipe says. It still twists a fang past the pin. (-${vDmg} HP, poisoned — rattlesnake venom. Find an antidote)`
+                  : `The box is ticking with dry sound — a rattlesnake, alive and coiled. You reach in anyway. It does not miss. (-${vDmg} HP, poisoned — rattlesnake venom. Find an antidote)`);
+                try { this.audioEvent('animalBite'); } catch (e) {}
+              } else {
+                this.say(careful
+                  ? 'You pin it behind the head with the forked stick, like the recipe says, and it never gets a strike in. The weave held — and so did you.'
+                  : 'The box is ticking with dry sound — a rattlesnake, alive and coiled. You freeze, then pin it with a stick by pure luck. It never gets a strike in. Pin it FIRST next time.');
+              }
+            }
             trap.uses -= 1;
             if (trap.uses <= 0) {
               this.say(`The ${recipe.name} broke. You'll need another.`);
