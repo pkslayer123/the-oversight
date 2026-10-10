@@ -14411,7 +14411,7 @@
     const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
     on('c-wait', () => { Game.tbPlayerWait(); rerender(); });
     on('c-study', () => { Game.tbPlayerStudy(); rerender(); });
-    on('c-scream', () => { Game.tbPlayerScream(); rerender(); });
+    on('c-scream', () => { Game.useAbility('scream_cheese', 'scream'); rerender(); });
     on('c-shout', () => { Game.tbPlayerShout(); rerender(); });
     on('c-well', () => { Game.tbPlayerGravityWell(); rerender(); });
     on('c-flip', () => {

@@ -833,6 +833,7 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
 - tentative_clears_neutral: behavior doubts and gossip leads resolve with no false-accusation cost (code: confrontDoubt)
+- windup_owns_the_accusation: the tentative no-lie windup ("help me understand it") applies ONLY to tentative kinds (behavior, gossip lead); a real accusation that lands empty keeps its accusatory windup so the 'cleared' punishment narrates the scene that played (code: confrontWindup, r13 2026-10-10)
 - lead_expiry: a gossip lead stops being tentative once the story is heard — doubtIsLead checks the story-heard stamp, not just the stale "haven't heard" marker (code: doubtIsLead, confrontWindup, confrontDoubt, convoChoices)
 - slip_crack_only: slip lines name the cover's crack, never the truth — origin/goal slips match the occupation discipline (code: truthLinePools slipOrigin/slipGoal)
 - stale_before_field_fallback: a confessed lie matching the doubt's evidence resolves as already-confessed before any fallback; the fallback matches the doubt's own field only, never a kind-guess (code: confrontDoubt)

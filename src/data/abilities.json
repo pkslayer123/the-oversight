@@ -976,17 +976,6 @@
     "metabolic": {
       "daily": 50
     },
-    "actions": [
-      {
-        "id": "echo_locate",
-        "context": "explore",
-        "name": "Echo-locate",
-        "cost": {
-          "kcal": 10
-        },
-        "effect": "Clap once: sense the shape of the land — reveals the 3x3 world-map tiles around you. Once per day. Works in combat too."
-      }
-    ],
     "paths": [
       "explorer",
       "hunter"
@@ -1420,17 +1409,6 @@
       "type": "cure_poison",
       "cooldown": "day"
     },
-    "actions": [
-      {
-        "id": "purify_poison",
-        "context": "camp",
-        "name": "Purify",
-        "cost": {
-          "time_min": 30
-        },
-        "effect": "Neutralize poison using charcoal and clean water. Once per day. Knowledge of plants helps."
-      }
-    ],
     "paths": [
       "caregiver",
       "forager"

@@ -2845,7 +2845,18 @@
             }
             if (_shy.level > 0) trapChance = Math.max(0.05, trapChance * Math.pow(0.65, _shy.level));
           }
-          if (Math.random() < trapChance) {
+          // STAGED INJURY (break-it abilities 2026-10-10): scarecrow's promise —
+          // the next trap with game on its ground is GUARANTEED to trigger.
+          // The staging waits for its moment: a trap with no eligible game
+          // doesn't consume it (empty woods stay honest). Trap-shyness is
+          // skipped — they fall for it. Every time.
+          let _stagedCatch = false;
+          if (this.state.scholar && this.state.scholar.stagedInjury && eligible.length) {
+            this.state.scholar.stagedInjury = null;
+            _stagedCatch = true;
+            this.say(`Your staged injury did its work — something came to look, and the ${recipe.name} did the rest. They fall for it. Every time. (Scarecrow)`);
+          }
+          if (_stagedCatch || Math.random() < trapChance) {
             const catchId = eligible[Math.floor(Math.random() * eligible.length)];
             // the catch leaves the tile population — hunted out is hunted out.
             _wl[catchId]--; if (_wl[catchId] <= 0) delete _wl[catchId];
@@ -3929,7 +3940,8 @@
     // mediate: player-initiated conflict resolution. The automatic path needs
     // 55+ trust with both; doing it yourself needs 40+ and a conversation.
     // Success eases tension; failure can make it worse.
-    mediateConflict(vid) {
+    mediateConflict(vid, opts) {
+      opts = opts || {};
       const v = this.state.village;
       const c = (v.conflicts || []).find(x => !x.resolved && x.known && (x.a === vid || x.b === vid));
       if (!c) { this.say("There's nothing to mediate with them."); return null; }
@@ -3942,7 +3954,12 @@
       const first = this.displayName(vid), oname = this.displayName(other);
       // your honesty and competence matter here, as THEY see it
       const r = this.repOf(vid);
-      const skill = (r.honest >= 0 ? 10 : 0) + (r.competent >= 0 ? 10 : 0) + 20;
+      // BREAK-IT abilities 2026-10-10: the mediator.mediate_dispute data
+      // action promises "Bonus from drama.resolve_bonus" — the bonus lands
+      // here, on the roll, so the copy is the contract. Callers that don't
+      // pass it get 0 (conversation-UI path unchanged).
+      const resolveBonus = opts.resolveBonus || 0;
+      const skill = (r.honest >= 0 ? 10 : 0) + (r.competent >= 0 ? 10 : 0) + 20 + resolveBonus;
       if (Math.random() * 100 < skill + ta * 0.3) {
         c.tension = Math.max(0, (c.tension || 50) - 35);
         if (c.tension <= 10) {
@@ -23324,6 +23341,15 @@
           const _ab2 = (this.state.scholar || {}).aimBonus;
           if (_ab2 && (_ab2.exposeTurns || 0) > 0) _ab2.exposeTurns -= 1;
         } catch (e) {}
+        // LEECH STANCE (break-it abilities 2026-10-10): the stance covers one
+        // full round — your turn through the monsters' answers. A new turn
+        // means a new round: the flag comes down. (c is the player fighter
+        // in this block.)
+        try { delete c.leechStance; } catch (e) {}
+        // WALK-IN EXPOSURE (break-it abilities 2026-10-10): a failed
+        // peacemaker.walk_in leaves you exposed — no slipping aside — until
+        // your next turn begins.
+        try { if ((c.exposedTurns || 0) > 0) c.exposedTurns -= 1; } catch (e) {}
         // STUNNED (mirror-stag gaze, belltoad croak): the stun is set during a
         // monster's turn, so it must be consumed HERE — tbBeginTurn otherwise
         // wipes moveLeft/acted and the freeze silently never happens.
@@ -24907,14 +24933,21 @@
       return true;
     },
 
-    tbPlayerScream() {
+    tbPlayerScream(opts) {
+      opts = opts || {};
       const f = this.tbfight;
       if (!f || !this.tbIsPlayerTurn()) return false;
       const p = this.tbFighter('p');
       const s = this.state.scholar;
       if (p.acted) { this.say('Already acted this turn.'); return false; }
       if (!this.hasAbility('scream_cheese') || s.screamDay === s.day) { this.say('Your throat is raw. No scream left today.'); return false; }
-      p.acted = true;
+      // BREAK-IT abilities 2026-10-10: the data-driven action
+      // (scream_cheese.scream) routes through here with viaAbility — the
+      // ability-actions framework owns the turn + the 20 kcal cost, so this
+      // path must NOT spend the turn itself (the old direct call did
+      // p.acted + tbAfterPlayerAction, which double-advanced when combined
+      // with the framework's turn handler).
+      if (!opts.viaAbility) p.acted = true;
       s.screamDay = s.day;
       let n = 0;
       for (const m of f.fighters) {
@@ -24930,7 +24963,7 @@
       }
       this.say(`You SCREAM. Milk curdles somewhere.${n ? ' Its focus shatters — the attack fizzles.' : ''} It freezes. (stunned)`);
       this.tbRefreshTelegraphUI();
-      this.tbAfterPlayerAction();
+      if (!opts.viaAbility) this.tbAfterPlayerAction();
       return true;
     },
 
@@ -25557,6 +25590,16 @@
             if (!_ab.exposedTold) { _ab.exposedTold = true; this.say('Exposed — lined up for the shot, nowhere to slip to. (Take Aim)'); }
           }
         } catch (e) {}
+        // WALK-IN EXPOSURE (break-it abilities 2026-10-10): a failed
+        // peacemaker.walk_in leaves you exposed — nowhere to slip to — until
+        // your next turn. Same honesty as the Take Aim exposure above.
+        // (t is the player fighter in this block.)
+        try {
+          if ((t.exposedTurns || 0) > 0 && dodgeCh > 0) {
+            dodgeCh = 0;
+            if (!t.exposedTold) { t.exposedTold = true; this.say('Exposed — you walked in open-handed and it went wrong. Nowhere to slip to. (Walk In failed)'); }
+          }
+        } catch (e) {}
         if (dodgeCh > 0 && Math.random() < dodgeCh) {
           this.say('You slip aside — it misses clean. (footwork)');
           this.practice('agi', 1); // dodging is agility practice
@@ -25728,6 +25771,31 @@
       // this fight (post-armor, post-brace). Reset in startCombat.
       if (t.kind === 'player' && final > 0) {
         this.state.scholar.fightDamageTaken = (this.state.scholar.fightDamageTaken || 0) + final;
+      }
+      // LEECH STANCE (break-it abilities 2026-10-10): the data action
+      // leech.leech_stance plants the flag on the player fighter for the
+      // round. When an ally fighter takes damage while the stance is up and
+      // the player is near (same scrum — within 2 tiles), half the hit
+      // (rounded up) lands on the player instead. They owe you. (They know
+      // it.) Routed through addHealth so the combat fighter is the live
+      // value; the stance persists until the player's next turn begins
+      // (cleared in tbBeginTurn) so the whole round is covered.
+      if (t.kind === 'villager' && final > 0 && this.tbfight) {
+        try {
+          const _pf = this.tbFighter('p');
+          const _near = _pf && _pf.alive && _pf.leechStance &&
+            Math.abs((_pf.mx || 0) - (t.mx || 0)) + Math.abs((_pf.my || 0) - (t.my || 0)) <= 2;
+          if (_near) {
+            const _half = Math.ceil(final / 2);
+            final = final - _half;
+            this.addHealth(-_half);
+            const _vt = (this.state.village.trust || {});
+            const _vid = t.villagerId || t.key;
+            if (_vid) _vt[_vid] = Math.min(100, (_vt[_vid] || 10) + this.trustGainProgressive(_vid, 5));
+            this.say(`You step in front of ${t.name || 'your ally'}. You take ${_half} of it. They owe you. (Leech Stance: trust +5)`);
+            try { this.noteAbilityUse('leech'); } catch (e) {}
+          }
+        } catch (e) {}
       }
       t.hp -= final;
       if (t.kind === 'player') {

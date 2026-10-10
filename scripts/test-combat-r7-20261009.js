@@ -192,7 +192,10 @@ function synthBetrayal(Game, vid) {
       'found=[' + [...found].sort().join(',') + '] unhandled=[' + unhandled.join(',') + ']');
   }
 
-  // T8. UNWIRED ACTIONS fail fast: no cost, no turn, honest line.
+  // T8. WIRED ACTIONS resolve honestly (break-it abilities 2026-10-10): the
+  // four actions this block used to assert as UNWIRED are now wired. They
+  // fire (or refuse pre-payment with an honest line) — the "isn't wired up
+  // yet" message is reserved for genuinely unwired actions, covered below.
   {
     const Game = await H.newCombatReadyGame();
     const said = [];
@@ -204,12 +207,37 @@ function synthBetrayal(Game, vid) {
     const s = Game.state.scholar;
     s.kcal = 5000;
     const p = Game.tbFighter('p');
-    for (const [ab, ac] of [['scream_cheese', 'scream'], ['pocket_sand', 'throw_sand'], ['leech', 'leech_stance'], ['peacemaker', 'walk_in']]) {
-      const actedBefore = p.acted;
-      const r = Game.useAbility(ab, ac);
-      ok(`T8 ${ab}.${ac} fails fast, keeps turn`, r === false && p.acted === actedBefore, 'ret=' + r);
-    }
-    ok('T8e honest "isn\'t wired up yet" line', said.some(x => x.includes("isn't wired up yet")), JSON.stringify(said.slice(-2)));
+    const m = Game.tbFighter('m_test');
+    // scream: fires, stuns, spends the turn exactly once
+    let r = Game.useAbility('scream_cheese', 'scream');
+    ok('T8a scream_cheese.scream fires and stuns', r === true && m.stunned > 0, 'ret=' + r);
+    ok('T8b scream spends the turn once', p.acted === true, 'acted=' + p.acted);
+    ok('T8c scream charges the copy\'s 20 kcal', s.kcal === 4980, 'kcal=' + s.kcal);
+    // pocket sand: fresh turn, fires, blinds 2 rounds
+    p.acted = false;
+    r = Game.useAbility('pocket_sand', 'throw_sand');
+    ok('T8d pocket_sand.throw_sand fires and blinds', r === true && m.blind === 2, 'ret=' + r + ' blind=' + m.blind);
+    // leech stance: no allies in this fight — honest pre-payment refusal,
+    // turn kept, and NOT the wiring message
+    p.acted = false;
+    r = Game.useAbility('leech', 'leech_stance');
+    ok('T8e leech.leech_stance refuses with no one to shield', r === false && p.acted === false, 'ret=' + r);
+    ok('T8f leech refusal is honest, not the wiring message',
+      said.some(x => x.includes('No one here to shield')) && !said.some(x => x.includes("isn't wired up yet")),
+      JSON.stringify(said.slice(-2)));
+    // walk_in: fires — they stand down or you're exposed
+    p.acted = false;
+    r = Game.useAbility('peacemaker', 'walk_in');
+    ok('T8g peacemaker.walk_in resolves', r === true && (m.fled === true || p.exposedTurns > 0),
+      'ret=' + r + ' fled=' + m.fled + ' exposed=' + p.exposedTurns);
+    // the wiring guard itself still fires for genuinely unwired actions
+    Game.data.abilities.push({ id: 'fake_unwired_test', name: 'Fake', actions: [{ id: 'doom', context: 'explore', name: 'Doom', cost: {}, effect: 'x' }] });
+    s.abilities.push({ id: 'fake_unwired_test' });
+    const r2 = Game.useAbility('fake_unwired_test', 'doom');
+    ok('T8h wiring guard still fires for genuinely unwired actions',
+      r2 === false && said.some(x => x.includes("isn't wired up yet")), 'ret=' + r2);
+    Game.data.abilities.pop();
+    s.abilities = s.abilities.filter(a => ((a && a.id) || a) !== 'fake_unwired_test');
   }
 
   // T9. BETRAYAL WOUND STASH (r6 F5) still holds: flee at 5 HP, re-engage at 5.

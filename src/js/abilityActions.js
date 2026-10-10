@@ -727,7 +727,97 @@
       if (rotten) return { ok: false, why: 'That carcass has turned — maggots, smell, the whole sad story. Dressing rot doesn\'t make dinner. Beyond dressing.' };
       return { ok: false, why: 'No game to dress. Hunt or trap something first, then break it down clean.' };
     },
+    // ---- BREAK-IT ABILITIES 2026-10-10: prechecks for the newly wired ----
+    'molt.shed_skin': function (game) {
+      var s = game.state.scholar;
+      var week = Math.floor((s.day || 0) / 7);
+      var uses = (s.moltWeek === week) ? (s.moltUses || 1) : 0;
+      var max = game.hasSynergy('refuses_death') ? 2 : 1;
+      if (uses >= max) return { ok: false, why: 'Already molted this week.' };
+      return { ok: true };
+    },
+    'scream_cheese.scream': function (game) {
+      var s = game.state.scholar;
+      if (s.screamDay === s.day) return { ok: false, why: 'Your throat is raw. No scream left today.' };
+      var f = game.tbfight;
+      if (!f || f.over) return { ok: false, why: 'No fight to scream in.' };
+      for (var i = 0; i < f.fighters.length; i++) {
+        var m = f.fighters[i];
+        if (m.kind === 'monster' && m.alive && !m.fled) return { ok: true };
+      }
+      return { ok: false, why: 'Nothing left to scream at.' };
+    },
+    'pocket_sand.throw_sand': function (game) {
+      var f = game.tbfight;
+      if (!f || f.over) return { ok: false, why: 'No fight to throw sand in.' };
+      for (var i = 0; i < f.fighters.length; i++) {
+        var m = f.fighters[i];
+        if (m.kind === 'monster' && m.alive && !m.fled) return { ok: true };
+      }
+      return { ok: false, why: 'Nothing left to blind.' };
+    },
+    'grave_robber.rob_grave': function (game) {
+      if (!_graveRobberCorpse(game)) return { ok: false, why: 'No body in reach to rob.' };
+      return { ok: true };
+    },
+    'mediator.mediate_dispute': function (game) {
+      var v = game.state.village;
+      var cs = ((v || {}).conflicts || []).filter(function (x) { return !x.resolved && x.known; });
+      if (!cs.length) return { ok: false, why: 'No open disputes.' };
+      return { ok: true };
+    },
+    'leech.leech_stance': function (game) {
+      var f = game.tbfight;
+      if (!f || f.over) return { ok: false, why: 'No fight to stand in.' };
+      for (var i = 0; i < f.fighters.length; i++) {
+        var m = f.fighters[i];
+        if ((m.kind === 'villager' || m.kind === 'hostile') && m.alive && !m.fled) return { ok: true };
+      }
+      return { ok: false, why: 'No one here to shield.' };
+    },
+    'peacemaker.walk_in': function (game) {
+      var f = game.tbfight;
+      if (!f || f.over) return { ok: false, why: 'No fight to walk into.' };
+      for (var i = 0; i < f.fighters.length; i++) {
+        var m = f.fighters[i];
+        if (m.kind === 'monster' && m.alive && !m.fled) return { ok: true };
+      }
+      return { ok: false, why: 'Nothing left to talk down.' };
+    },
+    'peacemaker.make_friends': function (game) {
+      var v = game.state.village;
+      var cs = ((v || {}).conflicts || []).filter(function (x) { return !x.resolved && x.known; });
+      if (!cs.length) return { ok: false, why: 'No tense situations.' };
+      return { ok: true };
+    },
+    'water_breathing.dive_deep': function (game) {
+      var tile = game.tileAt(game.map.px, game.map.py);
+      var tt = tile && tile.type;
+      if (tt !== 'creek' && tt !== 'wetland') return { ok: false, why: 'Need a creek or wetland under you.' };
+      var s = game.state.scholar;
+      var key = game.map.px + ',' + game.map.py + ':' + s.day;
+      if (s.diveDayTiles && s.diveDayTiles[key]) return { ok: false, why: 'Already worked this water today.' };
+      return { ok: true };
+    },
   };
+  // _graveRobberCorpse: nearest unburied corpse in reach (same node,
+  // adjacent cell) — the same reach rule lootCorpse enforces. Shared by the
+  // grave_robber.rob_grave precheck (refuse before payment) and impl.
+  function _graveRobberCorpse(game) {
+    var corpses = [];
+    try { corpses = game.corpses() || []; } catch (e) { return null; }
+    var s = game.state.scholar;
+    var px = game.map.px, py = game.map.py;
+    for (var i = 0; i < corpses.length; i++) {
+      var c = corpses[i];
+      if (!c || c.buried) continue;
+      var n = c.node || {};
+      if (n.x !== px || n.y !== py) continue;
+      if (Math.max(Math.abs((c.mx || 4) - (s.mx || 4)), Math.abs((c.my || 0) - (s.my || 4))) > 1) continue;
+      return c;
+    }
+    return null;
+  }
   var ABILITY_ACTION_IMPLS = {
 
     // ---- HUNTER ----
@@ -988,7 +1078,10 @@
         if (pf && game.tbfight && !game.tbfight.over) pf.moveLeft = 0;
       } catch (e) {}
       game.say('One breath. One shot. 3x damage, and armor won\'t save them. You plant your feet — you\'re not moving this turn. (Dead Aim — the shot is ready, strike to fire it.)');
-      try { if (game.tbAfterPlayerAction) game.tbAfterPlayerAction(); } catch (e) {}
+      // BREAK-IT abilities 2026-10-10: this action costs {turn:true} and the
+      // ability-actions framework spends the turn AFTER dispatch — the old
+      // direct tbAfterPlayerAction() call here advanced the world twice per
+      // tap (the monster acted twice). The framework owns the turn now.
       return true;
     },
 
@@ -1406,7 +1499,198 @@
         game.say('The food disappears. Magic. (It\'s not magic. Nobody saw. Light Fingers.)');
       }
       return true;
-    }
+    },
+
+    // ---- BREAK-IT ABILITIES 2026-10-10: the twelve dead buttons ----
+    // Twelve actions were declared in abilities.json but had no entry here.
+    // activatableAbilities() surfaced them as tappable buttons and every tap
+    // answered "isn't wired up yet — this is a bug, not a feature." Two were
+    // pure duplicates of working legacy buttons (echo_location.echo_locate,
+    // purify.purify_poison — removed from data); the other ten are wired
+    // below, each honoring its data copy as the contract.
+
+    'molt.shed_skin': function (game, target) {
+      // Manual Molt: the camp action shares the weekly budget with the
+      // automatic death-cheat (maybeCheatDeath). Once per week — twice with
+      // the refuses_death synergy. Heal to full, lose all equipped gear.
+      var s = game.state.scholar;
+      var week = Math.floor((s.day || 0) / 7);
+      var uses = (s.moltWeek === week) ? (s.moltUses || 1) : 0;
+      var max = game.hasSynergy('refuses_death') ? 2 : 1;
+      if (uses >= max) {
+        game.say('The new skin isn\'t ready yet — you already molted this week. (Molt: once per week' + (max > 1 ? ', twice with Refuses Death' : '') + '.)');
+        return false;
+      }
+      s.moltWeek = week; s.moltUses = uses + 1;
+      s.health = game.maxHealth();
+      var had = s.equipped && Object.keys(s.equipped).length;
+      s.equipped = {};
+      try { game.noteAbilityUse('molt'); } catch (e) {}
+      game.say('MOLT: your skin splits. You step out new, whole — and naked.' + (had ? ' All equipped gear lost in the old skin.' : '') + ' (Once per week.)');
+      return true;
+    },
+
+    'scream_cheese.scream': function (game, target) {
+      // The engine lives in game.tbPlayerScream; viaAbility tells it the
+      // ability-actions framework owns the turn + the 20 kcal cost, so it
+      // must not spend the turn itself (that double-advanced the world).
+      return game.tbPlayerScream({ viaAbility: true });
+    },
+
+    'pocket_sand.throw_sand': function (game, target) {
+      // Blind the nearest live monster for 2 rounds. The combat engine
+      // already honors m.blind > 0 as a 50% miss (see tbMonsterTurn), so
+      // this is the same disadvantage the copy promises — no new plumbing.
+      var f = game.tbfight;
+      var p = game.tbFighter ? game.tbFighter('p') : null;
+      var best = null, bestD = 1e9;
+      for (var i = 0; i < f.fighters.length; i++) {
+        var m = f.fighters[i];
+        if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+        var d = p ? Math.abs((m.mx || 0) - (p.mx || 0)) + Math.abs((m.my || 0) - (p.my || 0)) : 0;
+        if (d < bestD) { bestD = d; best = m; }
+      }
+      if (!best) { game.say('Nothing left to throw sand at.'); return false; }
+      best.blind = 2;
+      var label = game.encSubject ? game.encSubject(best) : (best.name || 'it');
+      game.say('You fling a handful of grit into ' + label + '\'s eyes. It reels, clawing at its face — half-blind for 2 rounds. (Pocket Sand: attacks at disadvantage.)');
+      return true;
+    },
+
+    'grave_robber.rob_grave': function (game, target) {
+      // Rob the Dead: loot a corpse thoroughly — takeAll in one action, where
+      // normal looting takes one item per action. That's the "better gear
+      // than normal looting": the whole body, now, not piece by piece.
+      // Seen doing it (party members travel with you): -15 trust each.
+      var c = _graveRobberCorpse(game);
+      if (!c) { game.say('No body in reach to rob. The dead are elsewhere.'); return false; }
+      var took = null;
+      try { took = game.lootCorpse(c.id, true); } catch (e) {}
+      if (!took) return false;
+      var seen = [];
+      try { seen = game.partyMembers ? game.partyMembers() : []; } catch (e) {}
+      if (seen.length && game.corpseIsPerson && game.corpseIsPerson(c)) {
+        var v = game.state.village; v.trust = v.trust || {};
+        for (var i = 0; i < seen.length; i++) {
+          var vid = seen[i];
+          v.trust[vid] = Math.max(0, (v.trust[vid] || 10) - 15);
+        }
+        var names = seen.map(function (id) { try { return game.displayName(id); } catch (e) { return 'someone'; } });
+        game.say(names.join(', ') + ' watched you work the body over. They won\'t forget it. (-15 trust each. Robbing the dead is a choice.)');
+      }
+      return true;
+    },
+
+    'mediator.mediate_dispute': function (game, target) {
+      // Find the hottest known unresolved dispute and mediate it through
+      // the shared engine — with the drama.resolve_bonus the copy promises.
+      var v = game.state.village;
+      var cs = ((v || {}).conflicts || []).filter(function (x) { return !x.resolved && x.known; });
+      if (!cs.length) { game.say('No open disputes to mediate. The village is — improbably — at peace.'); return false; }
+      cs.sort(function (a, b) { return (b.tension || 0) - (a.tension || 0); });
+      var bonus = 0;
+      try { bonus = Math.round(game.modTarget('drama.resolve_bonus', 0)); } catch (e) {}
+      game.mediateConflict(cs[0].a, { resolveBonus: bonus });
+      return true;
+    },
+
+    'leech.leech_stance': function (game, target) {
+      // Enter leech stance: until your next turn, when an ally fighter takes
+      // damage near you, you take half of it. The redirect lives in
+      // tbDamage; the flag clears in tbBeginTurn.
+      var p = game.tbFighter ? game.tbFighter('p') : null;
+      if (!p) return false;
+      p.leechStance = true;
+      game.say('You plant yourself between your people and what\'s coming. Anything that hits them near you hits you first — half of it, anyway. They owe you. (They know it.) (Leech Stance: this round.)');
+      return true;
+    },
+
+    'scarecrow.stage_injury': function (game, target) {
+      // Stage a fake injury. The next trap check with game on its ground is
+      // guaranteed to trigger (see checkTraps) — they fall for it. Every
+      // time. The staging waits: empty woods don't consume it.
+      game.state.scholar.stagedInjury = { day: game.state.scholar.day };
+      game.say('You stage the injury — the limp, the cry, the blood that isn\'t. Somewhere out there, something curious starts walking toward your line. The next trap with game on its ground WILL trigger. (Scarecrow)');
+      return true;
+    },
+
+    'peacemaker.walk_in': function (game, target) {
+      // Walk into the fight and attempt to end it peacefully. Talk check
+      // with the deescalate bonus (drama.resolve_bonus — the peacemaker's
+      // lane). Success: they stand down. Failure: you are exposed — no
+      // dodging until your next turn. Elders have seen it all: they don't
+      // stand down for talk.
+      var f = game.tbfight;
+      var p = game.tbFighter ? game.tbFighter('p') : null;
+      var foes = f.fighters.filter(function (m) { return m.kind === 'monster' && m.alive && !m.fled; });
+      if (!foes.length) { game.say('Nothing left to talk down.'); return false; }
+      var bonus = 0;
+      try { bonus = Math.round(game.modTarget('drama.resolve_bonus', 0)); } catch (e) {}
+      var chance = Math.min(90, 35 + bonus * 2);
+      var talkable = foes.filter(function (m) { return !m.elderCalm; });
+      if (Math.random() * 100 < chance && talkable.length) {
+        for (var i = 0; i < talkable.length; i++) {
+          talkable[i].fled = true;
+          if (talkable[i].telegraph) talkable[i].telegraph = null;
+        }
+        var unmoved = foes.length - talkable.length;
+        game.say('You walk in open-handed, talking — low, steady, unafraid. And impossibly, they listen. They stand down.' + (unmoved ? ' (The Elder doesn\'t even flinch — it has heard worse.)' : '') + ' (Walk In: the fight ends.)');
+        try { if (game.tbEndCheck) game.tbEndCheck(); } catch (e) {}
+        return true;
+      }
+      if (p) { p.exposedTurns = 1; p.exposedTold = false; }
+      game.say('You walk in open-handed — and it goes wrong. They don\'t want peace. You\'re exposed, off-balance, nowhere to slip to until your next turn. (Walk In failed.)');
+      return true;
+    },
+
+    'peacemaker.make_friends': function (game, target) {
+      // Turn the tensest social situation friendly: a big tension cut on
+      // the hottest known dispute, trust for the peacemaking.
+      var v = game.state.village;
+      var cs = ((v || {}).conflicts || []).filter(function (x) { return !x.resolved && x.known; });
+      if (!cs.length) { game.say('No tense situations to walk into. Everyone\'s already friends — suspiciously so.'); return false; }
+      cs.sort(function (a, b) { return (b.tension || 0) - (a.tension || 0); });
+      var c = cs[0];
+      c.tension = Math.max(0, (c.tension || 50) - 50);
+      var an = '', bn = '';
+      try { an = game.displayName(c.a); bn = game.displayName(c.b); } catch (e) {}
+      if (c.tension <= 10) {
+        c.resolved = true; c.tension = 0;
+        game.say('You walk in, and somehow walk out with friends. ' + an + ' and ' + bn + ' are laughing — actually laughing. It is a gift. (Dispute resolved.)');
+      } else {
+        game.say('You walk into the worst of it and walk out with the temperature down. ' + an + ' and ' + bn + ' aren\'t friends yet — but they\'re not enemies right now. (Tension eased.)');
+      }
+      try {
+        v.trust = v.trust || {};
+        v.trust[c.a] = Math.min(100, (v.trust[c.a] || 10) + game.trustGainProgressive(c.a, 4));
+        v.trust[c.b] = Math.min(100, (v.trust[c.b] || 10) + game.trustGainProgressive(c.b, 4));
+      } catch (e) {}
+      return true;
+    },
+
+    'water_breathing.dive_deep': function (game, target) {
+      // Dive at real water (creek/wetland tile under you) and come up with
+      // sunken salvage — things others can't reach. Once per tile per day;
+      // the salvage is modest (lost tackle and old knives, not treasure).
+      var px = game.map.px, py = game.map.py;
+      var tile = game.tileAt(px, py);
+      var tt = tile && tile.type;
+      if (tt !== 'creek' && tt !== 'wetland') {
+        game.say('No water here worth diving. You need a creek or wetland under you — the deep places. (Dive Deep)');
+        return false;
+      }
+      var s = game.state.scholar;
+      s.diveDayTiles = s.diveDayTiles || {};
+      var key = px + ',' + py + ':' + s.day;
+      if (s.diveDayTiles[key]) { game.say('You already worked this water today. The creek keeps its other secrets. (Dive Deep: once per tile per day.)'); return false; }
+      s.diveDayTiles[key] = true;
+      var table = ['fishing_line', 'fishing_line', 'lucky_coin', 'stone_knife', 'stone_knife'];
+      var pickId = table[Math.floor(Math.random() * table.length)];
+      var def = (game.data.items || []).find(function (x) { return x.id === pickId; }) || { name: pickId };
+      (s.inventory = s.inventory || []).push({ id: pickId, name: def.name, units: 1, salvaged: true });
+      game.say('You go down into the cold dark and feel along the bottom. Your lungs don\'t burn — they never do, down here. You come up with ' + (def.name || pickId).toLowerCase() + ', lost by someone, kept by the water, yours now. (Dive Deep)');
+      return true;
+    },
   };
 
   Object.assign(G, methods);

@@ -28,9 +28,14 @@ function check(name, cond, extra) {
   console.log('--- D3. player verbs wired to UI ---');
   const app = fs.readFileSync(path.join(ROOT, 'src/js/app.js'), 'utf8');
   for (const v of ['tbPlayerStrike', 'tbPlayerWait', 'tbPlayerMove', 'tbPlayerStudy',
-                   'tbPlayerShout', 'tbPlayerScream', 'tbPlayerOfferFood', 'tbBarrierExit']) {
+                   'tbPlayerShout', 'tbPlayerOfferFood', 'tbBarrierExit']) {
     check(`D3 ${v} has app.js call site`, app.includes(v + '('));
   }
+  // BREAK-IT abilities 2026-10-10: tbPlayerScream is now reached through the
+  // single entry point (useAbility) instead of a direct call — the c-scream
+  // button routes via the data action, which owns the turn + the 20 kcal.
+  check('D3 tbPlayerScream has app.js call site (via useAbility)',
+    app.includes("useAbility('scream_cheese', 'scream')"));
 
   console.log('--- D2. unwired combat actions fail fast (no cost) ---');
   const Game = await H.newCombatReadyGame();
