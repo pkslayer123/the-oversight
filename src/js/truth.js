@@ -23,7 +23,7 @@
 //   - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 //   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 //   - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
-//   - accuser_pays: deflected/attacked/cleared dent the accuser's rep; attacked/cleared seed village gossip naming the accuser; being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
+//   - accuser_pays: deflected/attacked/cleared dent the accuser's rep IN A READ SLOT (r12 2026-10-10: the hearers' view of the player — the old applyRep(player) wrote to the unread self-view slot, pure theater); attacked/cleared seed village gossip naming the accuser (player-subject gossip routes to hearers); being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
 //   - refusal_cooldown: a counter-attack refuses further confrontation for 2 days — no reopen-and-re-accuse grind (code: confrontDoubt, confrontTheft, convoChoices wrapper)
 //   - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
 //   - gone_closes_doubts: removing a villager resolves their open doubts as unanswered — the question outlives them, never a permanently open thread (code: closeDoubtsForGone, removeVillager hook)
@@ -1056,6 +1056,15 @@
     // village gossip names you, and your honest/competent rep takes the hit.
     // Being RIGHT (confessed) costs nothing. Design call, documented in
     // scripts/test-detective-breakit-20261009.js.
+    // DETECTIVE r12 (2026-10-10): the old code wrote the cost with
+    // applyRep(me, ...) — repOf(player) is the player's SELF-view slot, which
+    // nothing reads, and the seeded gossip (dims.who = player) routed back
+    // into the same dead slot. The whole mechanic was theater: the 2026-10-09
+    // proof test validated the dead write. Now the cost lands on the HEARERS
+    // — their view of YOUR honesty/competence drops — and the seeded gossip
+    // travels to further listeners (spreadGossip routes player-subject gossip
+    // to hearers). Deflections also used to be SILENT (no afterSay): "no
+    // silent actions" — the stain is narrated now.
     accuserPays(vid, outcome) {
       const me = this.villagerId;
       const name = this.displayName(vid);
@@ -1064,13 +1073,14 @@
       let afterSay = null;
       try {
         if (outcome === 'deflected') {
-          this.applyRep(me, { honest: -2 }, 1, true);
+          for (const h of hearers) this.applyRep(h, { honest: -2 }, 1, true);
+          afterSay = `Word gets around: you pressed ${name}, and ${name} slid off every question. Pressing people who dodge you stains you a little.`;
         } else if (outcome === 'attacked') {
-          this.applyRep(me, { honest: -3, competent: -3 }, 1, true);
+          for (const h of hearers) this.applyRep(h, { honest: -3, competent: -3 }, 1, true);
           this.seedGossip('confrontation', { who: me, honest: -6, competent: -4 }, hearers);
           afterSay = `Word gets around the fire: you pushed ${name} hard, and ${name} pushed back. People file that away.`;
         } else if (outcome === 'cleared') {
-          this.applyRep(me, { honest: -5 }, 1, true);
+          for (const h of hearers) this.applyRep(h, { honest: -5 }, 1, true);
           this.seedGossip('false_accusation', { who: me, honest: -8 }, hearers);
           afterSay = `Word gets around: you called ${name} a liar, and you were wrong. That sticks to you, not them.`;
         }

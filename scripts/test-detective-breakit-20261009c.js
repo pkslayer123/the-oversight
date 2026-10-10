@@ -348,15 +348,18 @@ function check(name, cond, detail) {
   const vid = honestVillager();
   const d = Game.addDoubt(vid, 'contradiction', 'test: contradiction, honest villager',
     ['said "x" (day 1)', 'now says "y" (day 2)']);
-  const rep0 = (Game.repOf(playerId()) || {}).honest || 0;
+  // r12 (2026-10-10): repOf(player) is the unread self-view slot — the cost
+  // lands on the hearers' view of the player.
+  const hsH = Game.npcIds().filter(id => id !== vid).slice(0, 3);
+  const rep0 = hsH.map(h => ((Game.repOf(h) || {}).honest || 0));
   const r = Game.confrontDoubt(vid, d.id);
   const log = say();
-  const rep1 = (Game.repOf(playerId()) || {}).honest || 0;
+  const rep1 = hsH.map(h => ((Game.repOf(h) || {}).honest || 0));
   const gossip = (Game.state.village.gossip || []).filter(g => g.dims && g.dims.who === playerId());
   const mem = (((Game.state.village || {}).memory || {})[vid] || []).filter(m => m.t === 'wrongly_accused');
-  console.log(`    outcome=${r.outcome} rep ${rep0}->${rep1}`);
+  console.log(`    outcome=${r.outcome} hearerHonest [${rep0}]->[${rep1}]`);
   check('H6a clears as a real (non-tentative) accusation', r.outcome === 'cleared', r.outcome);
-  check('H6b honest rep dented', rep1 < rep0, `${rep0}->${rep1}`);
+  check('H6b honest rep dented (hearers, read slot)', hsH.some((h, i) => rep1[i] < rep0[i]), `[${rep0}]->[${rep1}]`);
   check('H6c village gossip names the accuser', gossip.length > 0, `${gossip.length}`);
   check('H6d wrongly_accused memory written', mem.length > 0, `${mem.length}`);
   check('H6e aftermath copy owns the accusation', /called .* a liar/i.test((r.afterSay || '') + ' ' + log),

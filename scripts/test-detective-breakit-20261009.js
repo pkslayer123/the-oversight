@@ -122,7 +122,11 @@ function gossipNamingPlayer() {
   const { vid, lie } = liarWithOccLie();
   const d = plantOccDoubt(vid, lie);
   const t0 = trustOf(vid);
-  const rep0 = repOf(playerId()).honest || 0;
+  // DETECTIVE r12 (2026-10-10): repOf(player) is the unread self-view slot —
+  // the old assertion validated a dead write. The real cost lands on the
+  // hearers' view of the player.
+  const hs = Game.npcIds().filter(id => id !== vid).slice(0, 3);
+  const rep0 = hs.map(h => (repOf(h).honest || 0));
   let rounds = 0, outcomes = [];
   for (let i = 0; i < 40; i++) {
     if (d.resolved) break;
@@ -133,16 +137,18 @@ function gossipNamingPlayer() {
   }
   say();
   const t1 = trustOf(vid);
-  const rep1 = repOf(playerId()).honest || 0;
+  const rep1 = hs.map(h => (repOf(h).honest || 0));
   const goss = gossipNamingPlayer();
-  console.log(`    rounds=${rounds} outcomes=${outcomes.join(',')} trust ${t0}->${t1} playerHonest ${rep0}->${rep1} gossipNamingPlayer=${goss.length}`);
+  console.log(`    rounds=${rounds} outcomes=${outcomes.join(',')} trust ${t0}->${t1} hearerHonest [${rep0}]->[${rep1}] gossipNamingPlayer=${goss.length}`);
   // The break: the loop must NOT be infinite AND the accuser must pay.
   // Green bar: bounded rounds AND (player rep dented OR village gossip names player OR refusal engaged)
   const bounded = rounds < 40 || d.resolved;
   // D1: being RIGHT is free — the accuser pays only for dodges, blowups, and
   // baseless accusations. If every round confessed, no cost is the design.
   const harsh = outcomes.some(o => ['deflected', 'attacked', 'cleared'].includes(o));
-  const accuserPaid = rep1 < rep0 || goss.length > 0;
+  // r12: hearer-slot accounting — at least one hearer's view of the player's
+  // honesty dropped (the old repOf(player) check validated a dead write).
+  const accuserPaid = hs.some((h, i) => rep1[i] < rep0[i]) || goss.length > 0;
   const refused = outcomes.includes('refused') || (d.refusedUntil || 0) > 0;
   check('E1a loop is bounded (resolves or refuses)', bounded && (d.resolved || refused),
     `rounds=${rounds} resolved=${d.resolved}`);
@@ -284,13 +290,17 @@ function gossipNamingPlayer() {
   // test-detective-breakit-20261009b.js). The truly-baseless case is a REAL
   // accusation (observation doubt) with nothing behind it.
   const d = Game.addDoubt(honest, 'observation', 'test baseless', ['claims "baker"', 'observed: something off']);
-  const rep0 = repOf(playerId()).honest || 0;
+  // r12 (2026-10-10): repOf(player) is the unread self-view slot — the cost
+  // lands on the hearers' view of the player.
+  const hs2 = Game.npcIds().filter(id => id !== honest).slice(0, 3);
+  const rep0 = hs2.map(h => (repOf(h).honest || 0));
   const r = Game.confrontDoubt(honest, d.id);
   say();
-  const rep1 = repOf(playerId()).honest || 0;
-  console.log(`    outcome=${r.outcome} playerHonest ${rep0}->${rep1}`);
+  const rep1 = hs2.map(h => (repOf(h).honest || 0));
+  console.log(`    outcome=${r.outcome} hearerHonest [${rep0}]->[${rep1}]`);
   check('H2a baseless accusation resolves as cleared', r.outcome === 'cleared', r.outcome);
-  check('H2b baseless accusation dents accuser honesty rep', rep1 < rep0, `${rep0}->${rep1}`);
+  check('H2b baseless accusation dents accuser honesty rep (hearers, read slot)',
+    hs2.some((h, i) => rep1[i] < rep0[i]), `[${rep0}]->[${rep1}]`);
   check('H2c baseless accusation is village news', gossipNamingPlayer().length > 0, 'no gossip');
 })();
 

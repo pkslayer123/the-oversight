@@ -12344,7 +12344,16 @@
             // paid -4 trust-of-player per hop to the accuser plus the group
             // ripple). Player-ACTION gossip (no 'who') keeps its intended
             // secondhand-reputation drift.
-            const repTarget = dims.who ? subject : listener;
+            // DETECTIVE r12 (2026-10-10): gossip ABOUT THE PLAYER (dims.who ===
+            // player — the accuser-pays 'confrontation'/'false_accusation'
+            // gossip, the alien 'alien_smear', 'phoenix_broken') used to land
+            // on repOf(player), the player's self-view slot, which NOTHING
+            // reads — "accusations stick to the accuser" was pure theater (the
+            // old proof test validated the dead write). Route it to the
+            // hearers instead: their view of the player is the slot that
+            // exists — the same per-hearer accounting as player-action gossip
+            // (r5). NPC-subject routing is unchanged (r6-pinned).
+            const repTarget = (dims.who && subject !== this.villagerId) ? subject : listener;
             // CANON (Trust ≠ reputation) + SEEN-CRIME RULE (Steve 2026-10-09):
             // gossip/rumors move REP only, never trust. Suspicion is not
             // knowledge — secondhand talk shapes opinion, not trust.
@@ -21110,8 +21119,14 @@
       } catch (e) {}
       try {
         const v = this.state.village;
-        v.rep = v.rep || {};
-        v.rep[vid] = Math.max(-100, (v.rep[vid] || 0) - 8);
+        // DETECTIVE r12 (2026-10-10): the old line read
+        // v.rep[vid] = Math.max(-100, (v.rep[vid] || 0) - 8) — but v.rep[vid]
+        // is an OBJECT {generous, brave, honest, competent}, so (obj - 8) was
+        // NaN and the whole rep object was wiped (repOf self-heals on next
+        // read, so it silently ate accumulated rep). "Isn't pulling weight"
+        // dents generosity, through the real rep object.
+        const r = this.repOf(vid);
+        r.generous = Math.max(-100, (r.generous || 0) - 8);
       } catch (e) {}
       if (this.playerAtHaven()) {
         this.say(`Around the fire, low voices: ${first} isn't pulling weight. Nobody says it to their face. Yet.`);
