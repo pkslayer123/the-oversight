@@ -29,6 +29,7 @@
 //   - _stashLedgers(vid)
 //   - _stashItemLedgers(vid, section)
 //   - _stashToolLedgers(vid)
+//   - _stashItemGrant(vid, itemId, led)
 //   - _stashTotalNet(vid)
 //   - buryCache()
 //   - digUpCache()
@@ -287,6 +288,26 @@
       return { gives: v[gk][vid], takes: v[tk][vid] };
     },
     _stashToolLedgers(vid) { return this._stashItemLedgers(vid, 'Tool'); },
+    // _stashItemGrant(vid, itemId, led): the +2 deposit grant for tools /
+    // weapons / medicine, gated on net-positive contribution.
+    // MISER BREAK-IT 2026-10-10: the old unconditional +2 minted infinite
+    // trust via take-first cycles — take someone else's deposited item,
+    // "donate" it back (+2), repeat; the take-back sting never fired because
+    // takes always led gives (measured +10 over 5 cycles on all three
+    // sections). Returning a borrowed item is not a donation: the grant
+    // fires only when the donate raises this itemId's net above zero.
+    _stashItemGrant(vid, itemId, led) {
+      const netBefore = (led.gives[itemId] || 0) - (led.takes[itemId] || 0);
+      led.gives[itemId] = (led.gives[itemId] || 0) + 1;
+      const netAfter = netBefore + 1;
+      const grant = 2 * Math.max(0, netAfter - Math.max(netBefore, 0));
+      if (grant > 0) {
+        const v = this.state.village;
+        v.trust = v.trust || {};
+        v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + grant);
+      }
+      return grant;
+    },
     _stashTotalNet(vid) {
       const led = this._stashLedgers(vid);
       const sum = (o) => Object.values(o).reduce((t, x) => t + (x || 0), 0);
@@ -336,7 +357,11 @@
       const netBefore = (led.gives[mat] || 0) - (led.takes[mat] || 0);
       led.gives[mat] = (led.gives[mat] || 0) + n;
       const netAfter = netBefore + n;
-      const tGain = Math.max(0, Math.floor(netAfter / 10) - Math.floor(netBefore / 10));
+      // GRANT ONLY ABOVE WATER (miser break-it 2026-10-10): the old formula
+      // counted the 0-band crossing when digging out of debt (net -10 -> +5
+      // minted +1 for repaying what you took). Repaying a debt restores; it
+      // doesn't earn. Grants reward only net increases above zero.
+      const tGain = Math.max(0, Math.floor(netAfter / 10) - Math.max(Math.floor(netBefore / 10), 0));
       if (tGain > 0) v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + tGain);
       this.observe('donate');
       this.say(`Set ${n} ${matName(mat, n)} in the village stash. The pile grows.`);
@@ -446,15 +471,20 @@
       const isTool = def && (def.class === 'tool' || (def.tool && (def.tool.woodcut || def.tool.pry)));
       if (!isTool) { this.say("That's not a tool the village can share."); return null; }
       if (item.bonded) { this.say("That's yours. Bonded. Not the village's."); return null; }
+      // KEEPSAKE (miser break-it 2026-10-10): sentimental tools are yours in
+      // a deeper sense — and the stash strips items to {itemId, name}, which
+      // would destroy the sentimental charge. Refused here and hidden in the
+      // UI (isStashableTool), mirroring the armory/pharmacy rule.
+      if (this.isKeepsake && this.isKeepsake(item)) { this.say("That's yours. Not the village's."); return null; }
       inv.splice(idx, 1);
       const st = this.stashState();
       st.tools.push({ itemId: id, name: item.name || def.name });
       this.stashLog('give', item.name || def.name, 1);
-      const v = this.state.village, vid = this.state.scholar.villagerId;
-      v.trust = v.trust || {};
-      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
+      const vid = this.state.scholar.villagerId;
       // ASH GEAR HONORED (Steve 2026-10-09): bringing a phoenix victim's
-      // belongings home replaces the ordinary deposit line.
+      // belongings home replaces the ordinary deposit grant. The say line
+      // and the ontology header both promise +8 — the engine used to stack
+      // the ordinary +2 underneath (+10). Now +8, as said.
       if (this.phoenixHonorDeposit && this.phoenixHonorDeposit(item)) {
         const tg = this._stashToolLedgers(vid);
         tg.gives[id] = (tg.gives[id] || 0) + 1;
@@ -464,8 +494,10 @@
       // 2026-10-08): donating then re-taking the same tool farmed +2 trust
       // per cycle. The old flat counter ALSO accused you of taking back YOUR
       // tool when you borrowed a different one — tracked per itemId now.
+      // GRANT GATED (miser break-it 2026-10-10): +2 only for net-positive
+      // contribution — returning a borrowed tool is not a donation.
       const tg = this._stashToolLedgers(vid);
-      tg.gives[id] = (tg.gives[id] || 0) + 1;
+      this._stashItemGrant(vid, id, tg);
       this.say(`Left your ${item.name || def.name} in the stash. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },
@@ -518,6 +550,11 @@
     // Armory = weapons, pharmacy = medicine. Same deposit-gated rules as tools.
     isStashableWeapon(item) {
       if (!item || item.bonded) return false;
+      // KEEPSAKE (miser break-it 2026-10-10): the armory strips items to
+      // {itemId, name} — a keepsake deposited there would lose its
+      // sentimental charge. Hidden in the UI; the engine (_depositStashedItem)
+      // already refuses.
+      if (this.isKeepsake && this.isKeepsake(item)) return false;
       const id = item.itemId || item.id;
       const def = (this.data.items || []).find(i => i.id === id);
       return !!(def && def.class === 'weapon');
@@ -560,18 +597,19 @@
       const st = this.stashState();
       st[section].push({ itemId: id, name: item.name || def.name || id, kg: item.kg != null ? item.kg : (def.kg || 0.3) });
       this.stashLog('give', item.name || def.name || id, 1);
-      const v = this.state.village, vid = this.state.scholar.villagerId;
-      v.trust = v.trust || {};
-      v.trust[vid] = Math.min(100, (v.trust[vid] === undefined ? 15 : v.trust[vid]) + 2);
-      // TAKE-BACK TRACKING (miser break-it 2026-10-09): per-itemId
-      // give/take ledgers per section, mirroring donateTool's rule.
+      const vid = this.state.scholar.villagerId;
       const il = this._stashItemLedgers(vid, section === 'weapons' ? 'Weapon' : 'Medicine');
-      il.gives[id] = (il.gives[id] || 0) + 1;
       // ASH GEAR HONORED (Steve 2026-10-09): bringing a phoenix victim's
-      // belongings home replaces the ordinary deposit line.
+      // belongings home replaces the ordinary deposit grant (+8 as said,
+      // not +8 stacked on the ordinary +2).
       if (this.phoenixHonorDeposit && this.phoenixHonorDeposit(item)) {
+        il.gives[id] = (il.gives[id] || 0) + 1;
         return this.tickAction(2) || this.status();
       }
+      // GRANT GATED (miser break-it 2026-10-10): +2 only for net-positive
+      // contribution — returning a borrowed weapon/medicine is not a
+      // donation (see _stashItemGrant).
+      this._stashItemGrant(vid, id, il);
       this.say(`Left your ${item.name || def.name} in the ${kindLabel}. Anyone who needs it can take it.`);
       return this.tickAction(2) || this.status();
     },
@@ -999,6 +1037,10 @@
     // isStashableTool: can this inventory item be donated as a shared tool?
     isStashableTool(item) {
       if (!item || item.bonded) return false;
+      // KEEPSAKE (miser break-it 2026-10-10): the stash strips tools to
+      // {itemId, name} — a keepsake donated there would lose its sentimental
+      // charge. Hidden in the UI; the engine (donateTool) refuses.
+      if (this.isKeepsake && this.isKeepsake(item)) return false;
       const id = item.itemId || item.id;
       const def = (this.data.items || []).find(i => i.id === id);
       return !!(def && (def.class === 'tool' || (def.tool && (def.tool.woodcut || def.tool.pry))));

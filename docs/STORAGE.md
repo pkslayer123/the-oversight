@@ -51,6 +51,18 @@ rule mirrors tools: re-taking your own un-returned deposit is noticed, −5
 trust. (miser break-it 2026-10-09: the sections landed with a
 deposit↔take-back +2 trust farm, measured +22 over 11 cycles; killed by the
 same rule that guards the tool path.)
+Deposit grants are net-gated (miser break-it 2026-10-10): the +2 fires only
+when the donate raises that item's net above zero — taking someone else's
+deposited item and "donating" it back minted +2/cycle forever (measured +10
+over 5 cycles on all three sections); returning a borrowed item is not a
+donation. Same rule for materials: band grants count only net increases
+above zero — repaying a material debt restores, it doesn't earn.
+Keepsakes are refused everywhere (miser break-it 2026-10-10): the stash
+strips items to {itemId, name}, which would destroy a sentimental charge —
+donateTool and the armory/pharmacy refuse them, and the UI hides the
+Stash/Armory buttons for keepsakes.
+Ash-honor (Steve 2026-10-09): bringing a phoenix victim's ashOf gear home
+grants +8 as the line says — the ordinary +2 no longer stacks underneath.
 
 ## Personal caches
 
@@ -70,5 +82,8 @@ cache greets you with disturbed earth and an empty hole.
 - `src/js/app.js` — tool-aware tree actions, Haven stash panel, caches inline
   view, inventory Stash buttons.
 - `scripts/test-storage.js` — 59 tests.
+- `scripts/test-miser-takefirst-20261010.js` — 24 adversarial checks (take-first
+  trust farm on all three sections, material 0-band grant, keepsake donation
+  refusal, ash-honor +8 honesty, bury/take/dig softlock + honesty regressions).
 - `scripts/test-miser-attack-20261009.js` — 16 adversarial checks (armory/
   pharmacy trust farms, section-filter bypass, stale cache take).
