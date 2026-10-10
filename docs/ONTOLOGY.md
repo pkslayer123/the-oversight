@@ -608,6 +608,21 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 
 **Consumes:** state.scholar, state.village, state.codex (central game state roots)
 
+### havenGrowth (`havenGrowth.js`)
+Haven growth milestones — the 12→24 population ladder (PROGRESSION.md §10, Steve 2026-10-10). Resource-based, System-announced, never deed-based, never calendar. Each tier visibly improves the Haven and grants real mechanics. The raid system gives the Palisade something to defend against.
+
+**Provides:** havenTier(), havenPopCap(), havenStores(), havenGrowthMeter(), havenGrowthDaily(), havenTierUp(), announceHavenBar(tier), havenNeedGossip(next), havenRaidTick(), raidPillage(v, kcal), hearthStretch(), granarySpoilBonus(foodState), famineGraceDays()
+
+**Rules:**
+- resource_based: tiers unlock on stockpile thresholds only (code: havenGrowth.js — havenGrowthDaily checks havenStores() vs HAVEN_TIERS req; no deed, calendar, or knowledge reads anywhere in the tier path)
+- knowledge_never_gates: nothing here reads the codex (code: havenGrowth.js — havenTierUp/havenGrowthMeter reference stores only; announceHavenBar prints exact numbers)
+- discoverable: System announces each tier bar post-arrival, Haven panel shows the live meter, villagers gossip the shortfall (code: havenGrowth.js — announceHavenBar, havenGrowthMeter + app.js havenGrowthHTML, havenNeedGossip)
+- reactive_raids: raids fire on world state, never a schedule (code: havenGrowth.js — havenRaidTick requires 3+ world monsters, 3k+ pantry kcal, 7-day cooldown, 18% roll)
+- cap_ceiling: havenPopCap is the ceiling; intake reads it via housingCap (code: havenGrowth.js — havenPopCap; membership.js — housingCap takes max(shelters, 12+4*havenTier()))
+- no_consumption: reaching a tier does not eat the stockpile (code: havenGrowth.js — havenTierUp sets v.havenTier only; stores untouched)
+
+**Consumes:** state.village.pantry, state.village.wood, stashState().materials (wood, stone), pantryKcalLive(v), worldMonsters(), spawnWorldMonster(), removeWorldMonster(), fieldFight(), resolveWildMonsterEncounter(), progDaily() (wrapped: daily tier check + raid tick), pantryCapKcal() (wrapped: longhouse +25%)
+
 ### hierarchy (`hierarchy.js`)
 Inter-village hierarchy. Villages have relationships, rivalries, trade.
 

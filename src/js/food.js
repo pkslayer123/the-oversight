@@ -2395,7 +2395,11 @@
       vv.pantry.push({
         name: item.name || 'Finished food', plantId: item.plantId,
         kcalEach: item.kcalEach, units: item.units,
-        spoilDay: item.spoilDay || 9999, unit: item.unit,
+        // GRANARY (haven growth 2026-10-10): cool dark bins slow spoilage
+        // (+3d fresh, +14d preserved). Immortal-clock items (spoilDay 9999)
+        // are left alone.
+        spoilDay: (item.spoilDay || 9999) + ((this.granarySpoilBonus && isFinite(item.spoilDay)) ? this.granarySpoilBonus(item.foodState) : 0),
+        unit: item.unit,
         safe: item.safe !== false, kg: item.kg || 0.2, prep: item.prep,
         foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
         diseaseRisk: item.diseaseRisk, needsCooking: item.needsCooking,

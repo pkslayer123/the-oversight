@@ -14207,6 +14207,21 @@
     return `<p class="small" style="opacity:.6">😴 ${esc(prev.name)} · +${prev.heal} health · energy restored${prev.note ? `<br>${esc(prev.note)}` : ''}${prev.warn ? `<br>⚠️ ${esc(prev.warn)}` : ''}</p>`;
   }
 
+  // HAVEN GROWTH METER (2026-10-10): the visible progress bar toward the next
+  // tier — the System dangles it, the panel shows it, villagers gossip it.
+  function havenGrowthHTML(m) {
+    if (!m) return '';
+    const bars = (m.next ? m.next.bars : []).map(b => {
+      const mark = b.done ? ' ✓' : '';
+      return `<div class="small" style="margin:2px 0">${esc(b.label)}: ${b.have.toLocaleString()} / ${b.req.toLocaleString()}${mark}<div style="height:6px;background:#2a2f38;border-radius:3px;margin-top:2px"><div style="height:6px;width:${b.pct}%;background:${b.done ? '#7bc47f' : '#c9a227'};border-radius:3px"></div></div></div>`;
+    }).join('');
+    const nextBit = m.next
+      ? `<p class="small" style="margin:4px 0 2px"><b>Next: ${esc(m.next.name)}</b> (cap ${m.next.cap})</p>${bars}<p class="small" style="opacity:.65">${m.next.effects.map(esc).join('<br>')}</p>`
+      : `<p class="small" style="opacity:.65">The full muster. Haven stands complete.</p>`;
+    return `<div class="card" style="margin-top:6px"><h3>🛖 Haven growth — ${esc(m.tierName)} (cap ${m.cap})</h3>
+      <p class="small" style="opacity:.7">${m.effects.map(esc).join('<br>')}</p>${nextBit}</div>`;
+  }
+
   function panelHaven(st) {
     const v = Game.villageInfo();
     const vs = Game.data.villagers;
@@ -14257,6 +14272,7 @@
           }).join('');
           const ben = Game.memberBenefits ? Game.memberBenefits().map(b => String(b.label).split(' — ')[0]).join(' · ') : '';
           return `<p class="small" style="margin-top:6px"><b>🏠 Membership:</b> ${gs.used}/${gs.housing} housed${away ? ' · ' + away + ' away (still ours — no check-ins)' : ''}${gs.room <= 0 ? ' · ⚠ FULL' : ''}${ben ? `<br><span style="opacity:.6">Membership means: ${esc(ben)}</span>` : ''}</p>
+          ${(() => { try { return Game.havenGrowthMeter ? havenGrowthHTML(Game.havenGrowthMeter()) : ''; } catch (e) { return ''; } })()}
           <div class="btnrow"><button class="btn sm ghost" data-mship-build>🔨 Build shelter (+2, 10 wood)</button></div>
           ${apps ? `<div style="margin-top:4px"><p class="small"><b>Remote applications:</b></p>${apps}</div>` : ''}
           ${(() => {

@@ -4520,6 +4520,7 @@
         forage: { icon: '🌿', name: 'Forage', desc: 'Gather food from the wilds. Safe, steady.', danger: 0 },
         hunt:   { icon: '🏹', name: 'Hunt', desc: 'Hunt animals for meat. Risky — animals fight back.', danger: 1 },
         wood:   { icon: '🪵', name: 'Gather wood', desc: 'Firewood and building wood. Safe.', danger: 0 },
+        stone:  { icon: '🪨', name: 'Gather stone', desc: 'Pry loose stone from creek beds and hillsides. Building stone.', danger: 0 },
         water:  { icon: '💧', name: 'Fetch water', desc: 'Bring back clean water. Safe.', danger: 0 },
         scout:  { icon: '🔭', name: 'Scout', desc: 'Explore and map nearby land. May find things.', danger: 0 },
         patrol: { icon: '⚔️', name: 'Patrol / Fight', desc: 'Deal with monster threats. DANGEROUS.', danger: 2 },
@@ -4551,6 +4552,10 @@
       } else if (task === 'wood') {
         if (has('lumberjack', 'carpenter', 'logger', 'builder', 'handyman')) mult = 1.4;
         else if (has('farmer', 'firefighter')) mult = 1.2;
+      } else if (task === 'stone') {
+        // STONE (haven growth 2026-10-10): masons and builders know rock.
+        if (has('mason', 'stonecutter', 'quarry', 'builder')) mult = 1.4;
+        else if (has('carpenter', 'handyman', 'lumberjack')) mult = 1.2;
       } else if (task === 'water') {
         if (has('plumber', 'firefighter', 'fisherman', 'sailor')) mult = 1.3;
       } else if (task === 'scout') {
@@ -4849,6 +4854,19 @@
         const vv = this.state.village;
         vv.wood = (vv.wood || 0) + wood;
         this.say(`🪵 ${first} hauls back ${wood} wood. The pile grows. (${vv.wood} logs now.)`);
+        this.bumpTrust(vid, 1);
+      } else if (a.task === 'stone') {
+        // STONE (haven growth 2026-10-10): building stone for the palisade.
+        // Pry loose stone from creek beds and hillsides — scarcer than wood,
+        // deliberately. Goes to the communal stash (storage.js materials).
+        const stone = Math.max(1, Math.round(R(1, 2) * eff));
+        let pile = 0;
+        try {
+          const st = this.stashState();
+          st.materials.stone = (st.materials.stone || 0) + stone;
+          pile = st.materials.stone;
+        } catch (e) {}
+        this.say(`🪨 ${first} pries ${stone} stone loose from the creek bed. The building pile grows. (${pile} stone now.)`);
         this.bumpTrust(vid, 1);
       } else if (a.task === 'water') {
         const liters = Math.max(4, Math.round(R(10, 14) * eff));
@@ -5530,7 +5548,9 @@
         remaining -= pk;
         const item = {
           name: name || 'Foraged food', kcalEach: pk, units: 1,
-          spoilDay: day + 3, safe: true, kg: Math.max(0.05, Math.round(pk / 5) / 1000),
+          // GRANARY (haven growth 2026-10-10): cool dark bins slow spoilage.
+          spoilDay: day + 3 + (this.granarySpoilBonus ? this.granarySpoilBonus() : 0),
+          safe: true, kg: Math.max(0.05, Math.round(pk / 5) / 1000),
         };
         const existing = (this.stacksMatch && v.pantry.find(p => this.stacksMatch(p, item))) || null;
         if (existing) existing.units += 1;
@@ -11405,12 +11425,20 @@
       v.pantry = v.pantry || [];
       // FUNGIBILITY (break-it food 2026-10-08): merge only into a truly
       // identical stack — name-only merging destroyed donated value.
-      const existing = v.pantry.find(p => this.stacksMatch(p, item));
       const kcal = (item.kcalEach || 0) * (item.units || 1);
+      // GRANARY (haven growth 2026-10-10): cool dark bins slow spoilage for
+      // newly donated food (+3d fresh, +14d preserved). Merged-into-old-stack
+      // donations keep the old stack's clock (existing behavior).
+      const donated = { ...item };
+      try {
+        const b = this.granarySpoilBonus ? this.granarySpoilBonus(donated.foodState) : 0;
+        if (b && isFinite(donated.spoilDay)) donated.spoilDay += b;
+      } catch (e) {}
+      const existing = v.pantry.find(p => this.stacksMatch(p, donated));
       if (existing) {
         existing.units += (item.units || 1);
       } else {
-        v.pantry.push({ ...item });
+        v.pantry.push(donated);
       }
       // remove from inventory
       this.state.scholar.inventory.splice(idx, 1);
@@ -22032,7 +22060,11 @@
           }
         }
       } catch (e) {}
-      const need = (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
+      // LONGHOUSE HEARTH (haven growth 2026-10-10): a hot communal meal from
+      // the longhouse hearth stretches every calorie — villagers eating at
+      // haven need 10% less. Away villagers eat cold.
+      let need = (person.kcalPerDay || 2000) * (0.7 + 0.3 * healthFactor);
+      try { if (!away && this.hearthStretch) need = Math.round(need * this.hearthStretch()); } catch (e) {}
       const away = !!(v.away && v.away[vid]);
       // THEY FEED THEMSELVES FIRST: what they catch never sees the pantry
       const ownEat = Math.min(produced, need);
@@ -22336,12 +22368,20 @@
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
         this.say(`⚠ Haven's pantry is empty. Day ${v.hungryDays} of hunger.`);
+        // GRANARY (haven growth 2026-10-10): sealed reserve bins — the
+        // village holds five hungry days, not three. The bins opening is
+        // narrated, never silent.
+        let famineLimit = 3;
+        try { if (this.famineGraceDays) famineLimit = this.famineGraceDays(); } catch (e) {}
+        if (v.hungryDays === 4 && famineLimit > 3) {
+          this.say('The granary\u2019s reserve bins open — sealed grain from the good weeks. Two more days. Make them count.');
+        }
         // The scattering happens ONCE. Without the flag, every endDay after
         // game-over re-announces it and re-wipes (sims keep calling endDay).
-        if (v.hungryDays >= 3 && !v.scattered) {
+        if (v.hungryDays >= famineLimit && !v.scattered) {
           v.scattered = true;
           this.over = true; this.villageLost = true;
-          this.say('Haven couldn\'t hold. On the third hungry day, people started walking — in different directions. The scattering, again.');
+          this.say(`Haven couldn\'t hold. On the ${famineLimit === 3 ? 'third' : 'fifth'} hungry day, people started walking — in different directions. The scattering, again.`);
           this.wipe();
         }
       } else {

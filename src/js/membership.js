@@ -209,7 +209,13 @@
     // ---------- 4. HOUSING & GROWTH ----------
 
     housingCap() {
-      return (this.mshipState().housing) || 12;
+      // HAVEN TIERS (haven growth 2026-10-10, PROGRESSION.md §10): the
+      // milestone ladder raises the ceiling — 12 → 16 → 20 → 24. Shelters
+      // still add their own roof; the cap is whichever is higher. The tier
+      // is the intended path; a shelter is a side roof.
+      let cap = (this.mshipState().housing) || 12;
+      try { if (this.havenTier) cap = Math.max(cap, 12 + 4 * this.havenTier()); } catch (e) {}
+      return cap;
     },
 
     // buildShelter: +2 housing. Costs 10 wood from your pack and the work

@@ -2,6 +2,8 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Haven can grow now: stockpile food, wood, stone and preserved food and the village raises the Longhouse (room for 16), the Palisade (room for 20 \u2014 walls that bleed raiders and keep your sleep safe), and the Granary (room for 24, slower spoilage, a deeper famine reserve). The System tells you exactly what each one costs, the Haven panel shows your progress, and the village talks about what's missing.",
+      "The woods have teeth at night now: when monsters gather and the pantry smells rich, raiders hit Haven. Villagers fight them off for real \u2014 and anything they don't meet eats from your stores. There's a new stone-gathering job for the building pile.",
       "Going national is no longer just lead-or-bow: you can confederate as equals \u2014 no throne, just a shared granary and a war-pact where every fire answers every call \u2014 or found a trade league that pays weekly tariffs but owes no swords. You can also take villages by force now: muster a war party, offer terms, or burn and subjugate \u2014 but blood has a price, and conquered fires can rise. And if the System offers you a polity, you can refuse the scale entirely: keep every kcal, answer to no one \u2014 and face the late waves alone."
     ],
     "version": "pending-ship"
