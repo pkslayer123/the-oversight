@@ -16,7 +16,7 @@
 //   - quarantineKey(key): move corrupt save data to a capped dated quarantine key; writes a one-shot player notice + a restore manifest (break-it 2026-10-09 r7)
 //   - takeQuarantineNotice(): one-shot {key, at} for the title screen toast (break-it 2026-10-09 r7)
 //   - listQuarantines(): restorable snapshots [{qkey, origKey, at}] (break-it 2026-10-09 r7)
-//   - restoreQuarantine(qkey) -> true | 'occupied' | 'corrupt' | false (break-it 2026-10-09 r7)
+//   - restoreQuarantine(qkey) -> true | 'occupied' | 'corrupt' | 'unusable' | false (break-it 2026-10-09 r7; 'unusable' added break-it persistence r1 2026-10-10: parseable but never-loadable snapshots refuse instead of lying "restored")
 //   - MIGRATIONS: {targetVersion: (state)=>state} forward-migration registry; the runner owns version stamping, fns must not set version (break-it 2026-10-09 r7)
 //   - migrateSave(state): run registered migrations forward; null when no path or version > SAVE_VERSION (break-it 2026-10-09 r7)
 //   - hasMigrationPath(fromVersion): dry-run path check, no mutation (break-it 2026-10-09 r7)
@@ -304,8 +304,13 @@
   }
   // restoreQuarantine(qkey): copy a snapshot back under its original key.
   // Deliberate user action (debug panel) — clears the tombstone so the
-  // revived run can save again. Refuses to clobber a live save ('occupied')
-  // or restore an unparseable snapshot ('corrupt').
+  // revived run can save again. Refuses to clobber a live save ('occupied'),
+  // restore an unparseable snapshot ('corrupt'), or "restore" a snapshot
+  // that parses but can never load ('unusable': no version, or a version
+  // with no migration path). The old code returned true for those — the
+  // debug panel said "restored" while Continue still couldn't load it, and
+  // the next listSaves() silently re-quarantined it, burning a quarantine
+  // slot per restore cycle (break-it persistence r1 2026-10-10).
   function restoreQuarantine(qkey) {
     try {
       let m = {};
@@ -314,7 +319,10 @@
       if (!meta || !meta.origKey) return false;
       const d = localStorage.getItem(qkey);
       if (!d) return false;
-      try { JSON.parse(d); } catch (e) { return 'corrupt'; }
+      let s = null;
+      try { s = JSON.parse(d); } catch (e) { return 'corrupt'; }
+      if (!s || typeof s !== 'object') return 'corrupt';
+      if (s.version !== SAVE_VERSION && !hasMigrationPath(s.version)) return 'unusable';
       try {
         const cur = localStorage.getItem(meta.origKey);
         if (cur) {

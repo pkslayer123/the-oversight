@@ -13904,8 +13904,14 @@
     });
     // System arrival? Play the animation (once). Full-screen overlay — it's THE moment.
     if (Game.state.systemArrived && !Game.state.systemAnimationShown) {
-      Game.state.systemAnimationShown = true;
       systemArrivalAnimation(() => {
+        // COMPLETION FLAG (break-it persistence r1 2026-10-10): the flag used
+        // to be set when the cinematic STARTED — a tab backgrounded
+        // mid-cinematic autosaved with it set, and the reload skipped the
+        // staged reveal entirely (the arrival's pacing is a design
+        // requirement, not a nicety). "Once" means once SEEN: mark it when
+        // the cinematic finishes, so an interrupted viewing replays.
+        Game.state.systemAnimationShown = true;
         processPendingSheets();
         expeditionScreen();
       });
@@ -16308,6 +16314,7 @@
           Game.say(r === true ? '🐞 DEBUG: quarantined save restored.'
             : r === 'occupied' ? '🐞 DEBUG: a live save already occupies that slot — not clobbered.'
             : r === 'corrupt' ? '🐞 DEBUG: that snapshot is unparseable — not restored.'
+            : r === 'unusable' ? '🐞 DEBUG: that snapshot parses but can never load (no version / no migration path) — not restored.'
             : '🐞 DEBUG: restore failed.');
           renderQuarantines();
           refresh();
