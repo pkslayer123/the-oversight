@@ -2574,7 +2574,11 @@
       const now = this._absTick();
       const px = s.insideTent ? s.insideTent.tx : (this.map || {}).px;
       const py = s.insideTent ? s.insideTent.ty : (this.map || {}).py;
-      const f = (this.state.fires || []).find(f => f.tx === px && f.ty === py && f.till > now && f.burn0);
+      // (survivalist loop 2026-10-09): the old find required f.burn0, which
+      // only tent fires set — every outdoor player fire slipped through and
+      // cooking outdoors burned no fuel. All tracked player fires burn.
+      // (Map fires/hearths are never tracked, so they stay free — established.)
+      const f = (this.state.fires || []).find(f => f.tx === px && f.ty === py && f.till > now);
       if (!f) return 'ok';
       f.till -= ticks;
       return f.till <= now ? 'died' : 'ok';

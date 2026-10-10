@@ -9922,12 +9922,26 @@
       const fireHere = this.nearFire() || (typeof this.tentFireLit === 'function' && this.tentFireLit());
       if (!fireHere && !this.hasAbility('beard_moss')) { this.say('Need a fire to boil water.'); return null; }
       s.water = s.water || [];
+      // Count the boilable liters first: the fire has to survive the whole
+      // boil for any of them to count.
       let n = 0;
       for (const b of s.water) {
-        if (b.quality === 'risky' && !b.chemical) {
-          b.quality = 'clean';
-          b.source += ' (boiled)';
-          n++;
+        if (b.quality === 'risky' && !b.chemical) n++;
+      }
+      // BOIL BURNS FUEL (survivalist loop 2026-10-09): a 32-tick boil is a
+      // fire session like cooking — it burns 32 ticks of fuel, and a fire
+      // that dies under the pot fails the batch honestly: the water never
+      // boiled, still risky. (Moss-tinder boils burn no fire — there is none.)
+      // Map fires/hearths are untracked, so consumeCookFire passes them free.
+      const boilTicks = 32;
+      let fireDied = false;
+      if (n > 0 && fireHere) fireDied = this.consumeCookFire(boilTicks) === 'died';
+      if (!fireDied) {
+        for (const b of s.water) {
+          if (b.quality === 'risky' && !b.chemical) {
+            b.quality = 'clean';
+            b.source += ' (boiled)';
+          }
         }
       }
       // TENDING A FIRE IS WORK — and it scales with the batch. A liter is real
@@ -9938,7 +9952,6 @@
       // prices boiling at 1 chunk (32 ticks) — the old code charged zero, so
       // bulk purification was free on the one clock that governs everything.
       const boilCost = 30 + 5 * n;
-      const boilTicks = 32;
       if (n > 0) {
         s.kcal = Math.max(0, (s.kcal || 0) - boilCost);
         this.tickAction(boilTicks);
@@ -9946,8 +9959,15 @@
       // COST HONESTY (survivalist loop 2026-10-07): the charge was silent.
       // Name it. Moss-tinder boiling (no fire) still costs the work —
       // coaxing damp moss into enough heat to boil a liter is real labor.
+      // HONEST FAILURE (survivalist loop 2026-10-09): a fire that died under
+      // the pot never boiled anything — say so, don't print the success copy.
+      // The work happened (kcal + ticks already spent); the water is still risky.
       const mossBoil = n > 0 && !fireHere && this.hasAbility('beard_moss');
-      this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal, ${boilTicks} ticks ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      if (fireDied) {
+        this.say(`The fire died under the pot — the water never came to a boil. Still risky. Feed the fire and try again. (-${boilCost} kcal, ${boilTicks} ticks of wasted tending.)`);
+      } else {
+        this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal, ${boilTicks} ticks ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+      }
       return null;
     },
     // gatherCharcoal: rake charcoal from a campfire's ashes. Wood fires make
@@ -10193,8 +10213,13 @@
         // measurable, and burn duration is the fire's only heat-adjacent
         // mechanic. Documented here, not hidden in data.
         const heat = this.modTarget('fire.heat', 0);
-        const till = this._absTick() + Math.round(fuel.burn * (1 + 0.25 * heat));
-        (this.state.fires = this.state.fires || []).push({ tx: this.map.px, ty: this.map.py, cx, cy, till });
+        const burn0 = Math.round(fuel.burn * (1 + 0.25 * heat));
+        const till = this._absTick() + burn0;
+        // burn0 (survivalist loop 2026-10-09): the fire's initial fuel. The
+        // old push omitted it, so consumeCookFire's burn0 filter silently
+        // skipped every outdoor fire — cooking outdoors burned no fuel and
+        // the mid-cook death downgrade never fired outside tents.
+        (this.state.fires = this.state.fires || []).push({ tx: this.map.px, ty: this.map.py, cx, cy, till, burn0 });
         let msg = moss
           ? 'The beard-moss tinder takes the first real spark. You feed it twigs — fire. Yours.'
           : 'The tinder catches. A real flame, breathing. You feed it twigs — fire. Yours.';
