@@ -867,10 +867,11 @@
     // never a silent pocket.
     if (prize && (isPlayer || isSummons)) {
       try {
-        const items = this.data.items || [];
-        const cands = items.filter(it => it.origin === 'alien' && (it.tier || 1) <= 1
-          && !it.kcalEach && it.class !== 'food');
-        const gift = cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+        // ONE HELPER, ONE RULE (code: apWackyGift; break-it shows r2
+        // 2026-10-10): this used to inline the same filter apWackyGift
+        // runs (alien, tier<=1, no kcalEach, not food) — a drift risk.
+        // The prize is the same never-dinner curio the fan paths grant.
+        const gift = (typeof this.apWackyGift === 'function') ? this.apWackyGift(1) : null;
         if (gift && this.apGrantItem) {
           this.apGrantItem(gift.id);
           this.sysSay(`📺 The System presses something humming into your hands: ${gift.name || gift.id}. It's wacky. It's yours.`);

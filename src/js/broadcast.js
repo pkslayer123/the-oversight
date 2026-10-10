@@ -76,6 +76,18 @@
       [PBP, 'A watch party! The snacks are real. The stakes are not. This is the good part of being watched.'],
       [COLOR, 'They share food VOLUNTARILY. No cameras forced this. ...The cameras are here, but still.'],
     ],
+    // REFUSED (break-it shows r2 2026-10-10): the outcome beat for a
+    // refused summons/show ('SHOW_REFUSED') used to fall through
+    // classifyBeat into the generic pool — the commentators called a
+    // defiant no with a shrug, against the "tied to the actual result,
+    // never a generic line" rule. A refusal is its own kind of content;
+    // it gets its own commentary.
+    refused: [
+      [PBP, 'They said NO. On camera. In front of everyone. Is the broadcast still running? It is still running.'],
+      [COLOR, 'The refusal IS the content. We have filed their defiance under: interesting. We will watch them harder now.'],
+      [PBP, 'The System does not punish refusals. The System REMEMBERS refusals. Different thing. Probably.'],
+      [COLOR, 'It looked straight into the lens and said no. I felt something. Disdain? No — ...interest. Log it.'],
+    ],
     generic: [
       [PBP, 'The galaxy watches. The galaxy judges. The galaxy snacks.'],
       [COLOR, 'Note: they wave at the cameras now. They have learned. I am so proud. So, so proud.'],
@@ -93,6 +105,7 @@
     if (/escalate|climax/i.test(b)) return 'tension';
     if (/won|triumph|fans/i.test(b)) return 'triumph';
     if (/lost|shame|embarrass/i.test(b)) return 'embarrassment';
+    if (/refus/i.test(b)) return 'refused'; // the no is the content — never a generic shrug
     if (/mixed|both|together|watch/i.test(b)) return 'together';
     if (/win/i.test(b)) return 'triumph';
     if (/lose/i.test(b)) return 'embarrassment';
@@ -192,6 +205,7 @@
       pull: '😲👏😲',
       summons: '😬👀',
       together: '🍿😊👏',
+      refused: '😲🤫👀',
       generic: '👀',
     };
     return rows[mood] || rows.generic;
