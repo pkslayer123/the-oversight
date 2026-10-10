@@ -14194,7 +14194,8 @@
               }
               // PROPOSE (drifter loop 2026-10-08): proposeLink had no UI — the
               // whole link system was engine-only and unreachable. Court them
-              // first (join, learn their codex, deeds); cold proposals decline.
+              // first (join, learn their codex, deeds); cold proposals usually
+              // draw a counter-offer — the negotiation is the climb.
               // KNOWLEDGE GATE (regional audit 2026-10-09): only villages
               // you've heard of (rumor) or visited (generated) appear — a
               // name you never heard is not a button.

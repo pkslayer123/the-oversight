@@ -12,6 +12,13 @@
 //   - answerCounter(how)
 //   - answerDemand(a, b)
 //   - payTribute(a, b)
+//   - primaryDemand(linkId)
+//   - proveWorth(linkId, vid, mag)
+//   - successionCrisis(linkId)
+//   - renegotiateLink(linkId)
+//   - bidForPrimacy(linkId)
+//   - villageLinks(villageId)
+//   - representative()
 //   - hierarchyDaily()
 //   - linkTick(a, b)
 //   - onLeaderDeath(vid)
@@ -22,7 +29,7 @@
 //   - kingdomEndingEligible()
 //   - _nudgeOpinion(villageId, delta)
 // rules:
-//   - courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually decline (judgeLink base 38) — the climb is earned. (code: hierarchy.js)
+//   - courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually draw a counter-offer in the 35-54 band (judgeLink base 38) — the negotiation is the climb, and acceptance is earned through courtship (generosity bonus needs opinion 5+). (code: hierarchy.js)
 //   - join_surfaces_village_news: joining a village reads up to 3 recent village.news entries (named catch-up deaths/births) at their fire. (code: hierarchy.js)
 //   - negotiation_is_played: proposeLink scores the courtship; >=55 accepts, 35-54 counters with the village's own terms (accept/sweeten/walk away — played, never rolled), <35 declines. (code: hierarchy.js)
 //   - regional_dawn: Haven's first-ever link stages a played beat, not a threshold flip — the System overlay grows into coordination (networkLive) and the player chooses Haven's first gesture (gift/visit/cold), each with real costs. (code: hierarchy.js)
@@ -172,10 +179,11 @@
     // judgeLink: the negotiation, scored. The stronger village has leverage;
     // tribute offered smooths it; alliances and opinion open doors.
     // COURTSHIP IS THE CLIMB (drifter loop 2026-10-08): a cold proposal with
-    // no relationship behind it usually declines — the door isn't shut, but
-    // opinion has to be EARNED first (join them, learn their codex, deeds on
-    // the broadcast). Base 38, not 50: the old base accepted ~80% of cold
-    // proposals, skipping the climb entirely.
+    // no relationship behind it usually draws a COUNTER-OFFER, not a
+    // decline — the negotiation is the climb, and opinion has to be EARNED
+    // first (join them, learn their codex, deeds on the broadcast). Base
+    // 38, not 50: the old base accepted ~80% of cold proposals, skipping
+    // the climb entirely.
     judgeLink(targetId, opts) {
       opts = opts || {};
       var score = 38, reasons = [];
@@ -203,7 +211,13 @@
         else { score -= 10; reasons.push('Why would they bow to the weaker?'); }
       }
       var trib = opts.tributeKcalPerWeek || 0;
-      if (opts.asSubordinate && trib >= 3000) { score += 8; reasons.push('The tribute offered is generous.'); }
+      // GENEROSITY IS EARNED (break-it regional 2026-10-10): the old code
+      // handed +8 to any cold offer of 3,000+ — stacked with the +10
+      // subordinate bonus, cold proposals accepted ~50% of the time and
+      // skipped the counter band (the played negotiation) entirely. A big
+      // offer from a stranger is suspicious; from a village that's sat
+      // with you (opinion 5+, i.e. courtship started), it's generous.
+      if (opts.asSubordinate && trib >= 3000 && opinion >= 5) { score += 8; reasons.push('The tribute offered is generous.'); }
       score += R() * 20 - 10;
       return { score: Math.round(score), reasons: reasons, rep: rep };
     },
@@ -447,9 +461,20 @@
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active' || link.subordinate !== HOME) return null;
+      var week = this._week();
+      // IDEMPOTENT (break-it regional 2026-10-10): the old code granted +3
+      // trust on EVERY call once the week's accumulated total reached the
+      // owed amount — pay once in full, then click again with a bare
+      // pantry, and farm +3 trust per click for zero food. Tribute is
+      // current or it isn't; the bonus fires once, when the week becomes
+      // current. The UI hides the button when paid, but the engine holds
+      // the line too.
+      if (link.tributePaidWeek === week) {
+        this.say('Tribute is already current this week — the pantry keeps its food.');
+        return 0;
+      }
       var owed = link.tributeKcalPerWeek;
       var paid = this._removePantryKcal(kcal == null ? owed : kcal);
-      var week = this._week();
       // PARTIALS DON'T DOUBLE-COUNT (break-it regional 2026-10-09): the
       // week's payments accumulate in tributePaidKcal; linkTick charges the
       // true shortfall ONCE. The old code added (owed - paid) here AND the
@@ -508,12 +533,23 @@
               if (link.status !== 'active') return;
               if (link.subordinate === HOME) {
                 // THE TRUE SHORTFALL, CHARGED ONCE (break-it regional
-                // 2026-10-09): payTribute accumulates the week's payments in
-                // tributePaidKcal; here the unpaid remainder becomes arrears
-                // a single time. A week settled at payment time stays settled.
-                var settled = (link.tributePaidWeek || -1) >= week;
-                var paidK = (!settled && link.tributeWeek === week) ? (link.tributePaidKcal || 0) : 0;
-                var short = settled ? 0 : Math.max(0, link.tributeKcalPerWeek - paidK);
+                // 2026-10-09; boundary fix 2026-10-10): the tick runs at the
+                // week's boundary (endDay), AFTER the week's last day — so it
+                // settles the week that just ENDED (week-1), crediting the
+                // payments tagged with that week. The old code settled the
+                // CURRENT week, which only credited payments made on the
+                // single boundary day: every other payment — full or
+                // partial — was silently voided (food left the pantry AND
+                // full arrears were charged), the "partials are better than
+                // nothing" rule was false in the engine, and
+                // kingdomEndingEligible (arrears===0) was unreachable.
+                // Links formed mid-week get grace for the partial week: no
+                // full week's tribute for days the link didn't exist.
+                var settledWeek = week - 1;
+                var settled = (link.tributePaidWeek || -1) >= settledWeek;
+                var existedAllWeek = (link.day || 0) <= settledWeek * 7;
+                var paidK = (!settled && existedAllWeek && link.tributeWeek === settledWeek) ? (link.tributePaidKcal || 0) : 0;
+                var short = (settled || !existedAllWeek) ? 0 : Math.max(0, link.tributeKcalPerWeek - paidK);
                 if (short > 0) {
                   link.arrears += short;
                   link.trust = Math.max(0, link.trust - 6);
@@ -595,6 +631,14 @@
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || !link.pendingDemand) return null;
+      if (link.status !== 'active') {
+        // THE TABLE IS GONE (break-it regional 2026-10-10): a demand
+        // outliving its link used to be honor-able — tribute food left the
+        // pantry for a broken bond. Dead links hold no obligations.
+        link.pendingDemand = null;
+        this.say('That bond is broken — there is no one left at the other end of the table. The demand dies with it.');
+        return null;
+      }
       var d = link.pendingDemand;
       link.pendingDemand = null;
       var tGain = 8;
@@ -687,6 +731,7 @@
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active') return null;
       link.status = 'broken';
+      link.pendingDemand = null; // demands die with the link (break-it 2026-10-10)
       var other = link.subordinate === HOME ? link.primary : link.subordinate;
       var weAreSub = link.subordinate === HOME;
       var ov = this._otherVillage(other);

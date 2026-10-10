@@ -599,10 +599,10 @@ Central game controller. Owns state, map, day loop, actions, encounters, combat,
 ### hierarchy (`hierarchy.js`)
 Inter-village hierarchy. Villages have relationships, rivalries, trade.
 
-**Provides:** hierarchyState(), linkWith(vid, other), knowsVillage(v), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerCounter(how), answerDemand(a, b), payTribute(a, b), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid), theirLeaderDied(linkId), stageFirstAccord(link), answerAccord(how), deliverVillageRumors(), kingdomEndingEligible(), _nudgeOpinion(villageId, delta)
+**Provides:** hierarchyState(), linkWith(vid, other), knowsVillage(v), linkStanding(a, b), breakLink(a, b), judgeLink(a, b), proposeLink(a, b), answerCounter(how), answerDemand(a, b), payTribute(a, b), primaryDemand(linkId), proveWorth(linkId, vid, mag), successionCrisis(linkId), renegotiateLink(linkId), bidForPrimacy(linkId), villageLinks(villageId), representative(), hierarchyDaily(), linkTick(a, b), onLeaderDeath(vid), theirLeaderDied(linkId), stageFirstAccord(link), answerAccord(how), deliverVillageRumors(), kingdomEndingEligible(), _nudgeOpinion(villageId, delta)
 
 **Rules:**
-- courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually decline (judgeLink base 38) — the climb is earned. (code: hierarchy.js)
+- courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually draw a counter-offer in the 35-54 band (judgeLink base 38) — the negotiation is the climb, and acceptance is earned through courtship (generosity bonus needs opinion 5+). (code: hierarchy.js)
 - join_surfaces_village_news: joining a village reads up to 3 recent village.news entries (named catch-up deaths/births) at their fire. (code: hierarchy.js)
 - negotiation_is_played: proposeLink scores the courtship; >=55 accepts, 35-54 counters with the village's own terms (accept/sweeten/walk away — played, never rolled), <35 declines. (code: hierarchy.js)
 - regional_dawn: Haven's first-ever link stages a played beat, not a threshold flip — the System overlay grows into coordination (networkLive) and the player chooses Haven's first gesture (gift/visit/cold), each with real costs. (code: hierarchy.js)
