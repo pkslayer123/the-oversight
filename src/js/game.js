@@ -27613,45 +27613,17 @@
         if (this.tbEndCheck()) return;
         return;
       }
-      // BUNKER (speedbump): sealed in its shell. It doesn't act — it waits
-      // you out. Nearly invulnerable; the answer is patience, not force.
-      if (this.turtleIs(m) && (m.turtleBunker || 0) > 0) {
-        m.turtleBunker -= 1;
-        if (m.turtleBunker <= 0) {
-          m.bunkerNoted = false;
-          if (useFifo) this.encSetPhase(m, this.encPhaseFor(m, 'idle'));
-          this.say('The shell unseals with a soft pop. The bad attitude is back.');
-        } else {
-          this.say('The boulder sits. Sealed. Waiting you out.');
-        }
-        this.tbRefreshTelegraphUI();
-        if (this.tbEndCheck()) return;
-        return;
-      }
-      // HUMMICE: the swarm checks itself every turn — deaths drop voices,
-      // distance thins the hum.
-      if (this.humiceIs(m)) this.tbHumSwarmCheck(m);
-      // CROWD OVERLOAD (drone): it can't grade a crowd. More live targets
-      // than crowdLimit on the queue and the evaluation stalls out.
-      // Bring friends. (The deer is unaffected.)
-      if (useFifo && this.droneIs(m)) {
-        const limit = ((this.encConfig(m) || {}).crowdLimit) || 2;
-        const live = this.encThreatQueue(m).filter(k => {
-          const t = this.tbFighter(k); return t && t.alive && !t.fled;
-        });
-        // ADAPTATION: after 1 recalc the drone narrows scope and grades
-        // anyway (see the drone's bespoke block). Crowds buy time, not immunity.
-        if (live.length > limit && (m.drRecalcs || 0) < 1) {
-          m.drRecalcs = (m.drRecalcs || 0) + 1;
-          m.telegraph = null;
-          this.encSetPhase(m, 'recalc');
-          this.say('📊 "TOO MANY SUBJECTS. EVALUATION PAUSED. RECALIBRATING." The drone backs off, overwhelmed by the crowd.');
-          this.audioEvent('droneRecalc');
-          this.tbRefreshTelegraphUI();
-          if (this.tbEndCheck()) return;
-          return;
-        }
-      }
+      // HOOK-MIGRATED (monsterBehaviors.json + src/js/monsterBehaviors.js, Steve 2026-10-07):
+      // turtleBunker, humSwarmCheck, droneCrowdOverload run via mbRunPreTurn
+      // above — their inline branches were removed per the migration pattern
+      // (break-it monsters r6 2026-10-10). The hummice inline was still live
+      // and DOUBLE-FIRED tbHumSwarmCheck every turn (the hook returns false
+      // so it doesn't consume the turn); the turtle/drone inlines were
+      // unreachable (their hooks consume first under identical conditions).
+      // NOTE: hook order vs FLIPPED — mbRunPreTurn runs before the flipped
+      // check below, but turtleBunker>0 and turtleFlipped>0 can never
+      // co-occur (flip is refused while sealed; bunker requires unflipped),
+      // so relocation changes nothing.
       if (m.telegraph) {
         const tg = m.telegraph;
         const sweepBeam = !!((tg.pattern || {}).sweep && ((tg.pattern || {}).type === 'beam' || (tg.pattern || {}).type === 'line'));
@@ -30840,9 +30812,18 @@
       const waveBefore = this.unlockedWave();
       if (result === 'won') {
         this.state.combatWins++;
-        // Record kills by wave for unlock gates
+        // Record kills by wave for unlock gates. ONE BODY = ONE KILL
+        // (break-it monsters r6 2026-10-10): snake segments are one creature —
+        // the reward loop below de-dupes them by snakeId for carcasses, loot,
+        // and codex 'slain'. Counting each of the duck's 14 segments let a
+        // single snake clear the 4-kill wave-2 minimum alone. Pack monsters
+        // are separate creatures and still count individually.
+        const _seenKills = new Set();
         for (const m of f.fighters) {
           if (m.kind === 'monster' && !m.alive && m.mdef) {
+            const _bk = (m.mdef.snake && m.snakeId) ? 'snake:' + m.snakeId : 'body:' + m.key;
+            if (_seenKills.has(_bk)) continue;
+            _seenKills.add(_bk);
             this.recordWaveKill(m.mdef.id);
           }
         }
