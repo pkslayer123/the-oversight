@@ -1107,7 +1107,7 @@
       const looks = fn[pl.id];
       let first = 'Someone';
       try { first = this.displayName(vid).split(' ')[0]; } catch (e) {}
-      const pname2 = this.plantKnown(pl.id) ? pl.name : (pl.description || 'an unfamiliar plant');
+      const pname2 = this.plantDisplayName(pl.id);
       const present2 = this.playerAtHaven();
       if (looks >= 3) {
         delete fn[pl.id];
@@ -2557,7 +2557,14 @@
         // Above 40: talking doesn't build trust. Do something real.
       }
       // teaching is observed: generosity + competence, through each lens.
-      try { this.observe('share_knowledge', { target: vid }); } catch (e) {}
+      // TRUST CAP (break-it knowledge 2026-10-09 r2): the target's trust
+      // already moved through the capped direct block above ("talk gets you
+      // to 40"). Without trustMoved, the observe path drifted it AGAIN with
+      // no cap — 30 repeated bad-education lessons farmed a stranger's trust
+      // to 73, defeating the whole "words only go so far" rule. Same pattern
+      // as giveFood's deed path (socialite r5 2026-10-09): opinion still
+      // forms for everyone; trust drift lands on witnesses only.
+      try { this.observe('share_knowledge', { target: vid, trustMoved: true }); } catch (e) {}
       // THEY LEARN: a successful lesson sticks. Their foraging improves —
       // knowledge feeds, through the taught[] the village metabolism reads.
       try { this.villagerLearnsPlant(vid, plantId, 'taught'); } catch (e) {}
@@ -4130,7 +4137,9 @@
     // nudge to learn, not a free name.
     questPlantRef(pid, qty) {
       const p = (this.data.plants || []).find(x => x.id === pid) || {};
-      if (this.plantKnown(pid)) return `${qty} ${p.name || pid}`;
+      // BELIEVED NAME (break-it knowledge 2026-10-09 r2): quest text is
+      // player-facing — say what the player calls it, not the true name.
+      if (this.plantKnown(pid)) return `${qty} ${this.plantCalledName(pid)}`;
       return `${qty}× ${p.description || 'a plant'}`;
     },
 
@@ -4580,7 +4589,7 @@
             // only if known; otherwise the descriptor — same pattern as
             // firesideTeaching. The teaching moment (not the report) is what
             // earns the name.
-            const pname = this.plantKnown(p.id) ? (p.name || p.id) : (p.description || 'a plant');
+            const pname = this.plantDisplayName(p.id);
             learned = ` ${first} also learned to recognize ${pname} — village knowledge grows.`;
             if (this.state.systemArrived) this.flowVillageKnowledge();
           }
@@ -8538,7 +8547,7 @@
       const kcal = n * plant.caloriesPerUnit;
       if (this.plantKnown(pid)) {
         scholar.inventory.push(this.foodForageItem(plant, true, n, kcal, scholar.day));
-        this.say('+' + n + 'x ' + plant.name + ' (+' + kcal + ' kcal).');
+        this.say('+' + n + 'x ' + this.plantCalledName(pid) + ' (+' + kcal + ' kcal).');
       } else {
         this.addUnknownToLump(plant, n, scholar.day);
         this.say('Unfamiliar unknown nuts — into the bag. (Unknowns lump together; sort them at camp.)');
@@ -12282,9 +12291,10 @@
           const teacher = teachers[Math.floor(Math.random() * teachers.length)];
           const learner = learnersW[Math.floor(Math.random() * learnersW.length)];
           if (this.villagerLearnsPlant(learner, pid, 'word of mouth')) {
-            const p = (this.data.plants || []).find(x => x.id === pid);
-            if (p && Math.random() < 0.3) {
-              this.say(`${this.displayName(teacher)} showed ${this.displayName(learner)} the ${p.name} — "remember it." Word gets around.`);
+            if (Math.random() < 0.3) {
+              // BELIEVED NAME (break-it knowledge 2026-10-09 r2): the narrator
+              // speaks to the player in the player's terms.
+              this.say(`${this.displayName(teacher)} showed ${this.displayName(learner)} the ${this.plantDisplayName(pid)} — "remember it." Word gets around.`);
             }
           }
           }
@@ -13013,7 +13023,7 @@
       const teacher = this.displayName(entry.discoveredBy);
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return;
-      const pname = this.plantKnown(pid) ? p.name : (p.description || 'a plant');
+      const pname = this.plantDisplayName(pid);
       // CURIOSITY ASK (Steve 2026-10-09): the curious prompt the lesson — a
       // real beat, never silent. Someone has been wondering about this one.
       let askBead = '';
@@ -13142,6 +13152,15 @@
       const first = this.displayName(vid);
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return 'none';
+      // TRADER'S BELIEF (break-it knowledge 2026-10-09 r2): the offer lines
+      // are the TRADER's speech — they name what the trader calls it. A
+      // trader who is wrong about the plant offers it under the wrong name;
+      // the true name must not leak here before the wrongTeaching beat.
+      // (Read from the raw store: villagerWrongAbout() GENERATES wrongness
+      // as a side effect — don't roll new lies just to phrase an offer.)
+      const tWrong = (((this.state.village || {}).wrongAbout || {})[vid] || {})[pid] || {};
+      const tCalled = (tWrong.wrongPid &&
+        (((this.data.plants || []).find(x => x.id === tWrong.wrongPid) || {}).name)) || p.name;
       // ONE-SHOT LESSON (break-it knowledge 2026-10-08): a trade that teaches
       // nothing is not a trade. Traders teach to L3; if you already know the
       // plant that deep, there's nothing to buy — the old code charged the
@@ -13150,7 +13169,7 @@
       // no charge, no phantom lesson, no trust.
       const already = (this.state.codex.plants || {})[pid];
       if (already && (already.level || 0) >= 3) {
-        this.say(`${first} shakes their head. "You already know ${p.name} as well as I do — nothing to trade there."`);
+        this.say(`${first} shakes their head. "You already know ${tCalled} as well as I do — nothing to trade there."`);
         return 'known';
       }
       const trust = (this.state.village.trust || {})[vid] || 10;
@@ -13160,11 +13179,11 @@
       if (price === 'food') {
         const cost = 300;
         if ((this.state.scholar.kcal || 0) < cost) {
-          this.say(`${first} wants ${cost} kcal of food for the secret of ${p.name}. You don't have it.`);
+          this.say(`${first} wants ${cost} kcal of food for the secret of ${tCalled}. You don't have it.`);
           return 'poor';
         }
         this.state.scholar.kcal -= cost;
-        this.say(`${first} takes your food, nods. "Okay. ${p.name}. Here's what I know..."`);
+        this.say(`${first} takes your food, nods. "Okay. ${tCalled}. Here's what I know..."`);
       } else if (price === 'knowledge') {
         // they want something YOU know that they don't — their full pool
         // plus everything they've been taught. Only truly-known plants
@@ -13190,11 +13209,11 @@
           return 'nothing';
         }
         const tp = (this.data.plants || []).find(x => x.id === trade);
-        this.say(`Trade: you teach ${first} about ${tp ? tp.name : trade}. They teach you about ${p.name}. Knowledge for knowledge.`);
+        this.say(`Trade: you teach ${first} about ${tp ? tp.name : trade}. They teach you about ${tCalled}. Knowledge for knowledge.`);
         // the price is actually collected: they learn what you taught them.
         this.villagerLearnsPlant(vid, trade);
       } else {
-        this.say(`${first} trusts you. "Come here. Let me tell you about ${p.name}..." (High trust — free.)`);
+        this.say(`${first} trusts you. "Come here. Let me tell you about ${tCalled}..." (High trust — free.)`);
       }
       // the teaching: they know it DEEP. You get L2 immediately, L3 if you had L1.
       // BAD KNOWLEDGE (Steve 2026-10-06): bought knowledge can be counterfeit
@@ -13283,8 +13302,10 @@
         }
         return true;
       } else if (deepestOther > myLevel && harvests < 3) {
-        // hint: you're close, but need more hands-on experience
-        this.say(`💡 ${p.name}: ${sources.join(' and ')} know${sources.length > 1 ? '' : 's'} more than you do. Harvest it a few more times (${harvests}/3) and it'll click.`);
+        // hint: you're close, but need more hands-on experience. The hint is
+        // narrator-to-player: the believed name, never a leaked true one
+        // (break-it knowledge 2026-10-09 r2).
+        this.say(`💡 ${this.plantCalledName(pid)}: ${sources.join(' and ')} know${sources.length > 1 ? '' : 's'} more than you do. Harvest it a few more times (${harvests}/3) and it'll click.`);
       }
       return false;
     },
@@ -13399,9 +13420,11 @@
         learnedFrom: src.by || (fresh.learnedFrom || null),
         via: src.type,
       });
-      // a deeper truth clears a false label (break-it 2026-10-09)
-      this.say(`\u2605 ${p.name} — deeper understanding (Level ${level}).`);
+      // a deeper truth clears a false label (break-it 2026-10-09) — BEFORE the
+      // grant is announced, so the say never names a true plant the player
+      // still believes wrongly (break-it knowledge 2026-10-09 r2).
       try { this.resolveWrongName(pid, src.type); } catch (err) {}
+      this.say(`\u2605 ${p.name} — deeper understanding (Level ${level}).`);
       this.audioEvent('knowledgeReveal', { kind: 'plant', id: pid, level: level });
       return true;
     },
@@ -16189,7 +16212,7 @@
       if (t.knownPlant) {
         const kp = this.data.plants.find(p => p.id === t.knownPlant);
         if (kp) {
-          if (this.plantKnown(t.knownPlant)) return { name: epithet, text: `${kp.name} country — you found ${kp.name.toLowerCase()} here. Your ${this.journalName().toLowerCase()} remembers.` };
+          if (this.plantKnown(t.knownPlant)) return { name: epithet, text: `${this.plantCalledName(t.knownPlant)} country — you found ${this.plantCalledName(t.knownPlant).toLowerCase()} here. Your ${this.journalName().toLowerCase()} remembers.` };
           return { name: epithet, text: `${kp.description || 'An unnamed plant'} country — something grows here. You haven't named it yet.` };
         }
       }
@@ -19135,7 +19158,7 @@
         // the knowledgeable use them deliberately, the ignorant chew and hope.
         if (it.plantId) {
           const _mp = this.data.plants.find(pp => pp.id === it.plantId);
-          if (_mp && _mp.medicinal) { medAte++; medName = this.plantKnown(it.plantId) ? _mp.name : (_mp.description || 'bitter leaves'); }
+          if (_mp && _mp.medicinal) { medAte++; medName = this.plantKnown(it.plantId) ? this.plantCalledName(it.plantId) : (_mp.description || 'bitter leaves'); }
         }
         // THE BANK: the pool remembers what it was built from. Specialist
         // fuel burns hottest — even mixed into the war chest.
@@ -19401,7 +19424,7 @@
           if (!entry.prepKnown) {
             entry.prepKnown = true;
             const p = this.data.plants.find(x => x.id === it.plantId);
-            const pname = p ? p.name : it.plantId;
+            const pname = this.plantCalledName(it.plantId);
             // If you don't know what it is, you're honest about it
             if ((entry.level || 0) < 1) {
               this.say(`You don't know what it is, but you know it's edible now — and how much it fills you. (${kcal} kcal/${it.unit || 'unit'})`);
@@ -31643,10 +31666,10 @@
       const uses = this.plantUses(pid);
       const edible = uses.some(u => u.kind === 'food');
       if (lvl >= 2) {
-        return `You recognize it — ${p.name.toLowerCase()}${edible ? ', one of the edible ones' : ''}.` +
+        return `You recognize it — ${this.plantCalledName(pid).toLowerCase()}${edible ? ', one of the edible ones' : ''}.` +
           (uses.length ? ` Uses so far: ${uses.map(u => u.kind + ' (' + u.note + ')').join('; ')}.` : '');
       }
-      if (lvl >= 1) return `The ${p.name} — you've gathered it here before.`;
+      if (lvl >= 1) return `The ${this.plantCalledName(pid)} — you've gathered it here before.`;
       return `The ${(p.description || 'unfamiliar plant').toLowerCase()} from before — still unnamed.`;
     },
     // compact variant for the tile's "here" list
@@ -31655,14 +31678,26 @@
       if (!p) return null;
       const lvl = this.plantLevel(pid);
       const edible = this.plantUses(pid).some(u => u.kind === 'food');
-      if (lvl >= 2) return `${p.name.toLowerCase()} (known${edible ? ', edible' : ''})`;
-      if (lvl >= 1) return `${p.name.toLowerCase()} (recognized)`;
+      if (lvl >= 2) return `${this.plantCalledName(pid).toLowerCase()} (known${edible ? ', edible' : ''})`;
+      if (lvl >= 1) return `${this.plantCalledName(pid).toLowerCase()} (recognized)`;
       return `${(p.description || 'unfamiliar plant').toLowerCase()} (seen before, unnamed)`;
+    },
+    // plantCalledName(pid): what YOU call it — your believed label. A false
+    // lesson (wrongAs) changes the label, never the plant: mechanics key off
+    // the real pid, but every player-facing surface must say what the player
+    // believes, or the wrong-teaching fiction breaks (the codex card already
+    // headlines the false name "(as taught)"; the inventory, grid, and forage
+    // lines used to show the true name anyway). (break-it knowledge 2026-10-09 r2)
+    plantCalledName(pid) {
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return pid;
+      const e = (this.state.codex.plants || {})[pid] || {};
+      return e.wrongAs || p.name;
     },
     plantDisplayName(pid) {
       const p = this.data.plants.find(x => x.id === pid);
       if (!p) return 'unfamiliar plant matter';
-      if (this.plantKnown(pid)) return p.name;
+      if (this.plantKnown(pid)) return this.plantCalledName(pid);
       return p.description || 'an unfamiliar plant';
     },
     itemDisplayName(it) {
@@ -31801,6 +31836,14 @@
         // text. If you don't know, it doesn't show.
         if ((e.level || 0) < 1) return null;
         const lvl = e.level || 1;
+        // CODEX-TEXT GATE (break-it knowledge 2026-10-09 r2): p.codex is the
+        // designer's FULL summary — parts, uses, medicine. Showing it at L1
+        // leaked L2/L3 knowledge while the card itself labeled the levels
+        // honestly ("L1 Named, L2 Parts, L3 Uses, L4 Mastery"); 15/45 plants
+        // had codex text revealing parts/uses at L1. The progressive
+        // knowledgeLevels[lvl] carry L1-L3; the full summary is earned at
+        // mastery.
+        const fullText = lvl >= 4 ? p.codex : null;
         // KCAL GATING (Steve 2026-10-05): kcal requires preparation knowledge,
         // not just identification. prepKnown is a separate track from level —
         // you can know HOW to prepare something without knowing WHAT it is.
@@ -31811,7 +31854,7 @@
           unit: p.unit,
           prep: prepKnown ? p.preparation : null,
           prepKnown,
-          text: p.codex, knowledge: (p.knowledgeLevels || {})[String(lvl)] || '',
+          text: fullText, knowledge: (p.knowledgeLevels || {})[String(lvl)] || '',
           uses: this.plantUsesText(pid),
           // CONTESTED (Steve 2026-10-06): the codex is honest about
           // disagreement — "Mara says X, but you know Y."
