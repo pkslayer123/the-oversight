@@ -38,7 +38,7 @@
 //   - _cxNameList(ids, capPlayer) -> "Mara" / "Mara and Tove" / "Mara, Tove and Sef"
 //   - _cxTakenLine(ids) -> taken announcement (single or multi)
 //   - _cxPluralBeats(text, name) -> verb-agreement fix for multi-take watch beats
-//   - _cxKillContestant(pid) -> real roster removal for contest deaths (removeVillager wrapper is a no-op)
+//   - _cxKillContestant(pid) -> real roster removal for contest deaths (removeVillager wrapper is a no-op); ALSO the blood-on-air crisis choke point — every contest death fires it reactively (code: _cxKillContestant, Gap 4 2026-10-10)
 //   - _cxGossip(how, pid, contestName) -> seeds contest-outcome gossip so the village talks about wins/deaths (Steve 2026-10-08)
 //   - _contestWatchBeat(contest, pname) -> [setup, turn, ending] contest-specific watch beats (Steve 2026-10-06)
 //   - _cxCoaching(contest)
@@ -4643,6 +4643,15 @@
       v.roster = (v.roster || []).filter(id => id !== pid);
       if (v.positions) delete v.positions[pid];
     } catch (e2) {}
+    // CRISIS (Gap 4, 2026-10-10): blood on air — a villager died on camera.
+    // _cxKillContestant is the choke point for EVERY contest death
+    // (_contestDie watch path, _contestResolveOthers multi-take, the duel
+    // partner), so the crisis fires reactively wherever the show takes
+    // someone. The player never routes through here.
+    try {
+      if (pid && pid !== 'player' && this.fireCrisis)
+        this.fireCrisis('blood-on-air', { name: this.displayName(pid) });
+    } catch (e3) {}
   };
   // GOSSIP AFTERMATH (Steve 2026-10-08): contest news travels by mouth, not
   // broadcast — the village talks about who went, who won, who died, who
@@ -4702,8 +4711,8 @@
       }
       if (r.outcome === 'died') {
         this.sysSay(`📺 ${pname} didn't come home.`);
-        // CRISIS (Steve 2026-10-09): blood on air — it happened on camera.
-        try { if (this.fireCrisis) this.fireCrisis('blood-on-air', { name: pname }); } catch (e) {}
+        // (blood-on-air fires inside _cxKillContestant — the choke point for
+        // every contest death, Gap 4 2026-10-10.)
         this.sysSay('📺 ' + this._contestDeathLine(contest, r.detail || '', pname));
         // GOSSIP (Steve 2026-10-08): their arena, their fate, the village's news.
         this._cxGossip('died', pid, contest.name);

@@ -5,7 +5,7 @@
     "cat": "blood",
     "risk": "high",
     "desc": "Thrown into an arena with a wave-appropriate beast. Kill or be killed. The audience votes on weapons.",
-    "participants": 1,
+    "participants": 2,
     "arena": "🕳️\n🪨🪨🪨🪨🪨\n🪨⬛⬛⬛🪨\n🪨⬛🦴⬛🪨\n🪨⬛⬛⬛🪨\n🪨🪨🪨🪨🪨\n👥👥👥👥👥"
   },
   {
@@ -14,7 +14,7 @@
     "cat": "blood",
     "risk": "extreme",
     "desc": "Three waves, no rest. Survive all three and the crowd goes wild. Most don't see wave two.",
-    "participants": 1,
+    "participants": 2,
     "arena": "⚔️\n🔥🔥🔥🔥🔥\n🔥⬛⬛⬛🔥\n🔥⬛⚔️⬛🔥\n🔥⬛⬛⬛🔥\n🔥🔥🔥🔥🔥"
   },
   {
@@ -167,7 +167,7 @@
     "cat": "blood",
     "risk": "extreme",
     "desc": "Bleed into the System's altar, measure by measure. Too little and it finds you wanting. Too much and it keeps the rest.",
-    "participants": 1,
+    "participants": 2,
     "arena": "🩸\n⬛⬛⬛⬛⬛\n⬛🩸⬛🩸⬛\n⬛⬛🏺⬛⬛\n⬛🩸⬛🩸⬛\n⬛⬛⬛⬛⬛"
   },
   {
@@ -176,7 +176,7 @@
     "cat": "blood",
     "risk": "extreme",
     "desc": "Hold the chokepoint for three waves while the village watches from the walls. The line holds, or you don't.",
-    "participants": 1,
+    "participants": 2,
     "arena": "🏰\n🧱🧱🧱🧱🧱\n🧱⚔️🧱⚔️🧱\n🧱🧱🧱🧱🧱\n👥👥👥👥👥"
   },
   {

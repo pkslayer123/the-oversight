@@ -215,3 +215,27 @@ identically on main. Ontology 52/52.
 **Remaining walls (not this gap).** Integration-80 reach (stage 3 for Arc IV);
 survival to ~40+ days for the L3 grind. The channeling link of the chain is
 closed.
+
+## Gap 4: Blood on Air (villager contest death) — FIXED
+
+**Was:** 0/120 natural runs. The hook passed unit proof but the danger was
+vestigial (0% villager death — every blood fight ended in flight), blood
+contests were solo (`participants: 1`), and the watch-path death never fired
+the crisis.
+
+**Now:** Villagers in blood contests fight real sealed-arena fights
+(threat-matched beasts, no mid-fight flight) — pit kills ~23%, wins ~77%.
+Blood contests take 2 (pit/gauntlet/siege/tithe). `blood-on-air` fires
+reactively from `_cxKillContestant`, the choke point for every villager contest
+death (multi-take, watch verdict, duel partner).
+
+**Proof:** `scripts/test-gap4-bloodair-20261010.js` 81/81 × 3 seeds;
+`scripts/probe-bloodair-crisis-20261010.js` full-flow PASS; ontology 52/52.
+Evidence: `evidence/2026-10-10/gap4-bloodair-20261010.md`.
+
+**Caveat:** Natural-run validation blocked by pre-existing village fragility
+(villages die day 13–49; predates this change). Mechanism proven; needs villages
+that survive to contest age.
+
+**Needs Steve's eyes?** No — no player-facing feel change. The player's arena is
+untouched; villager off-screen fights are invisible by design (knowledge-gating).

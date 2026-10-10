@@ -132,19 +132,22 @@ note('D. cheer cap held — engine never sees more than 0.15 of cheer');
 })();
 
 // ---- E. contestBeastFor honesty.
-note('E. contestBeastFor — pool member, closest-HP, deterministic');
+note('E. contestBeastFor — pool member, closest-THREAT, deterministic (Gap 4: HP-matching -> threat-matching)');
 (function () {
   const pool = Game.monsterWavePool();
-  const b1 = Game.contestBeastFor(1, 60);
-  const b2 = Game.contestBeastFor(1, 60);
+  const b1 = Game.contestBeastFor(1, 600);
+  const b2 = Game.contestBeastFor(1, 600);
   ok('returns a pool member', !!b1 && pool.includes(b1), b1 && b1.id);
+  const threat = (m) => {
+    const hp = m.hp || [20, 20], atk = m.attack || {}, dmg = atk.damage || [6, 10];
+    return Math.max(1, m.pack || 1) * ((dmg[0] + dmg[1]) / 2) * ((hp[0] + hp[1]) / 2);
+  };
   let best = null, bestD = Infinity;
   for (const m of pool) {
-    const hp = (m.hp && m.hp[1] !== undefined) ? (m.hp[0] + m.hp[1]) / 2 : 25;
-    const d = Math.abs(hp - 60);
+    const d = Math.abs(Math.log(threat(m) / 600));
     if (d < bestD) { bestD = d; best = m; }
   }
-  ok('picks the closest-HP beast', b1 === best, `${b1 && b1.id} vs ${best && best.id}`);
+  ok('picks the closest-threat beast', b1 === best, `${b1 && b1.id} vs ${best && best.id}`);
   ok('deterministic', b1 === b2);
 })();
 

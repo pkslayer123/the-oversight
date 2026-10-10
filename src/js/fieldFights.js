@@ -6,6 +6,7 @@
 // rules:
 //   - rounds: initiative by speed each round; the monster acts with its real attack data (name, damage range, pattern, pack, thrash); the villager strikes with the tactical formula roll([4+wb, 8+wb]), wb = round(wbonus/2). (code: fieldFight)
 //   - morale: flee is driven by wounds + bravery + temperament, never a flat roll. (code: fieldFight)
+//   - arena: opts.noFlee seals a contest arena — no mid-fight flight; hopeless/low-HP no longer auto-flee, the fight runs to vKill/vDie/mFlee, and the round cap becomes a judges' call for the less-bloodied. Wild fights keep the believable flight. (code: fieldFight, Gap 4 2026-10-10)
 //   - pack: the lead IS the world-monster entity (members[0]) — wound it and the pack breaks, kill it and the pack dies/scatters with it; members never promote. (code: fieldFight)
 //   - hard: an average villager vs a real monster usually gets hurt, driven off, or killed. (code: fieldFight)
 //   - record: every fight returns rounds, wounds both ways, and outcome — feeds deeds, gossip, scars. (code: fieldFight)
@@ -325,11 +326,27 @@
           // still can. (Implements the documented intent above — "Hopeless
           // and alone -> believable flight" — which the old chain never
           // delivered: it fell through to the bravery threshold.)
-          rec.outcome = 'vFlee'; rec.fleeHopeless = true; rec.fleeHpFrac = vHp / vHpMax;
-          rec.log.push(vName + ' sees how this ends — and runs while running still works.');
-          break;
+          // ARENA PROTOCOL (Gap 4, 2026-10-10): a sealed contest arena has
+          // no flight — the System doesn't open the gate mid-fight. The
+          // fight runs to its real conclusion (vKill/vDie/mFlee). Wild
+          // fights keep the believable flight.
+          if (opts.noFlee) {
+            if (!rec.gateShut) { rec.gateShut = true; rec.log.push(vName + ' sees how this ends — but the gate is shut. No running.'); }
+          } else {
+            rec.outcome = 'vFlee'; rec.fleeHopeless = true; rec.fleeHpFrac = vHp / vHpMax;
+            rec.log.push(vName + ' sees how this ends — and runs while running still works.');
+            break;
+          }
         }
-        if ((vHp / vHpMax) < fleeAt) { rec.outcome = 'vFlee'; rec.fleeHopeless = hopeless; rec.fleeHpFrac = vHp / vHpMax; break; }
+        if ((vHp / vHpMax) < fleeAt) {
+          // ARENA PROTOCOL: sealed — past the sane line, still in. The
+          // crowd leans in. (Logged once; the log feeds gossip.)
+          if (opts.noFlee) {
+            if (!rec.pastSense) { rec.pastSense = true; rec.log.push(vName + ' is past the point of sense and still standing.'); }
+          } else {
+            rec.outcome = 'vFlee'; rec.fleeHopeless = hopeless; rec.fleeHpFrac = vHp / vHpMax; break;
+          }
+        }
         // THE LEAD FALLS: the pack coordinates through the lead animal —
         // the world-monster entity IS members[0]. Wound it below the break
         // line and the pack breaks (mFlee); kill it and the pack dies or
@@ -347,8 +364,16 @@
       if (!rec.outcome) {
         // round cap: the worse-off side disengages
         var vFrac = vHp / vHpMax, mFrac = members[0].hp / members[0].maxHp;
-        rec.outcome = (vFrac <= mFrac) ? 'vFlee' : 'mFlee';
-        rec.log.push('Neither gives after ' + MAX_ROUNDS + ' rounds — the worse-off side disengages.');
+        // ARENA PROTOCOL (Gap 4, 2026-10-10): sealed — nobody disengages.
+        // The judges call it for the less-bloodied (duelFight precedent).
+        if (opts.noFlee) {
+          rec.judges = true;
+          rec.outcome = (vFrac <= mFrac) ? 'vFlee' : 'mFlee';
+          rec.log.push('Fifteen rounds, no finish — the judges give it to the less-bloodied.');
+        } else {
+          rec.outcome = (vFrac <= mFrac) ? 'vFlee' : 'mFlee';
+          rec.log.push('Neither gives after ' + MAX_ROUNDS + ' rounds — the worse-off side disengages.');
+        }
       }
 
       rec.vHpLeft = Math.max(0, vHp);

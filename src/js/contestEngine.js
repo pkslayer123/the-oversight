@@ -5,8 +5,10 @@
 //   - contestResolveVillager(pid, contest, opts) -> {outcome, detail, log[]}
 //   - contestResolveGroup(pids, contest, opts) -> {pid: {outcome, detail, log[]}}
 //   - duelFight(a, b, opts) -> villager-vs-villager rounds
-//   - contestBeastFor(wave, targetHp)
+//   - contestBeastFor(wave, targetThreat) -> threat-matched beast (DPR x HP x pack); _cxThreat(pid) / _cxBeastThreat(m) are the two sides of the match
 // rules:
+//   - fair-fight: the System threat-matches the beast to the contestant (Gap 4, 2026-10-10) — HP-matching produced hopeless routs that always ended in flight, so no villager ever died in a blood contest. Threat-matching makes competitive fights: real wins, real deaths. Gauntlet/siege escalate per wave (0.7/1.0/1.3); hardened runs 1.2x hotter. (code: contestBeastFor, _cxThreat, _cxBeastThreat, _cxBlood)
+//   - sealed-arena: pit/gauntlet/siege fights run with fieldFight noFlee — the System doesn't open the gate mid-fight; the fight runs to vKill/vDie/mFlee, round cap becomes a judges' call. (code: _cxBlood, Gap 4 2026-10-10)
 //   - duel: head-to-head via duelFight (to the yield — death only on massive overkill); a LONE duel contestant gets a System-cast sparring partner from the living roster (seeded stream, real duelFight) — never a canned loss; no partner -> honest 'no partner — forfeit' said aloud. (code: _cxDuelSingle, _cxDuelPartner; break-it 2026-10-09)
 //   - moot: caseScore = notability*2 + trust/10 + bravery/10 + temperament; p1 vs risk demand, p2 head-to-head with trust/notability tiebreaks. (code: mootResolve)
 //   - endurance: ordeals with honest costs — starve (health/day), drop (legs/speed/stamina), maw (nerve vs demand), vigil (bravery vs fear), exchange (team relay). (code: enduranceResolve)
@@ -127,23 +129,49 @@
     },
 
     // ---- wave-appropriate beast, System-matched ----
-    // The System wants a fair fight for ratings: the beast's HP is matched
-    // closest to the target. Wave-scoping comes from monsterWavePool()
-    // (unlocked waves only); gauntlet/siege escalation comes from the
-    // caller's targetHp scaling (0.7 + w*0.3) — not from the wave param,
-    // which is kept for the documented signature.
-    contestBeastFor: function(wave, targetHp) {
+    // The System wants a fair fight for ratings — and HP-matching wasn't
+    // fair: monster damage-per-round outscales an unequipped villager's ~3:1,
+    // so every "fair" fight was a hopeless rout that ended in flight and no
+    // villager ever died in a blood contest (Gap 4, 2026-10-10). Threat
+    // (DPR x HP x pack) is matched instead: competitive fights, real wins,
+    // real deaths. Wave-scoping comes from monsterWavePool() (unlocked waves
+    // only); the wave param is kept for the documented signature.
+    contestBeastFor: function(wave, targetThreat) {
       var pool = [];
       try { pool = this.monsterWavePool ? this.monsterWavePool() : (this.data.monsters || []); }
       catch (e) { pool = this.data.monsters || []; }
       if (!pool.length) return null;
       var best = null, bestD = Infinity;
       for (const m of pool) {
-        const hp = (m.hp && m.hp[1] !== undefined) ? (m.hp[0] + m.hp[1]) / 2 : 25;
-        const d = Math.abs(hp - (targetHp || 60));
+        const bt = this._cxBeastThreat(m);
+        const d = Math.abs(Math.log(bt / (targetThreat || 600)));
         if (d < bestD) { bestD = d; best = m; }
       }
       return best;
+    },
+
+    // The beast's threat: what it deals per round times what it soaks,
+    // times pack size (every live pack member acts each round).
+    _cxBeastThreat: function(m) {
+      const hp = m.hp || [20, 20], atk = m.attack || {}, dmg = atk.damage || [6, 10];
+      const pack = Math.max(1, m.pack || 1);
+      return pack * ((dmg[0] + dmg[1]) / 2) * ((hp[0] + hp[1]) / 2);
+    },
+
+    // The contestant's real threat: damage-per-round x effective HP.
+    // vDpr mirrors fieldFight's verbatim strike average ([4+wb, 8+wb] -> 6+wb).
+    // Armor stretches HP by the same diminishing-returns curve the fight
+    // uses (effective multiplier 1 + P/20).
+    _cxThreat: function(pid) {
+      const st = this._cxStats(pid);
+      let varmor = 0;
+      try {
+        const _g = typeof window !== 'undefined' ? window : global;
+        const S = (_g.Scattering || {}).S || {};
+        const vp = ((this.data.villagers || []).find(function(x) { return x.id === pid; }) || {});
+        if (S.equipment && S.equipment.armorOf) varmor = S.equipment.armorOf(vp, this.data.items) || 0;
+      } catch (e) {}
+      return (6 + (st.wb || 0)) * Math.max(1, st.hp) * (1 + varmor / 20);
     },
 
     // ---- DUEL: villager vs villager, to the yield ----
@@ -299,19 +327,34 @@
       for (let w = 1; w <= waves; w++) {
         const st = this._cxStats(pid);
         if (st.hp <= 0) return { outcome: 'died', detail: `fell on wave ${w}`, log };
-        const beast = this.contestBeastFor(wave, st.hp * (0.7 + w * 0.3));
+        // FAIR FIGHT (Gap 4, 2026-10-10): the System threat-matches the
+        // beast to the contestant — a competitive fight, not a rout.
+        // Gauntlet/siege escalate per wave ("the closer smells blood");
+        // hardened runs hotter, like the player's arena. BIAS under 1.0
+        // favors the contestant: the System wants a show, not a slaughter —
+        // its stars are investments. Later waves bias lower: wounds persist
+        // ("no rest between") and a wounded contestant needs a weaker beast
+        // for the fight to stay competitive. Tuned via probe (see
+        // probe-bloodair-deathrate): pit ~1-in-5 dies, gauntlet usually kills.
+        const wm = (id === 'gauntlet' || id === 'siege') ? (0.7 + w * 0.3) : 1.0;
+        const hard = contest.variant === 'hardened' ? 1.2 : 1.0;
+        const bias = [0.9, 0.75, 0.6][Math.min(w - 1, 2)];
+        const beast = this.contestBeastFor(wave, this._cxThreat(pid) * wm * hard * bias);
         if (!beast) return { outcome: 'lost', detail: 'no beast', log };
         let rec;
         // rng: R draws from the seeded resolution stream under _cxWithSeed
         // (deterministic); fieldFight bypasses combat.roll when rng is set.
-        try { rec = this.fieldFight(pid, beast, null, { braveryBonus: opts.cheerBonus || 0, rng: R }); }
+        // noFlee: the arena is sealed — the System doesn't open the gate
+        // mid-fight. The fight runs to its real conclusion.
+        try { rec = this.fieldFight(pid, beast, null, { braveryBonus: opts.cheerBonus || 0, rng: R, noFlee: true }); }
         catch (e) { return { outcome: 'lost', detail: 'fight failed', log }; }
         log.push(`Wave ${w}: ${rec.log[rec.log.length - 1] || rec.outcome} (${rec.rounds} rounds, ${rec.vTaken} taken)`);
         if (rec.vTaken > 0) { try { this.hurtVillager(pid, rec.vTaken, 'contest'); } catch (e) {} }
         if (rec.outcome === 'vDie') return { outcome: 'died', detail: `killed on wave ${w} by ${beast.id}`, log };
         if (rec.outcome === 'vFlee') {
-          // Gauntlet: fleeing a wave is losing. Pit: driven off = lost.
-          return { outcome: 'lost', detail: `driven off on wave ${w}`, log };
+          // Sealed arena: the only vFlee is the judges' call at the round
+          // cap — the gate never opened mid-fight.
+          return { outcome: 'lost', detail: rec.judges ? `outlasted — the judges give it to the beast (wave ${w})` : `driven off on wave ${w}`, log };
         }
         // vKill / mFlee / evade: through to the next wave (evade in the
         // arena means the beast wouldn't engage — the System sends another).
@@ -515,7 +558,7 @@
         // The seeker is a wave-2 predator. 3 evasion rounds with fieldFight's
         // real awareness formula; caught → a real fight.
         const seeker = (this.data.monsters || []).find(m => m.behavior === 'pack' && (m.wave || 1) === 2)
-          || this.contestBeastFor(2, 40);
+          || this.contestBeastFor(2, 450);
         for (const pid of pids) {
           const st = stats[pid];
           const log = [];
@@ -543,7 +586,7 @@
       if (id === 'beastmaster') {
         // Dominance, not murder: mFlee counts as won.
         for (const pid of pids) {
-          const beast = this.contestBeastFor(1, 50);
+          const beast = this.contestBeastFor(1, 700);
           let rec = null;
           try { rec = this.fieldFight(pid, beast, null, { rng: R }); } catch (e) {}
           const st = stats[pid];
