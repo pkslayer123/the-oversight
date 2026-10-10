@@ -136,3 +136,55 @@ affect the other. Same-tab double-Continue just re-parses. No aliasing. Verdict:
 
 No `[needs-eyes]` — no feel/combat/UI changes a player would notice beyond honest
 toasts; nothing for Steve to playtest on his phone this pass.
+
+## Coordinator landing addendum (2026-10-10)
+
+### The broken integrity test exposed a 3-day-old stale-tree revert
+`scripts/test-save-integrity-20261007.js` was broken at the path level
+(hardcoded `/tmp/game-fix.js`), so it could never run — and while it was
+dead, commit `5cf57927` (2026-10-07, "Fix 2 data-drift bugs") silently
+REVERTED three of the five 2026-10-07 save-integrity fixes from `04da06ca`
+(stale-base revert — the sibling's tree predated the fix). The bugs lived
+for 3 days, caught only because the repaired test could finally execute.
+
+Restored, byte-faithful to `04da06ca`:
+1. **Win-score integration (EXPLOIT-class honesty):** `const sysLevel =
+   this.state.systemIntegration || 0` — never written, so the 25-pt
+   Integration component of win readiness scored 0 forever. Restored the
+   `scholar.integration/27` derivation.
+2. **threatRating party (honesty):** `const party = (this.state.party ||
+   []).length` — party lives on `state.village.party` (party.js), so every
+   villager's +10 threat was missing and the System under-cast monsters.
+   Restored the village read.
+3. **talkIdx (honesty):** `state.talkIdx` is unwritable-by-design now —
+   talkTo moved to conversation.js in the dialog rethink (2026-10-08) and
+   nothing increments it, but `socialSimmer` still read it: conflict
+   discovery sat at base 0.12 forever. REWIRED (not restored) to the live
+   counter `village.conv[vid].count` (incremented in `startConvo`,
+   persists on village state). Proof: `scripts/test-talkidx-rewire-20261010.js`
+   — BEFORE (HEAD game.js) red on 2 source checks, AFTER 8/8 green.
+4. **state.region write:** NOT restored — by design. `arrivalText.json` has
+   no `regionOverrides`, so nothing could ever read it; the reader
+   null-guards. Restoring the write would resurrect dead code.
+5. **inCombat:** intact (re-documented by break-it 2026-10-08). No action.
+
+### Sibling contamination caught in the same landing
+`scripts/socialite-harness.js` had a hardcoded `ROOT =
+'/home/hatch/workspace/worktrees/playtest-socialite'` committed in
+`77c232d6` (socialite r5) — the shared harness pointed at another run's
+worktree. Repaired to portable `path.join(__dirname, '..')`.
+
+### Flagged, not fixed (adjacent, other targets' territory)
+- `conversation.js` `startConvo` modal-interrupt loop reads `v.convos`
+  (lines 3071-3073) but `convoGet` writes `v.conv` — the "one conversation
+  at a time" interrupt iterates a bucket nothing writes. Social-target
+  territory; flagged for the next social pass.
+
+### Tests
+- `scripts/test-save-integrity-20261007.js` — repaired (paths, r7 migration
+  registry assertions, talkIdx rewire assertions, region-by-design note):
+  13/13 green.
+- `scripts/test-talkidx-rewire-20261010.js` — new proof (BEFORE/AFTER):
+  8/8 green.
+- `scripts/test-break-persistence7-20261009.js` 60/60, pass-6 suite green,
+  ontology 52/52 — re-verified post-merge.

@@ -1506,7 +1506,14 @@
       for (const c of v.conflicts) {
         if (c.resolved) continue;
         if (!c.known && day >= 3) {
-          const talked = ((this.state.talkIdx || {})[c.a] || 0) + ((this.state.talkIdx || {})[c.b] || 0);
+          // TALK COUNT (dialog rethink 2026-10-08): the pre-rethink
+          // state.talkIdx counter is dead — nothing writes it since talkTo
+          // moved to conversation.js. The live per-villager lifetime
+          // conversation count is village.conv[vid].count (incremented in
+          // startConvo). Conflict discovery accelerates with real talking
+          // again (2026-10-07 design, regressed silently).
+          const conv = (this.state.village || {}).conv || {};
+          const talked = ((conv[c.a] || {}).count || 0) + ((conv[c.b] || {}).count || 0);
           const p = 0.12 + Math.min(0.2, talked * 0.03);
           if (Math.random() < p) {
             c.known = true;
@@ -22329,7 +22336,7 @@
       const stability = starving > 0 ? 0.5 : 1;
       score += Math.round(popScore * stability * 25);
       // Integration: 25 pts (system level)
-      const sysLevel = this.state.systemIntegration || 0; // 0-3
+      const sysLevel = Math.min(3, Math.floor(((this.state.scholar || {}).integration || 0) / 27)); // 0-3, derived from neural depth (Steve 2026-10-07)
       score += Math.round((sysLevel / 3) * 25);
       return { score, max, ready: score >= 80 };
     },
@@ -22353,7 +22360,7 @@
         if (v > 5) rating += (v - 5) * 2;
       }
       // Party: each villager = 10
-      const party = (this.state.party || []).length;
+      const party = ((this.state.village || {}).party || []).length; // FIX: party lives on village, not state (Steve 2026-10-07)
       rating += party * 10;
       // Performance: win streak bonus (up to +20)
       const wins = (this.state.combatWins || 0);

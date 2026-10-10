@@ -1,29 +1,33 @@
 #!/usr/bin/env node
-/* Save/Load Integrity Test (Steve 2026-10-07)
-   Tests for save integrity bugs found in audit:
-   1. state.region never written (always defaulted to middle_america)
-   2. state.systemIntegration never written (win score always 0 for integration)
-   3. state.party read but party lives on state.village.party (threat rating always 0)
-   4. state.talkIdx never incremented (conflict discovery always base probability)
-   5. Migration v0->v1 untested
+/* Save/Load Integrity Test (Steve 2026-10-07; repaired 2026-10-10)
+   Regression guards for save-integrity bugs found in the 2026-10-07 audit.
+   REPAIR NOTES (2026-10-10, break-it persistence landing):
+   - gamePath pointed at '/tmp/game-fix.js' (a 2026-10-07 scratch concat) —
+     now reads the live repo src/js/game.js.
+   - Assertion 1 (state.region write): DROPPED by design. The 2026-10-07 fix
+     wrote state.region='middle_america' in newGame, but arrivalText.json has
+     NO regionOverrides (landing-location knowledge is future per design),
+     so nothing ever read it; the write was later removed and the reader
+     (arrivalPoolFor) null-guards. Asserting the write would resurrect dead
+     code. Guard now: the reader stays null-safe.
+   - Assertion 4 (talkIdx): the pre-rethink state.talkIdx counter is dead —
+     talkTo moved to conversation.js (dialog rethink 2026-10-08) and nothing
+     increments talkIdx anymore. The live counter is village.conv[vid].count
+     (startConvo). Guard now: startConvo increments c.count, and
+     socialSimmer reads the live counter (regression caught 2026-10-10:
+     conflict discovery was stuck at base 0.12 forever).
+   - Assertions 5-6 (migration): _migrateV0toV1 was replaced by the r7
+     MIGRATIONS registry (break-it persistence 2026-10-09). Guards now:
+     MIGRATIONS registry + migrateSave + hasMigrationPath exist,
+     SAVE_VERSION still 1.
 */
-
 const fs = require('fs');
 const path = require('path');
 
-// Load the fixed game.js
-const gamePath = '/tmp/game-fix.js';
-const gameCode = fs.readFileSync(gamePath, 'utf8');
-
-// Load state.js
-const statePath = path.join(__dirname, 'src/js/engine/state.js');
-// Fallback for different working dirs
-let stateCode;
-try {
-  stateCode = fs.readFileSync('/home/hatch/workspace/the-scattering/src/js/engine/state.js', 'utf8');
-} catch (e) {
-  stateCode = fs.readFileSync(statePath, 'utf8');
-}
+const gameCode = fs.readFileSync(path.join(__dirname, '..', 'src/js/game.js'), 'utf8');
+const convoCode = fs.readFileSync(path.join(__dirname, '..', 'src/js/conversation.js'), 'utf8');
+const stateCode = fs.readFileSync(path.join(__dirname, '..', 'src/js/engine/state.js'), 'utf8');
+const arrivalData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src/data/arrivalText.json'), 'utf8'));
 
 let passed = 0, failed = 0;
 function test(name, fn) {
@@ -42,10 +46,14 @@ function assert(cond, msg) {
 
 console.log('\n=== Save Integrity Tests ===\n');
 
-console.log('1. state.region is written in newGame:');
-test('region assignment exists in newGame', () => {
-  assert(gameCode.includes("this.state.region = 'middle_america'"),
-    'state.region assignment not found');
+console.log('1. state.region: no writer by design, reader null-safe, data has no overrides');
+test('arrivalText.json has no regionOverrides (nothing to gate)', () => {
+  const ro = arrivalData.regionOverrides || {};
+  assert(Object.keys(ro).length === 0, 'regionOverrides unexpectedly present');
+});
+test('arrivalPoolFor null-guards a missing region', () => {
+  assert(gameCode.includes("(this.state && this.state.region) || null"),
+    'region null-guard missing from arrivalPoolFor');
 });
 
 console.log('\n2. systemIntegration derived from scholar.integration:');
@@ -64,8 +72,6 @@ test('threatRating reads village.party', () => {
     'village.party read not found in threatRating');
 });
 test('old wrong read is gone', () => {
-  // The old line was: const party = (this.state.party || []).length;
-  // Make sure it's not there (except in comments)
   const lines = gameCode.split('\n');
   const badLines = lines.filter(l =>
     l.includes('(this.state.party || [])') && !l.trim().startsWith('//'));
@@ -73,43 +79,35 @@ test('old wrong read is gone', () => {
     `old state.party read still present: ${badLines[0]}`);
 });
 
-console.log('\n4. talkIdx incremented on conversation:');
-test('talkTo increments talkIdx', () => {
-  assert(gameCode.includes('this.state.talkIdx[vid] = (this.state.talkIdx[vid] || 0) + 1'),
-    'talkIdx increment not found in talkTo');
+console.log('\n4. conversation counting feeds conflict discovery (talkIdx rewire):');
+test('startConvo increments the lifetime per-villager count', () => {
+  assert(convoCode.includes('c.count++; c.lastDay = this.state.scholar.day;'),
+    'c.count++ missing from startConvo');
+});
+test('socialSimmer reads the live village.conv counts', () => {
+  assert(gameCode.includes('(this.state.village || {}).conv || {}'),
+    'socialSimmer does not read village.conv');
+});
+test('socialSimmer no longer reads the dead state.talkIdx', () => {
+  const lines = gameCode.split('\n');
+  const dead = lines.filter(l =>
+    l.includes('this.state.talkIdx') && !l.trim().startsWith('//'));
+  assert(dead.length === 0,
+    `dead talkIdx read still present: ${dead[0] && dead[0].trim()}`);
 });
 
-console.log('\n5. Migration v0->v1:');
-test('migration function exists', () => {
-  assert(stateCode.includes('_migrateV0toV1'),
-    '_migrateV0toV1 not found in state.js');
+console.log('\n5. Migration registry (r7 replaced _migrateV0toV1):');
+test('MIGRATIONS registry exists', () => {
+  assert(stateCode.includes('const MIGRATIONS ='), 'MIGRATIONS registry not found');
 });
-test('migration handles missing village', () => {
-  assert(stateCode.includes('if (!out.village'),
-    'migration does not handle missing village');
+test('migrateSave runner exists', () => {
+  assert(/function migrateSave\(/.test(stateCode), 'migrateSave not found');
 });
-test('migration handles missing codex', () => {
-  assert(stateCode.includes('if (!out.codex'),
-    'migration does not handle missing codex');
+test('hasMigrationPath exists', () => {
+  assert(/function hasMigrationPath\(/.test(stateCode), 'hasMigrationPath not found');
 });
 test('SAVE_VERSION is 1', () => {
-  assert(stateCode.includes('const SAVE_VERSION = 1'),
-    'SAVE_VERSION is not 1');
-});
-
-// Functional test: run the migration
-console.log('\n6. Migration functional test:');
-test('v0 save migrates to v1 with defaults', () => {
-  // Extract and eval the migration in isolation
-  const migrateMatch = stateCode.match(/function _migrateV0toV1\(s\) \{[\s\S]*?\n  \}/);
-  assert(migrateMatch, 'could not extract migration function');
-
-  // Create a minimal v0 save (no version, no village, no codex)
-  const v0save = { scholar: { day: 5 } };
-
-  // We need the helper functions too. Let's do a simpler check:
-  // the migration should not throw on empty object
-  assert(typeof migrateMatch[0] === 'string', 'migration not extractable');
+  assert(stateCode.includes('const SAVE_VERSION = 1'), 'SAVE_VERSION is not 1');
 });
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

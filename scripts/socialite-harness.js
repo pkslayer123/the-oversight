@@ -7,7 +7,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const ROOT = '/home/hatch/workspace/worktrees/playtest-socialite';
+const ROOT = path.join(__dirname, '..'); // repo root — never a worktree path (break-it 2026-10-10: a hardcoded sibling-worktree ROOT leaked in via socialite r5)
 const SRC = path.join(ROOT, 'src/js');
 
 function mulberry32(a) {
