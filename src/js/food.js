@@ -1052,25 +1052,31 @@
           }
           it.rawKcal = null; it.safe = true;
         } else if (it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.undercooked)) {
-          // DIGESTIBILITY HONESTY (break-it 2026-10-09): the cleaned total
-          // (kcalEach×units) is the honest raw net — hiddenKcal is the RAW
-          // GROSS, and cooking from it resurrected the ~60% the butchering
-          // took away (phantom calories: a 1280-kcal cleaned bulldozer
-          // cooked at 3200+). The specialist's skill buys a better cut of
-          // the gross via the class digestibility the player's fire uses —
-          // never more than the gross.
+          // DIGESTIBILITY HONESTY (break-it food 2026-10-10): cookTransform
+          // now models meat correctly — gross IS the cleaned total (the eat
+          // path grants it in full, so raw digestibility is 1.0 in
+          // practice); perfect is 100%, matching canon (PRESERVATION.md)
+          // and the decision label. The old inline gross = cleaned/cls.raw
+          // resurrected butchered-away calories (1.42x on the player's fire,
+          // up to ~1.77x here with the +5%/level mult on top). One shared
+          // math now: the specialist's fire runs it with a guaranteed
+          // perfect outcome — skill buys reliability (never burnt, never
+          // undercooked, worms dead), never phantom energy.
           // MONSTER FOOD SAFETY: the specialist's fire doesn't teach either.
           const sMeatId = (it.plantId || '').replace(/^meat_/, '');
           const sIsMonster = (this.data.monsters || []).some(m => m.id === sMeatId);
           const sFoodSafe = !sIsMonster || this.monsterFoodSafe(sMeatId);
           const units = it.units || 1;
-          const cleanedTotal = (it.kcalEach || 0) * units;
-          const sCls = this.cookClassFor(it) || {};
-          const sRaw = sCls.raw || 1, sCooked = sCls.cooked || 1;
-          const sGross = sRaw > 0 ? cleanedTotal / sRaw : cleanedTotal;
-          const sCookedTotal = Math.min(sGross, sGross * sCooked * mult);
-          it.kcalEach = sFoodSafe ? Math.round(sCookedTotal / units) : 0;
-          it.hiddenKcal = sFoodSafe ? null : (it.hiddenKcal || Math.round(cleanedTotal / sRaw));
+          const sR2 = this.cookTransform(it, { knows: true, outcome: { key: 'perfect', mult: 1.0 } });
+          if (sFoodSafe && sR2) {
+            it.kcalEach = sR2.kcalEach;
+            it.hiddenKcal = null;
+          } else if (!sFoodSafe) {
+            it.kcalEach = 0;
+            it.hiddenKcal = it.hiddenKcal || ((it.kcalEach || 0) * units);
+          }
+          // (no-class fallback: the transform refused — the meat keeps its
+          // cleaned value; the fire still makes it safe below, never zero.)
           it.foodState = 'cooked'; it.diseaseRisk = null; it.safe = sFoodSafe;
           it.undercooked = false; delete it.parasiteRisk; // specialist cooks it through
           it.spoilDay = day + 5;
@@ -2375,7 +2381,10 @@
         // doesn't resurrect the 60% the butchering discarded.
         const total = Math.round((it.kcalEach || 0) * (it.units || 1));
         const units = it.units || 1;
-        const cookKcal = Math.round((this.knowsTechnique('cook') ? total : Math.round(total * 0.85)) / units);
+        // BLIND CEILING (break-it food 2026-10-10): cookOutcome(knows=false)
+        // can never roll perfect — the best a blind cook does is decent
+        // (0.8x). The old 0.85 promised more than the engine can deliver.
+        const cookKcal = Math.round((this.knowsTechnique('cook') ? total : Math.round(total * 0.80)) / units);
         const smokeKcal = Math.round(cookKcal * (this.knowsTechnique('preserve') ? 0.95 : 0.80));
         // LABEL HONESTY (forager break-it 2026-10-10): the cook detail used
         // to hardcode "32 ticks" — but cookFood charges the class time
@@ -2473,7 +2482,7 @@
           opts.push({
             id: 'spec:' + spec.id,
             label: `Ask ${spec.name}`,
-            detail: `8 ticks of your time · ${task === 'cook' ? '+5%/level, safer' : 'keeps longer'}${this.specOccLabel(spec)}`,
+            detail: `8 ticks of your time · ${task === 'cook' ? 'guaranteed perfect, safer' : 'keeps longer'}${this.specOccLabel(spec)}`,
           });
         } else {
           opts.push({ id: 'nospec', label: 'Ask a specialist', detail: `no ${task === 'cook' ? 'cook' : 'preserver'} here`, blocked: 'none here' });
@@ -2696,11 +2705,23 @@
     const rawPer = item.rawKcal || item.kcalEach || 0;
     const rawTotal = Math.round(rawPer * units);
     if (rawTotal <= 0) return null;
-    const gross = rawTotal / cls.raw;
+    // MEAT (break-it food 2026-10-10): the cleaned item's kcalEach IS the
+    // chemical energy — eatOne/eatStashOne grant it in full, so raw
+    // digestibility is 1.0 in practice. Deriving gross = cleaned/cls.raw
+    // invented 1.67x phantom chemical energy and cooked at ~1.42x cleaned,
+    // contradicting canon (PRESERVATION.md: cooked 100%), the howFarOptions
+    // decision label, and the COOK PRESERVES comment. For meat, gross = the
+    // cleaned total — perfect is 100%; the ladder's reward is shelf life
+    // and safety, never new calories. Plants keep the raw-digestibility
+    // model: their kcalEach is the RAW NET, and tubers genuinely unlock at
+    // the fire (canon design).
+    const gross = item.foodKind === 'meat' ? rawTotal : rawTotal / cls.raw;
     const effMult = outcome.mult * (opts.skillMult || 1) * (opts.relicMult || 1);
     let cookedTotal;
     if (item.cookedKcal) {
       cookedTotal = Math.min(gross, item.cookedKcal * units * effMult);
+    } else if (item.foodKind === 'meat') {
+      cookedTotal = Math.min(gross, gross * effMult);
     } else {
       cookedTotal = Math.min(gross, gross * cls.cooked * effMult);
     }

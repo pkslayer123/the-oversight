@@ -114,7 +114,7 @@ const origRandom = Math.random;
     Game.state.codex.techniques = { clean: false, cook: false, preserve: false, shell: true };
     Game.cleanCarcass(0); // messy attempt
     const raw = s.inventory[0];
-    ok('messy clean: works, lower yield', raw.foodState === 'cleaned' && raw.units === 4 && raw.kcalEach === 225);
+    ok('messy clean: works, lower yield', raw.foodState === 'cleaned' && raw.units === 2 && raw.kcalEach === 450); // 3000 x 0.30 = 900 -> 2x450 (portion law)
     ok('messy clean: risky + spoils fast', !!raw.diseaseRisk && raw.spoilDay === s.day + 2);
     ok('messy clean: teaches', Game.knowsTechnique('clean') === true);
 
@@ -125,7 +125,7 @@ const origRandom = Math.random;
     const carIdx2 = s.inventory.findIndex(i => i.foodState === 'carcass');
     Game.cleanCarcass(carIdx2);
     const raw2 = s.inventory[carIdx2];
-    ok('skilled clean: 40% yield', raw2.kcalEach === 300 && raw2.units === 4);
+    ok('skilled clean: 40% yield', raw2.kcalEach === 600 && raw2.units === 2); // 3000 x 0.40 = 1200 -> 2x600
 
     // cook requires fire; cooking is a technique (messy first time)
     const origNear = Game.nearFire;
@@ -134,12 +134,13 @@ const origRandom = Math.random;
     ok('cookAll refused without fire', s.inventory[carIdx2].foodState === 'cleaned');
     Game.nearFire = () => true;
     ok('cook technique unknown before first cook', Game.knowsTechnique('cook') === false);
-    // DIGESTIBILITY (Steve 2026-10-08): messy cook rolls decent — meat class:
-    // gross 1200/0.6=2000, cooked 2000*0.85*0.8=1360 -> 340/unit. Honest gain.
+    // COOK PRESERVES (canon PRESERVATION.md): messy cook rolls decent — meat
+    // keeps the cleaned total x outcome mult: 900 x 0.8 = 720 -> 360/unit.
     Game.cookOutcome = () => ({ key: 'decent', mult: 0.8 });
     Game.cookAll();
     const cooked = s.inventory[carIdx2];
-    ok('messy cook: digestibility gain (decent)', cooked.kcalEach === 340); // 1200 cleaned -> 1360 cooked /4
+    ok('messy cook: digestibility (decent)', s.inventory[0].kcalEach === 360); // messy-cleaned 900 x 0.8 = 720 /2
+    ok('batch cook hits the skilled batch too', cooked.kcalEach === 480); // skilled-cleaned 1200 x 0.8 = 960 /2
     ok('messy cook: safe + spoilDay +5', cooked.safe === true && !cooked.diseaseRisk && cooked.spoilDay === s.day + 5);
     ok('messy cook: teaches', Game.knowsTechnique('cook') === true);
     // skilled cook on a fresh turkey: full value
@@ -148,7 +149,7 @@ const origRandom = Math.random;
     Game.cleanCarcass(carIdx3);
     Game.cookOutcome = () => ({ key: 'perfect', mult: 1.0 });
     Game.cookAll();
-    ok('skilled cook: full digestibility gain', s.inventory[carIdx3].kcalEach === 425); // 1200 cleaned -> 1700 cooked /4 — fire unlocks the gross
+    ok('skilled cook: perfect preserves cleaned value', s.inventory[carIdx3].kcalEach === 600); // 1200 cleaned -> 1200 cooked /2 — canon PRESERVATION.md: cooked 100%
     Game.nearFire = origNear;
 
     // preserve
@@ -157,7 +158,7 @@ const origRandom = Math.random;
     Game.preserveFood(cookIdx);
     const smoked = s.inventory[cookIdx];
     ok('preserved messy: keeps ~2 weeks', smoked.foodState === 'preserved' && smoked.spoilDay === s.day + 15);
-    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(255 * 0.8)); // messy-cleaned 225 -> decent 255, then *0.8
+    ok('preserved messy: 80% of cooked value', smoked.kcalEach === Math.round(360 * 0.8)); // messy-cooked 360 -> x0.8 blind smoke
     // skilled preserve: full month
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     Game.state.codex.techniques.preserve = true;
@@ -255,7 +256,7 @@ const origRandom = Math.random;
     Game.state.codex.techniques.clean = false;
     Game.askSpecialist(fakeId, 0);
     const cleaned = s.inventory[0];
-    ok('specialist clean: 48% yield (skill 2)', cleaned.kcalEach === 360 && cleaned.units === 4);
+    ok('specialist clean: 48% yield (skill 2)', cleaned.kcalEach === 480 && cleaned.units === 3); // 3000 x 0.48 = 1440 -> 3x480
     // watching twice teaches (locate the fresh carcass: byproducts shift indices)
     s.inventory.push(Game.foodCarcass(turkey, 3000, s.day, 'hunted'));
     const carIdxW = s.inventory.findIndex(i => i.foodState === 'carcass');
