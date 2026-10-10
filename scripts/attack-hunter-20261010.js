@@ -243,23 +243,35 @@ const grantAbility = (Game, id, level) => {
   }
 
   // ============ E8: cleanShotReady — survives a bolted strike, dies on a real one ============
+  // RNG-ROBUST (2026-10-10): the bolt is a roll; retry the setup until a bolt
+  // actually happens (the gill-net rebalance shifted the shared RNG stream,
+  // which broke the old single-shot expectation — test fragility, not a game bug).
   {
     grantAbility(Game, 'patient_aim', 2);
-    s.animal = null;
-    gotoTile(Game, 7, 7);
-    setTile(Game, 7, 7, 'meadow', { cottontail_rabbit: 3 });
-    s.cleanShotReady = false;
-    try { Game.useAbility('patient_aim', 'clean_shot'); } catch (e) {}
-    sayText();
-    const armed = !!s.cleanShotReady;
-    // bolted strike: aware=1 animal, strike -> preyReaction bolts pre-strike
-    s.animal = { id: 'cottontail_rabbit', mx: 4, my: 5, aware: 1, stamina: 9, pstate: 'graze', edgeTurns: 0, wild: true };
-    try { Game.huntAnimal(); } catch (e) {}
-    sayText();
-    const keptAfterBolt = armed && !!s.cleanShotReady;
-    console.log('INFO E8 flag armed=' + armed + ' kept after bolt=' + keptAfterBolt +
+    let bolted = false, keptAfterBolt = false, guard0 = 0;
+    while (!bolted && guard0++ < 12) {
+      s.animal = null;
+      gotoTile(Game, 7, 7);
+      setTile(Game, 7, 7, 'meadow', { cottontail_rabbit: 3 });
+      s.cleanShotReady = false;
+      try { Game.useAbility('patient_aim', 'clean_shot'); } catch (e) {}
+      sayText();
+      const armed = !!s.cleanShotReady;
+      // bolted strike: aware=1 animal, strike -> preyReaction bolts pre-strike.
+      // huntAnimal returns true when the strike aborted on a bolt (encStrikeReact)
+      // AND on a clean kill — distinguish: a bolted animal is still present
+      // (it moved), a killed one is gone. Only a bolt must preserve the flag.
+      s.animal = { id: 'cottontail_rabbit', mx: 4, my: 5, aware: 1, stamina: 9, pstate: 'graze', edgeTurns: 0, wild: true };
+      let struck = false;
+      try { struck = !!Game.huntAnimal(); } catch (e) {}
+      sayText();
+      bolted = armed && struck && !!s.animal;
+      if (bolted) keptAfterBolt = !!s.cleanShotReady;
+      if (s.animal) { try { Game.encReleaseAnimal(s.animal); } catch (e) {} s.animal = null; }
+    }
+    console.log('INFO E8 bolt observed=' + bolted + ' flag kept after bolt=' + keptAfterBolt +
       ' (design: the lined-up bonus waits for a real strike — paid cost, kept bonus)');
-    check('E8 clean_shot persists through a bolted strike', keptAfterBolt, '');
+    check('E8 clean_shot persists through a bolted strike', bolted && keptAfterBolt, '');
     // a resolved strike (kill or miss) consumes it
     s.animal = { id: 'cottontail_rabbit', mx: 4, my: 5, aware: 0, stamina: 9, pstate: 'graze', edgeTurns: 0, wild: true };
     let guard = 0;

@@ -2806,6 +2806,25 @@
           // game trails — +15% trap catch.
           let trapChance = Math.min(0.95, this.modTarget('hunt.trap_catch', 0.4));
           if (this.hasItem('binoculars')) trapChance = Math.min(0.95, trapChance + 0.15);
+          // TRAP SHYNESS (balance 2026-10-10): game learns. Every catch on a
+          // tile teaches the locals — the same trap on the same ground fools
+          // fewer animals. t.trapShy[recipeId] = {level, day}: +1 per catch
+          // (cap 3), multiplying trapChance by 0.65^level (floor 0.05);
+          // relaxes 1 level per 3 quiet days. Rest the ground or move the
+          // line — rotation is the trapper's real cost. Declining returns,
+          // not a cap: the first pit on fresh ground still hits full odds.
+          // (Steve: prefer declining returns and opportunity costs over hard caps.)
+          const _shyMap = (t.trapShy = t.trapShy || {});
+          let _shy = _shyMap[recipe.id] || { level: 0, day: 0 };
+          if (_shy.level > 0) {
+            const _relax = Math.floor((this.state.scholar.day - (_shy.day || 0)) / 3);
+            if (_relax > 0) {
+              _shy = { level: Math.max(0, _shy.level - _relax), day: _shy.day };
+              if (_shy.level === 0) _shy.day = 0;
+              _shyMap[recipe.id] = _shy;
+            }
+            if (_shy.level > 0) trapChance = Math.max(0.05, trapChance * Math.pow(0.65, _shy.level));
+          }
           if (Math.random() < trapChance) {
             const catchId = eligible[Math.floor(Math.random() * eligible.length)];
             // the catch leaves the tile population — hunted out is hunted out.
@@ -2879,12 +2898,45 @@
                   : 'The box is ticking with dry sound — a rattlesnake, alive and coiled. You freeze, then pin it with a stick by pure luck. It never gets a strike in. Pin it FIRST next time.');
               }
             }
+            // BOAR RETRIEVAL (balance 2026-10-10): the pit_trap L3 text warns
+            // "a boar in a pit is a butchering problem with teeth — spear it
+            // from above before you climb down." The old code handed the
+            // carcass over silently — the same lie class as the box-trap
+            // rattlesnake (fixed 2026-10-10). Retrieval is the beat now:
+            // L3 pit_trap readers spear from above first (10% goring, 5-10
+            // dmg); the careless climb down into the pit (35% goring, 12-20
+            // dmg). Either way the boar is killed and cleaned after — the
+            // carcass math below is untouched. Knowledge earns safety.
+            if (catchId === 'wild_boar' && trap.recipeId === 'pit_trap') {
+              const _careful = ((this.state.codex.recipes || {})['pit_trap'] || {}).level >= 3;
+              const _goreP = _careful ? 0.10 : 0.35;
+              if (Math.random() < _goreP) {
+                const _gDmg = _careful ? 5 + Math.floor(Math.random() * 6) : 12 + Math.floor(Math.random() * 9);
+                this.state.scholar.health = Math.max(0, (this.state.scholar.health || 100) - _gDmg);
+                this.say(_careful
+                  ? `The boar is down the pit, alive and furious. You spear it from above like the recipe says — but it surges up the stakes as the point goes in, and a tusk opens your leg on the way past. (-${_gDmg} HP) The recipe warned you. It still wasn't enough.`
+                  : `The boar is down the pit, alive and furious — and you climb down into the pit with it. That was the mistake the recipe warned about. It meets you halfway up with its head down. (-${_gDmg} HP) Spear it from ABOVE next time.`);
+                try { this.audioEvent('animalBite'); } catch (e) {}
+              } else {
+                this.say(_careful
+                  ? 'The boar paces the pit, snorting, tusks bright. You keep your feet on solid ground and work the spear down from above, like the recipe says. Clean. It never touches you.'
+                  : 'The boar paces the pit — and for once your luck holds. You scramble back out before it turns, shaking, and finish it from above with a spear. Do it that way FIRST next time.');
+              }
+            }
+            // shyness rises with every catch — the locals are learning.
+            _shyMap[recipe.id] = { level: Math.min(3, _shy.level + 1), day: this.state.scholar.day };
             trap.uses -= 1;
             if (trap.uses <= 0) {
               this.say(`The ${recipe.name} broke. You'll need another.`);
               t.traps = t.traps.filter(x => x !== trap);
             } else {
               trap.setDay = this.state.scholar.day; // reset, check again tomorrow
+            }
+          } else if (_shy.level >= 2) {
+            // the ground has learned: said once per shyness level, not every dawn.
+            if (!trap.shyTold || trap.shyTold < _shy.level) {
+              trap.shyTold = _shy.level;
+              this.say(`Your ${recipe.name} ${dirPhrase(x, y)} sits empty — the game trails bend around the hollow now. This ground has learned your trap. Rest it, or move the line.`);
             }
           }
         }
@@ -2944,26 +2996,42 @@
           const fishYield = S.modifiers.resolve(1, 'fishing.yield', _fm, {});
           const fishRare = S.modifiers.resolve(0, 'fishing.rare_chance', _fm, {});
           if (Math.random() < 0.35 + fishRare) {
-            const fid = fishHere[Math.floor(Math.random() * fishHere.length)];
-            _wl[fid]--; if (_wl[fid] <= 0) delete _wl[fid];
-            // REAL FISH, REAL KCAL (hunter playtest 2026-10-09): the net used
-            // to pay a flat 300-600 kcal gross for ANY fish — up to 4x a
-            // bluegill's 150-kcal chemical energy — and named it a generic
-            // "fish". The net fishes the tile's own stock; the catch keeps
-            // its species' real gross. fishing.yield is the skill channel.
-            const adef = (this.data.animals || []).find(a => a.id === fid) || { id: fid, name: 'fish', calories: 200 };
-            const kcal = Math.round((adef.calories || 200) * fishYield);
-            this.state.scholar.inventory.push(this.foodCarcass(adef, kcal, this.state.scholar.day, 'netted'));
-            // a body in hand teaches you what it was — same as a trap catch.
-            try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(fid); } catch (e) {}
-            this.say(`Your gill net ${_nwhere} caught a ${(adef.name || 'fish').toLowerCase()}! About ${kcal} kcal — clean it quickly (knife).`);
-            net.uses -= 1;
-            if (net.uses <= 0) {
-              this.say('The gill net is torn to shreds — it fished its last. You haul in the rags.');
-              t.nets = t.nets.filter(n => n !== net);
-            } else {
-              net.setDay = this.state.scholar.day; // check again tomorrow
+            // GILL NET HAUL (balance 2026-10-10): a real net doesn't take one
+            // fish a night. A successful night hauls 1-3 fish (60/30/10) —
+            // each from the tile's real stock, each fraying the net one use.
+            // Species-honest kcal preserved (hunter playtest 2026-10-09 E7).
+            let _haul = 1; const _hr = Math.random();
+            if (_hr < 0.10) _haul = 3; else if (_hr < 0.40) _haul = 2;
+            const _names = [];
+            for (let _h = 0; _h < _haul; _h++) {
+              const _avail = FISH_IDS.filter(id => (_wl[id] || 0) > 0);
+              if (!_avail.length) break;
+              const fid = _avail[Math.floor(Math.random() * _avail.length)];
+              _wl[fid]--; if (_wl[fid] <= 0) delete _wl[fid];
+              // REAL FISH, REAL KCAL (hunter playtest 2026-10-09): the net used
+              // to pay a flat 300-600 kcal gross for ANY fish — up to 4x a
+              // bluegill's 150-kcal chemical energy — and named it a generic
+              // "fish". The net fishes the tile's own stock; the catch keeps
+              // its species' real gross. fishing.yield is the skill channel.
+              const adef = (this.data.animals || []).find(a => a.id === fid) || { id: fid, name: 'fish', calories: 200 };
+              const kcal = Math.round((adef.calories || 200) * fishYield);
+              this.state.scholar.inventory.push(this.foodCarcass(adef, kcal, this.state.scholar.day, 'netted'));
+              // a body in hand teaches you what it was — same as a trap catch.
+              try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(fid); } catch (e) {}
+              _names.push((adef.name || 'fish').toLowerCase());
+              net.uses -= 1;
+              if (net.uses <= 0) {
+                this.say('The gill net is torn to shreds — it fished its last. You haul in the rags.');
+                t.nets = t.nets.filter(n => n !== net);
+                break;
+              }
             }
+            if (_names.length === 1) {
+              this.say(`Your gill net ${_nwhere} caught a ${_names[0]}! Clean it quickly (knife).`);
+            } else if (_names.length > 1) {
+              this.say(`Your gill net ${_nwhere} hauled ${_names.length} fish — ${_names.join(', ')}. A good night on the water. Clean them quickly (knife).`);
+            }
+            if ((t.nets || []).includes(net)) net.setDay = this.state.scholar.day; // check again tomorrow
           } else {
             net.setDay = this.state.scholar.day; // check again tomorrow
           }
