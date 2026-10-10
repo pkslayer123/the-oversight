@@ -621,11 +621,18 @@
         .filter(i => inv[i] && inv[i].foodKind === 'meat' && (inv[i].foodState === 'cleaned' || inv[i].foodState === 'cooked'));
       if (!targets.length) { this.say('Nothing to preserve (cleaned or cooked meat).'); return null; }
       const knows = this.knowsTechnique('preserve');
+      // FUEL (forager break-it 2026-10-10): a smoke press is one fire
+      // session — it burns 16 ticks of fuel. A fire that dies mid-smoke
+      // drops the batch to the rough job (blind values: 0.80x, 15d), the
+      // same fiction as cookAll's batch path. Nothing burns on an empty
+      // press; untracked map hearths stay free (established).
+      const fuelDied = this.consumeCookFire(16) === 'died';
+      const solid = knows && !fuelDied;
       let n = 0;
       for (const i of targets) {
         const it = inv[i];
         const wasCooked = it.foodState === 'cooked';
-        const eff = knows ? 0.95 : 0.80;
+        const eff = solid ? 0.95 : 0.80;
         it.kcalEach = Math.round(it.kcalEach * eff);
         it.foodState = 'preserved';
         it.diseaseRisk = null; it.safe = true;
@@ -634,13 +641,16 @@
         // had them deleted at the fire; make sure smoking can't bring back a
         // stale parasiteRisk from a pre-fix cook.
         if (wasCooked && !it.undercooked) { delete it.parasiteRisk; }
-        it.spoilDay = this.state.scholar.day + (knows ? 30 : 15);
+        it.spoilDay = this.state.scholar.day + (solid ? 30 : 15);
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
         // HONESTY (break-it food 2026-10-09 layer 2): the old prep always
         // said "Keeps ~a month" even when the unskilled smoke only earned
         // 15 days (spoilDay = day+15 above). The decision UI already said
         // ~15d honestly; the item copy lied. The rough job says so now.
-        it.prep = knows ? 'Smoked. Keeps ~a month. The pantry\'s future.'
+        // A died fire earns the rough job too (forager break-it 2026-10-10)
+        // — the copy names the dead fire, not the smoker's hands.
+        it.prep = solid ? 'Smoked. Keeps ~a month. The pantry\'s future.'
+          : fuelDied ? 'Smoked (rough job). The fire died halfway — uneven, damp in spots. Keeps ~two weeks.'
           : 'Smoked (rough job). Keeps ~two weeks — a real preserver could do better.';
         n++;
         if (!knows) {
@@ -651,8 +661,10 @@
       // SMOKING PACE (Steve 2026-10-09): 16 ticks = 1/8 of a day-part.
       // "1/8 of a day seems about correct. That's all fine." A real job, not a spare moment.
       this.tickAction(16);
-      this.say(knows
+      this.say(solid
         ? `Smoked ${n} batch${n > 1 ? 'es' : ''} over the fire. Slow smoke, honest work — this keeps. (16 ticks)`
+        : fuelDied
+        ? `The fire died halfway through the smoke — ${n} batch${n > 1 ? 'es' : ''} came out uneven and damp in spots. A rough job, but it keeps a while. (16 ticks)`
         : `You rig a smoky fire and tend it a good while. It sort of works — drier, safer, but you know a real preserver would do better. (16 ticks)`);
       return null;
     },
@@ -671,13 +683,18 @@
         .filter(i => inv[i] && inv[i].foodKind === 'fat' && inv[i].foodState === 'raw' && !this.isSpoiled(inv[i]));
       if (!targets.length) { this.say('No raw fat to render.'); return null; }
       const knows = this.knowsTechnique('render');
+      // FUEL (forager break-it 2026-10-10): a render press is one 12-tick
+      // fire session. A fire that dies mid-render scorches the batch
+      // (blind values: 0.65x), same fiction as the smoke path above.
+      const fuelDied = this.consumeCookFire(12) === 'died';
+      const solid = knows && !fuelDied;
       let n = 0;
       for (const i of targets) {
         const it = inv[i];
         // BLIND PENALTY (Steve 2026-10-09): first-timers scorch some — 0.65,
         // in line with the other blind penalties (clean 0.75x, smoke 0.84x).
         // The attempt teaches; the sting is one-time, never stupid-making.
-        const per = Math.max(1, Math.round((it.hiddenKcal || it.kcalEach || 0) * (knows ? 0.9 : 0.65)));
+        const per = Math.max(1, Math.round((it.hiddenKcal || it.kcalEach || 0) * (solid ? 0.9 : 0.65)));
         it.foodState = 'rendered';
         it.edible = true;
         it.kcalEach = per; it.hiddenKcal = per;
@@ -690,8 +707,10 @@
         if (!knows) this.learnTechnique('render', 'trial');
       }
       this.tickAction(12);
-      this.say(knows
+      this.say(solid
         ? `Rendered ${n} batch${n > 1 ? 'es' : ''} low and slow. Clear and golden — this keeps. (12 ticks)`
+        : fuelDied
+        ? `The fire died halfway through the rendering — some of it scorched, the rest uneven. Usable, barely. (12 ticks)`
         : `You work the fat over the fire by instinct. Some of it scorches — but your hands learned something real. (12 ticks)`);
       return null;
     },
