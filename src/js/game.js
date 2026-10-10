@@ -11,6 +11,7 @@
 //   - hostFeast()
 //   - spendCombatAction(kind)
 //   - tbFighter(id)
+//   - tbSnakeLineageKey(m) -> 'snake:<root>' | 'body:<key>' (reward de-dupe: one spawn = one body, split-proof)
 //   - fighterSize(f), fighterTiles(f) (multi-tile occupancy)
 //   - tbCanOccupy(f, nx, ny) (validated movement: whole-footprint occupancy)
 //   - tbAdvance()
@@ -23452,7 +23453,13 @@
             alive: true, fled: false, telegraph: null, mdef,
             hesitate: 0, blind: 0, stunned: 0,
             // Snake-specific
-            snakeId, segmentIndex: i, isHead: i === 0,
+            // SNAKE LINEAGE (break-it combat 2026-10-10): the original
+            // spawn's id. tbSnakeSplit reassigns snakeId per fragment (two
+            // snakes hunt you — the fight gets harder), but rewards de-dupe
+            // on the lineage: one spawn = one body = one kill, however many
+            // pieces it dies in. (The old snakeId key let deliberate
+            // middle-kills farm N x carcasses / loot rolls / wave kills.)
+            snakeId, snakeRoot: snakeId, segmentIndex: i, isHead: i === 0,
             threatQueue: [],
             veteran: isVeteran, veteranVariant,
           });
@@ -25939,6 +25946,10 @@
       // Reassign snakeId and reindex
       after.forEach((s, i) => {
       s.snakeId = newSnakeId;
+      // LINEAGE (break-it combat 2026-10-10): snakeRoot is deliberately NOT
+      // reassigned — the fragment is a new fighter but the same body.
+      // Reward de-dupe (tbSnakeLineageKey) keys on the original spawn, so
+      // one duck pays one carcass / loot roll / wave kill however it splits.
       s.segmentIndex = i;
       s.isHead = (i === 0);
       s.name = s.name.replace(/\(head\)|\(\d+\)/, i === 0 ? '(head)' : `(${i + 1})`);
@@ -31444,6 +31455,19 @@
       } catch (e) {}
       return null;
     },
+    // SNAKE LINEAGE KEY (break-it combat 2026-10-10): reward de-dupe key for
+    // one body. tbSnakeSplit gives each fragment a NEW snakeId — the fight
+    // gets harder (two snakes hunt you), but the duck's meat doesn't
+    // multiply: one spawn = one kill = one carcass + one loot roll + one
+    // wave-kill credit, however many pieces it dies in. (The old bare
+    // snakeId key let deliberate middle-kills farm Nx carcasses/loot/wave
+    // kills from a single duck — the split-path twin of the r6 segment-count
+    // hole.) snakeRoot is stamped at spawn and preserved through splits;
+    // pre-fix saves (snakeId only) fall back to snakeId.
+    tbSnakeLineageKey(m) {
+      if (m && m.mdef && m.mdef.snake && (m.snakeRoot || m.snakeId)) return 'snake:' + (m.snakeRoot || m.snakeId);
+      return 'body:' + (m && m.key);
+    },
     tbEnd(result) {
       const f = this.tbfight;
       if (!f || f.over) return;
@@ -31463,15 +31487,18 @@
       if (result === 'won') {
         this.state.combatWins++;
         // Record kills by wave for unlock gates. ONE BODY = ONE KILL
-        // (break-it monsters r6 2026-10-10): snake segments are one creature —
-        // the reward loop below de-dupes them by snakeId for carcasses, loot,
-        // and codex 'slain'. Counting each of the duck's 14 segments let a
-        // single snake clear the 4-kill wave-2 minimum alone. Pack monsters
-        // are separate creatures and still count individually.
+        // (break-it monsters r6 2026-10-10; lineage-hardened break-it combat
+        // 2026-10-10): snake segments are one creature — the loops below
+        // de-dupe by SNAKE LINEAGE (tbSnakeLineageKey), not bare snakeId.
+        // Counting each of the duck's 14 segments let a single snake clear
+        // the 4-kill wave-2 minimum alone; keying on snakeId alone let
+        // deliberate middle-kills re-open the same hole via splits (each
+        // fragment paying full rewards). Pack monsters are separate
+        // creatures and still count individually.
         const _seenKills = new Set();
         for (const m of f.fighters) {
           if (m.kind === 'monster' && !m.alive && m.mdef) {
-            const _bk = (m.mdef.snake && m.snakeId) ? 'snake:' + m.snakeId : 'body:' + m.key;
+            const _bk = this.tbSnakeLineageKey(m);
             if (_seenKills.has(_bk)) continue;
             _seenKills.add(_bk);
             this.recordWaveKill(m.mdef.id);
@@ -31522,12 +31549,15 @@
         // you drop pays out — one carcass + one loot roll per creature. The
         // old code paid once per FIGHT on the first monster fighter: pack
         // fights left the other corpses barren and never marked their species
-        // 'slain' in the codex. Snake segments share one body (per snakeId).
+        // 'slain' in the codex. Snake segments share one body (per lineage —
+        // tbSnakeLineageKey, break-it combat 2026-10-10: split fragments keep
+        // the original spawn's snakeRoot, so one duck pays one carcass / one
+        // loot roll however many pieces it dies in).
         const _dead = f.fighters.filter(x => x.kind === 'monster' && !x.alive && x.mdef);
         const _seenBodies = new Set();
         const _kills = [];
         for (const _m of _dead) {
-          const _bk = (_m.mdef.snake && _m.snakeId) ? 'snake:' + _m.snakeId : 'body:' + _m.key;
+          const _bk = this.tbSnakeLineageKey(_m);
           if (_seenBodies.has(_bk)) continue;
           _seenBodies.add(_bk);
           _kills.push(_m);
