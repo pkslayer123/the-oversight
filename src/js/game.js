@@ -21640,22 +21640,30 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // legs count when the use log shows them under the method's conditions.
         const otherSeen = (r, test) => synIds.has(r) ? (sch.synergies || []).includes(r) : log.some(u => u.id === r && test(u));
         let combined = false;
+        // PASSIVE RESONANCE (util audit 2026-10-10): a pure-passive leg (no
+        // actions — no button to press, no practice to perform) is always
+        // "brought to bear" while held. Practice is required where practice
+        // is possible; resonance where it isn't. Without this, synergies
+        // with passive legs could never progress (1/120 runs) — there was
+        // literally nothing the player could do.
+        const otherResonant = (r) => this._synergyPassiveLegHeld(r);
         if (dm.type === 'simultaneous') {
           // Both used in the same day-part.
-          combined = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day && u.part === ctx.part));
+          combined = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day && u.part === ctx.part) || otherResonant(r));
         } else if (dm.type === 'sequential') {
           // Used second in the defined order, other was first earlier today.
           // PATH-AWARE: without an explicit dm.order, use the first live path.
           const order = dm.order || livePaths[0] || reqs;
           if (usedId === order[1] || `tech:${usedId}` === order[1] || `skill:${usedId}` === order[1]) {
-            combined = otherSeen(order[0], u => u.day === ctx.day);
+            combined = otherSeen(order[0], u => u.day === ctx.day) || otherResonant(order[0]);
           }
         } else if (dm.type === 'same_target') {
           // Both applied to the same target today.
           combined = !!(ctx.target && otherLegs.some(r => otherSeen(r, u => u.target === ctx.target && u.day === ctx.day)));
         } else if (dm.type === 'sustained') {
           // Both used today — counts as one day toward a 3-day streak.
-          const otherUsedToday = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day));
+          // (Passive legs resonate: held = brought to bear — see above.)
+          const otherUsedToday = otherLegs.some(r => otherSeen(r, u => u.day === ctx.day) || this._synergyPassiveLegHeld(r));
           if (otherUsedToday) {
             const dayKey = syn.id + '_days';
             const lastKey = syn.id + '_lastday';
@@ -21762,6 +21770,25 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // spam on repeated checks.
         this.say(dm.hint);
       }
+    },
+
+    // _synergyPassiveLegHeld(rid): is this synergy leg a pure-passive ability
+    // (no actions) currently held at minLevel? Techniques/skills/synergy
+    // legs defer to the held checks (tech known, skill leveled, synergy
+    // discovered). Active abilities (with actions) return false — they need
+    // real use; that's the practice half of the design.
+    _synergyPassiveLegHeld(rid) {
+      try {
+        const sch = this.state.scholar || {};
+        const minLvl = 1;
+        if (rid.startsWith('tech:')) return !!(((sch.codex || {}).techniques || {})[rid.slice(5)]);
+        if (rid.startsWith('skill:')) return ((((this.state.codex || {}).skills || {})[rid.slice(6)] || {}).level || 0) >= minLvl;
+        const synIds = new Set(((this.data && this.data.synergies) || []).map(x => x.id));
+        if (synIds.has(rid)) return (sch.synergies || []).includes(rid);
+        const def = ((this.data && this.data.abilities) || []).find(a => a.id === rid);
+        if (!def || (def.actions || []).length) return false;
+        return this.abilityLevel(rid) >= minLvl;
+      } catch (e) { return false; }
     },
 
     // unlockSynergy: 3rd successful combined use. Permanent (while both held).

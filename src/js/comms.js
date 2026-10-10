@@ -42,6 +42,7 @@
 //   - system_relay_garbled: needs integration stage 2+; the call is enthusiastic and mistranslated (party size drifts, wrong-threat comedy said aloud, occasional wrong address); the System takes a cut — a favor owed, narrated aloud and collected later as a played demand. (code: aidSystemRelay)
 //   - cry_is_build_gated: war_cry's bellow (and kin) punch through — targeted, same-part muster, honest message; gated on actually having the ability. (code: aidCry)
 //   - refusals_aloud_fast: aidAskVillage always speaks — acceptance, refusal, or no-link — never silent waiting. (code: aidAskVillage)
+//   - raid_raises_crisis: raids raise the crisis reactively (havenGrowth.js havenRaidTick) — the "monster at your door" beat the chain was built for; raiseAidCrisis had no organic caller (0/120 runs). Lingering raiders are the persistent threat; the crisis resolves 'fought' when the treeline is clear, 'moved-on' on the 6-day valve (lingering cleared). (code: commsTick, 2026-10-10)
 //   - standing_ge_ask: only links with trust >= 35 can be asked; below that the refusal names the number. (code: aidAskVillage)
 //   - mid_crisis_cant_come: a village with its own crisis says so aloud and stays home; foreign crises start/end reactively (seeded), never on a calendar. (code: aidAskVillage, foreignCrisisTick)
 //   - capped_party_named_face: help is a party of at most 4 led by one of the village's ~3 named faces (consistent across calls); the party marches real day-parts and can stand down aloud if the door goes quiet. (code: aidAskVillage, aidHelpArrived)
@@ -709,9 +710,35 @@
       try { this.switchboardStageTick(); } catch (e) {}
       // THE SYSTEM COLLECTS.
       try { this.collectSystemFavor(); } catch (e) {}
-      // SAFETY VALVE: a crisis that outlives attention moves on.
+      // RAID-RAISED CRISES (util audit 2026-10-10): a raid raises the crisis
+      // (havenGrowth.js); it resolves 'fought' when no lingering raiders
+      // hold the treeline anymore. Only for raid-raised crises (crisis.raiders),
+      // and only once the crisis is 3+ parts old — the village looked to YOU,
+      // so you get a real chance to answer (call, fight, or let the
+      // defenders' work stand) before the door is declared quiet.
       var crisis = this.aidCrisis();
+      if (crisis && !crisis.resolved && crisis.raiders) crisis.ageParts = (crisis.ageParts || 0) + 1;
+      if (crisis && !crisis.resolved && crisis.raiders && (crisis.ageParts || 0) >= 3) {
+        var threat = false;
+        try {
+          var vv = this.state.village || {};
+          var hx2 = (vv.px !== undefined && vv.px !== null) ? vv.px : 4;
+          var hy2 = (vv.py !== undefined && vv.py !== null) ? vv.py : 4;
+          var ms2 = this.worldMonsters ? this.worldMonsters() : [];
+          for (var i = 0; i < ms2.length; i++) {
+            var mm = ms2[i];
+            if (mm && mm.lingering && mm.tx === hx2 && mm.ty === hy2 && (mm.hp || 0) > 0) { threat = true; break; }
+          }
+        } catch (e) {}
+        if (!threat) this.resolveAidCrisis('fought');
+      }
+      // SAFETY VALVE: a crisis that outlives attention moves on.
       if (crisis && !crisis.resolved && day - crisis.sinceDay > 6) {
+        // the raiders drift off with the crisis — the treeline goes quiet
+        try {
+          var ms3 = this.worldMonsters ? this.worldMonsters() : [];
+          for (var k = 0; k < ms3.length; k++) if (ms3[k] && ms3[k].lingering) ms3[k].lingering = false;
+        } catch (e) {}
         this.resolveAidCrisis('moved-on');
       }
     },

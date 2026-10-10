@@ -104,7 +104,8 @@
 //   - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
-//   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly; break-it r13 2026-10-10: UNREACHABLE until the ratings-decay fix — the dip trigger never fired in live play)
+//   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
+//   - ratings_drift: audience drift — weekly, viewership sags 10% (min 2.5, floor 12); hype must outpace the leak. This is what lets the dip-gate arm: without it viewership only ratcheted up and the summons was dead content (0/120 runs). (code: contestTick, util audit 2026-10-10)
 //   - summons_ratings_recovery: a delivered stunt REALLY moves the numbers — +2 viewership plus recordMoment's +1, because the stunt copy promised "the numbers tick UP" while the engine moved nothing (the dip never recovered, so the next dawn could re-summon on the same dip); phone-it-in promises nothing and moves nothing (code: _showEnd, break-it fame-seeker 2026-10-10)
 //   - together_unity_once: a watch-together win grants unity only through its choice's narrated do.unity — the old silent +1 in _showEnd's 'won' else-branch doubled the snacks choice's unity with no line said (code: _showEnd, break-it fame-seeker 2026-10-10)
 //   - summons_castability: the ratings summons is for the PLAYER specifically — a dead (over/health<=0) or exiled scholar is not summoned. The tick falls through to normal scheduling (unconsumed slot) and fireRatingsSummons refuses out loud (code: contestTick, fireRatingsSummons, break-it contest r10 2026-10-09)
@@ -257,6 +258,36 @@
   // Runs each dawn. Returns event or null.
   G.contestTick = function() {
     const day = this.state.scholar.day || 1;
+    // AUDIENCE DRIFT runs before every early return below (util audit
+    // 2026-10-10): eyeballs drift whether or not the System schedules TV —
+    // the budget gate, pending interruptions, and the day-14 embargo must
+    // not freeze the ratings. (The dip-gate that feeds the summons lives
+    // further down and reads the trend computed here.)
+    let ratingsDipping = false;
+    try {
+      const v = this.state.village || {};
+      const weekB = Math.floor(day / 7);
+      if (v._driftWeek !== weekB) {
+        v._driftWeek = weekB;
+        try {
+          const vb = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0);
+          if (vb > 12) v.viewership = Math.max(12, vb - Math.max(2.5, vb * 0.10));
+        } catch (e) {}
+      }
+      const now = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0);
+      if (v._trendWeek !== weekB) {
+        v._trendWeek = weekB;
+        const lastWeek = v._lastWeekViewership;
+        // Persist for the whole week (util audit 2026-10-10): the dip was
+        // only visible on the boundary day itself — the other 6 days saw
+        // ratingsDipping=false and the summons never fired. Soft = falling
+        // week-over-week OR just plain low (<15): the System doesn't care
+        // WHY the numbers are bad, it wants a stunt.
+        v._dipping = ((lastWeek !== undefined && lastWeek !== null) && (now - lastWeek) < -1) || now < 15;
+        v._lastWeekViewership = now;
+      }
+      ratingsDipping = !!v._dipping;
+    } catch (e) {}
     if (day < 14) return null;
 
     // One interruption at a time (Steve 2026-10-06): never fire while one is
@@ -282,37 +313,17 @@
     // Clamped 0.05–0.60. Budget (2/week) still caps it. Contests are bigger
     // TV than shows — the contest share rises when ratings dip.
     let chance = 0.25;
-    // RATINGS DIP (audit-shows 2026-10-09): computed ONCE from the trend,
-    // before _lastWeekViewership is overwritten below. The old code compared
-    // v.viewership < v._lastWeekViewership AFTER the update — always false,
-    // so the "75% contest when the numbers are bad" branch was dead.
-    // RATINGS DECAY (break-it contests r13 2026-10-10): the dip branch was
-    // STILL dead after that fix — different reason. Viewership only ever
-    // GREW in live play (recordMoment +1, sticky havenViewership init;
-    // every decrement lived in dead code paths: declineChallenge,
-    // arenaAct — both zero live callers), so `trend < -1` could never fire
-    // and the ratings summons — a canon system (Steve 2026-10-04) with a
-    // played stunt, real costs, and a care-package prize — NEVER aired.
-    // Attention fades: -1/day once the show starts (day 14+), floored at 0.
-    // Quiet stretches genuinely go soft; big plays still outrun the fade.
-    // Dips are real, rare, and recoverable (the stunt's +2 viewership plus
-    // recordMoment's +1). The key keeps its week-named legacy for save
-    // compat — the signal is day-over-day, said honestly here.
-    let ratingsDipping = false;
+    // RATINGS DIP (audit-shows 2026-10-09, trend moved to function top
+    // 2026-10-10): ratingsDipping is computed from the week-over-week trend
+    // before any early return; the scheduling odds below just read it.
     try {
       const v = this.state.village || {};
-      let now = 0;
-      try { now = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0); } catch (e) { now = 0; }
-      // havenViewership pins v.viewership on first read; decay the pinned value.
-      try { v.viewership = Math.max(0, (v.viewership == null ? now : v.viewership) - 1); } catch (e2) {}
-      now = (v.viewership == null ? now : v.viewership);
-      const lastWeek = v._lastWeekViewership;
-      if (lastWeek !== undefined && lastWeek !== null) {
-        const trend = now - lastWeek;
-        if (trend < 0) { chance += 0.15; ratingsDipping = true; }
-        else if (trend > 2) chance -= 0.10;
+      if (ratingsDipping) chance += 0.15;
+      else {
+        const now = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0);
+        const lastWeek = v._lastWeekViewership;
+        if (lastWeek !== undefined && lastWeek !== null && (now - lastWeek) > 2) chance -= 0.10;
       }
-      v._lastWeekViewership = now;
       const day = this.state.scholar.day || 1;
       const recentDeath = (v.fallen || []).some(f => day - (f.day || 0) <= 3);
       let fracture = false;

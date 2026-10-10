@@ -170,6 +170,7 @@ Call-for-help chain (4 tiers) + the switchboard OFFICE — the mechanical core o
 - system_relay_garbled: needs integration stage 2+; the call is enthusiastic and mistranslated (party size drifts, wrong-threat comedy said aloud, occasional wrong address); the System takes a cut — a favor owed, narrated aloud and collected later as a played demand. (code: aidSystemRelay)
 - cry_is_build_gated: war_cry's bellow (and kin) punch through — targeted, same-part muster, honest message; gated on actually having the ability. (code: aidCry)
 - refusals_aloud_fast: aidAskVillage always speaks — acceptance, refusal, or no-link — never silent waiting. (code: aidAskVillage)
+- raid_raises_crisis: raids raise the crisis reactively (havenGrowth.js havenRaidTick) — the "monster at your door" beat the chain was built for; raiseAidCrisis had no organic caller (0/120 runs). Lingering raiders are the persistent threat; the crisis resolves 'fought' when the treeline is clear, 'moved-on' on the 6-day valve (lingering cleared). (code: commsTick, 2026-10-10)
 - standing_ge_ask: only links with trust >= 35 can be asked; below that the refusal names the number. (code: aidAskVillage)
 - mid_crisis_cant_come: a village with its own crisis says so aloud and stays home; foreign crises start/end reactively (seeded), never on a calendar. (code: aidAskVillage, foreignCrisisTick)
 - capped_party_named_face: help is a party of at most 4 led by one of the village's ~3 named faces (consistent across calls); the party marches real day-parts and can stand down aloud if the door goes quiet. (code: aidAskVillage, aidHelpArrived)
@@ -255,7 +256,8 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
 - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
-- ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly; break-it r13 2026-10-10: UNREACHABLE until the ratings-decay fix — the dip trigger never fired in live play)
+- ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
+- ratings_drift: audience drift — weekly, viewership sags 10% (min 2.5, floor 12); hype must outpace the leak. This is what lets the dip-gate arm: without it viewership only ratcheted up and the summons was dead content (0/120 runs). (code: contestTick, util audit 2026-10-10)
 - summons_ratings_recovery: a delivered stunt REALLY moves the numbers — +2 viewership plus recordMoment's +1, because the stunt copy promised "the numbers tick UP" while the engine moved nothing (the dip never recovered, so the next dawn could re-summon on the same dip); phone-it-in promises nothing and moves nothing (code: _showEnd, break-it fame-seeker 2026-10-10)
 - together_unity_once: a watch-together win grants unity only through its choice's narrated do.unity — the old silent +1 in _showEnd's 'won' else-branch doubled the snacks choice's unity with no line said (code: _showEnd, break-it fame-seeker 2026-10-10)
 - summons_castability: the ratings summons is for the PLAYER specifically — a dead (over/health<=0) or exiled scholar is not summoned. The tick falls through to normal scheduling (unconsumed slot) and fireRatingsSummons refuses out loud (code: contestTick, fireRatingsSummons, break-it contest r10 2026-10-09)
@@ -651,7 +653,8 @@ Haven growth milestones — the 12→24 population ladder (PROGRESSION.md §10, 
 - resource_based: tiers unlock on stockpile thresholds only (code: havenGrowth.js — havenGrowthDaily checks havenStores() vs HAVEN_TIERS req; no deed, calendar, or knowledge reads anywhere in the tier path)
 - knowledge_never_gates: nothing here reads the codex (code: havenGrowth.js — havenTierUp/havenGrowthMeter reference stores only; announceHavenBar prints exact numbers)
 - discoverable: System announces each tier bar post-arrival, Haven panel shows the live meter, villagers gossip the shortfall (code: havenGrowth.js — announceHavenBar, havenGrowthMeter + app.js havenGrowthHTML, havenNeedGossip)
-- reactive_raids: raids fire on world state, never a schedule (code: havenGrowth.js — havenRaidTick requires 3+ world monsters, 3k+ pantry kcal, 7-day cooldown, 18% roll)
+- reactive_raids: raids fire on world state, never a schedule (code: havenGrowth.js — havenRaidTick requires 3+ world monsters, 3k+ pantry kcal, 7-day cooldown, 18% roll; wealth draws teeth: 3 +1 per 12k pantry over 3k, cap 5)
+- raid_raises_crisis: a raid raises an aid crisis reactively (the village looks to you; four call-for-help options said aloud). Raiders nobody meets LINGER at the treeline and gorge nightly (havenGrowthDaily) until driven off — the persistent threat the comms chain exists for. (code: havenRaidTick, 2026-10-10)
 - cap_ceiling: havenPopCap is the ceiling; intake reads it via housingCap (code: havenGrowth.js — havenPopCap; membership.js — housingCap takes max(shelters, 12+4*havenTier()))
 - no_consumption: reaching a tier does not eat the stockpile (code: havenGrowth.js — havenTierUp sets v.havenTier only; stores untouched)
 
@@ -852,7 +855,7 @@ Perception system. Proximity hints, spotting.
 ### progression (`progression.js`)
 Character progression. XP, levels, abilities.
 
-**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), progState(), fireCrisis(kind, ctx), progDaily(), slotMoment(), teachSentiment(), channelSentiment(idx), channelReadyKeepsakes(), channelLabel(), deedState(), recordDeedFight(monsterId), deedGateReady()
+**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), _synergyGiftPick(cands, owned), progState(), fireCrisis(kind, ctx), progDaily(), slotMoment(), teachSentiment(), channelSentiment(idx), channelReadyKeepsakes(), channelLabel(), deedState(), recordDeedFight(monsterId), deedGateReady()
 
 **Rules:**
 - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
@@ -958,6 +961,8 @@ Foreign villages as players — inner life (famine, succession, schism), splinte
 - cap_is_ceiling: havenPopCap() is the haven workstream's hook — reads their growthTier when present, falls back to 12/16/20/24 (code: villageAgency.js)
 - knowledge_never_gates: a starving stranger doesn't check your codex; no beat here is knowledge-gated (code: villageAgency.js)
 - reactive_not_calendar: schisms, succession, famine fire from conditions (hunger, tension, leader death), never timers (code: villageAgency.js)
+- they_eat_too: unapproached villages burn pantry daily (pop × 120 kcal net) — static pantries froze their inner lives (0/120 beg/raid answers). Approached villages run the catch-up sim instead. (code: _vaSimInner, util audit 2026-10-10)
+- petition_no_link_needed: splinter breakaways petition at your fire whether or not the parent village is linked — PROGRESSION.md §10; the interview beat is built for strangers. (code: fireSplinter, util audit 2026-10-10)
 - rumors_delayed_wrong: internal events arrive delayed, possibly wrong, never omniscience — only for known villages (code: villageAgency.js)
 - evil_is_legitimate: a cannibal splinter is content, not a bug; accepting them has real, lasting consequences (code: villageAgency.js)
 

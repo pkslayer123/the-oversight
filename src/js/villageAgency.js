@@ -40,6 +40,8 @@
 //   - cap_is_ceiling: havenPopCap() is the haven workstream's hook — reads their growthTier when present, falls back to 12/16/20/24 (code: villageAgency.js)
 //   - knowledge_never_gates: a starving stranger doesn't check your codex; no beat here is knowledge-gated (code: villageAgency.js)
 //   - reactive_not_calendar: schisms, succession, famine fire from conditions (hunger, tension, leader death), never timers (code: villageAgency.js)
+//   - they_eat_too: unapproached villages burn pantry daily (pop × 120 kcal net) — static pantries froze their inner lives (0/120 beg/raid answers). Approached villages run the catch-up sim instead. (code: _vaSimInner, util audit 2026-10-10)
+//   - petition_no_link_needed: splinter breakaways petition at your fire whether or not the parent village is linked — PROGRESSION.md §10; the interview beat is built for strangers. (code: fireSplinter, util audit 2026-10-10)
 //   - rumors_delayed_wrong: internal events arrive delayed, possibly wrong, never omniscience — only for known villages (code: villageAgency.js)
 //   - evil_is_legitimate: a cannibal splinter is content, not a bug; accepting them has real, lasting consequences (code: villageAgency.js)
 // consumes:
@@ -173,6 +175,18 @@
       try { day = (this.state.scholar || {}).day || 0; } catch (e) {}
       var inner = this._vaInner(v);
       this.ensureFaces(v);
+      // THEY EAT TOO (util audit 2026-10-10): unapproached villages held
+      // static pantries forever — no drain, no famine, tension decaying to
+      // zero — so their whole inner life (famine → beg/raid beats, tension →
+      // schism → petitions) sat frozen: 0/120 beg/raid answers, petitions
+      // only via the dead link gate. PROGRESSION.md §6: other villages run
+      // the same game. Mouths eat: pop × ~120 kcal/day net shortfall (they
+      // forage too — this is the gap, not the whole need). Approached
+      // villages run the catch-up sim instead; never double-drain.
+      if (!v.generated) {
+        var mouths = v.population || 8;
+        v.pantryKcal = Math.max(0, (v.pantryKcal || 0) - mouths * 120);
+      }
       var starving = (v.pantryKcal || 0) <= 0;
 
       // FAMINE: real pantries starve for real. Unapproached villages hold
@@ -448,9 +462,14 @@
       inner.splinterCooldownUntil = day + 30;
 
       var petitioners = [], remainers = members;
-      var linked = null;
-      try { linked = this.linkWith(v.id); } catch (e) {}
-      if (cause !== 'hardline' && linked) {
+      // PETITION WITHOUT LINK (util audit 2026-10-10): petitioners used to
+      // require a hierarchy link with the parent village — but links never
+      // form in organic play (0/120 runs), so the whole petition beat
+      // (interview, moot, vote) sat dead behind a dead prerequisite.
+      // PROGRESSION.md §10: breakaways petition at your fire — they're
+      // named, interviewed, voted on. Strangers is the point; the interview
+      // beat exists precisely for people you don't know yet.
+      if (cause !== 'hardline') {
         var half = Math.ceil(members.length / 2);
         petitioners = members.slice(0, half);
         remainers = members.slice(half);

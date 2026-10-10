@@ -7,6 +7,7 @@
 //   - integrationStage()
 //   - checkTrial(id)
 //   - completeTrial(id)
+//   - _synergyGiftPick(cands, owned)
 //   - progState()
 //   - fireCrisis(kind, ctx)
 //   - progDaily()
@@ -710,7 +711,12 @@
         const owned = new Set((s.abilities || []).map(a => a.id));
         const cands = (this.data.abilities || []).filter(a => !owned.has(a.id) && a.unlock && a.unlock.type === 'system_offer');
         if (cands.length && (s.abilities || []).length < this.abilitySlots()) {
-          const def = pick(cands);
+          // SYNERGY-AWARE GIFT (util audit 2026-10-10): synergy discovery was
+          // dead (1/120 runs) because grants never completed held legs — the
+          // pairs were never held. If a candidate completes a synergy with a
+          // leg the scholar holds (or has teased), the System notices the
+          // shape of the build and offers that one. Still a gift, not a menu.
+          const def = this._synergyGiftPick(cands, owned) || pick(cands);
           s.abilities.push({ id: def.id, name: def.name, desc: def.description || '', level: 1, xp: 0 });
           gift = def.name;
           // BREAK-IT abilities 2026-10-10 (sibling sweep): a granted ability
@@ -724,6 +730,37 @@
       const luck = (pg.flags || {}).quiet_luck ? ' Quiet luck was with you.' : '';
       this.say(`◈ TRIAL COMPLETE — the audience applauds, which sounds like static. (+15 integration${gift ? `, gift: ${gift}` : ''})${luck}`);
       try { this.save(); } catch (e) {}
+    },
+
+    // _synergyGiftPick(cands, owned): prefer a trial gift that completes a
+    // synergy leg the scholar holds (or has teased). Returns the def or null.
+    // Legs are matched bare (tech:/skill: prefixes stripped); multi-path
+    // synergies (requires_any) union their paths.
+    _synergyGiftPick(cands, owned) {
+      try {
+        const syns = (this.data && this.data.synergies) || [];
+        if (!syns.length) return null;
+        const sch = this.state.scholar || {};
+        const teased = sch.synergyAttempts || {};
+        const hasTease = (id) => Object.keys(teased).some(k => k.indexOf(id) === 0);
+        let best = null, bestScore = 0;
+        for (const c of cands) {
+          let score = 0;
+          for (const syn of syns) {
+            if ((sch.synergies || []).includes(syn.id)) continue;
+            const paths = syn.requires_any || (syn.requires ? [syn.requires] : []);
+            for (const path of paths) {
+              const legs = (path || []).map(l => String(l).split(':').pop());
+              if (!legs.includes(c.id)) continue;
+              const others = legs.filter(l => l !== c.id);
+              if (others.some(l => owned.has(l))) score = Math.max(score, 2);
+              else if (others.some(l => hasTease(l))) score = Math.max(score, 1);
+            }
+          }
+          if (score > bestScore) { bestScore = score; best = c; }
+        }
+        return best;
+      } catch (e) { return null; }
     },
 
     // ---------- DAILY ----------

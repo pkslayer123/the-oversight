@@ -19,7 +19,8 @@
 //   - resource_based: tiers unlock on stockpile thresholds only (code: havenGrowth.js — havenGrowthDaily checks havenStores() vs HAVEN_TIERS req; no deed, calendar, or knowledge reads anywhere in the tier path)
 //   - knowledge_never_gates: nothing here reads the codex (code: havenGrowth.js — havenTierUp/havenGrowthMeter reference stores only; announceHavenBar prints exact numbers)
 //   - discoverable: System announces each tier bar post-arrival, Haven panel shows the live meter, villagers gossip the shortfall (code: havenGrowth.js — announceHavenBar, havenGrowthMeter + app.js havenGrowthHTML, havenNeedGossip)
-//   - reactive_raids: raids fire on world state, never a schedule (code: havenGrowth.js — havenRaidTick requires 3+ world monsters, 3k+ pantry kcal, 7-day cooldown, 18% roll)
+//   - reactive_raids: raids fire on world state, never a schedule (code: havenGrowth.js — havenRaidTick requires 3+ world monsters, 3k+ pantry kcal, 7-day cooldown, 18% roll; wealth draws teeth: 3 +1 per 12k pantry over 3k, cap 5)
+//   - raid_raises_crisis: a raid raises an aid crisis reactively (the village looks to you; four call-for-help options said aloud). Raiders nobody meets LINGER at the treeline and gorge nightly (havenGrowthDaily) until driven off — the persistent threat the comms chain exists for. (code: havenRaidTick, 2026-10-10)
 //   - cap_ceiling: havenPopCap is the ceiling; intake reads it via housingCap (code: havenGrowth.js — havenPopCap; membership.js — housingCap takes max(shelters, 12+4*havenTier()))
 //   - no_consumption: reaching a tier does not eat the stockpile (code: havenGrowth.js — havenTierUp sets v.havenTier only; stores untouched)
 // consumes:
@@ -180,6 +181,26 @@
     havenGrowthDaily() {
       const v = this.state.village;
       if (!v || this.over) return;
+      // LINGERING RAIDERS (util audit 2026-10-10): raiders nobody met hold
+      // the treeline and gorge at each dawn until driven off (killed, or the
+      // crisis goes quiet and they drift). Re-pinned to the Haven tile —
+      // they're besieging, not wandering.
+      try {
+        const hx = (v.px !== undefined && v.px !== null) ? v.px : 4;
+        const hy = (v.py !== undefined && v.py !== null) ? v.py : 4;
+        const ms = this.worldMonsters ? this.worldMonsters() : [];
+        for (const m of ms) {
+          if (!m || !m.lingering || (m.hp || 0) <= 0) continue;
+          m.tx = hx; m.ty = hy;
+          const take = 500 + Math.floor(R() * 1000);
+          let got = 0;
+          try { got = this.raidPillage(v, take); } catch (e) {}
+          let mn = 'it';
+          try { mn = (this.monsterDisplayName && this.monsterDisplayName(m.id)) || 'it'; } catch (e) {}
+          this.say(`🌙 Night. The lingering ${mn} gorges at the treeline — ${Math.round(got).toLocaleString()} kcal gone from the stores. Drive it off, or call for help.`);
+        }
+        try { if (this.syncMonsterAlias) this.syncMonsterAlias(); } catch (e) {}
+      } catch (e) {}
       v.havenGrowth = v.havenGrowth || {};
       const hg = v.havenGrowth;
       const tier = this.havenTier();
@@ -312,7 +333,11 @@
       const hy = (v.py !== undefined && v.py !== null) ? v.py : 4;
       const sorted = monsters.slice().sort((a, b) =>
         (Math.abs(a.tx - hx) + Math.abs(a.ty - hy)) - (Math.abs(b.tx - hx) + Math.abs(b.ty - hy)));
-      const raiders = sorted.slice(0, 3);
+      // WEALTH DRAWS TEETH (util audit 2026-10-10): a rich pantry smells
+      // farther. 3 raiders base, +1 per 12k kcal above the 3k smell-line, cap 5.
+      // Reactive (world state), never scheduled.
+      const raidN = Math.min(5, 3 + (pantry > 12000 ? 1 : 0) + (pantry > 24000 ? 1 : 0));
+      const raiders = sorted.slice(0, raidN);
       const mname = (m) => {
         try { return this.monsterDisplayName(m.id) || 'something'; } catch (e) { return 'something'; }
       };
@@ -327,24 +352,41 @@
       const names = raiders.map(mname).join(', ');
       this.say(`🐗 RAID — ${raiders.length === 1 ? 'a raider' : raiders.length + ' raiders'} (${names}) hit Haven in the night, drawn by the smell of the pantry!` +
         (palisade ? " The palisade's stakes take their toll as they come over the wall." : ' No walls. No warning but the noise.'));
+      // THE DOOR (util audit 2026-10-10): raiders at Haven are exactly the
+      // "monster at your door" beat the call-for-help chain was built for —
+      // but raiseAidCrisis had no organic caller, so all four tiers sat dead
+      // (0/120 runs). Raids now raise the crisis reactively: the village
+      // looks to you, the four options are said aloud, you decide. Raiders
+      // nobody meets LINGER at the treeline (the crisis threat) instead of
+      // one instant pillage nobody can answer — that's what help is FOR.
+      // The crisis resolves 'fought' when the treeline is clear (commsTick),
+      // or drifts 'moved-on' on the 6-day valve.
+      try {
+        if (this.raiseAidCrisis) {
+          let wmax = 1;
+          for (const m of raiders) { try { wmax = Math.max(wmax, m.wave || 1); } catch (e) {} }
+          const crisis = this.raiseAidCrisis(names, wmax);
+          if (crisis) crisis.raiders = true;
+        }
+      } catch (e) {}
       // defenders: healthy villagers at home. Real fights, not rolls.
       const defenders = (v.roster || []).filter(id =>
         id !== this.villagerId &&
         !(v.away && v.away[id]) &&
         ((v.health || {})[id] === undefined || (v.health || {})[id] > 40));
-      let di = 0, pillaged = 0;
+      let di = 0;
       for (const m of raiders) {
         if (di < defenders.length) {
           const d = defenders[di++];
           try { if (this.resolveWildMonsterEncounter) this.resolveWildMonsterEncounter(d, m); } catch (e) {}
         } else {
-          // nobody met this one — it eats.
-          const take = 500 + Math.floor(R() * 1000);
-          try { pillaged += this.raidPillage(v, take); } catch (e) {}
+          // nobody met this one — it doesn't gorge once and leave. It
+          // LINGERS at the treeline and gorges at each dawn until driven
+          // off (havenGrowthDaily). The crisis threat, made persistent —
+          // this is the situation the call-for-help chain exists for.
+          m.lingering = true;
+          this.say(`Nobody met the ${mname(m)} — it's still out there at the treeline. It'll gorge every night until it's driven off.`);
         }
-      }
-      if (pillaged > 0) {
-        this.say(`The raiders nobody met gorge on the pantry — ${Math.round(pillaged).toLocaleString()} kcal gone, scattered and spoiled in the scramble.`);
       }
       // the player: without a palisade, one raider can reach a sleeper.
       let playerAtHaven = false;
