@@ -13563,7 +13563,10 @@
         // keeps the tset parameter for the highlight machinery.
         const tset = new Set();
         const _seenCount = Object.keys((Game.state.scholar || {}).seenTiles || {}).length;
-        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World (${_seenCount} seen)</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
+        // HIVE SIGHT (break-it travel 2026-10-10): name the sense in the header.
+        let _hiveHead = false;
+        try { _hiveHead = !!(Game.hiveSight && Game.hiveSight()); } catch (e) {}
+        overlay.innerHTML = `<div class="mapoverlay-back"></div><div class="mapoverlay-box"><div class="mapoverlay-head"><span>🗺️ World (${_seenCount} seen${_hiveHead ? ' · hive sight' : ''})</span><button class="btn sm ghost" id="mapoverlay-x">✕</button></div><div class="map minimap">${renderMap(st, tset)}</div></div>`;
         overlay.classList.remove('hidden');
         overlay.querySelector('#mapoverlay-x').onclick = () => overlay.classList.add('hidden');
         overlay.querySelector('.mapoverlay-back').onclick = () => overlay.classList.add('hidden');
@@ -13581,20 +13584,31 @@
             const x = +el.dataset.x, y = +el.dataset.y;
             const tl = Game.tileAt(x, y);
             const seen = Game.mapSeen ? Game.mapSeen(x, y) : null;
-            if (!seen) { mapInfoEl.innerHTML = '<span class="dim">Unexplored — you haven\'t been here.</span>'; return; }
+            // HIVE SIGHT (break-it travel 2026-10-10): the overlay renders
+            // hive-sensed tiles, so taps must read them too — otherwise the
+            // map shows terrain the tap calls "Unexplored".
+            const hiveTap = !seen && (Game.hiveSight && Game.hiveSight());
+            if (!seen && !hiveTap) { mapInfoEl.innerHTML = '<span class="dim">Unexplored — you haven\'t been here.</span>'; return; }
             if (x === (Game.map || {}).px && y === (Game.map || {}).py) {
               mapInfoEl.innerHTML = '<b>You are here.</b>';
               return;
             }
             const otherV = (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
             if (otherV) {
-              mapInfoEl.innerHTML = `<b>🏘️ ${esc(otherV.name || 'Another village')}</b> — tap again to visit.`;
+              // HONESTY (break-it travel 2026-10-10): the old line said "tap
+              // again to visit" but nothing ever read el.dataset.village — a
+              // dead promise, and it contradicts Steve's law (no travel from
+              // the map; travel happens by walking). The villageCard hint
+              // already says it right: walk to the edge and head out.
+              mapInfoEl.innerHTML = `<b>🏘️ ${esc(otherV.name || 'Another village')}</b> — walk to the edge of the map and head out to get there.`;
               el.dataset.village = otherV.id;
               return;
             }
             // MAP IS FOR VIEWING (Steve 2026-10-06): no travel from the map.
             // Travel happens by walking. The map shows where you've been.
-            const how = seen === 'shared' ? ' <span class="dim">(shown to you by someone)</span>' : '';
+            // HIVE SIGHT (break-it travel 2026-10-10): hive-sensed tiles name
+            // their terrain honestly — and name the limit.
+            const how = seen === 'shared' ? ' <span class="dim">(shown to you by someone)</span>' : (hiveTap ? ' <span class="dim">(sensed by the hive — terrain only)</span>' : '');
             const glyph = (typeof S !== 'undefined' && S.TILE_GLYPH && tl) ? (S.TILE_GLYPH[tl.type] || '·') : '·';
             const tname = tl ? (((typeof S !== 'undefined' && S.TILE_NAME && S.TILE_NAME[tl.type]) || tl.type)) : 'unknown';
             mapInfoEl.innerHTML = `${glyph} <b>${esc(tname)}</b>${how}.`;
@@ -13614,7 +13628,10 @@
         // FOG (break-it travel 2026-10-09): only on seen tiles — an unseen
         // tile with a generated village reads "Unexplored" below, never the
         // village's name. (villageCard also holds this line at the engine.)
-        const _seenTile = Game.mapSeen ? Game.mapSeen(x, y) : null;
+        // HIVE SIGHT (break-it travel 2026-10-10): hive_mind's earned sense
+        // names the village — the card still gates every action on proximity.
+        const _hiveTap = Game.hiveSight && Game.hiveSight();
+        const _seenTile = (Game.mapSeen ? Game.mapSeen(x, y) : null) || (_hiveTap ? 'hive' : null);
         const otherV = _seenTile && (Game.state.otherVillages || []).find(v => v.x === x && v.y === y && v.generated);
         if (otherV && Game.villageCard) {
           const card = Game.villageCard(otherV.id);
@@ -13634,11 +13651,11 @@
             return;
           }
         }
-        const seenHow = Game.mapSeen ? Game.mapSeen(x, y) : null;
+        const seenHow = (Game.mapSeen ? Game.mapSeen(x, y) : null) || (_hiveTap ? 'hive' : null);
         if (!seenHow) {
           info.innerHTML = `<div class="card"><p>🌫 <b>Unexplored.</b><br><span class="small">No one has been there. Walk to the edge and head out to see what's really there.</span></p></div>`;
         } else {
-          const via = seenHow === 'shared' ? '<br><span class="small" style="opacity:.7">Someone showed you this ground — you haven\'t walked it yourself.</span>' : '';
+          const via = seenHow === 'shared' ? '<br><span class="small" style="opacity:.7">Someone showed you this ground — you haven\'t walked it yourself.</span>' : (seenHow === 'hive' ? '<br><span class="small" style="opacity:.7">Sensed by the hive — terrain only. Walk it to truly know it.</span>' : '');
           info.innerHTML = `<div class="card"><p>🗺 ${esc(S.TILE_NAME[tl.type] || tl.type)}.<br><span class="small">Walk to the edge of the map to travel there.</span>${via}</p></div>`;
         }
       };
@@ -15350,6 +15367,12 @@
 
   function renderMap(st, tset) {
     let html = '';
+    // HIVE SIGHT (break-it travel 2026-10-10): hive_mind promises "(map
+    // reveals)" — the overlay honors it. Every tile renders at 'shared'
+    // level (biome color, never detail). Display-only: seenTiles is never
+    // written, so the compareMaps social gate and codex MAPS gate stay clean.
+    let _hive = false;
+    try { _hive = !!(Game.hiveSight && Game.hiveSight()); } catch (e) {}
     // PLAYER PERSON (Steve 2026-10-06): you render as your villager sprite —
     // like any villager. No marker, no arrow, no "you are here". You find
     // yourself by recognizing your own face.
@@ -15464,10 +15487,13 @@
         const cls = 'tile' + (isT ? ' dest' : '') + (isW ? ' beast' : '') + (depCls ? ' ' + depCls : '') + (pathCls ? ' ' + pathCls : '') + shrCls;
         // other villages: show 🏘️ ONLY if the tile is seen (Steve 2026-10-06:
         // "another village I never visited" = fog leak. generated != discovered)
+        // HIVE SIGHT (break-it travel 2026-10-10): hive_mind's earned alien
+        // sense shows villages too — the fiction is the payoff, and the
+        // card below still gates face-to-face actions on proximity.
         const otherV = (Game.state.otherVillages || []).find(v => {
           if (v.x !== x || v.y !== y || !v.generated) return false;
           const st2 = (Game.state && Game.state.scholar && Game.state.scholar.seenTiles) || {};
-          return !!st2[x + ',' + y];
+          return !!st2[x + ',' + y] || _hive;
         });
         let g;
         if (isP) {
@@ -15497,13 +15523,14 @@
           } else if (diagColor) {
             // DIAGNOSTIC: show the failure color
             g = `<div style="background:${diagColor};width:100%;height:100%;border-radius:4px"></div>`;
-        } else if (!seen) {
+        } else if (!seen && !_hive) {
             g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">` +
               `<rect x="2" y="2" width="60" height="60" rx="8" fill="#0d120d" stroke="#1a2a1a" stroke-width="1"/></svg>`;
-          } else if (seen === 'shared') {
+          } else if (seen === 'shared' || (_hive && !seen)) {
             // Steve 2026-10-07: shared tiles show as BIOME COLOR ONLY,
             // not detailed SVG. Fog of war for detail until visited personally
-            // or via codex connection.
+            // or via codex connection. HIVE SIGHT (break-it travel 2026-10-10):
+            // hive_mind renders the same level — sensed, never walked.
             const biomeColors = {
               haven: '#7cbd6b', meadow: '#7cbd6b', forest: '#2d6a2d', grove: '#3a7d3a',
               wetland: '#4a8a8a', creek: '#5a9aba', thicket: '#2d5a2d', trail_edge: '#8a7a5a',

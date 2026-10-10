@@ -1922,9 +1922,13 @@
     // call this for any generated village on the tapped tile, so tapping
     // fogged tiles leaked undiscovered villages by name. renderMap already
     // gates the 🏘️ icon on seenTiles; the card holds the same line.
+    // HIVE SIGHT (break-it travel 2026-10-10): hive_mind's earned alien sense
+    // passes this gate — the ability's whole promise is "(map reveals)". The
+    // card's actions still gate themselves on face-to-face proximity below.
     try {
       const seenHow = (typeof this.mapSeen === 'function') ? this.mapSeen(ov.x, ov.y) : null;
-      if (!seenHow) return null;
+      const hive = (typeof this.hiveSight === 'function') ? this.hiveSight() : false;
+      if (!seenHow && !hive) return null;
     } catch (e) { return null; }
     const s = this.state.scholar;
     // proximity, computed once: every action on this card is face to face.

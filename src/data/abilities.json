@@ -935,7 +935,7 @@
   {
     "id": "hive_mind",
     "name": "Hive Mind",
-    "description": "You know what all villagers are doing (map reveals). But they know what YOU'RE doing too. (-10 trust.)",
+    "description": "The hive opens: every tile on the map lies revealed — terrain-sense, never detail; walk a tile to truly know it. They feel you watching. (-10 trust.)",
     "flavor": "All the brains touch! It's cozy! It's invasive! It's... both! We love it!",
     "pool": "system",
     "tier": "overpowered",

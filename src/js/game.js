@@ -39,6 +39,7 @@
 //   - hydrateSeed(seed) -> full person (unified person system: seed -> genCharacter depth)
 //   - getPerson(id) -> person | null (unified lookup: villagers + hydrated seeds)
 //   - markSeen(x, y, kind, by), mapSeen(x, y) -> 'visited'|'shared'|null (player map knowledge: fog of war display)
+//   - hiveSight() -> bool (hive_mind map reveal: overlay renders all tiles at 'shared' level, display-only, never writes seenTiles)
 //   - worldMonsters() -> [{id,tx,ty,mx,my,hp,...}] (living world: monsters on tiles, independent of the player)
 //   - monsterAt(tx, ty) -> monster | null
 //   - playerMonster() -> monster | null (the monster on the player's tile; replaces scholar.monster reads; adopts debug-set alias)
@@ -75,6 +76,7 @@
 //   - map_is_seen_only: world map displays only visited + map-shared tiles; unvisited renders blank (code: mapSeen, Steve 2026-10-06)
 //   - map_shared_detail: 'shared' tiles render as biome color only, never full TileScenes/emoji detail (code: renderMap, Steve 2026-10-07; re-broken + restored break-it travel r4 2026-10-09)
 //   - map_depletion_fog: tile depletion styling requires seen (visited or shared); a fogged tile never renders picked-clean/barren (code: renderMap, break-it travel r4 2026-10-09)
+//   - hive_sight_is_display_only: hive_mind opens the world-map overlay (every tile at 'shared' biome-color level, never detail) but writes nothing to seenTiles — sensed ground stays out of the compareMaps social gate and the codex MAPS gate (code: hiveSight, renderMap, break-it travel 2026-10-10)
 //   - codex_maps_are_shared: the codex MAPS section shows only shared ground — your seen tiles plus villagers who actually compared maps with you (code: villageMapKnown, break-it travel r4 2026-10-09)
 //   - barrier_death_dissolves: dying mid-barrier-crossing (your own pit) dissolves the fight silently — no flee narration for a corpse, no health overwrite on the new bearer (code: tbBarrierExit, break-it travel r4 2026-10-09)
 //   - chase_not_roll: barrier flight never coin-flips — chasers pursue across nodes with per-monster persistence (code: chasePersistence); speed differential sets re-entry distance; the hushwolf is relentless until Haven or kill; every chase stage is narrated (Steve 2026-10-09)
@@ -7579,6 +7581,22 @@
         return e ? (e.k === 'v' ? 'visited' : 'shared') : null;
       } catch (e) { return null; }
     },
+    // HIVE SIGHT (break-it travel 2026-10-10): hive_mind's copy promises
+    // "(map reveals)" and its acquire line says "the map is open. Every
+    // tile, revealed." — but tile.revealed is the TRAVEL flag, and the
+    // world-map overlay the player actually reads is seenTiles-gated, so
+    // the promise was empty: you paid -10 trust and 200 kcal/day metabolic
+    // for a map that stayed dark. Hive sight makes the promise true: the
+    // overlay renders every tile at 'shared' level (biome color, never
+    // detail — "visited earns detail" still holds). Display-only — it
+    // writes NOTHING to seenTiles, so the compareMaps social gate and the
+    // codex MAPS gate (villageMapKnown) stay clean: sensed ground is not
+    // walked ground and not village knowledge. Derived from the live
+    // ability, so losing hive_mind (pact takes it) closes the sight
+    // automatically — no stale flag to forget.
+    hiveSight() {
+      try { return !!(this.hasAbility && this.hasAbility('hive_mind')); } catch (e) { return false; }
+    },
     // VILLAGER MAPS (Steve 2026-10-06): everyone has been somewhere.
     // Villagers' visited tiles seed their life experience — haven plus a
     // few nearby tiles. Comparing maps merges theirs into yours.
@@ -7778,7 +7796,16 @@
       const dx = Math.sign(x - this.map.px), dy = Math.sign(y - this.map.py);
       // tile-entry blockage (fallen tree, rubble, washed out)
       const bf = dest.blockFrom;
-      if (bf && bf.dx === -dx && bf.dy === -dy) {
+      // DIAGONAL ARMOR (break-it travel 2026-10-10): blockages generate
+      // orthogonal-only, but travelTargets offers diagonal destinations
+      // (Manhattan d=2). The old exact-anti-match (bf.dx===-dx &&
+      // bf.dy===-dy) let a diagonal approach slip past any blockage — e.g.
+      // entering from the northwest dodged a west-approach fallen tree, no
+      // card, no cost, no fix. A blockage guards its SIDE of the tile: any
+      // entry with a component from the blocked side is stopped, orthogonal
+      // or diagonal. (Honest UI paths are orthogonal today; this is engine
+      // armor for direct calls, same class as the insideTent travel armor.)
+      if (bf && ((bf.dx !== 0 && bf.dx === -dx) || (bf.dy !== 0 && bf.dy === -dy))) {
         return { kind: 'blockage', blockType: bf.type, x, y };
       }
       // hard creek crossing: bridge it, swim it, or go around
@@ -17537,7 +17564,13 @@
         trustAll(-10, 'You know what everyone is doing. They can feel you knowing. (hive_mind: trust -10)');
         // the map opens. Every tile revealed — you see the whole board.
         for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) this.reveal(x, y);
-        this.say('HIVE MIND: the map is open. Every tile, revealed. They know you\'re watching.');
+        // HONESTY (break-it travel 2026-10-10): the old line said "the map
+        // is open. Every tile, revealed." while the overlay stayed fogged —
+        // tile.revealed never painted it. hiveSight() now renders the
+        // overlay at 'shared' level, so the line is true; it names the
+        // limit (terrain-sense, never detail) because "visited earns detail"
+        // still holds.
+        this.say('HIVE MIND: the map is open. Every tile, revealed — terrain-sense, never detail. Walk it to truly know it. They know you\'re watching.');
       }
     },
 
