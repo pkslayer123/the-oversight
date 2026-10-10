@@ -35,8 +35,9 @@
 //    asks the player to trust the game). Undiscardable. Bond accrues; at
 //    evolution thresholds the game plays a FLASHBACK — a scene from the
 //    character's past, resolved against their lifeseed, revealing knowledge.
-//    At integration stage 3 the System teaches sentiment-channeling (wrong
-//    theory, right power). Keepsakes of the dead can evolve too — grief as
+//    At integration 60 the System teaches sentiment-channeling (wrong
+//    theory, right power) — the thesis mechanic as a mid-game engine, not
+//    a pre-finale footnote (pacing build 2026-10-10). Keepsakes of the dead can evolve too — grief as
 //    fuel, handled with care.
 //
 // Self-attaching module: Object.assign(Game, methods) + wraps. Load after
@@ -146,6 +147,11 @@
         led('showmanship', 1);
         this.say(`◈ THE TRIAL — the audience is restless. The System offers ${fname} a trial, broadcast live. Survive it and take the slot. Refuse it and... well. The audience remembers refusals. (Ability slots: ${this.abilitySlots()})`);
         this.offerAudienceTrial('milestone');
+        // SENTIMENT AT 60 (pacing build 2026-10-10): the thesis mechanic was
+        // taught at 80 to 2% of runs — a pre-finale footnote. It's a mid-game
+        // engine now: the System teaches it while the trial runs, wrong theory
+        // and all.
+        this.teachSentiment();
       } else if (t === 70) {
         led('embrace', 1);
         this.say(`◈ THE CREEP — ${fname}'s thoughts have an echo now. The System's echo. Or theirs. Hard to tell anymore. Gifts used in sequence resonate — try them together. (Ability slots: ${this.abilitySlots()})`);
@@ -153,7 +159,6 @@
       } else if (t === 80) {
         led('embrace', 1);
         this.say(`◈ THE GRANT — full integration. The System opens the last slot like a door it built just for ${fname}. "You have been adequate entertainment. We upgrade adequate." (Ability slots: ${this.abilitySlots()})`);
-        this.teachSentiment();
       }
       try { this.save(); } catch (e) {}
     },
@@ -210,13 +215,21 @@
         s.trauma = Math.max(0, (s.trauma || 0) - amt);
         msg = `You hold ${name}. Breathe. The shaking eases. (−${amt} trauma)`;
       } else {
-        const abs = [...(s.abilities || []), ...(s.backgroundAbilities || [])].filter(a => (a.level || 1) < 3);
-        if (abs.length) {
-          for (const a of abs) { try { this.gainAbilityXP(a.id, Math.round(2 * mult)); } catch (e) { a.xp = (a.xp || 0) + 2; } }
-          msg = `You hold ${name} and practice. They would want you to get better at this. (+ability experience)`;
-        } else {
+        // FEAST SURGE GATE (pacing build 2026-10-10, Steve: "Continue all
+        // proposed"): the old gate was ALL owned abilities at L3 — best of 240
+        // audit runs had exactly 1 L3, so Arc IV was unwalkable. New gate: 3+
+        // abilities mastered. A real stretch goal, not fiction.
+        const allAbs = [...(s.abilities || []), ...(s.backgroundAbilities || [])];
+        const maxed = allAbs.filter(a => (a.level || 1) >= 3).length;
+        const unmaxed = allAbs.filter(a => (a.level || 1) < 3);
+        if (maxed >= 3) {
           s.prog.feastSurge = true;
           msg = `You hold ${name}. The feast was the weapon — and they are with you. (Next feastburn surges ×${(1.5 * mult).toFixed(1)})`;
+        } else if (unmaxed.length) {
+          for (const a of unmaxed) { try { this.gainAbilityXP(a.id, Math.round(2 * mult)); } catch (e) { a.xp = (a.xp || 0) + 2; } }
+          msg = `You hold ${name} and practice. They would want you to get better at this. (+ability experience)`;
+        } else {
+          msg = `You hold ${name}. It hums — but the surge wants three mastered gifts, and you hold ${maxed}. Not yet.`;
         }
       }
       this.say(`💛 ${msg}`);
@@ -325,7 +338,11 @@
       const crises = Object.keys(pg.crises || {}).length;
       let want = 1;
       if (this.state.systemArrived && (s.day || 0) >= 7 && this.villageNotabilityScore() >= 10) want = 2;
-      if (want >= 2 && stage >= 2 && breadth >= 12 && crises >= 1) want = 3;
+      // ARC III CRUCIBLE (pacing build 2026-10-10): was crises>=1, but
+      // first-grave fires in ~every run by day 13 — "someone died in week two"
+      // read as attrition, not bonding. Two distinct crises = something the
+      // village survived TOGETHER.
+      if (want >= 2 && stage >= 2 && breadth >= 12 && crises >= 2) want = 3;
       if (want >= 3 && stage >= 3 && pg.sentimentTaught && breadth >= 25 && s.prog.feastSurgeUsed) want = 4;
       if (want > pg.arc) {
         pg.arc = want;
@@ -342,7 +359,17 @@
         this.say(`◈ ARC II — THE SHOW. The sky tore open a week ago and the village is still here. Still eating. The audience has noticed. Strangers will come — not because the plot says so, but because surviving is worth watching.`);
       } else if (n === 3) {
         try { if (this.ledgerAdd) this.ledgerAdd('might', 1); } catch (e) {}
-        this.say(`◈ ARC III — ENGINES. SYSTEM: "VIEWERSHIP MILESTONE. Organic unit demonstrates compounding capability. Resonance protocols unlocked." — Your gifts deepen. Used in sequence, they resonate. The village is no longer just surviving. It is becoming something.`);
+        let arc3line = `◈ ARC III — ENGINES. SYSTEM: "VIEWERSHIP MILESTONE. Organic unit demonstrates compounding capability. Resonance protocols unlocked." — Your gifts deepen. Used in sequence, they resonate. The village is no longer just surviving. It is becoming something.`;
+        // GRAVE-FIRST ACKNOWLEDGMENT (pacing build 2026-10-10): the crucible
+        // usually opens with a grave. Name it — the village survived the worst
+        // thing together, and the beat should say so.
+        try {
+          const cr = Object.keys((this.progState() || {}).crises || {});
+          if (cr.length && cr.every(k => k === 'first-grave' || k === 'hunger-winter')) {
+            arc3line += ` The first grave is still fresh soil. The village didn't choose this crucible — but it chose to keep going.`;
+          }
+        } catch (e) {}
+        this.say(arc3line);
         try { this.state.scholar.synergyBonus = true; } catch (e) {}
       } else if (n === 4) {
         try {
