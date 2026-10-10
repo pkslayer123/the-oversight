@@ -178,7 +178,7 @@ function freshGame() {
     }
   }
 
-  // 8. Channeling: taught at 80, smart default, once/day.
+  // 8. Channeling: taught at 60, live demo, smart default, once/day.
   {
     const s = freshGame();
     Game.state.systemArrived = true;
@@ -186,12 +186,31 @@ function freshGame() {
     const idx = (s.inventory || []).indexOf(keep);
     s.prog.sentimentTaught = false;
     ok('no channeling before lesson', Game.channelSentiment(idx) === 'You hold it. Nothing happens. Not yet.');
-    Game.teachSentiment();
+    // the lesson is a live demonstration when a keepsake is in pack
     s.trauma = 12;
     const t0 = s.trauma;
+    Game.teachSentiment();
+    ok('teach demonstrates on the keepsake', said.some(t => t.includes('DEMONSTRATION')), said.slice(0, 2).join(' | ').slice(0, 120));
+    ok('demo soothes trauma', s.trauma < t0, `${t0} -> ${s.trauma}`);
+    ok('demo consumed the daily channel', Game.channelSentiment(idx) === 'It is quiet now. Tomorrow.');
+    // next day: channeling still works, once per day
+    s.day = (s.day || 1) + 1;
+    s.trauma = 12;
+    const t1 = s.trauma;
     Game.channelSentiment(idx);
-    ok('channeling soothes trauma', s.trauma < t0, `${t0} -> ${s.trauma}`);
+    ok('channeling soothes trauma', s.trauma < t1, `${t1} -> ${s.trauma}`);
     ok('once per day', Game.channelSentiment(idx) === 'It is quiet now. Tomorrow.');
+  }
+
+  // 8b. Teach without a keepsake in pack: invitation, no demo.
+  {
+    const s = freshGame();
+    Game.state.systemArrived = true;
+    s.inventory = (s.inventory || []).filter(i => !Game.isKeepsake(i));
+    s.prog.sentimentTaught = false;
+    Game.teachSentiment();
+    ok('taught without keepsake', Game.sentimentTaught() === true);
+    ok('no demo without a keepsake', !said.some(t => t.includes('DEMONSTRATION')));
   }
 
   // 9. Chosen keepsakes bond faster (the gamble pays off).

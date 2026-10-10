@@ -145,3 +145,73 @@ Regressions: `test-pacing-20261010.js` 39/39, `test-break-knowledge-20261010.js`
   reading lanes, not just foraging — intended. If it fires too early once
   policies improve, retune the number, not the domains.
 
+## Gap 2: organic channeling never fires (landed 2026-10-10)
+
+**Symptom.** `feastSurgeUsed` was 0/240 in the sweep. The forced-chain proof
+walked mechanically (sentiment@60 → channel with 3×L3 → feastBurn → Arc IV →
+tableWaiting), but no organic run ever channeled a keepsake.
+
+**Diagnosis.** Three compounding reachability failures, not a gate problem:
+
+1. **Fire-and-forget teaching.** `teachSentiment()` fired one message at
+   integration 60, interleaved with the trial beat. The player was told
+   "Channel keepsakes from your pack" — but the button said "💛 Channel" with
+   no payoff preview, buried in the pack row. Nothing ever reminded them.
+2. **No demonstration.** The mentor at 40 shows ("No. Like this."). Channeling
+   was only described. The player had no mental model of what tapping does.
+3. **No trigger.** The payoffs are real (−6 trauma is the fastest relief in the
+   game vs −2/night; +2 XP/ability/day is a strong engine; the surge is the
+   Arc IV key) but the player never learned WHEN to channel: the teach didn't
+   mention trauma, the button didn't say what it does, and the post-fight
+   "You clutch your X" beat didn't suggest channeling.
+
+Sim policies "never channel" was partly policy blindness — but a real player
+faced the same three walls.
+
+**Fix (src/js/progression.js, src/js/game.js, src/js/app.js).** Reactive to
+deeds, not timers:
+
+- **Live demonstration at the teach.** When the System teaches channeling and
+  the player is carrying a keepsake, it doesn't just describe — it grabs one
+  and channels it in front of them, narrated ("DEMONSTRATION. Give me that —
+  the {name}. WATCH."). The mentor pattern. Fires on the deed (crossing 60
+  while holding a keepsake), once per run. No keepsake in pack: the invitation
+  copy stands.
+- **Honest button copy.** `Game.channelLabel()` mirrors `channelSentiment`'s
+  branch order exactly: trauma ≥ 8 → "💛 Hold it (steady yourself)"; 3+ L3 →
+  "💛 Channel (surge the feast)"; unmaxed abilities → "💛 Channel (train
+  gifts)". No more leap of faith.
+- **Trauma-reactive nudge.** The post-fight clutch beat ("You clutch your X…
+  The resonance deepens") now appends, when trauma ≥ 8 and a keepsake is
+  ready: "Your hands won't stop shaking. The {name} is right there — hold it,
+  think of them. (Pack → …)". The deed (surviving something awful) triggers
+  the reminder.
+- **Surge-multiplier honesty.** The channel message always promised
+  ×(1.5×mult) but the burn site applied a flat ×1.5 — a chosen wedding ring
+  overstated its surge 3×. `feastSurge` now stores the promised multiplier
+  (number); the wrap applies it (`true` = legacy flat ×1.5 for old saves).
+- **Practice payoff legible.** "+ability experience" → "+N experience to every
+  gift still learning".
+
+**Proof.** `scripts/test-channeling-gap-20261010.js`:
+
+- Unit: 42/42 × 3 seeds (20261010, 7, 99) — demo fires on all three paths
+  (trauma/practice/surge), dedupes, no-demo without keepsake, label copy per
+  branch, surge mult stored = promised = applied, legacy `true` → ×1.5,
+  once-per-day, not-taught gate, nudge conditions.
+- Probe (channel-aware policy = competent + "channel every ready keepsake
+  daily once taught", 200 days): **16/16 taught runs channeled organically**
+  (11–166 channels each). **Seed 15 completed the full organic chain:
+  taught day 23 → 90 channels → 3×L3 → surge armed day 38 → surge used day 40
+  → Arc IV (maxArc=4).** First organic Arc IV. Seed 31 armed the surge
+  (day 34) but died before a feastBurn. Deterministic across re-runs.
+
+**Regressions.** test-pacing-20261010.js 39/39; combat-break-honesty H2 held
+(stated ×1.5 / x2.25 == applied 2.25); test-progression.js failure list
+identical to pristine main tree (all pre-existing: arc-3/4 test setup, item
+pool audit rope_50ft/tin_cup, corpse-keepsake test 10); knowledge-leaks throws
+identically on main. Ontology 52/52.
+
+**Remaining walls (not this gap).** Integration-80 reach (stage 3 for Arc IV);
+survival to ~40+ days for the L3 grind. The channeling link of the chain is
+closed.

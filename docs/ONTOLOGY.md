@@ -755,7 +755,7 @@ Perception system. Proximity hints, spotting.
 ### progression (`progression.js`)
 Character progression. XP, levels, abilities.
 
-**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), progState(), fireCrisis(kind, ctx), progDaily(), slotMoment()
+**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), progState(), fireCrisis(kind, ctx), progDaily(), slotMoment(), teachSentiment(), channelSentiment(idx), channelReadyKeepsakes(), channelLabel()
 
 **Rules:**
 - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)

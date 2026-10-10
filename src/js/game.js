@@ -31361,6 +31361,17 @@
             if (this.sentimentTaught && this.sentimentTaught()) {
               const total = kept.reduce((s, r) => s + (r.bond || 0), 0);
               this.say(`You clutch your ${names}. You're still here. The resonance deepens. (bond ${total})`);
+              // CHANNEL NUDGE (gap fix 2026-10-10): the deed-reactive trigger.
+              // You survived something awful, your hands are shaking, you're
+              // already holding the keepsake — and channeling is the fastest
+              // trauma relief in the game (−2/night vs −6/channel). No player
+              // ever connected those dots; now the beat does. Only fires when
+              // a keepsake is actually ready (not channeled today).
+              try {
+                if ((this.state.scholar.trauma || 0) >= 8 && this.channelReadyKeepsakes && this.channelReadyKeepsakes().length) {
+                  this.say(`Your hands won't stop shaking. The ${kept[0].name} is right there — hold it, think of them. (Pack → ${this.channelLabel ? this.channelLabel() : '💛 Channel'})`);
+                }
+              } catch (e) {}
             } else {
               this.say(`You clutch your ${names}. You're still here.`);
             }

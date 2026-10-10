@@ -82,7 +82,7 @@ function atHaven() {
     s.trauma = 0;
     says.length = 0;
     Game.channelSentiment(0);
-    ok('3xL3 -> feastSurge armed', pg.feastSurge === true);
+    ok('3xL3 -> feastSurge armed at promised x1.5', pg.feastSurge === 1.5);
   }
   {
     freshGame();
@@ -95,7 +95,7 @@ function atHaven() {
     s.inventory = [{ itemId: 'keepsake_test', name: 'old photo', sentimental: true, units: 1 }];
     s.trauma = 0;
     Game.channelSentiment(0);
-    ok('1xL3 + unmaxed -> practice, no surge', pg.feastSurge !== true);
+    ok('1xL3 + unmaxed -> practice, no surge', !pg.feastSurge);
   }
   {
     freshGame();
@@ -106,7 +106,7 @@ function atHaven() {
     s.inventory = [{ itemId: 'keepsake_test', name: 'old photo', sentimental: true, units: 1 }];
     s.trauma = 0;
     const msg = Game.channelSentiment(0);
-    ok('1xL3 alone -> honest not-yet, no surge', pg.feastSurge !== true && /Not yet/.test(msg), String(msg).slice(0, 80));
+    ok('1xL3 alone -> honest not-yet, no surge', !pg.feastSurge && /Not yet/.test(msg), String(msg).slice(0, 80));
   }
 
   // ============ P2. sentiment at 60 ============

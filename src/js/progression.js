@@ -11,6 +11,10 @@
 //   - fireCrisis(kind, ctx)
 //   - progDaily()
 //   - slotMoment()
+//   - teachSentiment()
+//   - channelSentiment(idx)
+//   - channelReadyKeepsakes()
+//   - channelLabel()
 // rules:
 //   - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
 //   - ability_cap: 6 (code: progression.js)
@@ -209,8 +213,56 @@
       if (pg.sentimentTaught) return;
       pg.sentimentTaught = true;
       this.say(`◈ RESONANCE HARMONICS — SYSTEM: "HYPOTHESIS CONFIRMED. Objects with high observer-attention waveforms function as auxiliary capacitors. We call this RESONANCE HARMONICS. We do not know why the waveforms taste like grief. We have stopped asking." — Hold a keepsake. Think about them. The System will do the math. (It is not math. It is love. The System will never know.) Channel keepsakes from your pack.`);
+      // LIVE DEMONSTRATION (gap fix 2026-10-10): the lesson was fire-and-
+      // forget — one message, one buried button, and no run ever channeled
+      // organically. The mentor at 40 shows ("No. Like this."); channeling
+      // was only described. So the System doesn't just describe — it grabs.
+      // If you're carrying a keepsake, it channels it right now, in front of
+      // you, narrated. Reactive: fires on the deed (crossing 60 while holding
+      // one), once per run. No keepsake in pack: the invitation stands.
+      try {
+        const ready = this.channelReadyKeepsakes ? this.channelReadyKeepsakes() : [];
+        if (ready.length) {
+          const item = (this.state.scholar.inventory || [])[ready[0]];
+          const nm = (item && (item.name || '')) || 'it';
+          this.say(`SYSTEM: "DEMONSTRATION. Give me that — the ${nm}. WATCH."`);
+          this.channelSentiment(ready[0]);
+        }
+      } catch (e) {}
     },
     sentimentTaught() { return !!(this.progState && this.progState().sentimentTaught); },
+
+    // channelReadyKeepsakes: inventory indices of keepsakes not yet channeled
+    // today. One source for the demo, the trauma nudge, and the button state.
+    channelReadyKeepsakes() {
+      try {
+        const s = this.state.scholar, pg = this.progState();
+        const day = s.day;
+        const out = [];
+        (s.inventory || []).forEach((it, idx) => {
+          if (!it || !this.isKeepsake(it)) return;
+          const key = it.itemId || it.id;
+          if (!((pg.chanDay[key] || {})[day])) out.push(idx);
+        });
+        return out;
+      } catch (e) { return []; }
+    },
+
+    // channelLabel: honest button copy. Mirrors channelSentiment's branch
+    // order exactly — trauma soothes first, then surge, then practice. If the
+    // branches change, update this too. (Steve: no silent actions; the button
+    // says what it does. The old "💛 Channel" was a leap of faith.)
+    channelLabel() {
+      try {
+        const s = this.state.scholar;
+        if ((s.trauma || 0) >= 8) return '💛 Hold it (steady yourself)';
+        const allAbs = [...(s.abilities || []), ...(s.backgroundAbilities || [])];
+        const maxed = allAbs.filter(a => (a.level || 1) >= 3).length;
+        if (maxed >= 3) return '💛 Channel (surge the feast)';
+        if (allAbs.some(a => (a.level || 1) < 3)) return '💛 Channel (train gifts)';
+        return '💛 Channel';
+      } catch (e) { return '💛 Channel'; }
+    },
 
     itemDef(item) {
       if (!item) return {};
@@ -253,11 +305,16 @@
         const maxed = allAbs.filter(a => (a.level || 1) >= 3).length;
         const unmaxed = allAbs.filter(a => (a.level || 1) < 3);
         if (maxed >= 3) {
-          s.prog.feastSurge = true;
+          // HONESTY (gap fix 2026-10-10): the message always promised
+          // ×(1.5×mult) but the burn site applied a flat ×1.5 — a chosen
+          // wedding ring overstated its surge 3×. Store the real multiplier;
+          // the feastBurn wrap applies it (true = legacy flat ×1.5).
+          s.prog.feastSurge = 1.5 * mult;
           msg = `You hold ${name}. The feast was the weapon — and they are with you. (Next feastburn surges ×${(1.5 * mult).toFixed(1)})`;
         } else if (unmaxed.length) {
-          for (const a of unmaxed) { try { this.gainAbilityXP(a.id, Math.round(2 * mult)); } catch (e) { a.xp = (a.xp || 0) + 2; } }
-          msg = `You hold ${name} and practice. They would want you to get better at this. (+ability experience)`;
+          const xpEach = Math.round(2 * mult);
+          for (const a of unmaxed) { try { this.gainAbilityXP(a.id, xpEach); } catch (e) { a.xp = (a.xp || 0) + 2; } }
+          msg = `You hold ${name} and practice. They would want you to get better at this. (+${xpEach} experience to every gift still learning)`;
         } else {
           msg = `You hold ${name}. It hums — but the surge wants three mastered gifts, and you hold ${maxed}. Not yet.`;
         }
@@ -703,13 +760,20 @@
     // HONESTY (Steve 2026-10-08, break-it): the base feastBurn() states its own
     // multiplier — the wrapper's extra multiplier used to apply SILENTLY
     // (said x1.5, dealt x2.25 with a surge). Now the total is stated.
+    // HONESTY (gap fix 2026-10-10): feastSurge now carries the promised
+    // multiplier (a number); plain `true` (old saves, tests) = flat ×1.5.
     const _feastBurn = Game.feastBurn;
     Game.feastBurn = function () {
       let mult = 1;
       let why = '';
       try {
         const s = this.state.scholar;
-        if (s.prog && s.prog.feastSurge) { mult *= 1.5; s.prog.feastSurge = false; s.prog.feastSurgeUsed = true; why += ' A channeled keepsake feeds the flames (FEAST SURGE).'; }
+        const surge = s.prog && s.prog.feastSurge;
+        if (surge) {
+          const sm = typeof surge === 'number' ? surge : 1.5;
+          mult *= sm; s.prog.feastSurge = false; s.prog.feastSurgeUsed = true;
+          why += ` A channeled keepsake feeds the flames (FEAST SURGE ×${sm}).`;
+        }
         if (s.arc4burn) { mult *= s.arc4burn; why += ' Arc IV burns hotter.'; }
         if (this.ledgerAdd) this.ledgerAdd('might', 2);
       } catch (e) {}
