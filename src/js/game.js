@@ -5346,18 +5346,22 @@
     villageRoster() {
       const roster = this.state.village.roster || [];
       const conflicts = this.state.village.conflicts || [];
+      // NAME GATE (break-it knowledge 2026-10-10): this feeds the haven
+      // panel — pre-System, villagers are stranger descriptors, not names.
+      // (You know your own name.) displayName is the funnel.
+      const shownName = (id, trueName) => id === this.villagerId ? trueName : this.displayName(id);
       return roster.map(id => {
         const main = this.data.villagers.find(v => v.id === id);
         if (main) {
           const c = conflicts.find(x => !x.resolved && x.known && (x.a === id || x.b === id));
           return {
-            id, name: main.name, formerOccupation: main.formerOccupation, isMain: true,
+            id, name: shownName(id, main.name), formerOccupation: main.formerOccupation, isMain: true,
             langNote: this.langNote(id), conflictNote: this.conflictNote(c, id),
           };
         }
         const bg = (this.data.background_survivors || []).find(v => v.id === id);
-        if (bg) return { id, name: bg.name, formerOccupation: bg.formerOccupation, line: bg.line, isMain: false };
-        return { id, name: id, formerOccupation: '', isMain: false };
+        if (bg) return { id, name: shownName(id, bg.name), formerOccupation: bg.formerOccupation, line: bg.line, isMain: false };
+        return { id, name: this.displayName(id), formerOccupation: '', isMain: false };
       });
     },
 
@@ -13640,7 +13644,10 @@
     // (Steve 2026-10-07): 35 scattered grant sites with 12 distinct patterns unified here.
     // Like identifyPlant for plants and learnSkill for skills — now one dispatcher.
     //
-    // domain: 'plant' | 'animal' | 'recipe' | 'technique' | 'skill' | 'tree' | 'monster'
+    // domain: 'plant' | 'animal' | 'recipe' | 'technique' | 'skill'
+    //   ('tree'/'monster' removed break-it knowledge 2026-10-10: the branches
+    //   were never called — tree knowledge flows through carexplore.js and
+    //   monster knowledge through ensureMonsterEntry/combat stages.)
     // id: the knowledge ID
     // level: target level (1-4, or appropriate for domain)
     // source: {type, by, day}
@@ -13668,8 +13675,6 @@
         case 'recipe': return this._grantRecipe(id, level, src);
         case 'animal': return this._grantAnimal(id, level, src);
         case 'technique': return this._grantTechnique(id, level, src);
-        case 'tree': return this._grantTree(id, level, src);
-        case 'monster': return this._grantMonster(id, level, src);
         default: return false;
       }
     },
@@ -13708,6 +13713,9 @@
         learnedFrom: src.by || (fresh.learnedFrom || null),
         via: src.type,
       });
+      // PREP LADDER (break-it knowledge 2026-10-10): a deep grant (books,
+      // linked codices) lands L2+ — items learn the preparation text now.
+      if (level >= 2) { try { this.refreshItemPrep(pid); } catch (err) {} }
       // a deeper truth clears a false label (break-it 2026-10-09) — BEFORE the
       // grant is announced, so the say never names a true plant the player
       // still believes wrongly (break-it knowledge 2026-10-09 r2).
@@ -13799,38 +13807,6 @@
       this.say(`\uD83D\uDD27 Technique learned: ${label}.`);
       try { this.drama('techniqueLearned', this.map.px, this.map.py, tid); } catch (e) {}
       this.audioEvent('knowledgeReveal', { kind: 'technique', id: tid });
-      return true;
-    },
-
-    // _grantTree: tree knowledge via the unified path.
-    _grantTree(sp, level, src) {
-      this.state.codex.trees = this.state.codex.trees || {};
-      const cur = this.state.codex.trees[sp];
-      const curLevel = cur ? (cur.level || 0) : 0;
-      if (level <= curLevel) return false;
-      this.state.codex.trees[sp] = {
-        level: level,
-        learnedDay: src.day,
-        learnedFrom: src.by || null,
-        via: src.type || 'common knowledge',
-      };
-      return true;
-    },
-
-    // _grantMonster: monster codex entry via the unified path.
-    // Uses ensureMonsterEntry infrastructure. Level maps to encounter depth:
-    // 1 = encountered, 2 = observed (patterns), 3 = named by village.
-    _grantMonster(mid, level, src) {
-      const e = this.ensureMonsterEntry(mid);
-      const stages = ['encountered', 'observed', 'named'];
-      const targetStage = stages[Math.min(level, 3) - 1] || 'encountered';
-      const stageRank = { encountered: 1, observed: 2, named: 3 };
-      const curRank = stageRank[e.stage] || 0;
-      const newRank = stageRank[targetStage] || 1;
-      if (newRank <= curRank && e.learnedDay != null) return false;
-      e.stage = targetStage;
-      e.learnedDay = src.day;
-      if (src.by) e.learnedFrom = src.by;
       return true;
     },
 
@@ -19140,6 +19116,9 @@
               entry.level = 2;
               // L2 includes preparation knowledge — you now know how to prepare it
               entry.prepKnown = true;
+              // PREP LADDER (break-it knowledge 2026-10-10): items in your
+              // containers learn the preparation text now that it's earned.
+              try { this.refreshItemPrep(h.plantId); } catch (err) {}
               // WRONG-NAME RESOLUTION (Steve 2026-10-06): handling it yourself
               // teaches the truth. The false label falls off.
               if (entry.wrongAs) {
@@ -19801,6 +19780,9 @@
             } else {
               this.say(`Eating it teaches you: ${pname} gives ${kcal} kcal per ${it.unit || 'unit'}.`);
             }
+            // PREP LADDER (break-it knowledge 2026-10-10): the first bite
+            // teaches preparation — items learn the prep text now.
+            try { this.refreshItemPrep(it.plantId); } catch (err) {}
           }
           // LEVEL 3: Uses. Eat it 3 times at L2, you learn what it does to you.
           // (Ported from the retired bulk-eat: eatOne is the live path since the
@@ -21729,7 +21711,9 @@
           const pp = this.getPerson(rid); if (!pp) return null;
           const lg = (v.contribLog || {})[rid];
           return {
-            name: String(pp.name || '?').split(' ')[0],
+            // NAME GATE (break-it knowledge 2026-10-10): the weight board
+            // names people — descriptors until the name is earned.
+            name: this.displayName(rid),
             produced: lg ? lg.produced : 0,
             // today's haven-role credit (ledger recognition, not production)
             // so the panel's band sees haven work too
@@ -32138,7 +32122,13 @@
       const p = (this.data.plants || []).find(x => x.id === pid);
       if (!p) return pid;
       const e = (this.state.codex.plants || {})[pid] || {};
-      return e.wrongAs || p.name;
+      if (e.wrongAs) return e.wrongAs; // the believed name, even when false
+      // KNOWLEDGE GATE (break-it knowledge 2026-10-10): the true name is L1
+      // knowledge. Every current caller guards with plantKnown, but the
+      // function must not be a footgun — an unknown plant gets its honest
+      // descriptor, never the true name.
+      if (!this.plantKnown(pid)) return p.description || 'an unfamiliar plant';
+      return p.name;
     },
     plantDisplayName(pid) {
       const p = this.data.plants.find(x => x.id === pid);
@@ -32169,7 +32159,11 @@
       const p = this.data.plants.find(x => x.id === pid);
       if (!p) return;
       for (const it of (this.state.scholar.inventory || [])) {
-        if (it.plantId === pid) { it.name = p.name; if (p.preparation) it.prep = p.preparation; }
+        // PREP LADDER (break-it knowledge 2026-10-10): naming (L1) renames
+        // the stack but withholds preparation text until prepKnown/L2 —
+        // itemPrepFor writes the honest placeholder (sibling sweep: the old
+        // line printed p.preparation unconditionally, undoing the gate).
+        if (it.plantId === pid) { it.name = p.name; it.prep = this.itemPrepFor(pid); }
       }
     },
     // THE identification event. One path, every source. Names are earned here.

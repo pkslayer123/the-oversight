@@ -75,6 +75,9 @@
   const NUT_RE = /crack|shell|husk/i;
   // Plants that MUST be cooked (raw is a gamble).
   const MUST_COOK_RE = /must be cooked|must leach|never eat raw/i;
+  // Honest placeholder when preparation is not yet known (L1). refreshItemPrep
+  // replaces it once prepKnown/L2 is earned. (break-it knowledge 2026-10-10)
+  const PREP_UNKNOWN = 'Identified — preparation unknown. Eat it or reach L2 to learn.';
 
   // Occupation -> food specialties. Emergent, not classes: your old life is
   // what you know. skill 1 = competent, 2 = good, 3 = master.
@@ -162,6 +165,46 @@
       return true;
     },
 
+    // ---------- prep-text honesty ----------
+    //
+    // PREP LADDER (break-it knowledge 2026-10-10): preparation text is
+    // prepKnown-track knowledge (earned by the first bite) or L2+ — the codex
+    // L1 card withholds it ("Prep: unknown — eat it or reach L2 to learn"),
+    // so items must not print what the codex withholds. Identification (L1)
+    // names the item; the HOW comes later. Risk warnings ("Risky raw — cook
+    // it") are safety, not prep mastery — those stay visible.
+    itemPrepFor(pid) {
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return '';
+      const e = (this.state.codex.plants || {})[pid] || {};
+      if (e.prepKnown || (e.level || 0) >= 2) return p.preparation || 'Edible. The Codex knows it now.';
+      return PREP_UNKNOWN;
+    },
+    // refreshItemPrep(pid): preparation knowledge just landed (first bite, L2
+    // harvests, deep grant) — items of this plant in your containers learn
+    // how they're prepared. Only touches items still carrying the honest
+    // placeholder (earned/custom prep — cautious-test verdicts, cooking
+    // results — is left alone). Companion to refreshItemNames (which names).
+    refreshItemPrep(pid) {
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return;
+      const e = (this.state.codex.plants || {})[pid] || {};
+      if (!(e.prepKnown || (e.level || 0) >= 2)) return; // nothing earned — stay honest
+      const full = p.preparation || 'Edible. The Codex knows it now.';
+      const isNut = NUT_IDS[pid] || NUT_RE.test(p.preparation || '');
+      const RISK_SFX = ' \u26A0\uFE0F Risky raw — cook it.';
+      const pantry = (this.state.village || {}).pantry;
+      for (const cont of [this.state.scholar.inventory, this.state.scholar.prepStash, pantry]) {
+        for (const it of (cont || [])) {
+          if (!it || it.plantId !== pid || it.lump || it.foodKind === 'nut') continue;
+          const cur = String(it.prep || '');
+          if (cur.indexOf(PREP_UNKNOWN) !== 0) continue; // earned or custom — hands off
+          const hadRisk = !isNut && (cur.endsWith(RISK_SFX) || MUST_COOK_RE.test(p.preparation || ''));
+          it.prep = full + (hadRisk ? RISK_SFX : '');
+        }
+      }
+    },
+
     // ---------- item construction ----------
 
     // A foraged plant, knowledge-gated. Unknown plants aren't food yet.
@@ -193,7 +236,10 @@
         kcalEach: plant.caloriesPerUnit,
         name: plant.name,
       });
-      if (plant.preparation) item.prep = plant.preparation;
+      // PREP LADDER (break-it knowledge 2026-10-10): preparation text is
+      // prepKnown/L2+ knowledge — a fresh-foraged L1 plant gets the honest
+      // placeholder until the first bite or L2 teaches it (refreshItemPrep).
+      item.prep = this.itemPrepFor(plant.id);
       if (mustCook) {
         item.needsCooking = true;
         item.diseaseRisk = Object.assign({}, RISK.mustCook);
@@ -313,7 +359,7 @@
         prep: notFood
           ? (p.preparation || 'Identified — not food. But nothing is trash; the Codex knows its uses.')
           : isNut ? 'Needs shelling — crack and pick the nutmeats.'
-          : (p.preparation || 'Edible. The Codex knows it now.'),
+          : this.itemPrepFor(pid),
       };
       if (!isNut && !notFood && MUST_COOK_RE.test(p.preparation || '')) {
         item.needsCooking = true;
@@ -868,10 +914,23 @@
         let node = null;
         try { node = this.npcNode(p.id); } catch (e) {}
         if (node && (node.nx !== this.map.px || node.ny !== this.map.py)) continue;
-        here.push({ id: p.id, name: p.name, skill, occupation: p.formerOccupation });
+        // NAME GATE (break-it knowledge 2026-10-10): specialist buttons name
+        // them — pre-System that's a stranger descriptor, never the true name
+        // (displayName funnel; "if you don't know, it doesn't show").
+        here.push({ id: p.id, name: this.displayName(p.id), skill, occupation: p.formerOccupation });
       }
       here.sort((a, b) => b.skill - a.skill);
       return here;
+    },
+
+    // specOccLabel(spec): gated occupation suffix for specialist narration.
+    // A stranger's former occupation is earned knowledge (occupationLabel) —
+    // narration shows it only when known. (break-it knowledge 2026-10-10)
+    specOccLabel(spec) {
+      try {
+        const ol = this.occupationLabel ? this.occupationLabel(spec.id) : null;
+        return ol ? ` (${ol})` : '';
+      } catch (e) { return ''; }
     },
 
     // Ask a specialist to process your item. They're better at it than you.
@@ -899,7 +958,7 @@
       // no check). Honest, visible loss — same as the butcher branch had.
       if (this.isSpoiled(it)) {
         const verb = task === 'butcher' ? 'cleaning' : task === 'cook' ? 'cooking' : 'smoking';
-        this.say(`The ${it.name} went bad — ${spec.name} (${spec.occupation}) won't touch it. Beyond ${verb}. You leave it for the flies.`);
+        this.say(`The ${it.name} went bad — ${spec.name}${this.specOccLabel(spec)} won't touch it. Beyond ${verb}. You leave it for the flies.`);
         inv.splice(idx, 1);
         return null;
       }
@@ -975,8 +1034,8 @@
           if (got2.length) this.say('Butchering yields: ' + got2.join(', ') + '.');
         }
         this.say(foodSafe
-          ? `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. ${units2 * per} kcal in honest portions. You watch closely.`
-          : `${spec.name} (${spec.occupation}) cleans it in minutes — neat cuts, nothing wasted. But they won't vouch for the flesh: "Never seen its like. Test it before you trust it."`);
+          ? `${spec.name}${this.specOccLabel(spec)} cleans it in minutes — neat cuts, nothing wasted. ${units2 * per} kcal in honest portions. You watch closely.`
+          : `${spec.name}${this.specOccLabel(spec)} cleans it in minutes — neat cuts, nothing wasted. But they won't vouch for the flesh: "Never seen its like. Test it before you trust it."`);
         // AUDIO (Steve 2026-10-06): the specialist's knife work — same beat as self-clean.
         try { this.audioEvent('animalButcher'); } catch (e) {}
       } else if (task === 'cook') {
@@ -1036,7 +1095,7 @@
           it.spoilDay = day + 5;
         }
         it.wellMade = true; // a specialist made this — it burns hotter as fuel
-        this.say(`${spec.name} (${spec.occupation}) takes it to the fire. It comes back transformed — better than you could do.`);
+        this.say(`${spec.name}${this.specOccLabel(spec)} takes it to the fire. It comes back transformed — better than you could do.`);
       } else if (task === 'preserver') {
         // NO-CREATION CAP (forager break-it 2026-10-09): the drying loss
         // shrinks with skill (a master wastes nothing) but smoking must never
@@ -1051,7 +1110,7 @@
         it.name = it.name.replace(' (cleaned)', '').replace(' (cooked)', '') + ' (smoked)';
         it.prep = 'Smoked by knowing hands. Keeps well over a month.';
         it.wellMade = true; // a specialist made this — it burns hotter as fuel
-        this.say(`${spec.name} (${spec.occupation}) smokes it over the fire — quick work. This will keep for weeks.`);
+        this.say(`${spec.name}${this.specOccLabel(spec)} smokes it over the fire — quick work. This will keep for weeks.`);
       }
       // practice makes the specialist better; watching teaches you.
       if (src) {
@@ -1158,7 +1217,9 @@
         let node = null;
         try { node = this.npcNode(p.id); } catch (e) {}
         if (node && (node.nx !== this.map.px || node.ny !== this.map.py)) continue;
-        out.push({ id: p.id, name: p.name, knows: knows.length, occupation: p.formerOccupation });
+        // NAME GATE (break-it knowledge 2026-10-10): the "Ask X" button names
+        // the knower — descriptors until the name is earned (displayName funnel).
+        out.push({ id: p.id, name: this.displayName(p.id), knows: knows.length, occupation: p.formerOccupation });
       }
       out.sort((a, b) => b.knows - a.knows);
       return out;
@@ -1196,7 +1257,9 @@
         let person = null;
         try { person = this.villagePeople().find(p => p.id === vid); } catch (e) {}
         if (!person) { this.say("They're not here."); return null; }
-        sorterName = person.name;
+        // NAME GATE (break-it knowledge 2026-10-10): the sort narration names
+        // the sorter — pre-System, strangers are descriptors (displayName funnel).
+        sorterName = this.displayName(vid);
         const known = this.villagerKnowsPlants(vid);
         knowsFn = (pid) => known.includes(pid);
       }
@@ -2371,7 +2434,7 @@
           opts.push({
             id: 'spec:' + spec.id,
             label: `Ask ${spec.name}`,
-            detail: `8 ticks of your time · ~${specKcal} kcal · better hands (${spec.occupation})`,
+            detail: `8 ticks of your time · ~${specKcal} kcal · better hands${this.specOccLabel(spec)}`,
           });
         } else {
           opts.push({ id: 'nospec', label: 'Ask a specialist', detail: 'no butcher here — (find one, or do it yourself)', blocked: 'no butcher here' });
@@ -2404,7 +2467,7 @@
           opts.push({
             id: 'spec:' + spec.id,
             label: `Ask ${spec.name}`,
-            detail: `8 ticks of your time · ${task === 'cook' ? '+5%/level, safer' : 'keeps longer'} (${spec.occupation})`,
+            detail: `8 ticks of your time · ${task === 'cook' ? '+5%/level, safer' : 'keeps longer'}${this.specOccLabel(spec)}`,
           });
         } else {
           opts.push({ id: 'nospec', label: 'Ask a specialist', detail: `no ${task === 'cook' ? 'cook' : 'preserver'} here`, blocked: 'none here' });
@@ -2775,8 +2838,11 @@
         it.edible = !isNut;
         it.kcalEach = isNut ? 0 : (it.hiddenKcal || p.caloriesPerUnit);
         if (isNut) it.name = p.name + ' (in shell)';
+        // PREP LADDER (break-it knowledge 2026-10-10): the flip names the
+        // food (L1) but withholds preparation text until prepKnown/L2 —
+        // itemPrepFor writes the honest placeholder.
         it.prep = isNut ? 'Needs shelling — crack and pick the nutmeats.'
-          : (p.preparation || 'Edible. The Codex knows it now.');
+          : this.itemPrepFor(pid);
         if (MUST_COOK_RE.test(p.preparation || '') && !isNut) {
           it.needsCooking = true;
           it.diseaseRisk = Object.assign({}, RISK.mustCook);
