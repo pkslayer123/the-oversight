@@ -27,8 +27,14 @@ lock whole regions out of finishing. (Pacing audit: strong run unlocks wave 5
 which grows stronger with the calories it consumes (the Living Garden's
 predator, the dark mirror of the food thesis). Numbers anchored to *measured*
 godhood DPS (~220/round), not guesses — the draft's bands would have died in
-two rounds. First real `pierce` assignments. Gating is kills + scale, never
-calendar alone. Doom deaths trigger phoenix/second_wind like any death —
+two rounds. First real `pierce` assignments. **Gating is reactive engagement +
+scale, never calendar alone** (balance pass 2026-10-10: the kill-only lane
+never fired in organic play — players flee, they don't farm. Unlocks now take
+kills OR engagement: w2 = day 8 + (4 w1 kills OR 2 distinct w1 faced); w3 =
+day 25 + (8 w2 kills OR 2 distinct w2 faced); w4/w5 = kill/engagement lane +
+regional/national scale. Kills are the faster lane, not the only lane; the
+5/5/4/3/2 table bars are unchanged). Doom deaths trigger
+phoenix/second_wind like any death —
 "unkillable means unkillable."
 
 **4. The scale ladder is felt moments.** Village → regional (first link, the
