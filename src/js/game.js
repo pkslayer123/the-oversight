@@ -6057,6 +6057,38 @@
       // disabled the dawn home-return ("no home to return to") in a run
       // that HAS a home. A loadable save is a living run by definition.
       this.villageLost = false;
+      // STALE CONVERSATIONS (break-it persistence 2026-10-10 r9):
+      // v.conv[vid].active persists on state.village, but the chat UI is
+      // DOM-only — after Continue no chat is open, yet the person card hides
+      // the Talk button while active (app.js: talkLabel = convo.active ?
+      // null : ...). A mid-conversation save locked the villager out of talk
+      // forever (until you talked to someone else, which swept it with a
+      // dishonest "turn away" line). A save/load is a walk-away: settle
+      // substantive conversations through the tested endConvo path (stipend /
+      // XP / open-thread planting all scale with what actually happened, so
+      // no new farm — identical to tapping leave before closing), quietly
+      // clear ones that never started (0 exchanges, empty transcript).
+      try {
+        if (typeof this.endConvo === 'function') {
+          const vcv = (this.state.village || {}).conv || {};
+          let settled = 0;
+          for (const cvid of Object.keys(vcv)) {
+            const cc = vcv[cvid];
+            if (!cc || !cc.active) continue;
+            const substantive = (cc.exchanges || 0) >= 1 || (cc.transcript || []).length > 0;
+            if (substantive) {
+              try { this.endConvo(cvid, 'left'); }
+              catch (e2) { cc.active = false; cc.over = true; }
+            } else {
+              cc.active = false; cc.over = true;
+            }
+            settled++;
+          }
+          if (settled > 0) {
+            this.say(`(You closed the game mid-conversation — the moment has passed. The talk was left where it was; talk again any time.)`);
+          }
+        }
+      } catch (e) {}
       // SYNERGIES: recompute on load (saves predate the resonance system).
       // Discovered ones stay discovered; no re-announcement (checkSynergies only says on new).
       this.recomputeActiveSynergies();
@@ -6169,6 +6201,24 @@
             // Every fighter was a ghost or corrupt: there is no fight to
             // resume. Say so honestly instead of loading an empty arena.
             this.say('The fight you left is gone — only trampled ground remains. (No restorable fighters in the saved fight.)');
+            // ARENA VOID (break-it persistence 2026-10-10 r9): a mid-arena-
+            // fight save whose fighters all drop on load left
+            // activeContest.arenaSuspended + state.arenaContest set with no
+            // fight — contestChoose drops every input while suspended and the
+            // post-arena phases are unreachable by choice, so the contest
+            // could never resolve (stranded show). The beast never came:
+            // void the bout the way the startCombat-throw path does, instead
+            // of stranding it.
+            try {
+              const arc = this.state && this.state.arenaContest;
+              const ac2 = this.state && this.state.activeContest;
+              if (arc || (ac2 && ac2.arenaSuspended)) {
+                if (ac2) ac2.arenaSuspended = false;
+                this.state.arenaContest = null;
+                this.say('📺 The gate stands empty — the beast you faced is gone from the world. The System voids the bout. (The saved arena fight could not be restored; the contest was closed, not left suspended.)');
+                if (ac2 && typeof this._contestEnd === 'function') this._contestEnd(ac2, 'lost', false);
+              }
+            } catch (e2) {}
           } else {
           const fkeys = new Set(fighters.map(f => f.key));
           let order = Array.isArray(tbS.order) ? tbS.order.filter(k => fkeys.has(k)) : [];

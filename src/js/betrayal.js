@@ -2868,8 +2868,8 @@
   recordScam(whoName, whoId, kind, wareName) {
     const v = this.state.village || {};
     v.scamLedger = v.scamLedger || [];
-    const entry = { id: 'scam_' + Date.now().toString(36) + Math.floor(R() * 99), whoName, whoId,
-      kind, wareName, day: (this.state.scholar || {}).day || 0, discovered: false, resolved: false };
+    const entry = { id: 'scam_' + Date.now().toString(36) + '_' + Math.floor(R() * 1e9).toString(36), whoName, whoId,
+      kind, wareName, day: (this.state.scholar || {}).day || 0, discovered: false, resolved: false }; // ID UNIQUENESS (break-it persistence 2026-10-10 r9): Date.now()+R()*99 collided when two scammed wares were bought in the same millisecond (1/99 per pair) — ledger lookups by id then hit the wrong entry. Same shape as fight ids: timestamp + wide random.
     v.scamLedger.push(entry);
     return entry;
   },
