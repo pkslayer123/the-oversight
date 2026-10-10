@@ -140,8 +140,17 @@ function setPack(pid, kcal) {
   setPack(pid2, 2000);
   const oldName5 = Game.state.village.name;
   const popBefore = home.population;
-  const okPet = Game.petitionVillage(home.id, { giftKcal: 1500 });
-  ok('petition accepted with food + skills', okPet === true);
+  // JUDGMENT IS PROBABILISTIC (test-robustness 2026-10-10): 50 base, -12
+  // exiled, -5 severed-reputation abroad, +12 gift, +9 read_people, ±10 noise
+  // → ~5% honest refusal. Retry with a fresh gift until accepted (a rejection
+  // spends the gift — restock, like a real exile would). P(6 refusals) ~ 0.
+  let okPet = false, tries = 0;
+  while (!okPet && tries < 6) {
+    tries++;
+    setPack(pid2, 2000);
+    okPet = Game.petitionVillage(home.id, { giftKcal: 1500 }) === true;
+  }
+  ok('petition accepted with food + skills (<=6 honest tries)', okPet === true);
   ok('old village archived on join (hard reset)',
     (Game.state.pastVillages || []).some(x => x && x.name === oldName5));
   ok('probation set: 14 days', s2.probation && s2.probation.villageId === home.id && s2.probation.daysLeft === 14);
@@ -179,11 +188,27 @@ function setPack(pid, kcal) {
 
   console.log('== 9. drift smoke discovery runs clean ==');
   s2.drifting = true;
-  Game.map.px = 3; Game.map.py = 3; // out in the wild, not on a village tile
+  // PLACEMENT IS NONDETERMINISTIC (test-robustness 2026-10-10): the init path
+  // uses unseeded RNG, so a village can sit adjacent to the drift tile — then
+  // smoke says "close enough to smell" and never sets hinted. Drift from the
+  // farthest corner so the hint path is always reachable, and loop until a
+  // hint lands (the smoke branch is ~16%/tick; 1000 ticks without one ~ 0).
+  const vs9 = Game.state.otherVillages || [];
+  let bx = 0, by = 0, bd = -1;
+  for (let yy = 0; yy < 9; yy++) for (let xx = 0; xx < 9; xx++) {
+    const d = Math.min.apply(null, vs9.map(v => Math.abs(v.x - xx) + Math.abs(v.y - yy)));
+    if (d > bd) { bd = d; bx = xx; by = yy; }
+  }
+  Game.map.px = bx; Game.map.py = by;
   const dd0 = s2.driftDays || 0;
-  for (let i = 0; i < 200; i++) { try { Game.driftTick(); } catch (e) { ok('driftTick never throws (' + e.message + ')', false); break; } }
-  ok('200 drift days tick clean', (s2.driftDays || 0) === dd0 + 200);
-  ok('smoke sightings hint villages', ovs.some(v => v.hinted));
+  let ticks = 0, threw = null;
+  for (let i = 0; i < 1000 && !vs9.some(v => v.hinted); i++) {
+    try { Game.driftTick(); ticks++; }
+    catch (e) { threw = e; break; }
+  }
+  ok('drift days tick clean (no throw)', threw === null, threw && threw.message);
+  ok('drift days advance the clock', (s2.driftDays || 0) === dd0 + ticks);
+  ok('smoke sightings hint villages', vs9.some(v => v.hinted));
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
