@@ -158,9 +158,13 @@ const S = globalThis.Scattering;
     ok(worst.p >= 1, 'player block: min landed over hits 1..40 at P=500 is ' + worst.p + ' (expect >= 1)');
     ok(worst.v >= 1, 'villager block: min landed over hits 1..40 at P=500 is ' + worst.v + ' (expect >= 1)');
     ok(pierceSeen > 0, 'damage flows through the block at all (sanity)');
-    // Pierce hook defaults to 0: no monster in data declares pierce.
+    // Pierce is wave-3+ design space (MONSTER-WAVES.md, 2026-10-10): the hook
+    // had no assignments when this test was written, but 25 wave-3/4/5
+    // monsters now declare pierce. Guard the boundary instead: nothing in
+    // wave 1/2 may pierce (early-game armor math untouched).
     const piercers = (Game.data.monsters || []).filter(m => (m.pierce || 0) !== 0);
-    ok(piercers.length === 0, 'pierce default-0: no monster declares pierce (' + piercers.length + ' do)');
+    const earlyPiercers = piercers.filter(m => (m.wave || 1) < 3);
+    ok(earlyPiercers.length === 0, 'pierce wave-gated: no wave-1/2 monster declares pierce (' + earlyPiercers.length + ' do; ' + piercers.length + ' wave-3+ do)');
     Game.tbfight = null;
   }
 

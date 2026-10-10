@@ -24875,7 +24875,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // HONESTY (break-it combat 2026-10-09, sibling sweep): tbDamage
         // applies dodge/armor/brace after this line was composed. Resolve
         // first, state what landed.
-        const beamLanded = this.tbDamage(o.key, dmg, this.encDamageSource(m, tg.attackName));
+        // PIERCE (brawler break-it 2026-10-10): the attacker's fighter key is
+        // the pierce hook's only read path — without it mdef.pierce is
+        // silently 0 and wave-3/4/5 armor design is inert. Same for every
+        // monster-sourced tbDamage call below.
+        const beamLanded = this.tbDamage(o.key, dmg, this.encDamageSource(m, tg.attackName), m.key);
         this.say(`🔥 ${verb} ${who}! (${beamLanded})`);
         if (f.over) return;
       }
@@ -24922,7 +24926,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         const d = S.combat.roll([8, 14]);
         const who = o.kind === 'player' ? 'you' : o.name;
         this.say(`It can't move — but a foreleg lashes out and catches ${who}. The breather isn't free up close. (${d})`);
-        this.tbDamage(o.key, d, m.name + "'s paw");
+        this.tbDamage(o.key, d, m.name + "'s paw", m.key);
         hit = true;
         if (f.over) return true;
       }
@@ -25108,7 +25112,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (!S.combat.isFoe(m, o)) continue;
         if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
         hit = true;
-        this.tbDamage(o.key, S.combat.roll([10, 16]), this.encSubject(m));
+        this.tbDamage(o.key, S.combat.roll([10, 16]), this.encSubject(m), m.key);
         if (f.over) return;
       }
       if (!hit) this.say('Nothing in reach. It paws the earth, furious.');
@@ -25151,7 +25155,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         try { mn = this.monsterNoun(m.monsterId); } catch (e) {}
         if (/^something\b/i.test(mn)) this.say(`Something thrashes its antlers at ${who} — getting close has a price. (${d})`);
         else this.say(`The ${mn} thrashes its antlers at ${who} — getting close has a price. (${d})`);
-        this.tbDamage(o.key, d, mn + "'s antlers");
+        this.tbDamage(o.key, d, mn + "'s antlers", m.key);
         hit = true;
         if (f.over) return true;
       }
@@ -26234,7 +26238,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         const atk = (t.mdef || {}).attack || {};
         // BREAK-IT 2026-10-08: the fail IS a Snap Decision — play its audio.
         try { this.audioEvent('turtleSnap'); } catch (e) {}
-        this.tbDamage('p', S.combat.roll(atk.damage || [20, 30]), t.name || 'the turtle');
+        this.tbDamage('p', S.combat.roll(atk.damage || [20, 30]), t.name || 'the turtle', t.key);
       }
       this.tbAfterPlayerAction();
       return true;
@@ -28106,7 +28110,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             // chance to ring your ears — lose move action next turn. Simple,
             // fits the combat system. No stacking, no SHOUT interaction.
             const baseDmg = ((o.mdef || {}).attack || {}).damage || [8, 12];
-            this.tbDamage(t.key, S.combat.roll(baseDmg), this.encDamageSource(o, 'Resonant Croak'));
+            this.tbDamage(t.key, S.combat.roll(baseDmg), this.encDamageSource(o, 'Resonant Croak'), o.key);
             // SONIC STUN (Steve 2026-10-05): full turn loss. The sound hits like
             // a wall — ears ringing, world tilts. 15% chance. Don't skimp on audio.
             if (t.kind === 'player' && Math.random() < 0.15) {
@@ -28370,7 +28374,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             if (!o.alive || o.fled || o.key === m.key) continue;
             if (o.kind !== 'player' && o.kind !== 'villager') continue;
             if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) <= 2) {
-              this.tbDamage(o.key, S.combat.roll(atk.damage || [12, 20]), this.encDamageSource(m, 'Lure and Grasp'));
+              this.tbDamage(o.key, S.combat.roll(atk.damage || [12, 20]), this.encDamageSource(m, 'Lure and Grasp'), m.key);
             }
           }
           this.tbLearnPattern(m);
@@ -28466,7 +28470,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (dist() <= 1) {
           m.mosqPhase = 'drink'; setP('drink');
           const dmg = S.combat.roll(atk.damage || [10, 16]);
-          const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Drink'));
+          const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Drink'), m.key);
           // HONESTY (break-it combat r8 2026-10-09): a dodged drink is a
           // MISS - the old code still said "the proboscis slides in" and
           // still went heavy ("drunk on blood") on 0 damage, handing a free
@@ -28490,7 +28494,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         setP('heavy'); m.altitude = 'low';
         m.mosqHeavyTurns = (m.mosqHeavyTurns == null ? 2 : m.mosqHeavyTurns) - 1;
         if (dist() <= 1) {
-          const landed = this.tbDamage(foe.key, S.combat.roll([3, 6]), this.encDamageSource(m, 'Heavy Blunder'));
+          const landed = this.tbDamage(foe.key, S.combat.roll([3, 6]), this.encDamageSource(m, 'Heavy Blunder'), m.key);
           if (landed > 0) this.say(`It blunders into you, drunk and clumsy. (${landed})`);
           else this.say('It wallows in the air, heavy with blood \u2014 slow, clumsy, close.');
         } else {
@@ -28546,7 +28550,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           return;
         }
         m.tickFeeds = (m.tickFeeds || 0) + 1;
-        const landed = this.tbDamage(foe.key, 3, this.encDamageSource(m, 'Feeding'), null, { undodgeable: true });
+        const landed = this.tbDamage(foe.key, 3, this.encDamageSource(m, 'Feeding'), m.key, { undodgeable: true });
         if (landed > 0) this.say(`It drinks \u2014 a slow pull from somewhere deep. (${landed})`);
         if (m.tickFeeds >= 4) {
           release('Fed full, it drops off \u2014 fat, slow, shining. Now, while it can barely move.');
@@ -28566,7 +28570,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         m.tickLatched = true; m.tickFeeds = 0;
         m.tickPhase = 'latch'; setP('latch');
         const dmg = S.combat.roll(atk.damage || [6, 10]);
-        const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Latch'), null, { undodgeable: true });
+        const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Latch'), m.key, { undodgeable: true });
         this.say(`It\u2019s on you \u2014 mouthparts in before you can move. (${landed}) LATCHED. (torch burns it off; it feeds 4 turns then drops)`);
         this.audioEvent('tickLatch');
         if (foe.kind === 'player' && !this.hasStatus('scholar', 'lemons') && Math.random() < 0.5) {
@@ -29431,7 +29435,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
               }
               if (o.kind === 'player') playerHit = true;
               anyoneHit = true;
-              this.tbDamage(o.key, Math.round(S.combat.roll(tg.dmg) * humMult), this.encDamageSource(m, tg.attackName));
+              this.tbDamage(o.key, Math.round(S.combat.roll(tg.dmg) * humMult), this.encDamageSource(m, tg.attackName), m.key);
               hitFighters.push(o);
               if (f.over) break;
             }
@@ -30033,7 +30037,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             }
             if (Math.max(Math.abs(t.mx - m.mx), Math.abs(t.my - m.my)) <= 1) {
               this.say('Your own voice screams out of the radio — no words, just fury — and it\'s already on you. No voice. No warning. Teeth of static.');
-              this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+              this.tbDamage(t.key, S.combat.roll(atk.damage), m.name, m.key);
               this.tbLearnPattern(m);
             } else {
               this.say('Static shrieks — it lunges for the voice it stole, and finds only air.');
@@ -31013,7 +31017,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
                 ? '"Your warranty has EXPIRED." The words hit like a slap.'
                 : `"Your warranty has EXPIRED." ${wcAtk} — the words hit like a slap.`)
               : 'The voice drops all pretense of politeness, and the WORDS hit you.');
-            this.tbDamage(t.key, S.combat.roll(atk.damage), m.name);
+            this.tbDamage(t.key, S.combat.roll(atk.damage), m.name, m.key);
             // WRONG NUMBER CONNECTS: they're on the line — stunned, listening.
             // Hurt the caller to hang it up for them.
             if (t.kind === 'villager') {
@@ -31211,7 +31215,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           const rent = 1 + (m.llAddenda || 0);
           // HONESTY (break-it combat 2026-10-09, sibling sweep): armor can
           // absorb rent. Resolve first, state what landed.
-          const rentLanded = this.tbDamage('p', rent, 'rent collection', null, { quiet: true, undodgeable: true });
+          const rentLanded = this.tbDamage('p', rent, 'rent collection', m.key, { quiet: true, undodgeable: true });
           this.say(known ? `"RENT'S DUE." The leased ground takes its cut. (${rentLanded})`
             : `The ground under your feet feels owned. It takes its cut. (${rentLanded})`);
           if (!p.alive || (this.tbfight || {}).over) { this.tbRefreshTelegraphUI(); this.tbEndCheck(); return; }
@@ -31783,7 +31787,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           for (const o of f.fighters) {
             if (!o.alive || o.fled || o.key === m.key) continue;
             if (!S.combat.isFoe(m, o)) continue; // packmates aren't targets
-            if (hitKeys.has(o.mx + ',' + o.my)) this.tbDamage(o.key, S.combat.roll(atk.damage), m.name);
+            if (hitKeys.has(o.mx + ',' + o.my)) this.tbDamage(o.key, S.combat.roll(atk.damage), m.name, m.key);
           }
           this.tbLearnPattern(m);
         }
@@ -31819,7 +31823,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // bite harder. Party-gated inside tbFlankBonus; 0 for duels.
           const flank = this.tbFlankBonus ? this.tbFlankBonus(m, foe.f) : 0;
           if (flank > 0) this.say(`They're coming from both sides — nowhere to turn. (FLANKED +${flank})`);
-          this.tbDamage(foe.f.key, S.combat.roll(atk.damage) + flank, m.name);
+          this.tbDamage(foe.f.key, S.combat.roll(atk.damage) + flank, m.name, m.key);
           // JUDGMENT (Steve 2026-10-08): the rush itself stays SILENT — no
           // warning, just teeth (Steve killed the rush indicator 2026-10-06).
           // The snarl breaks only AFTER first contact: the teeth are done,

@@ -1064,7 +1064,10 @@
           `{n} strikes at {t} with a sound caught between a sob and a snarl.`,
         ];
         this.say(`🔪 ${this.pickFresh(verbs, 'humanRetaliate').replace('{n}', () => h.name).replace('{t}', () => tgt)}`);
-        this.tbDamage(foe.key, dmg, h.name);
+        this.tbDamage(foe.key, dmg, h.name, h.key);
+        // PIERCE (brawler break-it 2026-10-10): hostile attackers have no
+        // mdef so pierce is 0 — math unchanged — but the keyed source lets
+        // the justice.js enrage hook match by key instead of by name.
         // Hurting someone costs the hurter too. Even them.
       } else {
         // Same fight-scoped no-repeat semantics as the attack verbs above.

@@ -2670,7 +2670,9 @@
       }
       var dmg = tg.dmg || 18;
       for (var h = 0; h < hit.length; h++) {
-        this.tbDamage(hit[h].key, dmg, mName + "'s heavy strike");
+        // PIERCE (brawler break-it 2026-10-10): pass the attacker's key so
+        // the armor-pierce hook in tbDamage can read mdef.pierce.
+        this.tbDamage(hit[h].key, dmg, mName + "'s heavy strike", m.key);
       }
       try { this.drama('alienHeavyHit', cx, cy); } catch (e) {}
       m.apSpent = 1; // recovery: the strike took it out of them
@@ -2775,7 +2777,7 @@
         ? 'They pull the blow at the last instant — holding back, even now.'
         : 'Efficient. Practiced. No wasted motion.';
       this.say('🗡 ' + mName + ' strikes. ' + verb);
-      this.tbDamage(t.key, base, mName + "'s strike");
+      this.tbDamage(t.key, base, mName + "'s strike", m.key);
       // DREAD PROJECTOR (break-it 2026-10-08): "Projects your worst memory."
       // Sable's strike leaves the player Afraid (the status engine's fizzle
       // is the hands not listening). KNOWLEDGE GATE: the status source must
