@@ -435,6 +435,7 @@
       <button class="btn" id="b-new">New Expedition</button>
       ${Game.hasSave() ? '<div id="saves"></div>' : ''}
       <button class="btn ghost" id="b-codex0">Codex</button>
+      <button class="btn ghost" id="b-records">🏆 Records</button>
       ${(Game.state && Game.state.telemetry && Game.state.telemetry.length) ? '<button class="btn ghost" id="b-tel">📊 Telemetry</button>' : ''}
       <button class="btn ghost" id="b-about">About</button>
       <div style="display:flex;gap:8px;margin-top:6px">
@@ -450,6 +451,9 @@
     const savesDiv = document.getElementById('saves');
     if (savesDiv) renderSaves(savesDiv);
     document.getElementById('b-codex0').onclick = () => { toast('The Codex is empty. For now.'); };
+    // META PROGRESSION (prog-meta 2026-10-10): cross-run achievement codex.
+    const br = document.getElementById('b-records');
+    if (br) br.onclick = recordsScreen;
     const bt = document.getElementById('b-tel');
     if (bt) bt.onclick = () => telemetryScreen();
     document.getElementById('b-about').onclick = about;
@@ -545,6 +549,33 @@
       <p class="small">Keep yourself fed for seven days. The village is counting on you.</p>
       <button class="btn ghost" id="b-back">Back</button>`;
     document.getElementById('b-back').onclick = title;
+  }
+
+  // ---------- records screen (META PROGRESSION, prog-meta 2026-10-10) ----------
+  // Cross-run achievement codex. Unmet achievements show as ??? with a vague
+  // hint — "if you don't know, it doesn't show". Long-term planning surface:
+  // the list itself is allowed to scroll; the summary stays on one screen.
+  function recordsScreen() {
+    const list = (Game.metaList ? Game.metaList() : []);
+    const sum = (Game.metaSummary ? Game.metaSummary() : { total: list.length, unlocked: 0, byCat: {} });
+    const CAT_LABEL = { flora: '🌿 Flora', fauna: '🐾 Fauna', monsters: '👹 Monsters', escalation: '📈 The Escalation', show: '📺 The Show', arcs: '◈ The Long Haul', table: '🌌 The Table', sickness: '🤒 Sickness', milestones: '⭐ Milestones' };
+    let lastCat = null, rows = '';
+    for (const a of list) {
+      if (a.cat !== lastCat) {
+        lastCat = a.cat;
+        const bc = (sum.byCat || {})[a.cat] || { total: 0, unlocked: 0 };
+        rows += `<div style="margin:14px 0 4px;font-size:12px;letter-spacing:1px;opacity:.75">${esc(CAT_LABEL[a.cat] || a.cat)} — ${bc.unlocked}/${bc.total}</div>`;
+      }
+      rows += a.unlocked
+        ? `<div style="display:flex;gap:8px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🏆</span><div><b>${esc(a.name)}</b><br><span class="small" style="opacity:.75">${esc(a.desc)}</span></div></div>`
+        : `<div style="display:flex;gap:8px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.07);opacity:.55"><span style="font-size:18px">❔</span><div><b>???</b><br><span class="small" style="opacity:.75">${esc(a.hint)}</span></div></div>`;
+    }
+    screen.innerHTML = `${bar('scattering://records', 'every run remembered')}
+      <h1 class="title" style="font-size:22px">RECORDS</h1>
+      <p class="small">Across every expedition: <b>${sum.unlocked} of ${sum.total}</b> remembered.<br>New expeditions start with nothing — the records are the only thing you keep.</p>
+      <div style="max-height:52vh;overflow-y:auto;text-align:left;max-width:360px;margin:0 auto">${rows}</div>
+      <button class="btn ghost" id="b-records-back" style="margin-top:12px">Back</button>`;
+    document.getElementById('b-records-back').onclick = title;
   }
 
   // ---------- onboarding ----------

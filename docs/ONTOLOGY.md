@@ -710,6 +710,20 @@ Village membership. Joining, leaving, exile status.
 
 **Consumes:** village.members
 
+### metaProgression (`metaProgression.js`)
+Persistent cross-run achievement codex ("Records"). A per-device record of knowledge and content encountered across ALL runs — the meta incentive to replay until everything has been seen. New games start completely fresh; achievements NEVER grant power, knowledge, or items.
+
+**Provides:** metaGet(), metaSave(), metaReset(), metaUnlock(id), metaList(), metaSummary(), metaNotePlant(pid), metaNoteAnimal(aid), metaNoteMonster(mid), metaNoteMonsterNamed(mid), metaNoteWaveKill(monsterId), metaNoteWaveUnlocked(wave), metaNoteArc(n), metaNoteCrisis(kind), metaNoteContest(contestId, outcome), metaNotePlayerContest(outcome, watched), metaNoteTable(frame), metaNoteTableChoice(frame, choiceId), metaNoteLegend(outcome), metaNoteSystemArrival(), metaNoteDisease(effectId), metaNoteCure(effectId)
+
+**Rules:**
+- read_only_power: achievements write ONLY to localStorage key oversight.meta.v1. They never touch game state, save slots, knowledge, or items. A fresh game is provably unaffected (code: every metaNote* writes store-only; test-meta-progression-20261010.js)
+- corrupt_safe: corrupt stored JSON resets that key; nothing ever throws out of the meta layer (code: metaGet/metaSave try/catch)
+- defensive_wrap: hooks wrap existing Game methods at load; an absent method is skipped silently; every hook is exception-guarded so a meta failure can never break gameplay (code: wrapHook)
+- no_leak_hints: unmet achievements render as ??? with a vague hint, never content — "if you don't know, it doesn't show" (code: metaList, app.js recordsScreen)
+- data_driven_thresholds: "encounter them all" tiers count against Game.data at check time, never hardcoded totals (code: metaNotePlant/metaNoteAnimal/metaNoteMonster)
+
+**Consumes:** (none persistently — reads game state only transiently at event time; owns localStorage key oversight.meta.v1)
+
 ### monsterBehaviors (`monsterBehaviors.js`)
 Data-driven monster behavior dispatch. Replaces per-species if/else branches in tbMonsterTurn with a behavior table (monsterBehaviors.json) + registered hook functions. Migrated species run verbatim-extracted logic from the registry; unmigrated species keep inline branches until proven.
 
