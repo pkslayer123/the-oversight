@@ -107,7 +107,8 @@ function nearestVillage() {
       const v = nearestVillage();
       walkTo(v.x, v.y);
       Game.joinVillageReal(v.id);
-      walkTo(3, 3); // home, WITHOUT leaving: still "joined", but at Haven
+      walkTo(4, 4); // haven proper: genVillages keeps every village >=3 tiles from (4,4),
+      // so this is guaranteed away from their fire. (3,3) could sit adjacent to one.
       ok(sc.joinedVillage === v.id, `seed ${s}: still joined after walking home`);
       reseed(s * 104729 + 3);
       const jv0 = v.pantryKcal;
@@ -119,7 +120,11 @@ function nearestVillage() {
       reseed(s * 104729 + 5);
       const jv1 = v.pantryKcal, k0 = sc.kcal;
       Game.villageMeal();
-      ok(v.pantryKcal === jv1 - Math.min(2000, jv1) && sc.kcal > k0,
+      // PROBATION PORTIONS (test fix 2026-10-10): joinVillageReal puts the
+      // player on 14-day probation, and the betrayal.js villageMeal wrap
+      // serves half shares (1000) until voted in — the old 2000 expectation
+      // predates the probation-portions wrap. Copy and engine agree.
+      ok(v.pantryKcal === jv1 - Math.min(1000, jv1) && sc.kcal > k0,
         `seed ${s}: meal at their fire draws their pantry (${Math.round(jv1)} -> ${Math.round(v.pantryKcal)}), fed ${Math.round(k0)} -> ${Math.round(sc.kcal)}`);
       // starving fire: honest +0, no phantom food
       v.pantryKcal = 0;
@@ -157,7 +162,7 @@ function nearestVillage() {
       ok(turf0 > 0 && turf1 < turf0,
         `seed ${s}: they foraged their own turf while you lived there (${Math.round(turf0)} -> ${Math.round(turf1)} kcal)`);
       // walk away: their day must NOT advance while you're gone...
-      walkTo(3, 3);
+      walkTo(4, 4); // haven proper: guaranteed >=3 from every village (see above)
       const awayDay = v.day;
       sc.kcal = 4000; sc.hydration = 100;
       Game.endDay(); Game.endDay();
@@ -172,7 +177,7 @@ function nearestVillage() {
       walkTo(v.x, v.y); // first sight: catch-up to scholar day
       const firstDay = v.day;
       ok(firstDay === sc.day, `seed ${s}: first sight catch-up lands on scholar day (${firstDay} vs ${sc.day})`);
-      walkTo(3, 3);
+      walkTo(4, 4); // haven proper: guaranteed >=3 from every village (see above)
       for (let d = 0; d < 4; d++) {
         sc.kcal = 4000; sc.hydration = 100;
         Game.state.village.pantryKcal = Math.max(Game.state.village.pantryKcal || 0, 20000);

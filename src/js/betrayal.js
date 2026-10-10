@@ -1731,6 +1731,13 @@
     opts = opts || {};
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
+    // DRIFTER BREAK-IT 2026-10-10: petitioning the village you already belong
+    // to used to run the full judgment (and spend your gift) before
+    // joinVillageReal re-added a phantom seat. Refuse early, honestly.
+    if ((this.state.scholar || {}).joinedVillage === villageId) {
+      this.say(`You're already one of ${ov.name}'s. No need to petition your own fire.`);
+      return true;
+    }
     // FACE TO FACE (break-it travel 2026-10-09): "Approach & petition" means
     // approach. The card used to offer petition to exiles from across the
     // map — a tap on a seen-but-distant tile joined a village you'd never
@@ -1818,6 +1825,15 @@
     const s = this.state.scholar;
     const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
     if (!ov) return null;
+    // DRIFTER BREAK-IT 2026-10-10: rejoining the village you're ALREADY joined
+    // to re-ran the whole join: population +1 (a phantom seat feeding a
+    // phantom mouth in every simVillageDay), trust reset to 5, and a fresh
+    // 14-day probation — a voted-in full member who re-petitioned lost their
+    // standing and the village gained a ghost. Join is idempotent now.
+    if (s.joinedVillage === villageId) {
+      this.say(`You're already one of ${ov.name}'s — no new probation, no new vote. The seat's yours.`);
+      return true;
+    }
     // DRIFTER BREAK-IT r3 2026-10-08: switching villages released nothing —
     // the abandoned village kept the player's seat and fed a phantom mouth
     // in every simVillageDay forever. Give the seat back first.
