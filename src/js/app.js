@@ -15144,8 +15144,10 @@
           _cfCls = ' cftell';
         }
         // BARRIER EDGE (Steve 2026-10-06): during combat, grid edges are exits —
-        // stepping off flees through the node barrier (50% break, 50% followed).
-        // The edge must READ as an exit, not a wall. Players were "teleporting"
+        // stepping off flees through the node barrier (CHASE, Steve 2026-10-09:
+        // no coin flip — stamina pursuit: chasers follow per chasePersistence,
+        // non-chasers can't follow; Haven's walls end any chase). The edge
+        // must READ as an exit, not a wall. Players were "teleporting"
         // without understanding why.
         const _inCombat = !!(Game.tbfight && !Game.tbfight.over);
         const _isEdge = (cx === 0 || cx === 8 || cy === 0 || cy === 8);

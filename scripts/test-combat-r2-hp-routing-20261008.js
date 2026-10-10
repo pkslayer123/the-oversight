@@ -80,7 +80,7 @@ function holdAbility(Game, s, id, level) {
     s.hydration = 0;
     const hpBefore = pp.hp;
     Game.drinkWater();
-    if (pp.hp < hpBefore) { sickHit = true; check('R2 risky water damage hits the fighter', pp.hp === hpBefore - 15, `hp ${hpBefore} -> ${pp.hp}`); }
+    if (pp.hp < hpBefore) { sickHit = true; check('R2 risky water damage hits the fighter', pp.hp === hpBefore - 5, `hp ${hpBefore} -> ${pp.hp} (disease rework 2026-10-09: -5 + gut rot, was flat -15)`); }
   }
   if (!sickHit) check('R2 risky water damage hits the fighter (seed never rolled sick)', false, 'no sickness in 6 attempts');
   if (Game.tbfight) Game.tbEnd('fled');

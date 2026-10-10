@@ -25799,6 +25799,11 @@
             const _half = Math.ceil(final / 2);
             final = final - _half;
             this.addHealth(-_half);
+            // HONESTY (break-it combat 2026-10-10): the redirected half IS
+            // damage taken — trade_of_blows.settle_debt promises "you cash in
+            // every bruise, every cut". addHealth doesn't write
+            // fightDamageTaken, so record it here.
+            this.state.scholar.fightDamageTaken = (this.state.scholar.fightDamageTaken || 0) + _half;
             const _vt = (this.state.village.trust || {});
             const _vid = t.villagerId || t.key;
             if (_vid) _vt[_vid] = Math.min(100, (_vt[_vid] || 10) + this.trustGainProgressive(_vid, 5));
@@ -28277,7 +28282,7 @@
             this.say('You\'re not where it landed. Clean dodge.');
             this.tbStyle(15, `dodged the ${this.encAttackName(m, tg.attackName)}!`);
           }
-          if ((m.mdef.attack.pattern || {}).type === 'charge') {
+          if (((m.mdef.attack || {}).pattern || {}).type === 'charge') { // NULL-SAFE (break-it combat 2026-10-10): attack-less mdefs
             const last = tg.cells[tg.cells.length - 1];
             // FOOTPRINT (break-it combat 2026-10-09, sibling sweep): validate
             // the whole body at the lane's end, not just the top-left tile.
@@ -28285,7 +28290,7 @@
           }
           // BULLDOZER: a missed charge ends winded — flanks soft, head elsewhere.
           // Next turn it tramples whatever is close. You dodged the lane; respect the aftermath.
-          if (this.boarIs(m) && (m.mdef.attack.pattern || {}).type === 'charge' && !anyoneHit) {
+          if (this.boarIs(m) && (((m.mdef.attack || {}).pattern || {}).type === 'charge') && !anyoneHit) { // NULL-SAFE (break-it combat 2026-10-10)
             m.boarTrample = true;
             m.boarWinded = 2;
             if (useFifo) this.encSetPhase(m, 'spent');
@@ -28298,7 +28303,7 @@
           // window opens only after the wheel. (A connected charge, or a
           // wheel that already went around, goes back to the mirror — it
           // wants you to see it coming.)
-          if (this.stagIs(m) && (m.mdef.attack.pattern || {}).type === 'charge' && !anyoneHit && !tg.isWheel) {
+          if (this.stagIs(m) && (((m.mdef.attack || {}).pattern || {}).type === 'charge') && !anyoneHit && !tg.isWheel) { // NULL-SAFE (break-it combat 2026-10-10)
             m.stagWheel = true;
             if (useFifo) this.encSetPhase(m, 'confront');
           }
@@ -30659,15 +30664,21 @@
           cells = cut;
         }
         const p0 = this.tbFighter('p');
-        m.telegraph = { kind: 'squares', cells, dmg: atk.damage,
-          attackName: atk.name, pattern: pat, turnsLeft: pat.windup || 1,
+        // GENERIC DECLARE (break-it combat 2026-10-10): the pattern defaults to
+        // a burst for attack-less mdefs (see pat above) — the declare must
+        // not assume atk exists. (Was: TypeError on atk.damage / atk.name
+        // for any monster fighter whose mdef lacks attack.)
+        m.telegraph = { kind: 'squares', cells, dmg: (atk && atk.damage) || [6, 10],
+          attackName: (atk && atk.name) || 'violence', pattern: pat, turnsLeft: pat.windup || 1,
           threatenedPlayer: !!(p0 && p0.alive && cells.some(c => c.cx === p0.mx && c.cy === p0.my)),
           aim, dir: bdir, aimKey, angle: bang, firing: 0 };
         // WITNESS: seeing it wind up teaches you its attack. The codex notes
         // the behavior — never the true name, never numbers.
         try {
           const me = this.ensureMonsterEntry(m.mdef.id);
-          if (atk.name && !me.attacksSeen.includes(atk.name)) {
+          // NULL-SAFE (break-it combat 2026-10-10): atk may be null for
+          // attack-less mdefs — nothing to learn from a fallback declare.
+          if (atk && atk.name && !me.attacksSeen.includes(atk.name)) {
             me.attacksSeen.push(atk.name);
             if (me.stage === 'encountered') me.stage = 'observed';
           }
