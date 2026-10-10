@@ -5789,6 +5789,10 @@
       // TOMBSTONE (break-it persistence r5 2026-10-09): it can also return
       // 'tombstoned' when this run's key was wiped elsewhere — propagated
       // verbatim so the autosave can name the real reason.
+      // STALE (break-it persistence r7 2026-10-09): 'stale' when another tab
+      // saved this run newer than this tab's in-memory copy — the write was
+      // refused so it wouldn't destroy that tab's progress. Propagated
+      // verbatim like 'tombstoned'.
       return S.state.save(this.state);
     },
     // Where the save-list entry says you are. Haven by name; anywhere else is
@@ -5807,6 +5811,12 @@
     listSaves(opts) {
       try { return S.state.listSaves(opts); } catch (e) { return []; }
     },
+    // QUARANTINE (break-it persistence r7 2026-10-09): corrupt saves are set
+    // aside, never destroyed — the title screen toasts the one-shot notice,
+    // the debug panel lists snapshots and restores them.
+    takeQuarantineNotice() { try { return S.state.takeQuarantineNotice(); } catch (e) { return null; } },
+    listQuarantines() { try { return S.state.listQuarantines(); } catch (e) { return []; } },
+    restoreQuarantine(qkey) { try { return S.state.restoreQuarantine(qkey); } catch (e) { return false; } },
     load(key) {
       const s = S.state.load(key);
       // SCHOLAR GUARD (break-it persistence 2026-10-09): a save without a

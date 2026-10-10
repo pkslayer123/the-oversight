@@ -8,17 +8,27 @@
 //   - newCodex()
 //   - newState()
 //   - saveKey(state)
-//   - save(state) -> true | 'tombstoned' | false: honest save status; false on quota/blocked/unserializable, 'tombstoned' when the run's key was wiped (break-it 2026-10-09 r5)
-//   - listSaves(opts): opts.includeStale surfaces version-mismatched saves flagged {stale:true} (break-it 2026-10-09)
-//   - load(key)
+//   - save(state) -> true | 'tombstoned' | 'stale' | false: honest save status; false on quota/blocked/unserializable, 'tombstoned' when the run's key was wiped (break-it 2026-10-09 r5), 'stale' when another tab saved this run newer (cross-tab overwrite refused, break-it 2026-10-09 r7)
+//   - listSaves(opts): opts.includeStale surfaces version-mismatched saves with no migration path flagged {stale:true} (break-it 2026-10-09); self-heals a corrupt/missing index by adopting orphaned blobs from disk (break-it 2026-10-09 r7)
+//   - load(key): refuses tombstoned keys; runs registered migrations for old versions (break-it 2026-10-09 r7)
 //   - wipe(key, reason?): leaves a per-key tombstone so a wiped run stays dead (break-it 2026-10-09 r5)
-//   - wipeAll()
-//   - quarantineKey(key): move corrupt save data to a capped dated quarantine key (break-it 2026-10-09 r5)
+//   - wipeAll(): tombstones every removed key — a stale tab's autosave can't resurrect wiped runs (break-it 2026-10-09 r7)
+//   - quarantineKey(key): move corrupt save data to a capped dated quarantine key; writes a one-shot player notice + a restore manifest (break-it 2026-10-09 r7)
+//   - takeQuarantineNotice(): one-shot {key, at} for the title screen toast (break-it 2026-10-09 r7)
+//   - listQuarantines(): restorable snapshots [{qkey, origKey, at}] (break-it 2026-10-09 r7)
+//   - restoreQuarantine(qkey) -> true | 'occupied' | 'corrupt' | false (break-it 2026-10-09 r7)
+//   - MIGRATIONS: {targetVersion: (state)=>state} forward-migration registry; the runner owns version stamping, fns must not set version (break-it 2026-10-09 r7)
+//   - migrateSave(state): run registered migrations forward; null when no path or version > SAVE_VERSION (break-it 2026-10-09 r7)
+//   - hasMigrationPath(fromVersion): dry-run path check, no mutation (break-it 2026-10-09 r7)
 // rules:
 //   - save_honest_status: save() returns false on any failure; callers (autosave) surface it, never mistake silence for success (code: save, break-it 2026-10-09)
 //   - corrupt_quarantined: unparseable save data moves to a capped dated quarantine key before pruning — never destroyed on sight (code: quarantineKey, break-it 2026-10-09)
-//   - stale_version_visible: version-mismatched saves are kept and surfaced flagged, never silently hidden (code: listSaves, break-it 2026-10-09)
-//   - dead_runs_stay_dead: wipe() leaves a per-key tombstone; save() refuses tombstoned keys with a distinct 'tombstoned' signal (never the quota-false), so a stale tab's autosave can't resurrect a wiped run (code: save/wipe, break-it 2026-10-09 r5)
+//   - stale_version_visible: version-mismatched saves with no migration path are kept and surfaced flagged, never silently hidden (code: listSaves, break-it 2026-10-09)
+//   - dead_runs_stay_dead: wipe() leaves a per-key tombstone; save() refuses tombstoned keys with a distinct 'tombstoned' signal (never the quota-false), so a stale tab's autosave can't resurrect a wiped run; load() refuses them too (code: save/wipe/load, break-it 2026-10-09 r5, read-path break-it 2026-10-09 r7); wipeAll() tombstones every key it removes (code: wipeAll, break-it 2026-10-09 r7)
+//   - stale_tab_refused: a monotonic saveSeq detects cross-tab races — a tab whose in-memory copy is older than the disk blob gets 'stale' and no write, never a silent last-write-wins (code: save, break-it 2026-10-09 r7)
+//   - index_self_healing: the index is a cache, not truth — listSaves() adopts orphaned save blobs from disk when the index is corrupt or incomplete (code: listSaves, break-it 2026-10-09 r7)
+//   - quarantine_recoverable: quarantines write a one-shot player notice (title screen toast) and a restore manifest (debug panel) — "preserved for recovery" is reachable, not a black hole (code: quarantineKey/takeQuarantineNotice/listQuarantines/restoreQuarantine, break-it 2026-10-09 r7)
+//   - migrate_forward: old versions upgrade through the registered MIGRATIONS map on load and on save; versions with no path stay stale-surfaced (never destroyed, never silently loaded); future versions refuse (code: migrateSave/hasMigrationPath/load, break-it 2026-10-09 r7)
 // consumes:
 //   - (none documented)
 /* Game state: factory, save/load (versioned), sub-objects separable.
@@ -84,6 +94,46 @@
     const started = state.startedAt || Date.now();
     return `scattering-save-v1-${vid}-${started}`;
   }
+  // MIGRATIONS (break-it persistence r7 2026-10-09): forward-migration
+  // registry. ARCHITECTURE.md claimed "state.js migrates old versions
+  // forward" — no migration code existed, so a SAVE_VERSION bump bricked
+  // every save permanently (stale forever, Delete the only option). Now the
+  // path is real: register MIGRATIONS[targetVersion] = (state) => state.
+  // CONTRACT: the function transforms the state IN PLACE (or returns a
+  // replacement object) but MUST NOT set version itself — the runner stamps
+  // version after each step. A throwing migration is a failed migration
+  // (refuse, never half-upgrade).
+  const MIGRATIONS = {};
+  function hasMigrationPath(fromV) {
+    // dry-run: does a registered chain exist from fromV to SAVE_VERSION?
+    // No mutation — safe for listSaves() to call per entry.
+    if (fromV === SAVE_VERSION) return true;
+    if (typeof fromV !== 'number' || fromV > SAVE_VERSION) return false;
+    let v = fromV, guard = 0;
+    while (v < SAVE_VERSION && guard++ < 20) {
+      if (typeof MIGRATIONS[v + 1] !== 'function') return false;
+      v++;
+    }
+    return v === SAVE_VERSION;
+  }
+  function migrateSave(s) {
+    if (!s || typeof s !== 'object') return null;
+    if (s.version === SAVE_VERSION) return s;
+    // unknown/future version: refuse (never corrupt, never guess)
+    if (typeof s.version !== 'number' || s.version > SAVE_VERSION) return null;
+    let guard = 0;
+    while (s.version < SAVE_VERSION && guard++ < 20) {
+      const fn = MIGRATIONS[s.version + 1];
+      if (typeof fn !== 'function') return null; // no path: refuse
+      try {
+        const out = fn(s);
+        if (out && typeof out === 'object') s = out;
+      } catch (e) { return null; } // throwing migration = failed migration
+      if (typeof s.version !== 'number') return null;
+      s.version = s.version + 1; // the runner owns version stamping
+    }
+    return s.version === SAVE_VERSION ? s : null;
+  }
   function save(state) {
     // SAVE STATUS (break-it persistence 2026-10-09): returns true when the
     // save (and index) actually persisted, false on ANY failure (quota,
@@ -95,12 +145,36 @@
     // the exact two-tab resurrection of the class pass 2 killed single-tab.
     // Checked before any write; 'tombstoned' is deliberately distinct from
     // the quota-false so the UI can say so honestly.
+    // CROSS-TAB STALENESS (break-it persistence r7 2026-10-09): a monotonic
+    // saveSeq detects the two-tabs-one-run race. If the disk blob is newer
+    // than this tab's in-memory copy, writing would silently destroy the
+    // other tab's progress (last-write-wins). Refuse with a distinct 'stale'
+    // signal instead — the autosave toasts it honestly. The player closes
+    // the other tab and reloads here to keep playing.
+    // MIGRATE-ON-SAVE (break-it persistence r7 2026-10-09): an old-version
+    // in-memory state (stale tab across a version bump) upgrades through
+    // registered migrations before writing, so blobs are always current.
     try {
       if (!state.startedAt) state.startedAt = Date.now();
       // pin the key on first save so it can't drift mid-run (mantle transfer)
       if (!state.runKey) state.runKey = saveKey(state);
       const key = saveKey(state);
       if (isTombstoned(key)) return 'tombstoned';
+      if (state.version !== SAVE_VERSION) {
+        const m = migrateSave(state);
+        if (m && m !== state) {
+          for (const k of Object.keys(state)) delete state[k];
+          Object.assign(state, m);
+        }
+      }
+      let diskSeq = 0;
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) diskSeq = JSON.parse(raw).saveSeq || 0;
+      } catch (e) { diskSeq = 0; } // unparseable disk blob: overwrite is healing
+      const memSeq = state.saveSeq || 0;
+      if (diskSeq > memSeq) return 'stale';
+      state.saveSeq = Math.max(diskSeq, memSeq) + 1;
       localStorage.setItem(key, JSON.stringify(state));
       // upsert the index every save: name, day, last-played stay fresh.
       // includeStale: rebuilding from the default list would silently drop
@@ -160,6 +234,8 @@
   }
   // Quarantine: preserve corrupt save data under a capped, dated key instead
   // of destroying it. A future migrator (or a human) can still recover it.
+  const QUARANTINE_MANIFEST = 'scattering-save-quarantine-manifest';
+  const QUARANTINE_NOTICE = 'scattering-save-quarantine-notice';
   function quarantineKey(key) {
     try {
       const d = localStorage.getItem(key);
@@ -169,25 +245,136 @@
       // same millisecond — the second silently overwrote the first and one
       // snapshot of corrupt data was lost, defeating the quarantine.
       const stamp = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-      localStorage.setItem('scattering-save-quarantine-' + key + '-' + stamp, d);
+      const qk = 'scattering-save-quarantine-' + key + '-' + stamp;
+      localStorage.setItem(qk, d);
       localStorage.removeItem(key);
+      // NOTICE + MANIFEST (break-it persistence r7 2026-10-09): quarantines
+      // were a black hole — the expedition vanished with no word to the
+      // player, and nothing could ever read the data back, so "preserved for
+      // recovery" was unreachable. The one-shot notice lets the title screen
+      // say so honestly; the manifest makes snapshots restorable (debug
+      // panel). Neither resurrects anything by itself.
+      try {
+        let m = {};
+        try { m = JSON.parse(localStorage.getItem(QUARANTINE_MANIFEST) || '{}'); } catch (e) {}
+        m[qk] = { origKey: key, at: Date.now() };
+        localStorage.setItem(QUARANTINE_MANIFEST, JSON.stringify(m));
+        localStorage.setItem(QUARANTINE_NOTICE, JSON.stringify({ key: key, at: Date.now() }));
+      } catch (e) {}
       // cap: keep the 3 most recent quarantine snapshots per key
-      const qk = [];
+      const qk2 = [];
       try {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (k && k.indexOf('scattering-save-quarantine-' + key + '-') === 0) qk.push(k);
+          if (k && k.indexOf('scattering-save-quarantine-' + key + '-') === 0) qk2.push(k);
         }
       } catch (e2) {}
-      qk.sort();
-      while (qk.length > 3) { try { localStorage.removeItem(qk.shift()); } catch (e3) {} }
+      qk2.sort();
+      while (qk2.length > 3) {
+        const drop = qk2.shift();
+        try { localStorage.removeItem(drop); } catch (e3) {}
+        try {
+          const m = JSON.parse(localStorage.getItem(QUARANTINE_MANIFEST) || '{}');
+          if (m[drop]) { delete m[drop]; localStorage.setItem(QUARANTINE_MANIFEST, JSON.stringify(m)); }
+        } catch (e4) {}
+      }
     } catch (e) {}
+  }
+  // takeQuarantineNotice: one-shot {key, at} — the title screen toasts it
+  // once ("damaged, set aside — not deleted") then it's gone.
+  function takeQuarantineNotice() {
+    try {
+      const raw = localStorage.getItem(QUARANTINE_NOTICE);
+      if (!raw) return null;
+      localStorage.removeItem(QUARANTINE_NOTICE);
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+  // listQuarantines: restorable snapshots, newest first. Manifest entries
+  // whose snapshot is gone are skipped (bounded, self-cleaning).
+  function listQuarantines() {
+    try {
+      let m = {};
+      try { m = JSON.parse(localStorage.getItem(QUARANTINE_MANIFEST) || '{}'); } catch (e) {}
+      return Object.keys(m)
+        .filter(qk => { try { return localStorage.getItem(qk) !== null; } catch (e) { return false; } })
+        .map(qk => ({ qkey: qk, origKey: m[qk].origKey, at: m[qk].at }))
+        .sort((a, b) => (b.at || 0) - (a.at || 0));
+    } catch (e) { return []; }
+  }
+  // restoreQuarantine(qkey): copy a snapshot back under its original key.
+  // Deliberate user action (debug panel) — clears the tombstone so the
+  // revived run can save again. Refuses to clobber a live save ('occupied')
+  // or restore an unparseable snapshot ('corrupt').
+  function restoreQuarantine(qkey) {
+    try {
+      let m = {};
+      try { m = JSON.parse(localStorage.getItem(QUARANTINE_MANIFEST) || '{}'); } catch (e) {}
+      const meta = m[qkey];
+      if (!meta || !meta.origKey) return false;
+      const d = localStorage.getItem(qkey);
+      if (!d) return false;
+      try { JSON.parse(d); } catch (e) { return 'corrupt'; }
+      try {
+        const cur = localStorage.getItem(meta.origKey);
+        if (cur) {
+          try { const s = JSON.parse(cur); if (s && s.version === SAVE_VERSION) return 'occupied'; }
+          catch (e) {}
+        }
+      } catch (e) {}
+      localStorage.setItem(meta.origKey, d);
+      try { localStorage.removeItem(tombstoneKey(meta.origKey)); } catch (e) {}
+      // the next listSaves() adopts the restored blob into the index
+      return true;
+    } catch (e) { return false; }
+  }
+  // Save-blob key prefix. Tombstones ('scattering-save-tombstone-…') and
+  // quarantine snapshots ('scattering-save-quarantine-…') do NOT match it.
+  const BLOB_PREFIX = 'scattering-save-v1-';
+  function scanSaveBlobs() {
+    const found = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf(BLOB_PREFIX) === 0) found.push(k);
+      }
+    } catch (e) {}
+    return found;
+  }
+  // adoptEntry: synthesize an honest index entry from a blob found on disk
+  // but missing from the index (corrupt/missing index, crashed save).
+  function adoptEntry(k, s, isStale) {
+    const rc = (s.village && s.village.rosterChars) || {};
+    const liveVid = s.villagerId || (s.scholar && s.scholar.villagerId);
+    const char = (liveVid && rc[liveVid]) || {};
+    const e = {
+      key: k,
+      runName: s.runName || null,
+      villagerId: liveVid || null,
+      villagerName: char.name || null,
+      day: s.scholar && s.scholar.day,
+      location: s.saveLocationName || s.startLocationName || null,
+      startedAt: s.startedAt || 0,
+      lastPlayed: s.startedAt || 0,
+      adopted: true,
+    };
+    if (isStale) { e.stale = true; e.staleVersion = s.version; }
+    else if (s.version !== SAVE_VERSION) e.willMigrate = true;
+    return e;
   }
   function listSaves(opts) {
     opts = opts || {};
     try {
       const raw = localStorage.getItem('scattering-saves-index');
-      const idx = raw ? JSON.parse(raw) : [];
+      // CORRUPT INDEX (break-it persistence r7 2026-10-09): the index was a
+      // single point of failure — one corrupt index blob hid every healthy
+      // save, and the next save() rebuilt the index with only its own entry,
+      // orphaning the rest on disk (invisible to the player). The index is a
+      // cache, not truth: start from [] and let the disk scan below re-adopt
+      // every healthy blob.
+      let idx = [];
+      try { idx = raw ? JSON.parse(raw) : []; } catch (e) { idx = []; }
+      if (!Array.isArray(idx)) idx = [];
       // prune orphans: dead/finished runs are wiped, their index entries shouldn't linger.
       // CORRUPT-SAVE HONESTY (break-it persistence 2026-10-08): an entry whose data
       // is unparseable or version-mismatched can never load — offering Continue for
@@ -205,13 +392,24 @@
       const prunedKeys = new Set();
       const live = idx.filter(i => {
         try {
+          // TOMBSTONED (break-it persistence r7): a tombstoned key lingering
+          // in the index (crashed wipe) is pruned — dead runs stay dead.
+          if (isTombstoned(i.key)) { prunedKeys.add(i.key); return false; }
           const d = localStorage.getItem(i.key);
           if (!d) { prunedKeys.add(i.key); return false; } // orphan: wiped elsewhere
           const s = JSON.parse(d);
           if (s && s.version === SAVE_VERSION) return true;
           if (s && typeof s.version !== 'undefined') {
-            // version-mismatched: STAYS in the index (so includeStale can
-            // surface it later), just not in the default loadable list.
+            if (hasMigrationPath(s.version)) {
+              // MIGRATABLE (break-it persistence r7): an old version with a
+              // registered path loads fine (migrates on load) — it is NOT
+              // stale. Flagged so the title screen can say "upgrades on load".
+              if (s.version !== SAVE_VERSION) i.willMigrate = true;
+              return true;
+            }
+            // version-mismatched with no path: STAYS in the index (so
+            // includeStale can surface it later), just not in the default
+            // loadable list.
             stale.push(Object.assign({}, i, { stale: true, staleVersion: s.version }));
           }
           return false;
@@ -228,10 +426,37 @@
           if (d) { try { JSON.parse(d); } catch (e) { quarantineKey(i.key); prunedKeys.add(i.key); } }
         } catch (e) {}
       }
-      if (prunedKeys.size > 0) {
+      // SELF-HEALING SCAN (break-it persistence r7 2026-10-09): adopt blobs
+      // on disk that the index doesn't know about (corrupt/missing index,
+      // crashed save). Parseable current-version (or migratable) blobs join
+      // live; version-mismatched with no path join stale; unparseable ones
+      // are quarantined (never destroyed). Tombstoned keys are skipped —
+      // dead runs stay dead.
+      let adopted = false;
+      try {
+        const known = new Set(idx.map(i => i.key));
+        for (const k of scanSaveBlobs()) {
+          if (known.has(k) || isTombstoned(k)) continue;
+          let s = null, parseable = false;
+          try { s = JSON.parse(localStorage.getItem(k)); parseable = !!(s && typeof s === 'object'); }
+          catch (e) { parseable = false; }
+          if (!parseable) { quarantineKey(k); adopted = true; continue; }
+          if (s.version === SAVE_VERSION || hasMigrationPath(s.version)) {
+            live.push(adoptEntry(k, s, false)); adopted = true;
+          } else if (typeof s.version !== 'undefined') {
+            stale.push(adoptEntry(k, s, true)); adopted = true;
+          } else {
+            quarantineKey(k); adopted = true; // no version at all: untrustworthy
+          }
+        }
+      } catch (e) {}
+      if (prunedKeys.size > 0 || adopted) {
         try {
-          localStorage.setItem('scattering-saves-index',
-            JSON.stringify(idx.filter(i => !prunedKeys.has(i.key))));
+          const rebuilt = idx.filter(i => !prunedKeys.has(i.key));
+          for (const e of live.concat(stale)) {
+            if (e.adopted && !rebuilt.some(r => r.key === e.key)) rebuilt.push(e);
+          }
+          localStorage.setItem('scattering-saves-index', JSON.stringify(rebuilt));
         } catch (e) {}
       }
       if (opts.includeStale) return live.concat(stale);
@@ -241,11 +466,18 @@
   function load(key) {
     try {
       const k = key || SAVE_KEY; // fallback to legacy single save
+      // TOMBSTONE READ PATH (break-it persistence r7 2026-10-09): a blob
+      // that somehow still exists under a tombstoned key (failed removeItem,
+      // cross-tab weirdness) must not load — dead runs stay dead.
+      if (isTombstoned(k)) return null;
       const raw = localStorage.getItem(k);
       if (!raw) return null;
       const s = JSON.parse(raw);
-      if (s.version !== SAVE_VERSION) return null;
-      return s;
+      if (s.version === SAVE_VERSION) return s;
+      // MIGRATION (break-it persistence r7 2026-10-09): old versions upgrade
+      // through registered migrations; versions with no path (or future
+      // versions) refuse — null, never corrupt, never guess.
+      return migrateSave(s);
     } catch (e) { return null; }
   }
   function wipe(key, reason) {
@@ -267,11 +499,22 @@
   function wipeAll() { try {
     // includeStale: "wipe ALL saves" means all of them, including
     // version-mismatched ones the default list hides (break-it 2026-10-09).
-    for (const i of listSaves({ includeStale: true })) localStorage.removeItem(i.key);
+    const keys = [];
+    for (const i of listSaves({ includeStale: true })) {
+      localStorage.removeItem(i.key);
+      keys.push(i.key);
+    }
+    const hadLegacy = localStorage.getItem(SAVE_KEY) !== null;
     localStorage.removeItem('scattering-saves-index');
     localStorage.removeItem(SAVE_KEY);
+    // TOMBSTONES (break-it persistence r7 2026-10-09): wipe-all must leave
+    // the same per-key tombstones wipe() does — without them a stale tab's
+    // autosave silently resurrected every wiped run (dead runs must stay
+    // dead, no matter which wipe path killed them).
+    for (const k of keys) writeTombstone(k, 'wiped-all');
+    if (hadLegacy) writeTombstone(SAVE_KEY, 'wiped-all');
   } catch (e) {} }
 
   global.Scattering = global.Scattering || {};
-  global.Scattering.state = { newState, newVillage, newScholar, newCodex, save, load, wipe, wipeAll, listSaves, saveKey, quarantineKey, SAVE_VERSION };
+  global.Scattering.state = { newState, newVillage, newScholar, newCodex, save, load, wipe, wipeAll, listSaves, saveKey, quarantineKey, SAVE_VERSION, MIGRATIONS, migrateSave, hasMigrationPath, takeQuarantineNotice, listQuarantines, restoreQuarantine };
 })(typeof window !== 'undefined' ? window : globalThis);

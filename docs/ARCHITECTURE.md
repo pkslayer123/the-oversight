@@ -59,7 +59,7 @@ Content cross-references by `id` only. The validator checks:
 
 ## Save format
 
-`localStorage['scattering-save-v1']` — versioned. `state.js` migrates old versions forward; unknown versions refuse to load (never corrupt). Village, scholars, Codex, and run state are separate sub-objects so one can reset without touching the others.
+`localStorage['scattering-save-v1']` — versioned. `state.js` runs old versions forward through its registered `MIGRATIONS` map (on load and on save); versions with no registered path are kept and surfaced as stale (never silently loaded, never destroyed); unknown/future versions refuse to load (never corrupt). Village, scholars, Codex, and run state are separate sub-objects so one can reset without touching the others. Corrupt save data is moved to a capped, dated quarantine key (with a one-shot player notice and a restore manifest) instead of being destroyed on sight.
 
 ## UI layers
 

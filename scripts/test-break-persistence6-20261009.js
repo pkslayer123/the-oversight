@@ -397,8 +397,13 @@ function saveAndReloadKey() {
   store.setItem = realSet;
   const r2 = S.state.save(st);
   const listedAfterHeal = S.state.listSaves().some(i => i.key === key);
+  // R7 BEHAVIOR CHANGE (break-it persistence r7 2026-10-09): listSaves() now
+  // self-heals — the healthy orphaned blob is adopted (listed + loadable)
+  // IMMEDIATELY on the next listSaves, not only on the next save(). The old
+  // assertion (!listedAfterFail) encoded the pre-heal gap; the save() return
+  // contract (false on index-write failure) is unchanged.
   check('T5. index-write failure: honest false, orphaned blob adopted on next save',
-    r1 === false && blobExists && !listedAfterFail && r2 === true && listedAfterHeal,
+    r1 === false && blobExists && listedAfterFail && r2 === true && listedAfterHeal,
     `save1=${r1} blob=${blobExists} listed1=${listedAfterFail} save2=${r2} listed2=${listedAfterHeal}`);
 }
 

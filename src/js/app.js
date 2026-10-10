@@ -328,9 +328,19 @@
   }
   // Save list: name, character, day, location, last played. Load or delete (two-tap confirm).
   function renderSaves(el) {
+    // QUARANTINE NOTICE (break-it persistence r7 2026-10-09): corrupt saves
+    // are set aside, never destroyed — but the expedition vanished from this
+    // list with no word. Say so honestly, once.
+    try {
+      const n = Game.takeQuarantineNotice && Game.takeQuarantineNotice();
+      if (n) toast('One saved expedition\u2019s data was damaged and was set aside (not deleted).');
+    } catch (e) {}
     // STALE-VERSION HONESTY (break-it persistence 2026-10-09): saves from an
     // older version can't load, but hiding them pretends the expedition never
     // existed. Render them greyed with an honest line instead — Delete only.
+    // MIGRATABLE (break-it persistence r7 2026-10-09): willMigrate entries
+    // have a registered upgrade path — Continue works, the save upgrades on
+    // load. Say so.
     const saves = Game.listSaves({ includeStale: true });
     if (!saves.length) { el.innerHTML = ''; return; }
     el.innerHTML = `<p class="small" style="margin:18px 0 6px;opacity:.7">SAVED EXPEDITIONS</p>` + saves.map(sv => {
@@ -347,6 +357,7 @@
       return `<div class="card" style="text-align:left">
         <h3 style="margin:0 0 4px">${esc(name)}</h3>
         <p class="small" style="margin:0 0 2px">${esc(sub)}</p>
+        ${sv.willMigrate ? '<p class="small" style="margin:0 0 2px;opacity:.6">from an older version — upgrades on load</p>' : ''}
         <p class="small" style="margin:0 0 8px;opacity:.6">last played ${fmtWhen(sv.lastPlayed)}</p>
         <button class="btn sm" data-load="${esc(sv.key)}">Continue</button>
         <button class="btn sm ghost" data-del="${esc(sv.key)}">Delete</button>
@@ -12280,16 +12291,22 @@
   // 'tombstoned' — this run's key was wiped elsewhere (death/win/delete, most
   // likely in another tab). Same once-then-quiet treatment, but the message
   // names the real reason: blaming "storage may be full" would be a lie.
+  // STALE (break-it persistence r7 2026-10-09): 'stale' means another tab
+  // saved this run newer than this tab's copy — the write was refused so it
+  // wouldn't destroy that tab's progress. Tell the player what to do (close
+  // the other tab, reload here), once, then stay quiet.
   let __saveFailToasted = false;
   setInterval(() => {
     try {
       const r = Game.save();
       if (r === true) {
         __saveFailToasted = false;
-      } else if ((r === false || r === 'tombstoned') && !__saveFailToasted) {
+      } else if ((r === false || r === 'tombstoned' || r === 'stale') && !__saveFailToasted) {
         __saveFailToasted = true;
         toast(r === 'tombstoned'
           ? "This expedition's save was ended somewhere else (another tab?) — progress since your last save is at risk."
+          : r === 'stale'
+          ? 'Another tab saved this expedition more recently — this tab paused saving so it would not overwrite that progress. Close the other tab and reload here to keep playing.'
           : 'Could not save — storage may be full. Progress since your last save is at risk.');
       }
     } catch (e) {}
@@ -15855,7 +15872,8 @@
       <button id="dbg-kill">Kill foes</button>
       <button id="dbg-endc">End combat</button></p>
       <p style="border-top:1px solid #f90;padding-top:8px"><b>SAVES</b>
-      <button id="dbg-wipeall">Wipe ALL saves</button></p>`;
+      <button id="dbg-wipeall">Wipe ALL saves</button></p>
+      <div id="dbg-quarantines"></div>`;
     document.body.appendChild(el);
     const q = (id) => el.querySelector(id);
     q('#dbg-x').onclick = () => el.remove();
@@ -15982,6 +16000,36 @@
         setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Wipe ALL saves'; } }, 3000);
       }
     };
+    // QUARANTINES (break-it persistence r7 2026-10-09): corrupt saves are set
+    // aside, never destroyed — list the snapshots here with one-tap restore
+    // (refuses to clobber a live save; clears the tombstone on restore so the
+    // revived run can save again).
+    const qzBox = q('#dbg-quarantines');
+    const renderQuarantines = () => {
+      let qs = [];
+      try { qs = Game.listQuarantines(); } catch (e) {}
+      if (!qs.length) { qzBox.innerHTML = ''; return; }
+      qzBox.innerHTML = '<p style="margin:8px 0 4px"><b>QUARANTINED SAVES</b> <span style="opacity:.6;font-size:11px">corrupt, set aside — not deleted</span></p>' +
+        qs.map(x => {
+          let when = '';
+          try { when = new Date(x.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (e) {}
+          return `<p style="margin:4px 0"><span style="font-size:12px">${esc(String(x.origKey).slice(-24))} <span style="opacity:.6">${when}</span></span><br>` +
+            `<button class="dbg-qrestore" data-q="${esc(x.qkey)}">Restore</button></p>`;
+        }).join('');
+      qzBox.querySelectorAll('.dbg-qrestore').forEach(b => {
+        b.onclick = () => {
+          let r = false;
+          try { r = Game.restoreQuarantine(b.dataset.q); } catch (e) {}
+          Game.say(r === true ? '🐞 DEBUG: quarantined save restored.'
+            : r === 'occupied' ? '🐞 DEBUG: a live save already occupies that slot — not clobbered.'
+            : r === 'corrupt' ? '🐞 DEBUG: that snapshot is unparseable — not restored.'
+            : '🐞 DEBUG: restore failed.');
+          renderQuarantines();
+          refresh();
+        };
+      });
+    };
+    renderQuarantines();
   }
   function maybeDebugButton() {
     if (!DEBUG || document.getElementById('debug-btn')) return;
