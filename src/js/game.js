@@ -4540,6 +4540,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       return {
         forage: { icon: '🌿', name: 'Forage', desc: 'Gather food from the wilds. Safe, steady.', danger: 0 },
         garden: { icon: '🌱', name: 'Garden', desc: 'Tend the garden plots and bring in the harvest. Haven work counts.', danger: 0, haven: true },
+        fish:   { icon: '🎣', name: 'Fish', desc: 'Work the creek for real fish. The water has only so many.', danger: 0 },
         hunt:   { icon: '🏹', name: 'Hunt', desc: 'Hunt animals for meat. Risky — animals fight back.', danger: 1 },
         wood:   { icon: '🪵', name: 'Gather wood', desc: 'Firewood and building wood. Safe.', danger: 0 },
         stone:  { icon: '🪨', name: 'Gather stone', desc: 'Pry loose stone from creek beds and hillsides. Building stone.', danger: 0 },
@@ -4574,6 +4575,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } else if (task === 'garden') {
         if (has('farmer', 'gardener')) mult = 1.4;
         else if (has('cook', 'herbalist', 'botanist', 'forager')) mult = 1.2;
+      } else if (task === 'fish') {
+        // FISH DUTY (bal-survival 2026-10-10): the second food leg.
+        if (has('fisherman', 'fishing guide', 'sailor')) mult = 1.4;
+        else if (has('cook', 'hunter', 'forager')) mult = 1.2;
       } else if (task === 'wood') {
         if (has('lumberjack', 'carpenter', 'logger', 'builder', 'handyman')) mult = 1.4;
         else if (has('farmer', 'firefighter')) mult = 1.2;
@@ -4617,7 +4622,16 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const vp = (this.data.villagers || []).find(v => v.id === vid)
         || (this.data.background_survivors || []).find(v => v.id === vid) || {};
       const first = this.displayName(vid);
-      if (trust < 20) {
+      // FOOD WORK (bal-survival 2026-10-10): people will work for food even
+      // when they don't fully trust you yet. Fishing the creek or tending a
+      // garden isn't a favor — it's supper. The trust gate stays for
+      // dangerous/prestige work (patrol, hunt, scout); food production asks
+      // only that you're not a stranger (trust 10+).
+      const task = ((this.state.village || {}).assignments || {})[vid];
+      const taskId = (task && task.task) || (this._assignTaskId || null);
+      const isFoodWork = taskId === 'fish' || taskId === 'garden';
+      const gate = isFoodWork ? 10 : 20;
+      if (trust < gate) {
         const lines = [
           `${first} looks at you flatly. "Why should I listen to you?" (Trust too low.)`,
           `"You haven't earned that yet," ${first} says. (Trust too low.)`,
@@ -4625,7 +4639,8 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         ];
         return { ok: false, reason: lines[Math.floor(Math.random() * lines.length)] };
       }
-      if (trust < 40 && Math.random() < 0.4) {
+      // the reluctant roll is for asking favors; food work is an offer, not an ask.
+      if (!isFoodWork && trust < 40 && Math.random() < 0.4) {
         return { ok: false, reason: `${first} hesitates, then backs off. "Not today. Sorry." (Low trust — reluctant.)` };
       }
       return { ok: true, trust };
@@ -4671,6 +4686,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const vp = (this.data.villagers || []).find(x => x.id === vid)
         /* unified: getPerson */ || {};
       const first = this.displayName(vid);
+      // (bal-survival 2026-10-10): checkObedience gates food work lower —
+      // it needs to know which task is being assigned.
+      this._assignTaskId = task;
       if (task === 'rest') {
         delete v.assignments[vid];
         this.say(`${first} rests at Haven.`);
@@ -4920,7 +4938,15 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         const plots = this.gardenPlots();
         const live = plots.filter(p => p.pid && !p.dead);
         if (!live.length) {
-          this.say(`🌱 ${first} looks over the garden: turned soil, nothing planted. Someone has to sow first.`);
+          // SOWING (bal-survival 2026-10-10): the sowing bottleneck was the
+          // player — plots sat empty while the village starved. A villager on
+          // garden duty with seed in the village stores sows it: knowledge-
+          // gated honestly (only plants the village KNOWS, L1+, gardenable
+          // forms), seed stock comes from the pantry (2 units sown, the rest
+          // stays food). Farmers/gardeners sow; others just tend.
+          let sowMsg = '';
+          try { sowMsg = this.villagerSowPlot(vid) || ''; } catch (e) {}
+          this.say(`🌱 ${first} looks over the garden: turned soil, nothing planted.${sowMsg ? ' ' + sowMsg : ' Someone has to sow first.'}`);
         } else {
           for (const p of live) { p.lastTend = gday; p.weeds = 0; }
           let kcal = 0, n = 0;
@@ -4933,6 +4959,44 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           if (kcal > 0) this.stockPantry(kcal, 'Garden harvest');
           this.say(`🌱 ${first} works the garden — watered, weeded, turned${n ? `, and brings in a harvest (+${kcal} kcal to the pantry)` : '. Nothing ripe yet'}.`);
           try { this.villagerGainXP(vid, 'field', 1, 'gardening'); } catch (e) {}
+          this.bumpTrust(vid, 1);
+        }
+      } else if (a.task === 'fish') {
+        // FISH DUTY (bal-survival 2026-10-10): the second food leg. A villager
+        // works the nearest water with real fish stock — species-honest kcal
+        // (creek_chub 200, bluegill 150), the ecology pays per fish (wildlife
+        // decrement, like the player's line and the gill nets). A fished-out
+        // creek says so honestly; the stock regrows at the ecology's pace.
+        const FISH_IDS = ['creek_chub', 'bluegill'];
+        let best = null;
+        for (let fy = 0; fy < 9; fy++) for (let fx = 0; fx < 9; fx++) {
+          const ft = this.tileAt(fx, fy);
+          if (!ft || (ft.type !== 'creek' && ft.type !== 'pond' && ft.type !== 'wetland')) continue;
+          const wl = ft.wildlife || this.backfillWildlife(ft, fx, fy, ft.type === 'pond' ? 'creek' : ft.type);
+          if (!FISH_IDS.some(id => (wl[id] || 0) > 0)) continue;
+          const fd = Math.abs(fx - 4) + Math.abs(fy - 4);
+          if (!best || fd < best.d) best = { t: ft, wl, d: fd };
+        }
+        if (!best) {
+          this.say(`🎣 ${first} walked the banks — the water's fished out. Nothing to catch. It'll come back if it rests.`);
+        } else {
+          // FISH YIELD (bal-survival 2026-10-10): a day's work with a net
+          // is 2-4 fish, not 1-3. The creek feeds people who work it —
+          // this is the honest alternative to foraging, not a trickle.
+          const takes = Math.max(1, Math.round(R(2, 4) * eff));
+          let fkcal = 0, fn = 0;
+          for (let i = 0; i < takes; i++) {
+            const avail = FISH_IDS.filter(id => (best.wl[id] || 0) > 0);
+            if (!avail.length) break;
+            const fid = avail[Math.floor(Math.random() * avail.length)];
+            best.wl[fid]--; if (best.wl[fid] <= 0) delete best.wl[fid];
+            const adef = (this.data.animals || []).find(a => a.id === fid) || { calories: 200 };
+            fkcal += Math.round((adef.calories || 200) * eff);
+            fn++;
+          }
+          if (fkcal > 0) this.stockPantry(fkcal, 'Fish catch');
+          this.say(`🎣 ${first} worked the creek — ${fn} fish, +${fkcal} kcal to the pantry.`);
+          try { this.villagerGainXP(vid, 'field', 1, 'fishing'); } catch (e) {}
           this.bumpTrust(vid, 1);
         }
       } else if (a.task === 'cook' || a.task === 'tend' || a.task === 'teach' || a.task === 'mend') {
@@ -5414,9 +5478,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     },
 
     // stripGround(t, n, opts): THE one path for taking stock off a tile.
-    // Sustainable takes cost nothing; STRIPPING (taking the last) wounds
-    // vigor 5; SCRAPING bare ground costs 2 per take. Pressure accrues like
-    // any working of the land. Returns {taken, eroded}.
+    // Sustainable takes (leaving stock behind) cost nothing and accrue no
+    // pressure — the land gives what it can spare. STRIPPING (taking the
+    // last) wounds vigor 5; SCRAPING bare ground costs 2 per take. Only
+    // strip/scrape accrue pressure: a crew that takes only the regrowth
+    // never ratchets the ground. Returns {taken, eroded}.
     // opts.byVillage: the depleter (a village object, or null for the home
     // village / the player) — feeds commons-strain bookkeeping.
     stripGround(t, n, opts) {
@@ -5426,13 +5492,21 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       for (let i = 0; i < n; i++) {
         const sb = t.stock || 0;
         if (sb > 1) { t.stock = sb - 1; taken++; }
-        else if (sb === 1) { t.stock = 0; taken++; t.vigor = Math.max(0, t.vigor - 5); eroded += 5; }
-        else { t.vigor = Math.max(0, t.vigor - 2); eroded += 2; }
+        else if (sb === 1) { t.stock = 0; taken++; t.vigor = Math.max(0, t.vigor - 5); eroded += 5; t.erodedToday = true; }
+        else { t.vigor = Math.max(0, t.vigor - 2); eroded += 2; t.erodedToday = true; }
       }
-      // the land remembers being worked: pressure + worn paths, like before
-      t.foragePressure = (t.foragePressure || 0) + 1;
+      // the land remembers being worked HARD: pressure accrues only on
+      // strip/scrape, like worn paths. Sustainable harvests leave no mark.
+      // BAL-SURVIVAL 2026-10-10: the old rule (+1 pressure per work of the
+      // land, even sustainable) was the one-way ratchet — any daily crew
+      // hit pressure 10 by day 10 and the tile died on a timer. Rest is now
+      // reachable: take the regrowth, leave the seed, the ground holds.
+      if (eroded > 0) {
+        t.foragePressure = (t.foragePressure || 0) + 1;
+        if (t.foragePressure >= 5) t.wornPath = true;
+      }
       t.foragedToday = true;
-      if (t.foragePressure >= 5) t.wornPath = true;
+      try { t.lastForageDay = (this.state.scholar || {}).day || 0; } catch (e) {}
       return { taken, eroded };
     },
 
@@ -5500,19 +5574,50 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // forage zone: which ring does this villager work? Personality-driven, not random.
     // bold pushes far for better yields (more danger). cautious stays close (safe, depletes fast).
     // This is why villages MUST expand — cautious foragers strip the home turf first.
+    // BAL-SURVIVAL 2026-10-10: the zone WIDENS as the home turf thins — scarcity
+    // pushes crews further out (the fiction's "branch out", now mechanized).
+    // A cautious forager whose ring-1 is picked over works ring 2; the widening
+    // is visible in the zone label the crew reports.
     forageZone(vid) {
       const vp = (this.data.villagers || []).find(v => v.id === vid)
         || (this.data.background_survivors || []).find(v => v.id === vid) || {};
       const temp = (vp.personality && vp.personality.temperament) || 'steady';
       // rings are Manhattan distance from haven (4,4). Ring 0 = haven itself (no forage).
-      if (temp === 'bold') return { min: 2, max: 3, label: 'far afield' };
-      if (temp === 'cautious') return { min: 1, max: 1, label: 'close to home' };
-      return { min: 1, max: 2, label: 'the near wilds' };
+      let min, max, label;
+      if (temp === 'bold') { min = 2; max = 3; label = 'far afield'; }
+      else if (temp === 'cautious') { min = 1; max = 1; label = 'close to home'; }
+      else { min = 1; max = 2; label = 'the near wilds'; }
+      try {
+        // how thin is the home zone? Widen when it can't feed the crew:
+        // fewer than 3 lush, stocked tiles in the zone (stripped bare counts
+        // — a zone with no stock is the strongest widen signal, not a guard).
+        let lushStocked = 0, forageable = 0;
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+          if (x === 4 && y === 4) continue; // haven tile
+          const dist = Math.abs(x - 4) + Math.abs(y - 4);
+          if (dist < min || dist > max) continue;
+          const t = this.tileAt(x, y);
+          if (!t || t.type === 'ruin' || !t.maxStock) continue;
+          forageable++;
+          if ((t.stock || 0) > 0 && this.depletionLevel(t) === 'lush') lushStocked++;
+        }
+        if (forageable >= 4 && lushStocked < 3 && max < 4) {
+          max += 1;
+          label += ' (ranging wider — the near ground is thinning)';
+        }
+      } catch (e) {}
+      return { min, max, label };
     },
 
-    // find forageable tiles in a villager's zone. Returns tiles with stock, nearest-first.
+    // find forageable tiles in a villager's zone. Returns tiles with stock,
+    // lushest-first (rotation: crews work the fat ground and leave thinning
+    // ground to recover), nearest as tiebreak.
+    // BAL-SURVIVAL 2026-10-10: nearest-first was the other half of the
+    // ratchet — crews farmed the same 4 close tiles to zero while lush
+    // ground stood two tiles further out. "The village must branch out"
+    // was commented but nothing made them. Now the sort does.
     forageTilesInZone(zone, count) {
-      const hx = 3, hy = 3; // haven
+      const hx = 4, hy = 4; // haven (9x9 center; the old 3,3 was a stale 8x8 leftover)
       // COMMONS DEAL (depletion 2026-10-10): a split deal is two-sided — your
       // crews keep off their turf too.
       const deals = (this.state.otherVillages || []).filter(v => v.commons && v.commons.deal === 'split');
@@ -5524,10 +5629,23 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (deals.some(v => Math.abs(x - v.x) + Math.abs(y - v.y) <= 3)) continue;
         const t = this.tileAt(x, y);
         if (!t || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
-        candidates.push({ t, x, y, dist });
+        const cap = this.tGroundCap(t);
+        const ratio = cap > 0 ? (t.stock || 0) / cap : 0;
+        candidates.push({ t, x, y, dist, ratio });
       }
-      // nearest first — they work outward from haven, stripping close tiles first
-      candidates.sort((a, b) => a.dist - b.dist);
+      // lushest first, nearest as tiebreak — rotation, not strip-mining.
+      // BAL-SURVIVAL 2026-10-10: strict lush-first made every forager pile
+      // onto the SAME lushest tiles (tragedy of the commons — the best
+      // ground died fastest). Recently-worked tiles are deprioritized, so
+      // crews spread across the zone and each tile gets rest days.
+      const day = (this.state.scholar || {}).day || 0;
+      const effRatio = (e) => {
+        let r = e.ratio;
+        if (e.t.foragedToday) r -= 0.6; // worked today: let it breathe
+        else if (day - (e.t.lastForageDay || -99) <= 1) r -= 0.3; // worked yesterday: prefer rested
+        return r;
+      };
+      candidates.sort((a, b) => (effRatio(b) - effRatio(a)) || (a.dist - b.dist));
       return candidates.slice(0, count);
     },
 
@@ -16163,9 +16281,14 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           if (t.vigor == null) t.vigor = 100;
           const pressure = t.foragePressure || 0;
           const cap = this.tGroundCap(t);
-          // VIGOR: the slow memory. Rested ground heals; worked ground
-          // doesn't; heavily pressured ground degrades further.
+          // VIGOR: the slow memory. Rested ground heals; lightly-worked ground
+          // breathes; heavily pressured ground degrades further.
+          // BAL-SURVIVAL 2026-10-10: the old gate (heal ONLY on untouched,
+          // zero-pressure ground) made rest unreachable on any worked tile —
+          // a one-way ratchet to dead ground on a ~20-day timer. Rest is now
+          // reachable: ground that wasn't stripped/scraped today heals.
           if (!t.foragedToday && pressure === 0) t.vigor = Math.min(100, t.vigor + 2);
+          else if (!t.erodedToday && pressure < 5) t.vigor = Math.min(100, t.vigor + 1);
           else if (pressure >= 8) t.vigor = Math.max(0, t.vigor - (pressure - 7));
           // STOCK: +1 every 2 days up to the vigor-capped max. Pressure slows
           // it: every 4 days at 5+, nothing at 10+. Dead ground (vigor 0)
@@ -16186,6 +16309,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // pressure decays slowly — the land forgives, eventually
           if (pressure > 0 && !t.foragedToday) t.foragePressure = Math.max(0, pressure - 1);
           t.foragedToday = false;
+          t.erodedToday = false;
         }
         // detail cells regrow: the plant you picked comes back in 3 days.
         if (t.detail && t.detailRegrow) {
@@ -16453,9 +16577,23 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
 
     // sowOptions(): seed-eligible plants in your pack — known (L1+),
     // gardenable form, 2+ units (one to eat, one to sow — seed stock).
+    // VILLAGER-GUIDED (bal-survival 2026-10-10): a gardener on garden duty
+    // knows their plants — if THEY know it (background knowledge), you can
+    // sow it under their guidance even before you've learned it yourself.
+    // The knowledge lives in the village, not just in your head.
     sowOptions() {
       const inv = (this.state.scholar || {}).inventory || [];
       const codex = (this.state.codex || {}).plants || {};
+      // garden-duty villagers whose knowledge guides your hands
+      const guides = new Set();
+      try {
+        const v = this.state.village || {};
+        for (const [vid, a] of Object.entries(v.assignments || {})) {
+          if (a && a.task === 'garden' && this.villagerKnowsPlants) {
+            for (const pid of (this.villagerKnowsPlants(vid) || [])) guides.add(pid);
+          }
+        }
+      } catch (e) {}
       const seen = {};
       const opts = [];
       for (const item of inv) {
@@ -16465,11 +16603,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         const form = plant.form;
         if (!['shoots', 'berries', 'roots'].includes(form)) continue;
         const entry = codex[item.plantId];
-        if (!entry || (entry.level || 0) < 1) continue;
+        const playerKnows = entry && (entry.level || 0) >= 1;
+        if (!playerKnows && !guides.has(item.plantId)) continue;
         const units = inv.filter(i => i.plantId === item.plantId).reduce((s, i) => s + (i.units || 1), 0);
         if (units < 2) continue;
         seen[item.plantId] = true;
-        opts.push({ pid: item.plantId, name: plant.name, form, units, growthDays: this.gardenGrowthDays(form), kcalEach: plant.caloriesPerUnit });
+        opts.push({ pid: item.plantId, name: plant.name, form, units, growthDays: this.gardenGrowthDays(form), kcalEach: plant.caloriesPerUnit, guided: !playerKnows });
       }
       return opts;
     },
@@ -16499,6 +16638,42 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // sowing teaches: working seed is knowledge
       try { this.grantKnowledge('plant', plantId, 1, { type: 'experiment', by: null }); } catch (e) {}
       return this.tickAction(16) || this.status();
+    },
+
+    // villagerSowPlot(vid): a villager on garden duty sows an empty plot.
+    // Knowledge-gated honestly: only plants THEY know (background knowledge —
+    // a gardener knows their plants), only gardenable forms. The seed is
+    // gathered as part of the duty — a gardener sent to the garden finds seed;
+    // that's the work. No pantry stock required (the pantry never holds seed).
+    // Farmers/gardeners sow; anyone else on the duty just tends. Returns a
+    // narration fragment or null when there's nothing to sow.
+    villagerSowPlot(vid) {
+      const v = this.state.village || {};
+      const plots = this.gardenPlots();
+      const plot = plots.find(p => !p.pid && !p.dead);
+      if (!plot) return null;
+      const vp = (this.data.villagers || []).find(x => x.id === vid)
+        || (this.data.background_survivors || []).find(x => x.id === vid) || {};
+      const occ = (vp.formerOccupation || '').toLowerCase();
+      const greenHands = ['farmer', 'gardener', 'botanist', 'herbalist', 'forager'].some(w => occ.includes(w));
+      if (!greenHands) return null;
+      // what does THIS gardener know? (background knowledge, not the codex)
+      const known = this.villagerKnowsPlants ? (this.villagerKnowsPlants(vid) || []) : [];
+      let best = null;
+      for (const pid of known) {
+        const plant = (this.data.plants || []).find(p => p.id === pid);
+        if (!plant) continue;
+        if (!['shoots', 'berries', 'roots'].includes(plant.form)) continue;
+        const cand = { pid, name: plant.name, kcalEach: plant.caloriesPerUnit || 0 };
+        if (!best || cand.kcalEach > best.kcalEach) best = cand;
+      }
+      if (!best) return null;
+      const day = (this.state.scholar || {}).day || 0;
+      plot.pid = best.pid; plot.plantedDay = day; plot.lastTend = day;
+      plot.lastHarvest = 0; plot.weeds = 0; plot.dead = false;
+      const first = this.displayName(vid);
+      try { this.villagerGainXP(vid, 'field', 1, 'gardening'); } catch (e) {}
+      return `${first} sowed ${best.name} in the empty plot — seed from the village stores.`;
     },
 
     // plotYieldKcal(plot): one harvest. Knowledge pays: L1 5000, +25%/level.
@@ -16583,6 +16758,42 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           }
         }
       }
+    },
+
+    // gardenNudgeTick(): the village notices the land thinning before you do.
+    // When the near grounds go thin and there's little/no garden, a farmer
+    // or gardener says so OUT LOUD (throttled: once per 5 days) — the
+    // counter-play is discoverable in-fiction, not just in the panel. They
+    // don't break ground themselves (that's the leader's call); they ask.
+    gardenNudgeTick() {
+      const v = this.state.village || {};
+      const day = (this.state.scholar || {}).day || 0;
+      if ((v.gardenNudgeDay || 0) + 5 > day) return;
+      if (this.gardenPlots().length >= 2) return;
+      // how thin is the near ground? rings 1-2 of haven (4,4)
+      let stocked = 0, thin = 0;
+      for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+        if (x === 4 && y === 4) continue;
+        const dist = Math.abs(x - 4) + Math.abs(y - 4);
+        if (dist < 1 || dist > 2) continue;
+        const t = this.tileAt(x, y);
+        if (!t || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
+        stocked++;
+        if (this.depletionLevel(t) !== 'lush') thin++;
+      }
+      if (stocked < 3 || thin / stocked <= 0.5) return;
+      const farmer = (v.roster || []).find(rid => {
+        if (rid === this.villagerId) return false;
+        const p = (this.data.villagers || []).find(x => x.id === rid)
+          || (this.data.background_survivors || []).find(x => x.id === rid) || {};
+        const occ = (p.formerOccupation || '').toLowerCase();
+        return ['farmer', 'gardener', 'botanist', 'herbalist'].some(w => occ.includes(w));
+      });
+      if (!farmer) return;
+      v.gardenNudgeDay = day;
+      if (!this.playerAtHaven || !this.playerAtHaven()) return;
+      const first = String(this.displayName(farmer)).split(' ')[0];
+      this.say(`🌱 ${first} pulls you aside, dirt under their nails. "The near ground is thinning — I've watched this happen before. Break ground behind the hall and I'll sow it. We can't forage our way out of this one." (Make a garden plot at Haven, then sow seed.)`);
     },
 
     // ============ ALIVE: monsters are animals (alien ones) ============
@@ -22774,8 +22985,15 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const healthFactor = health / 100;
       // TRUST: they share food when they trust you. strangers hoard.
       // trust 0-30: 20% shared. 30-60: 50%. 60-80: 80%. 80+: all.
+      // CRISIS SHARING (bal-survival 2026-10-10): when the pantry is nearly
+      // empty, people share more — hunger is a better motivator than trust.
+      // The village pulls together when it has to.
       const trust = (v.trust && v.trust[vid] !== undefined) ? v.trust[vid] : 10;
-      const trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
+      let trustFactor = trust < 30 ? 0.2 : trust < 60 ? 0.5 : trust < 80 ? 0.8 : 1.0;
+      try {
+        const pantryKcal = ((v.pantry || [])).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
+        if (pantryKcal < 5000) trustFactor = Math.min(1.0, trustFactor * 2);
+      } catch (e) {}
       // VILLAGER GRIT (Steve 2026-10-09): production from identity — no flat
       // percentages.
       // HAVEN CREDIT (break-it food 2026-10-09): haven-role work is LEDGER
@@ -23723,20 +23941,28 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // rumors, summons, or raids. The garden's daily tick lives here too.
       try { this.commonsTick(); } catch (e) {}
       try { this.gardenTick(); } catch (e) {}
+      try { this.gardenNudgeTick(); } catch (e) {}
       // JACKPOT: rare knowledgeable stranger. "Occasionally you hit a vein."
       try { this.maybeJackpotStranger(); } catch (e) {}
       // SOCIAL SIMMER: old wounds surface slowly. The village has a life you only partly see.
       this.socialSimmer();
-      // depletion: every 5 days, the easy food is gone. the land gets tired.
-      if (this.state.scholar.day % 5 === 0) {
+      // depletion: the easy food thins over the weeks. the land gets tired.
+      // BAL-SURVIVAL 2026-10-10: was every 5 days down to a floor of 1 — a
+      // timer, not pressure. By day 10 every tile was a 1-stock strip-mine
+      // whether anyone had foraged it or not, and assigned forage crews
+      // produced scraps through the 0.3 fallback. The easy food still thins
+      // (3-stock groves become 2-stock), but the floor is 2: sustainable
+      // takes stay possible and the clock no longer kills the forage economy
+      // by itself. Harvest pressure (stripGround/vigor) does the real work.
+      if (this.state.scholar.day % 7 === 0) {
         for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
           const t = this.tileAt(x, y);
-          if (t.type !== 'haven' && t.type !== 'ruin' && t.maxStock > 1) {
+          if (t.type !== 'haven' && t.type !== 'ruin' && t.maxStock > 2) {
             t.maxStock -= 1;
             t.stock = Math.min(t.stock, t.maxStock);
           }
         }
-        this.say('The land is getting tired. The easy food is gone.');
+        this.say('The land is getting tired. The easy food is thinning.');
       }
       if (this.villageLost) { return this.status(); } // no home to return to
       if (this.over) { this.returnToVillage(); return this.status(); }
@@ -24172,10 +24398,17 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             varmor = S.equipment.armorOf(vp, this.data.items);
           }
         } catch (e) {}
+        // ALLY HP (bal-survival 2026-10-10): villagers fight beside you at
+        // their REAL health (v.health, 100-scale like fieldFight) — not the
+        // legacy 30 HP placeholder from the original combat build. Two
+        // hushwolf hits no longer delete a healthy adult. The danger stays
+        // (monsters still hit just as hard); the unfairness leaves.
+        const vhpCur = ((this.state.village || {}).health || {})[rid];
+        const vhp = Math.max(1, Math.round(vhpCur !== undefined ? vhpCur : 100));
         fighters.push({
           key: 'v_' + rid, kind: 'villager', villagerId: rid,
           name: this.displayName(rid), emoji: '🧍',
-          hp: 30, maxHp: 30, speed: 3, mx: pos.mx, my: pos.my,
+          hp: vhp, maxHp: Math.max(vhp, 100), speed: 3, mx: pos.mx, my: pos.my,
           alive: true, fled: false, ai, helped: false,
           wbonus: vwbonus, varmor: varmor,
         });

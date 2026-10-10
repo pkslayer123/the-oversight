@@ -154,10 +154,17 @@ console.log('== 2. REGROWTH (slow vigor, slower stock) ==');
   const v0 = t.vigor;
   Game.regrowTiles();
   ok('rested vigor heals +2/day', t.vigor === v0 + 2, `vigor ${v0}->${t.vigor}`);
-  // pressured ground does not heal vigor
-  t.foragedToday = true;
+  // BAL-SURVIVAL 2026-10-10: rest is reachable now. Lightly-worked ground
+  // (foraged but not stripped/scraped) breathes +1/day; only stripped ground
+  // skips the heal on the day it was stripped. The old "worked ground never
+  // heals" gate was the one-way ratchet.
+  t.foragedToday = true; t.erodedToday = false; t.foragePressure = 2;
   Game.regrowTiles();
-  ok('worked ground does not heal', t.vigor === v0 + 2, `vigor=${t.vigor}`);
+  ok('lightly-worked ground heals +1', t.vigor === v0 + 3, `vigor=${t.vigor}`);
+  t.erodedToday = true;
+  const vE = t.vigor;
+  Game.regrowTiles();
+  ok('stripped ground does not heal the same day', t.vigor === vE, `vigor=${t.vigor}`);
   // heavy pressure wounds further
   t.foragePressure = 9; t.foragedToday = false;
   const v1 = t.vigor;
@@ -222,7 +229,7 @@ console.log('== 4. DAYS-TO-PRESSURE (forager-heavy village, 30d) ==');
     if (/forag/i.test(name || '')) forageKcal += kcal;
     return _origStock.call(this, kcal, name, opts);
   };
-  const income = [], pantry = [];
+  const income = [], pantry = [], vigorCurve = [];
   const DAYS = 30;
   for (let d = 1; d <= DAYS; d++) {
     Game.state.scholar.day = d;
@@ -235,15 +242,23 @@ console.log('== 4. DAYS-TO-PRESSURE (forager-heavy village, 30d) ==');
     Game.state.scholar.day = d + 1;
     income.push(forageKcal);
     pantry.push(Math.round(Game.pantryKcalLive(v)));
+    let mv = 100;
+    for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+      const t = Game.tileAt(x, y);
+      if (t && t.maxStock && Math.abs(x - 4) + Math.abs(y - 4) <= 4) mv = Math.min(mv, t.vigor == null ? 100 : t.vigor);
+    }
+    vigorCurve.push(Math.round(mv));
   }
   Game.stockPantry = _origStock;
   const w1 = income.slice(0, 7).reduce((a, b) => a + b, 0) / 7;
-  let pressureDay = -1;
-  for (let d = 7; d < income.length; d++) {
-    if (income[d] < w1 * 0.6) { pressureDay = d + 1; break; }
-  }
-  console.log(`  week1 avg ${Math.round(w1)}/day, pressure day ${pressureDay}, pantry ${pantry[0]}->${pantry[pantry.length - 1]}`);
-  ok('pressure lands day 14-21 (not instant, not never)', pressureDay >= 14 && pressureDay <= 21, 'day ' + pressureDay);
+  // BAL-SURVIVAL 2026-10-10: rotation makes daily income oscillate (crews
+  // rest tiles, then work them) — a single-day dip is not pressure. The
+  // slow memory is vigor: it must erode GRADUALLY under the stress scenario
+  // (not instant, not never).
+  console.log(`  week1 avg ${Math.round(w1)}/day, vigor d7=${vigorCurve[6]} d14=${vigorCurve[13]} d20=${vigorCurve[19]}, pantry ${pantry[0]}->${pantry[pantry.length - 1]}`);
+  ok('week-1 forage income healthy (not instant pressure)', w1 > 3000, 'w1=' + Math.round(w1));
+  ok('vigor erodes gradually, not instantly (d7 minVigor > 65)', vigorCurve[6] > 65, 'd7=' + vigorCurve[6]);
+  ok('vigor erodes for real, not never (d20 minVigor < 85)', vigorCurve[19] < 85, 'd20=' + vigorCurve[19]);
   ok('no starvation before day 14 (pantry survives pressure onset)', pantry[13] > 0, 'pantry d14=' + pantry[13]);
   // vigor actually eroded (the slow memory did work)
   let minVigor = 100;
