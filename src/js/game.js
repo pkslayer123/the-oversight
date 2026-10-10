@@ -24990,7 +24990,11 @@
           const r = effP / (effP + 20);
           const absorb = Math.min(final - 1, Math.round(final * r));
           final = final - absorb;
-          this.say(`Armor absorbs ${absorb}.`);
+          // HONESTY (break-it combat r8 2026-10-09): don't narrate a 0 —
+          // "Armor absorbs 0." reads like a broken promise, not a mechanic
+          // (chip hits vs real protection). The monster-hide block below
+          // already gates on absorbed > 0; same rule here.
+          if (absorb > 0) this.say(`Armor absorbs ${absorb}.`);
         }
       }
       // EQUIPMENT (Steve 2026-10-06): villagers' worn armor absorbs too.
@@ -25007,7 +25011,9 @@
           const r = effP / (effP + 20);
           const absorb = Math.min(final - 1, Math.round(final * r));
           final = final - absorb;
-          this.say(`${t.name}'s gear absorbs ${absorb}.`);
+          // HONESTY (break-it combat r8 2026-10-09): same as the player
+          // block — a 0-absorb chip hit doesn't get an absorption line.
+          if (absorb > 0) this.say(`${t.name}'s gear absorbs ${absorb}.`);
         }
       }
       // PHASE BLADE (alien loot): ignores armor — the sealed shell might as
@@ -25365,19 +25371,24 @@
       f.terraformFelt[t] = true;
       // HONESTY (break-it combat 2026-10-09, sibling sweep): armor/dodge can
       // reduce these. Resolve first, state what landed.
+      // HONESTY (break-it combat r8 2026-10-09): stepping ONTO the terrain
+      // is unavoidable contact — you can't slip aside from the ground you're
+      // standing on (same rule as the tick's latched feed: undodgeable).
+      // The dodge branch was also a risk-free agi farm: ping-ponging two
+      // paper tiles for +1 agi practice per dodged step, zero damage.
       if (t === 'paper') {
-        const landed = this.tbDamage('p', 1, 'paper cuts', null, { quiet: true });
-        this.say(first ? `Paper cuts! The fine print bites. (${landed})` : `Paper cuts. (${landed})`);
+        const landed = this.tbDamage('p', 1, 'paper cuts', null, { quiet: true, undodgeable: true });
+        if (landed > 0) this.say(first ? `Paper cuts! The fine print bites. (${landed})` : `Paper cuts. (${landed})`);
       } else if (t === 'claimed') {
-        const landed = this.tbDamage('p', 1, 'leased ground', null, { quiet: true });
-        this.say(first ? `The ground is LEASED — it rejects you. (${landed}) The signs mean it.` : `Leased ground. (${landed})`);
+        const landed = this.tbDamage('p', 1, 'leased ground', null, { quiet: true, undodgeable: true });
+        if (landed > 0) this.say(first ? `The ground is LEASED — it rejects you. (${landed}) The signs mean it.` : `Leased ground. (${landed})`);
       } else if (t === 'shadowed') {
         // THE MODERATOR (Steve 2026-10-06): shadowban field rejects you.
-        const landed = this.tbDamage('p', 2, 'shadowbanned ground', null, { quiet: true });
-        this.say(first ? `The shadowbanned ground rejects you. (${landed}) The black field is the tell — get out of it.` : `Shadowbanned ground. (${landed})`);
+        const landed = this.tbDamage('p', 2, 'shadowbanned ground', null, { quiet: true, undodgeable: true });
+        if (landed > 0) this.say(first ? `The shadowbanned ground rejects you. (${landed}) The black field is the tell — get out of it.` : `Shadowbanned ground. (${landed})`);
       } else {
-        const landed = this.tbDamage('p', 1, 'scorched earth', null, { quiet: true });
-        this.say(first ? `The scorched earth burns your feet. (${landed})` : `Scorched ground. (${landed})`);
+        const landed = this.tbDamage('p', 1, 'scorched earth', null, { quiet: true, undodgeable: true });
+        if (landed > 0) this.say(first ? `The scorched earth burns your feet. (${landed})` : `Scorched ground. (${landed})`);
       }
       return 1;
     },
@@ -26488,11 +26499,20 @@
           m.mosqPhase = 'drink'; setP('drink');
           const dmg = S.combat.roll(atk.damage || [10, 16]);
           const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Drink'));
-          this.say(`It lands on you \u2014 the proboscis slides in. (${landed} damage)`);
-          this.audioEvent('mosquitoDrink');
-          if (landed > 0 && foe.kind === 'player') this.mosquitoBiteVirus();
-          m.mosqPhase = 'heavy'; m.mosqHeavyTurns = 2; setP('heavy');
-          this.say('It lifts off heavy and slow, drunk on blood. Now \u2014 while it\'s heavy!');
+          // HONESTY (break-it combat r8 2026-10-09): a dodged drink is a
+          // MISS - the old code still said "the proboscis slides in" and
+          // still went heavy ("drunk on blood") on 0 damage, handing a free
+          // punish window. Missed drink: back to circling, same as the
+          // wobbled-dive miss path. It only gets heavy when it drinks.
+          if (landed > 0) {
+            this.say(`It lands on you \u2014 the proboscis slides in. (${landed} damage)`);
+            this.audioEvent('mosquitoDrink');
+            if (foe.kind === 'player') this.mosquitoBiteVirus();
+            m.mosqPhase = 'heavy'; m.mosqHeavyTurns = 2; setP('heavy');
+            this.say('It lifts off heavy and slow, drunk on blood. Now \u2014 while it\'s heavy!');
+          } else {
+            m.mosqPhase = 'circle'; setP('circle');
+          }
           this.tbLearnPattern(m);
         } else {
           m.mosqPhase = 'circle'; setP('circle');

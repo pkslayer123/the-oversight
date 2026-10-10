@@ -125,7 +125,9 @@
                   (this.data.background_survivors || []).find(function (x) { return x.id === vid; })) || {};
         // RANGED COUNTS (2026-10-09): off-screen fights have no grid, so
         // range is meaningless — a spear is a spear. Melee + ranged both
-        // contribute, same as threatLevel sums them.
+        // contribute, halved like the tactical engine's "helpers, not heroes"
+        // rule (wb = round((melee+ranged)/2)). threatLevel sums the two
+        // WITHOUT halving — that's a threat rating, not a damage formula.
         if (S.equipment && S.equipment.weaponBonusOf)
           wb = Math.round(((S.equipment.weaponBonusOf(vp, this.data.items, 'melee') || 0) +
                            (S.equipment.weaponBonusOf(vp, this.data.items, 'ranged') || 0)) / 2);
