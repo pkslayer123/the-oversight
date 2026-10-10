@@ -791,7 +791,7 @@ Character progression. XP, levels, abilities.
 - feast_surge_gate: 3 abilities at L3 (code: progression.js — channelSentiment; was all-maxed, unwalkable per 2026-10-09 audit)
 - arc2_deed: true (code: progression.js — checkArc requires breadth>=6 or a held contest; the beat text is honest again)
 - arc3_crucible: 2 crisis kinds (code: progression.js — checkArc; grave-first runs get the acknowledgment line)
-- arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs 3+ distinct wave-3+ monsters fought incl. 1 wave-4+, 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept)
+- arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs EVERY wave fought (5/5/4/3/2 distinct per wave 1-5), 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept; retuned 2026-10-10 for the ~100-day target)
 - sentiment_at_60: true (code: progression.js — slotMoment(60); was 80)
 - audience_encore: true (code: progression.js — checkAudienceEncore, recurring post-40 trials)
 
