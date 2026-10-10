@@ -163,15 +163,31 @@ function instrumentParity(Game) {
   // corruption: npc cannibalism vs player cannibalism (eatCannibal)
   wrap('npcCannibalTick', function () { C.corruption.villager++; });
   wrap('eatCannibal', function () { C.corruption.player++; });
-  // disease: applyStatus is the single application path — tag by target.
-  // contractDisease is the player-only wrapper.
+  // disease: applyStatus is the single application path for the PLAYER.
+  // Villagers run their own v.sick pipeline (villagerFoodPoisoning,
+  // villageSicknessTick) with parity dice — count both sides honestly.
   wrap('applyStatus', function (G, a) {
     try {
       const target = a[0];
       if (target === 'scholar' || target === G.villagerId) C.disease.player++;
-      else if (typeof target === 'string' && target) C.disease.villager++;
     } catch (e) {}
   });
+  wrap('villagerFoodPoisoning', function (G, a) {
+    try {
+      const r = a[0]; // returns new cases; count at exit instead
+    } catch (e) {}
+  });
+  (function () {
+    const orig = Game.villagerFoodPoisoning;
+    if (typeof orig === 'function') {
+      Game.villagerFoodPoisoning = function (...args) {
+        const n = orig.apply(this, args);
+        try { C.disease.villager += (n || 0); } catch (e) {}
+        return n;
+      };
+    }
+  })();
+  wrap('villageSicknessTick', function () { C.disease.villagerTicks = (C.disease.villagerTicks || 0) + 1; });
   // trade: river trader + link trade ticks
   wrap('tradeRiverTrader', function () { C.trade++; });
   wrap('tradeTick', function () { C.trade++; });

@@ -9,12 +9,21 @@ function socialDaily(Game, ctx) {
   try {
     const vv = Game.state.village || {};
     const roster = (vv.roster || []).filter(id => id !== Game.villagerId);
-    // talk to several villagers per day
+    // talk to several villagers per day — and actually TAKE the conversation
+    // choices (agency:ask_expedition etc.), so villager teaching paths fire.
     if (Game.talkTo && roster.length) {
       const n = Math.min(roster.length, 3);
       for (let i = 0; i < n; i++) {
         const vid = roster[Math.floor(Math.random() * roster.length)];
-        try { Game.talkTo(vid); } catch (e) {}
+        try {
+          Game.talkTo(vid);
+          let choices = [];
+          try { choices = Game.convoChoices(vid) || []; } catch (e) {}
+          const agency = choices.find(c => c && c.id && String(c.id).indexOf('agency:') === 0);
+          if (agency && Game.convoTurn) {
+            try { Game.convoTurn(vid, agency.id); ctx.socialLessons = (ctx.socialLessons || 0) + 1; } catch (e) {}
+          }
+        } catch (e) {}
         try { Game.endConvo(vid, 'left'); } catch (e2) {}
         ctx.socialTalks = (ctx.socialTalks || 0) + 1;
       }
