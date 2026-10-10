@@ -168,7 +168,10 @@ function check(name, cond, detail) {
       check('a knowing gardener exists (seed-dependent)', false, 'no gardener knows a gardenable plant');
     } else {
       const msg = Game.villagerSowPlot(farmer);
-      check('gardener sows a plant they know', !!msg && ht.plots[0].pid === farmerPid, msg || 'null');
+      // the gardener sows their most valuable known gardenable plant (best by
+      // kcal), which may not be the first gardenable name in the test's list
+      const known = Game.villagerKnowsPlants ? (Game.villagerKnowsPlants(farmer) || []) : [];
+      check('gardener sows a plant they know', !!msg && known.includes(ht.plots[0].pid), (msg || 'null') + ' pid=' + ht.plots[0].pid);
       // non-gardener does not sow
       ht.plots.push({ pid: null, plantedDay: 0, lastTend: 0, lastHarvest: 0, weeds: 0, dead: false });
       const nonGreen = (v.roster || []).find(rid => {
