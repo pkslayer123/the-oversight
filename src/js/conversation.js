@@ -36,6 +36,8 @@
 //   - convoThreadAbout(vid, tid, label)
 //   - convoCloseLine(vid)
 //   - convoLapseLine(vid)
+//   - convoPendingQDodge(vid) -> lapse line | null
+//   - convoHeldAskDodge(vid)
 // rules:
 //   - compare_maps: choiceId 'compare_maps' merges their visited tiles into your shared map knowledge (code: convoTurn, via Game.compareMaps)
 //   - transcript_cap: 200 entries (code: conversation.js, convoTurn push sites)
@@ -52,6 +54,7 @@
 //   - thread_lifecycle: open threads older than 14 days lapse into a remembered lapsed list (never silently deleted); resuming a lapsed topic gets an honest nod, and a hanging thread that gets discussed earns its closing beat at goodbye (code: convoTopicLedger/convoCloseLine/convoLapseLine, Steve 2026-10-07)
 //   - resume_honest_time: the resume opener names how long the thread hung (a 12-day-old thread is not "last time") and nods at other hanging threads so none feel orphaned (code: convoResumeOpener, Steve 2026-10-07)
 //   - goodbye_once_real: endConvo is a no-op on an inactive conversation (no repeat-call trust payouts); the talk stipend scales with exchanges (0=none, 1-2=+1, 3+=+3) and the mood residue (talk-capped at 40 like the stipend — words only go so far, r8 2026-10-09) lingers only after 3+ exchanges in a SUBSTANTIVE conversation (c.substantive set by the convoTurn wrapper / convoMarkSubstantive — agree-spam must not smuggle trust past the 40 talk cap) (code: endConvo, break-it 2026-10-08)
+//   - question_dodge_lapse: a hanging bespoke question dodged with silence gets one noticed follow-up, then lapses honestly (same convention as dodged generic questions) — a lapsed question unblocks the winddown (!c.pendingQ gate); a queued-but-unrevealed question stonewalled twice is dropped unspoken (the moment passes, askedQs marked so it isn't re-queued) (code: convoPendingQDodge/convoHeldAskDodge, socialite r12 2026-10-10)
 // consumes:
 //   - village.villagers
 //   - state.convos
@@ -3106,6 +3109,12 @@
       c.teachSkill = null; c.learnedOnce = false; c.learnedWhat = null;
       c.over = false; c.offeredHelp = false; c.askedTopics = [];
       c.qCount = 0; c.theorized = [];
+      // PENDINGQ DODGE-LAPSE (socialite r12 2026-10-10): counts consecutive
+      // silence-dodges of a hanging bespoke question (see convoPendingQDodge).
+      c.pendingQDodges = 0;
+      // HELDASK DODGE (socialite r12 2026-10-10): counts silence-dodges while
+      // a question sits queued-but-unrevealed (see convoHeldAskDodge).
+      c.heldAskDodges = 0;
       // SUBSTANCE (socialite break-it 2026-10-08): per-conversation flag —
       // set by the convoTurn wrapper (convo-dialogue.js) when the player
       // makes any non-acknowledgment choice. The uncapped mood residue in
@@ -3258,6 +3267,67 @@
       return wdChoices;
     },
 
+    // convoPendingQDodge: silence-dodge handling for a hanging BESPOKE
+    // question (socialite r12 2026-10-10). Returns a lapse line when the
+    // question lapses (the caller replaces the turn's line with it), or null.
+    // Convention mirrors the generic-question dodge path: one noticed
+    // follow-up (queued as a held beat, revealed via the continuer), then an
+    // honest lapse. A lapsed question is asked, not forgotten — askedQs was
+    // marked at queue time, so it won't be re-asked this conversation. The
+    // lapse clears pendingQ, which unblocks the natural winddown (!c.pendingQ
+    // gate) — one unanswered question no longer defeats the energy budget.
+    convoPendingQDodge(vid) {
+      const c = this.convoGet(vid);
+      if (!c || !c.pendingQ) return null;
+      c.pendingQDodges = (c.pendingQDodges || 0) + 1;
+      if (c.pendingQDodges === 1) {
+        const fup = this.convoPickCycle(vid, 'pendingq_fup', [
+          '"Hey — I asked you something. You don\'t have to answer, but say something."',
+          '"Did you hear me? It\'s alright if you\'d rather not say."',
+          '"...You\'re not going to answer, are you."',
+        ]) || '"Did you hear what I asked?"';
+        (c.heldBeats = c.heldBeats || []).push({ text: fup, pendingqFup: true });
+        return null;
+      }
+      // Second dodge: lapse honestly. Drop any stale follow-up beats first —
+      // "forget I asked" must not be followed by "did you hear me?".
+      c.heldBeats = (c.heldBeats || []).filter(hb => !hb.pendingqFup);
+      c.pendingQ = null;
+      const lapse = this.convoPickCycle(vid, 'pendingq_lapse', [
+        '"...Alright. Forget I asked."',
+        '"Never mind — wasn\'t important."',
+        '"Okay. Your business is your business."',
+      ]) || '"Forget I asked."';
+      return lapse;
+    },
+
+    // convoHeldAskDodge: silence-dodge handling for a QUEUED-but-unrevealed
+    // question (socialite r12 2026-10-10). Same bug class as the pendingQ
+    // hang: a queued ask beat sets heldAsk, which gates the natural winddown
+    // (!c.heldAsk) — stonewalling with silence kept the beat queued forever
+    // and the conversation never wound down (the continuer was offered every
+    // turn, but nothing forced the issue). After 2 silence-dodges the moment
+    // passes: the queued ask beats are dropped and heldAsk clears. No lapse
+    // line is owed — the question was never spoken, so the fiction stays
+    // coherent by simply never asking. Dropped questions are marked in
+    // askedQs so the same question isn't re-queued two turns later (the
+    // village-wide note landed at queue time already).
+    convoHeldAskDodge(vid) {
+      const c = this.convoGet(vid);
+      if (!c || !c.heldAsk || c.pendingQ) return;
+      c.heldAskDodges = (c.heldAskDodges || 0) + 1;
+      if (c.heldAskDodges < 2) return;
+      const beats = c.heldBeats || [];
+      for (const hb of beats) {
+        if (hb && hb.ask && hb.ask.id && c.askedQs.indexOf(hb.ask.id) === -1) {
+          c.askedQs.push(hb.ask.id);
+        }
+      }
+      c.heldBeats = beats.filter(hb => !(hb && hb.ask));
+      c.heldAsk = (c.heldBeats || []).some(hb => hb && hb.ask);
+      c.heldAskDodges = 0;
+    },
+
     convoTurn(vid, choiceId) {
       const c = this.convoGet(vid);
       if (!c.active) return null;
@@ -3300,6 +3370,7 @@
           // question would be answering blind.
           if (hb.ask) {
             c.pendingQ = hb.ask;
+            c.pendingQDodges = 0;
             c.qCount = (c.qCount || 0) + 1;
             if (c.askedQs.indexOf(hb.ask.id) === -1) c.askedQs.push(hb.ask.id);
             try { this.noteAskedQ(hb.ask.id); } catch (e) {}
@@ -3967,6 +4038,17 @@
         // SCENE (Phase 2): through the resolver.
         if (ms.shift) this.resolveConsequence(vid, { mood: ms.shift, temper: 'neutral', name: 'silence' });
         done(ms.line, '(say nothing)');
+        // PENDINGQ DODGE (socialite r12 2026-10-10): silence never answers a
+        // hanging bespoke question — without this hook the question hung
+        // forever and its !c.pendingQ winddown gate defeated the energy
+        // budget indefinitely (measured: 40 turns, budget 3, never wound
+        // down). One noticed follow-up, then an honest lapse — the same
+        // convention dodged generic questions already get (GQ_FOLLOWUP /
+        // GQ_LAPSE). The lapse replaces this turn's line so the fiction
+        // stays coherent: they notice the silence, then let it go.
+        const _pqdLapse = this.convoPendingQDodge(vid);
+        if (_pqdLapse) done(_pqdLapse, '(say nothing)');
+        else this.convoHeldAskDodge(vid);
         }
       } else if (choiceId === 'subject') {
         // Change the subject — but LET THE PLAYER PICK, not a random jump.
@@ -4030,6 +4112,7 @@
       if (extraQ) {
         c.heldBeats.push({ text: extraQ.q, ask: extraQ });
         c.heldAsk = true;
+        c.heldAskDodges = 0;
       }
       // extraLine: the follow-up beat after an answer queues — the thought
       // continues on the continuer, or goes unspoken if the player moves on.
@@ -4136,6 +4219,7 @@
             try { this.noteAskedQ(qd.id); } catch (e) {}
             c.heldBeats.push({ text: qd.q, ask: qd });
             c.heldAsk = true;
+            c.heldAskDodges = 0;
             // The answer and their question stay SEPARATE transcript entries —
             // never mashed into one line. Reading back feels like dialogue.
           }
