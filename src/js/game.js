@@ -19372,10 +19372,33 @@
         // scholar.health directly (phantom mid-fight, erased at tbEnd).
         // Sleep already refuses mid-fight; rest does too.
         if (this.inCombat && this.inCombat()) { this.say('Not in the middle of a fight.'); return false; }
+        // COLD SNAPS BITE REST TOO (survivalist loop 2026-10-10, r5): rest()
+        // had no cold-exposure check, so a hostile player rested through cold
+        // nights instead of sleeping — full +30 energy and +5 healing for the
+        // same 96 ticks a sleeper pays -18 health / no-heal / energy-60 for,
+        // and the nightfall bite's "energy won't rise past 40 tonight" was a
+        // lie the moment you rested (40+30=70). The shivering never stops: no
+        // tissue rebuilds while you're losing heat, and you can't rest your
+        // way warm. Fire, the hall, or the tent are still the answers —
+        // nearFire and shelteredFromSky exempt, cold_blooded budgets through
+        // like the day shiver tax. (Design call: rest keeps its 96t/40kcal
+        // cost — the cold doesn't make rest free, it makes it unrecovering.)
+        let coldShiver = false;
+        try {
+          let atHavenR = this.location === 'haven';
+          const rt = this.playerTile();
+          if (rt && rt.type === 'haven') atHavenR = true;
+          coldShiver = this.state.weather === 'cold' && !atHavenR &&
+            !this.shelteredFromSky() && !this.nearFire() && !this.hasAbility('cold_blooded');
+        } catch (e) {}
         // RELIC — second_skin: no blisters, no misery. Energy returns faster.
         const restMult = S.modifiers.resolve(1, 'rest.energy', S.modifiers.collectModifiers(scholar, this.data.abilities, this.data.synergies), {});
         const restGain = Math.round(30 * restMult);
-        scholar.energy = Math.min(100, scholar.energy + restGain);
+        // While shivering, rest can't take you above 40 — but it never drags
+        // you down either (the nightfall bite already did its clamping).
+        scholar.energy = coldShiver
+          ? Math.max(scholar.energy, Math.min(40, scholar.energy + restGain))
+          : Math.min(100, scholar.energy + restGain);
         // METABOLIC CRISIS (survivalist loop 2026-10-08): mirrors sleep()'s
         // crisis rule — a body running on empty does not rebuild tissue.
         // Without this, a hydrated starving player rest-looped +10..+30
@@ -19384,14 +19407,16 @@
         // Breath still steadies (energy), so a starving player can always
         // rest up for the walk to food — no softlock. Wounds need fuel first.
         const crisis = (scholar.kcal || 0) <= 0 || (scholar.hydration || 0) <= 0;
-        if (!crisis) {
+        if (!crisis && !coldShiver) {
           // triage: practiced hands heal more, even resting.
           scholar.health = Math.min(this.maxHealth(), scholar.health + Math.round(this.modTarget('healing.amount', 5)));
         }
         scholar.kcal = Math.max(0, (scholar.kcal || 0) - S.calories.ACTION_COSTS.rest);
         // COST HONESTY: rest burns 96 ticks + the ACTION_COSTS.rest kcal — most
         // of the day part. The message names both so rest feels earned, not stolen.
-        msg = crisis
+        msg = coldShiver
+          ? `You huddle and try to rest through most of the ${DAY_PARTS[this.dayPart] || 'day'} — but the cold snap won't let go. Shivering the whole time, no real recovery. (-${S.calories.ACTION_COSTS.rest} kcal — the work happened; the cold kept the recovery. No healing while exposed in the cold, energy can't rise past 40. Fire, the hall, or your tent.)`
+          : crisis
           ? `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy — but your body has nothing to rebuild with. (No healing while starving or dehydrated: eat and drink first.)`
           : `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy. (-${S.calories.ACTION_COSTS.rest} kcal — rest burns fuel too.)`;
       } else if (kind === 'wait') {
