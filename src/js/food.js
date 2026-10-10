@@ -469,8 +469,10 @@
       it.diseaseRisk = Object.assign({}, RISK.rawMeat);
       // TRICHINOSIS (disease rework 2026-10-09): bear and boar carry it.
       // Only cooking through (foodState 'cooked') kills it — smoking won't.
+      // `from` rides along so later transforms (pemmican) and the pack
+      // marker can name the vector knowledge-gated (hunter break-it r3).
       if (['black_bear', 'wild_boar', 'javelina'].includes(meatId)) {
-        it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25 };
+        it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25, from: meatId };
       }
       // TICKS (Steve 2026-10-09): deer carry them — but these are the tiny
       // ambient kind, not the alien monster. One may latch on (the attached-
@@ -786,6 +788,17 @@
         // indices go stale the moment a splice shifts the array (see
         // pemmicanPlan). indexOf resolves the live position per pick, so a
         // set can never eat a later set's fresh pemmican or a neighbor stack.
+        // TRICHINOSIS (hunter break-it 2026-10-10): pemmican is pounded, not
+        // cooked — smoking never killed the worms and neither does this
+        // (BEAR.md: only foodState 'cooked' clears it). Wormy meat in, wormy
+        // bars out: the set's bars inherit the strongest input parasiteRisk.
+        // Every eat path already rolls parasiteRisk on any non-'cooked'
+        // state, so the bars stay honest the moment the risk rides along.
+        let wormRisk = null;
+        for (const p of set.picks) {
+          const pr = p.it && p.it.parasiteRisk;
+          if (pr && (!wormRisk || (pr.p || 0) > (wormRisk.p || 0))) wormRisk = pr;
+        }
         for (const p of set.picks) {
           const it = p.it;
           const at = inv.indexOf(it);
@@ -796,12 +809,14 @@
         totalBars += set.bars;
         // One stack per set: that set's bars carry that set's ~97%
         // retention (forager break-it 2026-10-09). Full sets read 3x600.
+        const barRisk = wormRisk ? { id: wormRisk.id || 'trichinosis', p: wormRisk.p || 0.25, from: wormRisk.from } : null;
         inv.push({
           itemId: 'pemmican', plantId: null, foodKind: 'meat', foodState: 'pemmican',
           edible: true, units: set.bars, unit: 'bar', kcalEach: set.kcalEach,
           spoilDay: day + 120, kg: 0.3 * set.bars, safe: true,
           name: 'Pemmican',
           prep: 'Dried meat pounded with rendered fat and berries. The original energy bar. Nearly indestructible.',
+          ...(barRisk ? { parasiteRisk: barRisk } : {}),
         });
       }
       this.tickAction(20);
@@ -841,6 +856,19 @@
         }
       }
       else if (it.diseaseRisk) m = '\u26A0\uFE0F Risky: ' + (it.diseaseRisk.note || 'raw');
+      else if (it.parasiteRisk && (it.foodState !== 'cooked' || it.undercooked)) {
+        // TRICHINOSIS (hunter break-it 2026-10-10): smoking never kills the
+        // worms (BEAR.md: only 'cooked' clears it). The old marker printed a
+        // bare 'smoked \u2713' on smoked-raw bear meat while the engine rolled
+        // 35% trichinosis per bite -- copy vs engine, the copy lying. Name
+        // the worms only for L4 knowers (encAnimalLevel >= vectorLevel gate,
+        // same as the kill line's diseaseVector); everyone else gets the
+        // honest instruction with no knowledge leak.
+        const _wormFrom = it.parasiteRisk.from;
+        let _wormKnows = false;
+        try { _wormKnows = !!(_wormFrom && this.encAnimalLevel && this.encAnimalLevel(_wormFrom) >= 4); } catch (e) {}
+        m = _wormKnows ? '\u26A0\uFE0F worms \u2014 cook it through' : 'still risky \u2014 cook it through';
+      }
       else if (it.foodState === 'preserved') m = 'smoked \u2713';
       else if (it.foodState === 'pemmican') m = 'pemmican \u2713';
       else if (it.foodKind === 'fat' && it.foodState === 'raw') m = 'needs rendering';
@@ -985,8 +1013,10 @@
         // block-scoped inside `if (!it.charred)` — so every specialist
         // butcher threw ReferenceError mid-action (half-cleaned item, no
         // yields, no trichinosis). `meatId` (same value) is already in scope.
+        // `from` rides along so later transforms (pemmican) and the pack
+        // marker can name the vector knowledge-gated (hunter break-it r3).
         if (['black_bear', 'wild_boar', 'javelina'].includes(meatId)) {
-          it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25 };
+          it.parasiteRisk = { id: 'trichinosis', p: meatId === 'black_bear' ? 0.35 : 0.25, from: meatId };
         }
         it.spoilDay = day + 2;
         it.name = it.name.replace(' (carcass)', '').replace(' (trapped)', '').replace(' (charred remains)', '') + ' (cleaned)';
