@@ -48,12 +48,18 @@ feel it.
 | mosquito | Giant freakish mosquito — plainly called "mosquito" (the shock is that it's just a mosquito). Alien-disease vector: bite can land Eurika virus or East Nile virus (see docs/DISEASES.md) | rush | crepuscular |
 | tick | Giant freakish tick — plainly called "tick". Latches on; vector for Lemons disease (alien pool, see docs/DISEASES.md) | single | both |
 
-## Wave 3: The Final Draft (day 25 + 8 wave-2 kills)
+## Wave 3: The Final Draft (day 25 + 8 wave-2 kills OR 2 distinct wave-2 faced)
 
 The System stops pretending these are animals at all. The horror: it was
 never an animal. Gating logic lives in `unlockedWave()` (game.js): day 25+
-AND 8 wave-2 kills (village-wide). (An older plan gated it on integration
-80+ — superseded; the kill-gated schedule is the live gate.)
+AND (8 wave-2 kills OR 2 distinct wave-2 monsters faced blow-by-blow).
+(An older plan gated it on integration 80+ — superseded; the kill-gated
+schedule is the live gate. ENGAGEMENT LANES added 2026-10-10, bal-waves:
+sweep r4 showed wave-2 kills median 0 in organic play — policies flee bad
+fights by design — so the kill funnel never filled. Facing/fleeing a fight
+counts as "faced" (you stood on the grid; Steve accepted this for the wave-5
+deed bar). Kills are the faster lane, not the only lane. Day/scale floors
+unchanged.)
 
 9 monsters: The Redactor (censorship made flesh — redacts your weapon, your
 footing, your last turn), Gavel (holds trials from your event log; bound by
@@ -69,7 +75,7 @@ Bands (anchored — see Implementation): damage 20-70, HP 240-420, pierce
 0-0.25. Wave-3 monsters are a mid-build fight (4-6 rounds at ~64
 dmg/round); godhood builds stomp them — correctly.
 
-## Wave 4: The Mirror Draft (5 wave-3 kills + scaleRank >= 'regional')
+## Wave 4: The Mirror Draft (5 wave-3 kills OR 2 distinct wave-3 faced + scaleRank >= 'regional')
 
 Steve 2026-10-10: identity is "The Mirror Draft" (not "The Audience
 Draft"). The System has watched long enough to build monsters out of *us* —
@@ -96,7 +102,7 @@ dark mirror of the food thesis).
 Bands (anchored): damage 35-95, HP 850-1500, pierce 0.2-0.5. A 4-6 round
 fight for a godhood build (~220 dmg/round).
 
-## Wave 5: The Producers (5 wave-4 kills + scaleRank >= 'national')
+## Wave 5: The Producers (5 wave-4 kills OR 2 distinct wave-4 faced + scaleRank >= 'national')
 
 Steve 2026-10-10: identity is "The Producers" (not "Oversight Fauna"). You
 are strong enough to threaten the narrative. The narrative sends its immune
@@ -132,10 +138,13 @@ ash-death; the villager pool is the cap.
   `pierce` added to the schema 2026-10-10 — the armor-pierce hook's first real
   assignments).
 - `Game.monsterWavePool()` in game.js: filters by `unlockedWave()`
-  (day 8 + 4 wave-1 kills for wave 2; day 25 + 8 wave-2 kills for wave 3;
-  5 wave-3 kills + scaleRank >= 'regional' for wave 4;
-  5 wave-4 kills + scaleRank >= 'national' for wave 5).
-  Earlier waves never leave the pool.
+  (day 8 + (4 wave-1 kills OR 2 distinct wave-1 faced) for wave 2; day 25 +
+  (8 wave-2 kills OR 2 distinct wave-2 faced) for wave 3;
+  (5 wave-3 kills OR 2 distinct wave-3 faced) + scaleRank >= 'regional' for wave 4;
+  (5 wave-4 kills OR 2 distinct wave-4 faced) + scaleRank >= 'national' for wave 5).
+  Earlier waves never leave the pool. Engagement = distinct monsters fought
+  blow-by-blow (fights started — fled or won — via deed feed wavesFaced);
+  kills are the faster lane, not the only lane (bal-waves 2026-10-10).
 - `Game.scaleAtLeast(rank, need)`: village -> local -> regional -> national ->
   global ladder; unknown ranks treated as 'regional' (defensive — scaleRank()
   is built in parallel in hierarchy.js).
@@ -154,7 +163,7 @@ ash-death; the villager pool is the cap.
   Producers ~day 83-99 — the bars complete inside a ~100-day game; slower
   runs slip later, reactively. The day floors in the unlock gates (day 8,
   day 25) were already floors, never scripts, and stay.
-- `checkEncounter()` uses the pool. The wanderer casts via `castMonster()`, which is wave-gated on `unlockedWave()` (day 8 + 4 wave-1 kills for wave 2) — never over-leveled, never stuck on wave 1.
+- `checkEncounter()` uses the pool. The wanderer casts via `castMonster()`, which is wave-gated on `unlockedWave()` (day 8 + (4 wave-1 kills OR 2 distinct wave-1 faced) for wave 2) — never over-leveled, never stuck on wave 1.
 - Wave-2 announcement woven into `checkSystemArrival()` dialogue.
 - Tests: `scripts/test-wave2.js` (gating, integrity, combat smoke), `scripts/test-wave2-harden-20261009.js` (post-hardening ranges),
   `scripts/test-wave3-5-20261010.js` (211 checks x 3 seeds: schema-clean roster,

@@ -21,7 +21,7 @@
 // rules:
 //   - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
 //   - ability_cap: 6 (code: progression.js)
-//   - feast_surge_gate: 3 abilities at L3 (code: progression.js — channelSentiment; was all-maxed, unwalkable per 2026-10-09 audit)
+//   - feast_surge_gate: 3 abilities at L3 (mastery lane) OR surgeResonance>=35 (code: progression.js — channelSentiment; devotion lane fed by gainAbilityXP/unlockSynergy; rework 2026-10-10 — 3-mastered fired 0/180)
 //   - arc2_deed: true (code: progression.js — checkArc requires breadth>=6 or a held contest; the beat text is honest again)
 //   - arc3_crucible: 2 crisis kinds (code: progression.js — checkArc; grave-first runs get the acknowledgment line)
 //   - arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs EVERY wave fought (5/5/4/3/2 distinct per wave 1-5), 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept; retuned 2026-10-10 for the ~100-day target)
@@ -258,11 +258,13 @@
     // says what it does. The old "💛 Channel" was a leap of faith.)
     channelLabel() {
       try {
-        const s = this.state.scholar;
+        const s = this.state.scholar, pg = this.progState();
         if ((s.trauma || 0) >= 8) return '💛 Hold it (steady yourself)';
         const allAbs = [...(s.abilities || []), ...(s.backgroundAbilities || [])];
         const maxed = allAbs.filter(a => (a.level || 1) >= 3).length;
-        if (maxed >= 3) return '💛 Channel (surge the feast)';
+        // Surge arms via the mastery lane (3+ L3) OR the devotion lane
+        // (surgeResonance >= 35) — the button is honest about which.
+        if (maxed >= 3 || (pg.surgeResonance || 0) >= 35) return '💛 Channel (surge the feast)';
         if (allAbs.some(a => (a.level || 1) < 3)) return '💛 Channel (train gifts)';
         return '💛 Channel';
       } catch (e) { return '💛 Channel'; }
@@ -305,20 +307,41 @@
         // proposed"): the old gate was ALL owned abilities at L3 — best of 240
         // audit runs had exactly 1 L3, so Arc IV was unwalkable. New gate: 3+
         // abilities mastered. A real stretch goal, not fiction.
+        // REWORK (bal-waves 2026-10-10): 3-mastered fired 0/180 in sweep r4 —
+        // scholars die ~day 24 holding 1-2 abilities they barely use. The gate
+        // now has two lanes. MASTERY lane (unchanged): 3+ gifts at L3. DEVOTION
+        // lane (new): pg.surgeResonance (every ability use +1, level-up +5,
+        // synergy discovered +10 — fed by gainAbilityXP/unlockSynergy) >= 35:
+        // your gifts are not mastered, but they are LIVED-IN. Either lane arms
+        // the surge via the keepsake beat. Practice XP is now FOCUSED (+6 to
+        // the single closest-to-complete gift, not +2 sprayed everywhere) —
+        // "one gift, deeply" — so the mastery lane is reachable by day 20-40
+        // through channeling alone (~6 channels per mastery).
         const allAbs = [...(s.abilities || []), ...(s.backgroundAbilities || [])];
         const maxed = allAbs.filter(a => (a.level || 1) >= 3).length;
         const unmaxed = allAbs.filter(a => (a.level || 1) < 3);
-        if (maxed >= 3) {
+        const resonance = pg.surgeResonance || 0;
+        const RESONANCE_NEED = 35;
+        const armSurge = (why) => {
           // HONESTY (gap fix 2026-10-10): the message always promised
           // ×(1.5×mult) but the burn site applied a flat ×1.5 — a chosen
           // wedding ring overstated its surge 3×. Store the real multiplier;
           // the feastBurn wrap applies it (true = legacy flat ×1.5).
           s.prog.feastSurge = 1.5 * mult;
-          msg = `You hold ${name}. The feast was the weapon — and they are with you. (Next feastburn surges ×${(1.5 * mult).toFixed(1)})`;
+          return why;
+        };
+        if (maxed >= 3) {
+          msg = armSurge(`You hold ${name}. The feast was the weapon — and they are with you. (Next feastburn surges ×${(1.5 * mult).toFixed(1)})`);
+        } else if (resonance >= RESONANCE_NEED) {
+          msg = armSurge(`You hold ${name}. Your gifts are not mastered — but they are lived-in, worn smooth by use, and they are with you. The feast was the weapon. (Next feastburn surges ×${(1.5 * mult).toFixed(1)})`);
         } else if (unmaxed.length) {
-          const xpEach = Math.round(2 * mult);
-          for (const a of unmaxed) { try { this.gainAbilityXP(a.id, xpEach); } catch (e) { a.xp = (a.xp || 0) + 2; } }
-          msg = `You hold ${name} and practice. They would want you to get better at this. (+${xpEach} experience to every gift still learning)`;
+          // FOCUSED PRACTICE: the closest-to-complete gift gets the session.
+          const needFor = (a) => ((a.level || 1) === 1 ? 10 : 25) - (a.xp || 0);
+          let target = unmaxed[0];
+          for (const a of unmaxed) if (needFor(a) < needFor(target)) target = a;
+          const xpAmt = Math.round(6 * mult);
+          try { this.gainAbilityXP(target.id, xpAmt); } catch (e) { target.xp = (target.xp || 0) + 6; }
+          msg = `You hold ${name} and practice — one gift, deeply. They would want you to get better at this. (+${xpAmt} experience to ${target.name || target.id})`;
         } else {
           msg = `You hold ${name}. It hums — but the surge wants three mastered gifts, and you hold ${maxed}. Not yet.`;
         }

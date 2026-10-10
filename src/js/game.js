@@ -18810,6 +18810,15 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const s = this.state.scholar;
       // SYNERGY: every ability use is a potential resonance attempt.
       this.noteAbilityUse(abilityId);
+      // SURGE RESONANCE (bal-waves 2026-10-10): every practice moment feeds
+      // the feast-surge devotion lane — uses, not just mastery. +1 per call
+      // (a use is a use, whatever the XP amount), +5 on level-up. Read by
+      // channelSentiment (progression.js). Defensive: progression may load
+      // after this module; progState() resolves at runtime.
+      try {
+        const pg = (typeof this.progState === 'function') ? this.progState() : (s.prog = s.prog || {});
+        pg.surgeResonance = (pg.surgeResonance || 0) + 1;
+      } catch (e) {}
       // Check both background and System abilities.
       const ab = (s.backgroundAbilities || []).find(a => a.id === abilityId) ||
                  (s.abilities || []).find(a => a.id === abilityId);
@@ -18819,6 +18828,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (ab.xp >= need) {
         ab.level++;
         ab.xp = 0;
+        try {
+          const pg = (typeof this.progState === 'function') ? this.progState() : (s.prog = s.prog || {});
+          pg.surgeResonance = (pg.surgeResonance || 0) + 5;
+        } catch (e) {}
         const bonus = this.abilityLevelBonus(ab.id, ab.level);
         this.say(`⬆️ ${ab.name} deepened to L${ab.level}! ${bonus}`);
         // DRAMA (Steve 2026-10-07, Round C2): golden burst — the ability deepens visibly.
@@ -21701,6 +21714,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const sch = this.state.scholar;
       if (!sch.synergies.includes(syn.id)) {
         sch.synergies.push(syn.id);
+        // SURGE RESONANCE (bal-waves 2026-10-10): a discovered synergy is a
+        // big practice moment — the devotion lane counts it large.
+        try {
+          const pg = (typeof this.progState === 'function') ? this.progState() : (sch.prog = sch.prog || {});
+          pg.surgeResonance = (pg.surgeResonance || 0) + 10;
+        } catch (e) {}
         // DRAMA (Steve 2026-10-07): synergy discovery is a hero moment
         try { this.drama('hero', syn.name, syn.discovery || syn.flavor || '', '✨'); } catch (e) {}
         // KNOWLEDGE REVEAL AUDIO (Steve 2026-10-07): synergy discovery moment.
@@ -23800,11 +23819,35 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // schedule, but you can't cheese it with a lucky weapon find — and it
     // can't arrive before you've proven you can handle the last wave.
     // Wave 1: always — hummice, moths, raccoons, toads
-    // Wave 2: day 8+ AND 4 wave-1 kills (village-wide, not just player)
-    // Wave 3 ("The Final Draft"): day 25+ AND 8 wave-2 kills
-    // Wave 4 ("The Mirror Draft"): 5 wave-3 kills AND scaleRank >= 'regional'
-    // Wave 5 ("The Producers"): 5 wave-4 kills AND scaleRank >= 'national'
+    // Wave 2: day 8+ AND (4 wave-1 kills OR 2 distinct wave-1 faced) — village-wide
+    // Wave 3 ("The Final Draft"): day 25+ AND (8 wave-2 kills OR 2 distinct wave-2 faced)
+    // Wave 4 ("The Mirror Draft"): (5 wave-3 kills OR 2 distinct wave-3 faced) AND scaleRank >= 'regional'
+    // Wave 5 ("The Producers"): (5 wave-4 kills OR 2 distinct wave-4 faced) AND scaleRank >= 'national'
     // (Wave 5 is the apex; readiness win comes after proving yourself there.)
+    // ENGAGEMENT LANES (bal-waves 2026-10-10): the kill-gated schedule assumed
+    // kill throughput that reactive play never produces (sweep r4: wave-2 kills
+    // median 0 — policies flee bad fights by design). Steve accepted that
+    // facing/fleeing a wave-5 fight counts as "faced" for the deed bars; the
+    // same philosophy opens the unlock gates: DISTINCT monsters of the current
+    // wave fought blow-by-blow (fights started — fled or won — via the deed
+    // feed's wavesFaced map, never UI or calendar). Kills are the faster lane,
+    // not the only lane. Bars sit below the deed-gate bars (5/5/4/3/2): the
+    // unlock is the on-ramp, the deed is the mastery. Day/scale floors
+    // unchanged — reactive pacing, never calendar scripts.
+    waveUnlockEngage() { return { 1: 2, 2: 2, 3: 2, 4: 2 }; },
+    // waveEngaged(wave): distinct monsters of this wave engaged blow-by-blow.
+    // Reads deedState().wavesFaced — fed by real startCombat / fieldFight /
+    // recordWaveKill only (progression.js). Fleeing counts (you stood on the
+    // grid); double-tap refusals and pre-combat evades record nothing.
+    waveEngaged(wave) {
+      try {
+        const ds = (typeof this.deedState === 'function') ? this.deedState() : null;
+        const faced = (ds && ds.wavesFaced) || {};
+        let n = 0;
+        for (const mid of Object.keys(faced)) if ((faced[mid] | 0) === wave) n++;
+        return n;
+      } catch (e) { return 0; }
+    },
     // SCALE-DEFENSIVE (2026-10-10): scaleRank() is being built in parallel in
     // hierarchy.js. Read it defensively — works with AND without it. Absent
     // (or unrecognized) rank defaults to 'regional': wave 4 gates on kills
@@ -23813,10 +23856,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const day = this.state.scholar.day || 1;
       const kills = this.state.waveKills || {}; // {1: n, 2: n, ...}
       const rank = (typeof this.scaleRank === 'function' ? this.scaleRank() : 'regional');
-      if ((kills[4] || 0) >= 5 && this.scaleAtLeast(rank, 'national')) return 5;
-      if ((kills[3] || 0) >= 5 && this.scaleAtLeast(rank, 'regional')) return 4;
-      if (day >= 25 && (kills[2] || 0) >= 8) return 3;
-      if (day >= 8 && (kills[1] || 0) >= 4) return 2;
+      const EB = this.waveUnlockEngage();
+      const eng = (w) => this.waveEngaged(w);
+      if (((kills[4] || 0) >= 5 || eng(4) >= (EB[4] || 2)) && this.scaleAtLeast(rank, 'national')) return 5;
+      if (((kills[3] || 0) >= 5 || eng(3) >= (EB[3] || 2)) && this.scaleAtLeast(rank, 'regional')) return 4;
+      if (day >= 25 && ((kills[2] || 0) >= 8 || eng(2) >= (EB[2] || 2))) return 3;
+      if (day >= 8 && ((kills[1] || 0) >= 4 || eng(1) >= (EB[1] || 2))) return 2;
       return 1;
     },
     // scaleAtLeast: compare scale ranks on the village -> regional ->

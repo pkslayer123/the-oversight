@@ -857,7 +857,7 @@ Character progression. XP, levels, abilities.
 **Rules:**
 - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
 - ability_cap: 6 (code: progression.js)
-- feast_surge_gate: 3 abilities at L3 (code: progression.js — channelSentiment; was all-maxed, unwalkable per 2026-10-09 audit)
+- feast_surge_gate: 3 abilities at L3 (mastery lane) OR surgeResonance>=35 (code: progression.js — channelSentiment; devotion lane fed by gainAbilityXP/unlockSynergy; rework 2026-10-10 — 3-mastered fired 0/180)
 - arc2_deed: true (code: progression.js — checkArc requires breadth>=6 or a held contest; the beat text is honest again)
 - arc3_crucible: 2 crisis kinds (code: progression.js — checkArc; grave-first runs get the acknowledgment line)
 - arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs EVERY wave fought (5/5/4/3/2 distinct per wave 1-5), 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept; retuned 2026-10-10 for the ~100-day target)
