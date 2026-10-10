@@ -12,6 +12,7 @@
 //   - examine_farm_cap: one cell teaches a skill at most 2 encounters' worth (surface + first deep study); the 4-encounter pattern counts distinct ground (code: feedKnowledge, explorer break-it 2026-10-09)
 //   - no_post_death_examine: examineCell refuses when this.over — the dead don't narrate, advance the world, or save (code: examineCell, explorer break-it 2026-10-09)
 //   - no_mid_fight_examine: examineCell refuses inCombat — examining is time-only (2 ticks) and tickAction no-ops mid-fight, so a stale card could farm knowledge for free while the world stands still; same class as the clearBlockage/beginPathWalk guards (code: examineCell, explorer break-it 2026-10-09)
+//   - examine_records_observation: examining a plant/bush resolves the species and records an observation memory (Scattering.Examine.observePlant) plus the name-scrubbed vague description — the foundation the recognition beat needs; the examine.js verb was orphaned by this module's override, so the live verb carries it (code: examineCell, explorer break-it 2026-10-10)
 // consumes:
 //   - scholar.energy
 //   - village.needs
@@ -636,6 +637,27 @@
       }
       this.say(text);
       feedKnowledge('track_read', 1);
+      // EXAMINE-RECOGNITION (explorer break-it 2026-10-10): Steve 2026-10-06 —
+      // examining a plant is the foundation of recognition: the cheap look
+      // records an observation memory and yields the vague description
+      // (never the true name), so a later lesson CLICKS. src/js/examine.js
+      // built the whole system, but its entry point (Ex.examinePlantCell)
+      // was orphaned — its only caller is game.js's examineCell, which this
+      // module has shadowed since 2026-10-04, so observations were reachable
+      // only by foraging. Wire the observation back into the live verb: same
+      // guards, same 2-tick charge, same farm cap — plus the memory the
+      // recognition beat needs. Names stay scrubbed by examineDescription.
+      try {
+        const ExR = (typeof Scattering !== 'undefined' && Scattering.Examine) || null;
+        if (ExR && ExR.resolveCellSpecies && ExR.observePlant && ExR.examineDescription) {
+          const pid = ExR.resolveCellSpecies(cx, cy);
+          if (pid && String(pid).indexOf('tree_') !== 0) {
+            const obs = ExR.observePlant(pid, 'examine');
+            const known = this.plantKnown && this.plantKnown(pid);
+            if (!known && obs) this.say(ExR.examineDescription(pid, obs.quality));
+          }
+        }
+      } catch (e) {}
     }
     // ---- TENT ----
     else if (cell === 'tent') {

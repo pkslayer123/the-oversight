@@ -97,7 +97,7 @@ function resetMA() {
     // per landed square, so an interrupted walk never bills squares never
     // walked. The old "charges up front" assertion is the retired contract.
     eq('beginPathWalk charges nothing up front', Math.round(kcal0 - s.kcal), 0);
-    eq('beginPathWalk quotes walkCost(path.length)', Game.walkCost(path.length), path.length * 10);
+    eq('beginPathWalk quotes walkCost(path.length)', Game.walkCost(path.length), path.length * Game.walkStepKcal());
     eq('beginPathWalk charges no ticks yet', (s.dayTicks || 0) - t0, 0);
     // path is single steps: consecutive deltas are Chebyshev-1 (animatable)
     let allSingle = true, px = sx, py = sy;
@@ -128,7 +128,7 @@ function resetMA() {
     eq('pathStep: 1 tick per step', (s.dayTicks || 0) - t0, testPath.length);
     // HONESTY r6: the walk bills exactly the landed squares — no double
     // charge (steps never bill twice) and no shortfall.
-    eq('pathStep: 10 kcal per landed square, total == walkCost(n)', Math.round(kcal0 - s.kcal), Game.walkCost(testPath.length));
+    eq('pathStep: one walkStepKcal() per landed square, total == walkCost(n)', Math.round(kcal0 - s.kcal), Game.walkCost(testPath.length));
     eq('monsterTurn ran once per step', monsters, testPath.length);
     eq('animalTurn ran once per step', animals, testPath.length);
     const [ex, ey] = testPath[testPath.length - 1];

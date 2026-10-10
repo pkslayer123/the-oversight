@@ -48,7 +48,7 @@ Every action is priced in up to three currencies:
 | Action | Ticks | Effort | Why |
 |---|---|---|---|
 | Check pack / codex (UI) | 0 | 0 | Accomplishes nothing; free |
-| Step (`microMove`) | 1 | 0 | Strolling is time-only |
+| Step (`microMove`) | 1 | 2 kcal | A step costs a little — not free, not punishing (Steve 2026-10-05) |
 | Examine a tile (`cellInteract`) | 1 | 0 | A glance is time-only |
 | Drink / eat / handoff (`giveFood`) | 1 | 0 | Moments, not labor |
 | Open a conversation (`startConvo`) | 1 | 10 kcal | Small talk is quick and cheap |
@@ -62,7 +62,7 @@ Every action is priced in up to three currencies:
 | Delegate a task (`assignTask`) | 2 | 0 | A social move; they're engaged |
 | Teach (`teachPlant`) | 3 | 0 | A real lesson takes real time |
 | Fill a water bottle | 1 | 0 | Quick |
-| Committed walk (`movePath`) | 1/square | 10 kcal/sq | Purposeful walking is work |
+| Committed walk (`movePath`) | 1/square | 2 kcal/sq | One square, one price — the button is convenience, never a tax (explorer break-it 2026-10-10 unified it with the manual step) |
 | Clear brush / clear blockage | 32 (1 chunk) | 40–60 kcal | Light labor |
 | Boil water (`treat`) | 32 (1 chunk) | 50 kcal | Half an hour, a fire, effort |
 | Craft a tool | 32 (1 chunk) | 0 | Hand work, not heavy labor |

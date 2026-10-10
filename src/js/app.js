@@ -1443,7 +1443,7 @@
           // Wanderer/Second Skin holders.
           const path = Game.findPath(px, py, cx, cy);
           if (path && path.length) {
-            const cost = (typeof Game.walkCost === 'function') ? Game.walkCost(path.length) : path.length * 10;
+            const cost = (typeof Game.walkCost === 'function') ? Game.walkCost(path.length) : path.length * 2; // fallback tracks walkStepKcal's unified per-square price (explorer break-it 2026-10-10)
             actions.push([`Walk here (${cost} kcal)`, () => walkPathAnimated(cx, cy)]);
           } else {
             desc += ' (No path there.)';

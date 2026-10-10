@@ -307,7 +307,7 @@ function setupBarrierDeath() {
   }
   ok('walk target found', !!target);
   if (target) {
-    // no modifiers: price is 10/square
+    // no modifiers: price is walkStepKcal()/square (unified 2026-10-10)
     const k0 = s.kcal;
     const path = Game.beginPathWalk(target.tx, target.ty);
     const charged = Math.round(k0 - s.kcal);
@@ -318,8 +318,10 @@ function setupBarrierDeath() {
       // charges up front — pathStep levies walkStepKcal() per landed square,
       // so an interrupted walk never bills squares never walked. The quote
       // (walkCost) must equal the sum of the step charges exactly.
+      // ONE PRICE (explorer break-it 2026-10-10): walkStepKcal() is the
+      // unified per-square price — the same a manual microMove step pays.
       ok('AFTER: walkCost(n) exists', typeof Game.walkCost === 'function');
-      ok('AFTER: walkCost(n) === 10*n unmodified', Game.walkCost(target.n) === target.n * 10);
+      ok('AFTER: walkCost(n) === n * walkStepKcal() (one square, one price)', Game.walkCost(target.n) === target.n * Game.walkStepKcal());
       ok('AFTER: beginPathWalk charges nothing up front', charged === 0, `charged=${charged}`);
       let landed = 0;
       for (const [qx, qy] of path) if (Game.pathStep(qx, qy)) landed++;

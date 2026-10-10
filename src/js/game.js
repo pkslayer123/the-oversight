@@ -63,7 +63,7 @@
 //   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge; records the sharing for the codex MAPS gate)
 //   - villageMapKnown() -> {"x,y":1} (codex MAPS: your seen tiles + visited tiles of villagers who actually shared via compareMaps; unshared seed tiles are never shown)
 //   - walkCost(n) -> kcal (the one honest price of a committed n-square walk: quoted by the "Walk here" button AND equal to the sum of the per-step charges pathStep levies as squares land; applies travel.cost_mult)
-//   - walkStepKcal() -> kcal (the honest price of ONE square of a committed walk; pathStep charges this per landed step so an interrupted walk never bills squares never walked)
+//   - walkStepKcal() -> kcal (the honest price of ONE square of walking; microMove and pathStep both levy exactly this — one square, one price, whichever verb walks it)
 // rules:
 //   - terraform_difficult_cost: 2 (code: tbTerrainCost)
 //   - terraform_entry_damage: 1 (code: tbTerrainStep)
@@ -85,6 +85,8 @@
 //   - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding, clearBlockage, buildBridge) refuse when over — the corpse walks nothing, builds nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
 //   - no_mid_fight_interact: _cellInteract refuses inCombat — interacting runs monster/animal/villager turns while tickAction(1) no-ops mid-fight, so a stale tile card could grant free interacts AND free monster turns; same class as the examineCell guard (code: _cellInteract, explorer break-it 2026-10-09)
 //   - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
+//   - one_square_one_price: microMove and pathStep levy the same walkStepKcal() — one square, one price, whichever verb walks it; the committed walk no longer costs 5x a hand-walked trail (code: walkStepKcal, microMove, explorer break-it 2026-10-10)
+//   - entry_has_exit: findWalkableEntry prefers the nearest walkable cell with at least one walkable neighbor — travel never strands the player in a pocket with zero grid moves; falls back to the nearest walkable only when the whole tile is pockets (code: findWalkableEntry, explorer break-it 2026-10-10)
 //   - travel_world_step_priced: travelTimeStep's needs+gossip world-step is proportional to player time actually spent — each travel banks its elapsed dayTicks; every 128 banked (one day-part) releases one step. The zero-tick ping-pong (2026-10-08) and the 1-tick re-arm (r7) buy nothing the clock didn't pay for. Exception (by design): the first crossing ever and each new day's first crossing grant one step — the crossing itself is a beat (code: travelTimeStep, break-it travel r7 2026-10-09)
 //   - one_monster_per_tile: the engine is singular (monsterAt, scholar.monster alias, perception, combat) — wanderWorldMonsters never wanders onto an occupied tile, pickWorldTile never picks one for maintenance spawns, the wanderer circles off claimed ground, and followers hold at the boundary rather than chasing onto it; stacking made phantoms the engine can't perceive or fight (deliberate same-species packs, e.g. the hushwolf trio, are the exception — they ship with their own flows) (code: wanderWorldMonsters, pickWorldTile, checkEncounter, travelTo, break-it travel r7 2026-10-09)
 //   - glasswing_dive_drives_off: the dive slams onto the player tile — if another monster claimed the ground while the shadow circled, the impact drives it to an adjacent tile (still out there, wounds kept); stacking would make startCombat delete the wrong monster and drop the promised grounded window (code: gwTrapTick, break-it travel r8 2026-10-10)
@@ -8203,8 +8205,20 @@
         const cell = detail[cy] && detail[cy][cx];
         return !!cell && !this.cellProps(cell).blocks;
       };
+      // STRAND-PROOF (explorer break-it 2026-10-10): a walkable cell with no
+      // walkable neighbors is a pocket — arriving there strands the player
+      // with zero grid moves (no step, no path, nothing adjacent to use).
+      // Prefer the nearest walkable cell that has a way out; only fall back
+      // to a pocket when the whole tile is pockets.
+      const hasExit = (cx, cy) => {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+          if (walkable(cx + dx, cy + dy)) return true;
+        }
+        return false;
+      };
       const sx = Math.max(0, Math.min(8, wantX)), sy = Math.max(0, Math.min(8, wantY));
-      if (walkable(sx, sy)) return { x: sx, y: sy };
+      if (walkable(sx, sy) && hasExit(sx, sy)) return { x: sx, y: sy };
+      let fallback = (walkable(sx, sy)) ? { x: sx, y: sy } : null;
       const seen = new Set([sy * 9 + sx]);
       const queue = [[sx, sy]];
       while (queue.length) {
@@ -8213,10 +8227,14 @@
           const nx = cx + dx, ny = cy + dy, k = ny * 9 + nx;
           if (nx < 0 || ny < 0 || nx > 8 || ny > 8 || seen.has(k)) continue;
           seen.add(k);
-          if (walkable(nx, ny)) return { x: nx, y: ny };
+          if (walkable(nx, ny)) {
+            if (hasExit(nx, ny)) return { x: nx, y: ny };
+            if (!fallback) fallback = { x: nx, y: ny };
+          }
           queue.push([nx, ny]);
         }
       }
+      if (fallback) return fallback;
       return { x: 4, y: 4 }; // unreachable in practice — every detail has walkable cells
     },
     travelTo(x, y, force, combatExit) {
@@ -8580,18 +8598,15 @@
       if (props.blocks) return false; // can't walk through, but might interact (see cellInteract)
       // FACING: you face where you step. The marker shows it.
       s.facing = { x: Math.sign(cx - px), y: Math.sign(cy - py) };
-      // MOVEMENT COSTS (Steve 2026-10-05): 2 kcal/step. Not free, not punishing.
-      // The 2026-10-04 "free steps" fix went too far — walking the map felt
-      // costless. 2 kcal is perceptible over distance (9x9 crossing ≈ 32 kcal)
-      // without making exploration tedious. Time cost (1 tick) unchanged.
-      // SECOND SKIN / WANDERER: travel.cost_mult reduces the kcal cost.
-      let cost = 2;
-      try {
-        const mult = this.modTarget('travel.cost_mult', 1);
-        if (mult !== 1) cost = Math.max(1, Math.round(cost * mult));
-      } catch (e) {}
+      // MOVEMENT COSTS (Steve 2026-10-05): walkStepKcal() per step. Not free,
+      // not punishing — walking the map feels light but never costless
+      // (9x9 crossing ≈ 32 kcal). Time cost (1 tick) unchanged.
+      // ONE PRICE (explorer break-it 2026-10-10): manual steps and committed
+      // walks levy the same walkStepKcal() — the same squares never cost 5x
+      // via the "Walk here" button again. SECOND SKIN / WANDERER:
+      // travel.cost_mult reduces the kcal cost (inside walkStepKcal).
       // Movement is baseline. Power doesn't tax walking.
-      s.kcal = Math.max(0, s.kcal - cost);
+      s.kcal = Math.max(0, s.kcal - this.walkStepKcal());
       s.mx = cx; s.my = cy;
       // MONSTERS MOVE WHEN YOU DO. A step can spook, warn, or trigger —
       // the stance machine runs on steps, not just on interacts. (It didn't.
@@ -8600,8 +8615,8 @@
       // EVERYONE ACTS (Steve 2026-10-07): your step is your turn — each NPC
       // on this node then takes one action, in roster order.
       try { this.villagerTurn(); } catch (e) {}
-      // ACTION CLOCK: a step is 1 tick. Strolling is time-only — no effort cost.
-      // Monsters, animals, and villagers move on their own schedule (or when you ACT).
+      // ACTION CLOCK: a step is 1 tick + walkStepKcal() kcal. Monsters,
+      // animals, and villagers move on their own schedule (or when you ACT).
       // But steps ACCUMULATE: every TICKS_PER_BATCH ticks, NPCs take a batch turn.
       this.ensureVillagerPositions();
       this.tickAction(1);
@@ -9879,12 +9894,17 @@
       return null; // no path
     },
 
-    // walkStepKcal(): the honest price of ONE square of a committed walk.
-    // walkCost(n) is exactly n of these — so the "Walk here (C kcal)" quote
-    // and the sum of the per-step charges pathStep levies always agree, even
-    // with travel.cost_mult (Wanderer / Second Skin).
+    // walkStepKcal(): the honest price of ONE square of walking — the SINGLE
+    // per-square price for every on-foot verb. microMove (manual taps) and
+    // pathStep (committed walks) both levy exactly this. walkCost(n) is n of
+    // these, so the "Walk here (C kcal)" quote, the per-step charges, and a
+    // hand-walked trail all agree, even with travel.cost_mult (Wanderer /
+    // Second Skin). (Explorer break-it 2026-10-10: the committed walk used
+    // to charge 10/square while manual steps charged 2 — the same squares
+    // cost 5x via the button, a noob trap on the accessibility tap-to-move
+    // path. One square, one price.)
     walkStepKcal() {
-      let cost = 10;
+      let cost = 2;
       try {
         const mult = this.modTarget('travel.cost_mult', 1);
         if (mult !== 1) cost = Math.max(1, Math.round(cost * mult));
