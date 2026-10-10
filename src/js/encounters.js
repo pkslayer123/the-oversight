@@ -1239,7 +1239,13 @@
       if (a.rattled && dist <= 1 && Math.random() < 0.5) {
         var vDmg = 8 + Math.floor(Math.random() * 7);
         try { s.health = Math.max(0, (s.health || 100) - vDmg); } catch (e) {}
-        try { (s.poisons = s.poisons || []).push({ name: 'rattlesnake venom', day: s.day }); } catch (e) {}
+        // VENOM VIA ENGINE (break-it disease 2026-10-10): the old code pushed
+        // straight to the s.poisons legacy mirror, bypassing applyStatus — a
+        // phantom poison with no engine entry: no tick damage, never expired,
+        // and purify burned its once-per-day use curing nothing (the mirror
+        // stayed forever, journal badge stuck). The engine is the single
+        // application path: real tick, real expiry, real purify.
+        try { this.applyStatus('scholar', 'poison', { name: 'rattlesnake venom', source: 'the rattlesnake' }); } catch (e) {}
         this.say('It strikes — ' + vDmg + ' damage, and the venom is in. (poisoned — find an antidote)');
         try { this.audioEvent('animalBite'); } catch (e) {}
       }
@@ -2298,7 +2304,11 @@
           : 'It bites! Teeth in your hand — ' + biteDmg + ' damage. Wild things have teeth.');
         if (bBeh === 'defensive') {
           // RATTLESNAKE: fangs, not teeth. The venom is in.
-          try { (s.poisons = s.poisons || []).push({ name: 'rattlesnake venom', day: s.day }); } catch (e) {}
+          // VENOM VIA ENGINE (break-it disease 2026-10-10): was a direct
+          // s.poisons mirror push — phantom poison, no tick, never expired,
+          // purify cured nothing. Routed through applyStatus like every
+          // other status application.
+          try { this.applyStatus('scholar', 'poison', { name: 'rattlesnake venom', source: 'the rattlesnake' }); } catch (e) {}
           this.feedback('(poisoned — rattlesnake venom. Find an antidote.)');
         }
         try { this.audioEvent('animalBite'); } catch (e) {}

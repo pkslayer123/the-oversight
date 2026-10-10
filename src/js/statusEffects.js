@@ -151,6 +151,15 @@
         if (dur.turns != null) entry.turnsLeft = (opts.turns != null) ? opts.turns : dur.turns;
         if (dur.dayParts != null) entry.dayPartsLeft = (opts.dayParts != null) ? opts.dayParts : dur.dayParts;
         if (opts.name) entry.name = opts.name;
+        // MIRROR SYNC (break-it disease 2026-10-10): each engine entry gets a
+        // session-unique seq, stamped onto its legacy mirror entry too. The
+        // old seRemove/cureStatus used shift() / blanket-clear on the mirror
+        // array, which dropped the WRONG entry when two diseases overlapped
+        // (out-of-order expiry) or wiped a still-sick entry when curing one of
+        // two — the herbal_remedy button then read "Not sick" while a disease
+        // was still active (the mirror is the ability gate). Mirrors are now
+        // removed by seq match, never by position.
+        entry._seq = (this._seSeq = (this._seSeq || 0) + 1);
         list.push(entry);
       }
 
@@ -165,10 +174,10 @@
               // mirror must never carry the true disease name — nothing reads
               // .name for display, but the symptom label is the honest value.
               var mLabel = (def.symptomLabel || opts.name || def.name);
-              if (!existing) s.diseases.push({ name: mLabel, day: s.day });
+              if (!existing) s.diseases.push({ name: mLabel, day: s.day, seq: entry._seq });
             } else if (s && def.bridge.legacy === 'poisons') {
               s.poisons = s.poisons || [];
-              if (!existing) s.poisons.push({ name: opts.name || def.name, day: s.day });
+              if (!existing) s.poisons.push({ name: opts.name || def.name, day: s.day, seq: entry._seq });
             }
           } else if (t) {
             if (def.bridge.legacyField) t[def.bridge.legacyField] = Math.max(t[def.bridge.legacyField] || 0, entry.turnsLeft || 1);
@@ -204,17 +213,38 @@
       // (tickStatuses) used to leave the mirror behind — a ghost disease that
       // kept the journal badge on and the herbal_remedy/purify "cure" gates
       // open forever. Expiry drops the mirror with the engine entry.
+      // MIRROR SYNC (break-it disease 2026-10-10): the old code used shift()
+      // here — position, not identity. When two diseases overlapped and the
+      // second-applied expired first (folk slowRoll targeting, different
+      // durations), the mirror dropped the wrong entry: the engine was clean
+      // but the mirror still claimed sickness, or vice versa. Now matched by
+      // the entry's _seq (see applyStatus); pre-seq saves fall back to shift().
+      this.seDropMirror(target, st);
+      return st;
+    },
+
+    // Drop exactly one legacy mirror entry for an engine entry: seq match
+    // when the entry was created by the current applyStatus (see _seq), else
+    // the old shift() behavior for pre-seq saves. Never throws.
+    seDropMirror: function (target, entry) {
       try {
-        var def = this.seDef && this.seDef(st.id);
-        if (def && def.bridge && target === 'scholar') {
-          var s = this.state.scholar;
-          if (s) {
-            if (def.bridge.legacy === 'diseases' && (s.diseases || []).length) s.diseases.shift();
-            if (def.bridge.legacy === 'poisons' && (s.poisons || []).length) s.poisons.shift();
+        if (target !== 'scholar' || !entry) return;
+        var def = this.seDef && this.seDef(entry.id);
+        if (!def || !def.bridge) return;
+        var key = def.bridge.legacy === 'diseases' ? 'diseases'
+          : def.bridge.legacy === 'poisons' ? 'poisons' : null;
+        if (!key) return;
+        var s = this.state.scholar;
+        if (!s || !Array.isArray(s[key]) || !s[key].length) return;
+        var at = -1;
+        if (entry._seq != null) {
+          for (var i = 0; i < s[key].length; i++) {
+            if (s[key][i] && s[key][i].seq === entry._seq) { at = i; break; }
           }
         }
+        if (at === -1) at = 0; // pre-seq mirror: old behavior
+        s[key].splice(at, 1);
       } catch (e) {}
-      return st;
     },
 
     // Tick statuses for a target at a scope ('combat' = per-turn, 'dayPart').
@@ -294,14 +324,6 @@
               } catch (e) {}
               return;
             }
-            // LEMONS CHRONIC: untreated, it can settle into the joints.
-            try {
-              if (isScholar && def.chronic && Math.random() < (def.chronic.chance || 0)) {
-                var cs = self.state.scholar;
-                cs.chronicAchesUntil = pIdx + (def.chronic.dayParts || 0);
-                self.say(def.chronic.text || 'The joints never quite forgave you.');
-              }
-            } catch (e) {}
             self.seRemove(target, st);
             try { self.say(self.seFill(def.expireText || ('{name} {verb} no longer ' + def.name.toLowerCase() + '.'), target, {})); } catch (e) {}
           }
@@ -324,15 +346,21 @@
       var def = this.seDef(effectId);
       var list = this.seList(target);
       var removed = false;
+      var dropped = [];
       for (var i = list.length - 1; i >= 0; i--) {
-        if (list[i].id === effectId) { list.splice(i, 1); removed = true; }
+        if (list[i].id === effectId) { dropped.push(list.splice(i, 1)[0]); removed = true; }
       }
       try {
         if (def && def.bridge) {
           if (target === 'scholar') {
-            var s = this.state.scholar;
-            if (s && def.bridge.legacy === 'diseases') s.diseases = [];
-            if (s && def.bridge.legacy === 'poisons') s.poisons = [];
+            // MIRROR SYNC (break-it disease 2026-10-10): the old code
+            // blanket-cleared s.diseases/s.poisons here. Curing one of two
+            // active diseases wiped the OTHER's mirror too — the engine still
+            // had it, but the mirror (which the herbal_remedy/purify buttons
+            // and the journal badge read) said clean, and the button vanished
+            // while you were still sick. Mirrors now drop only for the entries
+            // actually removed, matched by _seq.
+            for (var j = 0; j < dropped.length; j++) this.seDropMirror(target, dropped[j]);
           } else if (target && typeof target === 'object') {
             if (def.bridge.legacyField) target[def.bridge.legacyField] = 0;
             if (def.bridge.legacyFullField) target[def.bridge.legacyFullField] = 0;

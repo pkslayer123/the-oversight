@@ -9419,7 +9419,13 @@
           for (const te of ticks) {
             if (te.lastRollDay === day) continue; // one roll per day, not per part
             te.lastRollDay = day;
-            const daysOn = Math.max(1, day - (te.day || day) + 1);
+            // TICK ESCALATION (break-it disease 2026-10-10): the risk climbs
+            // with each day the tick stays attached. te.day was never stamped
+            // (applyStatus doesn't set it), so daysOn was always 1 and the
+            // roll sat at 3% forever — the UI's "the fever risk climbs"
+            // promise was a lie. Stamp the first-roll day, then escalate.
+            if (te.day == null) te.day = day;
+            const daysOn = Math.max(1, day - te.day + 1);
             const chance = Math.min(0.03 + 0.03 * (daysOn - 1), 0.15);
             if (!this.hasStatus('scholar', 'disease') && Math.random() < chance) {
               this.say(`The tick\u2019s been on you ${daysOn === 1 ? 'a day' : daysOn + ' days'} now. You wake up feverish, aching all over.`);
@@ -22886,7 +22892,7 @@
             this.say('A whine, circling — high, then higher. Too loud for anything that small. Way too loud.');
             this.audioEvent('mosquitoWhine');
           } else if (this.tickIs(mo)) {
-            mo.tickPhase = 'quest'; mo.tickLatched = false; mo.tickFeeds = 0; mo.tickRolled = false;
+            mo.tickPhase = 'quest'; mo.tickLatched = false; mo.tickFeeds = 0;
             this.say('In the grass: legs waving, slow. Questing. It\'s not hiding — it\'s fishing, and you\'re warm.');
             this.audioEvent('tickClick');
           } else if (this.humiceIs(mo) && !f0.humNoticed) {
@@ -26980,7 +26986,7 @@
       const dist = () => Math.max(Math.abs(foe.mx - m.mx), Math.abs(foe.my - m.my));
       const atk = (m.mdef || {}).attack || {};
       const release = (why) => {
-        m.tickLatched = false; m.tickFeeds = 0; m.tickRolled = false;
+        m.tickLatched = false; m.tickFeeds = 0;
         m.tickPhase = 'engorged'; setP('engorged');
         this.say(why);
         this.audioEvent('tickRelease');
@@ -27014,7 +27020,7 @@
       }
       if (dist() <= 1) {
         // LATCH — undodgeable at adjacency. It was already on you.
-        m.tickLatched = true; m.tickFeeds = 0; m.tickRolled = false;
+        m.tickLatched = true; m.tickFeeds = 0;
         m.tickPhase = 'latch'; setP('latch');
         const dmg = S.combat.roll(atk.damage || [6, 10]);
         const landed = this.tbDamage(foe.key, dmg, this.encDamageSource(m, 'The Latch'), null, { undodgeable: true });
