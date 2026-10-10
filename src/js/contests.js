@@ -1764,6 +1764,89 @@
     contestExchange: ['contestCall', 'rushHit'],
     // The Auction: the cruelest show — the call curdles into dread.
     contestAuction: ['contestCall', 'horrorSting'],
+    // POOL-EXPANSION PHASE BEATS (break-it audio r11 2026-10-10): the 14 pool
+    // contests added 2026-10-06/07 (sorting/witness/cache/longodds via
+    // contestPool expansions, price/impress/exchange/auction, lockpick/
+    // wrongmap/alibi/echo/tidepool/windfall) each had a single bespoke beat
+    // for the PLAY path above — but the WATCH path (_contestWatchPhases) and
+    // the death/refuse/end Resolve sites fire _cxB(contest.id, 'Declare'|
+    // 'Escalate'|'Climax'|'Resolve'), and _cxBeat SILENTLY no-ops on unknown
+    // names. So all three watch phases and every contest ending were silent
+    // for these 14 — the whole show, no sound. Each gets the same 4-beat
+    // grammar the older 30 use: Declare announces, Escalate tightens, Climax
+    // peaks, Resolve lands victory + the contest's signature texture. Parts
+    // are composed from registered voices, anchored on each contest's own
+    // bespoke beat identity above.
+    // The Sorting: conveyor triage — counting under the call, then the rush.
+    contestSortingDeclare: ['contestCall', 'droneCount'],
+    contestSortingEscalate: ['eurekaTick', 'droneCount'],
+    contestSortingClimax: ['eurekaDetonate', 'rushHit'],
+    contestSortingResolve: ['victory', 'justiceVerdict'],
+    // The Witness: forgery forensics — paper, then the wrongness screams.
+    contestWitnessDeclare: ['contestCall', 'paperRustle'],
+    contestWitnessEscalate: ['modNotice', 'staticScream'],
+    contestWitnessClimax: ['horrorSting', 'staticScream'],
+    contestWitnessResolve: ['victory', 'contestSpared'],
+    // The Cache: audit heist — the grab-klaxon, silence, the snap, footsteps out.
+    contestCacheDeclare: ['contestTaken', 'paperRustle'],
+    contestCacheEscalate: ['nightcourtSilence', 'lockpickChitter'],
+    contestCacheClimax: ['ambushSnap', 'horrorSting'],
+    contestCacheResolve: ['victory', 'exileWalk'],
+    // The Long Odds: push-your-luck dice — hype inflates, the table slams.
+    contestLongoddsDeclare: ['contestCall', 'hypeInflate'],
+    contestLongoddsEscalate: ['round', 'hypeInflate'],
+    contestLongoddsClimax: ['rushHit', 'eurekaDetonate'],
+    contestLongoddsResolve: ['victory', 'hypeDeflate'],
+    // The Price: the village decides who pays — the moot's verdict, receding.
+    contestPriceDeclare: ['contestCall', 'justiceVerdict'],
+    contestPriceEscalate: ['confront', 'justiceVerdict'],
+    contestPriceClimax: ['justiceVerdict', 'horrorSting'],
+    contestPriceResolve: ['lineCut', 'exileWalk'],
+    // Impress Us: make the aliens feel something new — cameras, then the unlock.
+    contestImpressDeclare: ['contestCall', 'paparazzoShutter'],
+    contestImpressEscalate: ['hypeInflate', 'levelup'],
+    contestImpressClimax: ['trialFanfare', 'horrorSting'],
+    contestImpressResolve: ['victory', 'contestSpared'],
+    // The Exchange: the village relay — the count, pounding feet, the crash.
+    contestExchangeDeclare: ['contestCall', 'droneCount'],
+    contestExchangeEscalate: ['animalPant', 'rushHit'],
+    contestExchangeClimax: ['rushHit', 'crash'],
+    contestExchangeResolve: ['victory', 'animalPant'],
+    // The Auction: bid memories, years, parts — hold music curdles into dread.
+    contestAuctionDeclare: ['contestCall', 'paparazzoShutter'],
+    contestAuctionEscalate: ['holdMusic', 'hypeInflate'],
+    contestAuctionClimax: ['hypeDetonate', 'horrorSting'],
+    contestAuctionResolve: ['victory', 'hypeDeflate'],
+    // The Iron Pantry: vault-lock — the call under the tumbler, then the grab.
+    contestLockpickDeclare: ['contestCall', 'lockpickChitter'],
+    contestLockpickEscalate: ['teethTick', 'lockpickChitter'],
+    contestLockpickClimax: ['lockpickGrab', 'horrorSting'],
+    contestLockpickResolve: ['victory', 'levelup'],
+    // The Wrong Map: the System lies about water — paper, corrections, the cry.
+    contestWrongmapDeclare: ['contestCall', 'paperRustle'],
+    contestWrongmapEscalate: ['droneCorrect', 'eurekaTick'],
+    contestWrongmapClimax: ['staticCry', 'horrorSting'],
+    contestWrongmapResolve: ['victory', 'contestSpared'],
+    // The Alibi Chain: breaking it — paper, the confrontation, the verdict.
+    contestAlibiDeclare: ['contestCall', 'paperRustle'],
+    contestAlibiEscalate: ['liarConfront', 'lineCut'],
+    contestAlibiClimax: ['justiceVerdict', 'modViolation'],
+    contestAlibiResolve: ['victory', 'contestSpared'],
+    // The Echo: two tellings — silence, the swarm of versions, the scream.
+    contestEchoDeclare: ['contestCall', 'nightcourtSilence'],
+    contestEchoEscalate: ['swarmBuild', 'staticScream'],
+    contestEchoClimax: ['horrorSting', 'staticScream'],
+    contestEchoResolve: ['victory', 'contestSpared'],
+    // The Tide Clock: the water — the grab-klaxon, pounding feet, the storm.
+    contestTidepoolDeclare: ['contestTaken', 'animalSplash'],
+    contestTidepoolEscalate: ['animalRustle', 'rushHit'],
+    contestTidepoolClimax: ['rushHit', 'stormFront'],
+    contestTidepoolResolve: ['victory', 'exileWalk'],
+    // Windfall: the rot race — the call over the swarm, the unlock at the end.
+    contestWindfallDeclare: ['contestCall', 'swarmBuild'],
+    contestWindfallEscalate: ['swarmEscalate', 'hungerGnaw'],
+    contestWindfallClimax: ['ambushSnap', 'swarmFlash'],
+    contestWindfallResolve: ['victory', 'levelup'],
     // pit: gladiator pit — fanfare curdles; quiet circling then the wrong-deep bellow; the rush lands wrong; the kill thud under victory
     contestPitDeclare: ['hecklerHeadliner', 'contestCall'],
     contestPitEscalate: ['woundCunning', 'deerAggro'],
