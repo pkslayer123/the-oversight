@@ -704,18 +704,19 @@
         }
         try { this.bumpTrust(vid, 1); } catch (e) {}
       } else if (purpose === 'visit' || purpose === 'guard') {
+        var withLine = '';
+        var withId = null;
+        try {
+          var o = this.objOf(vid);
+          if (o.companion) { withLine = ' with ' + this.displayName(o.companion); withId = o.companion; }
+          else if (o.targetVid) { withLine = ' — found ' + this.displayName(o.targetVid).split(' ')[0]; withId = o.targetVid; }
+        } catch (e) {}
         if (playerAtHaven) {
-          var withLine = '';
-          var withId = null;
-          try {
-            var o = this.objOf(vid);
-            if (o.companion) { withLine = ' with ' + this.displayName(o.companion); withId = o.companion; }
-            else if (o.targetVid) { withLine = ' — found ' + this.displayName(o.targetVid).split(' ')[0]; withId = o.targetVid; }
-          } catch (e) {}
           this.say(`🚶 ${nm} is back${withLine}.`);
         }
         // BONDS (pacing build 2026-10-10): a completed visit with someone —
-        // miles walked together, stories traded. +4.
+        // miles walked together, stories traded. +4. Fires whether or not
+        // the player was there to see them return.
         try { if (withId && this.bondAdd) this.bondAdd(vid, withId, 4, 'visit'); } catch (e) {}
         try { this.seedGossip('return', { who: vid }, []); } catch (e) {}
       }
