@@ -196,7 +196,22 @@ probes.rumorcap = function () {
 probes.talkspam = function () {
   console.log('=== PROBE talk-spam-cap (pure ack) ===');
   const vid = roster()[0];
+  // BASELINE (socialite r10 2026-10-10): earlier probes in the 'all' run can
+  // leave this villager above the cap via real acts (promise kept +15) — the
+  // words-cap probe needs a below-cap start to mean anything.
+  Game.state.village.trust = Game.state.village.trust || {};
+  Game.state.village.trust[vid] = 34;
   const t0 = trustOf(vid);
+  // ISOLATION (socialite r10 2026-10-10): 25 conversations burn ~25+ ticks,
+  // and the living world ticks with them — NPC task completions and returns
+  // pay the designed leadership drip (+1/+2, progressive) via bumpTrust
+  // during advancePart. That is not words and not the farm under test; it
+  // used to leak +2 past the cap here and fail the probe for the wrong
+  // reason. Freeze the world-drip so the probe measures the WORDS channel
+  // only. (The drip itself is pinned as designed in
+  // test-socialite-r10-20261010.js A6.)
+  const origBump = Game.bumpTrust;
+  Game.bumpTrust = function () {};
   for (let n = 0; n < 25; n++) {
     Game.startConvo(vid);
     for (let i = 0; i < 8; i++) {
@@ -210,6 +225,7 @@ probes.talkspam = function () {
     }
     Game.endConvo(vid, 'natural');
   }
+  Game.bumpTrust = origBump;
   const t1 = trustOf(vid);
   console.log(`25 convos pure-ack spam: trust ${t0} -> ${t1}`);
   verdict('talk-spam farm', t1 > 40, `trust ${t1}`);
@@ -287,17 +303,29 @@ probes.rumorthread = function () {
   Game.convoTurn(listener, tpick); // now mid-thread: type selection pending
   const c = Game.convoGet(listener);
   const midThread = c.thread, midTarget = c.rumorTarget;
-  // abandon: end convo mid-thread, start a fresh one — does the thread dangle?
+  // abandon: end convo mid-thread, start fresh ones — does the thread dangle?
+  // CONTRACT (socialite r10 2026-10-10): the coherence system (Steve
+  // 2026-10-07) may claim the immediate reopen to resurface the abandoned
+  // thread ("we never finished...") — the verb is not guaranteed on THAT
+  // menu. What must hold: no throw, no dangling rumor:type: menu, menus
+  // build, and the verb returns within the next few conversations. It is
+  // never permanently lost.
   Game.endConvo(listener, 'left');
-  Game.startConvo(listener);
-  const c2 = Game.convoGet(listener);
-  menu = (Game.convoChoices(listener) || []).map(c => c.id);
-  if (menu.includes('dlg:subject')) { Game.convoTurn(listener, 'dlg:subject'); menu = (Game.convoChoices(listener) || []).map(c => c.id); }
-  const canRumorAgain = menu.includes('ask:spread_rumor');
-  console.log(`mid: thread=${midThread} target=${!!midTarget}; after re-open: thread=${c2.thread} rumorDone=${c2.rumorDone} can-rumor-again=${canRumorAgain}`);
-  Game.endConvo(listener, 'left');
-  verdict('rumor thread dangle', !canRumorAgain, `re-offer=${canRumorAgain}`);
-  ok(canRumorAgain, 'abandoned rumor thread resets; rumor re-offerable', `canRumorAgain=${canRumorAgain}`);
+  let threw = false, dangled = false, reofferAt = -1;
+  for (let n = 0; n < 4; n++) {
+    try {
+      Game.startConvo(listener);
+      let m2 = (Game.convoChoices(listener) || []).map(c => c.id);
+      ok(m2.length > 0, 'menu builds after rumor abandon (reopen ' + n + ')', m2.length);
+      if (m2.includes('dlg:subject')) { Game.convoTurn(listener, 'dlg:subject'); m2 = (Game.convoChoices(listener) || []).map(c => c.id); }
+      if (m2.some(id => (id || '').indexOf('rumor:type:') === 0)) dangled = true;
+      if (reofferAt < 0 && m2.includes('ask:spread_rumor')) reofferAt = n;
+      Game.endConvo(listener, 'left');
+    } catch (e) { threw = true; console.log('  reopen threw:', e.message); }
+  }
+  console.log(`mid: thread=${midThread} target=${!!midTarget}; verb re-offered at reopen #${reofferAt}, dangled=${dangled}, threw=${threw}`);
+  verdict('rumor thread dangle', threw || dangled || reofferAt < 0, `reoffer=${reofferAt} dangle=${dangled}`);
+  ok(!threw && !dangled && reofferAt >= 0, 'abandoned rumor thread never dangles; verb returns', `reofferAt=${reofferAt}`);
 };
 
 // ---------- PROBE hawk: stranded pendingHawk ----------

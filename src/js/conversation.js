@@ -3132,6 +3132,13 @@
       // TALKING COSTS A LITTLE ENERGY — 10 kcal to open a conversation, not
       // per line. Small talk is quick and cheap; going deep costs ticks
       // (see convoDeepTick), not a flat tax. Social play stays viable.
+      // HONESTY (socialite r10 2026-10-10): the charge was silent — the
+      // button now names it (app.js), and the first conversation says it
+      // once, in-fiction. After that it's priced into the habit.
+      if (!this.state.scholar.talkCostTold) {
+        this.state.scholar.talkCostTold = true;
+        this.say('(Talking costs a little energy — 10 kcal a conversation. Small talk is cheap; going deep costs time, not more food.)');
+      }
       this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
       // ACTION CLOCK: opening a conversation takes 1 tick (time-only —
       // talking barely burns calories). Deep beats add ticks as they land.
@@ -4244,7 +4251,14 @@
       const cm = Math.max(-3, Math.min(3, c.mood || 0));
       if (cm !== 0 && c.exchanges >= 3 && c.substantive) this.resolveConsequence(vid, { trust: cm, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
-      try { this.checkPromises('social', vid); } catch (e) {}
+      // PROMISES (socialite r10 2026-10-10): keeping a 'belong'/'understand'
+      // promise ('social' kind) requires a REAL conversation — substantive
+      // and 3+ exchanges, the same bar as the mood residue. The old
+      // unconditional call kept the promise on ANY convo end, so
+      // promise -> open/close (hello-goodbye, 10 kcal, 1 tick) farmed +15
+      // trust per cycle: measured 10 -> 92 in 10 cycles for 100 kcal, zero
+      // real investment. Words don't keep promises; time spent does.
+      if (c.substantive && (c.exchanges || 0) >= 3) { try { this.checkPromises('social', vid); } catch (e) {} }
       // BUGFIX (break-it 2026-10-08): `t` was undefined here — every natural
       // conversation end threw ReferenceError, skipping the exit line, mood
       // goodbye, and coherence close-beat. Pass the live trust value.

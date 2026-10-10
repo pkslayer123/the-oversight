@@ -373,4 +373,28 @@
     }
     return r;
   };
+  // EXCHANGE COUNTING (socialite r10 2026-10-10): the dlg: handlers above
+  // return early without reaching the base turn handler, so c.exchanges
+  // never counted dialogue turns — a 6-turn "tell me more" conversation
+  // read as exchanges=0 (zero stipend, residue unreachable, and the
+  // promise-keep gate had nothing to stand on). A spoken turn that gets an
+  // answer IS an exchange. Count them here, once, for every dlg: choice
+  // that the inner wrapper handled itself. theorize/invite delegate to the
+  // base handler, which counts its own — exclude them to avoid double
+  // counting. (agree/joke/silence are not dlg: choices; the base counts
+  // those already.)
+  const _dlgTurnCounted = Game.convoTurn;
+  Game.convoTurn = function (vid, choiceId) {
+    const r = _dlgTurnCounted.call(this, vid, choiceId);
+    try {
+      if (r && !r.ended && typeof choiceId === 'string' && choiceId.indexOf('dlg:') === 0) {
+        const dlg = choiceId.slice(4);
+        if (dlg !== 'theorize' && dlg !== 'invite') {
+          const c = this.convoGet(vid);
+          if (c && c.active) c.exchanges = (c.exchanges || 0) + 1;
+        }
+      }
+    } catch (e) {}
+    return r;
+  };
 })();

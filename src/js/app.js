@@ -11253,7 +11253,11 @@
     // button below is the single entry point.
     const convo = Game.convoUI ? Game.convoUI(villagerId) : { active: false, transcript: [], choices: [] };
     const convoHtml = '';
-    const talkLabel = convo.active ? null : (convo.transcript && convo.transcript.length ? '\uD83D\uDCAC Talk again' : '\uD83D\uDCAC Talk');
+    // HONESTY (socialite r10 2026-10-10): the conversation open charges 10
+    // kcal, but the Talk button never said so — a silent cost. The person
+    // sheet is the single entry point to every conversation, so the cost
+    // lives on the button itself. Every entry path funnels through here.
+    const talkLabel = convo.active ? null : (convo.transcript && convo.transcript.length ? '\uD83D\uDCAC Talk again (10 kcal)' : '\uD83D\uDCAC Talk (10 kcal)');
     const youKnow = Object.keys(Game.state.codex.plants || {});
     const theyKnow = (Game.state.village.taught && Game.state.village.taught[villagerId]) || [];
     const teachable = youKnow.filter(pid => !theyKnow.includes(pid));
