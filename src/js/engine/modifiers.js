@@ -163,6 +163,17 @@
   // Knowledge isn't separate from powers — it AMPLIFIES them.
   // Takes codex.skills {skillId: {level}} and knowledge data, returns modifier objects.
   // Mechanical keys map to modifier targets (same language as abilities/relics).
+  //
+  // BREAK-IT abilities 2026-10-10 (sibling sweep): 19 of these 25 keys
+  // emitted targets NOTHING reads (hunt.find vs the engine's hunt.find_chance,
+  // food.spoil vs food.spoilage_days, ...). The skills' mechanicals were
+  // doubly dead: allModifiers() had no callers AND the emissions missed.
+  // Retargeted below to live engine targets where the mapping is
+  // unambiguous. Keys with no honest live target (night-gated night_hunt /
+  // night_spot — no ctx support; animal_calm, craft_quality, trust_read,
+  // morale_boost, combat_focus, desertion_resist, grief_recover, system_hide)
+  // stay unmapped and are dropped — a documented gap for content work, not
+  // silent: adding an engine target for any of them lights the skill up.
   const KNOWLEDGE_MOD_MAP = {
     // key in knowledge.json mechanical -> modifier target
     'fuel_save': (v) => [{ target: 'fire.fuel', op: 'multiply', value: 1 - v }],
@@ -172,12 +183,22 @@
     // reads (the engine's healing target is 'healing.amount'). Every
     // knowledge skill granting heal_bonus was silently doing nothing.
     'heal_bonus': (v) => [{ target: 'healing.amount', op: 'add', value: v }],
-    'hunt_find': (v) => [{ target: 'hunt.find', op: 'add', value: v }],
-    'hunt_success': (v) => [{ target: 'hunt.success', op: 'add', value: v }],
-    'trap_success': (v) => [{ target: 'trap.success', op: 'add', value: v }],
+    // BREAK-IT abilities 2026-10-10: was 'hunt.find' — nothing reads it.
+    // The engine's find target is 'hunt.find_chance' (encounters/game.js).
+    'hunt_find': (v) => [{ target: 'hunt.find_chance', op: 'multiply', value: 1 + v }],
+    // BREAK-IT abilities 2026-10-10: was 'hunt.success' — nothing reads it.
+    // Tracking finds game: same live target as hunt_find.
+    'hunt_success': (v) => [{ target: 'hunt.find_chance', op: 'multiply', value: 1 + v }],
+    // BREAK-IT abilities 2026-10-10: was 'trap.success' — nothing reads it.
+    // The engine's trap target is 'hunt.trap_catch' (base 0.4, cap 0.95).
+    'trap_success': (v) => [{ target: 'hunt.trap_catch', op: 'add', value: v }],
     'combat_crit': (v) => [{ target: 'combat.crit', op: 'add', value: v }],
-    'combat_damage': (v) => [{ target: 'combat.damage', op: 'multiply', value: 1 + v }],
-    'spoil_slow': (v) => [{ target: 'food.spoil', op: 'multiply', value: 1 - v }],
+    // BREAK-IT abilities 2026-10-10: was 'combat.damage' — nothing reads it.
+    // The engine's generic damage target is 'combat.strike_damage'.
+    'combat_damage': (v) => [{ target: 'combat.strike_damage', op: 'multiply', value: 1 + v }],
+    // BREAK-IT abilities 2026-10-10: was 'food.spoil' — nothing reads it.
+    // More spoilage_days IS slower spoilage (engine: food.spoilage_days).
+    'spoil_slow': (v) => [{ target: 'food.spoilage_days', op: 'multiply', value: 1 + v }],
     'trust_gain': (v) => [{ target: 'trust.gain_mult', op: 'multiply', value: 1 + v }],
     'lie_detect': (v) => [{ target: 'social.lie_detect', op: 'add', value: v }],
     'conflict_resolve': (v) => [{ target: 'social.conflict_resolve', op: 'add', value: v }],
@@ -193,6 +214,15 @@
     'disease_resist': (v) => [{ target: 'health.disease_resist', op: 'add', value: v }],
     'system_favor': (v) => [{ target: 'system.favor', op: 'add', value: v }],
     'shelter_warmth': (v) => [{ target: 'shelter.warmth', op: 'add', value: v }],
+    // BREAK-IT abilities 2026-10-10: was 'forage.find' — nothing reads it.
+    // The engine's forage target is 'forage.yield' (relic map precedent).
+    'forage_find': (v) => [{ target: 'forage.yield', op: 'multiply', value: 1 + v }],
+    // BREAK-IT abilities 2026-10-10: new keys for the fishing/foraging
+    // skills (knowledge.json). The gill-net check reads fishing.yield /
+    // fishing.rare_chance through mods().
+    'fish_yield': (v) => [{ target: 'fishing.yield', op: 'multiply', value: 1 + v }],
+    'fish_rare': (v) => [{ target: 'fishing.rare_chance', op: 'add', value: v }],
+    'forage_yield': (v) => [{ target: 'forage.yield', op: 'multiply', value: 1 + v }],
   };
 
   function collectKnowledgeModifiers(codexSkills, knowledgeData) {

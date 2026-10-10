@@ -120,10 +120,10 @@
     ],
     "abilitySynergies": [
       {
-        "ability": "stormcall",
+        "ability": "rain_dancer",
         "minLevel": 1,
         "technique": "Front Runner",
-        "effect": "You feel storms 12 hours out. Your storm abilities charge faster before rain."
+        "effect": "You feel storms 12 hours out. Your rain-dance charges faster before rain."
       }
     ]
   },
@@ -290,7 +290,7 @@
     ],
     "abilitySynergies": [
       {
-        "ability": "healing",
+        "ability": "field_medicine",
         "minLevel": 1,
         "technique": "Precise Mend",
         "effect": "Your healing knows where to go. +50% effectiveness."
@@ -334,7 +334,7 @@
     ],
     "abilitySynergies": [
       {
-        "ability": "healing",
+        "ability": "field_medicine",
         "minLevel": 2,
         "technique": "Surgical Grace",
         "effect": "You heal like a surgeon with infinite tools. Critical heals."
@@ -1053,7 +1053,12 @@
       "tracker"
     ],
     "abilitySynergies": [
-      "night_eyes"
+      {
+        "ability": "night_eyes",
+        "minLevel": 2,
+        "technique": "Owl's Ledger",
+        "effect": "You read the dark the way its natives do \u2014 movement first, shape second, intent third. Nothing nocturnal surprises you."
+      }
     ]
   },
   {
@@ -1081,7 +1086,12 @@
       "tracker"
     ],
     "abilitySynergies": [
-      "night_eyes"
+      {
+        "ability": "night_eyes",
+        "minLevel": 2,
+        "technique": "Still Hunt",
+        "effect": "Dark is your blind. You move through it the way the owls do \u2014 seen by nothing, seeing everything."
+      }
     ]
   },
   {
@@ -1192,5 +1202,59 @@
     },
     "backgrounds": [],
     "moved_from_ability": true
+  },
+  {
+    "id": "fishing",
+    "name": "Reading the Water",
+    "domain": "nature",
+    "rarity": "common",
+    "levels": {
+      "1": "You know where fish hold: seams, eddies, shade lines. The water stops being a surface and starts being a map.",
+      "2": "You read the day's water \u2014 temperature, clarity, current \u2014 and set your effort where the fish already are. Nets come up heavier.",
+      "3": "The old hands say the fish come to you. They are half right: you stopped fishing where fish aren\u2019t. Rare ones, too."
+    },
+    "mechanical": {
+      "1": {},
+      "2": {
+        "fish_yield": 0.15
+      },
+      "3": {
+        "fish_rare": 0.1,
+        "fish_yield": 0.3
+      }
+    },
+    "backgrounds": [
+      "fisherman",
+      "fishing guide",
+      "sailor"
+    ],
+    "abilitySynergies": []
+  },
+  {
+    "id": "foraging",
+    "name": "The Forager\u2019s Eye",
+    "domain": "nature",
+    "rarity": "common",
+    "levels": {
+      "1": "You walk slower and see more. Food was always there; now you notice it.",
+      "2": "Edges, disturbed ground, last year\u2019s growth \u2014 you read a hillside like a menu and strip it clean.",
+      "3": "You take the patch, not the plant. What you leave fruits twice as hard next season. The wild provides because you ask right."
+    },
+    "mechanical": {
+      "1": {},
+      "2": {
+        "forage_yield": 0.15
+      },
+      "3": {
+        "forage_yield": 0.3
+      }
+    },
+    "backgrounds": [
+      "forager",
+      "hunter",
+      "gardener",
+      "herbalist"
+    ],
+    "abilitySynergies": []
   }
 ]

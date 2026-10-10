@@ -104,7 +104,15 @@ function speciesCal(id) {
     const c = s.inventory.find(i => i && i.foodState === 'carcass');
     const gross = c ? c.hiddenKcal : null;
     console.log('  caught item:', c ? c.name : '(none)', 'gross:', gross);
-    check('E1 net pays species gross (chub=200)', gross === 200, 'gross=' + gross);
+    // BREAK-IT abilities r2 2026-10-10: the fishing SKILL (knowledge.json)
+    // now amplifies nets through allModifiers() — a fisherman scholar's
+    // Reading the Water L2 lands 200 x 1.15 = 230. The tripwire's target is
+    // the old 300-600 FLAT printer, not legit skill modifiers: expect
+    // species gross x the resolved fishing.yield (same pipeline as the net).
+    const S = globalThis.Scattering;
+    const expGross = Math.round(S.modifiers.resolve(200, 'fishing.yield', Game.allModifiers(), {}));
+    check('E1 net pays species gross x fishing.yield (chub)', gross === expGross, 'gross=' + gross + ' expected=' + expGross);
+    check('E1 gross is never the old 300-600 flat printer', gross < 300, 'gross=' + gross);
     check('E1 carcass is the real species, not generic "fish"', c && /creek chub/i.test(c.name), c && c.name);
     check('E1 catch message names the species', msgs.some(m => /creek chub/i.test(m)), msgs.join(' | ').slice(0, 160));
     check('E1 ecology decremented (4 -> 3)', (t.wildlife.creek_chub || 0) === 3, JSON.stringify(t.wildlife));

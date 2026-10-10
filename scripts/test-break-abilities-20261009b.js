@@ -198,14 +198,22 @@ async function main() {
     // (break-it abilities 2026-10-10: lie_detect joined the fixed list —
     // truth.js observePerson now reads social.lie_detect, so the knowledge
     // map's lie_detect key is live too. Dead inventory 32 -> 31.)
-    const fixed = ['heal_bonus', 'fire_success', 'fire_heat', 'lie_detect'];
+    // (break-it abilities r2 2026-10-10: hunt_find/hunt_success ->
+    // hunt.find_chance, trap_success -> hunt.trap_catch, spoil_slow ->
+    // food.spoilage_days, combat_damage -> combat.strike_damage, forage_find
+    // -> forage.yield retargeted to live engine targets; fish_yield /
+    // fish_rare / forage_yield added live for the new fishing/foraging
+    // skills. Dead inventory 31 -> 26.)
+    const fixed = ['heal_bonus', 'fire_success', 'fire_heat', 'lie_detect',
+      'hunt_find', 'hunt_success', 'trap_success', 'spoil_slow',
+      'combat_damage', 'forage_find', 'fish_yield', 'fish_rare', 'forage_yield'];
     for (const key of fixed) {
       const t = kmap[key];
       assert(t && consumed(t), `B4: knowledge key '${key}' -> '${t}' has an engine consumer`);
     }
     const deadKeys = [...usedKeys].sort().filter(k => !fixed.includes(k) && !(kmap[k] && consumed(kmap[k])));
     console.log(`  R3 inventory: ${deadKeys.length} used knowledge keys with no engine effect: ${deadKeys.join(', ')}`);
-    assert(deadKeys.length === 31, `R3 inventory stable (expected 31, got ${deadKeys.length})`);
+    assert(deadKeys.length === 26, `R3 inventory stable (expected 26, got ${deadKeys.length})`);
   }
 
   // ------------------------------------------------------------------

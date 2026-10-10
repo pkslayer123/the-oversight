@@ -3026,7 +3026,14 @@
           if (net.uses == null) net.uses = 12; // backfill pre-fix nets
           // SYNERGY (fix 2026-10-09): tidecaller grants fishing.yield and
           // fishing.rare_chance — wire them into the net check.
-          const _fm = S.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies);
+          // BREAK-IT abilities 2026-10-10: resolve through allModifiers()
+          // (abilities + synergies + relics + KNOWLEDGE) instead of raw
+          // collectModifiers — the fishing SKILL's fish_yield/fish_rare now
+          // amplify nets too, as designed. Deliberately NOT this.mods():
+          // the Versatile Generalist buildBonus ("+10% to everything")
+          // reaching net yields is a separate design call, and the net
+          // test pins exact species gross.
+          const _fm = this.allModifiers();
           const fishYield = S.modifiers.resolve(1, 'fishing.yield', _fm, {});
           const fishRare = S.modifiers.resolve(0, 'fishing.rare_chance', _fm, {});
           if (Math.random() < 0.35 + fishRare) {
@@ -17926,7 +17933,7 @@
       const out = [];
       const has = (id) => this.hasAbility(id);
       if (has('blood_magic')) { const bc = this.hasSynergy('crimson_circuit') ? 7 : 10; out.push({ id: 'blood_magic', target: 'self', name: 'Blood Price', desc: `-${bc} HP → +500 kcal. Your body eats itself. 2/day part.`, available: (s.health || 0) > bc, why: `Too weak — need ${bc}+ HP.` }); }
-      if (has('time_skip')) out.push({ id: 'time_skip', target: 'none', name: 'Time Skip', desc: 'Skip to the next day part instantly. Ages you 1 day.', available: true });
+      if (has('time_skip')) out.push({ id: 'time_skip', target: 'none', name: 'Time Skip', desc: 'Skip to the next day part instantly. Time passes — food spoils forward, calories burn, the world moves without you. 1/day.', available: true });
       if (has('dowsing')) out.push({ id: 'dowsing', target: 'none', name: 'Dowse', desc: 'A forked stick twitches toward water. 70% accurate.', available: true });
       if (has('echo_location')) out.push({ id: 'echo_location', target: 'none', name: 'Echo-locate', desc: 'Clap once: sense the 3x3 around you. 1/day.', available: s.echoDay !== s.day, why: 'Used today.', combat: true });
       // HEALING (Steve 2026-10-05): problems need answers. Field medicine heals,
@@ -21241,7 +21248,11 @@
     // The double-count arrived with the af62f4a5 wiring and hid behind the
     // 6-slot cap. One collection path now.
     mods() {
-      const mods = globalThis.Scattering.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies);
+      // BREAK-IT abilities 2026-10-10: allModifiers() (abilities + relics +
+      // synergies + KNOWLEDGE) had zero callers — every knowledge skill's
+      // mechanicals were silently dead at runtime. One pipeline now:
+      // knowledge amplifies powers, as the design always claimed.
+      const mods = this.allModifiers();
       // BUILD BONUS (Steve 2026-10-07): specialists and generalists both get
       // rewarded. The bonus applies as a modifier so it stacks with everything.
       try {

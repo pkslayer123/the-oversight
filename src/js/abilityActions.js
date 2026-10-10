@@ -1525,7 +1525,10 @@
       s.health = game.maxHealth();
       var had = s.equipped && Object.keys(s.equipped).length;
       s.equipped = {};
-      try { game.noteAbilityUse('molt'); } catch (e) {}
+      // BREAK-IT abilities 2026-10-10: no direct noteAbilityUse here —
+      // useAbility's post-dispatch gainAbilityXP() already logs the use.
+      // The direct call double-logged every tap (2 synergy attempts for 1
+      // tap — 3-attempt synergies unlocked in 2 taps).
       game.say('MOLT: your skin splits. You step out new, whole — and naked.' + (had ? ' All equipped gear lost in the old skin.' : '') + ' (Once per week.)');
       return true;
     },
