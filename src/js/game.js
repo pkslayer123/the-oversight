@@ -92,6 +92,8 @@
 //   - fight_gates_round_trip: per-fight gates on the fight object (alien beam _beamCooldown) and the uprising's identity (uprising/uprisingAttackers, rebuilt into _lastBetrayal) persist in tbSave and restore verbatim — a mid-fight reload can neither re-arm the beam nor downgrade an uprising to an ordinary betrayal (code: syncRun, load, break-it persistence r6 2026-10-09)
 //   - fight_gate_sibling_sweep: the same save-scum class in related systems — hummice sound pressure (humStacks/humMice/humRiseRound/humDecayRound), the player shout cap (shouts) + its chorus-break duration (chorusBrokenUntil), the scorch narration flag (terraformScorched), the pending order re-sort (orderDirty) — all persist in tbSave and restore verbatim (code: syncRun, load, break-it persistence r6 2026-10-09)
 //   - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
+//   - echo_is_exactly_3x3: echo_location's copy promises "3x3 revealed" — it marks exactly the 3x3 world-map tiles around the player. The old code called reveal() per 3x3 center (a Manhattan<=2 diamond each): 37 tiles for a 9-tile promise (code: _activateAbilityInner, explorer break-it 2026-10-10)
+//   - dowsing_reveals_the_water: dowsing reveals exactly the nearest water tile — direction + distance is the knowledge, walking there is still yours. The old reveal() call lit a 13-tile diamond around possibly-distant ground: free fog knowledge (code: _activateAbilityInner, explorer break-it 2026-10-10)
 //   - day_parts: 4 nested (code: TIME)
 //   - ticks_per_day: defined in TIME (code: tickAction)
 //   - sleep_heal_bunk: 35 (code: sleepPreview)
@@ -17713,16 +17715,29 @@
           }
         }
         if (best && Math.random() < 0.7) {
-          this.reveal(best.x, best.y);
+          // DOWSING REVEALS THE WATER (explorer break-it 2026-10-10): the old
+          // code called this.reveal(best.x, best.y) — a Manhattan<=2 diamond
+          // (13 tiles) around a possibly far-off water tile. The design note
+          // says "reveal the nearest water tile", singular — the diamond was
+          // free fog knowledge of distant ground (tileInfo then names biomes
+          // never walked; tiles in range unlock as travelTargets). The
+          // promise is direction + distance; the tile itself is the find.
+          // Walking there is still yours.
+          this.tileAt(best.x, best.y).revealed = true;
           const dir = best.y < this.map.py ? 'north' : best.y > this.map.py ? 'south' : best.x < this.map.px ? 'west' : 'east';
           this.say(`The stick twitches — water, ${dir}. ${bestD} tiles. (dowsing)`);
         } else this.say('The stick is still. Either no water near, or it\'s lying. (dowsing failed)');
       } else if (id === 'echo_location') {
         if (s.echoDay === s.day) { this.say('Already echoed today.'); return false; }
         s.echoDay = s.day;
+        // ECHO IS EXACTLY 3x3 (explorer break-it 2026-10-10): the old code
+        // called this.reveal(nx, ny) for each of the 3x3 centers — and
+        // reveal() is a Manhattan<=2 diamond (13 tiles), so the union was 37
+        // tiles while the copy promised "3x3 revealed". The copy is the
+        // contract: mark exactly the 3x3.
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const nx = this.map.px + dx, ny = this.map.py + dy;
-          if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) this.reveal(nx, ny);
+          if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9) this.tileAt(nx, ny).revealed = true;
         }
         this.say('You clap once. The echo comes back with the shape of the land — 3x3 revealed. (echo_location)');
       } else if (id === 'field_medicine') {

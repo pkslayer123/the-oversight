@@ -965,7 +965,7 @@
   {
     "id": "echo_location",
     "name": "Echo Location",
-    "description": "Clap once: you sense the layout of any 9x9 grid (reveals blocked cells). 1/day.",
+    "description": "Clap once: you sense the shape of the land — reveals the 3x3 world-map tiles around you. 1/day.",
     "flavor": "CLAP! The sound comes back with a MAP! You are the bat! (The bat is jealous!)",
     "pool": "system",
     "tier": "utility",
@@ -984,7 +984,7 @@
         "cost": {
           "kcal": 10
         },
-        "effect": "Clap once: sense the layout of the 9x9 around you (reveals blocked cells). Once per day. Works in combat too."
+        "effect": "Clap once: sense the shape of the land — reveals the 3x3 world-map tiles around you. Once per day. Works in combat too."
       }
     ],
     "paths": [
