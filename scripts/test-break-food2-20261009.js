@@ -307,7 +307,10 @@ function meatEntry(day) {
     const origWave = Game.unlockedWave;
     Game.unlockedWave = () => 2;
     const ap = Game.apState();
-    ap.favor = 60;
+    // STALE-SETUP FIX (break-it food r3 2026-10-10): favor is per-lane since
+    // audit-shows 2026-10-09 — writing the legacy ap.favor field directly no
+    // longer drives apFavor() (it reads fanClubs lanes). Use the real API.
+    Game.apAdjustFavor(60, 'test setup', 'showbiz');
     s.kcal = 0;
     const r1 = Game.apCarePackage();
     const k1 = s.kcal;

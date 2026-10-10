@@ -556,13 +556,22 @@
       pantry.sort(function (a, b) { return (a.spoilDay || 99999) - (b.spoilDay || 99999); });
       for (var i = pantry.length - 1; i >= 0 && need > 0; i--) {
         var it = pantry[i];
-        var have = (it.kcalEach || 0) * (it.units || 0);
-        if (have <= 0) continue;
-        var take = Math.min(have, need);
-        var units = take / (it.kcalEach || 1);
-        it.units = Math.max(0, (it.units || 0) - units);
+        var per = it.kcalEach || 0, units = it.units || 0;
+        if (per <= 0 || units <= 0) continue;
+        // WHOLE UNITS (break-it food r3 2026-10-10): the old fractional take
+        // (take/per) minted sub-unit crumbs in the pantry. A crumb eats at
+        // full per-unit value downstream — eatOne grants kcalEach per bite
+        // regardless of fraction, and takeFromPantry's coercion inflated
+        // sub-1 crumbs back to whole units (0.4u x 500 -> 1u x 500): phantom
+        // kcal, measured +50% on a tribute shave. Indivisible pieces go
+        // whole — over-removal is honest, callers report actuals. Same
+        // doctrine as pantryDraw's player ceil ("no fractionating").
+        var takeUnits = Math.min(units, Math.ceil(need / per));
+        if (takeUnits <= 0) continue;
+        it.units = units - takeUnits;
+        var take = takeUnits * per;
         removed += take; need -= take;
-        if (it.units <= 0.001) pantry.splice(i, 1);
+        if (it.units <= 0) pantry.splice(i, 1);
       }
       return Math.round(removed);
     },

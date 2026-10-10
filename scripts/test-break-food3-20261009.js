@@ -393,14 +393,16 @@ function freshGame() {
     const after = Game.villagerDayProduction(person, vid, v);
     // the bonus multiplies the villager's OWN production (feeds self first) —
     // no kcal conjured from nothing. The return compounds with learned
-    // knowledge (cap 1.8): bounded at ~2.7x of base after a 30-day investment
-    // in ONE villager, not a faucet. Assert the component caps hold.
+    // knowledge (cap 2.0 — Steve 2026-10-09 food early balance moved it from
+    // 1.8; this assertion was stale): bounded at ~3.0x of base after a 30-day
+    // investment in ONE villager, not a faucet. Assert the component caps hold.
     const kf = Game.villagerKnowledgeFactor(vid, v);
-    ok('mentorship components bounded (bonus<=0.5, kf<=1.8)', bonus <= 0.5 + 1e-9 && kf <= 1.8 + 1e-9, `bonus=${bonus} kf=${kf}`);
+    ok('mentorship components bounded (bonus<=0.5, kf<=2.0)', bonus <= 0.5 + 1e-9 && kf <= 2.0 + 1e-9, `bonus=${bonus} kf=${kf}`);
     ok('mentorship grows production (not flat)', after > before, `${Math.round(before)} -> ${Math.round(after)}`);
-    // knowledge factor capped at 1.8 (no runaway)
+    // knowledge factor capped at 2.0 (no runaway) — Steve 2026-10-09 food
+    // early balance moved the cap from 1.8; this assertion was stale.
     v.taught = v.taught || {}; v.taught[vid] = pids.concat(['x1','x2','x3','x4','x5','x6','x7','x8','x9','x10','x11','x12','x13']);
-    ok('knowledgeFactor capped at 1.8', Game.villagerKnowledgeFactor(vid, v) === 1.8);
+    ok('knowledgeFactor capped at 2.0', Game.villagerKnowledgeFactor(vid, v) === 2.0);
   }
 
   console.log(`\n${pass} passed, ${fail} failed (seed=${SEED}, mode=${BEFORE ? 'BEFORE' : 'AFTER'})`);

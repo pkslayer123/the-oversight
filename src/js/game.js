@@ -11905,9 +11905,23 @@
       if (!item) return null;
       // UNIT COERCION (miser break-it 2026-10-08): a unit-less/corrupt pantry
       // entry went `item.units--` → NaN, survived every take (NaN <= 0 is
-      // false), and minted 1 unit per take FOREVER. Collapse to exactly one
-      // honest unit — same doctrine as the bury/takeFromCache coercions.
-      item.units = Math.max(1, Math.floor(item.units || 1));
+      // false), and minted 1 unit per take FOREVER. Collapse corrupt entries
+      // to exactly one honest unit — same doctrine as the bury/takeFromCache
+      // coercions.
+      // FRACTION HARDENING (break-it food r3 2026-10-10): pre-fix tribute /
+      // event takes could leave fractional units. A fractional stack is real
+      // value — the old floor-then-max inflated sub-1 crumbs to whole units
+      // at full kcalEach (0.4u x 500 -> 1u x 500: phantom kcal on the take)
+      // and floored larger ones (value sink). Collapse value-preservingly:
+      // one whole unit carrying the fractional value — no phantom, no sink.
+      {
+        const _u = item.units;
+        if (typeof _u !== 'number' || !isFinite(_u) || _u <= 0) item.units = 1;
+        else if (Math.floor(_u) !== _u) {
+          item.kcalEach = Math.round((item.kcalEach || 0) * _u);
+          item.units = 1;
+        }
+      }
       if (item.units <= 0) return null;
       // weight check (includes water: 1L = 1kg)
       const carry = (this.state.scholar.inventory || []).reduce((t, i) => t + (i.kg || 0) * (i.units || 1), 0) + this.waterWeight();
@@ -19184,10 +19198,15 @@
 
     // ---- _ev helpers (private to these events) ----
     // _evTakePantryKcal(n): remove ~n kcal from the village pantry item list.
-    // Mirrors the take pattern at game.js ~L12017, but allows fractional units:
-    // stockPantry() packs whole hauls as single units, so whole-unit takes
-    // would eat a 5000-kcal sack to feed one trader. Fractional units keep
-    // the math honest (pantryKcalLive sums kcalEach*units either way).
+    // WHOLE UNITS (break-it food r3 2026-10-10): the old code fractionated
+    // units ("fractional units keep the math honest"). They don't — a 0.6u
+    // crumb of 500-kcal food is 300 kcal of real value, but takeFromPantry's
+    // miser coercion inflated sub-1 crumbs back to whole units (0.6 -> 1u @
+    // full kcalEach: phantom kcal), and any crumb eaten directly granted a
+    // full per-unit bite. The comment's premise (a 5000-kcal sack to feed one
+    // trader) died when stockPantry started granulating to <=500-kcal pieces
+    // (2026-10-08) — indivisible pieces go whole, over-removal is honest, the
+    // caller reports actuals. Same doctrine as pantryDraw's player ceil.
     // Returns kcal actually taken.
     _evTakePantryKcal(n) {
       const v = this.state.village;
@@ -19195,18 +19214,22 @@
       let need = Math.max(0, Math.round(n || 0)), taken = 0;
       for (const item of v.pantry) {
         if (need <= 0) break;
-        const per = item.kcalEach || 0, units = item.units || 1;
+        const per = item.kcalEach || 0, units = item.units || 0;
         if (per <= 0 || units <= 0) continue;
-        const unitsOut = Math.min(units, need / per);
-        item.units = Math.round((units - unitsOut) * 100) / 100;
+        const unitsOut = Math.min(units, Math.ceil(need / per));
+        if (unitsOut <= 0) continue;
+        item.units = units - unitsOut;
         taken += unitsOut * per; need -= unitsOut * per;
       }
-      v.pantry = v.pantry.filter(i => (i.units || 0) > 0.001);
+      v.pantry = v.pantry.filter(i => (i.units || 0) > 0);
       v.pantryKcal = v.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
       return Math.round(taken);
     },
     // _evTakePlayerFoodKcal(n): same, from the scholar's own pack. Bonded
     // keepsakes (the duck!) are never food, no matter how hungry you are.
+    // WHOLE UNITS (break-it food r3 2026-10-10): see _evTakePantryKcal — the
+    // old fractional take left pack crumbs that eatOne granted at full
+    // per-unit value (0.5u x 500 eaten as 500: measured +50% phantom).
     _evTakePlayerFoodKcal(n) {
       const s = this.state.scholar;
       if (!s || !s.inventory) return 0;
@@ -19214,13 +19237,14 @@
       for (const item of s.inventory) {
         if (need <= 0) break;
         if (item.bonded || item.bookId) continue;
-        const per = item.kcalEach || 0, units = item.units || 1;
+        const per = item.kcalEach || 0, units = item.units || 0;
         if (per <= 0 || units <= 0) continue;
-        const unitsOut = Math.min(units, need / per);
-        item.units = Math.round((units - unitsOut) * 100) / 100;
+        const unitsOut = Math.min(units, Math.ceil(need / per));
+        if (unitsOut <= 0) continue;
+        item.units = units - unitsOut;
         taken += unitsOut * per; need -= unitsOut * per;
       }
-      s.inventory = s.inventory.filter(i => (i.units || 0) > 0.001);
+      s.inventory = s.inventory.filter(i => (i.units || 0) > 0);
       return Math.round(taken);
     },
     // _evRawPlantKcal(): kcal of raw plant food in the scholar's pack.
@@ -19233,6 +19257,7 @@
       return Math.round(t);
     },
     // _evTakeRawPlantKcal(n): remove ~n kcal of raw plant food from the pack.
+    // WHOLE UNITS (break-it food r3 2026-10-10): see _evTakePantryKcal.
     _evTakeRawPlantKcal(n) {
       const s = this.state.scholar;
       if (!s || !s.inventory) return 0;
@@ -19241,12 +19266,14 @@
         if (need <= 0) break;
         if (item.bonded || (item.kcalEach || 0) <= 0) continue;
         if (!(item.foodKind === 'plant' || item.plantId)) continue;
-        const per = item.kcalEach, units = item.units || 1;
-        const unitsOut = Math.min(units, need / per);
-        item.units = Math.round((units - unitsOut) * 100) / 100;
+        const per = item.kcalEach, units = item.units || 0;
+        if (units <= 0) continue;
+        const unitsOut = Math.min(units, Math.ceil(need / per));
+        if (unitsOut <= 0) continue;
+        item.units = units - unitsOut;
         taken += unitsOut * per; need -= unitsOut * per;
       }
-      s.inventory = s.inventory.filter(i => (i.units || 0) > 0.001);
+      s.inventory = s.inventory.filter(i => (i.units || 0) > 0);
       return Math.round(taken);
     },
     // _evTrustAll(n): move every known village trust by n. Gains go through

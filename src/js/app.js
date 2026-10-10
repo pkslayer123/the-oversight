@@ -14288,7 +14288,16 @@
         // when the pantry can't carry it.
         try {
           const rosterN = (Game.villageRoster ? Game.villageRoster().length : 12) || 12;
-          const cost = Math.max(1500, 400 * rosterN);
+          // HONEST COST (break-it food r3 2026-10-10): the engine charges
+          // max(1500, 400 * (present+1)) — present excludes villagers away
+          // from Haven (hostFeast). The old label priced the full roster, so
+          // with 2 villagers away it read 800 kcal high. Mirror the engine.
+          let awayN = 0;
+          try {
+            const awayMap = (Game.state && Game.state.village && Game.state.village.away) || {};
+            awayN = Object.keys(awayMap).filter(id => id !== Game.villagerId).length;
+          } catch (e2) {}
+          const cost = Math.max(1500, 400 * Math.max(1, rosterN - awayN));
           return `<button class="btn sm" data-feast title="Open the pantry wide: ${cost.toLocaleString()} kcal, one evening, everyone eats together">🍖 Host a feast (${cost.toLocaleString()} kcal)</button>`;
         } catch (e) { return ''; }
       })()}

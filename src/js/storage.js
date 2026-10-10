@@ -846,7 +846,17 @@
         // -> NaN, survived every bury (`NaN <= 0` is false), and minted 1 unit
         // per bury FOREVER from one phantom item. Coerce once: corrupt entries
         // collapse to exactly one honest unit, never an infinite.
-        it.units = Math.max(1, Math.floor(it.units || 1));
+        // FRACTION HARDENING (break-it food r3 2026-10-10): pre-fix takes
+        // could leave fractional units. Collapse value-preservingly — one
+        // whole unit carrying the fractional value — never inflate, never sink.
+        {
+          const _u = it.units;
+          if (typeof _u !== 'number' || !isFinite(_u) || _u <= 0) it.units = 1;
+          else if (Math.floor(_u) !== _u) {
+            it.kcalEach = Math.round((it.kcalEach || 0) * _u);
+            it.units = 1;
+          }
+        }
         qty = Math.min(qty, it.units || 1);
         const kcal = (it.kcalEach || 0) * qty;
         // FULL PROCESSING STATE (miser break-it 2026-10-09): the old
@@ -1028,7 +1038,17 @@
       // yielded 1 unit per take FOREVER (measured 3 takes → 3 units from a
       // unit-less item). Coerce once: corrupt entries collapse to exactly
       // one honest unit, never an infinite.
-      it.units = Math.max(1, Math.floor(it.units || 1));
+      // FRACTION HARDENING (break-it food r3 2026-10-10): pre-fix takes
+      // could leave fractional units. Collapse value-preservingly — one
+      // whole unit carrying the fractional value — never inflate, never sink.
+      {
+        const _u = it.units;
+        if (typeof _u !== 'number' || !isFinite(_u) || _u <= 0) it.units = 1;
+        else if (Math.floor(_u) !== _u) {
+          it.kcalEach = Math.round((it.kcalEach || 0) * _u);
+          it.units = 1;
+        }
+      }
       qty = Math.min(Math.floor(qty || 0), it.units || 1);
       if (qty <= 0) { this.say('Take how many?'); return null; }
       // SPOILAGE UNDERGROUND: same rule as digUpCache — the rotted portion

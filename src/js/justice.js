@@ -346,8 +346,15 @@
         // pay from inventory food first, then pantry contribution credit
         for (const [it, takeUnits] of plan) {
           it.units -= takeUnits;
-          try { this.addPantryKcal ? this.addPantryKcal(takeUnits * (it.kcalEach || 0)) : null; } catch (e) {}
         }
+        // RESTITUTION IS REAL (break-it food r3 2026-10-10): the old code
+        // called a phantom pantry-credit helper that was NEVER defined
+        // anywhere. The existence guard made it a silent no-op, so fine food
+        // left the pack and VANISHED while the fiction said "X takes it.
+        // Counts it." The village gets real items now. Not recorded in the
+        // gives ledger: seizure isn't a gift, and the take-back penalty must
+        // never misfire on fine food.
+        try { this.stockPantry(paid, 'Restitution'); } catch (e) {}
         // clean up emptied stacks
         this.state.scholar.inventory = inv.filter(i => (i.units || 0) > 0);
         j.amendsCredit = (j.amendsCredit || 0) + Math.round(paid / 100);
