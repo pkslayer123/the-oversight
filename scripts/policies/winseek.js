@@ -311,27 +311,15 @@ function diplomacyRoad(Game, ctx) {
 }
 
 // ---------- ROAD 4: CRISES — weather them, don't dodge ----------
-// Crises fire reactively; the policy's job is to SURVIVE them well:
-//  - hunger-winter: keep the pantry deep (forage + preserve aggressively)
-//  - breach/raid: fight the raiders (winseekFight engages)
-//  - disease: treat the sick (competent's disease avoidance covers vectors)
-//  - schism/blood-on-air: social — moots, comfort
-// The main lever here is pantry depth + not fleeing the village.
+// Crises fire reactively; the policy's job is to SURVIVE them well.
+// The competent base already handles food/water/shelter; here we just
+// track which crises have fired (for the report) and ensure we don't
+// flee the village during a breach (the fight handler engages).
 function crisisRoad(Game, ctx) {
   try {
     const pg = Game.progState ? Game.progState() : {};
     const crises = Object.keys(pg.crises || {});
     ctx.crisesSeen = crises.length;
-    // Famine buffer: preserve food aggressively when the pantry is thin.
-    const v = Game.state.village || {};
-    const pantryKcal = (() => {
-      try {
-        return (v.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
-      } catch (e) { return 0; }
-    })();
-    if (pantryKcal < 8000) {
-      try { if (Game.doAction) Game.doAction('preserve', {}); } catch (e) {}
-    }
   } catch (e) {}
 }
 
