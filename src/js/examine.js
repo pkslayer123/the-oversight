@@ -89,11 +89,17 @@
     }
     const q = quality || examineQuality();
     let desc = p.description || 'a plant';
-    // strip any accidental name leak: description should never start with the name
+    // NAME SCRUB (examine_never_names; break-it knowledge 2026-10-09 r2): the
+    // description must never carry the species name — leading ("Dandelion
+    // with jagged leaves...") OR mid-string ("old-timers swear leakweed only
+    // grows..."). The old strip only handled the leading case.
+    const escRe = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (desc.toLowerCase().indexOf(p.name.toLowerCase()) === 0) {
       desc = desc.slice(p.name.length).replace(/^[\s.:—-]+/, '');
-      if (!desc) desc = 'a plant';
     }
+    desc = desc.replace(new RegExp('\\b' + escRe(p.name) + '\\b', 'gi'), 'it')
+      .replace(/\s{2,}/g, ' ').trim();
+    if (!desc) desc = 'a plant';
     let out = desc.charAt(0).toUpperCase() + desc.slice(1);
     if (!/[.!?]$/.test(out)) out += '.';
     if (q >= 2) {

@@ -1,13 +1,21 @@
 #!/usr/bin/env node
 // PROOF TEST: knowledge gating (Steve 2026-10-06 — "if you don't know, it doesn't show")
-// Exercises the three knowledge modules with a stubbed Game:
+// Exercises the knowledge modules with a stubbed Game:
 //   1. examine.js  — examineDescription never leaks names (incl. mid-string),
-//                    learnDifficulty (regional familiarity), teachQuality/teachPlant
-//   2. codex-people.js — personTeachTopics/teachFromPerson depth gates
-//   3. perceive.js — unknown trees stay generic ("nut tree" leak fixed),
+//                    observation memory, recognition beat
+//   2. perceive.js — unknown trees stay generic ("nut tree" leak fixed),
 //                    whisper variants rotate, monster/person hints stay gated
-// Plus a narrative playtest: a day-1 low-knowledge character learning (and
-// failing to learn) the honest way. Run: node scripts/test-knowledge-gate-20261006.js
+// TEACHING-MODEL RETIREMENT (break-it knowledge 2026-10-09 r2): the old
+// sections 2-5 + narrative tested Ex.teachQuality / Ex.teachPlant /
+// Ex.learnDifficulty / Game.personTeachTopics / Game.teachFromPerson —
+// none of which exist anymore. The teaching model moved to Game.teachPlant
+// (game.js) + Game.learnFromShowing (journal.js) on 2026-10-08; its proof
+// coverage lives in scripts/test-journal-knowledge-20261007.js (parts, thin
+// knowledge, haul moments) and scripts/test-break-knowledge-r2.js (teach
+// beats, trust cap, trade rungs, believed-name funnel). This file keeps the
+// examine/perceive/recognition gating core, plus a guard that examine.js
+// never re-grows a divergent teaching model.
+// Run: node scripts/test-knowledge-gate-20261006.js
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -132,10 +140,15 @@ for (const f of ['src/js/examine.js', 'src/js/codex-people.js', 'src/js/perceive
   eval(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 }
 const Ex = globalThis.Scattering.Examine;
-assert(Ex && Ex.teachPlant, 'S.Examine.teachPlant must exist');
-assert(typeof Game.teachPlant === 'function', 'Game.teachPlant alias must exist');
-assert(typeof Game.personTeachTopics === 'function', 'Game.personTeachTopics must exist');
-assert(typeof Game.teachFromPerson === 'function', 'Game.teachFromPerson must exist');
+assert(Ex && typeof Ex.examineDescription === 'function', 'S.Examine.examineDescription must exist');
+assert(Ex && typeof Ex.examineQuality === 'function', 'S.Examine.examineQuality must exist');
+assert(Ex && typeof Ex.observePlant === 'function', 'S.Examine.observePlant must exist');
+// TEACHING-MODEL GUARD: teaching lives in game.js (Game.teachPlant) and
+// journal.js (Game.learnFromShowing) — examine.js must not re-grow a
+// divergent teaching primitive (the 2026-10-08 migration removed them).
+assert(Ex.teachPlant === undefined, 'Ex.teachPlant must stay removed (moved to Game.teachPlant)');
+assert(Ex.teachQuality === undefined, 'Ex.teachQuality must stay removed (quality now assessed in learnFromShowing)');
+assert(typeof Game.perceptionHints === 'function', 'Game.perceptionHints must exist');
 
 let n = 0;
 function check(name, fn) { n++; fn(); console.log(`  ok ${n}. ${name}`); }
@@ -151,9 +164,16 @@ check('mid-string name in description is scrubbed (LEAKWEED)', () => {
   const d = Ex.examineDescription('leakweed', 1);
   assert(!/leakweed/i.test(d), 'mid-string name leaked: ' + d);
 });
-check('scrubName hardens any casing/position', () => {
-  const s = Ex.scrubName('The DANDELION root is best; dandelion leaves too.', 'Dandelion');
-  assert(!/dandelion/i.test(s), 'scrub failed: ' + s);
+check('leading name in description is stripped (internal scrub)', () => {
+  // the name-scrub is internal to examineDescription now (no Ex.scrubName) —
+  // prove the behavior, not the helper.
+  const p = Game.data.plants.find(x => x.id === 'dandelion');
+  const old = p.description;
+  p.description = 'Dandelion with jagged leaves and yellow flowers';
+  const d = Ex.examineDescription('dandelion', 1);
+  p.description = old;
+  assert(!/^dandelion/i.test(d), 'leading name leaked: ' + d);
+  assert(/jagged/i.test(d), 'description should survive the strip: ' + d);
 });
 check('known plant: name + earned L1 text', () => {
   codex.plants.dandelion = { level: 1 };
@@ -166,124 +186,24 @@ check('lookalike caution never names (yarrow-style note)', () => {
   assert(!/dandelion/i.test(d.replace(/^Dandelion\./, '')), 'leak in Q3: ' + d);
 });
 
-// ---- 2. learnDifficulty: regional familiarity is real ----
-check('home ground + easy species = easy', () => {
-  vpRecords.player1.homeRegion = 'Columbus, Ohio';
-  const r = Ex.learnDifficulty('dandelion');
-  assert(r.tier === 'easy', 'expected easy, got ' + r.tier);
-  assert(/home ground/i.test(r.reason), 'reason should say why: ' + r.reason);
-});
-check('foreign ground + hard species = hard', () => {
-  vpRecords.player1.homeRegion = 'Miami, Florida';
-  const r = Ex.learnDifficulty('mayapple');
-  assert(r.tier === 'hard', 'expected hard, got ' + JSON.stringify(r));
-  assert(/showing, not just telling/i.test(r.reason), 'reason should coach: ' + r.reason);
-});
-
-// ---- 3. teachQuality matrix ----
-check('teacher who does not know it: quality 0', () => {
-  assert.strictEqual(Ex.teachQuality('mara', 'leakweed', {}), 0);
-});
-check('bare naming, no specimen, shallow trust: quality 1', () => {
-  Game.personDepth('stranger').level = 1;
-  const q = Ex.teachQuality('stranger', 'mayapple', {});
-  assert.strictEqual(q, 1, 'got ' + q);
-});
-check('hearsay caps at 1 even from a good teacher', () => {
-  Game.personDepth('mara').level = 3;
-  const q = Ex.teachQuality('mara', 'dandelion', { shown: true, hearsay: true });
-  assert.strictEqual(q, 1, 'got ' + q);
-});
-check('deep knowledge + shown + trusted = quality 3', () => {
-  const q = Ex.teachQuality('mara', 'dandelion', { shown: true });
-  assert.strictEqual(q, 3, 'got ' + q);
-});
-
-// ---- 4. teachPlant: the beats ----
-check('Q3 good teaching on unknown plant: named AND deepened to L2', () => {
-  vpRecords.player1.homeRegion = 'Columbus, Ohio';
-  said.length = 0;
-  const r = Ex.teachPlant('dandelion', 'mara', { shown: true });
-  assert(r.taught && r.quality === 3, JSON.stringify(r));
-  assert.strictEqual(codex.plants.dandelion.level, 2, 'good teaching should land deep (L2)');
-  assert(said.some(s => /Dandelion/.test(s) && /taste|parts|hand/i.test(s)), 'beat should show, not tell');
-});
-check('Q1 hearsay on foreign hard plant: honest failure, nothing granted', () => {
-  vpRecords.player1.homeRegion = 'Miami, Florida';
-  Game.personDepth('stranger').level = 1;
-  said.length = 0;
-  const r = Ex.teachPlant('mayapple', 'stranger', { hearsay: true });
-  assert(!r.taught, 'should NOT have taught: ' + JSON.stringify(r));
-  assert(!codex.plants.mayapple, 'no knowledge granted on failure');
-  assert(said.some(s => /slide right off|doesn't stick|gives up/i.test(s)), 'failure must be honest, not silent');
-  assert(said.some(s => /shown|specimen|bring the plant/i.test(s)), 'failure must say what WOULD work');
-});
-check('Q2 decent telling: name only, L1', () => {
-  delete codex.plants.leakweed;
-  Game.state.village.plantKnowledge.mara.push('leakweed');
-  Game.personDepth('mara').level = 1; // shallow trust: no time-taking bonus... but green+known => q=2
-  vpRecords.mara.formerOccupation = 'forager';
-  said.length = 0;
-  const q = Ex.teachQuality('mara', 'leakweed', {});
-  const r = Ex.teachPlant('leakweed', 'mara', {});
-  assert(r.taught && r.level === 1, JSON.stringify(r) + ' q=' + q);
-});
-check('teaching an already-known plant deepens instead of renaming', () => {
-  codex.plants.dandelion = { level: 1 };
-  Game.personDepth('mara').level = 3;
-  said.length = 0;
-  const r = Ex.teachPlant('dandelion', 'mara', { shown: true });
-  assert(r.taught && r.deepened && codex.plants.dandelion.level === 2, JSON.stringify(r));
-});
-
-// ---- 5. people as teachers (codex-people.js) ----
-check('stranger teaches nothing: topics empty below depth 2', () => {
-  Game.personDepth('stranger').level = 1;
-  assert.deepStrictEqual(Game.personTeachTopics('stranger'), []);
-});
-check('known villager lists topics in plain words, never knowledge names', () => {
-  Game.personDepth('mara').level = 2;
-  peopleEntries.mara.name = { value: 'Mara Voss' };
-  const topics = Game.personTeachTopics('mara');
-  assert(topics.length === 2, JSON.stringify(topics));
-  assert(topics.some(t => t.knowledgeId === 'forage_sense'), 'food -> forage_sense');
-  assert(topics.some(t => t.knowledgeId === 'mending'), 'mending -> mending');
-  for (const t of topics) {
-    assert(t.label !== 'Reading the Land' && t.label !== 'Repair & Mending', 'knowledge name leaked into label: ' + t.label);
+// ---- 2-5. TEACHING MODEL (retired 2026-10-08, see file header) ----
+// The old learnDifficulty / teachQuality / teachPlant / personTeachTopics /
+// teachFromPerson checks tested an API that no longer exists. Their live
+// equivalents:
+//   - Game.teachPlant (game.js): good teachers identify instantly, poor ones
+//     tick encounters; trust gain caps at 40 ("words only go so far").
+//   - Game.learnFromShowing (journal.js): demonstration lessons — shown-deep
+//     teaches every part, poor teaching lands as thin (honest) notes.
+//   - Game.traderKnowledge (game.js): what a trader can teach, gated on
+//     what they actually know.
+// Proof coverage: scripts/test-journal-knowledge-20261007.js and
+// scripts/test-break-knowledge-r2.js. What this file still proves: the
+// teaching model never leaks names through the examine path.
+check('teaching model lives outside examine.js (no divergent primitive)', () => {
+  for (const k of ['teachPlant', 'teachQuality', 'learnDifficulty']) {
+    assert(Ex[k] === undefined, `examine.js must not own ${k}`);
   }
-});
-check('depth-2 teaching grants L1; depth-3 grants L2 (shown properly)', () => {
-  delete codex.skills.forage_sense;
-  Game.personDepth('mara').level = 2;
-  said.length = 0;
-  assert(Game.teachFromPerson('mara', 'forage_sense') === true);
-  assert.strictEqual(codex.skills.forage_sense.level, 1, 'depth-2 teaches the bones (L1)');
-  delete codex.skills.mending;
-  Game.personDepth('mara').level = 3;
-  assert(Game.teachFromPerson('mara', 'mending') === true);
-  assert.strictEqual(codex.skills.mending.level, 2, 'trusted teacher lands deep (L2)');
-  assert(said.some(s => /hands/i.test(s)), 'trusted lesson should be hands-on');
-});
-check('stranger refuses honestly, nothing granted', () => {
-  delete codex.skills.mending;
-  Game.personDepth('stranger').level = 0;
-  said.length = 0;
-  assert(Game.teachFromPerson('stranger', 'mending') === false);
-  assert(!codex.skills.mending, 'no skill granted');
-  assert(said.some(s => /don't know .* well enough/i.test(s)), 'refusal must be honest');
-});
-check('codex entry shows teachable topics, gated and name-safe', () => {
-  Game.personDepth('mara').level = 2;
-  const html = Game.personDepthHTML('mara');
-  assert(/Could teach you/.test(html), 'section missing');
-  assert(/finding food in the wild/.test(html), 'plain label missing');
-  assert(!/Reading the Land/.test(html), 'knowledge name leaked into codex HTML');
-});
-check('closed book (dead) teaches nothing more', () => {
-  const d = Game.personDepth('mara');
-  d.closed = true;
-  assert.deepStrictEqual(Game.personTeachTopics('mara'), [], 'dead keep their secrets');
-  d.closed = false;
+  assert(typeof Ex.observePlant === 'function', 'examine still owns observation memory');
 });
 
 // ---- 6. perception gating (perceive.js) ----
@@ -336,42 +256,39 @@ check('examined-before-named fires the recognition beat', () => {
 });
 
 // ---- 8. NARRATIVE PLAYTEST: day 1, knows nothing ----
+// (Rewritten 2026-10-09 r2: the old script used the retired teaching API.
+// The teaching beats are proved in test-journal-knowledge-20261007.js and
+// test-break-knowledge-r2.js. This playtest keeps the examine -> observe ->
+// recognize arc on the modules this file loads.)
 console.log('\n== playtest: a low-knowledge first day ==');
 (function playtest() {
   // reset to a fresh arrival
   for (const k of Object.keys(codex.plants)) delete codex.plants[k];
   for (const k of Object.keys(codex.observations)) delete codex.observations[k];
   for (const k of Object.keys(codex.skills)) delete codex.skills[k];
-  vpRecords.player1.homeRegion = 'Miami, Florida'; // a long way from home
-  Game.personDepth('stranger').level = 1;
-  Game.personDepth('mara').level = 3;
-  peopleEntries.mara.name = { value: 'Mara Voss' };
   said.length = 0;
   const lines = [];
   const narrate = (s) => lines.push(s);
 
-  narrate('You wash up with nothing. Miami is an ocean away; these woods are foreign.');
+  narrate('You wash up with nothing. These woods are foreign.');
   narrate('You crouch by an umbrella-leafed plant and look properly:');
   narrate('  EXAMINE → ' + Ex.examineDescription('mayapple', 1));
-  narrate('A drifter by the fire half-remembers something about it:');
-  const r1 = Ex.teachPlant('mayapple', 'stranger', { hearsay: true });
-  narrate(`  HEARSAY (quality ${r1.quality}) → taught: ${r1.taught}. "${said[said.length - 1]}"`);
-  narrate('Days later, Mara — who trusts you now — brings a haul home and shows you properly:');
-  vpRecords.player1.homeRegion = 'Columbus, Ohio'; // (same character, later: assume they settle — we test the easy path too)
-  const r2 = Ex.teachPlant('dandelion', 'mara', { shown: true });
-  narrate(`  SHOWN (quality ${r2.quality}) → taught: ${r2.taught}, level ${r2.level}.`);
-  narrate('  "' + said[said.length - 2] + '"');
-  narrate('That night you ask Mara what else she knows:');
-  narrate('  TOPICS → ' + Game.personTeachTopics('mara').map(t => t.label).join(', '));
-  Game.teachFromPerson('mara', 'forage_sense');
-  narrate('  "' + said[said.length - 1] + '"');
+  narrate('You look again tomorrow, and the day after. The memory builds:');
+  Ex.observePlant('mayapple', 'examine');
+  Ex.observePlant('mayapple', 'examine');
+  const obs = Ex.observationOf('mayapple');
+  narrate(`  OBSERVED ${obs.count}x, best quality ${obs.quality} — still no name.`);
+  narrate('Days later someone finally tells you what it is:');
+  Game.identifyPlant('mayapple', 'taught', 'Mara');
+  const beat = said.find(s => s.includes('\u{1F4A1}'));
+  narrate('  ' + (beat || '(no recognition beat!)'));
 
   for (const l of lines) console.log('  ' + l);
   // feel assertions: nothing unearned, nothing silent
-  assert(!r1.taught, 'hearsay on a foreign plant must fail honestly');
-  assert(r2.taught && r2.level === 2, 'proper showing must land deep');
-  assert(!/mayapple/i.test(lines.slice(0, 4).join(' ')), 'the name must not appear before it is earned');
-  console.log('\n  feel: hidden state stays hidden; failure is honest; proper teaching lands deep. earned, visibly.');
+  assert(!/mayapple/i.test(lines.slice(0, 5).join(' ')), 'the name must not appear before it is earned');
+  assert(beat && /Mayapple/.test(beat), 'the examined-first identification must CLICK');
+  assert(Game.plantKnown('mayapple'), 'now it is known — earned, visibly');
+  console.log('\n  feel: hidden state stays hidden; the vague description clicks into a name. earned, visibly.');
 })();
 
 console.log(`\nALL ${n} CHECKS PASSED`);

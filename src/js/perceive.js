@@ -185,9 +185,18 @@
               // TREE SPECIES GATING (Steve 2026-10-06): name only if known —
               // the bush branch 10 lines above gates on codex.plants level; the
               // tree branch gets the same treatment via treeLevel.
-              const sp = (mod.species && this.treeLevel(mod.species) >= 1) ? mod.species : 'nut tree';
-              const art = /^[aeiou]/i.test(sp) ? 'An' : 'A';
-              push(`${art} ${sp}. There might be nuts.`, 44);
+              // NUT HONESTY (break-it knowledge 2026-10-09 r2): ~30% of trees
+              // are pine — no nuts. An unknown tree must not promise them, and
+              // a known pine must not either. (The 2026-10-06 gate test caught
+              // the "nut tree" fallback promising food on every unknown tree.)
+              const sp = (mod.species && this.treeLevel(mod.species) >= 1) ? mod.species : null;
+              if (!sp) {
+                push(`A tree. Worth a closer look.`, 44);
+              } else {
+                const art = /^[aeiou]/i.test(sp) ? 'An' : 'A';
+                const nutty = /oak|hickory/i.test(sp);
+                push(`${art} ${sp}.${nutty ? ' There might be nuts.' : ''}`, 44);
+              }
             }
             forageSaid = true;
           }

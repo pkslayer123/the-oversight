@@ -15686,7 +15686,7 @@
         ${(e.journalMarks || []).length ? e.journalMarks.map(m => `<p class="small" style="color:#e8a13c">⚠ ${esc(m.kind)} — day ${m.day}${m.note ? ': ' + esc(m.note) : ''}</p>`).join('') : ''}
         ${(e.journalEntries || []).length ? `<p class="small"><i>📓 ${esc(e.journalEntries[e.journalEntries.length - 1].text)}</i></p>` : ''}
         ${(e.marginalia || []).length ? e.marginalia.slice(-2).map(m => `<p class="small" style="opacity:.7"><i>✒ ${esc(m.first || 'a former hand')}${m.register ? ' · ' + esc(m.register) : ''}, day ${m.day}: ${esc(m.text)}</i></p>`).join('') : ''}
-        <p class="small"><i>${e.knowledge || ''}</i></p><p>${e.level >= 1 ? e.text : ''}</p></div>`).join('')
+        <p class="small"><i>${esc(e.knowledge || '')}</i></p>${e.text ? `<p>${esc(e.text)}</p>` : ''}</div>`).join('')
         : '<div class="card"><h3>No entries yet.</h3><p>Forage something. Survive it. Write it down.</p></div>'}
       ${skills.length ? '<h1 class="title" style="font-size:18px">SKILLS</h1><p class="small"><i>knowledge about anything — not just plants. your old life, books, strangers, hard lessons.</i></p>' + skills.map(s => `
         <div class="card codex"><h3>${esc(s.name)} <span class="small" style="opacity:.7">[L${s.level} · ${esc(s.domain)}]</span></h3>

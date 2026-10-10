@@ -41,7 +41,7 @@
 //   - parts_are_knowledge: plant parts (roots/leaves/petals) tracked per item; first part learned lifts L1->L2 (code: learnPart, Steve 2026-10-05)
 //   - haul_is_curriculum: the haul-return moment teaches from the species carried home, not a random pick; max 2 demonstration lessons per return (code: haulTeachingMoment, Steve 2026-10-05)
 //   - thin_knowledge_honest: poor teaching lands as notes, never mechanics; thin=true until a proper lesson confirms it (code: recordThinKnowledge/thickenKnowledge, Steve 2026-10-05)
-//   - quality_model_borrowed: teaching quality 0-3 lives in examine.js (sibling-owned); journal calls Scattering.Examine.teachPlant, never reimplements it (code: learnFromShowing)
+//   - quality_model_borrowed: teaching quality 0-3 is assessed in learnFromShowing itself (shown-deep=3, named=2, thin=1) over the Game.teachPlant primitive (game.js, sibling-owned); journal never reimplements teaching (code: learnFromShowing)
 //   - no_k0_display: progress lines and gap lists return null/[] below L1 — if you don't know, it doesn't show (code: codexPlantLine/knowledgeGaps)
 //   - mantle_continuity: dead lives persist as marginalia in their OWN voices; the epitaph is written in the dying life's register, the new hand in the successor's (code: writeEpitaph/welcomeBearer, Steve 2026-10-07)
 //   - entries_evolve: sighting -> tasting -> deeper -> part/handling -> mastery entries accrue per plant per life, never rewritten (code: writePlantEntry + identifyPlant/eat/doAction/eatOne wraps, Steve 2026-10-07)
@@ -52,8 +52,9 @@
 //   - state.journal
 //   - state.codex.plants (parts, partials, thin, demonstrated)
 //   - state.codex.journal / state.codex.journalMarks / state.codex.mantle (this module's diary layer)
-//   - Scattering.Examine.teachPlant (sibling-owned quality primitive)
+//   - Game.teachPlant (game.js teaching primitive, sibling-owned)
 //   - Game.lifeseedVoice / Game.lifeseedMood (lifeseed-owned voice profiles)
+//   - Game.plantCalledName / Game.plantDisplayName (game.js believed-name funnel; journal's _calledName falls back to the data name in stub harnesses)
 //   - Game.wrongTeaching
 //   - Game.playerDeath (wrapped; ledger.js loads after journal.js — guarded)
 //   - Game.identifyPlant / Game.eat / Game.eatOne / Game.doAction (wrapped for entry beats)
@@ -340,8 +341,8 @@
     //    demonstrations (specimen in hand), capped at 2 per return — a moment,
     //    not a dump.
     // 2. game.js :: teachPlant(vid, plantId) / firesideTeaching(): player-side
-    //    learning already routes through Scattering.Examine.teachPlant
-    //    (sibling-owned, quality-gated). After any such lesson, call
+    //    learning already routes through Game.teachPlant (game.js,
+    //    quality-gated). After any such lesson, call
     //    this.learnFromShowing(pid, vid, {shown:true|false, via:'taught'})
     //    so the PARTS layer and thin-knowledge bookkeeping land too.
     // 3. app.js :: Codex screen plant cards: via the codexEntries() wrap
@@ -352,10 +353,10 @@
     //    parts and uses only, never a hint at unknown parts. (UNWIRED as of
     //    2026-10-08 — no caller yet; kept for the grid pass.)
     //
-    // The teaching-quality MODEL lives in examine.js (teachQuality 0-3,
-    // sibling-owned): journal.js calls it via Scattering.Examine.teachPlant
-    // and never reimplements it. The synergy ledger lives in progression.js
-    // (sibling-owned): never touched here.
+    // The teaching-quality MODEL (0-3) is assessed in learnFromShowing itself
+    // (shown-deep/named/thin) over Game.teachPlant's result: journal.js calls
+    // the game.js primitive and never reimplements teaching. The synergy
+    // ledger lives in progression.js (sibling-owned): never touched here.
 
     // plantPartsList(pid): the parts of a plant, parsed from data.
     // knowledgeLevels['2'] carries the design's parts line ("Parts: roots
@@ -403,6 +404,16 @@
       return !!(e && e.parts && e.parts[partKey] && e.parts[partKey].known);
     },
 
+    // _calledName(pid): the believed name without a hard game.js dependency.
+    // journal.js also loads in stub harnesses (the 2026-10-06/07 proof tests
+    // stub Game without game.js) — so delegate to Game.plantCalledName when
+    // present, else fall back to the data name (the old behavior).
+    _calledName(pid) {
+      try { if (this.plantCalledName) return this.plantCalledName(pid); } catch (e) {}
+      const p = (this.data.plants || []).find(x => x.id === pid) || {};
+      return p.name || pid;
+    },
+
     // learnPart(pid, partKey, how): record that a part's use is known.
     // The first part learned lifts L1 -> L2 — the use IS the part. Fires a
     // say-line so the progression has FEEL, not just a number moving.
@@ -423,9 +434,11 @@
       if ((e.level || 1) < 2) {
         e.level = 2;
         const kl2 = (p.knowledgeLevels || {})['2'];
-        this.say(`\u2605 ${p.name}: a part you know how to use. Level 2.${kl2 ? ' ' + kl2 : ''}`);
+        // BELIEVED NAME (break-it knowledge 2026-10-09 r2): the celebration
+        // names what the player calls it — a false label is still their label.
+        this.say(`\u2605 ${this._calledName(pid)}: a part you know how to use. Level 2.${kl2 ? ' ' + kl2 : ''}`);
       } else {
-        this.say(`Noted: ${p.name} ${partKey} — ${n} of ${all.length} parts known.`);
+        this.say(`Noted: ${this._calledName(pid)} ${partKey} — ${n} of ${all.length} parts known.`);
       }
       // The part learned is a diary beat too — the use, in the current hand.
       try {
@@ -480,13 +493,13 @@
 
     // learnFromShowing(pid, vid, opts): THE demonstration lesson. Someone
     // shows you the actual plant — the haul moment, or a deliberate lesson.
-    // Routes through the real teaching primitive (game.js teachPlant: good
-    // teachers identify instantly, poor ones only tick encounters), then
+    // Routes through the real teaching primitive (Game.teachPlant, game.js:
+    // good teachers identify instantly, poor ones only tick encounters), then
     // layers the journal-owned parts/thin bookkeeping on top. Returns
     // {quality, level, parts, outcome}.
     // (forager loop 2026-10-08: this previously called
-    // Scattering.Examine.teachPlant, which does not exist — every lesson
-    // narrated but taught nothing. Now it teaches for real.)
+    // Scattering.Examine.teachPlant, which never existed — every lesson
+    // narrated but taught nothing. Now it teaches for real via Game.teachPlant.)
     learnFromShowing(pid, vid, opts) {
       opts = opts || {};
       const out = { quality: 0, level: 0, parts: 0, outcome: 'none' };
@@ -519,11 +532,12 @@
       } else {
         // POOR TEACHING: a partial reveal only — encounters ticked, nothing
         // identified. A note, not a mechanic — honest about what it isn't.
-        const p = (this.data.plants || []).find(x => x.id === pid) || {};
+        // The note is the player's journal: their label, not the true name.
         const unk = this.plantPartsList(pid).find(pt => !this.partKnown(pid, pt.key));
+        const called = this._calledName(pid);
         const note = unk
           ? `Heard ${tname} say the ${unk.key} might be the useful bit — unconfirmed.`
-          : `Heard ${tname} mention ${p.name || pid} in passing — thin knowledge.`;
+          : `Heard ${tname} mention ${called} in passing — thin knowledge.`;
         this.recordThinKnowledge(pid, note, tname);
         out.quality = 1; out.outcome = 'thin';
       }
@@ -583,7 +597,10 @@
       for (const c of cands.slice(0, maxLessons)) {
         const p = (this.data.plants || []).find(x => x.id === c.pid) || {};
         const tname = this.displayName ? this.displayName(c.vid) : 'someone';
-        const pname = this.plantKnown(c.pid) ? p.name : (p.description || 'a plant');
+        // BELIEVED NAME (break-it knowledge 2026-10-09 r2): the haul is laid
+        // out in the player's terms — plantDisplayName says what they call it.
+        const pname = this.plantDisplayName ? this.plantDisplayName(c.pid)
+          : (this.plantKnown && this.plantKnown(c.pid) ? (p.name || c.pid) : (p.description || 'a plant'));
         // (forager loop 2026-10-08: "the a tree…" — the template must not
         // supply "the" when the description carries its own article.)
         this.say(`You lay out the haul. ${tname} leans over ${pname}. "Oh — THAT one. Here, look."`);
@@ -626,7 +643,9 @@
       bits.push((e.tastings || 0) > 0 || lvl >= 3 ? 'tasted' : 'untasted');
       if ((e.partials || []).length) bits.push(`${e.partials.length} unconfirmed note${e.partials.length > 1 ? 's' : ''}`);
       const by = e.demonstratedBy ? ` — shown by ${e.demonstratedBy}` : e.by ? ` — ${e.by}` : '';
-      return `${p.name || pid}${by}: ${bits.join('; ')}.`;
+      // BELIEVED NAME (break-it knowledge 2026-10-09 r2): the progress line
+      // is the player's own record — it says what the player calls it.
+      return `${this._calledName(pid)}${by}: ${bits.join('; ')}.`;
     },
 
     // knowledgeGaps(pid): what you still DON'T know, in plain words. Never
@@ -660,7 +679,9 @@
         : 'You know it has uses — handle it to remember which parts.';
       let uses = '';
       try { if (this.plantUsesText) uses = this.plantUsesText(pid); } catch (err) {}
-      return `${p.name || pid} (known${uses ? ', ' + uses : ''}): ${cue}`;
+      // BELIEVED NAME (break-it knowledge 2026-10-09 r2): coaching speaks the
+      // player's label, never a true name they were taught wrongly.
+      return `${this._calledName(pid)} (known${uses ? ', ' + uses : ''}): ${cue}`;
     },
 
     // homeFamiliarityLine(pid): regional familiarity as FEEL. Your background

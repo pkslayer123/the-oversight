@@ -614,7 +614,7 @@ People journal. Facts fill in as you learn them. Pre-System manual, post-System 
 - parts_are_knowledge: plant parts (roots/leaves/petals) tracked per item; first part learned lifts L1->L2 (code: learnPart, Steve 2026-10-05)
 - haul_is_curriculum: the haul-return moment teaches from the species carried home, not a random pick; max 2 demonstration lessons per return (code: haulTeachingMoment, Steve 2026-10-05)
 - thin_knowledge_honest: poor teaching lands as notes, never mechanics; thin=true until a proper lesson confirms it (code: recordThinKnowledge/thickenKnowledge, Steve 2026-10-05)
-- quality_model_borrowed: teaching quality 0-3 lives in examine.js (sibling-owned); journal calls Scattering.Examine.teachPlant, never reimplements it (code: learnFromShowing)
+- quality_model_borrowed: teaching quality 0-3 is assessed in learnFromShowing itself (shown-deep=3, named=2, thin=1) over the Game.teachPlant primitive (game.js, sibling-owned); journal never reimplements teaching (code: learnFromShowing)
 - no_k0_display: progress lines and gap lists return null/[] below L1 — if you don't know, it doesn't show (code: codexPlantLine/knowledgeGaps)
 - mantle_continuity: dead lives persist as marginalia in their OWN voices; the epitaph is written in the dying life's register, the new hand in the successor's (code: writeEpitaph/welcomeBearer, Steve 2026-10-07)
 - entries_evolve: sighting -> tasting -> deeper -> part/handling -> mastery entries accrue per plant per life, never rewritten (code: writePlantEntry + identifyPlant/eat/doAction/eatOne wraps, Steve 2026-10-07)
@@ -622,7 +622,7 @@ People journal. Facts fill in as you learn them. Pre-System manual, post-System 
 - neglect_honest: staleness is stated plainly when the hand hasn't touched the page; a neglected codex is never silently perfect (code: journalStaleness/journalTouch, Steve 2026-10-07)
 - marks_reframe: poisoning, hunger, and triumph marks persist and reframe later entries about the same plant (code: recordPlantMark/recordLifeMark, Steve 2026-10-07)
 
-**Consumes:** state.journal, state.codex.plants (parts, partials, thin, demonstrated), state.codex.journal / state.codex.journalMarks / state.codex.mantle (this module's diary layer), Scattering.Examine.teachPlant (sibling-owned quality primitive), Game.lifeseedVoice / Game.lifeseedMood (lifeseed-owned voice profiles), Game.wrongTeaching, Game.playerDeath (wrapped; ledger.js loads after journal.js — guarded), Game.identifyPlant / Game.eat / Game.eatOne / Game.doAction (wrapped for entry beats), Game.data.plants (knowledgeLevels, uses, regions)
+**Consumes:** state.journal, state.codex.plants (parts, partials, thin, demonstrated), state.codex.journal / state.codex.journalMarks / state.codex.mantle (this module's diary layer), Game.teachPlant (game.js teaching primitive, sibling-owned), Game.lifeseedVoice / Game.lifeseedMood (lifeseed-owned voice profiles), Game.plantCalledName / Game.plantDisplayName (game.js believed-name funnel; journal's _calledName falls back to the data name in stub harnesses), Game.wrongTeaching, Game.playerDeath (wrapped; ledger.js loads after journal.js — guarded), Game.identifyPlant / Game.eat / Game.eatOne / Game.doAction (wrapped for entry beats), Game.data.plants (knowledgeLevels, uses, regions)
 
 ### justice (`justice.js`)
 Village justice + combat dialogue. Crimes have consequences.
