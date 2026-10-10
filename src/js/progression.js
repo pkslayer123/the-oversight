@@ -349,9 +349,11 @@
       // proposed"): the old gate (notability>=10) was mathematically true for
       // every village by day 7 — a timer wearing reactive's clothes, while the
       // beat text claimed "not because the plot says so." Now the Show arrives
-      // when the village has DONE something notable: real knowledge breadth,
-      // or a televised contest already survived. The beat text is true again.
-      const deedDone = breadth >= 6 || (this.state.contestsHeld || 0) >= 1;
+      // when the village has DONE something notable: learned 6+ NEW things
+      // since landing (starting endowment doesn't count — breadth starts at
+      // ~8), or survived a televised contest. The beat text is true again.
+      if (pg.baseBreadth == null) pg.baseBreadth = breadth;
+      const deedDone = (breadth - (pg.baseBreadth || 0)) >= 6 || (this.state.contestsHeld || 0) >= 1;
       if (this.state.systemArrived && (s.day || 0) >= 7 && this.villageNotabilityScore() >= 10 && deedDone) want = 2;
       // ARC III CRUCIBLE (pacing build 2026-10-10): was crises>=1, but
       // first-grave fires in ~every run by day 13 — "someone died in week two"
@@ -566,14 +568,16 @@
 
   // ============ WRAPS (chain-safe) ============
   (function attach() {
-    // abilitySlots: 20->2, 40->3, 60->4, 70->5, 80->6.
+    // abilitySlots: 20->2, 35->3, 50->4, 65->5, 80->6. (pacing build
+    // 2026-10-10: pure granularity — measured play sat at integ ~35-53 with 1
+    // ability and 3 slots, so synergies were 0/240. No cap lowered.)
     const _abilitySlots = Game.abilitySlots;
     Game.abilitySlots = function () {
       const integ = this.state.scholar.integration || 5;
       if (integ >= 80) return 6;
-      if (integ >= 70) return 5;
-      if (integ >= 60) return 4;
-      if (integ >= 40) return 3;
+      if (integ >= 65) return 5;
+      if (integ >= 50) return 4;
+      if (integ >= 35) return 3;
       if (integ >= 20) return 2;
       return _abilitySlots ? 1 : 1;
     };
