@@ -919,8 +919,40 @@
     if (label === 'Go inside') { Game.enterBuilding(); return; }
     if (label === 'Rest' || label === 'Rest (a while)') { Game.doAction('rest'); return; }
     if (label === 'Search') { Game.searchRoom(cx, cy); return; }
+    // GARDEN (depletion 2026-10-10): the farming build. Sow opens a seed
+    // chooser — seed choice is knowledge, and the player picks.
+    if (label === 'Make a garden plot') { Game.makePlot(); refresh(); return; }
+    if (label === 'Tend the garden') { Game.tendGarden(); refresh(); return; }
+    if (label === 'Harvest the garden') { Game.harvestGarden(); refresh(); return; }
+    if (label === 'Sow seeds') { openSowSheet(); return; }
     // Examine, Use, Drink, Warm hands, Forage → the universal interact
     Game.cellInteract(cx, cy);
+  }
+
+  // SOW SHEET (depletion 2026-10-10): seed choice is knowledge — the player
+  // picks which known crop to sow, with honest growth times. Only
+  // seed-eligible plants list (Game.sowOptions gates: L1+, gardenable form,
+  // 2+ units). Sowing costs 2 units of seed stock.
+  function openSowSheet() {
+    let opts = [];
+    try { opts = Game.sowOptions() || []; } catch (e) { opts = []; }
+    if (!opts.length) {
+      Game.say('Nothing to sow — you need 2+ units of a KNOWN gardenable plant (shoots, berries, roots). Forage it, learn it, save seed.');
+      refresh();
+      return;
+    }
+    const rows = opts.map(o =>
+      `<div class="sow-row"><b>${esc(o.name)}</b> <span class="small" style="opacity:.7">${esc(o.form)} · ${o.growthDays} days to mature · ${o.units} units in pack</span></div>`
+    ).join('');
+    openSheet({
+      id: 'sow-seeds',
+      title: '\uD83C\uDF31 Sow seeds',
+      html: `<p class="small" style="opacity:.8">One empty plot, one crop. Sowing costs 2 units of seed stock. Deeper plant knowledge = bigger harvests.</p>${rows}`,
+      buttons: opts.map(o => ({
+        label: `Sow ${o.name}`,
+        onClick: () => { Game.sowPlot(o.pid); refresh(); },
+      })),
+    });
   }
 
   // nearbyActionItems: the 9 cells around you, deduped action labels. Single source.

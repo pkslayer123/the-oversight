@@ -2,6 +2,15 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "The ground remembers now: forage the same turf too hard and it thins \u2014 lush to picked-over to barren. Examine or work a patch to read its state; rested ground comes back, but it takes weeks, not days.",
+      "You can farm at the haven: clear a plot, sow seeds from plants you actually know, tend it daily, harvest every few days. A kept garden feeds people. A neglected one dies.",
+      "Your neighbors work the same ground. Shared turf thins faster \u2014 and they notice. Talk it out at their fire (split the territory, pay tribute, or threaten them), or let it fester into raids.",
+      "Fishing got stronger: creeks always hold fish, and a skilled fisher who reads the water sometimes doubles up on the line."
+    ]
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "Monsters have learned to hunt parties: hushwolves now run in bigger packs with flanking when three or more of you fight together, hecklers pile onto whoever they shame, and the landlord raises eviction walls to split your group (there's always a service entrance \u2014 find it).",
       "The Static has a new trick: it can mimic a crying villager to lure one of your people away from the group. Keep someone close \u2014 a hand on the shoulder breaks the spell.",
       "Bright Ideas drift toward bunched-up fighters and the Chorus aims for the densest cluster: spreading out is now a real defense. Solo scouts still get fair duels \u2014 the pack only comes out for parties of three or more."
@@ -119,13 +128,5 @@
       "Crafting menu now shows every recipe you've seen, with honest odds. Villagers fetch their own armor and use the pharmacy before a healer."
     ],
     "version": "165fd846-20261009-170208"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "The Craft screen now lists recipes you're learning \u2014 early attempts are honest blind tries (materials stay hidden until you've learned them).",
-      "Map monster popups no longer name creatures the village hasn't named yet."
-    ],
-    "version": "a6d63840-20261009-165835"
   }
 ]

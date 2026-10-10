@@ -407,6 +407,10 @@
     const row = detail[cy];
     const cell = row && row[cx];
     if (!cell) { this.say('Nothing there to examine.'); return null; }
+    // DEPLETION 2026-10-10: examining reads the ground — the cheap way to
+    // learn its state (foraging is the expensive way). "If you don't know,
+    // it doesn't show" — looking is how you come to know.
+    try { this.readGround(this.map.px, this.map.py); } catch (e) {}
     const key = `${this.map.px},${this.map.py},${cx},${cy}`;
     const t = this.playerTile();
     const mod = (t.modifiers || {})[cx + ',' + cy];

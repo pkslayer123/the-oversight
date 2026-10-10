@@ -2070,6 +2070,19 @@
         if (this.recognizedAbroad && this.recognizedAbroad(this.villagerId, ov)) {
           card.actions.push({ id: 'guestmeal', label: '🍲 Ask for a guest meal (allied)', hint: 'Their fire is open to our people. One guest meal per village per day — guests, not locusts.' });
         }
+        // THE COMMONS (depletion 2026-10-10): shared ground, shared problem.
+        // The speaker will talk turf — trade, a split, or teeth. No region
+        // screen: one conversation, face to face, real consequences.
+        const cm = ov.commons;
+        if (cm && !cm.deal && (cm.strainUs >= 3 || cm.strainThem >= 3)) {
+          card.actions.push({ id: 'territory', label: '🌾 Talk about the shared ground', hint: 'Their foragers and yours are stripping the same turf. The speaker will want words — a split, food, or a warning.' });
+        }
+        if (ov.commonsTalkOpen) {
+          card.actions.push({ id: 'deal_split', label: 'Propose a split of the ground', hint: 'We take our side, you take yours. Needs their trust (20+).' });
+          card.actions.push({ id: 'deal_tribute', label: 'Offer food for them to back off (2000 kcal)', hint: 'Real food from your pantry, today. They halve their take.' });
+          card.actions.push({ id: 'deal_threaten', label: 'Warn them off the ground', hint: 'Teeth. Trust will bleed, and they may answer in kind.' });
+          card.actions.push({ id: 'deal_leave', label: 'Leave it alone', hint: 'Say nothing. Silence is an answer too.' });
+        }
       } else {
         card.hint = 'Walk to the edge of the map to travel there.';
       }
@@ -2079,10 +2092,91 @@
   villageCardAction(villageId, actionId, opts) {
     if (actionId === 'petition') return this.petitionVillage(villageId, opts);
     if (actionId === 'talk') return this.villageTalk(villageId);
+    if (actionId === 'territory') return this.villageTerritory(villageId);
+    if (actionId === 'deal_split') return this.villageDeal(villageId, 'split');
+    if (actionId === 'deal_tribute') return this.villageDeal(villageId, 'tribute');
+    if (actionId === 'deal_threaten') return this.villageDeal(villageId, 'threaten');
+    if (actionId === 'deal_leave') return this.villageDeal(villageId, 'leave');
     if (actionId === 'study') return this.studyVillageCodex(villageId);
     if (actionId === 'sharefood') return this.villageShareFood(villageId, opts);
     if (actionId === 'guestmeal') return this.guestMeal(villageId);
     return null;
+  },
+  // villageTerritory: the commons, face to face. Their speaker names the
+  // strain — whose hands, which ground — and waits. The deal menu opens on
+  // the card (commonsTalkOpen): split, tribute, teeth, or silence. Every
+  // option has a real consequence; leaving is one too.
+  villageTerritory(villageId) {
+    const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
+    if (!ov) return null;
+    const s = this.state.scholar;
+    const dist = Math.abs((ov.x || 0) - ((this.map && this.map.px) || 0)) +
+                 Math.abs((ov.y || 0) - ((this.map && this.map.py) || 0));
+    if (dist > 1) { this.say(`You're not at ${ov.name}. Walk there first — this talk happens face to face.`); return null; }
+    try { this.catchUpSim(ov); } catch (e) {}
+    const cm = ov.commons || { strainUs: 0, strainThem: 0, tension: 0 };
+    const dir = this.directionTo(4, 4, ov.x, ov.y);
+    const prof = ov.knowledgeProfile || {};
+    const speakerWord = { fisher: 'a fisher with net-scarred hands', forager: 'a forager with bark under her nails', farmer: 'a farmer', scavenger: 'a scavenger' }[prof.focus] || 'their speaker';
+    let pitch;
+    if (cm.strainUs >= cm.strainThem) {
+      pitch = `You sit with ${ov.name}'s speaker — ${speakerWord} — and lay it out: the ${dir} ground. Their foragers are on turf your crews work, and the ground is thinning under both of you. They don't deny it. "Our children eat too," they say. "So. What do we do — split it, buy us off, or threaten us?" The fire is very quiet.`;
+    } else {
+      pitch = `You sit with ${ov.name}'s speaker — ${speakerWord}. Before you can open your mouth: "Your foragers. Our side of the ${dir} ground. Stripped." They let that sit. "We haven't answered it yet. We're answering it now — with you. Split it, feed us, or threaten us. Choose."`;
+    }
+    this.say(pitch);
+    ov.commonsTalkOpen = true;
+    return true;
+  },
+  // villageDeal: the commons resolved (or not). Split needs trust 20+;
+  // tribute costs 2000 real kcal from your pantry; threatening costs trust
+  // and raises tension; leaving costs a little tension — silence is an
+  // answer too. Deals change the SIM (see depleteRandomTile / simVillageDay),
+  // not just the mood.
+  villageDeal(villageId, which) {
+    const ov = (this.state.otherVillages || []).find(x => x.id === villageId);
+    if (!ov) return null;
+    ov.commons = ov.commons || { strainUs: 0, strainThem: 0, tension: 0, deal: null, depleteMult: 1, strainTiles: [], rumorStage: 0 };
+    const cm = ov.commons;
+    ov.commonsTalkOpen = false;
+    const trust = ov.trust || 0;
+    if (which === 'split') {
+      if (trust >= 20) {
+        cm.deal = 'split';
+        cm.tension = Math.max(0, cm.tension - 30);
+        ov.trust = Math.min(100, trust + 5);
+        this.say(`The speaker nods slowly. "North is yours, south is ours — three tiles of breathing room, both sides. Our foragers will keep off your turf, and yours keep off ours." Hands are shaken. The commons gets a fence made of words. (Trust +5. Their crews avoid your turf now — and yours avoid theirs.)`);
+        try { this.seedGossip('deal', { village: ov.id, kind: 'split' }, []); } catch (e) {}
+      } else {
+        cm.tension = Math.min(100, cm.tension + 10);
+        ov.trust = Math.max(0, trust - 3);
+        this.say(`The speaker laughs — not kindly. "Split the ground with strangers? Come back when we've eaten at the same fire a while." (Trust 20+ needed. Tension +10.)`);
+      }
+    } else if (which === 'tribute') {
+      const v = this.state.village;
+      const have = this.pantryKcalLive ? this.pantryKcalLive(v) : 0;
+      if (have < 2000) {
+        this.say(`You open the pantry books and close them again — not 2000 kcal to spare. The speaker sees it. "Come back with food, then." (No deal. The offer stands as long as the strain does.)`);
+        ov.commonsTalkOpen = true; // the menu stays — the offer is still on the table
+        return true;
+      }
+      try { this.pantryDraw(v, 2000, {}); } catch (e) {}
+      cm.deal = 'tribute';
+      cm.depleteMult = 0.5;
+      cm.tension = Math.max(0, cm.tension - 25);
+      ov.trust = Math.min(100, trust + 8);
+      this.say(`Two thousand kcal changes hands — real food, today. The speaker counts it twice, then nods. "Our foragers will work lighter on the shared ground. Half hands, half take." (Trust +8. Their turf pressure halves.)`);
+      try { this.seedGossip('deal', { village: ov.id, kind: 'tribute' }, []); } catch (e) {}
+    } else if (which === 'threaten') {
+      cm.tension = Math.min(100, cm.tension + 25);
+      ov.trust = Math.max(0, trust - 15);
+      this.say(`You lay it out flat: the ground is yours, and their foragers walk it at their own risk. The speaker's face closes like a door. "Noted," they say. Nothing else. On the walk home you hear their watch being doubled. (Trust -15. Tension +25. If this festers, it won't be words next.)`);
+      try { this.seedGossip('threat', { village: ov.id }, []); } catch (e) {}
+    } else {
+      cm.tension = Math.min(100, cm.tension + 5);
+      this.say(`You say nothing about the ground. The speaker watches you decide not to decide, and nods once. Silence is an answer too — and they've heard it. (Tension +5.)`);
+    }
+    return true;
   },
   // villageTalk: sit with another village. Trade news, trade plant knowledge.
   // The drifter's verb: you walked all that way — come home knowing something.

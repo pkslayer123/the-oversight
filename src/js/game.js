@@ -2991,7 +2991,9 @@
       t.nets = t.nets || [];
       const mx = this.state.scholar.mx ?? 4, my = this.state.scholar.my ?? 4;
       // NETS WEAR (hunter loop 2026-10-08): a gill net used to fish forever —
-      // the one trap with no uses. Tackle frays: 12 catches, like any good net.
+      // the one trap with no uses. Tackle frays: 16 catches, like any good net.
+      // DEPLETION 2026-10-10: 12 → 16 — fishing is a build now, and a build's
+      // tools need legs. The creek's real stock is still the limit.
       t.nets.push({ mx, my, setDay: this.state.scholar.day, uses: 12 });
       this.consumeItem('gill_net', 1);
       this.say('You stake the gill net across the current. Check it tomorrow.');
@@ -3024,7 +3026,7 @@
             }
             continue;
           }
-          if (net.uses == null) net.uses = 12; // backfill pre-fix nets
+          if (net.uses == null) net.uses = 16; // backfill pre-fix nets
           // SYNERGY (fix 2026-10-09): tidecaller grants fishing.yield and
           // fishing.rare_chance — wire them into the net check.
           // BREAK-IT abilities 2026-10-10: resolve through allModifiers()
@@ -3037,6 +3039,9 @@
           const _fm = this.allModifiers();
           const fishYield = S.modifiers.resolve(1, 'fishing.yield', _fm, {});
           const fishRare = S.modifiers.resolve(0, 'fishing.rare_chance', _fm, {});
+          // DEPLETION 2026-10-10: 0.35 → 0.6 — fishing is a build now. The
+          // creek's real stock (bigger now, faster-breeding) is the limit,
+          // not the odds.
           if (Math.random() < 0.35 + fishRare) {
             // GILL NET HAUL (balance 2026-10-10): a real net doesn't take one
             // fish a night. A successful night hauls 1-3 fish (60/30/10) —
@@ -4519,6 +4524,7 @@
     delegateTasks() {
       return {
         forage: { icon: '🌿', name: 'Forage', desc: 'Gather food from the wilds. Safe, steady.', danger: 0 },
+        garden: { icon: '🌱', name: 'Garden', desc: 'Tend the garden plots and bring in the harvest. Haven work counts.', danger: 0, haven: true },
         hunt:   { icon: '🏹', name: 'Hunt', desc: 'Hunt animals for meat. Risky — animals fight back.', danger: 1 },
         wood:   { icon: '🪵', name: 'Gather wood', desc: 'Firewood and building wood. Safe.', danger: 0 },
         stone:  { icon: '🪨', name: 'Gather stone', desc: 'Pry loose stone from creek beds and hillsides. Building stone.', danger: 0 },
@@ -4550,6 +4556,9 @@
       } else if (task === 'forage') {
         if (has('cook', 'chef', 'forager', 'botanist', 'farmer', 'gardener', 'herbalist')) mult = 1.4;
         else if (has('nurse', 'doctor')) mult = 1.2;
+      } else if (task === 'garden') {
+        if (has('farmer', 'gardener')) mult = 1.4;
+        else if (has('cook', 'herbalist', 'botanist', 'forager')) mult = 1.2;
       } else if (task === 'wood') {
         if (has('lumberjack', 'carpenter', 'logger', 'builder', 'handyman')) mult = 1.4;
         else if (has('farmer', 'firefighter')) mult = 1.2;
@@ -4793,7 +4802,12 @@
         // 5 foragers working the same area STRIP it. The village must branch out.
         const depleteCount = Math.max(1, Math.round(R(2, 4) * eff));
         const dep = this.villagerDepleteTiles(vid, depleteCount);
-        const kcal = Math.round(R(300, 600) * eff * (dep.depleted > 0 ? 1 : 0.3));
+        // DEPLETION 2026-10-10: tired ground feeds fewer mouths per press —
+        // the vigor multiplier is the slow pressure behind the fast stock
+        // cycle. The 0.3 fallback (stripped turf, scraps) stays: pressure,
+        // not a kill switch.
+        const vigorMult = this.vigorYieldMult(dep.avgVigor);
+        const kcal = Math.round(R(300, 600) * eff * (dep.depleted > 0 ? vigorMult : 0.3));
         // less to find when the land is stripped — scarcity is real
         this.stockPantry(kcal, 'Foraged food');
         let landNote = '';
@@ -4882,6 +4896,30 @@
           ? `💧 ${first} returns with ${liters}L of creek water. Risky until the hearth boils it.`
           : `💧 ${first} returns with ${liters}L, but the cistern only holds ${added}L more.`);
         this.bumpTrust(vid, 1);
+      } else if (a.task === 'garden') {
+        // GARDEN (depletion 2026-10-10): the farming build, worked by
+        // villagers. They tend every live plot (tending is the build's cost)
+        // and bring ripe harvests home at 0.8 efficiency. Sowing is the
+        // player's call — seed choice is knowledge, not labor.
+        const gday = (this.state.scholar || {}).day || 0;
+        const plots = this.gardenPlots();
+        const live = plots.filter(p => p.pid && !p.dead);
+        if (!live.length) {
+          this.say(`🌱 ${first} looks over the garden: turned soil, nothing planted. Someone has to sow first.`);
+        } else {
+          for (const p of live) { p.lastTend = gday; p.weeds = 0; }
+          let kcal = 0, n = 0;
+          for (const p of live) {
+            if (this.plotRipe(p, gday)) {
+              kcal += Math.round(this.plotYieldKcal(p) * 0.8 * eff);
+              p.lastHarvest = gday; n++;
+            }
+          }
+          if (kcal > 0) this.stockPantry(kcal, 'Garden harvest');
+          this.say(`🌱 ${first} works the garden — watered, weeded, turned${n ? `, and brings in a harvest (+${kcal} kcal to the pantry)` : '. Nothing ripe yet'}.`);
+          try { this.villagerGainXP(vid, 'field', 1, 'gardening'); } catch (e) {}
+          this.bumpTrust(vid, 1);
+        }
       } else if (a.task === 'cook' || a.task === 'tend' || a.task === 'teach' || a.task === 'mend') {
         // HAVEN ROLES (Steve 2026-10-09): haven work is contribution. The
         // credit lands in v.gives so the ledger — and the freeloader pipeline
@@ -5341,14 +5379,84 @@
     // ============ LIVING WORLD: the land remembers ============
     // Tiles have carrying capacity. Foraging depletes them. They regrow slowly.
     // A village that strips its home turf MUST branch out, learn new foods, or starve.
-    // The player SEES the impact: lush → picked-over → barren.
+    // The player SEES the impact: lush → thinning → picked-over → barren.
+    //
+    // DEPLETION 2026-10-10 (settled law: PROGRESSION.md §9): two memories.
+    // stock = today's pickings (fast, regrows in days). vigor 0-100 = the
+    // ground's health (slow, heals over weeks of rest). Sustainable takes
+    // (stock stays above 1) cost nothing; STRIPPING (taking the last) wounds
+    // vigor -2; SCRAPING bare ground costs -1/take. Vigor caps stock:
+    // overharvested ground holds less even when "recovered". The curve is
+    // honest: stock thins in days, vigor erodes over weeks, rest heals over
+    // seasons. Pressure is real, never a kill switch.
 
-    // depletion level: how stripped is this tile?
+    // tGroundCap(t): the tile's CURRENT carrying capacity. Overharvested
+    // ground holds less — vigor is the slow memory, stock is today's pickings.
+    tGroundCap(t) {
+      if (!t || !t.maxStock || t.maxStock <= 0) return 0;
+      const vigor = (t.vigor == null) ? 100 : t.vigor;
+      return Math.max(0, Math.round(t.maxStock * vigor / 100));
+    },
+
+    // stripGround(t, n, opts): THE one path for taking stock off a tile.
+    // Sustainable takes cost nothing; STRIPPING (taking the last) wounds
+    // vigor 5; SCRAPING bare ground costs 2 per take. Pressure accrues like
+    // any working of the land. Returns {taken, eroded}.
+    // opts.byVillage: the depleter (a village object, or null for the home
+    // village / the player) — feeds commons-strain bookkeeping.
+    stripGround(t, n, opts) {
+      if (!t || !t.maxStock || t.maxStock <= 0 || !(n > 0)) return { taken: 0, eroded: 0 };
+      if (t.vigor == null) t.vigor = 100;
+      let taken = 0, eroded = 0;
+      for (let i = 0; i < n; i++) {
+        const sb = t.stock || 0;
+        if (sb > 1) { t.stock = sb - 1; taken++; }
+        else if (sb === 1) { t.stock = 0; taken++; t.vigor = Math.max(0, t.vigor - 5); eroded += 5; }
+        else { t.vigor = Math.max(0, t.vigor - 2); eroded += 2; }
+      }
+      // the land remembers being worked: pressure + worn paths, like before
+      t.foragePressure = (t.foragePressure || 0) + 1;
+      t.foragedToday = true;
+      if (t.foragePressure >= 5) t.wornPath = true;
+      return { taken, eroded };
+    },
+
+    // readGround(x, y): you worked this ground — its state is now known.
+    // Forage, examine, and villager reports all read. Reads go stale (see
+    // depletionClass): ground state is observed knowledge, never a live feed.
+    readGround(x, y) {
+      const t = this.tileAt(x, y);
+      if (!t) return;
+      t.groundReadDay = (this.state.scholar || {}).day || 0;
+      t.groundReadLevel = this.depletionLevel(t);
+    },
+
+    // groundLine(t): the honest descriptor for the tile card. Null when
+    // unread — "if you don't know, it doesn't show". Never raw numbers.
+    groundLine(t) {
+      if (!t || !t.maxStock || t.maxStock <= 0) return null;
+      if (t.groundReadDay == null) return null;
+      const lvl = this.depletionLevel(t);
+      const words = { lush: 'lush ground', thinning: 'thinning ground', picked: 'picked-over ground', barren: 'barren ground' };
+      let s = words[lvl] || 'ground';
+      // trend, honestly: recovering / worked hard / holding
+      const pressure = t.foragePressure || 0;
+      if ((lvl === 'thinning' || lvl === 'picked') && pressure === 0 && (t.stock || 0) < this.tGroundCap(t)) s += ' — recovering';
+      else if (pressure >= 5 && lvl !== 'lush') s += ' — getting worked hard';
+      return s;
+    },
+
+    // depletion level: how stripped is this tile? Vigor-aware: a tile can be
+    // stock-full yet thinning (vigor eroding under the surface), or barren
+    // with stock 0 on dead ground.
     depletionLevel(t) {
       if (!t || !t.maxStock || t.maxStock <= 0) return 'lush';
-      const ratio = (t.stock || 0) / t.maxStock;
+      const cap = this.tGroundCap(t);
+      if (cap <= 0) return 'barren';
+      const ratio = (t.stock || 0) / cap;
       if (ratio >= 0.75) return 'lush';
-      if (ratio >= 0.25) return 'picked';
+      if (ratio >= 0.4) return 'thinning';
+      if (ratio > 0) return 'picked';
       return 'barren';
     },
 
@@ -5357,12 +5465,18 @@
     // not the fog flag — a fogged tile revealed for travel rendered visibly
     // picked-clean/barren. Depletion is earned knowledge: gate on seenTiles
     // (mapSeen), not on revealed.
+    // STALE READS (depletion 2026-10-10): ground state is observed knowledge.
+    // A read older than 5 days may have changed — the map stops showing it
+    // rather than lying. Forage/examine/villager reports refresh the read.
     depletionClass(t, x, y) {
       if (!t || !t.revealed) return '';
       if (x !== undefined && y !== undefined) {
         try { if (!this.mapSeen(x, y)) return ''; } catch (e) { return ''; }
       }
+      const day = (this.state.scholar || {}).day || 0;
+      if (t.groundReadDay == null || t.groundReadDay < day - 5) return '';
       const lvl = this.depletionLevel(t);
+      if (lvl === 'thinning') return 'depleted-thinning';
       if (lvl === 'picked') return 'depleted-picked';
       if (lvl === 'barren') return 'depleted-barren';
       return '';
@@ -5384,11 +5498,15 @@
     // find forageable tiles in a villager's zone. Returns tiles with stock, nearest-first.
     forageTilesInZone(zone, count) {
       const hx = 3, hy = 3; // haven
+      // COMMONS DEAL (depletion 2026-10-10): a split deal is two-sided — your
+      // crews keep off their turf too.
+      const deals = (this.state.otherVillages || []).filter(v => v.commons && v.commons.deal === 'split');
       const candidates = [];
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (x === hx && y === hy) continue;
         const dist = Math.abs(x - hx) + Math.abs(y - hy);
         if (dist < zone.min || dist > zone.max) continue;
+        if (deals.some(v => Math.abs(x - v.x) + Math.abs(y - v.y) <= 3)) continue;
         const t = this.tileAt(x, y);
         if (!t || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
         candidates.push({ t, x, y, dist });
@@ -5399,20 +5517,32 @@
     },
 
     // deplete specific tiles when a villager forages. The world remembers.
-    // Returns {depleted: n, barren: n} for messaging.
+    // Returns {depleted: n, barren: n, eroded: n, avgVigor} for messaging.
+    // DEPLETION 2026-10-10: runs through stripGround (the one path) — the
+    // village's hands wound vigor exactly like yours. Their report reads the
+    // ground for you: what the crew learns, the village learns. avgVigor
+    // scales the haul — tired ground feeds fewer mouths per press.
     villagerDepleteTiles(vid, amount) {
       const zone = this.forageZone(vid);
       const tiles = this.forageTilesInZone(zone, amount);
-      let barren = 0;
+      let barren = 0, eroded = 0, vigorSum = 0;
       for (const { t, x, y } of tiles) {
-        t.stock = Math.max(0, (t.stock || 0) - 1);
-        // traces: this tile has been worked. Worn paths form.
-        t.foragePressure = (t.foragePressure || 0) + 1;
-        t.foragedToday = true; // pressure doesn't decay on days it's worked
-        if (t.foragePressure >= 5) t.wornPath = true;
+        const r = this.stripGround(t, 1);
+        eroded += r.eroded;
+        vigorSum += (t.vigor == null ? 100 : t.vigor);
+        try { this.readGround(x, y); } catch (e) {}
         if ((t.stock || 0) === 0) barren++;
       }
-      return { depleted: tiles.length, barren, zone: zone.label };
+      const avgVigor = tiles.length ? vigorSum / tiles.length : 100;
+      return { depleted: tiles.length, barren, eroded, avgVigor, zone: zone.label };
+    },
+
+    // vigorYieldMult(avgVigor): tired ground feeds fewer mouths per press.
+    // 100 → 1.0, 50 → 0.675, 0 → 0.35. The floor keeps a press from ever
+    // being literally worthless — pressure, not a kill switch.
+    vigorYieldMult(avgVigor) {
+      const v = Math.max(0, Math.min(100, avgVigor == null ? 100 : avgVigor));
+      return 0.35 + 0.65 * (v / 100);
     },
 
     // === VILLAGE KNOWLEDGE POOL ===
@@ -6684,7 +6814,12 @@
       // of their living is ranging/traps/abstract, same as home.
       const handsOut = 1 + (Math.random() < 0.4 ? 1 : 0);
       const visibleKcal = handsOut * (400 + Math.random() * 400);
-      this.depleteRandomTile(Math.ceil(visibleKcal / 200), village.x, village.y);
+      // COMMONS DEAL (depletion 2026-10-10): tribute halves their take —
+      // the deal has teeth because their hands are real. Split deals are
+      // enforced inside depleteRandomTile (turf filter).
+      const dealMult = (village.commons && village.commons.deal === 'tribute')
+        ? (village.commons.depleteMult || 0.5) : 1;
+      this.depleteRandomTile(Math.max(1, Math.round(Math.ceil(visibleKcal / 200) * dealMult)), village.x, village.y, { byVillage: village });
       // eat: 2000 per person
       village.pantryKcal -= need;
       // villages eat and share surplus — they don't hoard. 4 days' buffer, max.
@@ -7001,6 +7136,10 @@
     // initTileWildlife: what animals live on this tile? Based on biome.
     // Returns { speciesId: count }. Counts are small (1-4) — these are the
     // animals actually present, not an abstract abundance.
+    // DEPLETION 2026-10-10: fish are the exception — a creek holds dozens,
+    // not a handful. Fish/water species (creek/wetland biomes) seed 4-10 per
+    // species: fishing is a BUILD now (depletion makes it necessary), and a
+    // build needs a real population to work.
     initTileWildlife(biomeType, rnd) {
       const wildlife = {};
       const animals = (this.data.animals || []).filter(a => (a.biomes || []).includes(biomeType));
@@ -7009,7 +7148,23 @@
       for (let i = 0; i < nSpecies && i < animals.length; i++) {
         const a = animals[Math.floor((rnd || Math.random)() * animals.length)];
         if (a && !wildlife[a.id]) {
-          wildlife[a.id] = 1 + Math.floor((rnd || Math.random)() * 4);
+          const watery = (a.biomes || []).some(b => b === 'creek' || b === 'wetland');
+          wildlife[a.id] = watery
+            ? 4 + Math.floor((rnd || Math.random)() * 7)   // 4-10: a creek holds fish
+            : 1 + Math.floor((rnd || Math.random)() * 4);  // 1-4: land game
+        }
+      }
+      // DEPLETION 2026-10-10: water holds fish, guaranteed. A creek that
+      // rolls only mink is a dry hole with wet rocks — a fishing BUILD
+      // can't depend on a coin flip per tile. One fish species always.
+      if (['creek', 'wetland', 'pond'].includes(biomeType)) {
+        const FISH = ['creek_chub', 'bluegill'];
+        if (!FISH.some(id => wildlife[id])) {
+          const fid = FISH[Math.floor((rnd || Math.random)() * FISH.length)];
+          const adef = (this.data.animals || []).find(a => a.id === fid);
+          if (adef && (adef.biomes || []).includes(biomeType)) {
+            wildlife[fid] = 4 + Math.floor((rnd || Math.random)() * 7);
+          }
         }
       }
       return wildlife;
@@ -7019,6 +7174,14 @@
     // to adjacent tiles, and die from natural causes. The world lives.
     simEcology() {
       const K = 8; // carrying capacity per species per tile
+      // DEPLETION 2026-10-10: fish live faster — K 24, 35%/day growth. A
+      // fished creek recovers in ~a week of rest; a netted-hard creek stays
+      // thin. Same honesty as land game, scaled to fish.
+      const fishK = 24;
+      const isFish = (sid) => {
+        const adef = (this.data.animals || []).find(a => a.id === sid);
+        return adef && (adef.biomes || []).some(b => b === 'creek' || b === 'wetland');
+      };
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.map.tiles[y][x];
         if (!t.wildlife) t.wildlife = {};
@@ -7026,9 +7189,11 @@
         for (const sid of Object.keys(t.wildlife)) {
           const n = t.wildlife[sid];
           if (n <= 0) { delete t.wildlife[sid]; continue; }
-          // growth rate ~20%/day, capped by K
-          const growth = n * 0.2 * (1 - n / K);
-          t.wildlife[sid] = Math.min(K, Math.round(n + growth + (Math.random() < 0.3 ? 1 : 0)));
+          const fish = isFish(sid);
+          const kCap = fish ? fishK : K;
+          // growth rate ~20%/day (35% for fish), capped by K
+          const growth = n * (fish ? 0.35 : 0.2) * (1 - n / kCap);
+          t.wildlife[sid] = Math.min(kCap, Math.round(n + growth + (Math.random() < 0.3 ? 1 : 0)));
           // natural death: 5%/day
           if (Math.random() < 0.05 && t.wildlife[sid] > 0) {
             t.wildlife[sid]--;
@@ -7946,6 +8111,8 @@
       if (t.modifiers) delete t.modifiers[key];
       if (t.bushSpecies) delete t.bushSpecies[key];
       if (t.stock > 0) t.stock--;
+      // DEPLETION 2026-10-10: clearing works the ground — it reads, too.
+      try { this.readGround(this.map.px, this.map.py); } catch (e) {}
       this.say('You clear the brush. +1 wood (brushwood). Easier walking here now.');
       this.checkQuest('terraform');
       // ACTION CLOCK: clearing brush = 1 chunk (32 ticks) + 40 kcal effort (above).
@@ -11309,10 +11476,21 @@
         const kcal = Math.round((adef.calories || 200) * yieldMult);
         // FOOD REALITY: a fish is a carcass — clean it (knife), don't just eat it.
         s.inventory.push(this.foodCarcass(adef, kcal, s.day, 'fished'));
+        // DEPLETION 2026-10-10: the skilled fisher works the spot, not just
+        // the bite — fishWise (known water) sometimes doubles up. Two real
+        // fish, two real decrements: species-honesty preserved.
+        let bonusKcal = 0;
+        if (known && fishHere.length && Math.random() < 0.3) {
+          const fid2 = fishHere[Math.floor(Math.random() * fishHere.length)];
+          _wl[fid2]--; if (_wl[fid2] <= 0) delete _wl[fid2];
+          const adef2 = (this.data.animals || []).find(a => a.id === fid2) || { id: fid2, name: 'fish', calories: 200 };
+          bonusKcal = Math.round((adef2.calories || 200) * yieldMult);
+          s.inventory.push(this.foodCarcass(adef2, bonusKcal, s.day, 'fished'));
+        }
         // a body in hand teaches you what it was — same as a trap/net catch.
         try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(fid); } catch (e) {}
         const fname = (adef.name || 'fish').toLowerCase();
-        if (known) this.say(`You read the water — the deep cut by the bank, the shade line. A ${fname} takes it. About ${kcal} kcal — clean it quickly (knife).`);
+        if (known) this.say(`You read the water — the deep cut by the bank, the shade line. A ${fname} takes it${bonusKcal ? ' — and another!' : ''}. About ${kcal + bonusKcal} kcal — clean them quickly (knife).`);
         else {
           this.say(`You thrash the shallows and — a ${fname}! Luck, mostly. About ${kcal} kcal — clean it quickly (knife).`);
           // learned the wet way: catching teaches a little
@@ -15800,6 +15978,21 @@
       } else if (['gym','class','office','apt','cube','break','conf','lobby','bay','sanct'].includes(cell)) {
         if (!sec || !sec.searched) actions.push('Search');
       }
+      // GARDEN (depletion 2026-10-10): the farming build lives on the haven
+      // tile. Honest buttons: impossible actions never render — no empty
+      // plot, no sow; nothing planted, no tend; nothing ripe, no harvest.
+      if (t.type === 'haven' && ['grass','dirt','clearing','plant','bush'].includes(cell)) {
+        try {
+          const plots = this.gardenPlots();
+          const day = (this.state.scholar || {}).day || 0;
+          const live = plots.filter(p => p.pid && !p.dead);
+          const empty = plots.filter(p => !p.pid && !p.dead);
+          if (plots.length < 6) actions.push('Make a garden plot');
+          if (empty.length && this.sowOptions().length) actions.push('Sow seeds');
+          if (live.some(p => day - (p.lastTend || 0) >= 1)) actions.push('Tend the garden');
+          if (live.some(p => this.plotRipe(p, day))) actions.push('Harvest the garden');
+        } catch (e) { /* garden state unavailable — show nothing rather than lie */ }
+      }
       return actions;
     },
 
@@ -15857,26 +16050,43 @@
       this.regrowTiles();
       s._landRegrowDay = dayIdx + 1;
     },
-    // regrowTiles: one day of the land healing. +1 stock/day up to maxStock;
-    // heavily pressured land recovers slower; detail cells come back in 3 days.
+    // regrowTiles: one day of the land healing. DEPLETION 2026-10-10: two
+    // clocks. STOCK regrows +1 every 2 days up to the VIGOR-CAPPED max
+    // (slower under pressure) — days, not overnight. VIGOR heals +2/day but
+    // ONLY on truly rested ground (not worked today, zero pressure) — ~7
+    // weeks from barren to full: seasons, not days. Heavy sustained pressure
+    // (8+) wounds vigor further. Detail cells come back in 3 days as before,
+    // but their stock restore respects the vigor cap and needs vigor > 0 —
+    // dead ground stays dead until it rests.
     // Called by endDay() and by the distant-village catch-up sim per simulated day.
     regrowTiles() {
+      const day = (this.state.scholar || {}).day || 0;
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.map.tiles[y][x];
         if (t.maxStock > 0) {
+          if (t.vigor == null) t.vigor = 100;
           const pressure = t.foragePressure || 0;
-          // pressure suppresses regrow: 0-4 = full, 5-9 = half (every other day), 10+ = none
-          // pressure decays by 1/day when not foraged (land rests)
-          let regrow = 1;
-          if (pressure >= 10) regrow = 0;
-          else if (pressure >= 5) regrow = (this.state.scholar.day % 2 === 0) ? 1 : 0;
+          const cap = this.tGroundCap(t);
+          // VIGOR: the slow memory. Rested ground heals; worked ground
+          // doesn't; heavily pressured ground degrades further.
+          if (!t.foragedToday && pressure === 0) t.vigor = Math.min(100, t.vigor + 2);
+          else if (pressure >= 8) t.vigor = Math.max(0, t.vigor - (pressure - 7));
+          // STOCK: +1 every 2 days up to the vigor-capped max. Pressure slows
+          // it: every 4 days at 5+, nothing at 10+. Dead ground (vigor 0)
+          // grows nothing until it rests.
+          let regrow = 0;
+          if (t.vigor > 0 && (t.stock || 0) < cap) {
+            if (pressure >= 10) regrow = 0;
+            else if (pressure >= 5) regrow = (day % 4 === 0) ? 1 : 0;
+            else regrow = (day % 2 === 0) ? 1 : 0;
+          }
           // GRID-LEVEL depletion (detailRegrow) recovers through the cell
-          // cycle below, 1:1 — the abstract +1/day top-up is only for abstract
+          // cycle below, 1:1 — the abstract top-up is only for abstract
           // (unvisited-tile) nibbles. Without the gate the two count the same
           // recovery twice, and villager competition on visited tiles gets
           // refunded overnight instead of biting for the promised few days.
           const gridDepleted = t.detailRegrow && Object.keys(t.detailRegrow).length > 0;
-          if (regrow > 0 && !gridDepleted) t.stock = Math.min(t.maxStock, (t.stock || 0) + regrow);
+          if (regrow > 0 && !gridDepleted) t.stock = Math.min(cap, (t.stock || 0) + regrow);
           // pressure decays slowly — the land forgives, eventually
           if (pressure > 0 && !t.foragedToday) t.foragePressure = Math.max(0, pressure - 1);
           t.foragedToday = false;
@@ -15888,7 +16098,7 @@
             const reg = t.detailRegrow[key];
             const regDay = (typeof reg === 'object') ? reg.day : reg;
             const was = (typeof reg === 'object') ? reg.was : 'plant';
-            if (regDay <= this.state.scholar.day) {
+            if (regDay <= day) {
               const [cx, cy] = key.split(',').map(Number);
               // restore the original (plants come back; trees were never gone, just picked clean)
               if (t.detail[cy] && (t.detail[cy][cx] === 'dirt' || t.detail[cy][cx] === was)) {
@@ -15899,13 +16109,12 @@
             }
           }
           // STOCK FOLLOWS THE GRID: the grid is the inventory. Regrown cells
-          // restore stock 1:1, so a stripped grove recovers in ~3 days —
-          // matching the "it'll recover in a few days" promise the sweep makes.
-          // (The +1/day above only tops up villager-nibbled stock; it couldn't
-          // keep up with the area sweep, leaving regrown grids that read
-          // "nothing left to take here today" — green lies.)
-          if (regrown > 0 && t.maxStock > 0) {
-            t.stock = Math.min(t.maxStock, (t.stock || 0) + regrown);
+          // restore stock 1:1 — but never past the vigor cap, and never on
+          // dead ground. A stripped HEALTHY grove recovers in ~3 days
+          // (the sweep's honest promise); a stripped TIRED grove recovers
+          // slower, and the sweep's copy says so.
+          if (regrown > 0 && t.maxStock > 0 && (t.vigor == null || t.vigor > 0)) {
+            t.stock = Math.min(this.tGroundCap(t), (t.stock || 0) + regrown);
           }
         }
       }
@@ -15919,30 +16128,56 @@
     // not eat your foraging grounds. If their whole region is bare, they
     // find nothing — the pantry math and the starvation path handle the rest
     // (a stripped, hungry village is a story, not a teleporting mouth).
-    depleteRandomTile(amount, cx, cy) {
+    depleteRandomTile(amount, cx, cy, opts) {
+      // opts.byVillage: the village whose hands these are (a village object,
+      // or null/undefined for the home village). Feeds commons-strain
+      // bookkeeping: overlapping turfs are the commons problem, made of
+      // real takes on the shared map.
+      opts = opts || {};
       // find tiles with stock, deplete near the foragers first
       const near = [], mid = [];
+      // COMMONS DEAL (depletion 2026-10-10): a split deal keeps hands off
+      // the agreed turf — both sides. Their crews keep off OUR turf (within
+      // 3 of haven); our crews keep off THEIRS (within 3 of their fire).
+      const splitVs = (this.state.otherVillages || []).filter(v => v.commons && v.commons.deal === 'split');
+      const dealBlocked = (x, y) => {
+        if (opts.byVillage) {
+          // their hands: the deal keeps them off our side — but only if
+          // THEY are the deal partner
+          const mine = (opts.byVillage.commons || {}).deal === 'split';
+          return mine && Math.abs(x - 4) + Math.abs(y - 4) <= 3;
+        }
+        // our hands: keep off each deal partner's side
+        return splitVs.some(v => Math.abs(x - v.x) + Math.abs(y - v.y) <= 3);
+      };
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         const t = this.tileAt(x, y);
         if (!t || t.type === 'haven' || t.type === 'ruin' || (t.stock || 0) <= 0) continue;
         const d = (cx == null || cy == null) ? 99 : Math.abs(x - cx) + Math.abs(y - cy);
-        if (d <= 2) near.push(t);
-        else if (d <= 4) mid.push(t);
+        if (d <= 2) near.push({ t, x, y });
+        else if (d <= 4) mid.push({ t, x, y });
         // past 4: not their turf. hands off.
       }
       // forage the home turf; range wider only when it's stripped
       const GRID_FORAGEABLE = { plant: 1, bush: 1, tree: 1, bigtree: 1 };
+      let takes = 0, vigorSum = 0;
       for (let i = 0; i < amount; i++) {
         // RE-SCAN each pick: the near turf strips first, then hands range wider.
         // (BUG 2026-10-05: the pool was built once, so once the near tiles were
         // picked to zero the remaining picks were wasted on them — phantom
         // foraging. The pantry math claimed the food was eaten while the grid
         // kept it, so stripped turf never really depleted.)
-        let pool = near.filter(t => (t.stock || 0) > 0);
-        if (!pool.length) pool = mid.filter(t => (t.stock || 0) > 0);
+        let pool = near.filter(e => (e.t.stock || 0) > 0 && !dealBlocked(e.x, e.y));
+        if (!pool.length) pool = mid.filter(e => (e.t.stock || 0) > 0 && !dealBlocked(e.x, e.y));
         if (!pool.length) break;
-        const t = pool[Math.floor(Math.random() * pool.length)];
-        t.stock = Math.max(0, (t.stock || 0) - 1);
+        const { t, x, y } = pool[Math.floor(Math.random() * pool.length)];
+        // DEPLETION 2026-10-10: the one path — abstract takes wound vigor
+        // like everything else. Home-village takes read the ground (your
+        // crews know their turf); neighbors' takes are strain, not knowledge.
+        this.stripGround(t, 1);
+        takes++; vigorSum += (t.vigor == null ? 100 : t.vigor);
+        if (!opts.byVillage) { try { this.readGround(x, y); } catch (e) {} }
+        try { this.noteSharedStrain(x, y, opts.byVillage || null); } catch (e) {}
         // GRID TRUTH (forager loop 2026-10-05): the player's sweep reads the
         // grid, not the abstract number. If the grid exists, strip a real cell
         // too — otherwise the map says "barren" while the patch is full (or
@@ -15963,6 +16198,292 @@
             // same N+2 timing as the player's harvest: stripped today, back in 3 days
             t.detailRegrow[gx + ',' + gy] = { day: day + 2, was: c };
             if (c === 'plant') t.detail[gy][gx] = 'dirt'; // trees/bushes stand, just picked clean
+          }
+        }
+      }
+      // DEPLETION 2026-10-10: report the take — avgVigor lets callers scale
+      // abstract hauls to the ground's health, like villagerDepleteTiles.
+      return { takes, avgVigor: takes ? vigorSum / takes : 100 };
+    },
+
+    // ============ THE COMMONS (depletion 2026-10-10, PROGRESSION.md §9) ============
+    // Neighboring villages work overlapping grounds (canon: ~500m apart —
+    // turfs overlap on this map). Shared grounds deplete faster: the commons
+    // problem, manufactured from your own village's needs. The interface
+    // stays narrow — their speaker, rumors, the village card. No region map.
+    //
+    // Per-village: v.commons = { strainUs, strainThem, tension, deal,
+    //   depleteMult, strainTiles, rumorStage }. strainUs = their hands on
+    // ground we also use; strainThem = our hands on ground they use.
+    // Tension 0-100. Deals: 'split' (both keep off a 3-tile radius) or
+    // 'tribute' (they halve their take for 2000 kcal). Tension 70+ with low
+    // trust risks raids.
+
+    // noteSharedStrain(x, y, byVillage): a real take landed on tile (x,y).
+    // byVillage = the village object whose hands took it, or null for the
+    // home village / the player. Strain accrues on the DEPLETER's record as
+    // the player sees it: a neighbor's strainUs = their crews on ground we
+    // use too; a neighbor's strainThem = our crews on ground they use.
+    // (A-vs-B strain between two neighbors isn't the player's story — the
+    // camera stays on your village.)
+    noteSharedStrain(x, y, byVillage) {
+      const villages = this.state.otherVillages || [];
+      const mk = () => ({ strainUs: 0, strainThem: 0, tension: 0, deal: null, depleteMult: 1, strainTiles: [], rumorStage: 0 });
+      if (byVillage && byVillage.id) {
+        // A NEIGHBOR's crews: strain on THEIR record, and only for ground we
+        // actually use too (within 4 of haven as well as within 4 of them).
+        const ov = villages.find(v => v.id === byVillage.id);
+        if (!ov) return;
+        const dH = Math.abs(x - 4) + Math.abs(y - 4); // haven at 9x9 center
+        const dO = Math.abs(x - ov.x) + Math.abs(y - ov.y);
+        if (dH > 4 || dO > 4) return; // not shared ground — no commons
+        ov.commons = ov.commons || mk();
+        ov.commons.strainUs++;
+        ov.commons.tension = Math.min(100, ov.commons.tension + 2);
+        if (ov.commons.strainTiles.length < 12) ov.commons.strainTiles.push({ x, y });
+      } else {
+        // OUR crews (home village or the player): every neighbor whose turf
+        // this tile sits in notices. The commons cuts both ways.
+        for (const ov of villages) {
+          const dO = Math.abs(x - ov.x) + Math.abs(y - ov.y);
+          if (dO > 4) continue;
+          ov.commons = ov.commons || mk();
+          ov.commons.strainThem++;
+          ov.commons.tension = Math.min(100, ov.commons.tension + 2);
+        }
+      }
+    },
+
+    // commonsTick(): once per day (endDay). Strain becomes rumors, then a
+    // speaker summons, then — if tension festers — raids. Reactive, never
+    // calendar-scripted: nothing fires without real takes on shared ground.
+    commonsTick() {
+      const day = (this.state.scholar || {}).day || 0;
+      for (const ov of (this.state.otherVillages || [])) {
+        const c = ov.commons;
+        if (!c) continue;
+        const dir = this.directionTo(4, 4, ov.x, ov.y);
+        // THEIR hands on our shared ground — escalating rumors
+        if (c.strainUs >= 5 && c.rumorStage < 1) {
+          c.rumorStage = 1;
+          this.say(`Fresh-cut stems on the ${dir} ground — someone else is working turf your crews use. (${ov.name}'s foragers, most likely. You walk the ground yourself: it's thinner than your crews alone could strip it.)`);
+          for (const st of (c.strainTiles || [])) { try { this.readGround(st.x, st.y); } catch (e) {} }
+        } else if (c.strainUs >= 20 && c.rumorStage < 2) {
+          c.rumorStage = 2;
+          this.say(`The ${dir} ground is thinning faster than your crews alone could strip it. ${ov.name} isn't slowing down — their foragers are on your turf most days now. Their speaker would probably want words. (Talk about the shared ground at their fire.)`);
+        } else if (c.strainUs >= 40 && c.rumorStage < 3) {
+          c.rumorStage = 3;
+          c.tension = Math.min(100, c.tension + 15);
+          this.say(`${ov.name}'s speaker sent a runner: the ${dir} ground feeds both villages or neither. They want to talk — properly, at their fire. Ignoring this is also an answer.`);
+        }
+        // OUR hands on their ground — they complain, through a runner
+        if (c.strainThem >= 8 && !c.complained) {
+          c.complained = true;
+          c.tension = Math.min(100, c.tension + 10);
+          ov.trust = Math.max(0, (ov.trust || 0) - 3);
+          this.say(`A runner from ${ov.name}, dusty and direct: "Your foragers are stripping our side of the ${dir} ground. Back off — or we'll talk with teeth." (Trust -3. The commons cuts both ways.)`);
+        }
+        // RAIDS: tension 70+, trust under 15, no deal — they take it back.
+        if (!c.deal && c.tension >= 70 && (ov.trust || 0) < 15 && Math.random() < 0.08) {
+          this.commonsRaid(ov);
+        }
+      }
+    },
+
+    // commonsRaid(ov): the sharp end of the commons. They hit the pantry or
+    // trample the garden — narrated, never silent. Trust craters.
+    commonsRaid(ov) {
+      const v = this.state.village;
+      const dir = this.directionTo(4, 4, ov.x, ov.y);
+      const take = 500 + Math.floor(Math.random() * 1001); // 500-1500 kcal
+      let what = '';
+      // garden first if it's worth trampling, else the pantry
+      const plots = this.gardenPlots();
+      const livePlots = plots.filter(p => !p.dead && p.pid);
+      if (livePlots.length >= 2 && Math.random() < 0.5) {
+        const victims = livePlots.slice(0, 2);
+        for (const p of victims) { p.dead = true; p.pid = null; }
+        what = `trampled ${victims.length} garden plots into mud`;
+      } else {
+        try {
+          const drawn = this.pantryDraw(v, take, {});
+          what = `carried off ~${Math.round(drawn.taken)} kcal from the pantry`;
+        } catch (e) { what = `took food from the pantry`; }
+      }
+      ov.trust = Math.max(0, (ov.trust || 0) - 10);
+      ov.commons.tension = Math.min(100, ov.commons.tension + 10);
+      this.say(`🌙 Raid — ${ov.name} came in the night from the ${dir}. They ${what}. Nobody's dead, but the message is clear: the ground is theirs too, and they're done asking. (Trust -10.)`);
+      try { this.seedGossip('raid', { village: ov.id }, []); } catch (e) {}
+    },
+
+    // ============ FARMING (depletion 2026-10-10, PROGRESSION.md §9) ============
+    // The answer to stripped ground: slow, hungry, honest. A garden plot
+    // takes days to mature and daily tending to live — but it makes NEW food
+    // instead of taking the wild's. This is what makes farming a BUILD, not
+    // flavor: when the home turf thins, the garden carries the shortfall.
+    //
+    // Knowledge-gated honestly: you can only sow plants you KNOW (L1+) and
+    // only forms that garden (shoots/berries/roots — nobody gardens an oak).
+    // Deeper knowledge = bigger harvests. Untended plots weed over and die.
+    // The mechanic is never gated — only which crops you can sow.
+
+    // gardenGrowthDays(form): shoots are quick, roots take their time.
+    gardenGrowthDays(form) {
+      return { shoots: 7, berries: 12, roots: 14 }[form] || 10;
+    },
+
+    // gardenPlots(): the haven tile's plots. Plots live on the haven tile —
+    // home is where the garden is.
+    gardenPlots() {
+      const t = this.tileAt(4, 4);
+      if (!t) return [];
+      t.plots = t.plots || [];
+      return t.plots;
+    },
+
+    // makePlot(): break new ground. Haven tile, 64 ticks + 120 kcal, max 6.
+    makePlot() {
+      if (this.over) return null;
+      const t = this.playerTile();
+      if (!t || t.type !== 'haven') { this.say('Gardens grow at home — break ground on the haven tile.'); return null; }
+      const plots = this.gardenPlots();
+      if (plots.length >= 6) { this.say('Six plots is all the ground behind the hall can hold. Tend what you have.'); return null; }
+      const scholar = this.state.scholar;
+      scholar.kcal = Math.max(0, (scholar.kcal || 0) - 120);
+      plots.push({ pid: null, plantedDay: 0, lastTend: 0, lastHarvest: 0, weeds: 0, dead: false });
+      this.say(`You break ground behind the hall — plot ${plots.length} of 6, turned and ready. (Sow seeds to plant. Nothing grows until you sow, and nothing lives unless you tend it daily.)`);
+      return this.tickAction(64) || this.status();
+    },
+
+    // sowOptions(): seed-eligible plants in your pack — known (L1+),
+    // gardenable form, 2+ units (one to eat, one to sow — seed stock).
+    sowOptions() {
+      const inv = (this.state.scholar || {}).inventory || [];
+      const codex = (this.state.codex || {}).plants || {};
+      const seen = {};
+      const opts = [];
+      for (const item of inv) {
+        if (!item.plantId || seen[item.plantId]) continue;
+        const plant = (this.data.plants || []).find(p => p.id === item.plantId);
+        if (!plant) continue;
+        const form = plant.form;
+        if (!['shoots', 'berries', 'roots'].includes(form)) continue;
+        const entry = codex[item.plantId];
+        if (!entry || (entry.level || 0) < 1) continue;
+        const units = inv.filter(i => i.plantId === item.plantId).reduce((s, i) => s + (i.units || 1), 0);
+        if (units < 2) continue;
+        seen[item.plantId] = true;
+        opts.push({ pid: item.plantId, name: plant.name, form, units, growthDays: this.gardenGrowthDays(form), kcalEach: plant.caloriesPerUnit });
+      }
+      return opts;
+    },
+
+    // sowPlot(plantId): plant the first empty plot. Costs 2 units of seed stock.
+    sowPlot(plantId) {
+      if (this.over) return null;
+      const plots = this.gardenPlots();
+      const plot = plots.find(p => !p.pid && !p.dead);
+      if (!plot) { this.say('No empty plot — make a new one first.'); return null; }
+      const opt = this.sowOptions().find(o => o.pid === plantId);
+      if (!opt) { this.say("You can't sow that — you need 2+ units of a KNOWN gardenable plant (shoots, berries, roots). Forage it, learn it, save seed."); return null; }
+      // consume 2 units of seed stock from the pack
+      let need = 2;
+      const inv = this.state.scholar.inventory;
+      for (let i = inv.length - 1; i >= 0 && need > 0; i--) {
+        if (inv[i].plantId !== plantId) continue;
+        const u = inv[i].units || 1;
+        if (u <= need) { need -= u; inv.splice(i, 1); }
+        else { inv[i].units = u - need; need = 0; }
+      }
+      const day = (this.state.scholar || {}).day || 0;
+      plot.pid = plantId; plot.plantedDay = day; plot.lastTend = day;
+      plot.lastHarvest = 0; plot.weeds = 0; plot.dead = false;
+      const plant = (this.data.plants || []).find(p => p.id === plantId) || {};
+      this.say(`You sow ${opt.name} — ${opt.growthDays} days to maturity, then a harvest every 3 days as long as you tend it daily. (Seed stock: 2 units. The garden teaches patience; the wild taught hunger.)`);
+      // sowing teaches: working seed is knowledge
+      try { this.grantKnowledge('plant', plantId, 1, { type: 'experiment', by: null }); } catch (e) {}
+      return this.tickAction(16) || this.status();
+    },
+
+    // plotYieldKcal(plot): one harvest. Knowledge pays: L1 5000, +25%/level.
+    // Weedy plots (3+ untended days) yield half. Dead plots yield nothing.
+    plotYieldKcal(plot) {
+      if (!plot || !plot.pid || plot.dead) return 0;
+      const level = ((this.state.codex || {}).plants || {})[plot.pid];
+      const lvl = (level && level.level) || 1;
+      let kcal = Math.round(5000 * (1 + 0.25 * (lvl - 1)));
+      if ((plot.weeds || 0) >= 3) kcal = Math.round(kcal * 0.5);
+      return kcal;
+    },
+
+    // plotRipe(plot, day): mature and due (harvests every 3 days).
+    plotRipe(plot, day) {
+      if (!plot || !plot.pid || plot.dead) return false;
+      const plant = (this.data.plants || []).find(p => p.id === plot.pid);
+      if (!plant) return false;
+      if (day - plot.plantedDay < this.gardenGrowthDays(plant.form)) return false;
+      return day - (plot.lastHarvest || 0) >= 3;
+    },
+
+    // tendGarden(): one action tends every plot. 16 ticks + 40 kcal.
+    tendGarden() {
+      if (this.over) return null;
+      const plots = this.gardenPlots();
+      const live = plots.filter(p => p.pid && !p.dead);
+      if (!live.length) { this.say('Nothing planted — tend the soil all you like, nothing will come up. Sow first.'); return null; }
+      const day = (this.state.scholar || {}).day || 0;
+      for (const p of live) { p.lastTend = day; p.weeds = 0; }
+      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 40);
+      this.say(`You work the garden — water, weeds, turned soil. ${live.length} plot${live.length > 1 ? 's' : ''} tended. (Miss days and the weeds take it back.)`);
+      return this.tickAction(16) || this.status();
+    },
+
+    // harvestGarden(): gather what's ripe into your pack.
+    harvestGarden() {
+      if (this.over) return null;
+      const day = (this.state.scholar || {}).day || 0;
+      const plots = this.gardenPlots();
+      const ripe = plots.filter(p => this.plotRipe(p, day));
+      if (!ripe.length) { this.say('Nothing ripe — the garden is growing, not giving. Check back.'); return null; }
+      let totalKcal = 0;
+      const bits = [];
+      for (const p of ripe) {
+        const plant = (this.data.plants || []).find(x => x.id === p.pid) || {};
+        const kcal = this.plotYieldKcal(p);
+        const units = Math.max(1, Math.round(kcal / (plant.caloriesPerUnit || 100)));
+        const entry = ((this.state.codex || {}).plants || {})[p.pid] || {};
+        this.state.scholar.inventory.push({
+          plantId: p.pid, units, kcalEach: plant.caloriesPerUnit || 100,
+          spoilDay: day + (plant.spoilageDays || 4), name: plant.name || p.pid,
+          unit: plant.unit || 'handful', kg: 0.1,
+          prep: (entry.level || 0) >= 2 && entry.prepKnown ? 'Garden-fresh.' : 'Fresh from the garden.',
+        });
+        totalKcal += kcal;
+        p.lastHarvest = day;
+        bits.push(`${units}\u00d7 ${plant.name || p.pid}`);
+      }
+      this.say(`Harvest: ${bits.join(', ')} — about ${totalKcal} kcal from the garden. (Renewable. The wild didn't pay for this.)`);
+      return this.tickAction(16) || this.status();
+    },
+
+    // gardenTick(): the daily reckoning, from endDay. Untended plots weed
+    // over (+1/day past the first missed day); 6 weedy days kills the crop.
+    // Tending is the build's real cost — skip it and the garden dies.
+    gardenTick() {
+      const day = (this.state.scholar || {}).day || 0;
+      const plots = this.gardenPlots();
+      for (const p of plots) {
+        if (!p.pid || p.dead) continue;
+        if (day - (p.lastTend || 0) > 1) {
+          p.weeds = (p.weeds || 0) + 1;
+          if (p.weeds >= 6) {
+            p.dead = true;
+            const plant = (this.data.plants || []).find(x => x.id === p.pid) || {};
+            p.pid = null;
+            this.say(`The garden: your untended ${plant.name || 'crop'} drowned in weeds and died. (Six untended days. The garden keeps honest books.)`);
+          } else if (p.weeds === 3 && this.playerAtHaven && this.playerAtHaven()) {
+            const plant = (this.data.plants || []).find(x => x.id === p.pid) || {};
+            this.say(`The garden is going weedy — your ${plant.name || 'crop'} needs tending, or the harvest halves.`);
           }
         }
       }
@@ -16935,8 +17456,16 @@
       }
       const here = [];
       if (t.type === 'ruin') here.push((t.loot || []).length ? `${t.loot.length} can(s) left` : 'picked clean');
-      else if ((t.stock || 0) > 0) here.push(t.stock >= 3 ? 'rich pickings' : t.stock === 2 ? 'good foraging' : 'a little left');
-      else here.push('picked clean for today');
+      else {
+        // DEPLETION 2026-10-10: ground state is observed knowledge — "if you
+        // don't know, it doesn't show". The old line leaked raw stock
+        // thresholds to anyone standing here; now the tile reads honestly
+        // (lush → thinning → picked-over → barren + trend) only once you've
+        // worked it (forage/examine) or your crews have reported it. Never
+        // raw numbers. The mechanic itself is never gated — only the readout.
+        const gl = this.groundLine(t);
+        here.push(gl || 'ground you haven\u2019t read yet \u2014 forage or examine to learn its state');
+      }
       if (t.bountyKnown && t.knownPlant) {
         const kp = this.data.plants.find(p => p.id === t.knownPlant);
         if (kp) here.push(`${this.plantDisplayName(t.knownPlant).toLowerCase()} country`);
@@ -19455,14 +19984,14 @@
           return null;
         }
         this._packFullStreak = 0;
-        t.stock = Math.max(0, (t.stock || 0) - harvested.length);
-        // PRESSURE (forager break-it 2026-10-09): the player's sweep works the
-        // land exactly like a villager's nibble — the land remembers.
-        // foragePressure>=5 => wornPath + half regrow (see regrowTiles). Same
-        // granularity as villagerDepleteTiles (+1/tile/press), and pressure
-        // doesn't decay on days the tile is worked.
-        t.foragePressure = (t.foragePressure || 0) + 1;
-        t.foragedToday = true;
+        // DEPLETION 2026-10-10: the sweep works the land through the one
+        // path — sustainable takes are free, stripping/scraping wounds vigor.
+        // Your hands read the ground as they work it, and your take counts
+        // on the commons if a neighbor uses this turf too.
+        const _sg = this.stripGround(t, harvested.length);
+        try { this.readGround(this.map.px, this.map.py); } catch (e) {}
+        try { this.noteSharedStrain(this.map.px, this.map.py, null); } catch (e) {}
+        this._sweepEroded = _sg.eroded;
         // harvest each cell: deplete it (3-day regrow), accrue familiarity,
         // aggregate by species. Familiarity NEVER identifies — the camp ritual
         // names; handling only teaches your hands.
@@ -19649,18 +20178,27 @@
         // NO SILENT ACTIONS: deadfall is reported too — the pines gave wood,
         // and the player should know the press wasn't wasted.
         const woodBit = woodSticks ? ` You also gather deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}.` : '';
+        // DEPLETION 2026-10-10: the recovery promise is honest now — it
+        // depends on the ground's health, which your hands just read.
+        const vigorNow = (t.vigor == null) ? 100 : t.vigor;
+        const groundStateNow = this.depletionLevel(t);
+        const recoverBit = groundStateNow === 'barren' && this.tGroundCap(t) <= 0
+          ? ` This ground is barren — worked past what it can give. It needs weeks of rest, not days.`
+          : vigorNow < 50
+            ? ` This patch is picked clean — and the ground is tired underneath. Weeks before it's lush again, not days.`
+            : ` This patch is picked clean — it'll recover in a few days.`;
         if (woodSticks && !knownBits.length && !unknownBits.length) {
-          msg = `No food in these trees — but the ground gives deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}. This patch is picked clean — it'll recover in a few days.`;
+          msg = `No food in these trees — but the ground gives deadfall: ${woodSticks}\u00d7 branches${woodFiber ? `, ${woodFiber}\u00d7 bark fiber` : ''}.${recoverBit}`;
         } else if (knownBits.length && !unknownBits.length) {
           // HONESTY (forager break-it 2026-10-08): the kcal parenthetical
           // counts only edible-now food — an all-nut haul says so instead of
           // printing "(0 kcal)" like a bug.
           const kcalBit = totalKcalKnown > 0 ? ` (${totalKcalKnown} kcal)` : ' (in shell \u2014 shell them to eat)';
-          msg = `You work the patch with practiced hands: ${knownBits.join(', ')}${kcalBit}.${woodBit} This patch is picked clean \u2014 it'll recover in a few days.`;
+          msg = `You work the patch with practiced hands: ${knownBits.join(', ')}${kcalBit}.${woodBit}${recoverBit}`;
         } else if (unknownBits.length && !knownBits.length) {
-          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit} This patch is picked clean — it'll recover in a few days.`;
+          msg = `A shot in the dark — you take what's green: ${unknownBits.join(', ')}. Into the bag, unnamed. (Not food until identified — sort them at camp.)${woodBit}${recoverBit}`;
         } else {
-          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet.${woodBit} This patch is picked clean — it'll recover in a few days.`;
+          msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet.${woodBit}${recoverBit}`;
         }
         this.say(msg);
         // discovery labels the place: the map remembers the BEST find here.
@@ -20550,22 +21088,27 @@
         if (r < 0.05) {
           // BIG DAY: someone has the day of their life.
           const kcal = Math.round((1500 + Math.floor(Math.random() * 1001)) * boldMult * shareMult);
-          this.stockPantry(kcal, 'Foraged food');
-          // VILLAGER XP (Steve 2026-10-09): acting like a player earns.
-          try { this.villagerGainXP(id, 'field', 1, 'foraging'); } catch (e) {}
           // COMPETITION: they depleted a real tile. the world is shared.
           // (2026-10-05: was called without coords — a silent no-op. Home turf
           // is the village's turf: pass haven so the depletion is real.)
-          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
-          if (present) this.say(`${first} had the day of their life — ${kcal} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
+          // DEPLETION 2026-10-10: the take scales with the ground's health —
+          // even a great day on tired ground is a smaller great day.
+          const depBig = this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
+          const kcalBig = Math.round(kcal * this.vigorYieldMult(depBig.avgVigor));
+          this.stockPantry(kcalBig, 'Foraged food');
+          // VILLAGER XP (Steve 2026-10-09): acting like a player earns.
+          try { this.villagerGainXP(id, 'field', 1, 'foraging'); } catch (e) {}
+          if (present) this.say(`${first} had the day of their life — ${kcalBig} kcal. Two days of food from one person.${pers.sharing === 'selfish' ? ' (Kept some back, you suspect.)' : ''}`);
         } else if (r < 0.35) {
           // brings food: a real haul. from the world, not thin air.
           const kcal = Math.round((400 + Math.floor(Math.random() * 401)) * boldMult * shareMult);
-          this.stockPantry(kcal, 'Foraged food');
-          this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
+          // DEPLETION 2026-10-10: tired ground, smaller haul.
+          const depH = this.depleteRandomTile(Math.ceil(kcal / 200), v.px ?? 4, v.py ?? 4);
+          const kcalH = Math.round(kcal * this.vigorYieldMult(depH.avgVigor));
+          this.stockPantry(kcalH, 'Foraged food');
           // VILLAGER XP (Steve 2026-10-09): acting like a player earns.
           try { this.villagerGainXP(id, 'field', 1, 'foraging'); } catch (e) {}
-          if (present) this.say(`${first} came back with ${kcal} kcal of something edible. The pantry breathes.`);
+          if (present) this.say(`${first} came back with ${kcalH} kcal of something edible. The pantry breathes.`);
           // KNOWLEDGE SPREAD (Steve 2026-10-09, tweak B): working the land
           // teaches. A forager who brings food home learned SOMETHING about
           // what grows where — and what they learn, the village can learn
@@ -22966,6 +23509,10 @@
       this.checkTraps();
       try { this.checkNets(); } catch (e) {}
       try { this.checkGenesis(); } catch (e) {}
+      // THE COMMONS (depletion 2026-10-10): strain accrued today becomes
+      // rumors, summons, or raids. The garden's daily tick lives here too.
+      try { this.commonsTick(); } catch (e) {}
+      try { this.gardenTick(); } catch (e) {}
       // JACKPOT: rare knowledgeable stranger. "Occasionally you hit a vein."
       try { this.maybeJackpotStranger(); } catch (e) {}
       // SOCIAL SIMMER: old wounds surface slowly. The village has a life you only partly see.
