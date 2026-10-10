@@ -109,6 +109,9 @@ Betrayal, accusation, trial & exile. Micro-quests disguise later betrayals; afte
 **Rules:**
 - betrayal_requires_motive: true (code: betrayal.js)
 - bonds_form_in_run: true (code: betrayal.js — bondAdd; meals/visits/feasts build, grievances decay, +6/pair/day cap, no bonds with the dead/gone)
+- switchboard_talker_cost: appointing the village's best talker to the relay weakens moots — trial swing -8 while they hold the office (code: betrayal.js — tallyVotes, switchboardTalkerCost)
+- switchboard_resentment: timed mood modifiers (village.moodMods) model appointment resentment — e.g. honoring the weakest forager (code: betrayal.js — villageMood)
+- switchboard_holder_absent: the relay holder runs the relay, not the moot — excluded from moot voters (code: betrayal.js — tallyVotes)
 
 **Consumes:** village.relationships, scholar.reputation
 
@@ -154,6 +157,32 @@ Every villager is a living codex entry. Deepens while they live.
 - (none documented)
 
 **Consumes:** village.villagers, state.codex.people
+
+### comms (`comms.js`)
+Call-for-help chain (4 tiers) + the switchboard OFFICE — the mechanical core of inter-village cooperation.
+
+**Provides:** aidCrisis(), raiseAidCrisis(name, wave), resolveAidCrisis(how), callForHelp(tier, opts), aidSendRunner(opts), aidPickRunner(), aidRunnerAway(vid), aidRoadHot(), aidSignalFire(), aidSystemRelay(), aidCry(abilityId, targetId), aidCryAbilities(), aidDistance(villageId), aidPartsFor(villageId), aidAskVillage(villageId, via, msg), aidFaceFor(villageId), aidHelpArrived(help), repayAidDebt(linkId), aidFight(vid, mdef, m, opts), aidAllyDown(villageId, face, allyName), commsTick(), foreignCrisisTick(), collectSystemFavor(), answerSystemFavor(how), switchboard(), switchboardAvailable(), switchboardCandidates(), appointSwitchboard(vid), removeSwitchboard(why), switchboardRoute(msg), switchboardTalkerCost(), switchboardStageTick(), confrontSwitchboard()
+
+**Rules:**
+- four_tiers_honest_costs: runner (time in day-parts + real road danger), signal (loud/indiscriminate), system relay (garbled + favor owed), cry (build-gated, fast, honest). Help is never free and never guaranteed. (code: callForHelp)
+- runner_road_danger: the runner can be hurt or die on the road (registerDeath); when the beacon's attention has made the road hot (attracted >= 2) nobody volunteers — said aloud. (code: aidSendRunner)
+- signal_is_indiscriminate: the beacon asks every linked village, but hostile known villages see it too (opinion -5, remembered), and the smoke draws company — crisis.attracted grows, arrives as real pack members in the fight (packBonus), and fleeing is blocked while it holds. (code: aidSignalFire)
+- system_relay_garbled: needs integration stage 2+; the call is enthusiastic and mistranslated (party size drifts, wrong-threat comedy said aloud, occasional wrong address); the System takes a cut — a favor owed, narrated aloud and collected later as a played demand. (code: aidSystemRelay)
+- cry_is_build_gated: war_cry's bellow (and kin) punch through — targeted, same-part muster, honest message; gated on actually having the ability. (code: aidCry)
+- refusals_aloud_fast: aidAskVillage always speaks — acceptance, refusal, or no-link — never silent waiting. (code: aidAskVillage)
+- standing_ge_ask: only links with trust >= 35 can be asked; below that the refusal names the number. (code: aidAskVillage)
+- mid_crisis_cant_come: a village with its own crisis says so aloud and stays home; foreign crises start/end reactively (seeded), never on a calendar. (code: aidAskVillage, foreignCrisisTick)
+- capped_party_named_face: help is a party of at most 4 led by one of the village's ~3 named faces (consistent across calls); the party marches real day-parts and can stand down aloud if the door goes quiet. (code: aidAskVillage, aidHelpArrived)
+- cost_remembered: their foragers leave their fields — trust >= 60 forgives it into trust; otherwise it's aidDebtKcal on the link, repayable aloud via repayAidDebt. (code: aidAskVillage)
+- help_fights_blow_by_blow: arrived parties join the crisis fight as real combatants through fieldFight (allyFromStart, real blows, real risk) — never an outcome table; a fallen ally costs trust and forgives debt in blood. (code: aidFight, aidAllyDown)
+- office_is_not_god_path: the switchboard is an appointed villager who routes/delays/edits messages — the corruption surface is the point, not a power fantasy. (code: switchboardRoute)
+- appointment_costs: every candidate costs something different — the best talker weakens moots (trial swing -8), the weakest forager breeds resentment (mood -8, trust -10); the appointment is public and televised, and the village reacts (pride/resentment/fear). (code: appointSwitchboard)
+- corruption_surface: the holder can delay, soften, or sit on messages; tampering is logged, discoverable, and confrontable — a baseless confrontation costs the accuser. (code: switchboardRoute, confrontSwitchboard)
+- scale_progression_not_skill_tree: the office's stage rides the game's own scale ladder (village relay -> regional switchboard -> national voice -> a name the planet knows), announced aloud, never a skill tree. (code: switchboardStageTick)
+- messages_feed_ending_frame: clean routing feeds diplomacy/unity; tampering feeds fracture — via leadShift. (code: switchboardRoute)
+- camera_rule: everything arrives through named people (runners, speakers, the holder); no region-management screen; knowledge never gates an aid call. (code: aidFaceFor)
+
+**Consumes:** linkWith(), hierarchyState(), villageLinks(), _otherVillage(), _linkNote(), _nudgeOpinion(), scaleRank(), knowsVillage(), fieldFight(), tickAction(), say(), sysSay(), displayName(), isMember(), npcTemper(), repOf(), registerDeath(), leadShift(), integrationStage(), hasAbility(), genNameForOrigin(), journalNote(), _removePantryKcal(), state.aidCrisis, state.aidRunners, state.pendingHelp, state.switchboard, state.systemFavorsOwed
 
 ### contest-engine (`contestEngine.js`)
 Real off-screen contest resolution for villager contestants. Every category resolves through a real process with the contestant's real stats — fights are fought (fieldFights.js), moots are argued (social stats, rounds), ordeals are endured (costs paid from real reserves). Never a single outcome table. (Steve 2026-10-08: "contests are to be played, not as RNG.")
@@ -527,6 +556,9 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
 - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
 - gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs via diminishing returns (r = P/(P+20); absorb = round(hit*r), at least 1 gets through) — mirroring the tactical engine, never full immunity. (code: fieldFight, 2026-10-09)
+- aid_allies_from_start: allied aid parties already at the door (opts.allyFromStart) join from round 1 as real combatants — they came to fight, not to watch; foreign allies carry their own names via opts.foreignAllies. (code: fieldFight, comms 2026-10-10)
+- smoke_draws_company: the signal fire's attention arrives as real pack members (opts.packBonus) — blow by blow, never a modifier. (code: fieldFight, comms 2026-10-10)
+- foreign_ally_fall: a fallen foreign ally lands on the inter-village link via aidAllyDown (trust, gossip, debt forgiven in blood) — not on a villager record. (code: fieldFight, comms 2026-10-10)
 
 **Consumes:** Scattering.combat.roll, village health, agency xp, equipment, monsters data
 

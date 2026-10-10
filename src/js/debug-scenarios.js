@@ -1190,6 +1190,40 @@
         }
       } catch (e) { Game.say('🐞 alien encounter failed: ' + e.message); }
     },
+
+    // AID (comms 2026-10-10): a monster at Haven's door, one linked village,
+    // regional live so the switchboard office is appointable. Play the four
+    // call tiers via Game.callForHelp('runner'|'signal'|'system'|'cry').
+    'aid-crisis'() {
+      freshGame();
+      const s = Game.state.scholar;
+      s.day = 20;
+      Game.state.systemArrived = true;
+      s.integration = 45; // neural creep — System relay available
+      Game.dayPart = 1;
+      // Villages exist from newGame; make them known and link the first.
+      const ovs = Game.state.otherVillages || [];
+      ovs.forEach(v => { v.generated = true; v.rumored = true; });
+      Game.state.networkLive = true; // regional — the office arrives with it
+      if (ovs[0]) {
+        try { Game._formLink(ovs[0].id, {}, null); } catch (e) { Game.say('🐞 link form failed: ' + e.message); }
+        try {
+          const link = Game.linkWith(ovs[0].id);
+          if (link) link.trust = 55; // standing >= the ask
+        } catch (e) {}
+      }
+      if (ovs[1] && ovs[1].id) {
+        // a hostile known fire, to make the signal fire's downside real
+        ovs[1].opinion = -40;
+      }
+      // the player has a cry that carries
+      s.abilities = s.abilities || [];
+      if (!s.abilities.some(a => a.id === 'war_cry')) s.abilities.push({ id: 'war_cry', name: 'War Cry', desc: 'carries', level: 1, xp: 0 });
+      Game.raiseAidCrisis('Hushwolf', 1);
+      Game.say('');
+      Game.say('🐞 SCENARIO: aid-crisis. Hushwolf at the door, day 20, ' + (ovs[0] ? ovs[0].name : 'no village') + ' linked at trust 55.');
+      Game.say('🐞 Try: Game.callForHelp("runner") / ("signal") / ("system") / ("cry", {abilityId:"war_cry"}). Office: Game.appointSwitchboard(<villagerId>) — see Game.switchboardCandidates().');
+    },
   };
 
   // RETIRED: scenarios we're confident are solid. Never deleted — saved for

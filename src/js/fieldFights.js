@@ -15,6 +15,9 @@
 //   - awareness: the pre-fight evade check ("saw it, gave it room") decides contact, not outcome. (code: fieldFight)
 //   - determinism: opts.rng supplies every random draw (the contest engine's seeded resolution stream) — without it, Math.random/combat.roll exactly as before; the live path is untouched. (code: fieldFight, break-it 2026-10-08)
 //   - gear: the villager re-equips at fight entry (villagerGearUp, acquire=false — deterministic, no mid-fight crafting) and strikes with the tactical formula; equipped armor absorbs via diminishing returns (r = P/(P+20); absorb = round(hit*r), at least 1 gets through) — mirroring the tactical engine, never full immunity. (code: fieldFight, 2026-10-09)
+//   - aid_allies_from_start: allied aid parties already at the door (opts.allyFromStart) join from round 1 as real combatants — they came to fight, not to watch; foreign allies carry their own names via opts.foreignAllies. (code: fieldFight, comms 2026-10-10)
+//   - smoke_draws_company: the signal fire's attention arrives as real pack members (opts.packBonus) — blow by blow, never a modifier. (code: fieldFight, comms 2026-10-10)
+//   - foreign_ally_fall: a fallen foreign ally lands on the inter-village link via aidAllyDown (trust, gossip, debt forgiven in blood) — not on a villager record. (code: fieldFight, comms 2026-10-10)
 // consumes:
 //   - Scattering.combat.roll
 //   - village health, agency xp, equipment, monsters data
@@ -106,7 +109,9 @@
       var atkName = atk.name || 'attack';
       var mSpeed = mdef.speed || 3;
       var wave = mdef.wave || 1;
-      var packN = Math.max(1, mdef.pack || 1);
+      // AID (comms 2026-10-10): the signal fire's smoke draws company — the
+      // pack is really bigger, blow by blow, not a modifier.
+      var packN = Math.max(1, (mdef.pack || 1) + (opts.packBonus || 0));
 
       // ---- villager stats (real) ----
       var vv = this.state.village || {};
@@ -219,6 +224,20 @@
       // fight — a second pair of hands, off-balance, exposed (no armor).
       var helpCalled = false, allyIn = false, allyHp = 0;
       var allyMax = 70, allyVid = null, allyName = 'Someone';
+      // AID (comms 2026-10-10): allied parties already at the door join from
+      // round 1 — they came to fight, not to watch. A new combatant, same as
+      // the hopeless-branch ally below.
+      if (opts.allyFromStart && allies > 0 && allyVids.length) {
+        helpCalled = true; allyIn = true; allyHp = allyMax;
+        allyVid = allyVids.shift(); allies--;
+        try {
+          var _fa0 = (opts.foreignAllies || {})[allyVid];
+          allyName = (_fa0 && _fa0.name) || opts.allyName || (this.displayName ? this.displayName(allyVid).split(' ')[0] : 'Someone');
+        } catch (e) {}
+        rec.calledHelp = true;
+        rec.log.push(allyName + ' is already at the door — charges in with ' + vName + '!');
+        try { if (this.bumpTrust) this.bumpTrust(allyVid, 1); } catch (e) {}
+      }
       for (var round = 1; round <= MAX_ROUNDS; round++) {
         rec.rounds = round;
         var mInit = mSpeed + RR() * 2, vInit = 3 + RR() * 2;
@@ -257,7 +276,14 @@
                 if (allyHp <= 0) {
                   allyIn = false;
                   rec.log.push(allyName + ' goes down!');
-                  try { if (allyVid && this.hurtVillager) this.hurtVillager(allyVid, 30, 'monster'); } catch (e) {}
+                  // AID (comms 2026-10-10): a foreign ally's fall lands on the
+                  // link — trust, gossip, debt forgiven in blood — not on a
+                  // villager record.
+                  try {
+                    var _fad = (opts.foreignAllies || {})[allyVid];
+                    if (_fad && this.aidAllyDown) this.aidAllyDown(_fad.villageId, _fad.face, allyName);
+                    else if (allyVid && this.hurtVillager) this.hurtVillager(allyVid, 30, 'monster');
+                  } catch (e) {}
                 }
               } else {
                 vHp -= total; rec.vTaken += total;
@@ -309,7 +335,11 @@
         } else if (hopeless && !helpCalled && allies > 0 && allyVids.length) {
           helpCalled = true; allyIn = true; allyHp = allyMax;
           allyVid = allyVids.shift(); allies--;
-          try { allyName = (this.displayName ? this.displayName(allyVid).split(' ')[0] : 'Someone'); } catch (e) {}
+          // AID (comms 2026-10-10): foreign allies carry their own names.
+          try {
+            var _fa2 = (opts.foreignAllies || {})[allyVid];
+            allyName = (_fa2 && _fa2.name) || opts.allyName || (this.displayName ? this.displayName(allyVid).split(' ')[0] : 'Someone');
+          } catch (e) {}
           rec.calledHelp = true;
           rec.log.push(vName + ' is losing — shouts for help! ' + allyName + ' charges in!');
           try { if (this.bumpTrust) this.bumpTrust(allyVid, 1); } catch (e) {}

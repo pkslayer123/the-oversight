@@ -42,6 +42,9 @@
 // rules:
 //   - betrayal_requires_motive: true (code: betrayal.js)
 //   - bonds_form_in_run: true (code: betrayal.js — bondAdd; meals/visits/feasts build, grievances decay, +6/pair/day cap, no bonds with the dead/gone)
+//   - switchboard_talker_cost: appointing the village's best talker to the relay weakens moots — trial swing -8 while they hold the office (code: betrayal.js — tallyVotes, switchboardTalkerCost)
+//   - switchboard_resentment: timed mood modifiers (village.moodMods) model appointment resentment — e.g. honoring the weakest forager (code: betrayal.js — villageMood)
+//   - switchboard_holder_absent: the relay holder runs the relay, not the moot — excluded from moot voters (code: betrayal.js — tallyVotes)
 // consumes:
 //   - village.relationships
 //   - scholar.reputation
@@ -1360,6 +1363,12 @@
       m += (j.crimes || []).filter(cr => this.state.scholar.day - cr.day < 3).length * 8;
       const v = this.state.village;
       if ((v.pantryKcal || 0) < 5000) m += 10;
+      // SWITCHBOARD COST (comms 2026-10-10): timed mood modifiers — e.g. the
+      // resentment of honoring the weakest forager with the relay.
+      const day = this.state.scholar.day || 0;
+      for (const mm of (v.moodMods || [])) {
+        if ((mm.untilDay || 0) >= day) m += mm.amt;
+      }
     } catch (e) {}
     return clamp(m, -20, 30);
   },
@@ -1371,11 +1380,22 @@
     const R = rng || Math.random;
     const v = this.state.village;
     const accused = c.accused[0]; // the ringleader stands trial (accomplices judged with them)
-    const voters = this.npcIds().filter(id => !c.accused.includes(id));
+    let voters = this.npcIds().filter(id => !c.accused.includes(id));
+    // SWITCHBOARD COST (comms 2026-10-10): the relay holder runs the relay,
+    // not the moot — they're not at the fire to vote.
+    try {
+      const _sw = this.switchboard && this.switchboard();
+      if (_sw && _sw.holderId) voters = voters.filter(id => id !== _sw.holderId);
+    } catch (e) {}
     // attendance varies
     const present = voters.filter(() => R() < 0.88);
     const mood = this.villageMood();
     const trialSwing = (wildDay ? (R() * 140 - 70) : (R() * 24 - 12)) + mood * 0.5;
+    // SWITCHBOARD COST (comms 2026-10-10): appointing the village's best
+    // talker to the relay costs the moots their voice — the swing loses 8.
+    let _swingAdj = 0;
+    try { if (this.switchboardTalkerCost && this.switchboardTalkerCost()) _swingAdj = -8; } catch (e) {}
+    const _trialSwing = trialSwing + _swingAdj;
     const noise = () => (R() * 30 - 15);
     let guilty = 0, votes = [];
     // the player's role: always at the moot unless they're the one accused.
@@ -1388,7 +1408,7 @@
       // belief is capped in its pull: evidence matters enormously, but the
       // room has its own weather. Nobody is un-convictable; nobody is safe.
       let s = clamp(c.belief[vid] || 0, -40, 40);
-      s += trialSwing;
+      s += _trialSwing;
       s += this.pairAffinity(vid, accused) * 0.4; // likes them → acquit
       // faction pull
       for (const gr of (v.groups || [])) {
