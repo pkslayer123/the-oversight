@@ -2,6 +2,13 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Fan care packages are curios again, never dinner: the mislabeled BEANS can has stopped showing up in fan mail (the galaxy still thinks it is hilarious, it just stopped mailing it)."
+    ],
+    "version": "pending-ship"
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "The wild got deeper: three new waves of monsters are out there now \u2014 the Final Draft, the Mirror Draft (built out of us), and the Producers themselves. They arrive when your deeds earn them, not on a schedule. One of them eats. It gets stronger every time it does.",
       "The world got bigger: villages can now grow into something more. Lead a polity of allied villages \u2014 or swear yourself to one \u2014 and the System starts treating you like a power. Go far enough and the whole world starts watching.",
       "The table got honest: humanity\u2019s case is made of deeds now, not words. Waves fought, contests survived, standing earned, crises weathered \u2014 the invitation only comes when the case is real.",
@@ -119,15 +126,5 @@
       "Food sharing and meal draws are now honestly tracked."
     ],
     "version": "46432553-20261009-162330"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Your gear is yours: villagers keep their own belongings. The village stash only holds what someone deliberately deposits.",
-      "New armory (weapons) and pharmacy (medicine) sections in the village stash.",
-      "The dead carry their real belongings \u2014 open their packs and loot.",
-      "13 craftable weapons and armor (spears, bows, bark armor, hide armor\u2026) through the normal crafting menu."
-    ],
-    "version": "a208a9e-20261009-161955"
   }
 ]

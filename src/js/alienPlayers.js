@@ -73,6 +73,8 @@
 //   - apKnowsAlien(pid)
 //   - apRevealAlien(pid, how)
 //   - apCarePackage()
+//   - apWackyGift(tier) -> alien curio def or null (wacky, never dinner — the
+//     BEANS exclusion, shared by apCarePackage + apClubBoon's showbiz curio)
 //   - apGrantItem(itemId)
 //   - apDousePlayerFire()
 // rules:
@@ -1052,6 +1054,26 @@
       return entry;
     },
 
+    // Wacky gift pool (canon; break-it fame-seeker 2026-10-10): fan gifts
+    // are curios, NEVER dinner — docs/CONTESTS.md "fan care packages
+    // (wacky, never dinner)". The "Can labeled BEANS" (350 kcal, class
+    // food) is dinner wearing a joke label; the _showEnd prize filter
+    // excluded it 2026-10-09 but apCarePackage and the club-boon curio
+    // kept granting it. One helper, one rule — both fan paths call this.
+    // Returns the item def, or null when the vault is shy (never falls
+    // back to food — callers say the shyness out loud).
+    apWackyGift: function (tier) {
+      var items = [];
+      try { items = this.data.items || []; } catch (e) {}
+      var t = tier || 1;
+      var cands = items.filter(function (it) {
+        return it.origin === 'alien' && (it.tier || 1) <= t
+          && !it.kcalEach && it.class !== 'food';
+      });
+      if (!cands.length) return null;
+      return cands[Math.floor(Math.random() * cands.length)];
+    },
+
     // Care package: the fan club sends supplies. Quality and frequency scale
     // with favor. Deepens the existing "wacky and available, not core" rule.
     apCarePackage: function () {
@@ -1064,15 +1086,12 @@
       ap.lastPackageDay = day;
       // Package quality scales with favor
       var tier = favor >= 70 ? 3 : favor >= 40 ? 2 : 1;
-      var items = this.data.items || [];
-      // HONEST (break-it 2026-10-08): the old filter read `it.alien`, but
-      // items.json marks alien goods with `origin: 'alien'` — the filter
-      // matched ZERO items and the gift never fired. Filter on origin.
-      var cands = items.filter(function (it) {
-        return it.origin === 'alien' && (it.tier || 1) <= tier;
-      });
-      if (!cands.length) cands = items.filter(function (it) { return it.origin === 'alien'; });
-      var gift = cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+      // WACKY, NEVER DINNER (canon; break-it fame-seeker 2026-10-10): the
+      // "Can labeled BEANS" (350 kcal, class food) used to be grantable
+      // here — dinner wearing a joke label. The _showEnd prize filter
+      // learned this 2026-10-09; this path had the same hole. One helper,
+      // one rule (code: apWackyGift).
+      var gift = this.apWackyGift ? this.apWackyGift(tier) : null;
 
       // Plus some practical supplies (the fans know you need to eat)
       // WACKY, NEVER DINNER (canon; break-it shows 2026-10-09): the old
@@ -1098,6 +1117,9 @@
         // (TypeError) and item.units-- went NaN, so the "gift" was a brick.
         // apGrantItem builds a real, usable entry from the item def.
         try { this.apGrantItem(gift.id); } catch (e) {}
+      } else {
+        // Said out loud, never a silent pocket (no-silent-actions rule).
+        this.say('The vault was feeling shy tonight — just the snacks. The thought is televised.');
       }
       this.say('Plus ' + kcal + ' kcal of fan-approved snacks.');
       try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + kcal); } catch (e) {}
@@ -1145,9 +1167,10 @@
       } else {
         this.say('📦 ' + club.charAt(0).toUpperCase() + club.slice(1) + ' voted: a wacky curio, gift-wrapped, no note. The note would have explained it. There is no note.');
         try {
-          var items = this.data.items || [];
-          var cands = items.filter(function (it) { return it.origin === 'alien' && (it.tier || 1) <= 1; });
-          if (cands.length) this.apGrantItem(cands[Math.floor(Math.random() * cands.length)].id);
+          // WACKY, NEVER DINNER (canon; break-it fame-seeker 2026-10-10):
+          // same BEANS hole as apCarePackage had — one helper, one rule.
+          var wg = this.apWackyGift ? this.apWackyGift(1) : null;
+          if (wg) this.apGrantItem(wg.id);
           else this.say('(The vault was shy — the thought counts. The thought is televised.)');
         } catch (e) {}
       }
