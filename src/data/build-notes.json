@@ -2,6 +2,13 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Alien players stay dead now. Kill one and they're gone for good \u2014 no more running into the same hunter weeks later sending you packages from beyond the grave. The feed marks the moment with a silence, then the betting resumes.",
+      "They've also stopped gloating about kills they didn't make: beat one in a fight and they react like someone who lost, and a dead hunter gives no post-fight speech."
+    ]
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "Late-wave monsters now bite through armor the way they were always meant to: the Final Draft's claws find seams, the Mirror Draft's teeth find more, and the Producers barely notice plate at all. Armor still helps \u2014 it just isn't a wall anymore past wave 3."
     ]
   },
@@ -115,15 +122,5 @@
       "Rare dark pasts: sometimes you wake as one of the village's hidden dark ones, with a history that explains it."
     ],
     "version": "c69c1beb-20261009-171111"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Running from a fight is no longer a coin flip \u2014 chasers chase you across the map now. Slow ones fall behind, fast ones gain on you, and you'll always see it happening.",
-      "The hushwolf does not give up. Once it's decided you're prey, only Haven's walls or killing it will end the hunt \u2014 the Codex says so, and so will the howls.",
-      "The wild things hit harder and take more killing than before. Armor is the answer: a geared fighter barely feels what flattens an unarmored one.",
-      "Fixed: your wielded weapon's damage bonus wasn't being applied at all \u2014 spears (and every other weapon) hit properly again."
-    ],
-    "version": "db5a862c-20261009-232417"
   }
 ]

@@ -102,6 +102,9 @@ function noAlienWord(t) { return !/alien/i.test(t); }
     ok(noAlienWord(H.sysText()), `seed ${seed}: F5 pre-reveal duel feed has no alien truth`);
     G.apRevealAlien('sarge', 'test');
     ap().active = { vex_marlowe: { enteredDay: 1 }, sarge: { enteredDay: 1 } };
+    // BREAK-IT r12: the first duel's non-rich loser (sarge) DIED — clear the
+    // corpse for this copy test's fresh setup.
+    if (ap().met && ap().met.sarge) delete ap().met.sarge.dead;
     ap().lastDuelDay = -999;
     H.clearLog(); seqRolls([0.0, 0.1, 0.9, 0.9, 0.1]);
     G.apPlaygroundDuel(); unforce();

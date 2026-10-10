@@ -19,6 +19,7 @@
 //   - apPilotTaunt(pid)
 //   - apWealthOf(pid)
 //   - apIsCombat(pid)
+//   - apIsDead(pid) -> met-record death flag (break-it r12: kills are permanent)
 //   - apWealthStance(pid, fighter)
 //   - apApplyWealthStance(pid, fighter)
 //   - apProgressRate(pid)
@@ -92,6 +93,9 @@
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
 //   - (salvage_kill_only) alien armor salvage fires only on a real kill: a retreating persona ends the fight 'won' (drove them off) but leaves no body to strip — sibling honesty with monster 'routed' ("no meat, no trophy") (break-it 2026-10-09) (code: apOnCombatEnd)
+//   - (death_permanent) a persona killed in combat (opts.killed) stays dead: rec.dead + deadDay, released from the playground, named honestly once (knowledge-gated), then excluded from EVERY pool — encounters, activation, groups, packages, dead drops, feed, rigging, lifelines, gossip, duels. Duel losers who can't afford another body die too (rich "come back"). The codex keeps the entry and records the fate. (break-it 2026-10-10 r12) (code: apOnCombatEnd, apIsDead)
+//   - (outcome_lines) persona victoryLines are spoken when the PERSONA wins (player lost/fled); defeatLines when the persona loses (player won, drove them off). A killed persona speaks no post-fight line — the death beat replaces it. (break-it 2026-10-10 r12: the mapping was inverted) (code: apOnCombatEnd)
+//   - (top_lane_ties) apTopLane breaks ties toward showbiz (the default crowd), per its contract (break-it 2026-10-10 r12: strict > gave ties to fight) (code: apTopLane)
 //   - (wealth) broke personas retreat when losing (can't afford another body); rich never retreat and enrage when hurt (death is an inconvenience) (code: alienPlayers.js)
 //   - (progression) alien players level alongside you: kit grows 3->6 abilities, tech upgrades; rich progress faster (buy), broke slower (earn) (code: alienPlayers.js)
 //   - (groups) rare late-game 2-3 persona team encounters (day 40+, 3%, 14-day cooldown, needs 2+ established rivals) with inter-alien banter; they join the fight in turn via the tbEnd chain (wired break-it 2026-10-08 — was dead code) (code: alienPlayers.js, encounters.js)
@@ -222,6 +226,7 @@
         var per = this.apPersona(pid);
         if (!per || per.disposition !== 'sadistic') continue;
         if (!this.apIsCombat(pid)) continue;
+        if (this.apIsDead(pid)) continue; // the dead do not hunt (break-it r12)
         if (day - (ap.lastHuntDay[pid] || -999) >= 2 && rec.encounters >= 1) { dueRival = pid; break; }
       }
 
@@ -247,6 +252,7 @@
           // hostile player could re-fight yesterday's rival daily (break-it
           // 2026-10-08: re-picked 400/400). Filter here too.
           if (day - (ap.lastHuntDay[cp.id] || -999) < 2) continue;
+          if (this.apIsDead(cp.id)) continue; // corpses don't re-encounter (break-it r12)
           var w = cp.disposition === 'sadistic' ? 4 : cp.disposition === 'neutral' ? 4.5 : 1.5;
           // Existing rivals are more likely to return
           if (ap.met[cp.id] && ap.met[cp.id].encounters > 0) w *= 2;
@@ -265,6 +271,7 @@
           for (var i2 = 0; i2 < personas.length; i2++) {
             var cp2 = personas[i2];
             if (!this.apIsCombat(cp2.id)) continue;
+            if (this.apIsDead(cp2.id)) continue; // corpses don't re-encounter (break-it r12)
             var w2 = cp2.disposition === 'sadistic' ? 4 : cp2.disposition === 'neutral' ? 4.5 : 1.5;
             if (ap.met[cp2.id] && ap.met[cp2.id].encounters > 0) w2 *= 2;
             // TRACKED (break-it 2026-10-08): same tracker boost in the
@@ -408,6 +415,9 @@
     apStartEncounter: function (pid) {
       var p = this.apPersona(pid);
       if (!p) return false;
+      // DEAD (break-it r12): refuse to start a fight with a corpse — debug
+      // spawns and group chains alike. No phantom, just a refusal.
+      if (this.apIsDead(pid)) return false;
 
       // Find a spot near the player
       var s = this.state.scholar;
@@ -596,6 +606,17 @@
       return COMBAT_PILOTS.includes(pid);
     },
 
+    // DEATH IS PERMANENT (break-it 2026-10-10 r12): apOnCombatEnd marks
+    // rec.dead on a real kill. Every selection pool below consults this —
+    // a corpse never re-encounters, never activates, never raids, never
+    // rigs, never lifelines, never gossips.
+    apIsDead: function (pid) {
+      try {
+        var rec = (this.apState().met || {})[pid];
+        return !!(rec && rec.dead);
+      } catch (e) { return false; }
+    },
+
     // Current tactical stance based on wealth + HP. Returns:
     // 'normal', 'cautious' (broke/comfortable pulling back),
     // 'retreating' (broke at critical HP — WILL flee),
@@ -726,7 +747,7 @@
       // Need at least 2 personas you've met 2+ times (real rivals)
       var rivals = 0;
       for (var pid in ap.met) {
-        if (ap.met[pid].encounters >= 2 && this.apIsCombat(pid)) rivals++;
+        if (ap.met[pid].encounters >= 2 && this.apIsCombat(pid) && !this.apIsDead(pid)) rivals++;
       }
       if (rivals < 2) return false;
       // Cooldown: max 1 group encounter per 14 days
@@ -743,7 +764,7 @@
       // Pick 2-3 from your established rivals
       var candidates = [];
       for (var pid in ap.met) {
-        if (ap.met[pid].encounters >= 2 && this.apIsCombat(pid)) {
+        if (ap.met[pid].encounters >= 2 && this.apIsCombat(pid) && !this.apIsDead(pid)) {
           candidates.push(pid);
         }
       }
@@ -834,6 +855,9 @@
     // Start a group encounter with 2-3 alien players
     apStartGroupEncounter: function (pids) {
       if (!pids || pids.length < 2) return false;
+      // DEAD (break-it r12): a group is only as alive as its members.
+      pids = pids.filter(function (pid) { return !this.apIsDead(pid); }, this);
+      if (pids.length < 2) return false;
       // Build fighters for each (they'll be added to the encounter)
       // They join the fight IN TURN: the tbEnd wrap chains the next persona
       // via state.alienGroup when the current fight is won (fleeing or
@@ -871,10 +895,34 @@
         this.apRevealAlien(pid, 'you recognized the fighting style');
       }
 
-      // Pilot-specific outcome lines
-      var lines = outcome === 'won' ? p.victoryLines : p.defeatLines;
-      if (lines && lines.length && this.apKnowsAlien(pid)) {
-        this.say('🎭 ' + p.name + ': "' + lines[Math.floor(Math.random() * lines.length)] + '"');
+      var killed = !!(opts && opts.killed);
+      // DEATH IS PERMANENT (break-it 2026-10-10 r12): a killed persona used
+      // to keep no record of dying — every selection pool (encounters,
+      // activation, groups, packages, feed, rigging, the playground itself)
+      // kept re-picking the corpse, and each re-kill re-granted favor and
+      // another armor roll. People stay dead, like villagers.
+      if (killed) {
+        rec.dead = true;
+        rec.deadDay = day;
+        try { delete this.apActive()[pid]; } catch (e0d) {}
+        // The dead do not give post-fight quotes. The kill is said out loud,
+        // knowledge-gated like every other naming.
+        var _dk = false;
+        try { _dk = !!this.apKnowsAlien(pid); } catch (e0dk) {}
+        if (_dk) this.say('🎭 ' + p.name + ' goes still. The suit stops moving. Whatever was wearing it is gone. They are not coming back.');
+        else this.say('🎭 The stranger goes still. Whoever they were wearing, it\'s empty now. They are not coming back.');
+        try { this.sysSay('◈ "One less player in the game. The feed observes a moment of silence. Then the betting resumes."'); } catch (e0ds) {}
+      } else {
+        // Pilot-specific outcome lines.
+        // HONEST (break-it 2026-10-10 r12): the mapping was INVERTED — a
+        // player win played the persona's VICTORY lines (the loser gloating
+        // "Magnificent. Truly. The moment the light went out") and a player
+        // loss played their DEFEAT lines ("You BEAT me!"). victoryLines are
+        // spoken when the PERSONA wins; defeatLines when the persona loses.
+        var lines = outcome === 'won' ? p.defeatLines : p.victoryLines;
+        if (lines && lines.length && this.apKnowsAlien(pid)) {
+          this.say('🎭 ' + p.name + ': "' + lines[Math.floor(Math.random() * lines.length)] + '"');
+        }
       }
 
       // ALIEN ARMOR SALVAGE (Steve 2026-10-07): defeating an alien player
@@ -885,7 +933,7 @@
       // old code salvaged armor off a fled opponent 60% of the time, with copy
       // claiming "from their body. It's warm." Sibling honesty: a monster
       // 'routed' gives "no meat, no trophy" (game.js) — the alien pool matches.
-      if (outcome === 'won' && opts && opts.killed) {
+      if (outcome === 'won' && killed) {
         try {
           var armorPool = ['alien_helm', 'alien_carapace', 'alien_greaves', 'alien_gauntlets', 'alien_boots'];
           // Don't drop what you already have
@@ -989,7 +1037,10 @@
       var lanes = ['fight', 'survival', 'social', 'showbiz'];
       for (var i = 0; i < lanes.length; i++) {
         var v = fc[lanes[i]] || 0;
-        if (v > bestV) { bestV = v; best = lanes[i]; }
+        // HONEST (break-it 2026-10-10 r12): the comment always promised ties
+        // break toward showbiz, but strict > let the first lane (fight) win
+        // every tie. >= with showbiz last in the order keeps the promise.
+        if (v >= bestV) { bestV = v; best = lanes[i]; }
       }
       return best;
     },
@@ -1189,6 +1240,7 @@
       for (var i = 0; i < personas.length; i++) {
         var per = personas[i];
         if (per.disposition !== 'benevolent') continue;
+        if (this.apIsDead(per.id)) continue; // the dead leave no drops (break-it r12)
         if (per.id === 'wren' || (ap.met[per.id] && ap.met[per.id].bond > 0)) { helper = per; break; }
       }
       if (!helper) return false;
@@ -1239,7 +1291,8 @@
       // Rival gossip (sadistic pilots you've met talk about you)
       for (var pid in ap.met) {
         var per = this.apPersona(pid);
-        if (per && per.disposition === 'sadistic' && ap.met[pid].encounters > 0) {
+        // DEAD (break-it r12): the dead are not "overheard saying" things.
+        if (per && per.disposition === 'sadistic' && ap.met[pid].encounters > 0 && !this.apIsDead(pid)) {
           msgs.push('"' + per.name.toUpperCase() + ' was overheard saying the human is "still interesting. For now." Your people just felt the room turn against them."');
           msgPids.push(pid);
         }
@@ -1348,6 +1401,7 @@
         var per = this.apPersona(pid);
         if (!per || per.disposition !== 'sadistic') continue;
         if (ap.met[pid].encounters < 2) continue; // needs a real rivalry
+        if (this.apIsDead(pid)) continue; // the dead rig nothing (break-it r12)
         if (day - (ap.lastRigDay || -999) < 5) continue; // LIMIT: max 1 rig per 5 days
         if (Math.random() < 0.35) {
           ap.lastRigDay = day;
@@ -1381,6 +1435,7 @@
           var per2 = this.apPersona(pid2);
           if (!per2 || per2.disposition !== 'benevolent') continue;
           if ((ap.met[pid2].bond || 0) < 2) continue;
+          if (this.apIsDead(pid2)) continue; // the dead save no one (break-it r12)
           if (day - (ap.lastLifelineDay || -999) < 7) continue; // LIMIT: max 1 per week
           if (Math.random() < 0.4) {
             ap.lastLifelineDay = day;
@@ -1420,7 +1475,7 @@
       // Pick a persona who knows you
       var candidates = [];
       for (var pid in ap.met) {
-        if (ap.met[pid].encounters >= 1) candidates.push(pid);
+        if (ap.met[pid].encounters >= 1 && !this.apIsDead(pid)) candidates.push(pid);
       }
       if (!candidates.length) return false;
       var pid = candidates[Math.floor(Math.random() * candidates.length)];
@@ -1501,6 +1556,7 @@
         var per = this.apPersona(pid);
         var rec = ap.met[pid];
         if (!per || rec.encounters < 2) continue;
+        if (this.apIsDead(pid)) continue; // the dead request nothing (break-it r12)
         if (per.disposition === 'sadistic') {
           // KNOWLEDGE GATE (break-it 2026-10-10): the old line named the
           // rival with no gate and no reveal — the same class r7 fixed in
@@ -1566,6 +1622,11 @@
         entry.note = p.name + ' — ' + p.title + '. ' + p.backstory + ' Motivation: ' + p.motivation;
       }
       this.state.codex.aliens[pid] = entry;
+      // DEAD (break-it r12): the codex is a historical record — it keeps the
+      // entry, but the fate is written down. The dead don't get new stages.
+      if (rec.dead) {
+        entry.fate = 'dead' + (rec.deadDay ? ' — killed on day ' + rec.deadDay : '');
+      }
       return entry;
     },
 
@@ -1598,6 +1659,7 @@
       for (var pid in ap.known) {
         var per = this.apPersona(pid);
         if (!per) continue;
+        if (this.apIsDead(pid)) continue; // gossip about the living (break-it r12)
         if (per.disposition === 'sadistic') {
           lines.push(vname + ' says: "That ' + per.name + '... I don\'t like the way it looks at you. Be careful."');
         } else if (per.disposition === 'benevolent') {
@@ -1708,6 +1770,7 @@
         var cp = personas[i];
         if (!this.apIsCombat(cp.id)) continue;
         if (active[cp.id]) continue;
+        if (this.apIsDead(cp.id)) continue; // the dead don't enter (break-it r12)
         // Weight: sadistic more likely to go active (they're here to play)
         var w = cp.disposition === 'sadistic' ? 3 : cp.disposition === 'neutral' ? 2 : 1;
         candidates.push({ p: cp, w: w });
@@ -1784,6 +1847,9 @@
       for (var i = 0; i < pids.length; i++) {
         var pid = pids[i];
         try {
+          // DEAD (break-it r12): a killed-then-active persona must never act
+          // from beyond the grave. Release the slot; the dead don't raid.
+          if (this.apIsDead(pid)) { delete active[pid]; continue; }
           // Each active alien acts (not every day — they're busy)
           if (Math.random() < 0.6) this.apPlaygroundAction(pid);
           // Maybe they leave
@@ -1802,6 +1868,7 @@
     apPlaygroundAction: function (pid) {
       var per = this.apPersona(pid);
       if (!per) return;
+      if (this.apIsDead(pid)) return false; // corpses take no actions (break-it r12)
       var active = this.apActive();
       var day = (this.state.scholar || {}).day || 1;
       if (active[pid]) active[pid].lastActionDay = day;
@@ -2148,6 +2215,8 @@
 
       var pa = this.apPersona(a), pb = this.apPersona(b);
       if (!pa || !pb) return false;
+      // DEAD (break-it r12): the dead don't duel.
+      if (this.apIsDead(a) || this.apIsDead(b)) return false;
 
       var ap = this.apState();
       var day = (this.state.scholar || {}).day || 1;
@@ -2176,6 +2245,17 @@
           var lw = this.apWealthOf(loser);
           if (lw !== 'rich' || Math.random() < 0.5) {
             delete active[loser];
+            // DEAD (break-it r12): the copy says "the other... didn't [walk
+            // away]" — a non-rich loser who can't afford another body is
+            // dead, not resting. Mark it so the corpse never re-encounters.
+            // (Rich losers "come back" — death is an inconvenience to them.)
+            if (lw !== 'rich') {
+              try {
+                var _lm = this.apState().met[loser] || { encounters: 0 };
+                _lm.dead = true; _lm.deadDay = (this.state.scholar || {}).day || 1;
+                this.apState().met[loser] = _lm;
+              } catch (e0ld) {}
+            }
             if (this.state.systemArrived && Math.random() < 0.5) {
               // KNOWLEDGE GATE (break-it 2026-10-09 r7): the old line gated
               // the NAME but still said "aliens" to a player who never earned
