@@ -2170,10 +2170,24 @@
     // and not "pick WIN to win". Your social capital (trust, fame) sets the
     // base; each rhetorical choice moves it. The climax is judged against a
     // threshold — deterministic, stats-driven, choice-driven.
+    // MOOT BASE (break-it fame-seeker 2026-10-10): the old code read s.trust
+    // / s.notability off state.scholar — fields that never exist. Trust lives
+    // at state.village.trust[villagerId] (same read as the meal-share code);
+    // notability lives at state.notability.player. The advertised base —
+    // "your social capital (trust, fame) sets the base", ontology
+    // moot_standing "trust/10 + notability×2" — was a frozen 5 no matter
+    // how famous or trusted you were: fame was mechanically meaningless in
+    // the one contest built for the famous. Fame counts distinct deed TYPES
+    // ×2 (the same notes the eligibility panel shows — legible, bounded,
+    // no repeat-farming). Trust defaults to the old 50 floor (base 5) when
+    // no entry exists, so trust-less states see no balance shift.
     let base = 0;
     try {
-      const s = this.state.scholar || {};
-      base = Math.round((s.trust || 50) / 10) + ((s.notability || []).length * 2);
+      const vt = ((this.state.village || {}).trust || {});
+      const trustV = (vt[this.villagerId] !== undefined) ? vt[this.villagerId] : 50;
+      let deedTypes = 0;
+      try { deedTypes = (this.notability('player') || []).length; } catch (e2) {}
+      base = Math.round(trustV / 10) + deedTypes * 2;
     } catch (e) {}
     const demand = { low: 8, medium: 12, high: 16, extreme: 20 }[contest.risk] || 12;
     return [

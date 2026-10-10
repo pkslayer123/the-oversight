@@ -204,9 +204,15 @@ sec('EXPLOIT E2 — terminal WIN cannot be double-claimed');
 sec("EXPLOIT E3 — moot 'Walk out' WIN carries the prize (template_prize contract)");
 {
   freshGame(15);
-  // towering standing: win even with the -3 walk-out penalty
-  Game.state.scholar.trust = 100;
-  Game.state.scholar.notability = new Array(12).fill('deed');
+  // towering standing: win even with the -3 walk-out penalty.
+  // (2026-10-10: the old setup wrote to state.scholar.trust/notability —
+  // fields the moot engine never read, so the test "passed" against dead
+  // code. The moot base now reads the real trust table + real deed types;
+  // the setup uses those. Intent unchanged: tower, walk out, win, prize.)
+  Game.state.village.trust = Game.state.village.trust || {};
+  Game.state.village.trust[Game.villagerId] = 100;
+  ['wave2Kill', 'wave3Kill', 'survivedMoot', 'heist', 'contestWin', 'showmanship']
+    .forEach(d => Game.addNotability('player', d));
   fireDirect('moot', ['player']);
   Game.state.scholar.day = Game.state.pendingContest.firesDay;
   Game.resolveContest();
