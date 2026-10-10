@@ -80,7 +80,7 @@
 //   - moot_standing: moot is argued not rolled — rhetorical standing (trust/10 + notability×2 base, sway per choice) vs System demand; deterministic judgment (code: _contestMoot, contestChoose MOOT_JUDGE, Steve 2026-10-08)
 //   - maw_pursuit: the Maw is a deterministic pursuit — distance 3, choices move it, 0 = caught (death). No rolls (code: _contestMaw, contestChoose MAW_JUDGE, Steve 2026-10-08)
 //   - ratings_casting: the System wants its stars — picks weighted by notabilityWeight (ONE shared weight: depth + impact, Steve 2026-10-09), 10% whim dark-horse path (uniform, announced). The lead pick is weighted too when the player isn't castable (break-it 2026-10-09: the old lead fallback was uniform and unannounced, so fame never mattered for a solo lead). Recast honors the bias (code: fireContest, resolveContest, Steve 2026-10-08)
-//   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08; DIP-SIGNAL FIX audit-shows 2026-10-09: the dip was compared AFTER _lastWeekViewership was overwritten — always false, the 75% branch was dead; now computed once from the trend; DECAY FIX break-it r13 2026-10-10: viewership never declined in live play so the dip STILL never fired — attention now fades -1/day at dawn, dip = any day-over-day decline)
+//   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08; DIP-SIGNAL FIX audit-shows 2026-10-09: the dip was compared AFTER _lastWeekViewership was overwritten — always false, the 75% branch was dead; now computed once from the trend; DECAY FIX break-it r13 2026-10-10: viewership never declined in live play so the dip STILL never fired — attention now fades weekly (10%, floor 12), dip = falling week-over-week or low-and-not-rising (util audit 2026-10-10, rising-coast parity 2026-10-10))
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
 //   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08; moot 'Walk out'->MOOT_JUDGE win fixed break-it 2026-10-09) (code: contestPlayable, contestChoose, Steve 2026-10-06)
@@ -105,7 +105,7 @@
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
 //   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
-//   - ratings_drift: audience drift — weekly, viewership sags 10% (min 2.5, floor 12); hype must outpace the leak. This is what lets the dip-gate arm: without it viewership only ratcheted up and the summons was dead content (0/120 runs). (code: contestTick, util audit 2026-10-10)
+//   - ratings_drift: audience drift — weekly, viewership sags 10% (min 2.5, floor 12); hype must outpace the leak. This is what lets the dip-gate arm: without it viewership only ratcheted up and the summons was dead content (0/120 runs). Dip = falling week-over-week OR low (<15) and not rising — a rising week coasts even when low (parity audit 2026-10-10; reconciles break-it r13's pinned rising-coast). (code: contestTick, util audit 2026-10-10)
 //   - summons_ratings_recovery: a delivered stunt REALLY moves the numbers — +2 viewership plus recordMoment's +1, because the stunt copy promised "the numbers tick UP" while the engine moved nothing (the dip never recovered, so the next dawn could re-summon on the same dip); phone-it-in promises nothing and moves nothing (code: _showEnd, break-it fame-seeker 2026-10-10)
 //   - together_unity_once: a watch-together win grants unity only through its choice's narrated do.unity — the old silent +1 in _showEnd's 'won' else-branch doubled the snacks choice's unity with no line said (code: _showEnd, break-it fame-seeker 2026-10-10)
 //   - summons_castability: the ratings summons is for the PLAYER specifically — a dead (over/health<=0) or exiled scholar is not summoned. The tick falls through to normal scheduling (unconsumed slot) and fireRatingsSummons refuses out loud (code: contestTick, fireRatingsSummons, break-it contest r10 2026-10-09)
@@ -283,7 +283,16 @@
         // ratingsDipping=false and the summons never fired. Soft = falling
         // week-over-week OR just plain low (<15): the System doesn't care
         // WHY the numbers are bad, it wants a stunt.
-        v._dipping = ((lastWeek !== undefined && lastWeek !== null) && (now - lastWeek) < -1) || now < 15;
+        // RISING-COAST (parity audit 2026-10-10): the low clause must not
+        // fire on a rising week — ratings that doubled (now-lastWeek > 2,
+        // the same bar as the -0.10 coast rule below) are a growth story,
+        // not a slump. Without this, a low-but-rising week read BOTH
+        // desperate (+0.15, 75% contest share, 20% summons) AND coasting
+        // (-0.10) — incoherent. Reconciles the util weekly-drift design
+        // with break-it r13's pinned "rising ratings do not summon".
+        const falling = (lastWeek !== undefined && lastWeek !== null) && (now - lastWeek) < -1;
+        const rising = (lastWeek !== undefined && lastWeek !== null) && (now - lastWeek) > 2;
+        v._dipping = falling || (now < 15 && !rising);
         v._lastWeekViewership = now;
       }
       ratingsDipping = !!v._dipping;
@@ -450,7 +459,11 @@
         desc: 'Call-in show. Strangers ask you deeply uncomfortable questions.' },
       { id: 'death_reel', name: 'The Death Reel',
         desc: 'Highlights. Yes, including yours. Especially yours.' },
-      { id: 'moot', name: 'The Moot',
+      // ID COLLISION (parity audit 2026-10-10): this show was id 'moot',
+      // colliding with the CONTEST 'moot' — game.js routes on id, so the
+      // show never aired; every pick became a contest. Renamed, beats key
+      // renamed with it; regression pinned in test-shows-break-20261010.
+      { id: 'moot_show', name: 'The Moot',
         desc: 'Televised trials and debates. The village holds court on camera; the galaxy is the jury.' },
       { id: 'nap_wars', name: 'Nap Wars',
         desc: 'A villager is pulled mid-afternoon for competitive napping. The galaxy holds its breath. Someone always snores.' },
@@ -1035,7 +1048,7 @@
       lose: `The empty-chair episode wins awards. You do not attend the ceremony.`,
       mixed: `Your narration makes the reel art. It also makes it permanent. Strangers quote your worst moments back at you, lovingly.`,
     },
-    moot: {
+    moot_show: {
       setup: `📺 The Moot — the village holds a trial, on camera.\n\nThe charge is read aloud. It might even be yours. The jury is seventeen systems of beings who have never been accused of anything. Your village fills the gallery. Everyone is performing, a little.`,
       choices: [
         { label: 'Argue the case', sub: 'rhetoric, televised', end: 'won', note: 'You argue like the galaxy is the jury — because it is. The points land. The prosecutor-drone objects to your charisma. Overruled, by applause.', do: { fanLane: { n: 3, why: 'won the televised trial' }, notability: 'showmanship' } },
@@ -2163,7 +2176,8 @@
         ] },
       // Phase 2 is unreachable by choice (the arena resolves WIN/LOSE/DIE
       // via tbEnd) — kept as the System's epitaph if the feed glitches.
-      { beat: 'contestPitClimax', text: `The sand settles. Whatever happened in the pit, the crowd saw it.`,
+      // Marked unreachable so phase-graph audits skip it honestly.
+      { beat: 'contestPitClimax', unreachable: true, text: `The sand settles. Whatever happened in the pit, the crowd saw it.`,
         choices: [
           { label: 'Breathe', sub: '', do: { note: 'You breathe.' }, next: 'LOSE' },
         ] },
@@ -2184,8 +2198,9 @@
           { label: 'Begin', sub: 'three waves, no rest', do: { arena: { waves: 3 }, note: 'You step out. The first gate slams up.' }, next: 2 },
         ] },
       // Unreachable by choice (the arena chains waves via tbEnd) — the
-      // System's epitaph if the feed glitches.
-      { beat: 'contestGauntletClimax', text: `The sand settles. Three gates, three silences.`,
+      // System's epitaph if the feed glitches. Marked unreachable so
+      // phase-graph audits skip it honestly.
+      { beat: 'contestGauntletClimax', unreachable: true, text: `The sand settles. Three gates, three silences.`,
         choices: [
           { label: 'Breathe', sub: '', do: { note: 'You breathe.' }, next: 'LOSE' },
         ] },
@@ -2592,8 +2607,9 @@
         choices: [
           { label: 'Hold the line', sub: 'three waves, real fights', do: { arena: { waves: 3 }, note: 'You plant yourself in the gap. The first wave comes.' }, next: 2 },
         ] },
-      // Unreachable by choice (the arena chains waves via tbEnd).
-      { beat: 'contestSiegeClimax', text: `The beacon hums behind you. The village holds its breath.`,
+      // Unreachable by choice (the arena chains waves via tbEnd). Marked
+      // unreachable so phase-graph audits skip it honestly.
+      { beat: 'contestSiegeClimax', unreachable: true, text: `The beacon hums behind you. The village holds its breath.`,
         choices: [
           { label: 'Breathe', sub: '', do: { note: 'You breathe.' }, next: 'LOSE' },
         ] },

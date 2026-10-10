@@ -1,0 +1,304 @@
+{"type":"runStart","seed":424242,"flavor":"fame","days":200,"day":1}
+{"type":"showCast","who":"player","why":"debut","note":null,"day":14}
+{"type":"bcastStart","kind":"show","day":14}
+{"type":"fireShow","showId":"stare_down","name":"The Stare-Down","viewership":39.7,"day":14}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":43.1,"day":15}
+{"type":"bcastEnd","day":15}
+{"type":"showEnd","showId":"stare_down","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":2},"day":15}
+{"type":"fireContest","contestId":"exchange","risk":"high","cat":"endurance","variant":null,"participants":3,"notabilityWeights":{"player":3,"gen_0nail69":1,"gen_ngfglcg":1,"gen_tggyfb5":1,"gen_udhztu0":1,"gen_v5mw7lm":1,"lena_ruiz":1,"marcus_webb":1,"sofia_chen":1,"james_okonkwo":1,"emma_larsen":1,"david_kim":1},"viewership":40.7,"day":16}
+{"type":"interruption","contestId":"exchange","participantIds":["player","marcus_webb","gen_udhztu0"],"isPlayer":true,"day":17}
+{"type":"resolveContest","day":17}
+{"type":"modalDriveStart","kind":"contest","contestId":"exchange","participant":"player","vBefore":41.7,"day":18}
+{"type":"resolveVillager","pid":"marcus_webb","contestId":"exchange","outcome":"lost","logLines":1,"day":18}
+{"type":"resolveVillager","pid":"gen_udhztu0","contestId":"exchange","outcome":"lost","logLines":1,"day":18}
+{"type":"resolveOthers","day":18}
+{"type":"bcastEnd","day":18}
+{"type":"contestEnd","contestId":"exchange","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":4,"social":0,"showbiz":2},"day":18}
+{"type":"dawnSample","viewership":43.7,"fans":{"fight":0,"survival":4,"social":0,"showbiz":2},"dipping":false,"eligibleN":8,"eligibleIds":["player","gen_udhztu0","gen_v5mw7lm","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":8,"fallenN":3,"day":21}
+{"type":"showCast","who":"player","why":"star","note":"won 2 contests","day":22}
+{"type":"bcastStart","kind":"show","day":22}
+{"type":"fireShow","showId":"how_to_human","name":"How to Human","viewership":41.2,"day":22}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":40.2,"day":23}
+{"type":"bcastEnd","day":23}
+{"type":"showEnd","showId":"how_to_human","participant":"player","outcome":"mixed","prize":false,"fans":{"fight":0,"survival":4,"social":0,"showbiz":6},"day":23}
+{"type":"showCast","who":"player","why":"star","note":"won 2 contests","day":23}
+{"type":"bcastStart","kind":"show","day":23}
+{"type":"fireShow","showId":"tiny_door","name":"The Tiny Door","viewership":41.2,"day":23}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":41.2,"day":24}
+{"type":"bcastEnd","day":24}
+{"type":"showEnd","showId":"tiny_door","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":4,"social":0,"showbiz":10},"day":24}
+{"type":"fireContest","contestId":"pantry_raid","risk":"high","cat":"forage","variant":null,"participants":2,"notabilityWeights":{"player":12.5,"gen_udhztu0":1,"gen_v5mw7lm":1,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":1,"david_kim":1},"viewership":37.1,"day":28}
+{"type":"interruption","contestId":"pantry_raid","participantIds":["player","emma_larsen"],"isPlayer":true,"day":29}
+{"type":"resolveContest","day":29}
+{"type":"modalDriveStart","kind":"contest","contestId":"pantry_raid","participant":"player","vBefore":37.1,"day":30}
+{"type":"resolveVillager","pid":"emma_larsen","contestId":"pantry_raid","outcome":"won","logLines":1,"day":30}
+{"type":"resolveOthers","day":30}
+{"type":"bcastEnd","day":30}
+{"type":"contestEnd","contestId":"pantry_raid","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":4,"social":0,"showbiz":14},"day":30}
+{"type":"bcastStart","kind":"summons","day":31}
+{"type":"fireSummons","viewership":38.1,"day":31}
+{"type":"modalDriveStart","kind":"summons","participant":"player","vBefore":37.1,"day":32}
+{"type":"bcastEnd","day":32}
+{"type":"showEnd","showId":"__summons","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":4,"social":0,"showbiz":17},"day":32}
+{"type":"showCast","who":"player","why":"star","note":"won 4 contests","day":35}
+{"type":"bcastStart","kind":"show","day":35}
+{"type":"fireShow","showId":"complaint_box","name":"The Complaint Box","viewership":37.9,"day":35}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":41.1,"day":36}
+{"type":"bcastEnd","day":36}
+{"type":"showEnd","showId":"complaint_box","participant":"player","outcome":"mixed","prize":false,"fans":{"fight":0,"survival":4,"social":0,"showbiz":20},"day":36}
+{"type":"fireContest","contestId":"exchange","risk":"high","cat":"endurance","variant":null,"participants":3,"notabilityWeights":{"player":14.5,"gen_udhztu0":1,"gen_v5mw7lm":1,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":5,"david_kim":1},"viewership":37.9,"day":37}
+{"type":"interruption","contestId":"exchange","participantIds":["player","james_okonkwo","lena_ruiz"],"isPlayer":true,"day":38}
+{"type":"resolveContest","day":38}
+{"type":"modalDriveStart","kind":"contest","contestId":"exchange","participant":"player","vBefore":37.9,"day":39}
+{"type":"resolveVillager","pid":"james_okonkwo","contestId":"exchange","outcome":"lost","logLines":1,"day":39}
+{"type":"resolveVillager","pid":"lena_ruiz","contestId":"exchange","outcome":"lost","logLines":1,"day":39}
+{"type":"resolveOthers","day":39}
+{"type":"bcastEnd","day":39}
+{"type":"contestEnd","contestId":"exchange","kind":"contest","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":4,"social":0,"showbiz":20},"day":39}
+{"type":"dawnSample","viewership":38.9,"fans":{"fight":0,"survival":4,"social":0,"showbiz":20},"dipping":false,"eligibleN":8,"eligibleIds":["player","gen_udhztu0","gen_v5mw7lm","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":8,"fallenN":3,"day":41}
+{"type":"fireContest","contestId":"pantry_raid","risk":"extreme","cat":"forage","variant":"hardened","participants":2,"notabilityWeights":{"player":16.5,"gen_udhztu0":1,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":5,"david_kim":1},"viewership":35.9,"day":42}
+{"type":"interruption","contestId":"pantry_raid","participantIds":["david_kim","player"],"isPlayer":true,"day":43}
+{"type":"resolveContest","day":43}
+{"type":"modalDriveStart","kind":"contest","contestId":"pantry_raid","participant":"player","vBefore":35.9,"day":44}
+{"type":"resolveVillager","pid":"david_kim","contestId":"pantry_raid","outcome":"won","logLines":1,"day":44}
+{"type":"resolveOthers","day":44}
+{"type":"bcastEnd","day":44}
+{"type":"contestEnd","contestId":"pantry_raid","kind":"contest","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":4,"social":0,"showbiz":20},"day":44}
+{"type":"showCast","who":"player","why":"star","note":"won 4 contests","day":47}
+{"type":"bcastStart","kind":"show","day":47}
+{"type":"fireShow","showId":"complaint_box","name":"The Complaint Box","viewership":38.9,"day":47}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":38.9,"day":48}
+{"type":"bcastEnd","day":48}
+{"type":"showEnd","showId":"complaint_box","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":4,"social":0,"showbiz":24},"day":48}
+{"type":"fireContest","contestId":"witness","risk":"high","cat":"detective","variant":null,"participants":1,"notabilityWeights":{"player":17,"gen_udhztu0":1,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":5,"david_kim":5},"viewership":35,"day":49}
+{"type":"interruption","contestId":"witness","participantIds":["player"],"isPlayer":true,"day":50}
+{"type":"resolveContest","day":50}
+{"type":"modalDriveStart","kind":"contest","contestId":"witness","participant":"player","vBefore":35,"day":51}
+{"type":"bcastEnd","day":51}
+{"type":"contestEnd","contestId":"witness","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":4,"social":0,"showbiz":28},"day":51}
+{"type":"fireContest","contestId":"pit","risk":"high","cat":"blood","variant":null,"participants":2,"notabilityWeights":{"player":18,"lena_ruiz":1,"james_okonkwo":1,"emma_larsen":5,"david_kim":5},"viewership":37,"day":52}
+{"type":"interruption","contestId":"pit","participantIds":["player","emma_larsen"],"isPlayer":true,"day":53}
+{"type":"resolveContest","day":53}
+{"type":"modalDriveStart","kind":"contest","contestId":"pit","participant":"player","vBefore":37,"day":54}
+{"type":"resolveVillager","pid":"emma_larsen","contestId":"pit","outcome":"won","logLines":1,"day":54}
+{"type":"resolveOthers","day":54}
+{"type":"bcastEnd","day":54}
+{"type":"contestEnd","contestId":"pit","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":4,"survival":4,"social":0,"showbiz":28},"day":54}
+{"type":"arenaDone","rounds":2,"hpBefore":77.66666666666667,"hpAfter":70.66666666666667,"day":54}
+{"type":"fireContest","contestId":"pattern","risk":"low","cat":"puzzle","variant":null,"participants":2,"notabilityWeights":{"player":18.5,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":7,"david_kim":5},"viewership":34.2,"day":56}
+{"type":"interruption","contestId":"pattern","participantIds":["player","david_kim"],"isPlayer":true,"day":57}
+{"type":"resolveContest","day":57}
+{"type":"modalDriveStart","kind":"contest","contestId":"pattern","participant":"player","vBefore":34.2,"day":58}
+{"type":"resolveVillager","pid":"david_kim","contestId":"pattern","outcome":"lost","logLines":1,"day":58}
+{"type":"resolveOthers","day":58}
+{"type":"bcastEnd","day":58}
+{"type":"contestEnd","contestId":"pattern","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":0,"social":0,"showbiz":28},"day":58}
+{"type":"fireContest","contestId":"informant","risk":"medium","cat":"detective","variant":null,"participants":4,"notabilityWeights":{"player":19.5,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":7,"david_kim":5},"viewership":35.2,"day":58}
+{"type":"interruption","contestId":"informant","participantIds":["player","emma_larsen","marcus_webb","david_kim"],"isPlayer":true,"day":59}
+{"type":"resolveContest","day":59}
+{"type":"modalDriveStart","kind":"contest","contestId":"informant","participant":"player","vBefore":35.2,"day":60}
+{"type":"resolveVillager","pid":"emma_larsen","contestId":"informant","outcome":"lost","logLines":1,"day":60}
+{"type":"resolveVillager","pid":"marcus_webb","contestId":"informant","outcome":"lost","logLines":1,"day":60}
+{"type":"resolveVillager","pid":"david_kim","contestId":"informant","outcome":"lost","logLines":1,"day":60}
+{"type":"resolveOthers","day":60}
+{"type":"bcastEnd","day":60}
+{"type":"contestEnd","contestId":"informant","kind":"contest","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":26},"day":60}
+{"type":"dawnSample","viewership":35.2,"fans":{"fight":0,"survival":0,"social":0,"showbiz":25},"dipping":false,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":61}
+{"type":"bcastStart","kind":"summons","day":63}
+{"type":"fireSummons","viewership":31.7,"day":63}
+{"type":"modalDriveStart","kind":"summons","participant":"player","vBefore":35.2,"day":64}
+{"type":"bcastEnd","day":64}
+{"type":"showEnd","showId":"__summons","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":25},"day":64}
+{"type":"fireContest","contestId":"price","risk":"extreme","cat":"moot","variant":null,"participants":1,"notabilityWeights":{"player":19.75,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":7,"david_kim":5},"viewership":34.7,"day":65}
+{"type":"interruption","contestId":"price","participantIds":["player"],"isPlayer":true,"day":66}
+{"type":"resolveContest","day":66}
+{"type":"modalDriveStart","kind":"contest","contestId":"price","participant":"player","vBefore":34.7,"day":67}
+{"type":"bcastEnd","day":67}
+{"type":"contestEnd","contestId":"price","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":0,"social":4,"showbiz":22},"day":67}
+{"type":"fireContest","contestId":"lottery","risk":"low","cat":"chance","variant":null,"participants":5,"notabilityWeights":{"player":23.25,"lena_ruiz":1,"marcus_webb":1,"james_okonkwo":1,"emma_larsen":7,"david_kim":5},"viewership":32.1,"day":71}
+{"type":"interruption","contestId":"lottery","participantIds":["player","emma_larsen","david_kim","marcus_webb","james_okonkwo"],"isPlayer":true,"day":72}
+{"type":"resolveContest","day":72}
+{"type":"modalDriveStart","kind":"contest","contestId":"lottery","participant":"player","vBefore":32.1,"day":73}
+{"type":"resolveVillager","pid":"emma_larsen","contestId":"lottery","outcome":"won","logLines":1,"day":73}
+{"type":"resolveVillager","pid":"david_kim","contestId":"lottery","outcome":"won","logLines":1,"day":73}
+{"type":"resolveVillager","pid":"marcus_webb","contestId":"lottery","outcome":"won","logLines":1,"day":73}
+{"type":"resolveVillager","pid":"james_okonkwo","contestId":"lottery","outcome":"won","logLines":1,"day":73}
+{"type":"resolveOthers","day":73}
+{"type":"bcastEnd","day":73}
+{"type":"contestEnd","contestId":"lottery","kind":"contest","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":16},"day":73}
+{"type":"fireContest","contestId":"honey","risk":"high","cat":"forage","variant":null,"participants":1,"notabilityWeights":{"player":23.25,"lena_ruiz":1,"marcus_webb":5,"james_okonkwo":5,"emma_larsen":8,"david_kim":7},"viewership":33.1,"day":75}
+{"type":"interruption","contestId":"honey","participantIds":["player"],"isPlayer":true,"day":76}
+{"type":"resolveContest","day":76}
+{"type":"modalDriveStart","kind":"contest","contestId":"honey","participant":"player","vBefore":33.1,"day":77}
+{"type":"bcastEnd","day":77}
+{"type":"contestEnd","contestId":"honey","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":0,"social":0,"showbiz":16},"day":77}
+{"type":"fireContest","contestId":"tithe","risk":"extreme","cat":"blood","variant":null,"participants":2,"notabilityWeights":{"player":24.25,"lena_ruiz":1,"marcus_webb":5,"james_okonkwo":5,"emma_larsen":8,"david_kim":7},"viewership":30.7,"day":77}
+{"type":"interruption","contestId":"tithe","participantIds":["player","james_okonkwo"],"isPlayer":true,"day":78}
+{"type":"resolveContest","day":78}
+{"type":"modalDriveStart","kind":"contest","contestId":"tithe","participant":"player","vBefore":30.7,"day":79}
+{"type":"resolveVillager","pid":"james_okonkwo","contestId":"tithe","outcome":"won","logLines":1,"day":79}
+{"type":"resolveOthers","day":79}
+{"type":"bcastEnd","day":79}
+{"type":"contestEnd","contestId":"tithe","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":4,"survival":0,"social":0,"showbiz":14},"day":79}
+{"type":"dawnSample","viewership":31.7,"fans":{"fight":2,"survival":0,"social":0,"showbiz":12},"dipping":true,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":81}
+{"type":"fireContest","contestId":"riddle","risk":"high","cat":"puzzle","variant":null,"participants":1,"notabilityWeights":{"player":24.75,"lena_ruiz":1,"marcus_webb":5,"james_okonkwo":7,"emma_larsen":8,"david_kim":7},"viewership":32.7,"day":81}
+{"type":"bcastStart","kind":"contest-watch","day":82}
+{"type":"interruption","contestId":"riddle","participantIds":["marcus_webb"],"isPlayer":false,"day":82}
+{"type":"resolveContest","day":82}
+{"type":"modalDriveStart","kind":"contest","contestId":"riddle","participant":"marcus_webb","vBefore":32.7,"day":83}
+{"type":"resolveGroup","pids":["marcus_webb"],"outcomes":{"marcus_webb":{"outcome":"lost","logLines":1}},"day":83}
+{"type":"bcastEnd","day":83}
+{"type":"contestEnd","contestId":"riddle","kind":"contest","participant":"marcus_webb","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":10},"day":83}
+{"type":"bcastEnd","day":83}
+{"type":"verdict","day":83}
+{"type":"fireContest","contestId":"riddle","risk":"high","cat":"puzzle","variant":null,"participants":1,"notabilityWeights":{"player":25,"lena_ruiz":1,"marcus_webb":5,"james_okonkwo":7,"emma_larsen":8,"david_kim":7},"viewership":31.2,"day":84}
+{"type":"interruption","contestId":"riddle","participantIds":["player"],"isPlayer":true,"day":85}
+{"type":"resolveContest","day":85}
+{"type":"modalDriveStart","kind":"contest","contestId":"riddle","participant":"player","vBefore":31.2,"day":86}
+{"type":"bcastEnd","day":86}
+{"type":"contestEnd","contestId":"riddle","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":0,"social":0,"showbiz":11},"day":86}
+{"type":"showCast","who":"player","why":"star","note":"won 15 contests","day":95}
+{"type":"bcastStart","kind":"show","day":95}
+{"type":"fireShow","showId":"stare_down","name":"The Stare-Down","viewership":33.6,"day":95}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":33.6,"day":96}
+{"type":"bcastEnd","day":96}
+{"type":"showEnd","showId":"stare_down","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":6},"day":96}
+{"type":"fireContest","contestId":"auction","risk":"high","cat":"chance","variant":null,"participants":3,"notabilityWeights":{"player":26.5,"lena_ruiz":1,"marcus_webb":5,"james_okonkwo":7,"emma_larsen":8,"david_kim":7},"viewership":31.1,"day":98}
+{"type":"interruption","contestId":"auction","participantIds":["player","david_kim","marcus_webb"],"isPlayer":true,"day":99}
+{"type":"resolveContest","day":99}
+{"type":"modalDriveStart","kind":"contest","contestId":"auction","participant":"player","vBefore":31.1,"day":100}
+{"type":"resolveVillager","pid":"david_kim","contestId":"auction","outcome":"won","logLines":1,"day":100}
+{"type":"resolveVillager","pid":"marcus_webb","contestId":"auction","outcome":"won","logLines":1,"day":100}
+{"type":"resolveOthers","day":100}
+{"type":"bcastEnd","day":100}
+{"type":"contestEnd","contestId":"auction","kind":"contest","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":2},"day":100}
+{"type":"showCast","who":"player","why":"star","note":"won 15 contests","day":100}
+{"type":"bcastStart","kind":"show","day":100}
+{"type":"fireShow","showId":"rose_ceremony","name":"The Rose Ceremony","viewership":32.1,"day":100}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":31.1,"day":101}
+{"type":"bcastEnd","day":101}
+{"type":"showEnd","showId":"rose_ceremony","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":5},"day":101}
+{"type":"dawnSample","viewership":32.1,"fans":{"fight":0,"survival":0,"social":0,"showbiz":5},"dipping":true,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":101}
+{"type":"bcastStart","kind":"summons","day":106}
+{"type":"fireSummons","viewership":29.8,"day":106}
+{"type":"modalDriveStart","kind":"summons","participant":"player","vBefore":29.8,"day":107}
+{"type":"bcastEnd","day":107}
+{"type":"showEnd","showId":"__summons","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":1},"day":107}
+{"type":"showCast","who":"player","why":"star","note":"won 15 contests","day":108}
+{"type":"bcastStart","kind":"show","day":108}
+{"type":"fireShow","showId":"break_room","name":"Break Room","viewership":29.8,"day":108}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":29.8,"day":109}
+{"type":"bcastEnd","day":109}
+{"type":"showEnd","showId":"break_room","participant":"player","outcome":"mixed","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":4},"day":109}
+{"type":"fireContest","contestId":"riddle","risk":"high","cat":"puzzle","variant":null,"participants":1,"notabilityWeights":{"player":29.25,"lena_ruiz":1,"marcus_webb":7,"james_okonkwo":7,"emma_larsen":8,"david_kim":8},"viewership":28.7,"day":117}
+{"type":"bcastStart","kind":"contest-watch","day":118}
+{"type":"interruption","contestId":"riddle","participantIds":["david_kim"],"isPlayer":false,"day":118}
+{"type":"resolveContest","day":118}
+{"type":"modalDriveStart","kind":"contest","contestId":"riddle","participant":"david_kim","vBefore":28.7,"day":119}
+{"type":"resolveGroup","pids":["david_kim"],"outcomes":{"david_kim":{"outcome":"lost","logLines":1}},"day":119}
+{"type":"bcastEnd","day":119}
+{"type":"contestEnd","contestId":"riddle","kind":"contest","participant":"david_kim","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":0},"day":119}
+{"type":"bcastEnd","day":119}
+{"type":"verdict","day":119}
+{"type":"dawnSample","viewership":27.7,"fans":{"fight":0,"survival":0,"social":0,"showbiz":0},"dipping":false,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":121}
+{"type":"showCast","who":"player","why":"star","note":"won 15 contests","day":122}
+{"type":"bcastStart","kind":"show","day":122}
+{"type":"fireShow","showId":"makeover","name":"Extreme Burrow Makeover","viewership":27.7,"day":122}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":27.7,"day":123}
+{"type":"bcastEnd","day":123}
+{"type":"showEnd","showId":"makeover","participant":"player","outcome":"mixed","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":4},"day":123}
+{"type":"fireContest","contestId":"box","risk":"medium","cat":"puzzle","variant":null,"participants":1,"notabilityWeights":{"player":29.75,"lena_ruiz":1,"marcus_webb":7,"james_okonkwo":7,"emma_larsen":8,"david_kim":8},"viewership":26.7,"day":126}
+{"type":"interruption","contestId":"box","participantIds":["player"],"isPlayer":true,"day":127}
+{"type":"resolveContest","day":127}
+{"type":"modalDriveStart","kind":"contest","contestId":"box","participant":"player","vBefore":26.7,"day":128}
+{"type":"bcastEnd","day":128}
+{"type":"contestEnd","contestId":"box","kind":"contest","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":0},"day":128}
+{"type":"showCast","who":"player","why":"star","note":"won 15 contests","day":132}
+{"type":"bcastStart","kind":"show","day":132}
+{"type":"fireShow","showId":"mystery_smell","name":"The Mystery Smell","viewership":28.7,"day":132}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":28.7,"day":133}
+{"type":"bcastEnd","day":133}
+{"type":"showEnd","showId":"mystery_smell","participant":"player","outcome":"mixed","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":4},"day":133}
+{"type":"fireContest","contestId":"calorie_run","risk":"medium","cat":"forage","variant":null,"participants":3,"notabilityWeights":{"player":30,"lena_ruiz":1,"marcus_webb":7,"james_okonkwo":7,"emma_larsen":8,"david_kim":8},"viewership":29.7,"day":139}
+{"type":"interruption","contestId":"calorie_run","participantIds":["player","james_okonkwo","david_kim"],"isPlayer":true,"day":140}
+{"type":"resolveContest","day":140}
+{"type":"modalDriveStart","kind":"contest","contestId":"calorie_run","participant":"player","vBefore":29.7,"day":141}
+{"type":"resolveVillager","pid":"james_okonkwo","contestId":"calorie_run","outcome":"won","logLines":1,"day":141}
+{"type":"resolveVillager","pid":"david_kim","contestId":"calorie_run","outcome":"won","logLines":1,"day":141}
+{"type":"resolveOthers","day":141}
+{"type":"bcastEnd","day":141}
+{"type":"contestRefuse","contestId":"calorie_run","participant":"player","day":141}
+{"type":"dawnSample","viewership":27.7,"fans":{"fight":0,"survival":0,"social":0,"showbiz":0},"dipping":false,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":141}
+{"type":"fireContest","contestId":"moot","variant":null,"notabilityWeights":{"player":30.25,"lena_ruiz":1,"marcus_webb":7,"james_okonkwo":8,"emma_larsen":8,"david_kim":8.5},"viewership":27.7,"day":141}
+{"type":"interruption","contestId":"moot","participantIds":["player"],"isPlayer":true,"day":142}
+{"type":"resolveContest","day":142}
+{"type":"modalDriveStart","kind":"contest","contestId":"moot","participant":"player","vBefore":27.7,"day":143}
+{"type":"bcastEnd","day":143}
+{"type":"contestEnd","contestId":"moot","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":0,"social":4,"showbiz":0},"day":143}
+{"type":"showCast","who":"player","why":"star","note":"won 17 contests","day":144}
+{"type":"bcastStart","kind":"show","day":144}
+{"type":"fireShow","showId":"stare_down","name":"The Stare-Down","viewership":28.7,"day":144}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":28.7,"day":145}
+{"type":"bcastEnd","day":145}
+{"type":"showEnd","showId":"stare_down","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":2,"showbiz":2},"day":145}
+{"type":"showCast","who":"player","why":"star","note":"won 17 contests","day":153}
+{"type":"bcastStart","kind":"show","day":153}
+{"type":"fireShow","showId":"hot_take","name":"Hot Take","viewership":30.7,"day":153}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":29.7,"day":154}
+{"type":"bcastEnd","day":154}
+{"type":"showEnd","showId":"hot_take","participant":"player","outcome":"lost","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":0},"day":154}
+{"type":"showCast","who":"player","why":"star","note":"won 17 contests","day":158}
+{"type":"bcastStart","kind":"show","day":158}
+{"type":"fireShow","showId":"lost_found","name":"Lost & Found","viewership":28.6,"day":158}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":28.6,"day":159}
+{"type":"bcastEnd","day":159}
+{"type":"showEnd","showId":"lost_found","participant":"player","outcome":"mixed","prize":true,"fans":{"fight":0,"survival":0,"social":0,"showbiz":4},"day":159}
+{"type":"showCast","who":"player","why":"star","note":"won 17 contests","day":160}
+{"type":"bcastStart","kind":"show","day":160}
+{"type":"fireShow","showId":"small_claims","name":"Small Claims","viewership":29.6,"day":160}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":29.6,"day":161}
+{"type":"bcastEnd","day":161}
+{"type":"showEnd","showId":"small_claims","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":6},"day":161}
+{"type":"dawnSample","viewership":29.6,"fans":{"fight":0,"survival":0,"social":0,"showbiz":6},"dipping":false,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":161}
+{"type":"fireContest","contestId":"cache","risk":"medium","cat":"forage","variant":null,"participants":2,"notabilityWeights":{"player":32.75,"lena_ruiz":1,"marcus_webb":7,"james_okonkwo":8,"emma_larsen":8,"david_kim":8.5},"viewership":24.9,"day":168}
+{"type":"interruption","contestId":"cache","participantIds":["player","marcus_webb"],"isPlayer":true,"day":169}
+{"type":"resolveContest","day":169}
+{"type":"modalDriveStart","kind":"contest","contestId":"cache","participant":"player","vBefore":24.9,"day":170}
+{"type":"resolveVillager","pid":"marcus_webb","contestId":"cache","outcome":"won","logLines":1,"day":170}
+{"type":"resolveOthers","day":170}
+{"type":"bcastEnd","day":170}
+{"type":"contestEnd","contestId":"cache","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":0,"social":0,"showbiz":4},"day":170}
+{"type":"fireContest","contestId":"pantry_raid","risk":"high","cat":"forage","variant":null,"participants":2,"notabilityWeights":{"player":34,"lena_ruiz":1,"marcus_webb":8,"james_okonkwo":8,"emma_larsen":8,"david_kim":8.5},"viewership":26.9,"day":172}
+{"type":"interruption","contestId":"pantry_raid","participantIds":["player","marcus_webb"],"isPlayer":true,"day":173}
+{"type":"resolveContest","day":173}
+{"type":"modalDriveStart","kind":"contest","contestId":"pantry_raid","participant":"player","vBefore":26.9,"day":174}
+{"type":"resolveVillager","pid":"marcus_webb","contestId":"pantry_raid","outcome":"won","logLines":1,"day":174}
+{"type":"resolveOthers","day":174}
+{"type":"bcastEnd","day":174}
+{"type":"contestEnd","contestId":"pantry_raid","kind":"contest","participant":"player","outcome":"won","prize":true,"fans":{"fight":0,"survival":0,"social":0,"showbiz":4},"day":174}
+{"type":"showCast","who":"player","why":"star","note":"won 20 contests","day":175}
+{"type":"bcastStart","kind":"show","day":175}
+{"type":"fireShow","showId":"karaoke","name":"Alien Karaoke","viewership":25.1,"day":175}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":26.9,"day":176}
+{"type":"bcastEnd","day":176}
+{"type":"showEnd","showId":"karaoke","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":7},"day":176}
+{"type":"dawnSample","viewership":26.1,"fans":{"fight":0,"survival":0,"social":0,"showbiz":2},"dipping":false,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":181}
+{"type":"showCast","who":"player","why":"whim","note":"won 20 contests","day":181}
+{"type":"bcastStart","kind":"show","day":181}
+{"type":"fireShow","showId":"hot_take","name":"Hot Take","viewership":26.1,"day":181}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":26.1,"day":182}
+{"type":"bcastEnd","day":182}
+{"type":"showEnd","showId":"hot_take","participant":"player","outcome":"won","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":5},"day":182}
+{"type":"bcastStart","kind":"summons","day":188}
+{"type":"fireSummons","viewership":23.5,"day":188}
+{"type":"modalDriveStart","kind":"summons","participant":"player","vBefore":23.5,"day":189}
+{"type":"bcastEnd","day":189}
+{"type":"showEnd","showId":"__summons","participant":"player","outcome":"refused","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":-2},"day":189}
+{"type":"showCast","who":"player","why":"star","note":"won 20 contests","day":196}
+{"type":"bcastStart","kind":"show","day":196}
+{"type":"fireShow","showId":"break_room","name":"Break Room","viewership":20.5,"day":196}
+{"type":"modalDriveStart","kind":"show","participant":"player","vBefore":23,"day":197}
+{"type":"bcastEnd","day":197}
+{"type":"showEnd","showId":"break_room","participant":"player","outcome":"mixed","prize":false,"fans":{"fight":0,"survival":0,"social":0,"showbiz":4},"day":197}
+{"type":"dawnSample","viewership":21.5,"fans":{"fight":0,"survival":0,"social":0,"showbiz":0},"dipping":false,"eligibleN":6,"eligibleIds":["player","lena_ruiz","marcus_webb","james_okonkwo","emma_larsen","david_kim"],"rosterN":6,"fallenN":5,"day":201}
+{"type":"runEnd","deaths":0,"leakDays":0,"viewership":21.5,"fans":{"fight":0,"survival":0,"social":0,"showbiz":0},"contestLines":851,"day":201}

@@ -41,8 +41,19 @@ function check(name, cond, extra) {
     if (!phases) continue;
     for (let i = 0; i < phases.length; i++) {
       const p = phases[i];
+      // Unreachable fallback phases (arena epitaphs) are skipped honestly —
+      // they're marked unreachable in the game code, not silently dead.
+      if (p.unreachable) { check(`${c.id} phase ${i}: marked unreachable (arena epitaph)`, true); continue; }
       check(`${c.id} phase ${i}: has text`, typeof p.text === 'string' && p.text.length > 20, (p.text || '').slice(0, 40));
-      check(`${c.id} phase ${i}: has >=2 choices`, Array.isArray(p.choices) && p.choices.length >= 2, (p.choices || []).length + ' choices');
+      // ARENA RECONCILIATION (parity audit 2026-10-10, Steve 2026-10-08):
+      // pit/gauntlet/siege phases that gate the arena carry ONE choice —
+      // "Enter the pit" — because the fight itself is the played content
+      // (real tactical combat), not a second menu. A lone arena-entry
+      // choice is playable; a lone non-arena choice is a dead end.
+      const isArenaGate = (p.choices || []).length === 1 && p.choices[0].do && p.choices[0].do.arena;
+      check(`${c.id} phase ${i}: has >=2 choices (or is an arena gate)`,
+        (Array.isArray(p.choices) && p.choices.length >= 2) || isArenaGate,
+        (p.choices || []).length + ' choices' + (isArenaGate ? ' [arena gate]' : ''));
       for (const ch of (p.choices || [])) {
         check(`${c.id} phase ${i} choice "${ch.label}": has next`, ch.next !== undefined && ch.next !== null);
         check(`${c.id} phase ${i} choice "${ch.label}": has do`, typeof ch.do === 'object');
@@ -71,7 +82,12 @@ function check(name, cond, extra) {
     check(`${c.id}: phases attached`, ac.phases.length >= 2);
 
     // Play through: always pick first choice
-    let steps = 0, resolved = null;
+    // ARENA RECONCILIATION (parity audit 2026-10-10): blood contests suspend
+    // the modal into a REAL tactical fight (Steve 2026-10-08) — the choice
+    // driver can't fight it, so "resolves" for an arena contest means the
+    // played path reaches a live arena suspension (the fight is real and
+    // waiting), never a stuck modal. Clean up the suspended fight after.
+    let steps = 0, resolved = null, reachedArena = false;
     const hp0 = Game.state.scholar.health;
     while (Game.state.activeContest && steps < 12) {
       const cur = Game.state.activeContest;
@@ -82,10 +98,17 @@ function check(name, cond, extra) {
       const idx = (steps + pool.indexOf(c)) % phase.choices.length;
       let r;
       try { r = Game.contestChoose(idx); } catch (e) { check(`${c.id}: choice ${idx} no-throw`, false, e.message); break; }
+      if (r && r.arena) { reachedArena = !!(Game.state.activeContest && Game.state.activeContest.arenaSuspended); break; }
       if (r && r.done) { resolved = r.outcome; break; }
       steps++;
     }
-    check(`${c.id}: resolves within 12 steps`, !!resolved || !Game.state.activeContest, `steps=${steps} resolved=${resolved}`);
+    if (reachedArena) {
+      check(`${c.id}: reaches a live arena fight (played, not stuck)`, true);
+      try { if (Game.tbfight) Game.tbEnd('fled'); } catch (e) {}
+      Game.state.activeContest = null; Game.state.arenaContest = null;
+    } else {
+      check(`${c.id}: resolves within 12 steps`, !!resolved || !Game.state.activeContest, `steps=${steps} resolved=${resolved}`);
+    }
     if (resolved) {
       check(`${c.id}: outcome is win/lose/died/refused`, ['won', 'lost', 'died', 'refused'].includes(resolved), resolved);
     }
@@ -123,24 +146,29 @@ function check(name, cond, extra) {
   }
 
   // 4. Stakes check: blood contests can kill, all contests have consequences
+  // ARENA RECONCILIATION (parity audit 2026-10-10, Steve 2026-10-08): death
+  // rolls are GONE by design ("contests are to be played, not as RNG") —
+  // blood contests kill through REAL arena fights (do.arena), not do.die.
+  // FEARED = a real fight waits behind the gate; deadlier = more waves.
   {
     const pit = pool.find(x => x.id === 'pit');
     const phases = Game.contestPlayable(pit);
-    let canDie = false, canDmg = false;
+    let hasArena = false, canDmg = false;
     const walk = (phs) => {
       for (const p of phs) for (const ch of (p.choices || [])) {
-        if (ch.do && (ch.do.die > 0)) canDie = true;
+        if (ch.do && ch.do.arena) hasArena = true;
         if (ch.do && ch.do.dmg) canDmg = true;
       }
     };
     walk(phases);
-    check('pit: can kill (FEARED)', canDie);
-    check('pit: can damage', canDmg);
+    check('pit: gates a real arena fight (FEARED = played, not a roll)', hasArena);
+    check('pit: can damage (arena or choice)', canDmg || hasArena, canDmg ? 'choice dmg' : 'arena fight');
 
     const gaunt = Game.contestPlayable(pool.find(x => x.id === 'gauntlet'));
-    let gDie = 0;
-    for (const p of gaunt) for (const ch of (p.choices || [])) gDie = Math.max(gDie, (ch.do && ch.do.die) || 0);
-    check('gauntlet: deadlier than pit', gDie >= 0.25, `max die chance ${gDie}`);
+    let gWaves = 0, pWaves = 0;
+    for (const p of gaunt) for (const ch of (p.choices || [])) gWaves = Math.max(gWaves, (ch.do && ch.do.arena && ch.do.arena.waves) || 0);
+    for (const p of phases) for (const ch of (p.choices || [])) pWaves = Math.max(pWaves, (ch.do && ch.do.arena && ch.do.arena.waves) || 0);
+    check('gauntlet: deadlier than pit (more arena waves)', gWaves > pWaves, `gauntlet ${gWaves} vs pit ${pWaves} waves`);
   }
 
   // 5. Scheduler rules: unlock day 14, budget 2/week

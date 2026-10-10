@@ -181,12 +181,20 @@ sec('R4b — the 75%-contest share when dipping actually works (was dead code)')
     let contest = 0, show = 0;
     // 1600 iters (~240 events): seed 7 read 0.75 at 400 iters (2.4σ noise —
     // true mean probed at 0.601). More samples, not a wider band.
+    // PARITY AUDIT 2026-10-10: the weekly-drift design persists the dip flag
+    // per week (_trendWeek) — without resetting it here, the "steady"
+    // measurement inherits the dipping flag from the earlier dipping case
+    // (or vice versa) and the share reads wrong. Reset per iteration so the
+    // trend recomputes from the pinned values; pin _driftWeek so the drift
+    // itself doesn't compound across iterations.
+    Game.state.village._driftWeek = 2;
     for (let i = 0; i < 1600; i++) {
       rng.reset(SEED + i * 7);
       Game.state.showBudget = { week: 2, used: 0 };
       Game.state.pendingContest = null; Game.state.activeContest = null;
       Game.state.village.viewership = dipping ? 10 : 60;
       Game.state.village._lastWeekViewership = dipping ? 20 : 40;
+      delete Game.state.village._trendWeek;
       const ev = Game.contestTick();
       if (!ev || ev.id === '__summons') continue;
       if (Game.contestPool().find(c => c.id === ev.id)) contest++; else show++;

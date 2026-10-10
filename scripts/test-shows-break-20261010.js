@@ -428,10 +428,19 @@ sec('DEAD CODE D1 — broadcast + contest engine modules are loaded and runtime-
 sec('DEAD CODE D2 — all six canon shows are in the pool with authored beats');
 {
   const poolIds = Game.showPool().map(s => s.id);
-  for (const id of ['why_eat', 'break_room', 'mouth_race', 'ask_human', 'death_reel', 'moot']) {
+  // 'moot' the SHOW is 'moot_show' — the id 'moot' is the CONTEST (parity
+  // audit 2026-10-10: the collision hijacked every airing of the show into
+  // a contest via the game.js router).
+  for (const id of ['why_eat', 'break_room', 'mouth_race', 'ask_human', 'death_reel', 'moot_show']) {
     ok('pool has ' + id, poolIds.includes(id));
     ok('SHOW_BEATS has ' + id, !!(Game.SHOW_BEATS || {})[id]);
   }
+  // NO ID COLLISIONS between the show pool and the contest pool — the
+  // router in game.js dispatches on id, so a collision silently converts
+  // shows into contests (or vice versa).
+  const contestIds = Game.contestPool().map(c => c.id);
+  const coll = poolIds.filter(id => contestIds.includes(id));
+  ok('no show/contest id collisions', coll.length === 0, coll.join(','));
 }
 
 sec('DEAD CODE D3 — ticker renders while live, silent when dead');

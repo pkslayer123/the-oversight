@@ -10,8 +10,13 @@
 //        ratings summons — a canon system (Steve 2026-10-04) with a played
 //        stunt, real costs, a care-package prize — NEVER aired in live play.
 //        The audit-shows DIP-SIGNAL FIX (2026-10-09) fixed the comparison
-//        ORDER but not the signal. Fix: attention fades (-1/day at dawn,
-//        day 14+, floored at 0); dip = any day-over-day decline (trend < 0).
+//        ORDER but not the signal. This round's fix: attention fades on
+//        quiet stretches so the dip can fire. SUPERSEDED 2026-10-10 (bal-util
+//        resolution, parity audit): the live mechanism is WEEKLY audience
+//        drift (10%/week, min 2.5, floor 12) in contestTick — NOT the -1/day
+//        dawn decay this round proposed. K1b now pins the weekly design;
+//        the rising-coast principle (K1d) is preserved via the low-clause
+//        carve-out (low AND not rising).
 //   K1b — SIBLING, same bug class: contestEngine._cxChance ("ratings are
 //        slipping — the System gives the audience its favorite") read the
 //        same dead signal with the same `trend < -1` — chance contests were
@@ -163,17 +168,27 @@ sec('K1a — BEFORE model: the old dip signal could never fire (documents the br
   ok('BEFORE: 30 quiet dawns, old rules → dip never detected', dips === 0, 'dips=' + dips);
 }
 
-sec('K1b — AFTER: attention fades on quiet dawns (decay is real)');
+sec('K1b — AFTER: attention fades over quiet weeks (weekly drift is real)');
 freshGame(15);
 {
+  // PARITY AUDIT 2026-10-10: the bal-util resolution replaced the sibling's
+  // -1/day dawn decay with WEEKLY audience drift (10%, min 2.5, floor 12) —
+  // the decided design. This pins THAT: viewership declines week-over-week
+  // on quiet weeks, never negative, floored at 12.
   const v = Game.state.village;
-  delete v._lastWeekViewership;
+  delete v._lastWeekViewership; delete v._driftWeek; delete v._trendWeek;
   const seen = [];
-  for (let i = 0; i < 5; i++) { quietDawn(); seen.push(v.viewership); }
+  for (let w = 0; w < 6; w++) {
+    for (let d = 0; d < 7; d++) quietDawn();
+    seen.push(Math.round(v.viewership * 100) / 100);
+  }
   let declining = true;
-  for (let i = 1; i < seen.length; i++) if (!(seen[i] < seen[i - 1])) declining = false;
-  ok('viewership strictly declines over 5 quiet dawns', declining, JSON.stringify(seen));
+  for (let i = 1; i < seen.length; i++) {
+    if (seen[i - 1] > 12.5 && !(seen[i] < seen[i - 1])) declining = false;
+  }
+  ok('viewership declines week-over-week while above the floor', declining, JSON.stringify(seen));
   ok('viewership never negative', seen.every(x => x >= 0), JSON.stringify(seen));
+  ok('viewership floors at 12', seen[seen.length - 1] >= 12, JSON.stringify(seen));
 }
 
 sec('K1c — AFTER: a quiet stretch reads as dipping; the summons becomes reachable');

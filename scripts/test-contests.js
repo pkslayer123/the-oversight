@@ -92,7 +92,7 @@ function ok(name, cond, extra) {
     Game.addNotability('player', 'contestWin');
     const e2 = Game.contestEligible();
     const me = e2.eligible.find(x => x.id === 'player');
-    return me && me.notability.some(n => /won 1 contest/.test(n));
+    return me && me.notability.some(n => /won a contest/.test(n));
   })());
   ok('pre-day-14 gives the reason, not a list', (() => {
     Game.state.scholar.day = 5;
@@ -169,7 +169,7 @@ function ok(name, cond, extra) {
   // terminal ('WIN'|'LOSE'|'DIE'|'REFUSE'|'VERDICT'); no self-loops; every
   // path terminates within 12 steps. Covers both knowledge variants and
   // the watch-mode phases.
-  const TERMINAL = new Set(['WIN', 'LOSE', 'DIE', 'REFUSE', 'VERDICT']);
+  const TERMINAL = new Set(['WIN', 'LOSE', 'DIE', 'REFUSE', 'VERDICT', 'MIXED', 'MOOT_JUDGE', 'MAW_JUDGE', 'SHOW_VILLAGER']);
   function auditPhases(phases, label) {
     if (!phases || !phases.length) return [`${label}: no phases`];
     const errs = [];
