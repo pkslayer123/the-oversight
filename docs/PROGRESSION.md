@@ -33,7 +33,14 @@ never fired in organic play — players flee, they don't farm. Unlocks now take
 kills OR engagement: w2 = day 8 + (4 w1 kills OR 2 distinct w1 faced); w3 =
 day 25 + (8 w2 kills OR 2 distinct w2 faced); w4/w5 = kill/engagement lane +
 regional/national scale. Kills are the faster lane, not the only lane; the
-5/5/4/3/2 table bars are unchanged). Doom deaths trigger
+5/5/4/3/2 table bars are unchanged). **Villager experiences count the same**
+(Steve 2026-10-10): a villager's blow-by-blow fight (fight, survive, flee, or
+kill) feeds the engagement lanes and the deed bars exactly like the player's
+— the village is the protagonist. Definitions NOT weakened: same bars, same
+distinct-monster counts, keyed by monster type (villager + player facing the
+same hushwolf = one count). The dead told no tale — a villager who DIES in
+the fight records nothing; corpses and pre-contact evades record nothing.
+Fleeing counts, same as the player. Doom deaths trigger
 phoenix/second_wind like any death —
 "unkillable means unkillable."
 

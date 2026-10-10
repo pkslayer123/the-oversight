@@ -1054,10 +1054,20 @@
       if (args[0] && this.recordDeedFight) this.recordDeedFight(args[0]);
     });
     // fieldFight is the villager blow-by-blow fight (patrols, wild
-    // encounters, expeditions) — its module loads AFTER this one, so the
-    // wrap attaches lazily on first progDaily. A real fight is any
-    // outcome but 'evade' (saw it, gave it room, lived — no fight).
-    const _attachFieldFight = () => {
+    // encounters, expeditions) — its module loads AFTER this one in the
+    // browser, so the wrap attaches lazily on first progDaily (and eagerly
+    // at init when fieldFight already exists, e.g. the node harness).
+    // VILLAGER XP LAW (Steve 2026-10-10): a villager's blow-by-blow
+    // encounter counts toward the wave-unlock engagement lanes AND the
+    // deed bars exactly like the player's — fight, survive, flee, or kill.
+    // What counts: 'vKill' (killed it), 'mFlee' (drove it off — survived),
+    // 'vFlee' (fled — same as the player fleeing, you stood on the ground).
+    // What does NOT count: 'evade' (saw it, gave it room — no fight),
+    // 'vDie' (the dead told no tale — no experience the village can use),
+    // 'alreadyDead' (a corpse is not a fight). Dedupe is by monster id —
+    // the same villager fighting the same hushwolf twice is one count;
+    // a villager and the player facing the same hushwolf is one count.
+    const _attachFieldFight = function () {
       try {
         if (this._deedFieldFightWrapped || typeof this.fieldFight !== 'function') return;
         this._deedFieldFightWrapped = true;
@@ -1067,12 +1077,19 @@
           const r = origFF.apply(this, args);
           try {
             const mdef = args[1];
-            if (r && r.outcome && r.outcome !== 'evade' && mdef && mdef.id) self.recordDeedFight(mdef.id);
+            const o = r && r.outcome;
+            if (o && (o === 'vKill' || o === 'mFlee' || o === 'vFlee') && mdef && mdef.id) self.recordDeedFight(mdef.id);
           } catch (e) {}
           return r;
         };
       } catch (e) {}
     };
+    // Eager attach at init when possible (harness: all modules loaded).
+    try { _attachFieldFight.call(Game); } catch (e) {}
+    // Also attach when the player departs — day-1 patrol/expedition fights
+    // can fire before the first endDay (progDaily), and the deed feed must
+    // not miss them.
+    _deedWrap('depart', null, function () { try { _attachFieldFight.call(this); } catch (e) {} });
     const _progDailyOrig = Game.progDaily;
     Game.progDaily = function () {
       try { _attachFieldFight.call(this); } catch (e) {}

@@ -145,6 +145,14 @@ ash-death; the villager pool is the cap.
   Earlier waves never leave the pool. Engagement = distinct monsters fought
   blow-by-blow (fights started — fled or won — via deed feed wavesFaced);
   kills are the faster lane, not the only lane (bal-waves 2026-10-10).
+  VILLAGER XP LAW (Steve 2026-10-10): a villager's real blow-by-blow fight
+  (fieldFight: vKill/mFlee/vFlee) counts exactly like the player's toward
+  the engagement lanes and the deed bars — the village is the protagonist.
+  Same bars, same distinct counts, keyed by monster type (dedupe: villager +
+  player facing the same type = one count). vDie records nothing (the dead
+  told no tale); evade and alreadyDead record nothing. (Pre-fix, the
+  fieldFight deed wrap never attached — an arrow-function `this` bug — so
+  villager fights fed nothing at all; fixed 2026-10-10.)
 - `Game.scaleAtLeast(rank, need)`: village -> local -> regional -> national ->
   global ladder; unknown ranks treated as 'regional' (defensive — scaleRank()
   is built in parallel in hierarchy.js).

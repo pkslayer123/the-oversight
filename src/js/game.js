@@ -24159,7 +24159,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // facing/fleeing a wave-5 fight counts as "faced" for the deed bars; the
     // same philosophy opens the unlock gates: DISTINCT monsters of the current
     // wave fought blow-by-blow (fights started — fled or won — via the deed
-    // feed's wavesFaced map, never UI or calendar). Kills are the faster lane,
+    // feed's wavesFaced map, never UI or calendar). VILLAGER XP LAW (Steve
+    // 2026-10-10): a villager's real blow-by-blow fight (fieldFight:
+    // vKill/mFlee/vFlee) counts exactly like the player's — the village is
+    // the protagonist. The dead told no tale (vDie) and corpses are not
+    // fights (alreadyDead): they record nothing. Kills are the faster lane,
     // not the only lane. Bars sit below the deed-gate bars (5/5/4/3/2): the
     // unlock is the on-ramp, the deed is the mastery. Day/scale floors
     // unchanged — reactive pacing, never calendar scripts.
@@ -24167,7 +24171,8 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // waveEngaged(wave): distinct monsters of this wave engaged blow-by-blow.
     // Reads deedState().wavesFaced — fed by real startCombat / fieldFight /
     // recordWaveKill only (progression.js). Fleeing counts (you stood on the
-    // grid); double-tap refusals and pre-combat evades record nothing.
+    // grid); double-tap refusals, pre-combat evades, dead villagers, and
+    // corpses record nothing.
     waveEngaged(wave) {
       try {
         const ds = (typeof this.deedState === 'function') ? this.deedState() : null;
