@@ -807,7 +807,7 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - gossip_exempt_from_teller_lie_scrub: true (code: convoAskTopic wrapper)
 - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
-- accuser_pays: deflected/attacked/cleared dent the accuser's rep; attacked/cleared seed village gossip naming the accuser; being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
+- accuser_pays: deflected/attacked/cleared dent the accuser's rep IN A READ SLOT (r12 2026-10-10: the hearers' view of the player — the old applyRep(player) wrote to the unread self-view slot, pure theater); attacked/cleared seed village gossip naming the accuser (player-subject gossip routes to hearers); being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
 - refusal_cooldown: a counter-attack refuses further confrontation for 2 days — no reopen-and-re-accuse grind (code: confrontDoubt, confrontTheft, convoChoices wrapper)
 - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
 - gone_closes_doubts: removing a villager resolves their open doubts as unanswered — the question outlives them, never a permanently open thread (code: closeDoubtsForGone, removeVillager hook)
