@@ -46,6 +46,22 @@ Proof: `scripts/test-weird-dead-trust-20261010.js` 10/10 ×3 (4/10 before — se
 
 **Cross-lane observations (not fixed):** villager mortality steep without player healthcare (thirst/sickness cascades emptied rosters ~day 40 — survival-balance lane may want the numbers); idle players get moot-exiled ~day 16–17 (plausible, judged non-contributor, but zeroes contest participation — justice lane may want a glance); villager co-stars win 79% (threat-matching works; too kind is a balance call).
 
+## Worker E — Win-seeking completion runs (LANDDED as `db9d9a23`)
+
+60 seeds × winseek policy × 200-day cap, 6 parallel shards × 10 seeds. The money metric.
+
+**Wins: 0/60. Table reached: 0/60.** Median survival 24 days (max 43) — the win needs ~100 days (pacing audit).
+
+Per-requirement completion (60 runs): w1 ≥5 distinct 42/60 (70%); w2 ≥5 1/60 (2%); w3+ 0/60; contests ≥3 survived 13/60 (22%); crises ≥3 36/60 (60%); scale national+ 0/60; sentiment taught 45/60 (75%); feast surge used 21/60 (35%); integration stage ≥3 41/60 (68%).
+
+**Top blockers:** (1) early-game survival — villages lose ~12 members in ~24 days to combat (~6) and attrition (~6: night/sickness/starvation/thirst/wounds); best run (seed 17, day 43) reached w2=4/5, one short, would have filled with 20 more days. (2) Scale: 0/60 national — the BELONG road works mechanically (subordinate links by day 3–4, weekly tribute paid) but needs 21+ days link age + trust 60, mathematically impossible at 24-day median survival. (3) The 5/5/4/3/2 bars are proportional to wave sizes and well-calibrated — NOT the problem; runs just end too early.
+
+**No game-code fixes warranted:** the policy reliably achieves early requirements (w1 70%, sentiment 75%, stage 68%, crises 60%), proving the gates are achievable in principle. The later gates are unreachable only because runs end. Per settled law, the 5/5/4/3/2 bars stand; no gate changes.
+
+**Vicious cycle documented:** haven tiers (Longhouse/Palisade/Granary) are never built — 0/60 reach tier 1 (needs 8,000 kcal + 200 wood stockpile). The Palisade's raid defense would help survival, but villages can't accumulate surplus while starving. Fixing food economy / combat lethality / tier reachability is a design call for Steve.
+
+Harness fixes found during development: travel in `daily` sets pendingEncounter which blocks `sleep()` → clock stuck (travel belongs in `upkeep`); `startCombat` records the deed immediately, so "flee if faced" needs a faced-before-fight snapshot. Evidence: `evidence/2026-10-10/parity-worker-e.md`; policy `scripts/policies/winseek.js`; results `scripts/sweep-winseek-results.json`.
+
 ## Worker B — Reachability sweep (IN FLIGHT)
 
 Instrumented coverage over long organic runs; coverage table system → organic fire count → verdict. Report lands on completion; evidence `evidence/2026-10-10/parity-worker-b.md` (pending).
