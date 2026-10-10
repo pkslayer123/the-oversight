@@ -688,20 +688,15 @@
         this.pendingEncounter = false; this.pendingMonsterId = null; this.pendingInTent = false;
         const c = this.state.camp;
         if (c) {
-          const fires = this.state.fires || [];
-          try {
-            const detail = this.genDetail(c.px, c.py);
-            for (let i = fires.length - 1; i >= 0; i--) {
-              const f = fires[i];
-              if (f.tx !== c.px || f.ty !== c.py) continue;
-              if (!f.inside && detail[f.cy] && detail[f.cy][f.cx] === 'fire') detail[f.cy][f.cx] = 'dirt';
-              fires.splice(i, 1);
-            }
-          } catch (e) {}
+          // COLD-PIT HONESTY (break-it camps R10 2026-10-10): same class as
+          // breakCamp's destroyed path — the fire may already have burned
+          // down while the tents stood. Name it gone cold only when the
+          // camp's end actually killed a live flame.
+          const firesKilled = this.killCampFires(c.px, c.py);
           let place = 'the wild';
           try { place = this.nodeEpithet(c.px, c.py) || place; } catch (e) {}
           delete this.state.camp;
-          this.say(`The camp at ${place} has no keeper now — the fire's gone cold. The tent still stands, if anyone walks back for it.`);
+          this.say(`The camp at ${place} has no keeper now — ${firesKilled > 0 ? "the fire's gone cold" : "the fire was already cold"}. The tent still stands, if anyone walks back for it.`);
         }
       } catch (e) {}
       // DEATH ENDS THE JOIN (drifter break-it r3 2026-10-08): the join was the

@@ -1926,7 +1926,16 @@
     // when a fire was actually doused. (break-it 2026-10-08 r4: fire
     // sabotage used to write a write-only flag while the fire kept burning.)
     apDousePlayerFire: function () {
+      // FIRE HONESTY (break-it camps R10 2026-10-10, sibling sweep): the old
+      // scan took the nearest 'fire' CELL — map hearths, edge-blended wild
+      // fires, and burned-out cells nobody swept yet all qualified. The raid
+      // then announced "Your fire is out. Not burned down — doused." about a
+      // hearth that was never yours, or a pit that burned down on its own —
+      // the same copy-vs-engine class as breakCamp's cold-pit lie. Sweep
+      // first, then take only the player's LIVE tracked fire; otherwise
+      // refuse and the raid falls through to trust sabotage honestly.
       try {
+        if (typeof this.sweepDeadFires === 'function') this.sweepDeadFires();
         var detail = this.genDetail(this.map.px, this.map.py);
         var s = this.state.scholar || {};
         var px = (s.mx == null ? 4 : s.mx), py = (s.my == null ? 4 : s.my);
@@ -1934,6 +1943,9 @@
         for (var y = 0; y < 9; y++) {
           for (var x = 0; x < 9; x++) {
             if (detail[y] && detail[y][x] === 'fire') {
+              var mine = false;
+              try { mine = this.playerFireAt(x, y); } catch (e2) { mine = false; }
+              if (!mine) continue;
               var d2 = Math.abs(x - px) + Math.abs(y - py);
               if (d2 < best) { best = d2; bx = x; by = y; }
             }

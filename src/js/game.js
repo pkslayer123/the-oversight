@@ -58,6 +58,7 @@
 //   - villagerTickTeachTick() (camp healer teaches tick_removal within a couple days)
 //   - campHealerName() -> name | null
 //   - campTentStanding(tx, ty) -> bool (camp integrity: an intact yours-tent still stands on the tile)
+//   - killCampFires(tx, ty) -> int (kill a camp tile's tracked fires honestly: sweep dead first, return live count)
 //   - seedVillagerMaps() (every villager gets visitedTiles: haven + nearby)
 //   - compareMaps(vid) -> {newCount} (conversation action: merge their visited into your shared knowledge; records the sharing for the codex MAPS gate)
 //   - villageMapKnown() -> {"x,y":1} (codex MAPS: your seen tiles + visited tiles of villagers who actually shared via compareMaps; unshared seed tiles are never shown)
@@ -10605,6 +10606,30 @@
       this.tickAction(30);
       return null;
     },
+    // killCampFires(tx, ty) -> int: sweep dead fires first, then kill every
+    // tracked fire on the tile (grid cells restored to dirt). Returns the
+    // number of LIVE fires actually killed — the honest count behind "the
+    // fire's scattered cold" copy. A burned-out ledger entry is not a fire
+    // the camp's destruction took. (break-it camps R10 2026-10-10: a camp
+    // can outlive its flame — the old destroyed path promised "the fire's
+    // scattered cold" about a cold pit, the same copy-vs-engine class as
+    // camps-7's struck-path fix. The ledger's death path shares the helper.)
+    killCampFires(tx, ty) {
+      this.sweepDeadFires();
+      let killed = 0;
+      try {
+        const detail = this.genDetail(tx, ty);
+        const fires = this.state.fires || [];
+        for (let i = fires.length - 1; i >= 0; i--) {
+          const f = fires[i];
+          if (f.tx !== tx || f.ty !== ty) continue;
+          if (!f.inside && detail[f.cy] && detail[f.cy][f.cx] === 'fire') detail[f.cy][f.cx] = 'dirt';
+          fires.splice(i, 1);
+          killed++;
+        }
+      } catch (e) {}
+      return killed;
+    },
     breakCamp(reason) {
       if (!this.state.camp) return;
       const c = this.state.camp;
@@ -10646,16 +10671,13 @@
       // fire's cold" while camp-tile fires kept burning, feedable — copy vs
       // engine. A destroyed camp's player fires (grid and interior) go out
       // with it now; a struck camp's fire honestly keeps burning.
+      // COLD-PIT HONESTY (break-it camps R10 2026-10-10): a camp can outlive
+      // its fire — the flame burns down while the tents stand. killCampFires
+      // sweeps the dead entries first and returns the LIVE count; the message
+      // below names the fire only when one actually died.
+      let firesKilled = 0;
       if (!struck) {
-        try {
-          const detail = this.genDetail(c.px, c.py);
-          for (let i = fires.length - 1; i >= 0; i--) {
-            const f = fires[i];
-            if (f.tx !== c.px || f.ty !== c.py) continue;
-            if (!f.inside && detail[f.cy] && detail[f.cy][f.cx] === 'fire') detail[f.cy][f.cx] = 'dirt';
-            fires.splice(i, 1);
-          }
-        } catch (e) {}
+        firesKilled = this.killCampFires(c.px, c.py);
       }
       if (struck) {
         // BREAK-IT CAMPS-7 (2026-10-09): "keeps burning" must name a fire
@@ -10670,7 +10692,10 @@
           ` That's the deal with camps: they're not havens.`);
       } else {
         const tentBit = wrecked > 1 ? `The ${wrecked} tents are wrecked` : `The tent's wrecked`;
-        this.say(`Your camp is gone — ${r}. ${tentBit}, the fire's scattered cold. That's the deal with camps: they're not havens.`);
+        // COLD-PIT HONESTY (break-it camps R10 2026-10-10): name the fire only
+        // when the camp's end actually killed one — a cold pit gets an honest line.
+        const fireBit = firesKilled > 0 ? `, the fire's scattered cold` : `, the fire was already cold`;
+        this.say(`Your camp is gone — ${r}. ${tentBit}${fireBit}. That's the deal with camps: they're not havens.`);
       }
       // TENT ROOMS: if you were inside the tent, the wreck dumps you outside.
       // BREAK-IT CAMPS-9 (2026-10-09): only evict when the tent you're in is
