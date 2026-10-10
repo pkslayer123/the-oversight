@@ -4568,6 +4568,8 @@
       }
       if (r.outcome === 'died') {
         this.sysSay(`📺 ${pname} didn't come home.`);
+        // CRISIS (Steve 2026-10-09): blood on air — it happened on camera.
+        try { if (this.fireCrisis) this.fireCrisis('blood-on-air', { name: pname }); } catch (e) {}
         this.sysSay('📺 ' + this._contestDeathLine(contest, r.detail || '', pname));
         // GOSSIP (Steve 2026-10-08): their arena, their fate, the village's news.
         this._cxGossip('died', pid, contest.name);

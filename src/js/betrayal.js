@@ -759,6 +759,15 @@
       }
       if (v.mentored) delete v.mentored[vid];
     } catch (e) {}
+    // CRISIS (Steve 2026-10-09): the schism — the village cast one out.
+    // This is the one removal choke point, so moot exiles and the freeloader
+    // vote-out both land here. Genuine expulsions only: 'killed'/'fled' pass by.
+    if (how === 'exiled') {
+      try {
+        const nm = (() => { try { return this.displayName(vid); } catch (e) { return 'Someone'; } })();
+        if (this.fireCrisis) this.fireCrisis('schism', { name: nm });
+      } catch (e) {}
+    }
     v.roster = (v.roster || []).filter(id => id !== vid);
     for (const gr of (v.groups || [])) gr.members = (gr.members || []).filter(m => m !== vid);
     v.exiles = v.exiles || [];
@@ -1575,6 +1584,8 @@
   exilePlayer(how) {
     const s = this.state.scholar;
     try { this.justiceState().exiled = true; this.justiceState().exileDay = s.day; } catch (e) {}
+    // CRISIS (Steve 2026-10-09): the schism — the moot cast YOU out.
+    try { if (how === 'moot' && this.fireCrisis) this.fireCrisis('schism', { name: 'You' }); } catch (e) {}
     this.say(`Exiled. You leave with what you carry — nothing more. Behind you, Haven keeps its fire. Ahead: the world, which just got much bigger.`);
     // AUDIO (Steve 2026-10-06): footsteps receding, the village hum thinning.
     try { this.audioEvent('exileWalk'); } catch (e) {}

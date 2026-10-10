@@ -223,6 +223,14 @@
           }
         } catch (e) {}
       }
+      // CRISIS (Steve 2026-10-09): the first grave — first villager death
+      // (not the player). The village digs, and understands.
+      try {
+        if ((corpse.kind === 'person' || corpse.kind === 'villager') && corpse.villagerId && corpse.villagerId !== this.villagerId && this.fireCrisis) {
+          const nm = (() => { try { return this.displayName(corpse.villagerId); } catch (e) { return corpse.name || 'Someone'; } })();
+          this.fireCrisis('first-grave', { name: nm });
+        }
+      } catch (e) {}
       return corpse;
     },
 

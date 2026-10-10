@@ -21466,6 +21466,14 @@
           }
         }
       }
+      // CRISIS (Steve 2026-10-09): the hunger winter — genuine hunger
+      // (actual intake under 60% of need, measured by villagerMealDay), three
+      // days running. Not voluntary fasting: the signal is what they ate.
+      try {
+        const pg = this.progState();
+        pg.hungryStreak = anyStarving ? (pg.hungryStreak || 0) + 1 : 0;
+        if (pg.hungryStreak >= 3 && !(pg.crises || {})['hunger-winter'] && this.fireCrisis) this.fireCrisis('hunger-winter');
+      } catch (e) {}
       if (v.pantryKcal <= 0) {
         v.hungryDays = (v.hungryDays || 0) + 1;
         this.say(`⚠ Haven's pantry is empty. Day ${v.hungryDays} of hunger.`);
@@ -22341,6 +22349,9 @@
         this.say('Already in a fight — finish this one first. (startCombat refused: a fight is live.)');
         return;
       }
+      // CRISIS (Steve 2026-10-09): the breach — a hostile got INSIDE the
+      // haven. The safe place isn't.
+      try { if (this.playerAtHaven && this.playerAtHaven() && this.fireCrisis) this.fireCrisis('breach'); } catch (e) {}
       this.resetPerFightFlags();
       const s = this.state.scholar;
       this.syncMonsterAlias();

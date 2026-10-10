@@ -8,9 +8,11 @@
 //   - checkTrial(id)
 //   - completeTrial(id)
 //   - progState()
+//   - fireCrisis(kind, ctx)
 //   - progDaily()
 //   - slotMoment()
 // rules:
+//   - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
 //   - ability_cap: 6 (code: progression.js)
 // consumes:
 //   - scholar.xp
@@ -47,6 +49,40 @@
   const pick = (a) => a[Math.floor(R() * a.length)];
 
   const SLOT_MOMENT = { 20: 'spark', 40: 'mentor', 60: 'trial', 70: 'creep', 80: 'grant' };
+
+  // CRISIS BEATS (Steve 2026-10-09): the road to Arc III. A crisis is a real
+  // setback the village weathers — recorded permanently, once per kind per
+  // run. name: the beat's title. line(ctx): the loud in-fiction beat.
+  // sys: one earnest System line, said only after the System arrives.
+  const CRISIS_BEATS = {
+    'hunger-winter': {
+      name: 'THE HUNGER WINTER',
+      line: () => 'Three days now the village has gone to sleep hungry. The pantry is an echo. This is the part the old stories skip \u2014 the part where you find out what you\u2019re made of.',
+      sys: 'SYSTEM: "Organic units require fuel. Noting. Noting loudly. The audience is very quiet, which for them is screaming."',
+    },
+    'first-grave': {
+      name: 'THE FIRST GRAVE',
+      line: (ctx) => `${ctx.name || 'Someone'} is dead. The village digs its first grave, and everyone understands at once: this place can kill you. It just did.`,
+      sys: 'SYSTEM: "Oh. Oh no. Was that supposed to happen? The audience is crying. I did not know they could do that."',
+    },
+    'breach': {
+      name: 'THE BREACH',
+      line: () => 'It got INSIDE. The haven was supposed to be the safe place \u2014 the one place. It isn\u2019t.',
+      sys: 'SYSTEM: "Perimeter violated! This is unprecedented! ...Is this unprecedented? Checking. Yes. Unprecedented."',
+    },
+    'schism': {
+      name: 'THE SCHISM',
+      line: (ctx) => (ctx.name === 'You'
+        ? 'You are cast out. The village chose, and the choosing cut something that won\u2019t heal clean. The fire keeps burning without you.'
+        : `${ctx.name || 'Someone'} is cast out. The village chose, and the choosing cut something that won\u2019t heal clean. Fewer chairs around the fire tonight.`),
+      sys: 'SYSTEM: "Social unit ejected. The audience is divided. Half of them are furious. The other half is also furious, but differently."',
+    },
+    'blood-on-air': {
+      name: 'BLOOD ON AIR',
+      line: (ctx) => `It happened on camera. Trillions watched ${ctx.name || 'someone'} die, and the show kept rolling. The village will remember who the cameras loved.`,
+      sys: 'SYSTEM: "That was... a lot. The producers say the ratings were historic. I don\u2019t know what to do with that sentence."',
+    },
+  };
 
   const methods = {
 
@@ -253,6 +289,24 @@
     },
     noteCrisis(kind) {
       try { this.progState().crises[kind] = true; } catch (e) {}
+    },
+    fireCrisis(kind, ctx) {
+      // CRISIS (Steve 2026-10-09): one loud beat + ledger moment + noteCrisis.
+      // Dedupe lives here: once per kind per run — the hook sites stay 1-3
+      // lines and never think about farming.
+      let pg = null;
+      try { pg = this.progState(); } catch (e) { return false; }
+      if (!pg) return false;
+      pg.crises = pg.crises || {};
+      if (pg.crises[kind]) return false;
+      const B = CRISIS_BEATS[kind] || null;
+      if (B) {
+        this.say('\u25C8 CRISIS \u2014 ' + B.name + '. ' + (typeof B.line === 'function' ? B.line(ctx || {}) : B.line));
+        try { if (this.recordMoment) this.recordMoment('Crisis survived: ' + B.name + '.'); } catch (e) {}
+        try { if (this.state.systemArrived && B.sys) this.say(B.sys); } catch (e) {}
+      }
+      this.noteCrisis(kind);
+      return true;
     },
     villageNotabilityScore() {
       try {
