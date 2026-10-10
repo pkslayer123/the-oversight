@@ -19585,7 +19585,24 @@
           ? `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy — but your body has nothing to rebuild with. (No healing while starving or dehydrated: eat and drink first.)`
           : `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy. (-${S.calories.ACTION_COSTS.rest} kcal — rest burns fuel too.)`;
       } else if (kind === 'wait') {
-        msg = 'You wait. The light changes. Nothing asks anything of you.';
+        // HONEST WAIT (survivalist loop 2026-10-10): the world moves while you
+        // wait — monsterTurn runs per batch and a hungry pack can engage
+        // mid-wait (Steve 2026-10-06: waiting is time, and time is the
+        // monster's turn). The calm line printed unconditionally before the
+        // clock moved, so it lied whenever a fight started mid-wait. Say it
+        // only when nothing actually asked anything of you; the fight's own
+        // intro narrates the other case. (this.TIME, not T — T is declared
+        // later in this function.)
+        const WT = this.TIME;
+        const rem = (this.state.scholar.dayTicks || 0) % WT.TICKS_PER_PART;
+        const wticks = rem === 0 ? WT.TICKS_PER_PART : WT.TICKS_PER_PART - rem;
+        this.checkQuest(kind);
+        this.maybeOfferQuest();
+        try { this.villagerTurn(); } catch (e) {}
+        const wr = this.tickAction(wticks);
+        if (!this.tbfight && !this.pendingEncounter && !this.over)
+          this.say('You wait. The light changes. Nothing asks anything of you.');
+        return wr || this.status();
       } else if (kind === 'drink') {
         // Drinking water. Hydrates. FREE — you're just drinking, not making a decision.
         // (drinkWater says what happened; it returns null either way.)

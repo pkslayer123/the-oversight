@@ -2690,8 +2690,27 @@
       // only tent fires set — every outdoor player fire slipped through and
       // cooking outdoors burned no fuel. All tracked player fires burn.
       // (Map fires/hearths are never tracked, so they stay free — established.)
-      const f = (this.state.fires || []).find(f => f.tx === px && f.ty === py && f.till > now);
-      if (!f) return 'ok';
+      const cands = (this.state.fires || []).filter(f => f.tx === px && f.ty === py && f.till > now);
+      if (!cands.length) return 'ok';
+      // NEAREST FIRE BURNS (survivalist loop 2026-10-10): the old find() took
+      // the OLDEST fire on the tile — cooking at fire B burned fire A's fuel,
+      // so "the fire died under the pot" could kill a fire across the tile
+      // while the pot's own fire kept burning, and "feed the fire and try
+      // again" pointed at the wrong flame. Burn the fire you're actually at:
+      // the tent fire when inside, else the nearest outdoor fire to your cell
+      // (same nearest-fire pattern as gatherCharcoal's per-fire key).
+      let f = cands[0];
+      if (s.insideTent) {
+        f = cands.find(c => c.inside) || f;
+      } else {
+        const cmx = s.mx ?? 4, cmy = s.my ?? 4;
+        let bd = Infinity;
+        for (const c of cands) {
+          if (c.inside) continue; // the tent's fire isn't the one under your pot out here
+          const d = Math.abs((c.cx ?? 4) - cmx) + Math.abs((c.cy ?? 4) - cmy);
+          if (d < bd) { bd = d; f = c; }
+        }
+      }
       f.till -= ticks;
       return f.till <= now ? 'died' : 'ok';
     } catch (e) { return 'ok'; }
