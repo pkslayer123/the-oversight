@@ -30514,7 +30514,12 @@
           }
         } catch (e) {}
         this.sayTelegraphOnce(m, '⚠ ' + this.tbTelegraphCue(m));
-        this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam' || pat.type === 'line', highbeam: (m.mdef || {}).id === 'gallowdeer' });
+        // PATTERN-HONEST WINDUP (break-it audio r5, 2026-10-10): beam:true is
+        // for machine beams only. 'line' used to ride along here (a 2026-10-04
+        // leftover), so line attacks wound up as a machine beam but resolved
+        // as lineStrike — the ear learned the wrong cue. Line now gets
+        // lineWindup, matching its resolve.
+        this.audioEvent('telegraph', { urgency: m.telegraph.turnsLeft, pattern: pat.type, beam: pat.type === 'beam', highbeam: (m.mdef || {}).id === 'gallowdeer' });
         // Declare phase: per-monster (batch 2's encDeclarePhase) where defined,
         // else the config phaseMap (batch 1's encPhaseFor). The deer gets 'aim' either way.
         if (useFifo) {
