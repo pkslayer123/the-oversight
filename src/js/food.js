@@ -678,13 +678,20 @@
       const sets = this.pemmicanSets(inv);
       const plan = [];
       const rem = inv.map(it => it ? (it.units || 1) : 0); // shadow units
+      // STALE-INDEX HARDENING (forager break-it 2026-10-10): picks used to
+      // carry only the ARRAY INDEX. makePemmican consumed set-by-set with
+      // mid-loop splices, so a set-1 splice shifted every later set's picks:
+      // set 2 ate set 1's fresh pemmican as "meat", ate berries as "fat",
+      // left real fat behind (phantom kcal, destroyed items — and a
+      // TypeError crash when the stale index fell off the array). Picks now
+      // carry the ITEM REFERENCE; consumption resolves the live index.
       const pick = (pred, need) => {
         let left = need; const picks = [];
         for (let i = inv.length - 1; i >= 0 && left > 0; i--) {
           const it = inv[i];
           if (!it || !pred(it) || this.isSpoiled(it) || rem[i] <= 0) continue;
           const take = Math.min(rem[i], left);
-          picks.push({ i, take, kcal: (it.kcalEach || 0) * take });
+          picks.push({ i, it, take, kcal: (it.kcalEach || 0) * take });
           rem[i] -= take; left -= take;
         }
         return left > 0 ? null : picks;
@@ -729,12 +736,16 @@
       if (!plan.length) { this.say('Pemmican needs three things: dried meat (2), rendered fat, and berries (2).'); return null; }
       let totalBars = 0;
       for (const set of plan) {
-        // consume back-to-front so indices stay valid
-        const byI = set.picks.slice().sort((a, b) => b.i - a.i);
-        for (const p of byI) {
-          const it = inv[p.i];
+        // consume by ITEM REFERENCE (forager break-it 2026-10-10): the plan's
+        // indices go stale the moment a splice shifts the array (see
+        // pemmicanPlan). indexOf resolves the live position per pick, so a
+        // set can never eat a later set's fresh pemmican or a neighbor stack.
+        for (const p of set.picks) {
+          const it = p.it;
+          const at = inv.indexOf(it);
+          if (at < 0) continue; // already gone — the plan is exact, so this shouldn't happen
           it.units = (it.units || 1) - p.take;
-          if (it.units <= 0) inv.splice(p.i, 1);
+          if (it.units <= 0) inv.splice(at, 1);
         }
         totalBars += set.bars;
         // One stack per set: that set's bars carry that set's ~97%
@@ -2289,6 +2300,10 @@
         const units = it.units || 1;
         const cookKcal = Math.round((this.knowsTechnique('cook') ? total : Math.round(total * 0.85)) / units);
         const smokeKcal = Math.round(cookKcal * (this.knowsTechnique('preserve') ? 0.95 : 0.80));
+        // LABEL HONESTY (forager break-it 2026-10-10): the cook detail used
+        // to hardcode "32 ticks" — but cookFood charges the class time
+        // (monster meat: 40). The decision label must name the real cost.
+        const cookTicks = (this.cookClassFor(it) || {}).time || 32;
         // HONESTY (break-it food r4): the spoil countdown is bonus-aware —
         // stashClock and isSpoiled both add spoilBonusDays()
         // (preservation_instinct). The raw spoilDay understated shelf life.
@@ -2301,7 +2316,7 @@
         opts.push({
           id: 'cook',
           label: this.knowsTechnique('cook') ? 'Cook it' : 'Cook it (you\'re learning)',
-          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}32 ticks${this.nearFire() ? '' : ''} · safe · ~${cookKcal}/portion · keeps ~5d`,
+          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}${cookTicks} ticks${this.nearFire() ? '' : ''} · safe · ~${cookKcal}/portion · keeps ~5d`,
           blocked: !this.nearFire() ? 'needs fire' : null,
         });
         opts.push({

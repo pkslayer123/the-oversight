@@ -19200,8 +19200,20 @@
             this.addUnknownToLump(nut, 2, scholar.day);
             this.say('A squirrel drops nuts at your feet and vanishes. A gift — unfamiliar ones, into the bag with the rest. (squirrel_friend)');
           } else {
-            scholar.inventory.push({ plantId: 'hickory_nut', units: 2, kcalEach: 100, spoilDay: scholar.day + 5, name: 'Squirrel gift (hickory nuts)', unit: 'handful', prep: 'A squirrel left these. A tip? A bribe? Nuts.', kg: 0.2 });
-            this.say('A squirrel drops nuts at your feet and vanishes. A gift. (squirrel_friend: +200 kcal)');
+            // IN-SHELL HONESTY (forager break-it 2026-10-10): the old push
+            // arrived shelled and edible (kcalEach 100, no foodKind) —
+            // bypassing the in-shell rule the sweep itself honors ("in shell
+            // — shell them to eat") and promising "+200 kcal" for unshelled
+            // nuts. The gift is real nuts, same shape as a foraged haul.
+            scholar.inventory.push({
+              plantId: 'hickory_nut', foodKind: 'nut', foodState: 'in_shell', edible: false,
+              units: 2, unit: 'handful', kcalEach: 0, hiddenKcal: nut.caloriesPerUnit,
+              spoilDay: scholar.day + (nut.spoilageDays || 60),
+              name: 'Squirrel gift (hickory nuts, in shell)',
+              prep: 'A squirrel left these. Crack and pick the nutmeats. (Shell action)',
+              kg: 0.2,
+            });
+            this.say('A squirrel drops nuts at your feet and vanishes. A gift — hickory nuts, still in the shell. Crack them open. (squirrel_friend)');
           }
         }
         // eagle_eye/third_eye: the sharp-eyed find the odd one.
