@@ -100,7 +100,8 @@
     agencyOf(vid) {
       var a = this.agencyState();
       if (!a.stats[vid]) a.stats[vid] = { expeditions: 0, monsterKills: 0, caches: 0, nodes: {} };
-      if (!a.know[vid]) a.know[vid] = { plants: 0, monsters: 0, places: [] };
+      if (!a.know[vid]) a.know[vid] = { plants: 0, monsters: 0, places: [], fought: [] };
+      if (!a.know[vid].fought) a.know[vid].fought = []; // monster species they actually fought (teachable)
       if (!a.xp[vid]) a.xp[vid] = { tracking: 0, survival: 0, bravery: 0 };
       if (!a.tier[vid]) a.tier[vid] = 0;
       if (!a.scars[vid]) a.scars[vid] = [];
@@ -346,6 +347,10 @@
         a.know[vid].monsters++;
         a.xp[vid].bravery += 3 * (st.potential[vid] ? 2 : 1);
         a.stats[vid].monsterKills++;
+        // FOUGHT, not just seen (gap-breadth 2026-10-10): a kill means they
+        // can TEACH the species later — earned monster knowledge, one
+        // species per lesson, declining by construction.
+        if (m.id && a.know[vid].fought.indexOf(m.id) === -1) a.know[vid].fought.push(m.id);
         st.exped[vid].encounters.push('killed ' + (m.id || 'it') + ' (' + fightNote + ')' + (lootNote ? ' —' + lootNote : ''));
         this.recordDeed(vid, 'monster_kill', `${nm} killed ${mName} out past the ridge — alone — and walked home. ${fightNote}.`, 10);
         return;
@@ -353,6 +358,9 @@
       if (rec.outcome === 'mFlee') {
         try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
         a.xp[vid].bravery += 1;
+        // stood it down = real contact = teachable (gap-breadth 2026-10-10).
+        // Evades are just sightings — they stay flavor, never knowledge.
+        if (m.id && a.know[vid].fought.indexOf(m.id) === -1) a.know[vid].fought.push(m.id);
         st.exped[vid].encounters.push('stood down ' + (m.id || 'it') + ' (' + fightNote + ')');
         this.recordDeed(vid, 'stood_down', `${nm} stood down ${mName} and kept walking. ${fightNote}.`, 4);
         return;
@@ -672,12 +680,26 @@
       var lessons = [];
       var t = st.teachable[vid] || [];
       if (t.length) lessons.push({ topic: 'plants', n: t.length });
+      // MONSTER LESSONS (gap-breadth 2026-10-10): only species they FOUGHT
+      // and you haven't learned yet — the lesson is real or it doesn't exist.
+      var teachableMonsters = this.agencyTeachableMonsters(vid);
+      if (teachableMonsters.length) lessons.push({ topic: 'monsters', n: teachableMonsters.length });
       var k = (st.know[vid] || {});
-      if ((k.monsters || 0) >= 2) lessons.push({ topic: 'monsters', n: k.monsters });
       if ((k.places || []).length) lessons.push({ topic: 'places', n: k.places.length });
       var v = this.state.village;
       if (v.explorerNews && v.explorerNews[vid]) lessons.push({ topic: 'expedition', n: 1 });
       return lessons;
+    },
+    // agencyTeachableMonsters: fought species the player hasn't learned.
+    // 'observed'/'slain' = already known — never re-taught (declining).
+    agencyTeachableMonsters(vid) {
+      var st = this.agencyState();
+      var fought = ((st.know[vid] || {}).fought) || [];
+      var cxm = (this.state.codex || {}).monsters || {};
+      return fought.filter(function (mid) {
+        var e = cxm[mid] || {};
+        return !(e.stage === 'observed' || e.stage === 'slain');
+      });
     },
     agencyChoices(vid) {
       try {
@@ -699,10 +721,18 @@
         var k = st.know[vid] || { plants: 0, monsters: 0, places: [] };
         var lines = [];
         if ((k.places || []).length) lines.push(`"${k.places[k.places.length - 1]} — I'll show you on the map sometime. It's real."`);
-        if ((k.monsters || 0) >= 2) lines.push(`"Saw things with too many joints. Give them room. That's the whole lesson."`);
-        if ((k.plants || 0) >= 3) {
+        // real teaching: monster lore from someone who fought it. One
+        // species per ask; the lesson lands as 'observed' — you've learned
+        // it the way the village learns things: through talk.
+        var taughtMonster = false;
+        try { taughtMonster = !!this.agencyTeachMonster(vid); } catch (e) {}
+        if (taughtMonster) lines.push(`"Ask me about the wild again sometime. There's more, but that's the one that matters."`);
+        else if ((k.monsters || 0) >= 2) lines.push(`"Saw things with too many joints. Give them room. That's the whole lesson."`);
+        if ((st.teachable[vid] || []).length) {
           lines.push(`"The bitter greens by the creek — boil them twice. First water's a liar."`);
-          // real teaching: one plant identification, earned through their ranging
+          // real teaching: one plant identification per earned lesson entry.
+          // The entry is SPENT — talk doesn't print knowledge (gap-breadth
+          // 2026-10-10; the old path re-taught forever on k.plants>=3).
           try { this.agencyTeachPlant(vid); } catch (e) {}
         }
         if (!lines.length) lines.push('"Weather. Mostly weather. Ask me again when I\'ve been farther."');
@@ -715,17 +745,40 @@
     },
     agencyTeachPlant(vid) {
       // an explorer teaches you one plant they actually learned. Concrete,
-      // from the data pool, only if you don't know it yet.
+      // from the data pool, only if you don't know it yet. Each lesson
+      // SPENDS one earned teachable entry (gap-breadth 2026-10-10):
+      // declining returns, not an infinite talk faucet.
+      var st = this.agencyState();
+      var t = st.teachable[vid] || [];
+      if (!t.length) return false;
+      t.shift();
       var plants = this.data.plants || [];
       var cx = this.state.codex || {};
       cx.plants = cx.plants || {};
       var cands = plants.filter(function (p) { return p && p.id && !((cx.plants[p.id] || {}).level >= 1); });
-      if (!cands.length) return;
+      if (!cands.length) return false;
       var p = pick(cands);
       cx.plants[p.id] = { level: 1, source: 'taught' };
       var nm = '';
       try { nm = this.displayName(vid).split(' ')[0]; } catch (e) { nm = 'They'; }
       this.say(`📖 ${nm} shows you ${p.name || 'a plant'} — leaf, stem, smell. You won't forget it now. (Codex: ${p.name || 'plant'} identified.)`);
+      return true;
+    },
+    // agencyTeachMonster: one fought species, taught honestly. Lands as
+    // 'observed' (never downgrades 'slain') — the village-name gate opens
+    // the way talk opens it. Returns the species id or null.
+    agencyTeachMonster(vid) {
+      var cands = this.agencyTeachableMonsters(vid);
+      if (!cands.length) return null;
+      var mid = pick(cands);
+      var e = this.ensureMonsterEntry(mid);
+      if (e.stage !== 'slain') e.stage = 'observed';
+      var nm = '';
+      try { nm = this.displayName(vid).split(' ')[0]; } catch (e) { nm = 'They'; }
+      var what = '';
+      try { what = this.monsterDisplayName(mid); } catch (err) { what = 'that thing'; }
+      this.say(`📖 ${nm} walks you through it — the tracks, the sound it makes before it moves, where not to stand. "${what}" — you'll know it next time. (Monster codex: observed.)`);
+      return mid;
     },
 
     // ---------- 5. HIGH-POTENTIAL SEEDS ----------

@@ -19133,12 +19133,15 @@
         const mx = scholar.mx ?? 4, my = scholar.my ?? 4;
         const detail = this.genDetail(this.map.px, this.map.py);
         // ruins: scavenge finite loot, not plants
-        // BOOKS: 10% chance in ruins. Treasure, not routine.
+        // BOOKS (gap-breadth 2026-10-10): treasure, not routine. Canon:
+        // books are treasure troves unlocking big codex chunks. One roll
+        // on the FIRST search of each ruin — 30%, a real find — then the
+        // ruin is just loot. The old 10%-after-loot-exhausted roll meant
+        // ~0.1 books per run; books never fed breadth.
         if (t.type === 'ruin') {
-          if (!t.loot || !t.loot.length) {
-            // check for a book (once per ruin)
-            if (!t.bookChecked && Math.random() < 0.1 && this.data.books.length) {
-              t.bookChecked = true;
+          if (!t.bookChecked) {
+            t.bookChecked = true;
+            if (this.data.books.length && Math.random() < 0.30) {
               const book = this.data.books[Math.floor(Math.random() * this.data.books.length)];
               this.state.scholar.inventory.push({
                 bookId: book.id, units: 1, name: book.name, kcalEach: 0,
@@ -19149,6 +19152,8 @@
               scholar.kcal = Math.max(0, (scholar.kcal || 0) - 100);
               return this.tickAction(64) || this.status();
             }
+          }
+          if (!t.loot || !t.loot.length) {
             this.say('Picked clean. The houses fed someone — not you.'); return null;
           }
           const lootId = t.loot.shift();

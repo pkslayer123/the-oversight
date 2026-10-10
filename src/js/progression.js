@@ -119,12 +119,34 @@
     },
 
     // ---------- CODE BREATH ----------
+    // Breadth = how many DISTINCT things the village's codex genuinely
+    // knows. Plants, monsters, animals, recipes, techniques, skills —
+    // every domain the knowledge system actually writes. Breadth was a
+    // plant monoculture (75%+ of every run's total): the monster branch
+    // counted (e.level||0)>=1 but monster entries carry `stage`, never
+    // `level` — the whole monster codex contributed ZERO, forever — and
+    // animal/technique knowledge wasn't counted at all. Hunters, fighters
+    // and readers compound breadth now, not just foragers.
     codexBreadth() {
       const cx = this.state.codex || {};
       let n = 0;
       for (const e of Object.values(cx.plants || {})) if ((e.level || 0) >= 1) n++;
-      for (const e of Object.values(cx.monsters || {})) if ((e.level || 0) >= 1) n++;
-      n += Object.keys(cx.recipes || {}).length;
+      // MONSTER CODEX (gap-breadth 2026-10-10): mere sightings
+      // ('encountered') still don't count (break-it knowledge 2026-10-08 —
+      // a glimpse can't force arc triggers). A species counts once you've
+      // actually learned it: fought it through three rounds ('observed')
+      // or killed it ('slain'). Real fights, real breadth.
+      for (const e of Object.values(cx.monsters || {})) {
+        const stg = e.stage || '';
+        if (stg === 'observed' || stg === 'slain') n++;
+      }
+      // ANIMAL CODEX (gap-breadth 2026-10-10): 48 animals of real knowledge
+      // (hunting lore, butchering depth, books) — never counted before.
+      for (const e of Object.values(cx.animals || {})) if ((e.level || 0) >= 1) n++;
+      for (const e of Object.values(cx.recipes || {})) if ((e.level || 0) >= 1) n++;
+      // TECHNIQUES (gap-breadth 2026-10-10): binary, earned (mastery,
+      // books, village codices) — each one is a distinct thing learned.
+      n += Object.keys(cx.techniques || {}).length;
       for (const e of Object.values(cx.skills || {})) if ((e.level || 0) >= 2) n++;
       return n;
     },
