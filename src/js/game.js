@@ -10800,6 +10800,14 @@
       const cookLvl = this.abilityLevel('camp_cook');
       const waterMult = cookLvl >= 2 ? 0 : cookLvl >= 1 ? 0.5 : 1;
       const kcalMult = cookLvl >= 3 ? 1.25 : cookLvl >= 1 ? 1.1 : 1.0;
+      // BATCH FUEL (forager break-it 2026-10-09): the batch is one fire
+      // session — the wrapper (food.js) burns the 16 ticks of fuel before
+      // calling in and flags a mid-batch death via _cookAllFuelDied. A dead
+      // fire downgrades the whole batch one outcome step, same fiction as
+      // the per-item path. One outcome for the batch: the fire doesn't roll
+      // per portion.
+      let batchOutcome = this.cookOutcome(true);
+      if (this._cookAllFuelDied) batchOutcome = this.downgradeOutcome(batchOutcome);
       let n = 0, waterUsed = 0, wellUsed = 0;
       for (const item of (this.state.scholar.inventory || [])) {
         if (item.rawKcal) {
@@ -10815,7 +10823,9 @@
           // RELIC — impossible_edge: physics-defying prep. +10% cooked kcal.
           const relicCook = S.modifiers.resolve(1, 'cook.kcal', S.modifiers.collectModifiers(this.state.scholar, this.data.abilities, this.data.synergies), {});
           // DIGESTIBILITY: batch camp cooking — the shared honest math, capped by gross.
-          const caR = this.cookTransform(item, { knows: true, skillMult: kcalMult, relicMult: relicCook });
+          // One outcome for the batch (rolled above); a fire that died
+          // mid-batch already downgraded it.
+          const caR = this.cookTransform(item, { knows: true, outcome: batchOutcome, skillMult: kcalMult, relicMult: relicCook });
           if (caR) {
             item.kcalEach = caR.kcalEach;
             if (caR.outcome.key === 'burnt') item.burnt = true;

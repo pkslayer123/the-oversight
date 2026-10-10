@@ -2284,17 +2284,30 @@
     // from a flame. Same pattern as boilWater (game.js).
     const fireHere = this.nearFire() || (typeof this.tentFireLit === 'function' && this.tentFireLit());
     if (!fireHere) { this.say('Need a fire to cook.'); return null; }
+    // BATCH FUEL (forager break-it 2026-10-09): batch cooking is one fire
+    // session — it burns 16 ticks of fuel. Per-item cooking honors fuel via
+    // consumeCookFire (and downgrades when the fire dies); the batch never
+    // did, so a 1-tick fire cooked the whole harvest for free. A fire that
+    // dies mid-batch downgrades every batch outcome one step, same fiction.
+    // No fuel burns when there's nothing to cook.
+    const knowsCook = this.knowsTechnique('cook');
+    const inv0 = this.state.scholar.inventory || [];
+    const anyCookable = inv0.some(i => i && (i.rawKcal ||
+      (i.foodKind === 'meat' && (i.foodState === 'cleaned' || i.undercooked)) ||
+      (i.foodKind === 'plant' && i.needsCooking && i.diseaseRisk)));
+    const fuelDied = anyCookable && this.consumeCookFire(16) === 'died';
+    this._cookAllFuelDied = fuelDied || null; // read by game.js cookAll; cleared below
     const captured = [];
     const origSay = this.say;
     this.say = (m) => captured.push(String(m));
     // snapshot legacy raw items so messy cooking can scale what orig cooked
     const rawBefore = new Set((this.state.scholar.inventory || []).filter(i => i.rawKcal));
     let r;
-    try { r = origCookAll.call(this); } finally { this.say = origSay; }
+    try { r = origCookAll.call(this); } finally { this.say = origSay; this._cookAllFuelDied = null; }
+    if (fuelDied) captured.push('The fire dies halfway through the batch — everything comes out scorched and uneven, a step worse than it should be.');
     const origCooked = captured.some(m => m.startsWith('Cooked '));
     // FOOD REALITY: cooking is a technique. Blind attempts work but uneven
     // (85%) — and teach. Specialists (askSpecialist) do it better.
-    const knowsCook = this.knowsTechnique('cook');
     if (!knowsCook) {
       for (const item of (this.state.scholar.inventory || [])) {
         if (rawBefore.has(item) && !item.rawKcal) {
@@ -2313,6 +2326,12 @@
     // the reason said out loud. (The per-item cook path keeps it unknown
     // but never reveals it; the batch path shouldn't touch it at all.)
     let n = 0, nUnknown = 0;
+    // One honest outcome per batch portion (the fire doesn't roll per
+    // portion); a fire that died mid-batch downgrades it a step.
+    let meatOutcome = this.cookOutcome(knowsCook);
+    if (fuelDied) meatOutcome = this.downgradeOutcome(meatOutcome);
+    let plantOutcome = this.cookOutcome(knowsCook);
+    if (fuelDied) plantOutcome = this.downgradeOutcome(plantOutcome);
     for (const item of (this.state.scholar.inventory || [])) {
       if (item.foodKind === 'meat' && (item.foodState === 'cleaned' || item.undercooked)) {
         const mId = (item.plantId || '').replace(/^meat_/, '');
@@ -2320,7 +2339,7 @@
         if (isMon && !this.monsterFoodSafe(mId)) { nUnknown++; continue; }
         // DIGESTIBILITY: batch uses the shared math \u2014 one honest outcome
         // for the batch (the fire doesn't roll per portion).
-        const rB = this.cookTransform(item, { knows: knowsCook });
+        const rB = this.cookTransform(item, { knows: knowsCook, outcome: meatOutcome });
         if (rB) {
           item.kcalEach = rB.kcalEach;
           if (rB.outcome.key === 'burnt') item.burnt = true;
@@ -2337,7 +2356,7 @@
         item.prep = 'Cooked ' + (rB ? this.cookOutcomePhrase(rB.outcome, rB.cls) : 'through') + '. Better smoked for the long haul.';
         n++;
       } else if (item.needsCooking && item.diseaseRisk && item.foodKind === 'plant') {
-        const rP2 = this.cookTransform(item, { knows: knowsCook });
+        const rP2 = this.cookTransform(item, { knows: knowsCook, outcome: plantOutcome });
         if (rP2) {
           item.kcalEach = rP2.kcalEach;
           if (rP2.outcome.key === 'burnt') item.burnt = true;
@@ -2366,6 +2385,7 @@
       if (n > 0) this.say(origCooked ? `Plus ${n} from the hunt, cooked through. (16 ticks)` : `Cooked ${n} over the fire. (16 ticks)`);
       if (this.state.scholar.week1) this.state.scholar.week1.cook++;
     }
+    this._cookAllFuelDied = null;
     return r;
   };
 
