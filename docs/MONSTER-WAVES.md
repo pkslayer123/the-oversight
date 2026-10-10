@@ -48,18 +48,22 @@ feel it.
 | mosquito | Giant freakish mosquito — plainly called "mosquito" (the shock is that it's just a mosquito). Alien-disease vector: bite can land Eurika virus or East Nile virus (see docs/DISEASES.md) | rush | crepuscular |
 | tick | Giant freakish tick — plainly called "tick". Latches on; vector for Lemons disease (alien pool, see docs/DISEASES.md) | single | both |
 
-## Wave 3: Reserved (integration 80+)
+## Wave 3: Reserved (day 25 + 8 wave-2 kills)
 
-The System's final draft. Gating logic exists in `monsterWavePool()` —
-wave 3+ monsters spawn only after System arrival AND deep integration (80+).
-No wave-3 monsters designed yet. When they are, they should feel like the
-System has stopped pretending these are animals at all.
+The System's final draft. Gating logic lives in `unlockedWave()` (game.js):
+wave 3 unlocks at day 25+ AND 8 wave-2 kills (village-wide). (An older plan
+gated it on integration 80+ — superseded; the kill-gated schedule is the
+live gate.) No wave-3 monsters designed yet. When they are, they should feel
+like the System has stopped pretending these are animals at all.
+(Break-it monsters r11 2026-10-09: the old text promised an integration-80
+gate the engine never checks — doc now matches the code.)
 
 ## Implementation
 
 - `wave` field on each monster in `src/data/monsters.json` (schema allows it).
-- `Game.monsterWavePool()` in game.js: filters by `state.systemArrived` and
-  `scholar.integration`.
+- `Game.monsterWavePool()` in game.js: filters by `unlockedWave()`
+  (day 8 + 4 wave-1 kills for wave 2; day 25 + 8 wave-2 kills for wave 3;
+  day 50 + 5 wave-3 kills for wave 4). Earlier waves never leave the pool.
 - `checkEncounter()` uses the pool. The wanderer casts via `castMonster()`, which is wave-gated on `unlockedWave()` (day 8 + 4 wave-1 kills for wave 2) — never over-leveled, never stuck on wave 1.
 - Wave-2 announcement woven into `checkSystemArrival()` dialogue.
 - Tests: `scripts/test-wave2.js` (gating, integrity, combat smoke), `scripts/test-wave2-harden-20261009.js` (post-hardening ranges).
