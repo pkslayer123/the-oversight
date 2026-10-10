@@ -86,6 +86,7 @@
 //   - (package_club_credit) care packages name the loudest club; feed messages get per-lane lines at 50+ (code: apCarePackage, apPackageClubLine, apFeedMessage, audit-shows 2026-10-09)
 //   - (integration) woven into contests (rigging/lifelines), codex (discoverable truth), village gossip, and NPC contacts (code: alienPlayers.js)
 //   - (knowledge_alien_word) the word "alien" IS the alien truth and never appears in player-facing copy pre-reveal — the beam-horror lesson, sadistic package, contact establishment, duel feed, and Pip's rookie mistakes all gate on apKnowsAlien; stripping alien armor off a body reveals the persona on the spot (the item is literally named "Alien <piece>") — same class as the gated "MULTIPLE alien players" line (break-it 2026-10-09 r7) (code: alienPlayers.js)
+//   - (knowledge_persona_names) persona names ("Countess Sable", "K'thari Expeditionary") are the alien truth too — there are no cover names in the data, so group banter, feed lines, and combat cards all gate names on apKnowsAlien (break-it 2026-10-10 r11: group encounters fire at 2 encounters, before the 3rd-encounter auto-reveal — the banter was naming them outright) (code: apGroupBanter, alienPlayers.js)
 //   - (lifeline_player_only) the benevolent lifeline fires only at the player's own death roll — apContestInterference(ac, {forPlayer:true}) from contestChoose's killing-blow check and from tbEnd's arena-loss branch (break-it 2026-10-08: arena deaths never checked the lifeline). The save converts death into 'lost' and leaves the player barely alive (break-it 2026-10-08: 0-HP saves died at the next endDay). The verdict call never passes forPlayer, so deathSave is always false there — a villager's played death is never converted by a hidden roll (break-it 2026-10-08: the old playerIn-only gate fired the lifeline at VERDICT, wasting the 7-day cooldown on a non-death and erasing a villager's earned death) (code: apContestInterference, contestChoose, tbEnd)
 //   - (people) they are PEOPLE: full ability sets, alien tech, they remember past encounters, escalate or soften, speak in their own voice (code: alienPlayers.js)
 //   - (commentary) heavy unhinged mid-combat dialogue: onHit/onHurt/onWinning/onLosing/unhinged per persona, 15+ lines each, knowledge-gated (code: alienPlayers.js)
@@ -764,21 +765,40 @@
     // Team banter: they talk to EACH OTHER, not just you.
     apGroupBanter: function (pids) {
       if (!pids || pids.length < 2) return;
+      // KNOWLEDGE GATE (break-it 2026-10-10 r11): the banter above named
+      // personas outright pre-reveal — but there are no cover names in the
+      // data. p.name ("Countess Sable", "K'thari Expeditionary (Ret.)") IS
+      // the alien truth: the fighter card says "Stranger" and the combat
+      // intro stays silent pre-reveal. A group encounter can fire at 2
+      // encounters, BEFORE the 3rd-encounter auto-reveal, so the banter
+      // must gate too. Pre-reveal the team-up is anonymous: generic lines
+      // only.
+      var self = this;
+      var _allKnown = true;
+      for (var _gi = 0; _gi < pids.length; _gi++) {
+        try { if (!self.apKnowsAlien(pids[_gi])) { _allKnown = false; break; } } catch (e) { _allKnown = false; break; }
+      }
       var names = pids.map(function (pid) {
-        var p = this.apPersona(pid);
-        return p ? p.name : 'Someone';
-      }, this);
+        var p = self.apPersona(pid);
+        if (!p) return 'A stranger';
+        return _allKnown ? p.name : 'A stranger';
+      });
 
-      // Personality-driven team dynamics
-      var hasVex = pids.includes('vex_marlowe');
-      var hasSable = pids.includes('countess_sable');
-      var hasSarge = pids.includes('sarge');
-      var hasPip = pids.includes('pip_quindle');
-      var hasRax = pids.includes('rax_dentist');
-      var hasFenwick = pids.includes('dr_fenwick');
-      var hasTam = pids.includes('old_tam');
+      if (_allKnown) {
+        this.say('👥 ' + names.join(' and ') + ' step out together. This is... not good.');
+      } else {
+        this.say('👥 ' + (pids.length >= 3 ? 'Three figures' : 'Two figures') + ' step out together. You don\'t know their names. This is... not good.');
+      }
 
-      this.say('👥 ' + names.join(' and ') + ' step out together. This is... not good.');
+      // Personality-driven team dynamics (known personas speak in their own
+      // voice; pre-reveal the team-up stays anonymous)
+      var hasVex = _allKnown && pids.includes('vex_marlowe');
+      var hasSable = _allKnown && pids.includes('countess_sable');
+      var hasSarge = _allKnown && pids.includes('sarge');
+      var hasPip = _allKnown && pids.includes('pip_quindle');
+      var hasRax = _allKnown && pids.includes('rax_dentist');
+      var hasFenwick = _allKnown && pids.includes('dr_fenwick');
+      var hasTam = _allKnown && pids.includes('old_tam');
 
       if (hasVex && hasSable) {
         this.say('🎭 Vex Marlowe: "Sable. Darling. Try not to break this one before I get my shot."');
@@ -794,25 +814,20 @@
       } else if (hasTam) {
         this.say('🎭 Old Tam: "...I didn\'t agree to this. But I\'m here. Let\'s get it over with."');
       } else {
-        // Generic team-up
+        // Generic team-up (also the pre-reveal fallback)
         this.say('🎭 ' + names[0] + ': "Together, then. Don\'t get in my way."');
         this.say('🎭 ' + names[1] + ': "Wouldn\'t dream of it. Probably."');
       }
 
-      // KNOWLEDGE GATE (break-it 2026-10-09): the banter above uses cover
-      // names (safe pre-reveal), but "MULTIPLE alien players" names the
-      // alien truth outright. Pre-reveal it's a coordinated hostile team —
-      // the truth waits for an earned reveal.
-      var _allKnown = true;
-      for (var _gi = 0; _gi < pids.length; _gi++) {
-        try { if (!this.apKnowsAlien(pids[_gi])) { _allKnown = false; break; } } catch (e) { _allKnown = false; break; }
-      }
       if (_allKnown) {
         this.say('(⚠ MULTIPLE alien players. This is a major event. The System is watching closely.)');
       } else {
         this.say('(⚠ Multiple hostiles — and they\'re coordinating. This is a major event. The System is watching closely.)');
       }
-      try { this.apAdjustFavor(5, 'survived a group encounter setup — the crowd loves a spectacle', 'fight'); } catch (e) {}
+      // HONEST (break-it 2026-10-10 r11): the old copy claimed the player
+      // "survived a group encounter setup" at FIGHT START — nothing has been
+      // survived yet. The favor is for facing it.
+      try { this.apAdjustFavor(5, 'faced down a group encounter — the crowd loves a spectacle', 'fight'); } catch (e) {}
     },
 
     // Start a group encounter with 2-3 alien players
@@ -1232,7 +1247,7 @@
       // Benevolent whispers (deniable)
       var wren = this.apPersona('wren');
       if (wren && Math.random() < 0.2) {
-        msgs.push('"A message board post, quickly deleted: \'stay away from the northern treeline tomorrow. trust me.\' — the System claims it saw nothing."');
+        msgs.push('"A message board post, quickly deleted: \'stay away from the northern treeline for a while. trust me.\' — the System claims it saw nothing."');
         msgPids.push(null);
       }
 
@@ -2591,10 +2606,19 @@
           var gi = grp.pids.indexOf(alienPid);
           var nextPid = gi >= 0 ? grp.pids[gi + 1] : null;
           if (nextPid && outcome === 'won') {
-            this.say('👥 The next one steps out of the treeline. No rest. No mercy.');
+            // HONEST (break-it 2026-10-10 r11): the old code announced "the
+            // next one steps out" BEFORE the chained start confirmed — a
+            // refused or throwing start left the line hanging over an empty
+            // treeline. Announce only on a real chain; the dispersal is
+            // named honestly when nobody comes.
             var chained = false;
             try { chained = !!this.apStartEncounter(nextPid); } catch (e2) { chained = false; }
-            if (chained) this.state.alienGroup = { pids: grp.pids, current: gi + 1 };
+            if (chained) {
+              this.say('👥 The next one steps out of the treeline. No rest. No mercy.');
+              this.state.alienGroup = { pids: grp.pids, current: gi + 1 };
+            } else {
+              this.say('👥 The others melt back into the treeline. The moment passes.');
+            }
           }
           // else: group done, fled, or lost — the moment passes.
         }
