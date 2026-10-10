@@ -17852,6 +17852,11 @@
         if (cur >= left) { ab.xp = cur - left; left = 0; }
         else { left -= cur; ab.xp = 0; if (ab.level > 1) ab.level--; else left = 0; }
       }
+      // BREAK-IT abilities 2026-10-10: a leg dropping below a synergy's
+      // minLevel must deactivate it — the modifiers engine reads
+      // activeSynergies, and every other XP/level path recomputes. This one
+      // didn't, so a revoked-XP leg kept its synergy firing.
+      try { this.recomputeActiveSynergies(); } catch (e) {}
     },
     // buildArchetype: are you a SPECIALIST or GENERALIST?
     // SPECIALIST: 3+ abilities in one pool, average L3+ → deep mastery bonus.
@@ -17864,7 +17869,11 @@
       if (held.length < 3) return null;
       // count by pool
       const byPool = {};
-      for (const aid of held) {
+      for (const entry of held) {
+        // BREAK-IT abilities 2026-10-10: entries are OBJECTS {id,name,...},
+        // not bare ids — the old `a.id === aid` never matched, so the whole
+        // specialist/generalist bonus system silently never fired.
+        const aid = (entry && entry.id) || entry;
         const adef = (this.data.abilities || []).find(a => a.id === aid);
         if (!adef) continue;
         const pool = adef.pool || 'unknown';
@@ -18033,20 +18042,26 @@
       const arch = this.buildArchetype();
       if (!arch) return null;
       if (arch.type === 'specialist') {
+        // BREAK-IT abilities 2026-10-10: social/exploration/investigation
+        // pointed at targets NOTHING reads (social.persuade, travel.speed,
+        // truth.detect_chance) — the bonus was dead for 3 of 7 pools. Now
+        // every pool maps to a live engine target. Exploration REDUCES cost
+        // (mult 0.8), so it carries its own mult and desc.
         const poolTargets = {
-          combat: 'combat.strike_damage',
-          care: 'healing.amount',
-          fieldcraft: 'forage.yield',
-          craft: 'craft.success',
-          social: 'social.persuade',
-          exploration: 'travel.speed',
-          investigation: 'truth.detect_chance',
+          combat: { target: 'combat.strike_damage', mult: 1.25, desc: '+25% strike damage' },
+          care: { target: 'healing.amount', mult: 1.25, desc: '+25% healing' },
+          fieldcraft: { target: 'forage.yield', mult: 1.25, desc: '+25% forage yield' },
+          craft: { target: 'craft.success', mult: 1.25, desc: '+25% craft success' },
+          social: { target: 'trust.gain_mult', mult: 1.25, desc: '+25% trust gains' },
+          exploration: { target: 'travel.cost_mult', mult: 0.8, desc: '-20% travel cost' },
+          investigation: { target: 'social.lie_detect', mult: 1.25, desc: '+25% lie detection' },
         };
+        const pt = poolTargets[arch.pool] || { target: 'all', mult: 1.1, desc: '+10% to everything' };
         return {
           name: `${arch.pool} Specialist`,
-          target: poolTargets[arch.pool] || 'all',
-          mult: 1.25,
-          desc: `Specialist (${arch.pool} L${arch.avgLevel}): +25% to ${arch.pool} actions. Mastery has its rewards.`
+          target: pt.target,
+          mult: pt.mult,
+          desc: `Specialist (${arch.pool} L${arch.avgLevel}): ${pt.desc}. Mastery has its rewards.`
         };
       }
       // generalist
@@ -18076,10 +18091,17 @@
         gossip_network: { 2: 'You hear everything. Nothing is secret.', 3: 'Travelers seek you out with news.' },
         peacemaker: { 2: 'You can stop any fight.', 3: 'Warring villages ask you to mediate.' },
         // EXPLORATION (Steve 2026-10-07)
-        pathfinder: { 2: 'You travel 50% faster.', 3: 'You never get lost. Ever.' },
+        // BREAK-IT abilities 2026-10-10: pathfinder's modifier retargeted
+        // travel.speed (dead) -> travel.cost_mult (live). The L2 blurb
+        // promised speed; the mechanic is efficiency — blurb now honest.
+        pathfinder: { 2: 'Every step costs less. Distance shrinks.', 3: 'You never get lost. Ever.' },
         eagle_eye: { 2: 'Rare finds catch your eye while foraging.', 3: 'The odd one out finds you more often now.' },
         // INVESTIGATION (Steve 2026-10-07)
-        lie_detector: { 2: 'You catch 50% of lies.', 3: 'You know WHY they\'re lying.' },
+        // BREAK-IT abilities 2026-10-10: lie_detector's modifier retargeted
+        // truth.detect_chance (dead) -> social.lie_detect (live, wired into
+        // observePerson). L2 is +0.4 on a 0.30 base — "50%" was the old
+        // dead number; blurb now honest.
+        lie_detector: { 2: 'You catch most lies. The hands always tell.', 3: 'You know WHY they\'re lying.' },
         evidence_board: { 2: 'Contradictions glow.', 3: 'You reconstruct events from fragments.' },
         // CARE / HEALER PATH (Steve 2026-10-09, disease rework): disease cure
         // is EARNED through deepening. L2 unlocks working on others; L3

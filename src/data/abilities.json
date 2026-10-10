@@ -1526,7 +1526,7 @@
     "description": "Words are tools. You've got a whole workshop.",
     "modifiers": [
       {
-        "target": "social.persuade",
+        "target": "trust.gain_mult",
         "op": "add",
         "value": 0.2,
         "scale": "level"
@@ -1589,9 +1589,9 @@
     "description": "You don't get lost. The land tells you where you are.",
     "modifiers": [
       {
-        "target": "travel.speed",
+        "target": "travel.cost_mult",
         "op": "multiply",
-        "value": 1.2,
+        "value": 0.85,
         "scale": "level"
       }
     ],
@@ -1624,7 +1624,7 @@
     "description": "The mouth says one thing. The hands say another. You watch the hands.",
     "modifiers": [
       {
-        "target": "truth.detect_chance",
+        "target": "social.lie_detect",
         "op": "add",
         "value": 0.2,
         "scale": "level"

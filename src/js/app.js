@@ -12542,7 +12542,6 @@
           const c = pathColors[p] || '#aaa';
           return `<span style="color:${c};font-size:11px">● ${esc(p)}</span>`;
         }).join(' ');
-        const canSwap = !Game.inCombat || !Game.inCombat();
         // Detail: description, actions, modifiers
         let detail = `<p class="small" style="opacity:.8">${esc(ab.desc || def.description || '')}</p>`;
         if (def.actions && def.actions.length) {
@@ -12554,16 +12553,16 @@
         if (def.modifiers && def.modifiers.length) {
           detail += `<p class="small" style="opacity:.6"><b>Passive:</b> ${def.modifiers.map(m => `${esc(m.target)} ${esc(m.op)} ${esc(m.value)}`).join('; ')}</p>`;
         }
-        const swapBtn = (!isBg && canSwap)
-          ? ` <button class="btn ghost sm" data-ability-swap="${ab.id || ab}">Swap</button>`
-          : (!isBg ? ` <span class="small" style="opacity:.5">(swap at camp)</span>` : '');
+        // (break-it abilities 2026-10-10: the old Swap button rendered here had
+        // no click handler anywhere — a fake affordance. No swap mechanic
+        // exists in canon; removed rather than left lying.)
         return `<details style="border:1px solid #333;border-radius:6px;padding:6px 8px;margin:4px 0">
           <summary style="cursor:pointer;list-style:none">
             <b>${esc(name)}</b> ${badge} <span style="opacity:.7">L${level}</span>
             <div style="background:#222;border-radius:3px;height:4px;margin:4px 0"><div style="background:#4df3ff;height:4px;border-radius:3px;width:${xpPct}%"></div></div>
             ${paths ? `<div>${paths}</div>` : ''}
           </summary>
-          <div style="margin-top:6px">${detail}${swapBtn}</div>
+          <div style="margin-top:6px">${detail}</div>
         </details>`;
       };
 

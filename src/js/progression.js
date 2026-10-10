@@ -489,6 +489,10 @@
           const def = pick(cands);
           s.abilities.push({ id: def.id, name: def.name, desc: def.description || '', level: 1, xp: 0 });
           gift = def.name;
+          // BREAK-IT abilities 2026-10-10 (sibling sweep): a granted ability
+          // can complete a synergy's legs — recompute, like every other
+          // grant path (chooseAbility, pact, gainAbilityXP level-up).
+          try { this.recomputeActiveSynergies(); } catch (e) {}
         }
       } catch (e) {}
       try { if (this.ledgerAdd) this.ledgerAdd('showmanship', 3); } catch (e) {}

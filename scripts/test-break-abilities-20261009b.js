@@ -195,14 +195,17 @@ async function main() {
     // B4: the fixed keys must be live. R3: the rest are a counted design
     // backlog (dead knowledge effects needing canon, not silent fixes) —
     // inventoried LOUD here and in the evidence file, not asserted.
-    const fixed = ['heal_bonus', 'fire_success', 'fire_heat'];
+    // (break-it abilities 2026-10-10: lie_detect joined the fixed list —
+    // truth.js observePerson now reads social.lie_detect, so the knowledge
+    // map's lie_detect key is live too. Dead inventory 32 -> 31.)
+    const fixed = ['heal_bonus', 'fire_success', 'fire_heat', 'lie_detect'];
     for (const key of fixed) {
       const t = kmap[key];
       assert(t && consumed(t), `B4: knowledge key '${key}' -> '${t}' has an engine consumer`);
     }
     const deadKeys = [...usedKeys].sort().filter(k => !fixed.includes(k) && !(kmap[k] && consumed(kmap[k])));
     console.log(`  R3 inventory: ${deadKeys.length} used knowledge keys with no engine effect: ${deadKeys.join(', ')}`);
-    assert(deadKeys.length === 32, `R3 inventory stable (expected 32, got ${deadKeys.length})`);
+    assert(deadKeys.length === 31, `R3 inventory stable (expected 31, got ${deadKeys.length})`);
   }
 
   // ------------------------------------------------------------------

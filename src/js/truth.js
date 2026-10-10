@@ -759,6 +759,11 @@
         watches = Math.min(3, mem.filter(m => m.t === 'observed' && day - (m.day || 0) <= 14).length);
       } catch (e) {}
       detectChance = Math.max(0.05, detectChance - 0.08 * watches);
+      // LIE DETECTOR (break-it abilities 2026-10-10): the ability's
+      // modifier was a dead target (truth.detect_chance, read nowhere).
+      // It now speaks social.lie_detect (same channel as the knowledge
+      // map's lie_detect) and the engine reads it here, capped at 0.95.
+      try { detectChance = Math.min(0.95, detectChance + this.modTarget('social.lie_detect', 0)); } catch (e) {}
 
       const lyingOcc = lies && lies.occupation && !lies.occupation.confessed;
       const lyingOrigin = lies && lies.origin && !lies.origin.confessed;

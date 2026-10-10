@@ -449,7 +449,7 @@ The scalability core. Every computed value resolves base -> collect modifiers ->
 **Provides:** resolve(base, target, modifiers, context), checkCondition(cond, ctx), levelOf(entry), scaledValue(m, level), collectModifiers(scholar, abilitiesData), hasAbility(scholar, id), abilityLevel(scholar, id), collectKnowledgeModifiers(codexSkills, knowledgeData), hasKnowledgeUnlock(codexSkills, knowledgeData, unlockId)
 
 **Rules:**
-- (none documented)
+- wildcard_target_all: modifiers with target 'all' apply to every resolution target (code: resolve)
 
 **Consumes:** (none documented)
 

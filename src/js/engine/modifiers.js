@@ -12,7 +12,7 @@
 //   - collectKnowledgeModifiers(codexSkills, knowledgeData)
 //   - hasKnowledgeUnlock(codexSkills, knowledgeData, unlockId)
 // rules:
-//   - (none documented)
+//   - wildcard_target_all: modifiers with target 'all' apply to every resolution target (code: resolve)
 // consumes:
 //   - (none documented)
 /* The modifier pipeline — the scalability core.
@@ -29,7 +29,10 @@
   function resolve(base, target, modifiers, context) {
     let add = 0, mul = 1;
     for (const m of modifiers || []) {
-      if (m.target !== target) continue;
+      // BREAK-IT abilities 2026-10-10: target 'all' is a wildcard — the
+      // Versatile Generalist's "+10% to everything" was dead because no
+      // resolution target is literally named 'all'. Documented engine rule.
+      if (m.target !== target && m.target !== 'all') continue;
       if (m.condition && context && !checkCondition(m.condition, context)) continue;
       if (m.op === 'add') add += m.value;
       else if (m.op === 'multiply') mul *= m.value;
