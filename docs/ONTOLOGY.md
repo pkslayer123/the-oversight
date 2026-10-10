@@ -922,7 +922,7 @@ Composes each world-map tile as a miniature auto-composed SVG scene: terrain bas
 ### truth (`truth.js`)
 Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip distorts per retelling (code: game.js seedGossip).
 
-**Provides:** trackClaim(vid, topic, claim), getClaims(vid), lieLive(vid, lie), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), closeDoubtsForGone(vid, how), confrontDoubt(vid), npcGossipAbout(vid), doubtIsLead(doubt)
+**Provides:** trackClaim(vid, topic, claim), getClaims(vid), lieLive(vid, lie), makeLie(vid, topic), getActiveLie(vid), addDoubt(doubt), getDoubts(), resolveDoubt(id), closeDoubtsForGone(vid, how), confrontDoubt(vid), plotBehindDoubt(doubt, vid), npcGossipAbout(vid), doubtIsLead(doubt)
 
 **Rules:**
 - claim_gossip_shares_truth_no_distortion: true (code: npcGossipAbout)
@@ -941,7 +941,8 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 - lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
 - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
-- tentative_clears_neutral: behavior doubts and gossip leads resolve with no false-accusation cost (code: confrontDoubt)
+- tentative_clears_neutral: behavior doubts, gossip leads, and engine-witnessed event observations (eventBacked) resolve with no false-accusation cost (code: confrontDoubt)
+- plot_backed_doubts: a doubt tagged caseId with a live (open/dormant) case and the vid still a real participant (accused, or exposed fabricating accuser) resolves as 'pressed' — the accusation stands, they hold their story, the case record keeps what was earned; no false-accuser machinery ever fires on a real plot (code: plotBehindDoubt, confrontDoubt)
 - windup_owns_the_accusation: the tentative no-lie windup ("help me understand it") applies ONLY to tentative kinds (behavior, gossip lead); a real accusation that lands empty keeps its accusatory windup so the 'cleared' punishment narrates the scene that played (code: confrontWindup, r13 2026-10-10)
 - lead_expiry: a gossip lead stops being tentative once the story is heard — doubtIsLead checks the story-heard stamp, not just the stale "haven't heard" marker (code: doubtIsLead, confrontWindup, confrontDoubt, convoChoices)
 - slip_crack_only: slip lines name the cover's crack, never the truth — origin/goal slips match the occupation discipline (code: truthLinePools slipOrigin/slipGoal)

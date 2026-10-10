@@ -694,7 +694,7 @@
           ? `You talk through the shaking. ${Wtag} has stopped pretending. "I'm sorry," they whisper — and it lands wrong, because there's nobody else here to be sorry to but you. The whole thing is coming apart.`
           : `You talk through the shaking. ${Wtag} has stopped pretending. "I'm sorry," they whisper. Not to you — to the leader. The whole thing is coming apart.`);
       }
-      try { this.addDoubt(waver, 'observation', `${wtag} wavered when you talked instead of running. They don't want this.`); } catch (e) {}
+      try { this.addDoubt(waver, 'observation', `${wtag} wavered when you talked instead of running. They don't want this.`, [], { eventBacked: true }); } catch (e) {}
       // TALK-DOWN (Steve 2026-10-06): three rounds of talk fray the plan to
       // the breaking point — the fiction already promises "the whole thing
       // is coming apart," so the mechanics have to let it actually come
@@ -1094,7 +1094,7 @@
     if (!this.isPlayer(c.target) || w <= 0) { this.say(`You have no wounds to show. That weakens everything.`); return null; }
     this.say(`You show them. The bruises, the cuts. "Does this look like I started it?" Silence does the rest.`);
     this.moveBelief(c, -15, 'showed wounds');
-    try { this.addDoubt(plot.leader, 'observation', `Their story doesn't explain your wounds.`); } catch (e) {}
+    try { this.addDoubt(plot.leader, 'observation', `Their story doesn't explain your wounds.`, [], { caseId: c.id }); } catch (e) {}
     return true;
   },
   // (b) evidence: revisit the site
@@ -1159,7 +1159,8 @@
     try {
       this.addDoubt(vid, 'contradiction', inc.selfContra
         ? `${this.displayName(vid)} contradicted their own first telling about the ${inc.field} (${inc.claims[vid]} vs ${inc.altClaim}).`
-        : `${this.displayName(vid)} said ${inc.claims[vid]} about the ${inc.field}; the others said otherwise.`);
+        : `${this.displayName(vid)} said ${inc.claims[vid]} about the ${inc.field}; the others said otherwise.`,
+        [], { caseId: c.id });
     } catch (e) {}
     this.moveBelief(c, -12, `caught inconsistency (${inc.field})`);
     return true;
@@ -1179,7 +1180,7 @@
     if (R() < chance) {
       c.flipped = w;
       this.say(`${this.capFirst(name)} breaks. All of it — whose idea, what they planned, what they told the village after. The rehearsed story comes apart like wet paper.`);
-      try { this.addDoubt(c.accused.find(a => a !== w) || w, 'contradiction', `${name} confessed and named the others.`); } catch (e) {}
+      try { this.addDoubt(c.accused.find(a => a !== w) || w, 'contradiction', `${name} confessed and named the others.`, [], { caseId: c.id }); } catch (e) {}
       this.moveBelief(c, -45, 'the weakest talked');
       return true;
     }
@@ -1331,7 +1332,7 @@
     c.bribes.push({ voter: voterId, by: byId, amount, day: this.state.scholar.day, trace: true });
     // the trace: sudden friendliness, a gift noticed
     if (R() < 0.5) {
-      try { this.addDoubt(voterId, 'observation', `${this.whoTag(voterId)} has been suddenly warm toward ${this.whoTag(byId)} — and there's a new something in their pack.`); } catch (e) {}
+      try { this.addDoubt(voterId, 'observation', `${this.whoTag(voterId)} has been suddenly warm toward ${this.whoTag(byId)} — and there's a new something in their pack.`, [], { eventBacked: true }); } catch (e) {}
     }
     if (this.isPlayer(byId)) this.say(`Done. Expensive, quiet. Secrets like this have a half-life.`);
     return true;
@@ -3730,7 +3731,7 @@
     }
     if (act === 'refusebribe') {
       const cs = this.getCase(parts[2]);
-      if (cs) { cs.playerBribeOffer = null; try { this.addDoubt(parts[3] || vid, 'observation', 'Tried to buy a vote. That tells you everything.'); } catch (e) {} }
+      if (cs) { cs.playerBribeOffer = null; try { this.addDoubt(parts[3] || vid, 'observation', 'Tried to buy a vote. That tells you everything.', [], { eventBacked: true }); } catch (e) {} }
       return finish('"No." The word lands like a door closing.', '"No."');
     }
     return null;
@@ -4083,7 +4084,7 @@
         const said = inc.field === 'time' ? 'dusk' : 'the creek';
         const seen = inc.field === 'time' ? 'full dark' : 'near the ridge';
         this.say(`You press ${aname} — not angry, precise. "You said ${said}. But it was ${seen} — people saw." The pause before the answer is the answer.`);
-        try { this.addDoubt(c.accuser, 'contradiction', `${aname}'s accusation doesn't match what others saw.`); } catch (e) {}
+        try { this.addDoubt(c.accuser, 'contradiction', `${aname}'s accusation doesn't match what others saw.`, [], { caseId: c.id }); } catch (e) {}
         this.moveBelief(c, 20, 'accuser caught in a lie');
         this.notePlayerEvidence(c, `Caught ${this.displayName(c.accuser)} in a lie about the ${inc.field}.`);
         const t = this.state.village.trust || {};

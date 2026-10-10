@@ -12,6 +12,7 @@
 //   - resolveDoubt(id)
 //   - closeDoubtsForGone(vid, how)
 //   - confrontDoubt(vid)
+//   - plotBehindDoubt(doubt, vid)
 //   - npcGossipAbout(vid)
 //   - doubtIsLead(doubt)
 // rules:
@@ -31,7 +32,8 @@
 //   - lead_windup_tentative: gossip leads formed before hearing their story never claim a contradiction with "what you told me" (code: confrontWindup)
 //   - confront_needs_convo: the confront: turn refuses cleanly with no active conversation (code: convoTurn wrapper)
 //   - trust_earns_truth: trust > 60 makes non-pathological liars speak the truth — every speech path gates on lieLive (code: lieLive, fillTalkLine wrapper, convoAskTopic wrapper)
-//   - tentative_clears_neutral: behavior doubts and gossip leads resolve with no false-accusation cost (code: confrontDoubt)
+//   - tentative_clears_neutral: behavior doubts, gossip leads, and engine-witnessed event observations (eventBacked) resolve with no false-accusation cost (code: confrontDoubt)
+//   - plot_backed_doubts: a doubt tagged caseId with a live (open/dormant) case and the vid still a real participant (accused, or exposed fabricating accuser) resolves as 'pressed' — the accusation stands, they hold their story, the case record keeps what was earned; no false-accuser machinery ever fires on a real plot (code: plotBehindDoubt, confrontDoubt)
 //   - windup_owns_the_accusation: the tentative no-lie windup ("help me understand it") applies ONLY to tentative kinds (behavior, gossip lead); a real accusation that lands empty keeps its accusatory windup so the 'cleared' punishment narrates the scene that played (code: confrontWindup, r13 2026-10-10)
 //   - lead_expiry: a gossip lead stops being tentative once the story is heard — doubtIsLead checks the story-heard stamp, not just the stale "haven't heard" marker (code: doubtIsLead, confrontWindup, confrontDoubt, convoChoices)
 //   - slip_crack_only: slip lines name the cover's crack, never the truth — origin/goal slips match the occupation discipline (code: truthLinePools slipOrigin/slipGoal)
@@ -287,6 +289,14 @@
       coachConfess: [
         `You've pulled a confession before — they come when the evidence is heavy. One thread isn't a rope.`,
         `Confessions need weight behind them. What you have right now is a thread. Find the rope.`,
+      ],
+      // PRESSED (detective playtest 2026-10-10): the line for a plot-backed
+      // confrontation — the accusation is real (a live case), they hold their
+      // story, nobody was wrong to ask. Stonewalling, not innocence.
+      pressed: [
+        `They hold your gaze. Say nothing you don't already know. The silence is doing a lot of work.`,
+        `A long look. "Is that what you think?" — and then nothing else. The case file says otherwise.`,
+        `They don't flinch. Don't explain, either. Some accusations you don't get to walk back — and some you shouldn't.`,
       ],
     },
 
@@ -592,6 +602,13 @@
         vid, kind, text, evidence: evidence || [], day: day(), resolved: false,
       };
       if (opts.field) doubt.field = opts.field;
+      // CASE-BACKED / EVENT-BACKED (detective playtest 2026-10-10): doubts
+      // planted by engine-verified events (a real ambush case, a witnessed
+      // bribe) carry their provenance. The lie system (npcLies) can't see
+      // that provenance — without the tag, confrontDoubt treats them as
+      // baseless and brands the player a false accuser for being right.
+      if (opts.caseId) doubt.caseId = opts.caseId;
+      if (opts.eventBacked) doubt.eventBacked = true;
       cx.doubts.push(doubt);
       // surface in the journal as a ❓ note — visible in the current UI.
       // Honor opts.quiet: callers that already said the payload outright
@@ -953,7 +970,7 @@
     // say it.
     socialLedger() {
       const cx = this.state.codex;
-      cx.socialLessons = cx.socialLessons || { confront: 0, confessed: 0, deflected: 0, attacked: 0, cleared: 0 };
+      cx.socialLessons = cx.socialLessons || { confront: 0, confessed: 0, deflected: 0, attacked: 0, cleared: 0, pressed: 0 };
       return cx.socialLessons;
     },
     noteSocialLesson(outcome) {
@@ -1102,6 +1119,25 @@
       return afterSay;
     },
 
+    // plotBehindDoubt(doubt, vid): is this doubt backed by a REAL, still-live
+    // betrayal case naming this villager? (detective playtest 2026-10-10.)
+    // showWounds / pressAccomplice / approachWeakest / the exposed-fabricator
+    // doubt plant engine-verified facts — a real ambush, real inconsistencies,
+    // a real confession, a caught lie. The lie system (npcLies) can't see them,
+    // but the accusation is not baseless. A dismissed/acquitted/resolved case
+    // no longer backs anything: the village's verdict stands, and the standard
+    // path applies.
+    plotBehindDoubt(doubt, vid) {
+      try {
+        if (!doubt || !doubt.caseId || !this.getCase) return null;
+        const c = this.getCase(doubt.caseId);
+        if (!c || (c.status !== 'open' && c.status !== 'dormant')) return null;
+        if ((c.accused || []).includes(vid)) return c;
+        if (vid === c.accuser && c.accuserExposed) return c; // caught fabricating
+        return null;
+      } catch (e) { return null; }
+    },
+
     // confrontDoubt(vid, doubtId): "You told me X, but [evidence]."
     // Personality-driven. Can resolve (truth) or deepen (better lies).
     confrontDoubt(vid, doubtId) {
@@ -1178,6 +1214,25 @@
       }
 
       if (!lie) {
+        // PLOT-BACKED (detective playtest 2026-10-10): the doubt names a real,
+        // still-live betrayal case. The old code fell through to 'cleared' +
+        // accuserPays and branded the player a false accuser ("you called X
+        // a liar, and you were wrong") for accusing an actual attempted
+        // murderer — the engine lying about what happened (H1). The
+        // accusation stands: they hold their story, the case record keeps
+        // what the player earned, and no false-accuser machinery fires.
+        // Ever. Being right about a plot is not a punishable offense.
+        const plotCase = this.plotBehindDoubt(doubt, vid);
+        if (plotCase) {
+          this.confrontWindup(vid, doubt, null);
+          line = this.drawTruthLine('pressed', vid) ||
+            `"${first} holds your gaze. Says nothing you don't already know."`;
+          outcome = 'pressed';
+          this.resolveDoubt(doubtId, 'pressed them on it — they held their story; the case record holds what you know');
+          this.noteSocialLesson('pressed');
+          try { this.bumpTrust(vid, -2); this.remember(vid, 'pressed', 'you confronted them about the plot and they held'); } catch (e) {}
+          return { ok: true, line, outcome };
+        }
         // TENTATIVE CLEARS (detective break-it 2026-10-09b): behavior doubts
         // and gossip leads were never accusations — the windup says so
         // ("Something's been bothering me... help me understand it" /
@@ -1189,9 +1244,14 @@
         // no accuser cost, no wrongly_accused memory. (Supersedes the
         // 2026-10-09 H2 reading that a behavior-doubt clear was a punishable
         // "baseless accusation" — the observation was real.)
+        // EVENT-BACKED (detective playtest 2026-10-10): same class — doubts
+        // planted by engine-witnessed events (a waver mid-ambush, a bribe
+        // trace, a refused bribe offer) allege no backstory lie; the player
+        // asked about something real they saw. "They explained it" is the
+        // honest close — never a false-accusation brand.
         // Real accusations (contradiction/slip/observation/gossip-with-claim
         // doubts with nothing behind them) still sting: that WAS an offense.
-        const tentative = doubt.kind === 'behavior' || this.doubtIsLead(doubt);
+        const tentative = doubt.kind === 'behavior' || this.doubtIsLead(doubt) || !!doubt.eventBacked;
         this.confrontWindup(vid, doubt, null);
         line = this.drawTruthLine('clears', vid);
         outcome = 'cleared';
