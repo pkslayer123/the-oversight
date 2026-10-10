@@ -98,6 +98,7 @@
 //   - fight_gates_round_trip: per-fight gates on the fight object (alien beam _beamCooldown) and the uprising's identity (uprising/uprisingAttackers, rebuilt into _lastBetrayal) persist in tbSave and restore verbatim — a mid-fight reload can neither re-arm the beam nor downgrade an uprising to an ordinary betrayal (code: syncRun, load, break-it persistence r6 2026-10-09)
 //   - fight_gate_sibling_sweep: the same save-scum class in related systems — hummice sound pressure (humStacks/humMice/humRiseRound/humDecayRound), the player shout cap (shouts) + its chorus-break duration (chorusBrokenUntil), the scorch narration flag (terraformScorched), the pending order re-sort (orderDirty) — all persist in tbSave and restore verbatim (code: syncRun, load, break-it persistence r6 2026-10-09)
 //   - scout_reports_are_shared: a scout's mapped tiles set t.revealed AND markSeen 'shared' — the world-map overlay agrees with the "mapped N new areas" log; never 'visited' (code: resolveOneAssignment, explorer break-it 2026-10-08)
+//   - path_blockages_hold: travelTo at d>1 checks every tile on a shortest path for entry blockages from the approach side (travelBlockage fx/fy) — a fallen tree on the middle tile refuses the jump, honestly, as if walked into; force (swim/debug) still bypasses (code: travelTo, explorer break-it 2026-10-10)
 //   - echo_is_exactly_3x3: echo_location's copy promises "3x3 revealed" — it marks exactly the 3x3 world-map tiles around the player. The old code called reveal() per 3x3 center (a Manhattan<=2 diamond each): 37 tiles for a 9-tile promise (code: _activateAbilityInner, explorer break-it 2026-10-10)
 //   - dowsing_reveals_the_water: dowsing reveals exactly the nearest water tile — direction + distance is the knowledge, walking there is still yours. The old reveal() call lit a 13-tile diamond around possibly-distant ground: free fog knowledge (code: _activateAbilityInner, explorer break-it 2026-10-10)
 //   - day_parts: 4 nested (code: TIME)
@@ -8138,9 +8139,14 @@
     // BLOCKED PATHS: returns {blocked} info instead of traveling, so the UI
     // can offer solutions. Multiple ways through, always: cut, clear, bridge,
     // swim, or go around. Never one mandatory path.
-    travelBlockage(x, y) {
+    // fx/fy: optional entry origin — the blockage guards its SIDE of the
+    // tile, and the approach side is computed from (fx,fy) instead of the
+    // player's current tile. Used by travelTo's intermediate-tile check.
+    travelBlockage(x, y, fx, fy) {
       const dest = this.tileAt(x, y);
-      const dx = Math.sign(x - this.map.px), dy = Math.sign(y - this.map.py);
+      const sx = (fx === undefined) ? this.map.px : fx;
+      const sy = (fy === undefined) ? this.map.py : fy;
+      const dx = Math.sign(x - sx), dy = Math.sign(y - sy);
       // tile-entry blockage (fallen tree, rubble, washed out)
       const bf = dest.blockFrom;
       // DIAGONAL ARMOR (break-it travel 2026-10-10): blockages generate
@@ -8540,6 +8546,41 @@
             : 'Something blocks the path.';
           this.say(what);
           return block;
+        }
+        // INTERMEDIATE BLOCKAGES (explorer break-it 2026-10-10): travelTargets
+        // offers d<=3 destinations, but only the DESTINATION's blockage was
+        // checked — a fallen tree on the middle tile was jumped clean over
+        // (no 60 kcal, no card, no narration). Walk the straight line: every
+        // tile on a shortest path from here to the destination must be
+        // enterable from the tile before it. The first blockage on the path
+        // refuses, honestly, as if you'd walked into it. (Destination first:
+        // when the destination itself is blocked, its message is the one the
+        // player expects.)
+        const px0 = this.map.px, py0 = this.map.py;
+        const dTot = Math.abs(x - px0) + Math.abs(y - py0);
+        if (dTot > 1) {
+          for (let ty = 0; ty < 9; ty++) for (let tx = 0; tx < 9; tx++) {
+            if ((tx === px0 && ty === py0) || (tx === x && ty === y)) continue;
+            const dS = Math.abs(tx - px0) + Math.abs(ty - py0);
+            const dT = Math.abs(x - tx) + Math.abs(y - ty);
+            if (dS === 0 || dS + dT !== dTot) continue; // not on a shortest path
+            for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const ex = tx + ox, ey = ty + oy;
+              if (ex < 0 || ey < 0 || ex > 8 || ey > 8) continue;
+              const dE = Math.abs(ex - px0) + Math.abs(ey - py0);
+              if (dE !== dS - 1 || dE + 1 + dT !== dTot) continue; // entry not on a shortest path
+              const ib = this.travelBlockage(tx, ty, ex, ey);
+              if (ib) {
+                const what = ib.blockType === 'creek' ? 'The creek runs fast here — no crossing without a bridge or a swim.'
+                  : ib.blockType === 'fallen_tree' ? 'A fallen tree blocks the path.'
+                  : ib.blockType === 'rubble' ? 'Rubble chokes the path.'
+                  : ib.blockType === 'washed_out' ? 'The path is washed out.'
+                  : 'Something blocks the path.';
+                this.say(what);
+                return ib;
+              }
+            }
+          }
         }
       }
       const odx = Math.sign(x - this.map.px), ody = Math.sign(y - this.map.py);
