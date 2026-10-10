@@ -25,7 +25,7 @@
 //   - never_silent: application, ticks, expiry, and cures all narrate via say() (code: applyStatus)
 //   - symptom_only: disease apply/tick/expire text never names the disease; the legacy s.diseases mirror stores the symptom label, not the true name (code: applyStatus)
 //   - diagnosis_gated: the true name unlocks only via diagnoseDisease — medical ability, herb lore, or stethoscope (code: diagnoseDisease)
-//   - two_pools: EVERY disease def carries pool 'mundane' (earthly vectors: water/food/wounds/ticks/mosquitoes) or 'alien' (monster bites, monster meat). The pools NEVER mix — seIsDisease admits mundane only; contractDisease refuses alien; alien diseases keep their own effects, cures (usually none), and transformations. Mundane medicine never touches alien biology (code: seIsDisease, contractDisease)
+//   - two_pools: EVERY disease def carries pool 'mundane' (earthly vectors: water/food/wounds/ticks/mosquitoes) or 'alien' (monster bites, monster meat). The pools NEVER mix — seIsDisease admits mundane only; contractDisease refuses alien; cureStatus/diagnoseDisease/easeDisease refuse alien (mundane medicine never touches alien biology); alien diseases keep their own effects and transformations. (code: seIsDisease, contractDisease, cureStatus, diagnoseDisease, easeDisease)
 //   - bridge: stun-family writes legacy stunned/stunFull fields; poison/disease mirror s.poisons/s.diseases (code: applyStatus)
 //   - legacy_countdown: stun-family turn countdown stays with existing consumption sites; engine tracks parallel turnsLeft (code: seTickFighter)
 //   - resistible: resistMod is read via modTarget as an apply-chance multiplier (code: applyStatus)
@@ -375,6 +375,14 @@
     // Cure a status (ability/item/rest). Clears engine + legacy bridges. Narrates.
     cureStatus: function (target, effectId, source) {
       var def = this.seDef(effectId);
+      // TWO POOLS (Steve 2026-10-09, break-it disease 2026-10-10): mundane
+      // medicine never touches alien biology. The generic cure path is not a
+      // back door around the pool law — alien conditions leave on their own
+      // terms (meat-quirks expire; the warping viruses never do).
+      if (def && def.pool === 'alien') {
+        try { this.say('Earthly medicine doesn\u2019t touch alien biology \u2014 the ' + (def.name || effectId) + ' stays.'); } catch (e) {}
+        return false;
+      }
       var list = this.seList(target);
       var removed = false;
       var dropped = [];
@@ -495,6 +503,14 @@
       opts = opts || {};
       var def = this.seDef(effectId);
       if (!def) return false;
+      // TWO POOLS (break-it disease 2026-10-10): alien conditions are never
+      // diagnosed by mundane medicine — there is no earthly name for them.
+      // (The player reads them in the afflictions panel instead: what
+      // happened, what changed, what it costs.)
+      if (def.pool === 'alien') {
+        if (!opts.silent) { try { this.say('No earthly diagnosis names this \u2014 it isn\u2019t a sickness of this earth.'); } catch (e) {} }
+        return false;
+      }
       try {
         if (target === 'scholar') {
           var s = this.state.scholar || {};
@@ -563,6 +579,9 @@
 
     // Ease a disease entry: halve its tick for `parts` dayParts. Narrates.
     easeDisease: function (target, effectId, parts, source) {
+      // TWO POOLS (break-it disease 2026-10-10): alien conditions are never
+      // eased by mundane medicine either.
+      try { var _ed = this.seDef && this.seDef(effectId); if (_ed && _ed.pool === 'alien') return false; } catch (e) {}
       try {
         var list = this.seList(target);
         for (var i = 0; i < list.length; i++) {

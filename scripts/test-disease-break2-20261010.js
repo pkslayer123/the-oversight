@@ -235,7 +235,15 @@ function resetScholar() {
     Game.applyStatus('scholar', 'howlbelly', { source: 'test' });
     Game.applyStatus('scholar', 'witness_maw', { source: 'test' });
     ok((Game.state.scholar.diseases || []).length === 0, 'alien quirks write no s.diseases mirror (nothing to ghost)');
-    Game.cureStatus('scholar', 'howlbelly', 'test');
+    // TWO-POOLS LAW (break-it disease 2026-10-10): the generic cure path is
+    // not a back door — cureStatus refuses alien biology. Targeted removal
+    // of one quirk goes through the engine removal path (seRemove, as used
+    // by natural expiry), which must drop only the named entry.
+    const refused = Game.cureStatus('scholar', 'howlbelly', 'test');
+    ok(refused === false && Game.hasStatus('scholar', 'howlbelly') && Game.hasStatus('scholar', 'witness_maw'),
+      'cureStatus refuses alien quirks (both stay)');
+    const entry = (Game.seList('scholar') || []).find(e => e.id === 'howlbelly');
+    Game.seRemove('scholar', entry);
     ok(!Game.hasStatus('scholar', 'howlbelly') && Game.hasStatus('scholar', 'witness_maw'),
       'targeted removal drops only the named quirk');
   }

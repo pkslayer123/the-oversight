@@ -54,6 +54,7 @@
 //   - mosquitoIs(m), tickIs(m) (vector-monster id gates: giant mosquito, alien tick)
 //   - tbMosquitoTurn(m) (hit-and-run drinker: circle, dive, drink, heavy phases; bite may carry eurika or east_nile)
 //   - tbTickTurn(m) (questing ambusher: quest, latch, feed, engorged phases; latch may carry lemons)
+//   - alienAfflictions() (alien-pool conditions on the scholar: readable surface — name, effects, transformation; never diagnosed/eased/cured by mundane medicine)
 //   - removeTick() (attached ambient tick removal: technique/ability-gated, blind attempt with botch risk)
 //   - villagerTickTeachTick() (camp healer teaches tick_removal within a couple days)
 //   - campHealerName() -> name | null
@@ -9302,7 +9303,18 @@
       this.tickAction(glance ? 16 : 32);
       if (!vid) {
         const sick = this.sickDiseases();
-        if (!sick.length) { this.say('You\'re not sick. Nothing to examine.'); return null; }
+        if (!sick.length) {
+          // ALIEN HONESTY (break-it disease 2026-10-10): an alien condition
+          // is not "not sick" — it just doesn't answer to earthly
+          // examination. Say so instead of lying.
+          const alien = this.alienAfflictions ? this.alienAfflictions() : [];
+          if (alien.length) {
+            this.say('Nothing earthly in you to name — but there IS something else in there, and examination won\'t read it. No earthly medicine touches it either. (Your alien conditions are listed under afflictions — what happened, what changed, what it costs.)');
+          } else {
+            this.say('You\'re not sick. Nothing to examine.');
+          }
+          return null;
+        }
         sick.sort((a, b) => (b.dayPartsLeft || 0) - (a.dayPartsLeft || 0));
         const entry = sick[0];
         const def = this.seDef(entry.id);
@@ -9652,6 +9664,29 @@
                      severe: !!e.severe, stacks: e.stacks || 1,
                      pool: def.pool || 'mundane',
                      transformation: (def.pool === 'alien' && def.transformation) ? def.transformation : null });
+        }
+        return out;
+      } catch (e) { return []; }
+    },
+
+    // alienAfflictions(): alien-pool conditions on the scholar \u2014 the min-max
+    // building blocks (monster meat quirks, mosquito/tick warping viruses).
+    // Never diagnosed, eased, or cured by mundane medicine, so they get
+    // their own readable surface: name, what it does, the transformation,
+    // and whether it passes or is permanent. No examine/treat buttons \u2014 the
+    // honest note in the panel says why. (break-it disease 2026-10-10)
+    alienAfflictions() {
+      try {
+        const list = this.seList ? this.seList('scholar') : [];
+        const out = [];
+        for (const e of list) {
+          const def = this.seDef(e.id);
+          if (!def || def.pool !== 'alien' || !(def.scope || []).includes('scholar')) continue;
+          const dl = this.diseaseLabel('scholar', e);
+          out.push({ id: e.id, icon: dl.icon, label: dl.label,
+                     description: def.description || '',
+                     transformation: def.transformation || '',
+                     permanent: !(def.duration && (def.duration.dayParts || def.duration.turns)) });
         }
         return out;
       } catch (e) { return []; }

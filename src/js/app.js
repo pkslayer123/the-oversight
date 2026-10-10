@@ -279,9 +279,15 @@
     try {
       const affs = st.afflictions || [];
       if (!affs.length) return '';
-      const chips = affs.map(a =>
-        `<span class="affchip" title="${esc(a.diagnosed ? a.label + ' (diagnosed)' : 'Undiagnosed — examine (🧬 You) to identify')}">${a.icon ? esc(a.icon) + ' ' : ''}${esc(a.label)}${a.severe ? '!' : ''}</span>`
-      ).join(' ');
+      const chips = affs.map(a => {
+        // ALIEN HONESTY (break-it disease 2026-10-10): alien conditions are
+        // never diagnosed — the old title promised an examination path that
+        // does not exist. Name the real situation instead.
+        const title = a.pool === 'alien'
+          ? 'Alien — no earthly diagnosis or medicine touches it. Read it in your afflictions.'
+          : (a.diagnosed ? a.label + ' (diagnosed)' : 'Undiagnosed — examine (🧬 You) to identify');
+        return `<span class="affchip" title="${esc(title)}">${a.icon ? esc(a.icon) + ' ' : ''}${esc(a.label)}${a.severe ? '!' : ''}</span>`;
+      }).join(' ');
       return `<div class="statrow afflictions">${chips}</div>`;
     } catch (e) { return ''; }
   }
@@ -12952,14 +12958,18 @@
 
   // DISEASE (Steve 2026-10-09): the affliction panel. Symptoms until
   // diagnosed; examine/treat/folk-remedy/medicine/villager care all live here.
+  // ALIEN (break-it disease 2026-10-10): alien conditions get readable rows
+  // too — name, effects, transformation — with no treatment buttons, because
+  // no earthly medicine touches them.
   function renderAfflictionsSection() {
     try {
       const sick = (Game.sickDiseases && Game.sickDiseases()) || [];
+      const alien = (Game.alienAfflictions && Game.alienAfflictions()) || [];
       const v = (Game.state && Game.state.village) || {};
       const sickVillagers = Object.keys(v.sick || {});
       const hasTick = !!(Game.hasStatus && Game.hasStatus('scholar', 'tick_attached'));
-      if (!sick.length && !sickVillagers.length && !hasTick) return '';
-      let html = `<details open style="margin:8px 0"><summary style="cursor:pointer;font-size:15px;font-weight:bold">🤒 Afflictions <span style="opacity:.6;font-weight:normal">(${sick.length + sickVillagers.length})</span></summary><div style="margin-top:6px">`;
+      if (!sick.length && !alien.length && !sickVillagers.length && !hasTick) return '';
+      let html = `<details open style="margin:8px 0"><summary style="cursor:pointer;font-size:15px;font-weight:bold">🤒 Afflictions <span style="opacity:.6;font-weight:normal">(${sick.length + alien.length + sickVillagers.length})</span></summary><div style="margin-top:6px">`;
       for (const e of sick) {
         const def = Game.seDef(e.id) || {};
         const dl = Game.diseaseLabel('scholar', e);
@@ -12981,6 +12991,19 @@
           for (const m of meds) html += `<button class="btn ghost sm" data-aff="med:${m.medType}">${esc(m.name)} (${m.doses})</button> `;
           html += `</p>`;
         }
+      }
+      // ALIEN (break-it disease 2026-10-10): alien-pool conditions are real
+      // conditions the Bearer <redacted> — the min-max building blocks — but no earthly
+      // medicine diagnoses, eases, or cures them, so they get a readable row
+      // (name, what it does, the transformation) and NO treatment buttons.
+      // The honest note says why.
+      for (const a of alien) {
+        const note = a.permanent
+          ? 'It doesn\u2019t leave. It\u2019s part of you now. No earthly medicine touches alien biology.'
+          : 'It will pass on its own. No earthly medicine speeds it, eases it, or ends it early.';
+        html += `<p class="small">${a.icon ? esc(a.icon) + ' ' : ''}<b>${esc(a.label)}</b> <span style="opacity:.6">(alien)</span><br><span style="opacity:.75">${esc(a.description || '')}</span>`;
+        if (a.transformation) html += `<br><span style="opacity:.75"><i>${esc(a.transformation)}</i></span>`;
+        html += `<br><span style="opacity:.6">${esc(note)}</span></p>`;
       }
       // AMBIENT TICK (Steve 2026-10-09): attached tick gets its own row —
       // narrated, visible, removable. Never silent.
