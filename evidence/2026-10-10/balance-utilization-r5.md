@@ -55,3 +55,8 @@
 `test-haven-growth` 61/61, `test-aid-comms` 71/71, ontology 57/57, `node --check` clean. No sibling files touched (food/depletion/lethality, wave unlocks/feast, scale/plant-lane).
 
 **Merged locally, pending ship.** No push/bump per Vercel batching rule.
+
+## Landing notes — coordinator conflict resolution (2026-10-10)
+
+- **Ratings-decay design conflict:** sibling break-it contests r13 landed the same day with a different fix for the dead dip signal (daily −1 viewership decay, floor 0). Resolved in favor of this pass's design (weekly −10% drift, floor 12; week-over-week trend persisted all week; soft = falling OR <15), which carries the measured utilization data (summons 18.3% of runs). Sibling's break-contest r3 suite still green (22/22) under the chosen design. ONTOLOGY.md keeps both entries.
+- **Test bug fixed:** test-util-raid-crisis's "resolves fought" check called commsTick once on a crisis <3 parts old; the 3-part answer delay is intentional design (village gets a chance to answer). Test now ticks until the crisis is old enough (≤5). 11/11 ×3 seeds.

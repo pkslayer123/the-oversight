@@ -83,7 +83,10 @@ ok(kcalAfter < kcalBefore, 'lingering raiders gorge nightly from the real pantry
 console.log('== crisis resolves when cleared ==');
 // drive off the lingerers (kill them)
 for (const m of lingerers) { try { Game.removeWorldMonster(m); } catch (e) {} }
-Game.commsTick();
+// the crisis is answered over parts, not instantly: the 3-part delay lets the
+// village answer (call, fight, let defenders' work stand) before the door is
+// declared quiet — tick the crisis old enough for the clear treeline to count
+for (let p = 0; p < 5 && Game.aidCrisis(); p++) Game.commsTick();
 ok(!Game.aidCrisis(), "crisis resolves 'fought' when the treeline is clear");
 
 console.log('== moved-on valve clears lingering ==');
