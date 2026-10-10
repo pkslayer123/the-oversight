@@ -125,3 +125,6 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
 ## Change log
 
 - 2026-10-10: ladder designed and national/global implemented (prog-scale workstream).
+- 2026-10-10: endgame deed gate retuned (Steve: ~100-day target, every wave
+  1-5 must be fought — 5/5/4/3/2 distinct per wave). scaleRank's national+
+  bar is unchanged; the gate reads it alongside the per-wave deed bars.

@@ -143,6 +143,17 @@ ash-death; the villager pool is the cap.
   w5: 55/20/12/8/5).
 - `Game.waveUnlockBeat(wave)`: woven System-voice beats on unlock (The Final
   Draft / The Mirror Draft / The Producers) — reactive, never scripted.
+- Endgame deed gate (Steve 2026-10-10, retuned for the ~100-day target):
+  the table requires progressing through EVERY wave, blow-by-blow —
+  `deedGateReady()` in progression.js needs 5/5/4/3/2 DISTINCT monsters
+  fought per wave 1-5 (fed by real startCombat/recordWaveKill/fieldFight,
+  never unlocked-only), plus 3+ contests survived, scaleRank >= 'national',
+  3+ crises, sentimentTaught + feastSurgeUsed + stage >= 3. Knowledge never
+  gates. Pacing audit (`scripts/sim-wave-pacing-20261010.js`): a strong run
+  (a real fight every ~2 days) unlocks w5 ~day 77-93 and faces 2+ distinct
+  Producers ~day 83-99 — the bars complete inside a ~100-day game; slower
+  runs slip later, reactively. The day floors in the unlock gates (day 8,
+  day 25) were already floors, never scripts, and stay.
 - `checkEncounter()` uses the pool. The wanderer casts via `castMonster()`, which is wave-gated on `unlockedWave()` (day 8 + 4 wave-1 kills for wave 2) — never over-leveled, never stuck on wave 1.
 - Wave-2 announcement woven into `checkSystemArrival()` dialogue.
 - Tests: `scripts/test-wave2.js` (gating, integrity, combat smoke), `scripts/test-wave2-harden-20261009.js` (post-hardening ranges),

@@ -24,7 +24,7 @@
 //   - feast_surge_gate: 3 abilities at L3 (code: progression.js — channelSentiment; was all-maxed, unwalkable per 2026-10-09 audit)
 //   - arc2_deed: true (code: progression.js — checkArc requires breadth>=6 or a held contest; the beat text is honest again)
 //   - arc3_crucible: 2 crisis kinds (code: progression.js — checkArc; grave-first runs get the acknowledgment line)
-//   - arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs 3+ distinct wave-3+ monsters fought incl. 1 wave-4+, 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept)
+//   - arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs EVERY wave fought (5/5/4/3/2 distinct per wave 1-5), 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept; retuned 2026-10-10 for the ~100-day target)
 //   - sentiment_at_60: true (code: progression.js — slotMoment(60); was 80)
 //   - audience_encore: true (code: progression.js — checkAudienceEncore, recurring post-40 trials)
 // consumes:
@@ -430,10 +430,23 @@
     // regions." A weak day-47 scholar (regional, wave-2 max, thin contests)
     // walked into the table on devotion metrics — the gates measured
     // channels, integration and codex breadth, not capability. Now the table
-    // judges DEEDS:
-    //   - 3+ DISTINCT wave-3+ monsters FOUGHT (blow-by-blow, not unlocked —
-    //     fed by the startCombat/recordWaveKill/fieldFight wraps below)
-    //   - at least 1 of them wave-4+ (fought, not just unlocked)
+    // judges DEEDS.
+    //
+    // RETUNE (Steve 2026-10-10): the win targets ~100 days and the player
+    // must progress through EVERY monster wave (1-5), not just wave-3+.
+    // Per-wave DISTINCT-fight bars (blow-by-blow, not unlocked — fed by the
+    // startCombat/recordWaveKill/fieldFight wraps below). Demanding but
+    // reachable: pacing sim scripts/sim-wave-pacing-20261010.js shows a
+    // strong run unlocking w5 ~day 77-93 and winning ~day 90-115 — the bars
+    // below are completable inside that window without becoming a calendar
+    // script (every unlock stays kill+scale reactive; day floors were already
+    // floors, never scripts):
+    //   - wave 1: 5+ distinct fought (of 15) — the early game
+    //   - wave 2: 5+ distinct fought (of 15)
+    //   - wave 3: 4+ distinct fought (of 9)
+    //   - wave 4: 3+ distinct fought (of 9)
+    //   - wave 5: 2+ distinct fought (of 8) — The Producers must be faced;
+    //     the show's immune system is the narrative climax before the table
     //   - 3+ contests SURVIVED (the player taken and lived; death, refusal
     //     and watched-villager contests don't count — fed by _cxCountHeld)
     //   - scaleRank() >= 'national' (the table judges a world power, not a
@@ -454,12 +467,13 @@
     // recordDeedFight: a real blow-by-blow fight happened against this
     // monster. Keyed by monster id (distinct monsters), value = wave.
     // Called by the wraps below — the feed is the fight itself, never UI.
+    // RETUNE 2026-10-10: every wave 1-5 feeds now (was wave-3+ only) — the
+    // gate requires progressing through EVERY wave.
     recordDeedFight(monsterId) {
       try {
         if (!monsterId) return;
         const mdef = (this.data.monsters || []).find(m => m.id === monsterId);
         const wave = (mdef && mdef.wave) || 1;
-        if (wave < 3) return; // wave 1-2 fights are the whole game, not the gate
         const d = this.deedState();
         if (!d.wavesFaced[monsterId]) d.wavesFaced[monsterId] = wave;
       } catch (e) {}
@@ -470,13 +484,17 @@
     deedGateReady() {
       const pg = this.progState(), d = this.deedState();
       const faced = d.wavesFaced || {};
-      let w3 = 0, w4 = 0;
+      let w1 = 0, w2 = 0, w3 = 0, w4 = 0, w5 = 0;
       for (const mid of Object.keys(faced)) {
         const w = faced[mid] | 0;
-        if (w >= 3) w3++;
-        if (w >= 4) w4++;
+        if (w === 1) w1++;
+        else if (w === 2) w2++;
+        else if (w === 3) w3++;
+        else if (w === 4) w4++;
+        else if (w === 5) w5++;
       }
-      const waves = w3 >= 3 && w4 >= 1;
+      // Every wave must be progressed through: 5/5/4/3/2 distinct fought.
+      const waves = w1 >= 5 && w2 >= 5 && w3 >= 4 && w4 >= 3 && w5 >= 2;
       const contestsN = d.contestsSurvived || 0;
       const contests = contestsN >= 3;
       const crisesN = Object.keys(pg.crises || {}).length;
@@ -487,7 +505,7 @@
       // primacy is real standing (it feeds the wave-4 unlock gate) but it
       // is a neighborhood — deliberate call, documented as insufficient.
       const scale = rank === 'national' || rank === 'global';
-      return { ok: !!(waves && contests && crises && scale), waves, contests, crises, scale, w3, w4, contestsN, crisesN, rank };
+      return { ok: !!(waves && contests && crises && scale), waves, contests, crises, scale, w1, w2, w3, w4, w5, contestsN, crisesN, rank };
     },
     checkArc() {
       const pg = this.progState(), s = this.state.scholar;
@@ -515,9 +533,10 @@
       // other regions' knowledge, so it gated the endgame on where you
       // landed. "You shouldn't be able to beat the game without going
       // through a majority of game content." The gate is deeds now —
-      // deedGateReady() below: waves faced, contests survived, scale,
-      // crises. sentimentTaught + feastSurgeUsed stay (food-thesis deeds,
-      // not knowledge) and stage>=3 stays (earned standing).
+      // deedGateReady() below: EVERY wave fought (per-wave distinct bars),
+      // contests survived, scale, crises. sentimentTaught + feastSurgeUsed
+      // stay (food-thesis deeds, not knowledge) and stage>=3 stays (earned
+      // standing). RETUNE 2026-10-10: every wave 1-5, ~100-day target.
       if (want >= 3 && stage >= 3 && pg.sentimentTaught && s.prog.feastSurgeUsed && this.deedGateReady().ok) want = 4;
       // TABLE RE-FIRE (deed gate 2026-10-10): the tableScene's
       // defense-in-depth re-check can clear tableWaiting without firing;
@@ -560,7 +579,7 @@
           this.progState().tableWaiting = true;
           this.say('The table is being set. They are watching to see who comes to it.');
         } catch (e) {}
-        this.say(`◈ ARC IV — THE INEFFICIENCY. SYSTEM: "ROUNDING ERROR RECLASSIFIED: ANOMALY. Organic consumption yields impossible output. Recalculating. Recalculating." — They finally see it. The thing they laughed at — needing to EAT — is the engine. Their confusion is your weapon now. You fought their Final Draft and their Mirror Draft, lived through their Show, weathered the worst together, and built something bigger than a village. One day there will be a table, and humanity will need a case to make. The case is made of deeds, not words — and yours are done. (Feastburn burns hotter from here.)`);
+        this.say(`◈ ARC IV — THE INEFFICIENCY. SYSTEM: "ROUNDING ERROR RECLASSIFIED: ANOMALY. Organic consumption yields impossible output. Recalculating. Recalculating." — They finally see it. The thing they laughed at — needing to EAT — is the engine. Their confusion is your weapon now. You fought every draft they threw at you — the calibration fauna, the audience's notes, the Final Draft, the Mirror Draft, the Producers themselves — lived through their Show, weathered the worst together, and built something bigger than a village. One day there will be a table, and humanity will need a case to make. The case is made of deeds, not words — and yours are done. (Feastburn burns hotter from here.)`);
         try { this.state.scholar.arc4burn = 1.25; } catch (e) {}
       }
       try { this.save(); } catch (e) {}
