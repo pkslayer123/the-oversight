@@ -1153,7 +1153,7 @@
         if (before[vid] !== p.kept) {
           const want = this.goalWant(vid) || 'something';
           this.journalLearn(vid, 'promise',
-            { text: `Help them ${want}`, status: p.kept === true ? 'kept' : 'broken' }, {});
+            { text: `Help them ${want}`, status: p.kept === true ? 'kept' : (p.kept === 'released' ? 'released — they\'re gone' : 'broken') }, {});
         }
       }
     } catch (e) {}

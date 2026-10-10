@@ -12065,9 +12065,14 @@
       const pos = v.positions;
       const s = this.state.scholar;
       if (!pos || s.mx === undefined || s.mx === null) return null;
+      // ROSTER GATE (break-it social r9 2026-10-09): only the living village
+      // witnesses. Stale positions (exiles, the fled) must never testify —
+      // defense in depth behind removeVillager's position cleanup.
+      const roster = v.roster || [];
       const out = [];
       for (const [rid, p] of Object.entries(pos)) {
         if (rid === this.villagerId) continue;
+        if (!roster.includes(rid)) continue;
         if (Math.max(Math.abs(p.mx - s.mx), Math.abs(p.my - s.my)) <= (range || 6)) out.push(rid);
       }
       return out;
@@ -19058,6 +19063,15 @@
     checkQuest(kind) {
       const q = this.state.scholar.activeQuest;
       if (!q) return;
+      // GHOST-QUEST GUARD (break-it social r9 2026-10-09): a quest whose giver
+      // is gone (old saves, or any path that missed removeVillager's lapse)
+      // can never be turned in — the dead don't take dandelions. Lapse aloud.
+      if (q.giver && !((this.state.village || {}).roster || []).includes(q.giver) && q.giver !== this.villagerId) {
+        this.state.scholar.activeQuest = null;
+        const nm = (() => { try { return this.displayName(q.giver); } catch (e) { return 'They'; } })();
+        this.say(`${nm} is gone. The errand lapses — nobody's waiting on it now.`);
+        return;
+      }
       if (q.type === 'bring' && kind === 'forage') {
         const has = this.state.scholar.inventory.filter(i => i.plantId === q.plant).reduce((t, i) => t + i.units, 0);
         if (has >= q.qty) {

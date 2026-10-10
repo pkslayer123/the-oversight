@@ -762,12 +762,46 @@
     v.roster = (v.roster || []).filter(id => id !== vid);
     for (const gr of (v.groups || [])) gr.members = (gr.members || []).filter(m => m !== vid);
     v.exiles = v.exiles || [];
-    if (how !== 'killed') v.exiles.push({ vid, day: this.state.scholar.day, how: how || 'left' });
+    // NO DOUBLE EXILE (break-it social r9 2026-10-09): an accused exiled via a
+    // non-moot path then sentenced 'exile' at the moot used to land in
+    // v.exiles twice — two walkings-out for one leaving.
+    if (how !== 'killed' && !(v.exiles.some(e => e && e.vid === vid))) v.exiles.push({ vid, day: this.state.scholar.day, how: how || 'left' });
+    // PHANTOM WITNESS (break-it social r9 2026-10-09): exiled/fled removals
+    // kept grid + node positions — the gone counted as witnesses() and
+    // combatWitnessReact spoke lines for them ("Mei watches, jaw tight" from
+    // someone three nodes away). The 'killed' path already cleared positions;
+    // every removal does now.
+    try { if (v.positions) delete v.positions[vid]; } catch (e) {}
+    try { if (v.nodePos) delete v.nodePos[vid]; } catch (e) {}
     // DOUBT CLOSURE (detective 2026-10-09e): open doubts about the removed
     // die with them — resolved as UNANSWERED, never silently dropped or
     // left open with no resolution path. Truth module owns the closer;
     // removeVillager is the one removal choke point.
     try { if (this.closeDoubtsForGone) this.closeDoubtsForGone(vid, how); } catch (e) {}
+    // GHOST-QUEST CLOSURE (break-it social r9 2026-10-09): a quest anchored to
+    // a removed giver completed posthumously — the dead "took" the dandelions
+    // and the pantry got paid. The debt dies with the leaving: lapse it aloud.
+    try {
+      const s = this.state.scholar || {};
+      const q = s.activeQuest;
+      if (q && q.giver && q.giver === vid) {
+        s.activeQuest = null;
+        const nm = (() => { try { return this.displayName(vid); } catch (e) { return 'They'; } })();
+        this.say(`${nm} is gone${how === 'killed' ? ' — dead' : ''}. The errand dies with them; nobody's waiting on those dandelions now.`);
+      }
+    } catch (e) {}
+    // PROMISE RELEASE (break-it social r9 2026-10-09): a promise to the
+    // removed is neither kept nor broken — it's released. Otherwise
+    // checkPromises would rot it at 7 days (-15 trust on a ghost) or "keep"
+    // it across the fire ("catches your eye" from a corpse).
+    try {
+      const pr = (this.state.village || {}).promises || {};
+      if (pr[vid] && !pr[vid].kept) {
+        pr[vid].kept = 'released';
+        const nm = (() => { try { return this.displayName(vid); } catch (e) { return 'They'; } })();
+        this.say(`The promise you made ${nm} isn't broken — it's just unkeepable now. You carry that differently.`);
+      }
+    } catch (e) {}
     // DEAD IS DEAD (2026-10-08): 'killed' removals must mark the villager
     // record — vpOf(vid).dead is read by game code (party skips, System
     // fragments, record filters) and must not lie about a corpse.
@@ -1264,7 +1298,8 @@
     // the player's role: always at the moot unless they're the one accused.
     // PLAYER-CONVENED moots (Steve 2026-10-08): you called it, you're there —
     // the vote is unconditional. Otherwise attendance is 90%.
-    const playerVoter = !c.accused.includes(this.villagerId) && (c.playerConvened ? true : R() < 0.9);
+    // EXILE (break-it social r9 2026-10-09): the exiled aren't at the fire.
+    const playerVoter = !this.state.scholar.exiled && !c.accused.includes(this.villagerId) && (c.playerConvened ? true : R() < 0.9);
     for (const vid of present) {
       if (vid === this.villagerId) continue; // player votes via choice below
       // belief is capped in its pull: evidence matters enormously, but the
@@ -1345,6 +1380,12 @@
   castPlayerVote(caseId, guiltyVote) {
     const c = this.getCase(caseId); if (!c || !c.trial || !c.trial.awaitingPlayerVote) return null;
     c.trial.awaitingPlayerVote = false;
+    // EXILE (break-it social r9 2026-10-09): an exiled player isn't at the
+    // fire. The moot doesn't wait — the count is taken without them, said aloud.
+    if (this.state.scholar.exiled) {
+      this.say(`The moot doesn't wait for the exiled. The count is taken without you.`);
+      return this.finishTrial(c, 0);
+    }
     return this.finishTrial(c, guiltyVote ? 1 : 0);
   },
   finishTrial(c, playerGuiltyVotes) {
@@ -1543,6 +1584,17 @@
     s.exiled = true;
     s.exileStartDay = s.day; // the solo clock starts now — founding takes 7+ days alone
     s.founding = null; // any previous founding project is gone with the old life
+    // GHOST-QUEST CLOSURE (break-it social r9 2026-10-09): exile is a hard
+    // reset — the giver is at the old fire, you're walking. An errand for
+    // someone who just cast you out doesn't survive the road. Quests with no
+    // giver (System tasks) cross with you.
+    try {
+      const q = s.activeQuest;
+      if (q && q.giver) {
+        s.activeQuest = null;
+        this.say(`Whatever ${q.giverName || 'they'} asked of you stays at the old fire. You're done running errands for people who walked you out.`);
+      }
+    } catch (e) {}
     // EXILE ENDS THE JOIN (drifter break-it r4 2026-10-08): exilePlayer used
     // to leave a live join in place — the exiled bearer kept another fire's
     // seat (phantom mouth in every simVillageDay), kept their probation, and
