@@ -15657,7 +15657,10 @@
   // 📺 OVERSIGHT (Steve 2026-10-06): visible eligibility — who can go, and why.
   // Driven by Game.contestEligible(): eligible names + notability notes
   // (earned deeds — showing them here is the intended "why was I picked"),
-  // or the reason pre-day-14. Absent fn = no panel (sibling owns contests.js).
+  // plus the OFF THE BOARD list (break-it contests r12 2026-10-10): canon
+  // says the village must answer "who can go, AND WHY" — exclusions now
+  // carry their legible reason (dead, severed, too young/old, gravely
+  // wounded, exiled). Absent fn = no panel (sibling owns contests.js).
   function oversightPanel() {
     if (typeof Game.contestEligible !== 'function') return '';
     let el = null;
@@ -15670,7 +15673,11 @@
         ((e.notability && e.notability.length)
           ? ' — <i>' + esc(e.notability.join('; ')) + '</i>'
           : ' — <i>no deeds on the record. the show decides.</i>') +
-        '</p>').join('');
+        '</p>').join('') +
+        ((el.ineligible && el.ineligible.length)
+          ? '<p class="small" style="opacity:.75"><i>off the board:</i></p>' +
+            el.ineligible.map(e => `<p class="small" style="opacity:.6">🚫 <b>${esc(e.name)}</b> — <i>${esc(e.reason || 'not castable')}</i></p>`).join('')
+          : '');
     }
     return head + `<p class="small">${esc(el.reason || "The show isn't casting yet.")}</p>`;
   }

@@ -29,7 +29,10 @@ is computed from legible factors and SHOWN (leaderboard screen):
   currently exiled. Death disqualifies you permanently (obviously).
 
 The village can see the eligibility list change. Being near the cut is its
-own dread — coveted and feared, per the design.
+own dread — coveted and feared, per the design. The panel shows not only who
+is castable but who is OFF THE BOARD and why (dead, severed, too young/old,
+gravely wounded, away from Haven, exiled) — break-it contests r12
+2026-10-10: "who can go, and why" was only half-shown before.
 
 **Casting, as implemented (Steve 2026-10-08/09 — supersedes the viewership-rank
 gate above for who is actually taken):** the System wants its stars. Picks are

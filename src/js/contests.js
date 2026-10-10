@@ -2,7 +2,9 @@
 // system: contests
 // description: Alien TV contests and shows that interrupt village life. Contests are FEARED high-risk events; shows are gossip/drama. UNAVOIDABLE — they interrupt whatever you're doing.
 // provides:
-//   - contestEligible() -> {eligible, reason}
+//   - contestEligible() -> {eligible, ineligible, reason} (ineligible carries the legible why-out per person — dead, severed, age, gravely wounded, exiled)
+//   - _cxCountHeld(ac) -> counts one held contest per contest object at ANY terminal (end/die/refuse/arena-lost), once-guarded for multi-take verdicts
+//   - _cxWinnerShare(pname) -> the villager winner's share (pantryAdd, cap-real) for every villager-win path
 //   - contestTick() -> event|null
 //   - contestPool()
 //   - pickContest()
@@ -135,9 +137,14 @@
   // that makes the rest of it scarier.
   G.contestEligible = function() {
     const day = this.state.scholar.day || 1;
-    if (day < 14) return { eligible: [], reason: 'Show not yet casting (day 14+)' };
+    if (day < 14) return { eligible: [], ineligible: [], reason: 'Show not yet casting (day 14+)' };
 
     const eligible = [];
+    // OFF THE BOARD (break-it contests r12 2026-10-10): canon says the
+    // village must be able to answer "who can go, AND WHY" — the panel
+    // showed the castable and never said who was out or why. Every
+    // exclusion below records its legible reason.
+    const ineligible = [];
     const roster = (this.state.village.roster || []);
 
     // Player: alive, not exiled, and with health to stand on. A dying
@@ -149,30 +156,48 @@
       const nota = this.notability('player');
       if (nota.length) notes.push(...nota);
       eligible.push({ id: 'player', name: 'You', notability: nota, notes });
+    } else {
+      ineligible.push({ id: 'player', name: 'You',
+        reason: this.state.over || (s.health || 0) <= 0 ? 'dead — the mantle has passed' : 'exiled — cut off from the village' });
     }
 
     // Villagers: check each — alive, a member in good standing, of
     // fighting age. Notability notes are the earned "why was I picked".
     for (const rid of roster) {
       if (rid === this.villagerId) continue; // player handled above
-      if (!this.isMember(rid)) continue;     // dead or severed: not drafted
-      const vpos = (this.state.village.positions || {})[rid];
-      if (!vpos) continue;
-      const vp = this.vpOf(rid);
+      const v = this.state.village;
+      const vname = (() => { try { return this.displayName(rid); } catch (e) { return rid; } })();
+      const out = (reason) => ineligible.push({ id: rid, name: vname, reason });
+      let vp = null;
+      try { vp = this.vpOf(rid); } catch (e) {}
+      if ((v.severed || {})[rid]) { out('severed from the village'); continue; }
+      if (vp && vp.dead) { out('dead'); continue; }   // dead: not drafted
+      if (!this.isMember(rid)) { out('not a member in good standing'); continue; }
+      const vpos = (v.positions || {})[rid];
+      if (!vpos) {
+        // Grid positions only exist for NPCs on your node — a villager out
+        // in the world (expedition, another node) has none. Say which.
+        const np = (v.nodePos || {})[rid];
+        const hnX = v.px ?? 4, hnY = v.py ?? 4;
+        const away = (v.away || {})[rid] || (np && (np.nx !== hnX || np.ny !== hnY));
+        out(away ? 'away from Haven' : 'unaccounted for');
+        continue;
+      }
       const age = (vp && typeof vp.age === 'number') ? vp.age : 30;
-      if (age < 15 || age > 72) continue;    // children and the very old stay
+      if (age < 15) { out('too young'); continue; }    // children stay
+      if (age > 72) { out('too old'); continue; }      // and the very old stay
       // GRAVELY WOUNDED (break-it 2026-10-09 r4; docs/CONTESTS.md): canon
       // says the gravely wounded are ineligible. 20 HP is the engine's own
       // survival floor (drop/starve reserve) — at or below it you're not a
       // contestant, you're a casualty waiting for a timeslot.
-      const vhp = ((this.state.village.health || {})[rid] !== undefined)
-        ? this.state.village.health[rid] : 100;
-      if (vhp <= 20) continue;
+      const vhp = ((v.health || {})[rid] !== undefined)
+        ? v.health[rid] : 100;
+      if (vhp <= 20) { out('gravely wounded'); continue; }
       const nota = this.notability(rid);
       eligible.push({ id: rid, name: this.displayName(rid), notability: nota, notes: [] });
     }
 
-    return { eligible, reason: null };
+    return { eligible, ineligible, reason: null };
   };
 
   // Notability: specific deeds that flag you
@@ -3746,6 +3771,14 @@
         this.drama('contest', { type: 'loser', name: 'You', integration: integ });
       } catch (e3) {}
       ac.phase = 'done';
+      // HELD-COUNTER + KNOWLEDGE (break-it contests r12 2026-10-10): this
+      // death branch never ran the resolve hygiene of the other death
+      // paths — the held-contest count skipped arena deaths, and the
+      // codex never learned from a death on camera in the arena (every
+      // other _contestDie path grants 'died' knowledge). Same terminal,
+      // same accounting.
+      this._cxCountHeld(ac);
+      try { this.contestLearn(ac.contestId, 'died'); } catch (e) {}
       try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
       this.state.activeContest = null;
       if (ac.others && ac.others.length) {
@@ -3770,11 +3803,57 @@
     return 'showbiz';
   };
 
+  // HELD-CONTEST COUNTER (break-it contests r12 2026-10-10): Arc II gates
+  // on a real deed — a held contest counts. The old code counted inline in
+  // _contestEnd under a comment claiming "every end path flows through
+  // here" — false: _contestDie, _contestRefuse, and the arena-lost branch of
+  // _contestArenaAfter all terminate WITHOUT touching _contestEnd, so a
+  // death, a refusal, or an arena death never counted. Every terminal of
+  // the interruption sequence counts, exactly once per contest object: the
+  // _heldCounted flag keeps the multi-take verdict (which calls
+  // _contestEnd per contestant on the same ac) at exactly one.
+  G._cxCountHeld = function(ac) {
+    try {
+      if (!ac || ac._heldCounted) return;
+      ac._heldCounted = true;
+      this.state.contestsHeld = (this.state.contestsHeld || 0) + 1;
+    } catch (e) {}
+  };
+
+  // WINNER'S SHARE (break-it contests r12 2026-10-10): the televised
+  // winner's prize for a VILLAGER — alien rations the whole village feels,
+  // via pantryAdd (cap-real, pantryKcal in sync). Shared by the watch-verdict
+  // path and the multi-take co-winner path: a winner is a winner, whichever
+  // arena they fought in. The multi-take path used to grant nothing — a
+  // watched winner ate, a co-taken winner didn't, for the same deed.
+  G._cxWinnerShare = function(pname) {
+    const pday = (this.state.scholar || {}).day || 1;
+    const share = { name: "Winner's share (alien rations)", kcalEach: 300, units: 2, spoilDay: pday + 9, safe: true };
+    // PANTRY CAP (break-it contest 2026-10-09): the winner's share goes
+    // through pantryAdd like every other finished-food grant — the cap is
+    // real, and pantryKcal stays in sync. The old direct push bypassed both
+    // (silent overfill, stale pantryKcal).
+    try {
+      const canAdd = (typeof this.pantryAdd === 'function');
+      const added = canAdd ? this.pantryAdd(share) : false;
+      if (added) {
+        this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
+      } else if (canAdd) {
+        this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations. The pantry is full to bursting, so the village eats them on the spot, laughing.`);
+      } else {
+        const vv = this.state.village;
+        vv.pantry = vv.pantry || [];
+        vv.pantry.push(share);
+        this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
+      }
+    } catch (e2) {
+      this.sysSay(`📺 Prize for ${pname}: the System's favor (and a story they'll tell forever).`);
+    }
+  };
+
   G._contestEnd = function(ac, outcome, prize) {
     try { this.tele('contest_end', { id: (ac && ac.contestId) || '?', outcome: outcome || '?' }); } catch (e) {}
-    // CONTEST COUNTER (pacing build 2026-10-10): Arc II gates on a real deed —
-    // a held contest counts. Every end path flows through here.
-    try { this.state.contestsHeld = (this.state.contestsHeld || 0) + 1; } catch (e) {}
+    this._cxCountHeld(ac);
     const contest = this._cxScaledContest(ac);
     const s = this.state.scholar;
     const isWatch = ac.participant && ac.participant !== 'player';
@@ -3813,30 +3892,10 @@
         // winner brings home alien rations the whole village feels.
         // (Steve 2026-10-08: "the System's favor (and a story)" was a
         //  placeholder prize.)
-        if (prize) {
-          try {
-            const pday = (this.state.scholar || {}).day || 1;
-            const share = { name: "Winner's share (alien rations)", kcalEach: 300, units: 2, spoilDay: pday + 9, safe: true };
-            // PANTRY CAP (break-it contest 2026-10-09): the winner's share
-            // goes through pantryAdd like every other finished-food grant —
-            // the cap is real, and pantryKcal stays in sync. The old direct
-            // push bypassed both (silent overfill, stale pantryKcal).
-            const canAdd = (typeof this.pantryAdd === 'function');
-            const added = canAdd ? this.pantryAdd(share) : false;
-            if (added) {
-              this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
-            } else if (canAdd) {
-              this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations. The pantry is full to bursting, so the village eats them on the spot, laughing.`);
-            } else {
-              const vv = this.state.village;
-              vv.pantry = vv.pantry || [];
-              vv.pantry.push(share);
-              this.sysSay(`📺 Prize for ${pname}: the winner's share — alien rations for the pantry. The village eats tonight.`);
-            }
-          } catch (e2) {
-            this.sysSay(`📺 Prize for ${pname}: the System's favor (and a story they'll tell forever).`);
-          }
-        }
+        // WINNER'S SHARE (break-it contests r12 2026-10-10): one helper for
+        // every villager-win path — the watch verdict here, multi-take
+        // co-winners in _contestResolveOthers.
+        if (prize) this._cxWinnerShare(pname);
       } else {
         this.sysSay(`📺 ${contest.name} — YOU WIN. The crowd is a weather system.`);
         this.addNotability('player', 'contestWin');
@@ -3988,6 +4047,7 @@
     const isWatch = ac.participant && ac.participant !== 'player';
     const pname = isWatch ? this.displayName(ac.participant) : 'You';
     ac.phase = 'done';
+    this._cxCountHeld(ac);
     this.sysSay(`📺 ${contest.name} — ${how}`);
     this.sysSay('📺 ' + this._contestDeathLine(contest, how, pname));
     this.sysSay(`📺 The Death Reel will be tasteful. It won't be.`);
@@ -4066,6 +4126,7 @@
     // sustained beat audio (tithe's heartbeat) must die with the contest.
     try { this.audioEvent('heartbeatStop'); } catch (e) {}
     ac.phase = 'done';
+    this._cxCountHeld(ac);
     try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     return { done: true, outcome: 'refused' };
@@ -4654,6 +4715,9 @@
         this.sysSay(`📺 ${pname} WON. You didn't see it — you had your own arena. The village will tell you about it for weeks.`);
         this.addNotability(pid, 'contestWin');
         this._cxGossip('won', pid, contest.name);
+        // WINNER'S SHARE (break-it contests r12 2026-10-10): a co-taken
+        // winner's prize is real — same share the watch-verdict path grants.
+        this._cxWinnerShare(pname);
       } else {
         const survived = [
           `📺 ${pname} survived. Barely, by the look of them when the lights came up.`,
