@@ -173,13 +173,24 @@
       return { ok: true, amount, units: taken, public: pub, trustGain: -5, recognized: true };
     }
 
-    let trustGain = amount === 'bite' ? 4 : amount === 'meal' ? 10 : 16;
+    // SUBSTANCE (break-it socialite r9 2026-10-09): a gift earns in proportion
+    // to its substance. The old code paid the portion rate for ANY unit — a
+    // 1-kcal crumb-bite paid +4 like a 400-kcal steak-bite (measured: trust
+    // 15->90 over 29 crumb-bites, 29 kcal + 87 ticks). Words wearing a food
+    // disguise. refKcal: what a real portion of this size is worth (real food
+    // units run 120-800 kcal); crumbs earn crumbs. Design call, Steve can
+    // overrule: the portion sets the ceiling, the kcal fills it.
+    const refKcal = amount === 'bite' ? 100 : amount === 'meal' ? 300 : 500;
+    const substance = Math.min(1, takenKcal / refKcal);
+    let trustGain = Math.round((amount === 'bite' ? 4 : amount === 'meal' ? 10 : 16) * substance);
     let note = null;
 
-    // STARVING + BITE = insult risk. A crumb to a starving person can sting.
+    // STARVING + CRUMB = insult risk. A crumb to a starving person can sting.
+    // (Was: 40% on ANY bite — a real 400-kcal bite could "sting", incoherent.
+    // Now only when the bite is actually insulting: substance under half.)
     const starving = hunger > 70;
-    if (amount === 'bite' && starving && Math.random() < 0.4) {
-      trustGain = 1;
+    if (amount === 'bite' && starving && substance < 0.5 && Math.random() < 0.4) {
+      trustGain = 0;
       note = 'stingy';
       this.say(`${first} looks at the ${takenName}. A long pause. "That's... it?" They eat it anyway. Hunger doesn't leave room for pride, but it leaves room for memory.`);
       this.remember(vid, 'stingy_gift', 'gave a bite to a starving person');

@@ -3383,6 +3383,13 @@
     appealToGoal(vid, task) {
       const goal = this.npcGoal(vid);
       if (!goal) { this.say("You don't know what they want yet."); return null; }
+      // KNOWLEDGE GATE (break-it socialite r9 2026-10-09): the comment always
+      // said "requires knowing their goal" and the UI gates the appeal button
+      // on goalKnown — but the engine never checked, so a direct call framed
+      // the ask through a goal the player never learned. Engine and UI agree.
+      if (typeof this.goalKnown === 'function' && !this.goalKnown(vid)) {
+        this.say("You don't know what they want yet."); return null;
+      }
       const want = this.goalWant(vid);
       const first = this.displayName(vid);
       const aff = this.goalTaskAffinity(goal, task);
@@ -3741,6 +3748,19 @@
     makeAmends(vid) {
       const w = this.worstRepAxis(vid);
       if (!w) { this.say("They don't hold anything against you."); return null; }
+      // CONTRITION TAKES TIME (break-it socialite r9 2026-10-09): eleven
+      // back-to-back "I'm sorry"s repaired six caught thefts to the full 40
+      // words-cap in one sitting (measured: trust 0->40, ~1350 kcal kept).
+      // One amends per villager per day — you've said your piece; let it
+      // sit. Design call, Steve can overrule.
+      const vv = this.state.village;
+      const today = this.state.scholar.day;
+      vv.amendsDay = vv.amendsDay || {};
+      if (vv.amendsDay[vid] === today) {
+        this.say("You've already said your piece today. Let it sit a while.");
+        return null;
+      }
+      vv.amendsDay[vid] = today;
       const first = this.displayName(vid);
       const axisLines = {
         generous: `"I know I've been holding back. That's changing."`,
