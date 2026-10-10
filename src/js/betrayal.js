@@ -628,7 +628,7 @@
         const nicked = R() < 0.3;
         if (nicked) {
           const d = 3 + Math.floor(R() * 5);
-          s.health = Math.max(1, (s.health || 100) - d);
+          s.health = Math.max(1, (s.health == null ? 100 : s.health) - d);
           plot.woundsTaken = (plot.woundsTaken || 0) + d;
           this.say(`You run. Something catches your shoulder on the way out — ${d} of hurt, and proof. Then trees, and breath, and gone.`);
         } else {
@@ -643,7 +643,7 @@
         this.say(`You bolt — and one of them just... freezes. Hands up, shaking. They can't do it.${others ? ' The others can.' : ' But the leader can.'}`);
       }
       const d = 2 + Math.floor(R() * 5);
-      s.health = Math.max(1, (s.health || 100) - d);
+      s.health = Math.max(1, (s.health == null ? 100 : s.health) - d);
       plot.woundsTaken = (plot.woundsTaken || 0) + d;
       try { this.addTrauma(6); } catch (e) {}
       this.say(`They catch your arm, wild and clumsy. It hurts (${d}) — desperate, not skilled. You're still on your feet.`);
@@ -731,7 +731,7 @@
     }
     // they flail back
     const d = 2 + Math.floor(R() * 4);
-    s.health = Math.max(1, (s.health || 100) - d);
+    s.health = Math.max(1, (s.health == null ? 100 : s.health) - d);
     plot.woundsTaken = (plot.woundsTaken || 0) + d;
     this.say(`Wild swings back at you (${d}). They're terrible at this. That's the only reason you're still standing.`);
     if (plot.round >= 3) return this.ambushAftermath(plot, 'escaped');
@@ -907,7 +907,7 @@
       // they take some of your things and leave you
       this.say(`Darkness, then dirt. You wake up lighter — pack rifled — and hurting. But alive. They couldn't finish it.`);
       plot.woundsTaken = (plot.woundsTaken || 0) + 10;
-      s.health = Math.max(1, (s.health || 100) - 10);
+      s.health = Math.max(1, (s.health == null ? 100 : s.health) - 10);
       try { this.addTrauma(18); } catch (e) {}
     }
     if (outcome === 'talked_down') {

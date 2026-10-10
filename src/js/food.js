@@ -2258,7 +2258,7 @@
       // SHELLGUT (Steve 2026-10-08): armor gut — nothing ingested touches you.
       const shellgut3 = this.hasStatus && this.hasStatus('scholar', 'shellgut');
       if (it.diseaseRisk && !shellgut3 && Math.random() < it.diseaseRisk.p) {
-        s.health = Math.max(0, (s.health || 100) - it.diseaseRisk.dmg);
+        s.health = Math.max(0, (s.health == null ? 100 : s.health) - it.diseaseRisk.dmg);
         this.say(`The ${it.name} was ${it.diseaseRisk.note || 'risky'}. Fever by nightfall. (-${it.diseaseRisk.dmg} health)`);
       }
       // TRICHINOSIS / POISON (break-it food r4): the old counter bite rolled

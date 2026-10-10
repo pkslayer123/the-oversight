@@ -983,6 +983,7 @@
       this.feedback('It SCREECHES awake mid-swing and sinks its teeth into your hand! (-' + dmg + ' HP) It bolts, heart hammering.');
       try { this.audioEvent('animalBite'); } catch (e) {}
       this.animalTurn();
+      this.encScholarDeathGate('the ' + (animal.name || 'hunt'));
       return true;
     }
     s.animal = null;
@@ -1221,7 +1222,7 @@
       }
       if (dist <= 1 && Math.random() < 0.35) {
         var snapDmg = 6 + Math.floor(Math.random() * 8);
-        try { s.health = Math.max(0, (s.health || 100) - snapDmg); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - snapDmg); } catch (e) {}
         this.say('It snaps! ' + snapDmg + ' damage — that beak means it.');
         try { this.audioEvent('animalBite'); } catch (e) {}
       }
@@ -1238,7 +1239,7 @@
       }
       if (a.rattled && dist <= 1 && Math.random() < 0.5) {
         var vDmg = 8 + Math.floor(Math.random() * 7);
-        try { s.health = Math.max(0, (s.health || 100) - vDmg); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - vDmg); } catch (e) {}
         // VENOM VIA ENGINE (break-it disease 2026-10-10): the old code pushed
         // straight to the s.poisons legacy mirror, bypassing applyStatus — a
         // phantom poison with no engine entry: no tick damage, never expired,
@@ -1341,7 +1342,7 @@
       if (dist <= 1) {
         a.pstate = 'advancing'; a.aware = 1;
         var wingDmg = 4 + Math.floor(Math.random() * 6);
-        try { s.health = Math.max(0, (s.health || 100) - wingDmg); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - wingDmg); } catch (e) {}
         this.say('HONK — ' + this.encCap(label) + ' is on you, wings hammering, beak pinching. (-' + wingDmg + ' HP) It has never lost a fight it started.');
         try { this.audioEvent('animalHonk'); } catch (e) {}
         return;
@@ -1378,7 +1379,7 @@
       } else if (dist <= 1) {
         a.satTurns = 0; a.aware = 1;
         var clawDmg = 6 + Math.floor(Math.random() * 7);
-        try { s.health = Math.max(0, (s.health || 100) - clawDmg); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - clawDmg); } catch (e) {}
         this.say(this.encCap(label) + ' slashes — claws raking your arm. (-' + clawDmg + ' HP) Yellow eyes, no hurry.');
         try { this.audioEvent('animalBite'); } catch (e) {}
       } else {
@@ -1410,7 +1411,7 @@
         // mid-charge: it reaches you
         a.mx = px; a.my = py;
         var goreDmg = 10 + Math.floor(Math.random() * 7);
-        try { s.health = Math.max(0, (s.health || 100) - goreDmg); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - goreDmg); } catch (e) {}
         a.pstate = 'winded'; a.stamina = 0; a.aware = 1;
         this.say(this.encCap(label) + ' hits you like a door — tusks raking. (-' + goreDmg + ' HP) It overshoots, blowing hard. Overcommitted. Now\'s your chance.');
         try { this.audioEvent('animalCharge'); } catch (e) {}
@@ -1748,7 +1749,7 @@
       if (dist <= 1 && Math.random() < 0.5) {
         var panicDmg = { wary: [4, 8], flock: [2, 5], skittish: [1, 3] }[beh] || [2, 4];
         var pd = panicDmg[0] + Math.floor(Math.random() * (panicDmg[1] - panicDmg[0] + 1));
-        try { s.health = Math.max(0, (s.health || 100) - pd); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - pd); } catch (e) {}
         var panicVerb = beh === 'wary' ? 'lashes out — hooves flashing, a kick that could break ribs'
           : beh === 'flock' ? 'spurs wildly — wings hammering your face, claws raking'
           : beh === 'skittish' ? 'THRASHES — a scream like a stepped-on toy, claws everywhere'
@@ -2017,7 +2018,7 @@
     // it stays. This is the non-monster monster fight.
     if (animal && animal.id === 'black_bear') {
       var bDmg = 6 + Math.floor(Math.random() * 8);
-      try { s.health = Math.max(0, (s.health || 100) - bDmg); } catch (e) {}
+      try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - bDmg); } catch (e) {}
       a.pstate = 'advancing'; a.aware = 1;
       this.feedback(this.encCap(this.encAnimalLabel(a)) + ' does not run. It ROARS — the sound goes through your ribs — and comes at you. (-' + bDmg + ' HP) This is a fight now.');
       try { this.audioEvent('animalBite'); } catch (e) {}
@@ -2032,14 +2033,14 @@
     if (b === 'territorial') {
       a.pstate = 'advancing'; a.aware = 1;
       var wd = 4 + Math.floor(Math.random() * 6);
-      try { s.health = Math.max(0, (s.health || 100) - wd); } catch (e) {}
+      try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - wd); } catch (e) {}
       this.feedback('HONK — your miss enrages it. Wings hammering, beak pinching. (-' + wd + ' HP) It is not leaving.');
       try { this.audioEvent('animalHonk'); } catch (e) {}
       return false;
     }
     if (b === 'stalker') {
       var cd = 6 + Math.floor(Math.random() * 6);
-      try { s.health = Math.max(0, (s.health || 100) - cd); } catch (e) {}
+      try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - cd); } catch (e) {}
       this.encReleaseAnimal(a);
       this.feedback(this.encCap(this.encAnimalLabel(a)) + ' twists aside — claws raking as it goes (-' + cd + ' HP) — and melts into the brush. It hates a fair fight.');
       try { this.audioEvent('animalYowl'); } catch (e) {}
@@ -2099,6 +2100,20 @@
       if (s.huntXPSeeded == null) { s.huntXPSeeded = true; s.huntXP = 0; }
       s.huntXP = (s.huntXP || 0) + (kind === 'kill' ? 2 : 1);
     } catch (e) {}
+  };
+
+  // DEATH GATE (brawler break-it 2026-10-10): hunt damage can drop the
+  // scholar to 0 HP — the old `(s.health || 100)` resurrection used to paper
+  // over it (the next hit healed you to ~100), so no death check ever lived
+  // on this path. No silent 0-HP walking: cheat-death abilities get their
+  // say first (maybeCheatDeath), then the mantle passes via playerDeath.
+  G.encScholarDeathGate = function (cause) {
+    var s = this.state.scholar;
+    if (!s || s.health > 0 || this.over) return false;
+    try { if (this.maybeCheatDeath && this.maybeCheatDeath()) return true; } catch (e) {}
+    try { this.playerDeath(cause || 'the hunt'); }
+    catch (e2) { try { this.over = true; } catch (e3) {} }
+    return true;
   };
 
   // HUNT: the strike. Range-gated, awareness-penalized, three outcomes:
@@ -2265,7 +2280,7 @@
       // strikes are clean — the quills only punish the grab.
       a.quilledYou = true;
       var qDmg = 4 + Math.floor(Math.random() * 5);
-      try { s.health = Math.max(0, (s.health || 100) - qDmg); } catch (e) {}
+      try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - qDmg); } catch (e) {}
       this.feedback('Quills — in your hand, barbed and deep. (-' + qDmg + ' HP) Pull them straight out, slow. Every strike this encounter is compromised.');
       try { this.audioEvent('animalQuill'); } catch (e) {}
     }
@@ -2286,7 +2301,12 @@
     // teeth — not a fight, just the price of grabbing. Traps avoid this.
     // (Porcupines don't bite — the quills already answered. Bluegill don't
     // bite either — reaching into the bed is the whole point.)
-    if (dist <= 1 && hBeh !== 'quilled' && hBeh !== 'bedding') {
+    // BRAWLER BREAK-IT 2026-10-10: the black bear has its own close-range
+    // answer (the maul, below — 8-17 every strike at dist<=2). The generic
+    // bite double-dipped: a dist-1 strike could bite (3-8, "Teeth in your
+    // hand" — weak fiction for a bear) AND maul AND draw the roar-answer,
+    // three damage events on one swing. The maul is the full answer.
+    if (dist <= 1 && a.id !== 'black_bear' && hBeh !== 'quilled' && hBeh !== 'bedding') {
       var bBeh = animal.behavior || '';
       var biteP = bBeh === 'aggressive' ? 0.6 : bBeh === 'defensive' ? 0.6 : bBeh === 'constrictor' ? 0.5 : bBeh === 'plays_dead' ? 0.3 : 0.2;
       if (Math.random() < biteP) {
@@ -2294,7 +2314,7 @@
           : bBeh === 'defensive' ? 8 + Math.floor(Math.random() * 7)
           : bBeh === 'charger' ? 6 + Math.floor(Math.random() * 7)
           : 3 + Math.floor(Math.random() * 6);
-        try { s.health = Math.max(0, (s.health || 100) - biteDmg); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - biteDmg); } catch (e) {}
         this.feedback(bBeh === 'defensive'
           ? 'It strikes! Fangs — ' + biteDmg + ' damage. The head bites after death — cut wide, bury the head.'
           : bBeh === 'charger'
@@ -2330,13 +2350,17 @@
     // hunt into a fight. Bow hunters at range get a clean shot; a spear is a
     // dangerous second choice (reach halves the mauling); a knife or bare
     // hands this close is answered in full. Fierce, not a stat-check.
-    if (a.id === 'black_bear' && dist <= 2 && !a._mauled) {
-      a._mauled = true;
+    // BRAWLER BREAK-IT 2026-10-10: the maul answers EVERY close strike, not
+    // just the first. The old `!a._mauled` one-shot made it a toll — one
+    // 8-17 maul per encounter, then free close-range knife strikes at FULL
+    // kill chance (the x0.4 penalty lived inside the same one-shot block).
+    // Canon (docs/BEAR.md) is present-tense: "at range <= 2 the bear mauls".
+    if (a.id === 'black_bear' && dist <= 2) {
       var maulMethod = 'hands';
       try { maulMethod = this.encWeaponMethod(); } catch (e) {}
       var maulDmg = 8 + Math.floor(Math.random() * 10);
       if (maulMethod === 'spear') maulDmg = Math.ceil(maulDmg / 2);
-      try { s.health = Math.max(0, (s.health || 100) - maulDmg); } catch (e) {}
+      try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - maulDmg); } catch (e) {}
       this.feedback(maulMethod === 'bow'
         ? 'It closes the distance before your shot lands — claws rake across your arm as you loose. (-' + maulDmg + ' HP) Too close for a bow.'
         : maulMethod === 'spear'
@@ -2377,7 +2401,7 @@
       // CRAYFISH: the tiny boxer gets a pinch in on the way into the bag.
       if ((animal.behavior || '') === 'aquatic_defensive' && !charsMeat && Math.random() < 0.3) {
         var pinchDmg = 2 + Math.floor(Math.random() * 3);
-        try { s.health = Math.max(0, (s.health || 100) - pinchDmg); } catch (e) {}
+        try { s.health = Math.max(0, (s.health == null ? 100 : s.health) - pinchDmg); } catch (e) {}
         this.feedback('Got it — but the tiny boxer gets a pinch in first. (-' + pinchDmg + ' HP) Grab it right behind the claws next time.');
         try { this.audioEvent('animalPinch'); } catch (e) {}
       }
@@ -2385,6 +2409,7 @@
         this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
         this.state.codex.animalEncounters[a.id] = (this.state.codex.animalEncounters[a.id] || 0) + 1;
       } catch (e) {}
+      this.encScholarDeathGate('the ' + (animal.name || 'hunt'));
       return true;
     }
     if (roll < chance + 0.15) {
@@ -2402,6 +2427,7 @@
       this.encHuntPracticed('strike'); // a near-miss still teaches
       var nmEnded = this.encMissReact(a, animal);
       if (!nmEnded) this.animalTurn();
+      this.encScholarDeathGate('the ' + (animal.name || 'hunt'));
       return true;
     }
     var mBeh = (animal.behavior || '');
@@ -2420,6 +2446,7 @@
     this.encHuntPracticed('strike'); // a clean miss still teaches
     var mEnded = this.encMissReact(a, animal);
     if (!mEnded) this.animalTurn();
+    this.encScholarDeathGate('the ' + (animal.name || 'hunt'));
     return true;
   };
   G.huntAnimal._wrapped = true;

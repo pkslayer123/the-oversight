@@ -2,6 +2,13 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "The bear is a proper fight now. It mauls you every time you swing at close range \u2014 a spear's reach still halves it, but a knife up close is answered in full, every time. And if the bear puts you down, you stay down: no more walking away from 0 health."
+    ],
+    "version": "pending-ship"
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "Issue Challenge dares have real stakes now: if it comes to blows, the village holds you both to the terms \u2014 witnessed, to yield. Winner takes respect, loser takes humility. Break the terms with a killing and the village names you oathbreaker."
     ],
     "version": "pending-ship"
@@ -121,12 +128,5 @@
       "Villagers gear up and get patched up by the healer before heading into danger."
     ],
     "version": "94fa7f7-20261009-154608"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Closed mid-fight examine and interact exploits."
-    ],
-    "version": "975b5f8-20261009-151628"
   }
 ]

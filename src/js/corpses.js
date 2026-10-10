@@ -358,7 +358,7 @@
       const s = this.state.scholar;
       // ASH: no rot, no disease from ashes.
       if (!c.ash && Math.random() < st.diseaseP) {
-        s.health = Math.max(0, (s.health || 100) - st.diseaseDmg);
+        s.health = Math.max(0, (s.health == null ? 100 : s.health) - st.diseaseDmg);
         this.say(`Handling the ${st.id} remains was a mistake. Fever by nightfall. (-${st.diseaseDmg} health)`);
       }
       // WITNESSES: looting a fresh person-corpse where others can see.
@@ -689,7 +689,7 @@
       this.addTrauma(trauma);
       if (Math.random() < st.diseaseP) {
         const s = this.state.scholar;
-        s.health = Math.max(0, (s.health || 100) - st.diseaseDmg);
+        s.health = Math.max(0, (s.health == null ? 100 : s.health) - st.diseaseDmg);
         this.say(`Burying the ${st.id} dead was honest work, and it cost you. Fever by nightfall. (-${st.diseaseDmg} health)`);
       }
       this.say(`You bury ${who}. A marker, of sorts. The village will know where. (+${trauma} trauma)`);

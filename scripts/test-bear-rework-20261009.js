@@ -214,7 +214,14 @@ function check(name, cond, detail) {
   console.log('== 6. BEAR FIGHT DATA (fierce, weapon-appropriate) ==');
   check('bear method: bow first, spear second', bear.method[0] === 'bow' && bear.method[1] === 'spear', bear.method.join(','));
   const src = fs.readFileSync(path.join(ROOT, 'src/js/encounters.js'), 'utf8');
-  check('maul hook present (dist<=2)', /black_bear.*dist <= 2.*_mauled/.test(src), '');
+  check('maul hook present (dist<=2)', /black_bear.*dist <= 2\)/.test(src), '');
+  // BRAWLER BREAK-IT 2026-10-10: the maul answers EVERY close strike — the
+  // old one-shot flag made it a per-encounter toll (free knife strikes at
+  // full chance after the first). Canon BEAR.md is present-tense. (Asserts
+  // on code, not comments: the comment block above the maul names the old
+  // flag by design.)
+  check('maul is per-strike, not one-shot (no _mauled assignment)', !/_mauled\s*=\s*true/.test(src), '');
+  check('maul condition has no one-shot guard', /if \(a\.id === 'black_bear' && dist <= 2\) \{/.test(src), '');
   check('maul damage 8-17', /maulDmg = 8 \+ Math\.floor\(Math\.random\(\) \* 10\)/.test(src), '');
   check('maul halved with spear', /maulMethod === 'spear'\) maulDmg = Math\.ceil\(maulDmg \/ 2\)/.test(src), '');
   check('maul chance: bow x0.85 / spear x0.6 / else x0.4', /maulMethod === 'bow' \? 0\.85 : maulMethod === 'spear' \? 0\.6 : 0\.4/.test(src), '');

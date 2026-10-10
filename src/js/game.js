@@ -9553,7 +9553,7 @@
           }
         } catch (e) {}
         // WOUNDS: low health means open cuts \u2014 they infect.
-        if ((s.health || 100) < 40 && !this.hasStatus('scholar', 'wound_fever') && !this.hasStatus('scholar', 'lockjaw')) {
+        if ((s.health == null ? 100 : s.health) < 40 && !this.hasStatus('scholar', 'wound_fever') && !this.hasStatus('scholar', 'lockjaw')) {
           const r = Math.random();
           if (r < 0.12) this.contractDisease('wound_fever', { source: 'a cut gone wrong' });
           else if (r < 0.16) this.contractDisease('lockjaw', { source: 'a dirty cut' });
@@ -18914,7 +18914,7 @@
         { id: 'meal', label: 'Trial of the Perfect Meal', desc: 'Cook something worth remembering.',
           score: ((this.knowsTechnique && this.knowsTechnique('cook')) || this.hasAbility('camp_cook')) ? 3 : 1 },
         { id: 'stone', label: 'Trial of Stone', desc: 'Endure. That is the whole trial. Endure.',
-          score: ((s.health || 100) >= 70 || this.hasAbility('second_wind') || this.hasAbility('iron_stomach')) ? 3 : 1 },
+          score: ((s.health == null ? 100 : s.health) >= 70 || this.hasAbility('second_wind') || this.hasAbility('iron_stomach')) ? 3 : 1 },
         { id: 'tongues', label: 'Trial of Tongues', desc: 'Talk the village through something hard.',
           score: (this.hasAbility('mediator') || this.hasAbility('diplomat') || this._evAvgTrust() >= 40) ? 3 : 1 },
         { id: 'ember', label: 'Trial of the First Ember', desc: 'Make fire the old way, from nothing.',
@@ -18973,13 +18973,13 @@
           try { this.integrate(2, 'trial of the perfect meal'); } catch (e) {}
         }
       } else if (opt.id === 'stone') {
-        if ((s.health || 100) >= 70 || this.hasAbility('second_wind') || this.hasAbility('iron_stomach')) {
+        if ((s.health == null ? 100 : s.health) >= 70 || this.hasAbility('second_wind') || this.hasAbility('iron_stomach')) {
           say('🪨 TRIUMPH: cold water, hard ground, a whole day of it — and you do not bend. The System watches you not-bend with something like awe. "NOTE: the human did not stop. We do not understand. We are taking notes anyway."');
           triumphed = true;
           try { this.integrate(4, 'trial of stone'); } catch (e) {}
           try { this.addNotability('player', 'trial of stone'); } catch (e) {}
         } else {
-          s.health = Math.max(1, (s.health || 100) - 10);
+          s.health = Math.max(1, (s.health == null ? 100 : s.health) - 10);
           say('You endure it hurt and shivering, because quitting in front of a trillion viewers was never an option. The System respects stubbornness the way a mountain respects weather.');
           try { this.integrate(3, 'trial of stone'); } catch (e) {}
           say('(It cost you: −10 health. It paid: the System will remember the stubborn one.)');
@@ -19064,7 +19064,7 @@
       } else {
         this.say('🌪️ The sky OPENS. Not rain — a wall of it, sideways, with the wind behind it like something personally offended. You\'re caught out in it.');
         s.kcal = Math.max(0, (s.kcal || 0) - 300);
-        s.health = Math.max(1, (s.health || 100) - 15);
+        s.health = Math.max(1, (s.health == null ? 100 : s.health) - 15);
         // The wind takes something: first non-bonded, non-book item in the pack.
         let lost = null;
         try {
