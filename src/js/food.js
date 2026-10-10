@@ -227,14 +227,17 @@
         return Object.assign(base, {
           foodKind: 'nut', foodState: 'in_shell', edible: false,
           kcalEach: 0, hiddenKcal: plant.caloriesPerUnit,
-          name: plant.name + ' (in shell)',
+          // BELIEVED NAME (break-it knowledge 2026-10-10c): the item wears the
+          // name the player believes — a false label is still their label.
+          name: (this.plantCalledName ? this.plantCalledName(plant.id) : plant.name) + ' (in shell)',
           prep: 'Needs shelling — crack and pick the nutmeats. (Shell action)',
         });
       }
       const item = Object.assign(base, {
         foodKind: 'plant', foodState: 'ready', edible: true,
         kcalEach: plant.caloriesPerUnit,
-        name: plant.name,
+        // BELIEVED NAME (break-it knowledge 2026-10-10c): see the nut branch.
+        name: this.plantCalledName ? this.plantCalledName(plant.id) : plant.name,
       });
       // PREP LADDER (break-it knowledge 2026-10-10): preparation text is
       // prepKnown/L2+ knowledge — a fresh-foraged L1 plant gets the honest
@@ -355,7 +358,11 @@
         edible: !isNut && !notFood,
         kcalEach: (isNut || notFood) ? 0 : p.caloriesPerUnit,
         hiddenKcal: isNut ? p.caloriesPerUnit : null,
-        name: isNut ? p.name + ' (in shell)' : p.name,
+        // BELIEVED NAME (break-it knowledge 2026-10-10c): split happens at
+        // identification; a taught-wrong plant is already L1 (identifyPlant
+        // no-ops), so the item must wear the false believed name.
+        name: isNut ? (this.plantCalledName ? this.plantCalledName(pid) : p.name) + ' (in shell)'
+              : (this.plantCalledName ? this.plantCalledName(pid) : p.name),
         prep: notFood
           ? (p.preparation || 'Identified — not food. But nothing is trash; the Codex knows its uses.')
           : isNut ? 'Needs shelling — crack and pick the nutmeats.'
@@ -2936,7 +2943,10 @@
         it.foodState = isNut ? 'in_shell' : 'ready';
         it.edible = !isNut;
         it.kcalEach = isNut ? 0 : (it.hiddenKcal || p.caloriesPerUnit);
-        if (isNut) it.name = p.name + ' (in shell)';
+        // BELIEVED NAME (break-it knowledge 2026-10-10c): the base
+        // refreshItemNames already renamed via plantCalledName; the nut
+        // flip here must agree with it.
+        if (isNut) it.name = (this.plantCalledName ? this.plantCalledName(pid) : p.name) + ' (in shell)';
         // PREP LADDER (break-it knowledge 2026-10-10): the flip names the
         // food (L1) but withholds preparation text until prepKnown/L2 —
         // itemPrepFor writes the honest placeholder.

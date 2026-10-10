@@ -918,7 +918,11 @@
       const all = this.journalPlantEntries(pid);
       return {
         pid,
-        name: p.name || pid,
+        // BELIEVED NAME (break-it knowledge 2026-10-10c): the payload's name
+        // is the player's label — no current renderer reads it (the card
+        // title gates wrongAs separately), but the next caller shouldn't
+        // inherit a true-name footgun.
+        name: this._calledName(pid),
         line: this.codexPlantLine(pid),
         entries: all.filter(x => x.life === this.villagerId),
         marginalia: all.filter(x => x.life !== this.villagerId),
@@ -1291,8 +1295,13 @@
         if (poisoned || sickened) {
           this.recordPlantMark(pid, poisoned ? 'poisoned' : 'sickened',
             `Day ${day()}: ${poisoned ? 'poisoned by it' : 'fever by nightfall'}.`);
+          // BELIEVED NAME (break-it knowledge 2026-10-10c): the diary is the
+          // player's hand — a false label is still their label until corrected
+          // (same class as the learnPart/thickenKnowledge r2 fixes). A wrongAs
+          // plant is L1 (taught-wrong), so this entry IS reachable with a false
+          // name in play.
           this.writePlantEntry(pid, 'poison', this.journalVoiceLine('poison', v,
-            { pname: p.name || pid, note: poisoned ? 'Veins burned for an hour.' : 'Fever by nightfall.' }));
+            { pname: this._calledName(pid), note: poisoned ? 'Veins burned for an hour.' : 'Fever by nightfall.' }));
           this.journalTouch('poison');
         }
       }

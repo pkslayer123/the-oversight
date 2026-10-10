@@ -2418,7 +2418,13 @@
         by: source || 'taught', wrongAs: wname, wrongPid: wrong.wrongPid,
         taughtBy: vid, taughtByName: tname });
       this.say(`\u2605 IDENTIFIED (maybe): ${wname}. ${tname} is sure — "${wname}, see the leaves?" — and you have no reason to doubt them. Yet.`);
-      try { this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${wname} (${source || 'taught'}).`); } catch (e) {}
+      try { 
+      // BELIEVED NAME (break-it knowledge 2026-10-10c): the lie renames the
+      // stacks too. You identified honestly at L1 (true names in the pack);
+      // now you believe the false label — the pack must agree, or the true
+      // name leaks through the inventory of a plant "you don't know."
+      try { this.refreshItemNames(pid); } catch (e) {}
+this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${wname} (${source || 'taught'}).`); } catch (e) {}
       return 'taught-wrong';
     },
     // resolveWrongName(pid, how): the truth arrived through a trustworthy
@@ -2442,7 +2448,13 @@
       this.say(`\u2605 The record corrects itself: this was never ${e.wrongAs} — it's ${p.name || pid}. ${who} taught you wrong${how ? ` (${how})` : ''}. (The Codex marks the disagreement. You can call them out in conversation.)`);
       e.contested = { by: e.taughtBy, byName: who, claim: e.wrongAs,
         claimPid: e.wrongPid, deliberate, day: (this.state.scholar || {}).day || 0 };
+      
+      // BELIEVED NAME (break-it knowledge 2026-10-10c): the truth renames
+      // the stacks back — AFTER the deletes below, so plantCalledName now
+      // resolves to the true name. Without this the pack kept showing the
+      // false label (or a stale descriptor) after the Codex corrected itself.
       delete e.wrongAs; delete e.wrongPid;
+      try { this.refreshItemNames(pid); } catch (err2) {}
       return true;
     },
     // hasContestedWith(vid): unresolved contested claims by this person.
@@ -20174,7 +20186,10 @@
           if (e.known) {
             const item = this.foodForageItem(e.plant, true, e.units, kcal, scholar.day);
             scholar.inventory.push(item);
-            packedBits.push(`${e.units}\u00d7 ${e.plant.name}`);
+            // BELIEVED NAME (break-it knowledge 2026-10-10c): the pack line
+            // speaks the name the player believes — a false label is still
+            // their label until corrected.
+            packedBits.push(`${e.units}\u00d7 ${this.plantCalledName(pid)}`);
             // HONESTY (forager break-it 2026-10-08): nuts land in-shell
             // (edible:false, 0 kcal until shelled) — the "(X kcal)" promise
             // counts only food you can eat now. In-shell nuts are listed by
@@ -20241,7 +20256,9 @@
         const knownBits = [], unknownBits = [];
         for (const pid of Object.keys(bySpecies)) {
           const e = bySpecies[pid];
-          (e.known ? knownBits : unknownBits).push(`${e.units}\u00d7 ${e.known ? e.plant.name : this.lumpFormName(e.plant)}`);
+          // BELIEVED NAME (break-it knowledge 2026-10-10c): same class as the
+          // pack-line fix above — the summary speaks the believed name.
+          (e.known ? knownBits : unknownBits).push(`${e.units}\u00d7 ${e.known ? this.plantCalledName(pid) : this.lumpFormName(e.plant)}`);
         }
         // NO SILENT ACTIONS: deadfall is reported too — the pines gave wood,
         // and the player should know the press wasn't wasted.
@@ -33582,7 +33599,13 @@
         // the stack but withholds preparation text until prepKnown/L2 —
         // itemPrepFor writes the honest placeholder (sibling sweep: the old
         // line printed p.preparation unconditionally, undoing the gate).
-        if (it.plantId === pid) { it.name = p.name; it.prep = this.itemPrepFor(pid); }
+        // BELIEVED NAME (break-it knowledge 2026-10-10c): the stack wears the
+        // name the player believes — a false label (wrongAs) is still their
+        // label until resolveWrongName corrects it. Callers: identifyPlant
+        // (fresh L1, no wrongAs possible), wrongTeaching (lie lands), and
+        // resolveWrongName (truth lands) — all three keep pack and codex in
+        // agreement about what you call it.
+        if (it.plantId === pid) { it.name = this.plantCalledName(pid); it.prep = this.itemPrepFor(pid); }
       }
     },
     // THE identification event. One path, every source. Names are earned here.
