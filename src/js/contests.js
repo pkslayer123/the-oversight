@@ -3454,12 +3454,28 @@
         }
       } catch (e) {}
     }
-    // WATCHER HECKLE (audit-shows 2026-10-09): heckling a villager's show
-    // is noticed — it dings their deterministic resolution (read in
-    // _showVillagerEnd) and the village remembers the cruelty.
+    // WATCHER HECKLE (audit-shows 2026-10-09; break-it fame-seeker
+    // 2026-10-09): heckling a villager's show is noticed — it dings their
+    // deterministic resolution (read in _showVillagerEnd) and the victim
+    // remembers the cruelty. The old code only set ac.heckle: the choice
+    // note promised "X will remember this" but nothing recorded it, so
+    // heckling was a free fame button (+1 showmanship, zero cost). Heckling
+    // happens on camera in front of the victim — a SEEN action, not
+    // gossip — so their trust of the player moves (trust ripple to their
+    // circle is witness-gated by the show's watch-together framing).
+    // Infamy stays famous (showmanship still lands); the village just has
+    // opinions now.
     if (d.heckle) {
       ac.heckle = true;
       log.push('heckled — the cameras noticed');
+      try {
+        const hpid = ac.participant;
+        if (hpid && hpid !== 'player') {
+          this.remember(hpid, 'heckled', 'heckled them on camera during ' + (ac.showName || ac.showId || 'a show'));
+          this.applyRep(hpid, { kind: -4, honest: -2 }, 1, false);
+          this.sysSay(`📺 ${this.displayName(hpid)} heard every word. The cameras caught their face. They'll remember this.`);
+        }
+      } catch (e) {}
     }
     // WATCHER AGENCY (Steve 2026-10-06): watcher choices move performance.
     // Cheering is real support — capped, and the cameras notice.
