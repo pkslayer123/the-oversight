@@ -6548,6 +6548,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // only assigns tbfight when the save HAS a fight. Loading a peaceful
         // save in a session that already restored a mid-fight save left the
         // OLD fight live — a phantom fight from another save. Clear first.
+        // AUDIO HYGIENE (break-it audio 2026-10-10): a restored peaceful save
+        // must not inherit the previous session's sustained loops — kill the
+        // heartbeat / beam hum / hummice bed before dropping the fight.
+        // combatEnd is idempotent; silent when nothing is playing.
+        try { this.audioEvent('combatEnd'); } catch (e) {}
         this.tbfight = null;
         if (tbS && tbS.fighters && tbS.fighters.length) {
           let droppedGhosts = 0, droppedCorrupt = 0;
@@ -26081,7 +26086,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (this.over || this.villagerId !== _bearerBefore) {
         try {
           if (this.tbfight && !this.tbfight.over) {
-            this.tbfight.over = true; this.tbfight.result = 'dissolved'; this.tbfight = null;
+            this.tbfight.over = true; this.tbfight.result = 'dissolved';
+            // AUDIO HYGIENE (break-it audio 2026-10-10): dissolving the fight
+            // without tbEnd left the combat heartbeat / beam hum / hummice bed
+            // thumping forever with no fight. combatEnd is idempotent.
+            try { this.audioEvent('combatEnd'); } catch (e2) {}
+            this.tbfight = null;
           }
         } catch (e) {}
         return true;
