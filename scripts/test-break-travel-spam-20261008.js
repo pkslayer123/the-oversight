@@ -9,6 +9,10 @@
 // FIX: travelTimeStep() only runs its world-advance when the player's clock
 // (dayTicks) has moved since the last step. Real journeys still advance the
 // world; zero-cost pacing does not.
+// REPRICED (break-it travel r7 2026-10-09): the 1-tick re-arm defeated the
+// moved-at-all gate (a full part-scale step per ~2 player ticks). Now each
+// travel banks elapsed ticks and every 128 banked releases one step; the
+// first crossing (ever / per day) keeps its designed free step.
 // Usage: node scripts/test-break-travel-spam-20261008.js        (AFTER fix)
 //        BEFORE=1 node scripts/test-break-travel-spam-20261008.js (pre-fix code from git HEAD)
 const fs = require('fs');
@@ -125,8 +129,12 @@ if (BEFORE) {
   ok('AFTER: 30 spams = exactly one world-step (energy)', nAfter.energy === 14, `energy=${nAfter.energy}`);
   ok('AFTER: 30 spams = exactly one world-step (hunger)', nAfter.hunger === 18, `hunger=${nAfter.hunger}`);
   ok('AFTER: 30 spams = exactly one world-step (grief)', v.grief === 4, `grief=${v.grief}`);
-  // design preserved: spend real time, then travel DOES advance the world
-  Game.tickAction(32);
+  // design preserved: spend real time, then travel DOES advance the world.
+  // REPRICED (break-it travel r7 2026-10-09): the world-step is a day-part
+  // (128 ticks) of needs+gossip, so a travel only earns one after a part's
+  // worth of banked clock. 32 ticks no longer buys it — the honest price is
+  // the honest price.
+  Game.tickAction(128);
   const f0 = Game.npcNeeds(rid).fear;
   const here = { x: Game.map.px, y: Game.map.py };
   const back = (here.x === ax && here.y === ay) ? tgt : { x: ax, y: ay };

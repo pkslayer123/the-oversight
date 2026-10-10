@@ -81,6 +81,8 @@
 //   - dead_dont_move: movement + map interaction (beginPathWalk, pathStep, microMove, _cellInteract, enterBuilding, exitBuilding, clearBlockage, buildBridge) refuse when over — the corpse walks nothing, builds nothing, the world advances nothing (code: beginPathWalk, break-it travel r6 2026-10-09)
 //   - no_mid_fight_interact: _cellInteract refuses inCombat — interacting runs monster/animal/villager turns while tickAction(1) no-ops mid-fight, so a stale tile card could grant free interacts AND free monster turns; same class as the examineCell guard (code: _cellInteract, explorer break-it 2026-10-09)
 //   - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
+//   - travel_world_step_priced: travelTimeStep's needs+gossip world-step is proportional to player time actually spent — each travel banks its elapsed dayTicks; every 128 banked (one day-part) releases one step. The zero-tick ping-pong (2026-10-08) and the 1-tick re-arm (r7) buy nothing the clock didn't pay for. Exception (by design): the first crossing ever and each new day's first crossing grant one step — the crossing itself is a beat (code: travelTimeStep, break-it travel r7 2026-10-09)
+//   - one_monster_per_tile: the engine is singular (monsterAt, scholar.monster alias, perception, combat) — wanderWorldMonsters never wanders onto an occupied tile, pickWorldTile never picks one for maintenance spawns, the wanderer circles off claimed ground, and followers hold at the boundary rather than chasing onto it; stacking made phantoms the engine can't perceive or fight (deliberate same-species packs, e.g. the hushwolf trio, are the exception — they ship with their own flows) (code: wanderWorldMonsters, pickWorldTile, checkEncounter, travelTo, break-it travel r7 2026-10-09)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - load_resets_session_death: load() clears villageLost (session state of a dead run, not save data) — a Continued living run always has a home (code: load, break-it persistence r5 2026-10-09)
@@ -8105,7 +8107,18 @@
       const oldMonster = this.monsterAt(fromX, fromY);
       if (oldMonster) {
         const mdef = this.data.monsters.find(m => m.id === oldMonster.id);
-        if (mdef && mdef.follows) {
+        // ONE MONSTER PER TILE (break-it travel r7 2026-10-09): the follower
+        // chases you through the boundary — but not onto claimed ground.
+        // Stacking made it a phantom (monsterAt/perception/combat only ever
+        // see the first). It holds at the boundary instead, still on your
+        // trail — next crossing, it tries again.
+        if (mdef && mdef.follows && this.monsterAt(x, y)) {
+          // (explorer loop 2026-10-06 bug 2, same class): monsterNoun can be a
+          // vague descriptor — never compose "The something…".
+          const mn = this.monsterNoun(mdef.id);
+          if (/^something\b/i.test(mn)) this.say(`It stops at the boundary — pacing, unwilling. Something else is already here. It's still out there.`);
+          else this.say(`The ${mn} stops at the boundary — pacing, unwilling. Something else is already here. It's still out there.`);
+        } else if (mdef && mdef.follows) {
           // FOLLOW RE-ENTRY (explorer loop 2026-10-05): the monster chases
           // you through the boundary and enters the NEW grid at the edge you
           // came from, a step or two behind you. Its old mx/my belonged to
@@ -8233,12 +8246,40 @@
       // and fast-forwards all gossip for free (infinite calm, rest, and —
       // via hunger-driven foraging departures — pantry food). The world only
       // advances when the player's clock has moved since the last step.
+      // RE-ARM (break-it travel r7 2026-10-09): the 2026-10-08 gate blocked
+      // only the ZERO-tick ping-pong — a single step (1 tick, 2 kcal) between
+      // travels re-armed it, granting a full part-scale needs+gossip step per
+      // ~2 player ticks (measured: 20 ping-pongs = 20 ticks + 40 kcal zeroed
+      // the village's fear, maxed energy, fast-forwarded gossip — ~1/64th the
+      // honest price of a day-part). The world-step is now proportional to
+      // the clock: each travel banks its elapsed player ticks; every 128
+      // banked (one day-part) releases one needs+gossip step. Pacing the
+      // boundary buys nothing the clock didn't pay for.
       const s = this.state.scholar;
       const ticks = s.dayTicks || 0;
-      if (ticks === s._lastTravelStepTicks) return;
-      s._lastTravelStepTicks = ticks;
-      try { this.tickNeeds(); } catch (e) {}
-      try { this.spreadGossip(); } catch (e) {}
+      const PART = (this.TIME && this.TIME.TICKS_PER_PART) || 128;
+      let last = s._lastTravelStepTicks;
+      let debt = s._travelStepDebt || 0;
+      if (last === undefined || ticks < last) {
+        // FIRST CROSSING (break-it travel 2026-10-08, preserved r7): the
+        // crossing itself is a beat — "moving between nodes is a BIG time
+        // step." One world-step, by design, on the first travel ever and the
+        // first travel of each new day. Everything after is priced by the
+        // clock below.
+        last = ticks;
+        debt += PART;
+      } else {
+        debt += (ticks - last);
+        last = ticks;
+      }
+      s._lastTravelStepTicks = last;
+      let steps = 0;
+      while (debt >= PART && steps < 8) { debt -= PART; steps++; }
+      s._travelStepDebt = debt;
+      for (let i = 0; i < steps; i++) {
+        try { this.tickNeeds(); } catch (e) {}
+        try { this.spreadGossip(); } catch (e) {}
+      }
     },
 
     // micro-move: step to an adjacent cell in the 9x9. 1 tick of time, no effort.
@@ -14005,6 +14046,7 @@
       for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
         if (x === px && y === py) continue;
         if (this.isSafeTile(x, y)) continue;
+        if (this.monsterAt(x, y)) continue; // ONE MONSTER PER TILE (break-it travel r7 2026-10-09)
         const t = this.tileAt(x, y);
         if (!t) continue;
         const tt = t.type;
@@ -14049,6 +14091,12 @@
         const nx = m.tx + d[0], ny = m.ty + d[1];
         if (nx < 0 || nx > 8 || ny < 0 || ny > 8) continue; // 9x9 world (2026-10-07)
         if (this.isSafeTile(nx, ny)) continue;
+        // ONE MONSTER PER TILE (break-it travel r7 2026-10-09): the engine is
+        // singular — monsterAt returns the first, the scholar.monster alias,
+        // perception, and combat all target one. A wanderer stacking onto an
+        // occupied tile made a phantom: unperceivable, unfightable, but still
+        // wandering and narrating. It waits for open ground instead.
+        if (this.monsterAt(nx, ny)) continue;
         const ox = m.tx, oy = m.ty;
         m.tx = nx; m.ty = ny;
         m.mx = Math.floor(Math.random() * 9); m.my = Math.floor(Math.random() * 9);
@@ -16465,6 +16513,13 @@
           this.say('Your skin prickles before your eyes catch up — warmth, moving, close. The sensory hairs know. Something is HERE. (eurika-sense: no ambush)');
           return;
         }
+        // ONE MONSTER PER TILE (break-it travel r7 2026-10-09): if this
+        // ground is already claimed, the wanderer circles off instead of
+        // stacking into a phantom the engine can't perceive or fight. It
+        // stays out there — the beat recurs.
+        if (this.monsterAt(px, py)) {
+          this.say('Something big pads at the edge of the clearing — then thinks better of it. This ground is already claimed.');
+        } else {
         // the monster is HERE, in the grid with you. spawn at a distance, not on top of you.
         // WATER-SPAWN (Steve 2026-10-06): water-affinity wanderers (heron,
         // toad, turtle) take the shore when there's water to take.
@@ -16486,6 +16541,7 @@
         this.encounterDone = true;
         this.state.wandererNextDay = scholar.day + 4; // it comes back. they always come back.
         this.wanderer = null;
+        }
       }
     },
 
