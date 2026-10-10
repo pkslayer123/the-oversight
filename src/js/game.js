@@ -9999,6 +9999,11 @@
           const cell = detail[ny] && detail[ny][nx];
           const props = this.cellProps(cell);
           if (props.blocks) continue;
+          // EVICTION WALL (party tactics 2026-10-10): the landlord's wall is
+          // fight-scoped terraform — findPath only reads map detail, so check
+          // it here. (In-combat player pathing only; the wall never exists
+          // outside a fight.)
+          if (this.tbfight && this.tbTerrainAt(nx, ny) === 'eviction_wall') continue;
           // no corner-cutting: a diagonal step needs both orthogonal sides clear
           if (dx !== 0 && dy !== 0) {
             const c1 = detail[y] && detail[y][nx];
@@ -23395,7 +23400,13 @@
       // monsters: behavior drives count (pack/swarm bring friends)
       // BELLTOAD DELAY (Steve 2026-10-05): the pack doesn't teleport in.
       // 1 toad starts. The rest arrive after round 1.
-      let count = mdef.pack || 1;
+      // PARTY-AWARE SPAWN (Steve 2026-10-10, party tactics): pack hunters
+      // scale their numbers to your party — solo scouts keep a fair duel,
+      // parties face the pack. partyN = player + allies joining this fight.
+      // No tactics.packSpawn -> legacy mdef.pack (belltoad, hummice, field
+      // fights — untouched).
+      const partyN = 1 + Math.min(candidates.length, 4);
+      let count = this.tbPackSpawnCount ? this.tbPackSpawnCount(mdef, partyN) : (mdef.pack || 1);
       let packDelayed = 0;
       if (mdef.id === 'belltoad' && count > 1) {
         packDelayed = count - 1;
@@ -25584,6 +25595,12 @@
       }
       this.sysSay(`ROUND ${f.round}!`);
       this.audioEvent('round', { round: f.round });
+      // EVICTION WALL EXPIRY (party tactics 2026-10-10): the landlord's wall
+      // is on a clock, not on the landlord — it sinks even if the landlord
+      // dies mid-lease. (The pre-turn hook only runs on the landlord's turn.)
+      if (f.evictionWall && f.round >= f.evictionWall.expires && this.tbClearEvictionWall) {
+        this.tbClearEvictionWall();
+      }
       // BELLTOAD CHORUS (Steve 2026-10-05): the sound IS the mechanic.
       // Every 2 rounds, another answers the call (up to 4), even if the
       // original is dead. The croak carries for miles.
@@ -26634,6 +26651,11 @@
       const detail = this.genDetail(this.map.px, this.map.py);
       const cell = detail[y] && detail[y][x];
       if (this.cellProps(cell).blocks) return true;
+      // EVICTION WALL (party tactics 2026-10-10): the landlord's wall blocks
+      // player-side fighters only — it is the landlord's weapon, and monsters
+      // ignore terrain. (tbBlocked, the fighter-blind version, is untouched:
+      // monster steps validate through tbCanOccupy -> here.)
+      if (f && (f.kind === 'player' || f.kind === 'villager') && this.tbTerrainAt(x, y) === 'eviction_wall') return true;
       const tf = this.tbfight;
       if (tf) for (const o of tf.fighters) {
         if (o === f || !o.alive || o.fled) continue;
@@ -26654,6 +26676,12 @@
       const f = this.tbfight;
       // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks (bleed/burn), expiry.
       if (this.seTickFighter(v)) return;
+      // LURED (party tactics 2026-10-10): the Static's call has them — they
+      // walk toward the crying and do nothing else. Handled here, before the
+      // normal AI. Returns true when the turn was consumed by the lure.
+      if (this.tbLuredAllyTurn && this.tbLuredAllyTurn(v)) {
+        return;
+      }
       // ON THE LINE (warranty caller, Steve 2026-10-06): a villager the
       // caller reached is stuck listening — they lose the turn. Hurting the
       // caller mid-call hangs it up (the bad-connection rule is the peel).
@@ -28497,6 +28525,10 @@
             // windup — a mid-declare hit weakens it honestly.
             if (this.sunbaskerIs(m)) tg.dmg = this.sbBiteDmg(m);
             let dmg = S.combat.roll(tg.dmg), missed = false;
+            // FLANK (party tactics 2026-10-10): packmates beside the target
+            // hit harder. Computed at resolve — never stale. 0 for duels.
+            const flankD = this.tbFlankBonus ? this.tbFlankBonus(m, t) : 0;
+            if (flankD > 0) dmg += flankD;
             if (m.blind > 0 && Math.random() < 0.5) { missed = true; }
             if (missed) this.say(`${this.encShortLabel(m) || m.name}'s ${this.encAttackName(m, tg.attackName)} swipes at sand-ghosts. Missed. (pocket_sand)`);
             else {
@@ -28507,7 +28539,7 @@
                 this.say(`💥 ${this.encShortLabel(m) || m.name}'s DESPERATE IMPROV — your ${tg.usImprovNames[0]}, then your ${tg.usImprovNames[1]} — finds you. Badly. Frantically.`);
                 this.tbDamage(t.key, dmg, (this.encShortLabel(m) || m.name) + "'s Desperate Improv", m.key);
               } else {
-                this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.`);
+                this.say(`💥 ${this.encShortLabel(m) || m.name}'s ${hitName} finds ${t.kind === 'player' ? 'you' : t.name} — no dodging it.` + (flankD > 0 ? ` (FLANKED +${flankD})` : ''));
                 // SUNBASKER (Steve 2026-10-06): the bite TRACKS — footwork can't
                 // dodge it. The fiction says "no dodging it" and means it; the
                 // counterplay is hitting it mid-windup to starve the charge.
@@ -28991,6 +29023,14 @@
       if (this.wolfIs(m) && m.wolfBroken) {
         const near = S.combat.nearestEnemy(f.fighters, m);
         if (near) foe = near;
+      }
+      // PARTY TACTICS (Steve 2026-10-10): pack hunters run down the isolated;
+      // the Chorus Line's Downbeat walks toward the densest cluster. Both
+      // key off player-side count >= 3 (data: mdef.tactics). Broken wolves
+      // keep their nearest-only override above.
+      if (this.tbTacticalFoe) {
+        const tactFoe = this.tbTacticalFoe(m, foe);
+        if (tactFoe) foe = tactFoe;
       }
       // BATCH 4 breather beats: post-attack recovery with the monster's own
       // name on it. The breather spends the whole turn.
@@ -29491,7 +29531,12 @@
         }
         if (biPhase === 'brighten') {
           // windup runs in the generic pending section (escalation hook
-          // above). It holds position — never moves once set.
+          // above).
+          // GREED DRIFT (party tactics 2026-10-10): against 3+ fighters the
+          // Idea drifts toward the crowd while brightening — greed as a
+          // targeting laser, and its self-centered burst follows it. Spread
+          // out and it loses the scent. Solo, it still holds position.
+          if (this.tbIdeaDrift) this.tbIdeaDrift(m);
           this.tbRefreshTelegraphUI(); this.tbEndCheck(); return;
         }
         // settle
@@ -30520,7 +30565,16 @@
       // fast — it's all mouth, no armor).
       if (this.hkIs(m)) {
         const ff = fifoFoe(); if (ff) foe = ff;
-        const t = foe.f;
+        // PACK PILE-ON (party tactics 2026-10-10): the set piles onto the
+        // most-shamed fighter. Party-gated in the packTactics hook
+        // (m.tactPileTarget); the jibes follow the target.
+        if (m.tactPileTarget) {
+          const pt2 = this.tbFighter(m.tactPileTarget);
+          if (pt2 && pt2.alive && !pt2.fled) {
+            foe = { f: pt2, d: Math.max(Math.abs(pt2.mx - m.mx), Math.abs(pt2.my - m.my)) };
+          }
+        }
+        let t = foe.f;
         if (!m.beamPhase || m.beamPhase === 'stalk') { this.encSetPhase(m, 'warming_up'); }
         const known = this.encTelegraphKnown(m);
         // WARMING UP gets a visible beat (Steve 2026-10-06): the phase was
@@ -30574,6 +30628,9 @@
           if (!m.hkDeclared) { m.hkDeclared = true; this.tbAggroAudio(m); }
           m.hkShame += 1;
           f.lastPlayerMissed = false;
+          // PACK PILE-ON (party tactics 2026-10-10): per-target shame lets
+          // the set pile onto the most-shamed fighter (packTactics hook).
+          t.hkShamedByPack = (t.hkShamedByPack || 0) + 1;
           // PILE-ON (Steve 2026-10-06): the moment it's headlining, the crowd
           // that isn't there joins in — every headliner jibe stacks an extra
           // shame, and the words start to CUT (psychic chip). The codex
@@ -31002,7 +31059,11 @@
         }
         if (Math.max(Math.abs(foe.f.mx - m.mx), Math.abs(foe.f.my - m.my)) <= 1) {
           this.say(`${this.encSubject(m)} is on ${foe.f.kind === 'player' ? 'you' : foe.f.name} — no warning, just teeth.`);
-          this.tbDamage(foe.f.key, S.combat.roll(atk.damage), m.name);
+          // FLANK (party tactics 2026-10-10): packmates beside the target
+          // bite harder. Party-gated inside tbFlankBonus; 0 for duels.
+          const flank = this.tbFlankBonus ? this.tbFlankBonus(m, foe.f) : 0;
+          if (flank > 0) this.say(`They're coming from both sides — nowhere to turn. (FLANKED +${flank})`);
+          this.tbDamage(foe.f.key, S.combat.roll(atk.damage) + flank, m.name);
           // JUDGMENT (Steve 2026-10-08): the rush itself stays SILENT — no
           // warning, just teeth (Steve killed the rush indicator 2026-10-06).
           // The snarl breaks only AFTER first contact: the teeth are done,

@@ -51,8 +51,10 @@
       "aggroRange": 6,
       "archetype": "hype",
       "fleeAt": 0.3,
-      "notes": "Renamed from hype_horn; the old hornIs crowd-deflate branch was dead code; removed 2026-10-08.",
-      "preTurnHooks": [],
+      "notes": "Renamed from hype_horn; the old hornIs crowd-deflate branch was dead code; removed 2026-10-08. Pack tactics (party-aware 2026-10-10): the set piles onto one target.",
+      "preTurnHooks": [
+        "packTactics"
+      ],
       "preferredRange": 3
     },
     "hummice": {
@@ -69,14 +71,20 @@
       "aggroRange": 7,
       "archetype": "pack_hunter",
       "fleeAt": 0.25,
-      "preTurnHooks": [],
+      "notes": "Pack tactics (party-aware 2026-10-10): flanks (+2 per wolf beside the target), runs down the isolated. Spawn scales with your party.",
+      "preTurnHooks": [
+        "packTactics"
+      ],
       "preferredRange": 2
     },
     "landlord": {
       "aggroRange": 6,
       "archetype": "territorial",
       "fleeAt": 0,
-      "preTurnHooks": [],
+      "notes": "Eviction Wall (party-splitter 2026-10-10): against 3+ fighters it rezones the ground — a telegraphed wall through the cluster, service entrance left open.",
+      "preTurnHooks": [
+        "landlordEviction"
+      ],
       "preferredRange": 3
     },
     "lockpick_raccoon": {
@@ -153,6 +161,16 @@
       ],
       "preferredRange": 4
     },
+    "reunion": {
+      "aggroRange": 7,
+      "archetype": "pack_hunter",
+      "fleeAt": 0,
+      "notes": "The village you failed, given teeth. Brings as many as you brought (mirror spawn, max 3); the faces flank and run down stragglers.",
+      "preTurnHooks": [
+        "packTactics"
+      ],
+      "preferredRange": 2
+    },
     "speedbump_turtle": {
       "aggroRange": 2,
       "archetype": "bunker",
@@ -195,7 +213,10 @@
       "aggroRange": 6,
       "archetype": "mimic",
       "fleeAt": 0.2,
-      "preTurnHooks": [],
+      "notes": "The Call Goes Out (party-splitter 2026-10-10): against 3+ fighters it lures one ally off alone, once per fight. A hand on their shoulder breaks it.",
+      "preTurnHooks": [
+        "staticCallOut"
+      ],
       "preferredRange": 4
     },
     "warranty_caller": {

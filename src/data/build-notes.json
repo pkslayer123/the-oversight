@@ -2,6 +2,15 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Monsters have learned to hunt parties: hushwolves now run in bigger packs with flanking when three or more of you fight together, hecklers pile onto whoever they shame, and the landlord raises eviction walls to split your group (there's always a service entrance \u2014 find it).",
+      "The Static has a new trick: it can mimic a crying villager to lure one of your people away from the group. Keep someone close \u2014 a hand on the shoulder breaks the spell.",
+      "Bright Ideas drift toward bunched-up fighters and the Chorus aims for the densest cluster: spreading out is now a real defense. Solo scouts still get fair duels \u2014 the pack only comes out for parties of three or more."
+    ],
+    "version": "pending-ship"
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "Other villages are alive now, the way yours is. A village you know can split apart \u2014 and when it does, the breakaways may walk out of the treeline at dusk and ask for your fire, every one of them named. Your village votes on it at a moot, and the loudest voices on both sides say their piece first. Taking people in means more mouths to feed, and their reputation walks in with them: harbor the eaters and every other fire will remember. You\u2019ll also hear about their hunger, their dead leaders, and their schisms through travelers \u2014 late, and not always right. And if a starving village comes begging \u2014 or comes with spears \u2014 that\u2019s a real choice too."
     ],
     "version": "pending-ship"
@@ -118,13 +127,5 @@
       "Map monster popups no longer name creatures the village hasn't named yet."
     ],
     "version": "a6d63840-20261009-165835"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Gristlefit rage can lash out at allies mid-fight \u2014 and now they remember it. Trust drops, and it haunts you.",
-      "Trying to strike an ally in a fight gets an honest refusal instead of silence."
-    ],
-    "version": "4bb5cc7e-20261009-165604"
   }
 ]

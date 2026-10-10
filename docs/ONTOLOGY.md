@@ -823,6 +823,20 @@ Party system. Companions travel and fight with you.
 
 **Consumes:** state.party
 
+### party-tactics (`partyTactics.js`)
+Party-aware monster tactics (Steve 2026-10-10, PROGRESSION.md settled law #8: "Monsters are party-aware"). Pack hunters, party-splitters, and group punishers — tactics that scale, not flat bigger numbers. Every behavior keys off the player-side fighter count (>= 3): solo scouts face the same monsters as fair duels; parties face coordination.
+
+**Provides:** tbPartySideCount(), tbPackSpawnCount(mdef, partyN), tbPackmates(m), tbFlankBonus(m, target), tbIsolatedFighter(), tbDensestFighter(radius), tbPartyCentroid(), tbTacticalFoe(m, foe), tbIdeaDrift(m), tbRaiseEvictionWall(m, cells), tbClearEvictionWall(), tbEvictionWallCells(), tbWallActive(), tbStaticCallOut(m), tbLuredAllyTurn(v), tbMostShamedFighter()
+
+**Rules:**
+- party_gate: every tactic keys off tbPartySideCount() >= minParty (default 3). Solo/duo fights never see pack tactics, splitters, or AoE-punish drift. (code: tbFlankBonus, tbTacticalFoe, tbIdeaDrift, tbStaticCallOut, tbEvictionWallCells)
+- data_driven: which monsters do what lives in mdef.tactics (monsters.json), not in branches here. This module is the interpreter. (code: tbPackSpawnCount, tbTacticalFoe)
+- blow_by_blow: tactics modify targeting, movement, and damage inside the real turn/round structure — never an outcome table. (code: all)
+- telegraph_honest: the eviction wall warns its exact cells one round before it rises; the Eureka drift recomputes its telegraph cells when it moves. (code: tbRaiseEvictionWall, tbIdeaDrift)
+- monsters_ignore_terrain: the eviction wall blocks player-side fighters only — it is the landlord's weapon, and monsters ignore terrain. (code: tbBlockedFor patch in game.js)
+
+**Consumes:** Game.tbfight (fighters: mx, my, kind, alive, fled), Game.warnCells, Game.tbTerraform, Game.tbTerrainAt, Game.tbCanOccupy, Game.tbBlockedFor, Game.tbStepToward, Game.tbFighter, Game.tbRefreshTelegraphUI, Game.tbVillagerSyncPos, Game.encTelegraphKnown, Game.vmVoiceName, Game.audioEvent, Game.say, Scattering.combat (patternCells), window.MonsterBehaviorHooks (hook registration surface for packTactics, landlordEviction, staticCallOut)
+
 ### perceive (`perceive.js`)
 Perception system. Proximity hints, spotting.
 

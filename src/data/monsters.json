@@ -151,10 +151,14 @@
       "pelt"
     ],
     "behavior": "pack",
+    "tactics": {
+      "packSpawn": { "solo": 2, "party": 4 },
+      "packTactics": { "flank": 2, "flankCap": 6, "focusIsolated": true }
+    },
     "codexStages": {
       "unknown": "The woods went silent all at once. Not quiet \u2014 silent. Like the world holding its breath.",
       "observed": "Feral dogs. The System classified vocalization as 'inefficient' and removed it. They coordinate without sound \u2014 watch the lead animal's ears. They are still loyal. Just not to you. They run prey down over miles \u2014 once they've decided, they do not stop. If you run, run for Haven's walls or turn and kill the lead.",
-      "slain": "Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks."
+      "slain": "Moves: Silent Rush (ambush opener, heavy), Harass (pack circles, light hits), Withdraw (if the lead falls). They fear fire \u2014 they remember being dogs. Wound the lead and the pack breaks. Pack tactics: the pack flanks (each wolf beside your target bites +2 harder) and runs down stragglers \u2014 anyone 3+ tiles from the group gets the pack\u2019s full attention. Stay together."
     },
     "systemDesignation": "Canis familiaris (standard)",
     "aggression": "hungry",
@@ -1067,6 +1071,9 @@
       "damageType": "sonic"
     },
     "behavior": "curious",
+    "tactics": {
+      "split": { "type": "allyLure", "minParty": 3 }
+    },
     "aggression": "hungry",
     "follows": true,
     "fear": "fire",
@@ -1102,7 +1109,7 @@
     "codexStages": {
       "unknown": "Someone was crying in the woods last night. Everyone was accounted for in the morning.",
       "observed": "Voice-mimic predator. The System watched humans run toward crying and concluded distress is bait. It plays the voices of people you know. The voices are always crying. It never learned any other emotion.",
-      "slain": "Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Break the act \u2014 exposed, the signal scrambles. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours. Break the act \u2014 don't go to the crying, twice \u2014 and it drops the voice and RUSHES, no telegraph at all. Back off then; don't stand in reach of the replay."
+      "slain": "Moves: Distress Call (locks on \u2014 moving won't help once it has your voice, range 3). It follows. It learns new voices from your conversations \u2014 be careful what you say near it. Break the act \u2014 exposed, the signal scrambles. Meat: none. It's a radio. Parts: copper wire, speaker cone, and a tape labeled 'VOICES' in handwriting that isn't yours. Break the act \u2014 don't go to the crying, twice \u2014 and it drops the voice and RUSHES, no telegraph at all. Back off then; don't stand in reach of the replay. The Call Goes Out: against a party it cries in a voice one of YOUR people would run toward, and pulls them off alone. A hand on their shoulder breaks it \u2014 or end the radio."
     },
     "systemDesignation": "Acoustic lure unit (audience-tested)",
     "encounter": {
@@ -1385,6 +1392,9 @@
       "damageType": "psychic"
     },
     "behavior": "ambush",
+    "tactics": {
+      "aoePunish": { "type": "driftToCluster", "minParty": 3 }
+    },
     "aggression": "hungry",
     "follows": false,
     "fear": "daylight",
@@ -1421,7 +1431,7 @@
     "codexStages": {
       "unknown": "There was a light in the woods last night. Beautiful. I didn't go toward it. Good.",
       "observed": "Deliberate evolution of the Nightlight Catfish. The lure worked, so the System iterated: brighter bloom, and REKINDLE \u2014 the ember safe-window shrinks every cycle (2 turns, then 1, then 0) \u2014 plus DAZZLE, which blinds for 2 rounds. The idea gets worse the longer you entertain it. Detonation predator. Like the Speedbump it sits perfectly still \u2014 but where the Speedbump snaps, this DETONATES. Burst radius 2, the hardest-hitting burst in either wave. The tell is the brightening: 2 beats from glow to boom. It fears daylight \u2014 it only sets its ambush at night.",
-      "slain": "Moves: Eureka (burst radius 2, 22-34 damage \u2014 the biggest burst so far, telegraphed by brightening). It never moves once placed. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid. Each detonation teaches it to rekindle faster \u2014 the ember shrinks from 2 turns to none. And the bloom dazzles (blinded 2 rounds) if it catches you."
+      "slain": "Moves: Eureka (burst radius 2, 22-34 damage \u2014 the biggest burst so far, telegraphed by brightening). It never moves once placed \u2014 alone. Against a group it DRIFTS toward the crowd while brightening, greed as a targeting laser. Spread out and it loses the scent. The counterplay is simple: see the glow, don't approach, wait for dawn. It seemed like a good idea at the time. Parts: filament (excellent fire-starter), glass, and the lingering feeling you almost did something stupid. Each detonation teaches it to rekindle faster \u2014 the ember shrinks from 2 turns to none. And the bloom dazzles (blinded 2 rounds) if it catches you."
     },
     "systemDesignation": "Illumination event (contained)",
     "encounter": {
@@ -2082,6 +2092,9 @@
       "damageType": "physical"
     },
     "behavior": "territorial",
+    "tactics": {
+      "split": { "type": "evictionWall", "minParty": 3, "everyRounds": 4 }
+    },
     "aggression": "territorial",
     "follows": false,
     "fear": null,
@@ -2118,7 +2131,7 @@
     "codexStages": {
       "unknown": "A clipboard. A stamp. A property line that wasn't there yesterday. Something is claiming the ground you stand on.",
       "observed": "The System's landlord. It doesn't fight you \u2014 it EVICTS you. It claims tiles, charges rent (in blood or calories), and the ground itself starts obeying the lease. You can fight on claimed ground, but it hurts. Break the claim or pay up.",
-      "slain": "Moves: Serve Notice (claims the ground around you \u2014 stand still and it serves notice on YOUR position), Collect Rent (damages you every round you end on claimed ground \u2014 the rent rises with each Addendum), Jurisdiction Spread (the claim grows in repeated waves). The longer the fight runs, the more Addenda: kill it before foreclosure."
+      "slain": "Moves: Serve Notice (claims the ground around you \u2014 stand still and it serves notice on YOUR position), Collect Rent (damages you every round you end on claimed ground \u2014 the rent rises with each Addendum), Jurisdiction Spread (the claim grows in repeated waves). The longer the fight runs, the more Addenda: kill it before foreclosure. Eviction Wall: against a party it rezones the ground \u2014 a wall rises through your cluster on one round\u2019s warning, service entrance left open. Pick your side before it rises."
     },
     "systemDesignation": "Parcel acquisition unit (field model)",
     "encounter": {
@@ -2182,6 +2195,10 @@
       "psychic": 0.75
     },
     "behavior": "pack",
+    "tactics": {
+      "packSpawn": { "solo": 1, "party": 3 },
+      "packTactics": { "pileOn": true }
+    },
     "aggression": "pack",
     "follows": false,
     "fear": "fire",
@@ -2216,7 +2233,7 @@
     "codexStages": {
       "unknown": "Laughter from the dark. Not joy \u2014 the other kind. The kind that knows exactly what you're insecure about.",
       "observed": "The System's heckler. It doesn't want your blood \u2014 it wants your confidence. Its taunts stack SHAME, and shame makes your hands shake (reduced damage). Answer back (wait a turn) to clear the shame, or kill it before the words stick.",
-      "slain": "Moves: Vicious Mockery (stacks SHAME, -1 damage per stack; the words CUT once it's headlining), Pile-On (double shame when you're already ashamed), Compulsion (answer back or act and take +2 shame). The counter is dignity: wait, answer back, clear the shame. Or end it fast before it finds your weak spot."
+      "slain": "Moves: Vicious Mockery (stacks SHAME, -1 damage per stack; the words CUT once it's headlining), Pile-On (double shame when you're already ashamed), Compulsion (answer back or act and take +2 shame). The counter is dignity: wait, answer back, clear the shame. Or end it fast before it finds your weak spot. Pack tactics: they hunt in packs now \u2014 the whole set piles its shame onto one of you. Split their attention or end one fast."
     },
     "systemDesignation": "Morale suppression unit (field model)",
     "encounter": {
@@ -3486,10 +3503,13 @@
       "sheet music (4/4, aggressive)"
     ],
     "behavior": "territorial",
+    "tactics": {
+      "aoePunish": { "type": "aimDensity", "minParty": 3 }
+    },
     "codexStages": {
       "unknown": "A kickline with no music you can hear. Yet. The legs go all the way up.",
       "observed": "Synchronized AoE on a 4/4 beat \u2014 sweeps week, and the System is doing it anyway. Extremely long legs; the LINE formation is the tell \u2014 it can't turn fast, so flanking works. The downbeat is the hit, and you can hear it coming.",
-      "slain": "Moves: Downbeat (AoE kick on the 4 \u2014 the music is the telegraph). Counter: dance. Match the rhythm \u2014 a real timing choice each round \u2014 and you're untouchable. Or break the rhythm: throw something arrhythmic. Deafness (or earplugs) breaks the telegraph but not the beat \u2014 the beat doesn't care about your HP pool, only your timing."
+      "slain": "Moves: Downbeat (AoE kick on the 4 \u2014 the music is the telegraph). Counter: dance. Match the rhythm \u2014 a real timing choice each round \u2014 and you're untouchable. Or break the rhythm: throw something arrhythmic. Deafness (or earplugs) breaks the telegraph but not the beat \u2014 the beat doesn't care about your HP pool, only your timing. Against a group the Downbeat finds the crowd \u2014 it aims where you're densest. Spread out."
     },
     "systemDesignation": "SWEEPS-EP-12 (the System is not proud of this one)",
     "aggression": "territorial",
@@ -4367,10 +4387,14 @@
       "your own tactics, written down (take notes)"
     ],
     "behavior": "pack",
+    "tactics": {
+      "packSpawn": { "mirror": true, "max": 3 },
+      "packTactics": { "flank": 3, "flankCap": 9, "focusIsolated": true }
+    },
     "codexStages": {
       "unknown": "Everyone you've buried, standing up. It moves like a crowd, not a creature.",
       "observed": "The village you failed, given teeth \u2014 a gestalt of dead scholars and villagers. A mass of almost-people; the faces are the organs. It knows every tactic you've ever used \u2014 it has your fight history. Faces surface on its body before it uses your moves.",
-      "slain": "Moves: Your Move (your own tactics, echoed \u2014 the face telegraphs which). Counter: it only knows your PAST \u2014 do something you've never done. The game tracks your action history; novelty is literally the weapon. The counter is playing differently. (One-Person Army: they have ONE tactic \u2014 the Reunion has it memorized. Apex Predator: their patterns ARE their identity.)"
+      "slain": "Moves: Your Move (your own tactics, echoed \u2014 the face telegraphs which). Counter: it only knows your PAST \u2014 do something you've never done. The game tracks your action history; novelty is literally the weapon. The counter is playing differently. Party-aware: it brings as many as you brought (up to three) \u2014 and they flank and run down stragglers like wolves. The dead outnumber you on purpose. (One-Person Army: they have ONE tactic \u2014 the Reunion has it memorized. Apex Predator: their patterns ARE their identity.)"
     },
     "systemDesignation": "CLIP-SHOW-9 (the clip show, with a body count)",
     "aggression": "territorial",

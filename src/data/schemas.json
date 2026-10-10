@@ -177,7 +177,28 @@
    "telegraph": "string?",
    "tactics": {
     "observed": "string?",
-    "slain": "string?"
+    "slain": "string?",
+    "packSpawn": {
+     "solo": "number?",
+     "party": "number?",
+     "mirror": "boolean?",
+     "max": "number?"
+    },
+    "packTactics": {
+     "flank": "number?",
+     "flankCap": "number?",
+     "focusIsolated": "boolean?",
+     "pileOn": "boolean?"
+    },
+    "split": {
+     "type": "string?",
+     "minParty": "number?",
+     "everyRounds": "number?"
+    },
+    "aoePunish": {
+     "type": "string?",
+     "minParty": "number?"
+    }
    }
   }
  },
