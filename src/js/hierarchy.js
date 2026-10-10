@@ -36,6 +36,10 @@
 //   - speaker_is_named: theirSpeaker is a named person from the sim's roster; when the sim kills them, theirLeaderDied fires the mirror succession beat. (code: hierarchy.js)
 //   - rumors_are_delivered: queued village rumors are spoken one per day at the day boundary — "heard of them" is reachable. (code: hierarchy.js)
 //   - tribute_partials_dont_double_count: weekly tribute payments accumulate (tributePaidKcal); linkTick charges the true shortfall once — paying half is strictly better than paying nothing. (code: hierarchy.js)
+//   - debts_survive_the_break: re-linking a broken pair inherits the latest broken link's outstanding arrears — break to wipe the debt is an exploit the engine refuses, and says so. (code: hierarchy.js)
+//   - the_table_burns_the_books: bidForPrimacy's flip clears old arrears (the new primary writes the books) and SAYS so — silent forgiveness was an exploit-shaped honesty hole. (code: hierarchy.js)
+//   - tribute_is_real_food: when our subordinate pays, the kcal arrive as a real spoil-dated pantry item — "the pantry grows" is engine, not copy. (code: hierarchy.js)
+//   - the_moment_survives: a pending accord killed by a broken first link is said aloud and restaged on the next link (accordUnanswered) — the Regional Dawn moment is never lost silently. (code: hierarchy.js)
 //   - demand_honor_is_proportional: honoring a tribute demand with a thin pantry grants proportional trust and honest copy, never a free +8 on empty hands; an already-loaned representative extends instead of being clobbered. (code: hierarchy.js)
 //   - the_table_is_weekly: renegotiateLink/bidForPrimacy are one hard conversation per week (lastTableWeek) — the climb is paced in weeks, not ground out in an afternoon. (code: hierarchy.js)
 //   - diplomacy_is_knowledge_gated: proposeLink/proposeAlliance refuse villages the player never heard of or visited (knowsVillage). (code: hierarchy.js)
@@ -334,6 +338,28 @@
       };
       this.hierarchyState().push(link);
       this._designateSpeaker(link);
+      // DEBTS SURVIVE THE BREAK (break-it regional 2026-10-10, third pass):
+      // the old code wiped arrears on re-link — rack up debt, break, re-form,
+      // clean slate. The graph remembers: a new link with the same pair
+      // inherits the latest broken link's outstanding arrears, and says so
+      // aloud. Pair-matched either direction; clean breaks re-link clean.
+      try {
+        var _priorDebt = 0, _latest = null;
+        var _all = this.hierarchyState();
+        for (var _bi = 0; _bi < _all.length; _bi++) {
+          var _bl = _all[_bi];
+          if (_bl === link || _bl.status !== 'broken' || !(_bl.arrears || 0)) continue;
+          var _same = (_bl.primary === link.primary && _bl.subordinate === link.subordinate) ||
+                      (_bl.primary === link.subordinate && _bl.subordinate === link.primary);
+          if (_same && (!_latest || (_bl.day || 0) > (_latest.day || 0))) _latest = _bl;
+        }
+        if (_latest) _priorDebt = _latest.arrears || 0;
+        if (_priorDebt > 0) {
+          link.arrears = _priorDebt;
+          this.say(`Old debts don't die with the old table — ${nm} remembers the ${_priorDebt.toLocaleString()} kcal owed. It rides with the new link.`);
+          this._linkNote(link, 'formed', 'Inherited arrears ' + _priorDebt.toLocaleString() + ' kcal from the broken link.');
+        }
+      } catch (e) {}
       this._linkNote(link, 'formed',
         opts.asSubordinate ? 'Haven joined ' + nm + ' as subordinate.' : nm + ' joined Haven as subordinate.');
       var rep = (j && j.rep) ? j.rep : null;
@@ -342,7 +368,9 @@
       try { rn = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
       this.say(`⛓️ ${rn} brings it home: ${opts.asSubordinate ? 'Haven bows to ' + nm + ' — one organization, them primary.' : nm + ' bows to Haven — one organization, us primary.'} Tribute: ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. The relationship starts at trust 30. Everything from here is earned.`);
       try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'linked:' + targetId + ':' + (opts.asSubordinate ? 'sub' : 'prim')); } catch (e) {}
-      if (!this.state.networkLive) this.stageFirstAccord(link);
+      // accordUnanswered: a first link that broke before its gesture restages
+      // the moment on the next link (break-it regional 2026-10-10).
+      if (!this.state.networkLive || this.state.accordUnanswered) this.stageFirstAccord(link);
       return link;
     },
 
@@ -355,8 +383,10 @@
     // food, the representative's three days, or cold ink. They watch what
     // you do first.
     stageFirstAccord(link) {
-      if (!link || this.state.networkLive) return null;
+      if (!link) return null;
+      if (this.state.networkLive && !this.state.accordUnanswered) return null;
       this.state.networkLive = true;
+      this.state.accordUnanswered = false;
       var other = link.subordinate === HOME ? link.primary : link.subordinate;
       this.state.pendingAccord = { linkId: link.id, day: (this.state.scholar || {}).day || 0 };
       var rep = null;
@@ -377,9 +407,19 @@
       var link = null;
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) if (links[i].id === pa.linkId) { link = links[i]; break; }
-      if (!link || link.status !== 'active') { this.state.pendingAccord = null; return null; }
-      var other = link.subordinate === HOME ? link.primary : link.subordinate;
-      var onm = this._ovName(other);
+      var other = link ? (link.subordinate === HOME ? link.primary : link.subordinate) : null;
+      var onm = other ? this._ovName(other) : 'them';
+      if (!link || link.status !== 'active') {
+        // THE MOMENT SURVIVES (break-it regional 2026-10-10, third pass):
+        // the old code cleared the accord silently when the first link broke
+        // before the gesture — the Regional Dawn moment was lost forever and
+        // nothing said so. The gesture dies unmade, aloud, and the next link
+        // restages it (see accordUnanswered in _formLink/stageFirstAccord).
+        this.state.pendingAccord = null;
+        this.state.accordUnanswered = true;
+        this.say(`The first gesture dies unmade — the link with ${onm} is gone before Haven ever came to their fire. They'll remember the silence longer than any gift. The next fire gets the gesture instead.`);
+        return null;
+      }
       this.state.pendingAccord = null;
       if (how === 'gift') {
         var paid = this._removePantryKcal(2000);
@@ -564,7 +604,18 @@
                 // our subordinate pays us — abstracted, trust-weighted
                 if (R() < link.trust / 100) {
                   link.trust = Math.min(100, link.trust + 1);
+                  // THE PANTRY GROWS (break-it regional 2026-10-10, third
+                  // pass): the old code said "the pantry grows" but added
+                  // nothing — a copy/engine lie. Tribute is real food (the
+                  // metabolism system makes it REAL): it arrives as grain,
+                  // spoil-dated, like any other haul.
+                  try {
+                    var _v = self.state.village || {}; _v.pantry = _v.pantry || [];
+                    var _day = (self.state.scholar || {}).day || 0;
+                    _v.pantry.push({ name: 'Tribute grain from ' + self._ovName(link.subordinate), kcalEach: link.tributeKcalPerWeek, units: 1, spoilDay: _day + 21 });
+                  } catch (e) {}
                   self._linkNote(link, 'tribute', self._ovName(link.subordinate) + ' paid. The pantry grows.');
+                  if (R() < 0.35) self.say(`🌾 Tribute from ${self._ovName(link.subordinate)} arrives — ${link.tributeKcalPerWeek.toLocaleString()} kcal of grain into the pantry. Their fields, our fire.`);
                 } else {
                   link.arrears += link.tributeKcalPerWeek;
                   link.trust = Math.max(0, link.trust - 4);
@@ -806,12 +857,18 @@
       if (link.trust >= 60) {
         // THE TABLE TURNS
         var old = link.primary;
+        var oldArrears = link.arrears || 0;
         link.primary = HOME; link.subordinate = old;
         link.trust = Math.max(0, link.trust - 10);
+        // THE BOOKS BURN (break-it regional 2026-10-10, third pass): the flip
+        // used to zero old arrears silently — refuse tribute for weeks, then
+        // turn the table and the debt vanishes. That's a designed reset
+        // (the new primary writes the books), but it has to be SAID: silent
+        // forgiveness is an exploit-shaped honesty hole.
         link.arrears = 0; link.tributePaidWeek = -1;
-        this._linkNote(link, 'flipped', 'Primacy flipped: Haven is primary.');
+        this._linkNote(link, 'flipped', 'Primacy flipped: Haven is primary.' + (oldArrears > 0 ? ' Old arrears ' + oldArrears.toLocaleString() + ' kcal burned with the old table.' : ''));
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'primacy:' + old); } catch (e) {}
-        this.say(`👑 The table turns: ${this._ovName(old)} bows to HAVEN now. Earned — every deed, every tribute, every honored call. Nobody likes it. Everybody respects it.`);
+        this.say(`👑 The table turns: ${this._ovName(old)} bows to HAVEN now. Earned — every deed, every tribute, every honored call. Nobody likes it. Everybody respects it.` + (oldArrears > 0 ? ` The old books burn — the ${oldArrears.toLocaleString()} kcal Haven owed dies with the old table. Nobody mentions it. Everybody knows.` : ''));
         return 'flipped';
       }
       // not trusted enough to flip — settle for better terms
