@@ -2818,6 +2818,18 @@
             // vs rot. The 🪤 TRAP: prefix makes the catch visually scannable
             // even mid-list; the rot warning is explicit, not implied.
             this.say(`🪤 TRAP: Your ${recipe.name} ${dirPhrase(x, y)} caught a ${animal.name}! About ${catchKcal} kcal on the bone — clean it quickly (knife). It rots fast.`);
+            // TRAP LEARNABILITY (pacing build 2026-10-10, Steve: "Continue all
+            // proposed"): snares were never crafted in 240 audit runs — recipe
+            // L0 means no button, and nothing teaches it. Watching the
+            // mechanism work teaches the shape of it: first witnessed catch
+            // grants recipe L1. Yields untouched — knowledge was the bug.
+            try {
+              const rk = (this.state.codex.recipes || {})[trap.recipeId] || {};
+              if ((rk.level || 0) < 1 && this._grantRecipe) {
+                this._grantRecipe(trap.recipeId, 1, { day: this.state.scholar.day, by: null, type: 'witnessed' });
+                this.say(`Watching the ${recipe.name} do its work, you finally see the shape of it — the loop, the trigger, the patience. You could build one now.`);
+              }
+            } catch (e) {}
             // STRIPED SKUNK (hunter loop 2026-10-07): the box-trap recipe
             // warns "a skunk, which you will regret." Deliver the regret —
             // opening the box is the spray moment, same as pressing one on

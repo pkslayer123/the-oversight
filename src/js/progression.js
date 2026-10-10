@@ -400,11 +400,17 @@
     offerAudienceTrial(reason) {
       const s = this.state.scholar, pg = this.progState();
       if (pg.trial) return;
+      // AUDIENCE TRIAL TASKS (pacing build 2026-10-10): the 3,000-kcal haul was
+      // unreachable while the pantry drains ~3k/day — 7/240 completions. The
+      // 1,000-kcal haul is the completable ask (chains to the snare); the
+      // 3,000 stays as the ambitious option.
       const tasks = [
+        { id: 'haul_small', text: 'Haul 1,000 kcal to the pantry within 3 days.', need: 1000, have: 0, kind: 'pantry' },
         { id: 'haul', text: 'Haul 3,000 kcal to the pantry within 3 days.', need: 3000, have: 0, kind: 'pantry' },
         { id: 'identify', text: 'Fully identify 3 plants (knowledge level 3) within 3 days.', need: 3, have: 0, kind: 'identify' },
       ];
-      const t = pick(tasks);
+      const roll = Math.random();
+      const t = roll < 0.45 ? tasks[0] : roll < 0.7 ? tasks[1] : tasks[2];
       if (t.kind === 'pantry') { try { t.start = this.pantryKcal ? this.pantryKcal() : 0; } catch (e) { t.start = 0; } }
       if (t.kind === 'identify') {
         t.startN = Object.values((this.state.codex || {}).plants || {}).filter(e => (e.level || 0) >= 3).length;
@@ -412,9 +418,21 @@
       pg.trial = { ...t, reason, expires: (s.day || 0) + 3 };
       const why = reason === 'struggle'
         ? 'SYSTEM: "The audience is bored. Bored audiences stop watching. Stopped being watched is... we do not like to think about it. A trial, then. For you."'
-        : 'SYSTEM: "A trial, broadcast live. The audience loves a trial."';
+        : reason === 'audience'
+          ? 'SYSTEM: "The audience wants an encore. A trial, then — smaller this time, but televised."'
+          : 'SYSTEM: "A trial, broadcast live. The audience loves a trial."';
       this.say(`◈ AUDIENCE TRIAL — ${why} ${t.text} Reward: integration, and a gift.`);
       try { this.save(); } catch (e) {}
+    },
+    // AUDIENCE ENCORE (pacing build 2026-10-10): post-40 the audience keeps
+    // wanting trials. Recurring, cooldown-gated (completeTrial sets +7), so
+    // the 60-milestone trial is the first of many, not a one-shot.
+    checkAudienceEncore() {
+      const s = this.state.scholar, pg = this.progState();
+      if (!this.state.systemArrived) return;
+      if ((s.integration || 0) < 40) return;
+      if (pg.trial || (pg.trialCd || 0) > (s.day || 0)) return;
+      if (Math.random() < 0.25) this.offerAudienceTrial('audience');
     },
     checkTrial(kind) {
       const s = this.state.scholar, pg = this.progState();
@@ -476,6 +494,8 @@
       this.checkTrial('daily');
       // struggle watch
       this.checkStruggle();
+      // audience encore: recurring post-40 trials (pacing build 2026-10-10)
+      this.checkAudienceEncore();
       // arc watch
       this.checkArc();
       // comfort flag: making bad days smaller, including your own
