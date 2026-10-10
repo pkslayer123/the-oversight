@@ -200,9 +200,16 @@ function check(name, cond, detail) {
   check('B2f-d aftermath copy stays honest', !/called .* a liar/i.test((r.afterSay || '') + ' ' + log), (r.afterSay || '').slice(0, 160));
 })();
 
-// ============ S3: refusal rotation — bounded by cost, never a crash ============
+// ============ S3: refusal rotation — villager-level (2026-10-10) ============
+// SPEC CHANGE (detective playtest 2026-10-10): the old S3a asserted the
+// rotation was NOT blocked mid-fight ("no guard yet"). That was the loophole:
+// a second open doubt bypassed the counter-attack cooldown entirely, and the
+// "we're done with that" fiction broke on the next breath. The refusal now
+// covers the PERSON for 2 days — the grief loop the refusal was built to stop
+// ("no reopen-and-re-accuse grind") applied to doubt #2 verbatim. Doubts
+// planted after the blowup day are new business and stay actionable.
 (function () {
-  console.log('S3: two-doubt refusal rotation');
+  console.log('S3: two-doubt refusal rotation (villager-level)');
   fresh();
   const { vid, lie } = liarWithOccLie();
   lie.motive = 'pathological';
@@ -217,18 +224,19 @@ function check(name, cond, detail) {
   let r1, r2, r3, r4;
   try {
     r1 = Game.confrontDoubt(vid, d1.id);
-    r2 = Game.confrontDoubt(vid, d2.id); // rotate to the second doubt — no guard yet
-    r3 = Game.confrontDoubt(vid, d1.id); // now both are in cooldown
+    r2 = Game.confrontDoubt(vid, d2.id); // rotation: now refused (villager-level)
+    r3 = Game.confrontDoubt(vid, d1.id); // cooldown
     r4 = Game.confrontDoubt(vid, d2.id);
   } finally { Game.npcTemper = realTemper; Math.random = realRandom; }
   say();
   console.log(`    ${r1.outcome}/${r2.outcome}/${r3.outcome}/${r4.outcome}`);
-  check('S3a both attacks land (rotation not blocked mid-fight)', r1.outcome === 'attacked' && r2.outcome === 'attacked',
+  check('S3a first attack lands, rotation blocked mid-fight (refusal covers the person)',
+    r1.outcome === 'attacked' && r2.outcome === 'refused' && r2.ok === false,
     `${r1.outcome}/${r2.outcome}`);
   check('S3b both doubts refuse during cooldown (no re-grind)', r3.ok === false && r4.ok === false,
     `${r3.outcome}/${r4.outcome}`);
   const repHit = ((Game.repOf(playerId()) || {}).honest || 0);
-  check('S3c the rotation COST the accuser (bounded by price, not by guard)',
+  check('S3c the blocked rotation still COST the accuser (price AND guard now)',
     repHit < 0 || gossipNamingPlayer().length > 0,
     `playerHonest=${repHit} gossip=${gossipNamingPlayer().length}`);
   // menu hides both during cooldown

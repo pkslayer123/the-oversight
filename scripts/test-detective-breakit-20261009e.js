@@ -90,7 +90,12 @@ const openFor = (vid) => G.getDoubts(vid).filter(d => !d.resolved);
   const goneOpen = G.allDoubts().filter(d => !d.resolved && !G.npcIds().includes(d.vid));
   ok(goneOpen.length === 0, 'H1: no open doubt references a gone villager', goneOpen.length);
   const html = G.doubtsHTML();
-  const promises = (html.match(/confront them, watch them, or ask around/g) || []).length;
+  // COPY CHANGE (detective playtest 2026-10-10): the old card promised three
+  // resolution paths ("confront them, watch them, or ask around") — but
+  // watching and asking only gather threads; they never close a doubt. The
+  // card now names the one real path (confrontation), or the language block
+  // for nonverbal targets. Every unresolved card still carries its guidance.
+  const promises = (html.match(/❓ unresolved —/g) || []).length;
   const unresolved = (html.match(/unresolved/g) || []).length;
   ok(promises === unresolved, 'H1: every "unresolved" doubt is actionable (promise == unresolved count)', { promises, unresolved });
 

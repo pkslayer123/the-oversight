@@ -25,7 +25,8 @@
 //   - confront_via_interpreter_when_bridged: true (code: convoChoices wrapper)
 //   - confront_doubt_vid_match: true (code: confrontDoubt, confrontTheft)
 //   - accuser_pays: deflected/attacked/cleared dent the accuser's rep IN A READ SLOT (r12 2026-10-10: the hearers' view of the player — the old applyRep(player) wrote to the unread self-view slot, pure theater); attacked/cleared seed village gossip naming the accuser (player-subject gossip routes to hearers); being right (confessed) costs nothing (code: confrontDoubt, confrontTheft, accuserPays)
-//   - refusal_cooldown: a counter-attack refuses further confrontation for 2 days — no reopen-and-re-accuse grind (code: confrontDoubt, confrontTheft, convoChoices wrapper)
+//   - refusal_cooldown: a counter-attack refuses ALL confrontation for 2 days (villager-level, not per-doubt) — no reopen-and-re-accuse grind, even via a second open doubt; doubts planted after the blowup day are new business (code: confrontDoubt, confrontTheft, convoChoices wrapper)
+//   - doubts_ui_honest: the doubts UI promises only confrontation as the resolution path — watching/asking gather threads, never close — and names the language block for nonverbal targets (code: doubtsHTML)
 //   - dead_cant_confess: gone (dead/exiled/removed) villagers refuse confrontation cleanly (code: confrontDoubt, confrontTheft)
 //   - gone_closes_doubts: removing a villager resolves their open doubts as unanswered — the question outlives them, never a permanently open thread (code: closeDoubtsForGone, removeVillager hook)
 //   - contradiction_dedupe_pair: a re-flipped claim pair doesn't plant a second open contradiction doubt; the aha beat still fires (code: trackClaim)
@@ -980,6 +981,34 @@
         if (outcome && L[outcome] !== undefined) L[outcome]++;
       } catch (e) {}
     },
+    // truthRefusal(vid): villager-level confrontation refusal. A counter-attack
+    // refuses ALL confrontation for 2 days — the old per-doubt stamp let a
+    // second open doubt bypass the cooldown entirely (detective playtest
+    // 2026-10-10: "we're done with that" → immediate re-accuse about something
+    // else — the grief loop the refusal was built to stop). Stored as
+    // {until, day}: doubts planted AFTER the blowup day (new evidence
+    // surfacing later) are new business and stay actionable.
+    truthRefusal(vid) {
+      try {
+        const r = ((this.state.village || {}).truthRefused || {})[vid];
+        return r && r.until ? r : null;
+      } catch (e) { return null; }
+    },
+    truthRefuse(vid) {
+      try {
+        const v = this.state.village;
+        v.truthRefused = v.truthRefused || {};
+        v.truthRefused[vid] = { until: day() + 2, day: day() };
+      } catch (e) {}
+    },
+    // refusalBlocks(vid, doubt): the villager-level refusal covers every doubt
+    // planted on or before the blowup day. Later-planted doubts are new business.
+    refusalBlocks(vid, doubt) {
+      const r = this.truthRefusal(vid);
+      if (!r || !(r.until > day())) return false;
+      if (!doubt) return true;
+      return (doubt.day || 0) <= r.day;
+    },
     // the richest piece of gathered evidence, spoken aloud — bookkeeping
     // entries ("confronted (day 3) — deflected") don't count.
     confrontEvidenceText(doubt) {
@@ -1156,11 +1185,12 @@
       try {
         if (!this.npcIds().includes(vid)) return { ok: false, line: '"Never mind."' };
       } catch (e) {}
-      // REFUSAL (detective break-it 2026-10-09): after a counter-attack they
-      // won't entertain another confrontation for 2 days. Without this, the
-      // player could reopen the conversation and re-accuse immediately — an
-      // infinite grief loop, since the doubt stays open after 'attacked'.
-      if (doubt.refusedUntil && day() < doubt.refusedUntil) {
+      // REFUSAL (detective break-it 2026-10-09, widened 2026-10-10): after a
+      // counter-attack they won't entertain confrontation for 2 days —
+      // villager-level now, not per-doubt: a second open doubt used to
+      // bypass the cooldown entirely. Doubts planted after the blowup day
+      // (new evidence) are new business — refusalBlocks lets those through.
+      if ((doubt.refusedUntil && day() < doubt.refusedUntil) || this.refusalBlocks(vid, doubt)) {
         const first = this.firstRef(vid);
         return { ok: false, outcome: 'refused', line: `"Not this again." ${first} turns away. "We're done with that."` };
       }
@@ -1353,10 +1383,12 @@
         outcome = 'attacked';
         line = this.drawTruthLine('attacks', vid);
         doubt.evidence.push(`confronted (day ${day()}) — turned hostile`);
-        // REFUSAL (detective break-it 2026-10-09): they walk away from the
-        // topic for 2 days. Set here, read by the guard at the top and by
-        // the convoChoices wrapper.
+        // REFUSAL (detective break-it 2026-10-09, widened 2026-10-10): they
+        // walk away from confrontation for 2 days — villager-level, not
+        // per-doubt (a second open doubt used to bypass it). Set here, read
+        // by the guard at the top and by the convoChoices wrapper.
         doubt.refusedUntil = day() + 2;
+        this.truthRefuse(vid);
         try {
           this.bumpTrust(vid, -8);
           // BREAK-IT (social r7 2026-10-09): rep only — the -8 trust already
@@ -1382,11 +1414,12 @@
       // IDENTITY GUARD (detective playtest 2026-10-08): see confrontDoubt.
       // The accused must be the doubt's subject — never a bystander.
       if (doubt.vid !== vid) return { ok: false, line: '"Never mind."' };
-      // GONE GUARD + REFUSAL (detective break-it 2026-10-09): see confrontDoubt.
+      // GONE GUARD + REFUSAL (detective break-it 2026-10-09, refusal widened
+      // 2026-10-10 to villager-level): see confrontDoubt.
       try {
         if (!this.npcIds().includes(vid)) return { ok: false, line: '"Never mind."' };
       } catch (e) {}
-      if (doubt.refusedUntil && day() < doubt.refusedUntil) {
+      if ((doubt.refusedUntil && day() < doubt.refusedUntil) || this.refusalBlocks(vid, doubt)) {
         const first = this.firstRef(vid);
         return { ok: false, outcome: 'refused', line: `"Not this again." ${first} turns away. "We're done with that."` };
       }
@@ -1433,8 +1466,10 @@
         outcome = 'attacked';
         line = this.drawTruthLine('attacks', vid);
         doubt.evidence.push(`confronted (day ${day()}) — turned hostile`);
-        // REFUSAL (detective break-it 2026-10-09): see confrontDoubt.
+        // REFUSAL (detective break-it 2026-10-09, widened 2026-10-10 to
+        // villager-level): see confrontDoubt.
         doubt.refusedUntil = day() + 2;
+        this.truthRefuse(vid);
         try {
           this.bumpTrust(vid, -8);
           // BREAK-IT (social r7 2026-10-09): rep only — the -8 trust already
@@ -1479,9 +1514,21 @@
       const cards = doubts.map(d => {
         const name = this.displayName(d.vid);
         const ev = (d.evidence || []).map(e => `<p class="small" style="opacity:.7">· ${e}</p>`).join('');
+        // HONEST (detective playtest 2026-10-10): watching and asking around
+        // only gather threads — they never close a doubt. The old copy
+        // promised three resolution paths ("confront them, watch them, or ask
+        // around"); the engine has one player path: confrontation. And when
+        // shared words are the block, say so — the menu silently omits
+        // confrontation for nonverbal+unbridged targets, which left a ❓ the
+        // player could never act on without knowing why.
+        let unresHint = 'only a confrontation closes this — watching and asking around may turn up more threads';
+        try {
+          if (this.commLevel(d.vid).level === 'none')
+            unresHint = 'you share no words with them yet — confrontation needs language, or someone here who can bridge';
+        } catch (e) {}
         const status = d.resolved
           ? `<p class="small" style="color:#8f8">✓ resolved: ${d.resolution || ''}</p>`
-          : `<p class="small" style="color:#fd8}">❓ unresolved — confront them, watch them, or ask around</p>`;
+          : `<p class="small" style="color:#fd8}">❓ unresolved — ${unresHint}</p>`;
         return `<div class="card codex"><h3>❓ ${name} <span class="small" style="opacity:.6">· ${d.kind}</span></h3>
           <p>${d.text}</p>${ev}${status}</div>`;
       }).join('');
@@ -1693,11 +1740,13 @@
       const nonverbal = c.thread === 'nonverbal';
       const bridged = nonverbal && !!c.interpreter;
       if (!c.pendingQ && (!nonverbal || bridged)) {
-        // REFUSAL (detective break-it 2026-10-09): doubts in the post-
-        // counter-attack cooldown don't offer confrontation — they walked
-        // away from the topic, and the menu respects that.
+        // REFUSAL (detective break-it 2026-10-09, widened 2026-10-10): doubts
+        // in the post-counter-attack cooldown don't offer confrontation —
+        // villager-level now: a second open doubt can't bypass it. Doubts
+        // planted after the blowup day are new business (refusalBlocks).
         const nowDay = (this.state.scholar || {}).day || 0;
-        const doubts = this.getDoubts(vid).filter(d => !(d.refusedUntil && nowDay < d.refusedUntil));
+        const doubts = this.getDoubts(vid).filter(d =>
+          !(d.refusedUntil && nowDay < d.refusedUntil) && !this.refusalBlocks(vid, d));
         if (doubts.length && !choices.some(ch => String(ch.id).indexOf('confront:') === 0)) {
           const d = doubts[0];
           const first = this.firstRef(vid);

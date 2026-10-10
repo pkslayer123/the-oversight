@@ -274,9 +274,13 @@ function check(name, cond, detail) {
     lies.origin.confessed !== true, 'origin lie got confessed: ' + JSON.stringify(lies.origin.confessed));
 })();
 
-// ============ S5: refusal rotation (held) ============
+// ============ S5: refusal rotation — villager-level (2026-10-10) ============
+// SPEC CHANGE (detective playtest 2026-10-10): refusal is villager-level now,
+// not per-doubt. The old S5 planted fresh doubts and expected each to attack
+// in turn; a same-day rotation is now refused wholesale. New doubts planted
+// after the blowup day stay actionable (new business).
 (function () {
-  console.log('S5: attacked → 2-day refusal per doubt; rotation bounded, menu recovers');
+  console.log('S5: attacked → 2-day refusal, villager-level; rotation blocked, menu recovers');
   fresh();
   // force attacked outcomes: pathological motive, prickly temp, low trust.
   // Fresh doubts each round (evidence weight would otherwise force confessions —
@@ -305,15 +309,19 @@ function check(name, cond, detail) {
     }
     return null;
   };
-  const dA = forceAttack(), dB = forceAttack();
-  check('S5a counter-attacks happened without crash', !!(dA && dB), `dA=${!!dA} dB=${!!dB}`);
+  const dA = forceAttack();
+  // same-day rotation: every further press is refused (villager-level) — the
+  // old loop expected a second attack here; that was the loophole.
+  const dB = forceAttack();
   const vid = target.vid;
-  const refused = Game.getDoubts(vid).filter(d => d.refusedUntil && nowDay() < d.refusedUntil);
-  check('S5b refused doubts are gated per-doubt', refused.length >= 2, `refused=${refused.length}`);
+  check('S5a first counter-attack lands; same-day rotation refused (villager-level)',
+    !!(dA && !dB), `dA=${!!dA} dB=${!!dB}`);
+  const vRef = Game.truthRefusal(vid);
+  check('S5b villager-level refusal recorded', !!vRef && vRef.until === nowDay() + 2, JSON.stringify(vRef));
   // direct call during refusal → clean refused, no trust movement
-  if (refused.length) {
+  {
     const t0 = (Game.state.village.trust || {})[vid];
-    const r = Game.confrontDoubt(vid, refused[0].id);
+    const r = Game.confrontDoubt(vid, dA.id);
     const t1 = (Game.state.village.trust || {})[vid];
     check('S5c refused confrontation is a clean no-op', r.ok === false && r.outcome === 'refused' && t0 === t1,
       `ok=${r.ok} outcome=${r.outcome} trust ${t0}->${t1}`);
@@ -325,18 +333,19 @@ function check(name, cond, detail) {
   let menuIds = [];
   try { menuIds = Game.convoChoices(vid).map(x => String(x.id)); } catch (e) {}
   c.active = wasActive;
-  const refusedIds = refused.map(d => 'confront:' + d.id);
-  check('S5d menu hides refused doubts', !menuIds.some(id => refusedIds.includes(id)),
+  check('S5d menu hides refused doubts', !menuIds.some(id => id.indexOf('confront:') === 0),
     menuIds.filter(id => id.indexOf('confront:') === 0).join(','));
   // recovery: 3 days later the refusal expires — the filter the menu uses
   // must admit the previously-refused doubts again (the menu only ever
   // offers doubts[0], so assert eligibility, not the exact choice id)
-  if (refused.length) {
+  {
     Game.state.scholar.day = nowDay() + 3;
-    const eligible = Game.getDoubts(target.vid).filter(d => !(d.refusedUntil && ((Game.state.scholar || {}).day || 0) < d.refusedUntil));
+    const dayNow = (Game.state.scholar || {}).day || 0;
+    const eligible = Game.getDoubts(target.vid).filter(d =>
+      !(d.refusedUntil && dayNow < d.refusedUntil) && !Game.refusalBlocks(target.vid, d));
     const eligibleIds = eligible.map(d => d.id);
     check('S5e refused doubts become eligible again after the refusal expires',
-      refused.every(d => eligibleIds.includes(d.id)),
+      eligibleIds.includes(dA.id),
       'eligible: ' + eligibleIds.join(','));
   }
 })();
