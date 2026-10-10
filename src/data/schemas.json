@@ -162,6 +162,7 @@
     "note": "string?"
    },
    "armor": "number?",
+   "pierce": "number?",
    "resistances": "object?",
    "terraform": "string?",
    "terraformDesc": "string?",

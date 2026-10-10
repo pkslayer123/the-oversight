@@ -23047,21 +23047,55 @@
       return Math.round(rating);
     },
 
-    // WAVE UNLOCK (Steve 2026-10-05, revised): day-based with kill minimums.
-    // The show has a schedule. You can't cheese it with a lucky weapon find.
-    // 100-day campaign: waves at 8 / 25 / 50 / 75. Win ~day 85-95.
+    // WAVE UNLOCK (Steve 2026-10-05, revised; waves 4-5 gated 2026-10-10):
+    // reactive to deeds/kills/scale, never pure calendar. The show has a
+    // schedule, but you can't cheese it with a lucky weapon find — and it
+    // can't arrive before you've proven you can handle the last wave.
     // Wave 1: always — hummice, moths, raccoons, toads
     // Wave 2: day 8+ AND 4 wave-1 kills (village-wide, not just player)
-    // Wave 3: day 25+ AND 8 wave-2 kills
-    // Wave 4: day 50+ AND 5 wave-3 kills
-    // (Wave 4 is the apex; readiness win comes after proving yourself there.)
+    // Wave 3 ("The Final Draft"): day 25+ AND 8 wave-2 kills
+    // Wave 4 ("The Mirror Draft"): 5 wave-3 kills AND scaleRank >= 'regional'
+    // Wave 5 ("The Producers"): 5 wave-4 kills AND scaleRank >= 'national'
+    // (Wave 5 is the apex; readiness win comes after proving yourself there.)
+    // SCALE-DEFENSIVE (2026-10-10): scaleRank() is being built in parallel in
+    // hierarchy.js. Read it defensively — works with AND without it. Absent
+    // (or unrecognized) rank defaults to 'regional': wave 4 gates on kills
+    // alone until the scale system ships; wave 5 still needs 'national'.
     unlockedWave() {
       const day = this.state.scholar.day || 1;
-      const kills = this.state.waveKills || {}; // {1: n, 2: n, 3: n}
-      if (day >= 50 && (kills[3] || 0) >= 5) return 4;
+      const kills = this.state.waveKills || {}; // {1: n, 2: n, ...}
+      const rank = (typeof this.scaleRank === 'function' ? this.scaleRank() : 'regional');
+      if ((kills[4] || 0) >= 5 && this.scaleAtLeast(rank, 'national')) return 5;
+      if ((kills[3] || 0) >= 5 && this.scaleAtLeast(rank, 'regional')) return 4;
       if (day >= 25 && (kills[2] || 0) >= 8) return 3;
       if (day >= 8 && (kills[1] || 0) >= 4) return 2;
       return 1;
+    },
+    // scaleAtLeast: compare scale ranks on the village -> regional ->
+    // national -> global ladder (DIRECTIVES.md). Unknown rank strings are
+    // treated as 'regional' (the defensive default — see unlockedWave).
+    scaleAtLeast(rank, need) {
+      const ladder = ['village', 'local', 'regional', 'national', 'global'];
+      const ri = ladder.indexOf(rank);
+      const ni = ladder.indexOf(need);
+      const r = ri < 0 ? ladder.indexOf('regional') : ri;
+      return r >= ni;
+    },
+    // waveUnlockBeat: the woven beat for a new wave's arrival (Steve
+    // 2026-10-10). Reactive — called from the waveAfter > waveBefore check,
+    // never on a timer. Each wave recontextualizes the last; the System says
+    // so, in its own voice. (Wave 2's beat lives in checkSystemArrival.)
+    waveUnlockBeat(wave) {
+      if (wave === 3) {
+        this.say('📺 "Oh, you survived the AUDIENCE NOTES? Cute. We\'ve stopped pretending these are animals now. That was the FINAL DRAFT, folks — what comes out of the treeline next was never alive the way you mean it."');
+        this.say('(Something new is moving in the treeline. It was never an animal.)');
+      } else if (wave === 4) {
+        this.say('📺 "We\'ve been watching you for a LONG time. Your faiths. Your formats. Your little institutions. So we built something out of... well. Out of YOU. Say hello to the MIRROR DRAFT."');
+        this.say('(The new things wearing your shapes are already here. The horror: it\'s made of you.)');
+      } else if (wave === 5) {
+        this.say('📺 "You\'ve gotten too big for the story. Ratings are GREAT, by the way \u2014 but you\'re threatening the narrative now. So the narrative is fighting back. Meet the PRODUCERS."');
+        this.say('(The sky clears its throat. The show is defending itself.)');
+      }
     },
     // Track kills by wave for unlock gates
     recordWaveKill(monsterId) {
@@ -23078,7 +23112,8 @@
     // Single source of truth for the 60%-newest-wave ratios — used by both
     // castMonster (wanderer/contest casting) and checkEncounter (tile-entry
     // spawns), so the System's escalation reads the same on every path.
-    // (Wave 1: 100% wave 1. Wave 2: 60% w2 / 40% w1. Wave 3: 60/25/15.)
+    // (Wave 1: 100% wave 1. Wave 2: 60% w2 / 40% w1. Wave 3: 60/25/15.
+    //  Wave 4: 60/20/15/5. Wave 5: 55/20/12/8/5 — the apex shares the sky.)
     spawnWaveTarget(pool) {
       let top = 1;
       for (const m of (pool || [])) top = Math.max(top, m.wave || 1);
@@ -23086,7 +23121,11 @@
       if (top <= 1) return 1;
       if (top === 2) return r < 0.6 ? 2 : 1;
       if (top === 3) return r < 0.6 ? 3 : (r < 0.85 ? 2 : 1);
-      return r < 0.6 ? 4 : (r < 0.8 ? 3 : (r < 0.95 ? 2 : 1));
+      if (top === 4) return r < 0.6 ? 4 : (r < 0.8 ? 3 : (r < 0.95 ? 2 : 1));
+      if (r < 0.55) return 5;
+      if (r < 0.75) return 4;
+      if (r < 0.87) return 3;
+      return r < 0.95 ? 2 : 1;
     },
 
     // CASTING (Steve 2026-10-05): the System casts a monster appropriate to
@@ -31369,6 +31408,11 @@
         this.sysSay(hasTalent
           ? `📺 RATINGS ARE UP! The producers are pleased. New casting directives incoming — Wave ${waveAfter} talent has been released into your sector.`
           : `📺 RATINGS ARE UP! The producers are pleased. Wave ${waveAfter} protocols active — the challenges escalate, the stakes sharpen. The woods feel... expectant.`);
+        // WAVE BEATS (Steve 2026-10-10): each wave unlocks with a woven beat
+        // in the System's voice — reactive (fires on the unlock, never on a
+        // timer), naming the wave's identity. Wave 2's beat lives in
+        // checkSystemArrival; waves 3-5 land here, where the unlock happens.
+        try { this.waveUnlockBeat(waveAfter); } catch (e) {}
         this.audioEvent('waveUnlock');
       }
       // AUDIO HYGIENE (Steve): killing the deer left the beam's hum playing.

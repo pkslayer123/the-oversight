@@ -3054,5 +3054,2551 @@
     },
     "armor": 1,
     "resistances": {}
+  },
+  {
+    "id": "redactor",
+    "activity": "nocturnal",
+    "name": "The Redactor",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      260,
+      320
+    ],
+    "attack": {
+      "name": "Redact",
+      "damage": [
+        35,
+        55
+      ],
+      "telegraph": "Its white edge-handles grab toward you \u2014 pointing. Whatever it points at goes quiet. The handles ARE the telegraph.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "it redacts the loudest thing first \u2014 carry a decoy",
+      "go quiet for two turns and it starves",
+      "the handles point before it redacts \u2014 watch them, not the bar"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a redaction. Do not eat the redaction."
+    },
+    "parts": [
+      "a strip of black bar (lightless)",
+      "white handle-fragments (they point at you)"
+    ],
+    "behavior": "ambush",
+    "codexStages": {
+      "unknown": "A missing piece of the world, shaped like a doorway. The trees behind it don't line up.",
+      "observed": "A hovering black rectangle with white selection-handles, like a text cursor. It pointed at Mara's spear and the spear... wasn't, for two turns. The handles grab before it redacts \u2014 that grab is the only warning.",
+      "slain": "Moves: Redact (silences one equipped item or ability for 2 turns \u2014 the handles point first, always), Return (redacted things come back. Probably). It redacts what you RELY on. Counter: go quiet \u2014 fight two turns with nothing but your hands and it starves. Or carry decoys: it redacts the loudest thing first."
+    },
+    "systemDesignation": "CENSOR-9 (field unit)",
+    "aggression": "ambush",
+    "follows": true,
+    "fear": "decoys",
+    "speed": 3,
+    "emoji": "\u2b1b",
+    "unknown": "a missing piece of the world",
+    "vibe": "censorship made flesh \u2014 polite, total, already editing you",
+    "cues": {
+      "curious": [
+        "The black bar drifts closer. A handle twitches toward your pack."
+      ],
+      "warn": [
+        "Both handles grab toward you. Something you rely on is about to go quiet."
+      ],
+      "fearful": [
+        "The bar thins, flickers \u2014 nothing left loud enough to redact. It is starving."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.1,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "drift",
+        "point",
+        "redact",
+        "return"
+      ],
+      "phaseBadges": {
+        "drift": " \u2b1b DRIFTING",
+        "point": " \ud83d\udc49 POINTING",
+        "redact": " \u2b1b REDACTING",
+        "return": " \u21a9\ufe0f RETURNING"
+      },
+      "phaseMap": {
+        "declare": "point",
+        "windup": "point",
+        "resolve": "redact",
+        "idle": "drift"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "redactor",
+      "noticeText": "A doorway-shaped hole in the world, drifting closer.",
+      "painText": "The bar glitches \u2014 a frame of the world shows through the black.",
+      "knownCue": "The handles point before it redacts. Always.",
+      "knownTactics": "It redacts the loudest thing first. Go quiet or bring decoys."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 5
+  },
+  {
+    "id": "gavel",
+    "activity": "diurnal",
+    "name": "Gavel",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      300,
+      360
+    ],
+    "attack": {
+      "name": "Verdict",
+      "damage": [
+        40,
+        60
+      ],
+      "telegraph": "It raises the gavel-head high. The sound-block swings forward as a shield. It names your crime first \u2014 a full round before the verdict falls.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "it is bound by procedure \u2014 object, cite precedent, demand a recess",
+      "flank it \u2014 frontal attacks hit the sound-block",
+      "confess first: smaller hit, but witnesses remember the confession"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a courthouse. Do not eat the courthouse."
+    },
+    "parts": [
+      "gavel-splinters (heavy)",
+      "the sound-block (dented, still rings)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A walking courthouse. You can hear the hammer fall before you see it, and you have done things.",
+      "observed": "A car-sized gavel head on jointed legs, carrying its sound-block as a shield. It accused Joren \u2014 of something he actually did, on camera, three days ago. The accusation comes a full round before the verdict. Frontal attacks hit the block.",
+      "slain": "Moves: Accusation (names a real logged action \u2014 telegraphed a full round ahead), Verdict (the gavel falls). Counter: it's bound by procedure. Object. Cite precedent. Demand a recess. Treat it like court, not a fight \u2014 the trial has rules and the rules bind IT too. Or confess first: smaller hit, but witnesses remember."
+    },
+    "systemDesignation": "JUDICIAL-4 (accountability content)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "recess",
+    "speed": 2,
+    "emoji": "\u2696\ufe0f",
+    "unknown": "a walking courthouse",
+    "vibe": "the audience voted for accountability, and the System complied with unusual enthusiasm",
+    "cues": {
+      "curious": [
+        "The gavel-head tilts. It is reviewing footage of you."
+      ],
+      "warn": [
+        "\"THE ACCUSED WILL RISE.\" It names what you did. Everyone hears."
+      ],
+      "fearful": [
+        "The gavel lowers. \"RECESS.\" It backs off, procedural to the end."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.2,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "docket",
+        "accuse",
+        "verdict",
+        "adjourn"
+      ],
+      "phaseBadges": {
+        "docket": " \ud83d\udccb DOCKET",
+        "accuse": " \u2696\ufe0f ACCUSING",
+        "verdict": " \ud83d\udd28 VERDICT",
+        "adjourn": " \ud83d\udcdc ADJOURNED"
+      },
+      "phaseMap": {
+        "declare": "accuse",
+        "windup": "accuse",
+        "resolve": "verdict",
+        "idle": "docket"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "gavel",
+      "noticeText": "A courthouse on legs, reviewing your footage.",
+      "painText": "A crack runs down the gavel-head. \"OBJECTION SUSTAINED,\" it mutters.",
+      "knownCue": "The accusation comes a full round before the verdict.",
+      "knownTactics": "Flank it \u2014 the sound-block only guards the front. Procedure binds it."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 8
+  },
+  {
+    "id": "focus_group",
+    "activity": "both",
+    "name": "The Focus Group",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      240,
+      300
+    ],
+    "attack": {
+      "name": "Deliberation",
+      "damage": [
+        30,
+        45
+      ],
+      "telegraph": "The murmur rises \u2014 you can HEAR them deliberating. They're about to love your dodge and hate your strike. The ratings are honest and visible.",
+      "pattern": {
+        "type": "burst"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "be deliberately boring for three rounds and they lose interest and LEAVE",
+      "kill the mouth-heads first \u2014 eye-heads only mark you",
+      "knowing what they'll rate IS the counter"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is an audience. Do not eat the audience."
+    },
+    "parts": [
+      "a mouth-head's teeth (still rating)",
+      "an eye-head's lens (it watched you)"
+    ],
+    "behavior": "swarm",
+    "codexStages": {
+      "unknown": "A committee that hasn't decided about you yet. The murmur follows you through the trees.",
+      "observed": "Five to seven floating heads, each with one exaggerated feature. Mouth-heads bite; eye-heads mark you \u2014 marked actions get rated harder. You can hear the murmur before they act: they're about to love your dodge and hate your strike. Next round, dodge is buffed, strike is suppressed.",
+      "slain": "Moves: Deliberation (audible telegraph \u2014 the ratings are honest), the System buffs what entertains them and suppresses what bores them. Shared HP \u2014 kill the mouth-heads first. Counter: be deliberately boring. Do nothing flashy for three rounds and they lose interest and LEAVE. The win is refusing to be content. (One-Person Army: rage is VERY entertaining \u2014 they will never leave a brawler.)"
+    },
+    "systemDesignation": "AUDIENCE-ID-7 (given bodies and a budget)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "boredom",
+    "speed": 3,
+    "emoji": "\ud83d\udc65",
+    "unknown": "a committee that hasn't decided about you yet",
+    "vibe": "the audience's id, rating your every move out loud",
+    "cues": {
+      "curious": [
+        "The murmur shifts. \"Ooh, a new one. Show us something.\""
+      ],
+      "warn": [
+        "The mouth-heads lean in. The murmur gets excited. This will be rated."
+      ],
+      "fearful": [
+        "The murmur thins... wanders... \"Next.\" They're leaving. Stay boring."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.0,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "murmur",
+        "rate",
+        "deliberate",
+        "bored"
+      ],
+      "phaseBadges": {
+        "murmur": " \ud83d\udc65 MURMURING",
+        "rate": " \u2b50 RATING",
+        "deliberate": " \ud83d\udde3\ufe0f DELIBERATING",
+        "bored": " \ud83e\udd71 BORED"
+      },
+      "phaseMap": {
+        "declare": "deliberate",
+        "windup": "deliberate",
+        "resolve": "rate",
+        "idle": "murmur"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "focus group",
+      "noticeText": "Floating heads, mid-argument about you.",
+      "painText": "A mouth-head pops like a soap bubble. The murmur dips.",
+      "knownCue": "You can hear the deliberation \u2014 the ratings are honest.",
+      "knownTactics": "Boring for three rounds and they leave. Mouth-heads first."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 4
+  },
+  {
+    "id": "spool",
+    "activity": "nocturnal",
+    "name": "Spool",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      280,
+      340
+    ],
+    "attack": {
+      "name": "Replay",
+      "damage": [
+        35,
+        50
+      ],
+      "telegraph": "RECORD first \u2014 harmless, it watches. Then REPLAY: the reels on its back spin, and the spinning reel SHOWS what's loaded. Watch the reel, not the tape.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "spend three turns doing harmless things \u2014 eat, wait, talk to yourself \u2014 and the replay is useless",
+      "feed it a heal: the replay heals YOU",
+      "the reels show what's coming \u2014 read them"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a blooper reel. Do not eat the blooper reel."
+    },
+    "parts": [
+      "a reel of tape (your fight is on it)",
+      "magnetic tape (limbs, tangled)"
+    ],
+    "behavior": "curious",
+    "codexStages": {
+      "unknown": "A tangle of tape that moves like it's remembering. It watched you for a while before you noticed.",
+      "observed": "The System's blooper reel, weaponized. Visible film reels across its back; magnetic tape for limbs. It records your last 3 turns, then replays them AT you \u2014 your own numbers, echoed, capped. The spinning reel shows what's loaded.",
+      "slain": "Moves: Record (harmless \u2014 it watches), Replay (your echoed actions, telegraphed by the reels). Counter: spend three turns doing harmless things and the replay is useless. Or feed it a heal \u2014 the replay heals YOU. (Apex Predator: their dead-aim spikes get replayed \u2014 the build's best moment becomes incoming.)"
+    },
+    "systemDesignation": "POST-PROD-2 (someone got a monster budget)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "dead air",
+    "speed": 3,
+    "emoji": "\ud83c\udf9e\ufe0f",
+    "unknown": "a tangle of tape that moves like it's remembering",
+    "vibe": "your own blooper reel, and it's been saving the good stuff",
+    "cues": {
+      "curious": [
+        "The reels turn slowly. It's watching. Recording."
+      ],
+      "warn": [
+        "The reels spin up \u2014 fast. Something you did is about to come back."
+      ],
+      "fearful": [
+        "The tape goes slack. Nothing worth replaying. It's losing interest."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.15,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "record",
+        "rewind",
+        "replay",
+        "tangle"
+      ],
+      "phaseBadges": {
+        "record": " \ud83d\udcfa RECORDING",
+        "rewind": " \u23ea REWINDING",
+        "replay": " \u25b6\ufe0f REPLAYING",
+        "tangle": " \ud83e\udea2 TANGLED"
+      },
+      "phaseMap": {
+        "declare": "rewind",
+        "windup": "rewind",
+        "resolve": "replay",
+        "idle": "record"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "spool",
+      "noticeText": "Tape-limbs, reels turning, watching you.",
+      "painText": "Tape snaps and whips loose. The reel wobbles.",
+      "knownCue": "The spinning reel shows what's loaded.",
+      "knownTactics": "Harmless turns make harmless replays. A fed heal heals you."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 5
+  },
+  {
+    "id": "chorus_line",
+    "activity": "crepuscular",
+    "name": "Chorus Line",
+    "biomes": [
+      "grassland",
+      "se_woodlands"
+    ],
+    "hp": [
+      300,
+      360
+    ],
+    "attack": {
+      "name": "Downbeat",
+      "damage": [
+        30,
+        48
+      ],
+      "telegraph": "The music starts \u2014 an actual audio cue, 4/4, and you can feel the downbeat coming. The downbeat is the kick. Deafness breaks the telegraph but not the beat.",
+      "pattern": {
+        "type": "burst"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "move ON the beat: dodge. Move OFF it: eat the kick",
+      "dance \u2014 match the rhythm and you're untouchable",
+      "throw something arrhythmic (a handful of gravel works)",
+      "it can't turn fast \u2014 attack from the side"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a musical episode. Do not eat the musical episode."
+    },
+    "parts": [
+      "a dancer's shoe (enormous)",
+      "sheet music (4/4, aggressive)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A kickline with no music you can hear. Yet. The legs go all the way up.",
+      "observed": "Synchronized AoE on a 4/4 beat \u2014 sweeps week, and the System is doing it anyway. Extremely long legs; the LINE formation is the tell \u2014 it can't turn fast, so flanking works. The downbeat is the hit, and you can hear it coming.",
+      "slain": "Moves: Downbeat (AoE kick on the 4 \u2014 the music is the telegraph). Counter: dance. Match the rhythm \u2014 a real timing choice each round \u2014 and you're untouchable. Or break the rhythm: throw something arrhythmic. Deafness (or earplugs) breaks the telegraph but not the beat \u2014 the beat doesn't care about your HP pool, only your timing."
+    },
+    "systemDesignation": "SWEEPS-EP-12 (the System is not proud of this one)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "silence",
+    "speed": 4,
+    "emoji": "\ud83d\udc83",
+    "unknown": "a kickline with no music you can hear. Yet.",
+    "vibe": "sweeps week \u2014 extremely long legs, extremely committed",
+    "cues": {
+      "curious": [
+        "A toe taps. Four beats. It's counting you in."
+      ],
+      "warn": [
+        "The line straightens. The music swells. ONE two three\u2014"
+      ],
+      "fearful": [
+        "The kicks slow... stumble... the line breaks formation."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.1,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "countin",
+        "downbeat",
+        "kickline",
+        "bow"
+      ],
+      "phaseBadges": {
+        "countin": " \ud83c\udfb5 COUNT-IN",
+        "downbeat": " \ud83e\udd81 DOWNBEAT",
+        "kickline": " \ud83d\udc83 KICKLINE",
+        "bow": " \ud83d\ude47 BOW"
+      },
+      "phaseMap": {
+        "declare": "countin",
+        "windup": "downbeat",
+        "resolve": "kickline",
+        "idle": "countin"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "chorus line",
+      "noticeText": "A kickline, mid-formation, in perfect time.",
+      "painText": "A dancer stumbles \u2014 the line wobbles, the beat skips.",
+      "knownCue": "The music \u2014 the downbeat is the hit.",
+      "knownTactics": "Dance on the beat, or break the rhythm. Flank the line."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 6
+  },
+  {
+    "id": "terms_of_service",
+    "activity": "both",
+    "name": "The Terms of Service",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      340,
+      420
+    ],
+    "attack": {
+      "name": "Clause",
+      "damage": [
+        25,
+        40
+      ],
+      "telegraph": "The text on the scroll GLOWS before a clause activates \u2014 the glow runs along the words like a fuse. The telegraph is literally legible. Reading is the defense.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "READ IT \u2014 spend turns examining and you'll find the loophole clause that dismisses it",
+      "object now at small cost, or accept and pay bigger later \u2014 a real choice each clause",
+      "it unrolls toward you \u2014 don't let it surround you"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a legal document. Do not eat the legal document."
+    },
+    "parts": [
+      "a glowing clause (still binding?)",
+      "paper \u2014 so much paper"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "Fine print, approaching. It unrolls toward you. You feel like you've already agreed to something.",
+      "observed": "A towering scroll that adds clauses mid-fight \u2014 'by standing here you agree...' Each clause is a debuff you accepted by not objecting in time. The text GLOWS before a clause activates; the glow runs like a fuse. Paper, mostly \u2014 but the paper is everywhere.",
+      "slain": "Moves: Clause (debuff you accepted by not objecting \u2014 object now at small cost, or accept and pay bigger later). Counter: READ IT. Spend turns examining \u2014 knowledge as a weapon, literally \u2014 and you'll find the loophole clause that dismisses it. (Detective: this is their boss fight. Market God: they LIVE in fine print \u2014 home turf.)"
+    },
+    "systemDesignation": "LEGAL-1 (nobody is happy about this, including the System)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "loopholes",
+    "speed": 1,
+    "emoji": "\ud83d\udcdc",
+    "unknown": "fine print, approaching",
+    "vibe": "the System's lawyers got a monster budget, and the paper is everywhere",
+    "cues": {
+      "curious": [
+        "The scroll unrolls a little further. Small text. Smaller intentions."
+      ],
+      "warn": [
+        "A paragraph begins to glow. Read it. READ IT."
+      ],
+      "fearful": [
+        "The glow gutters. A loophole, found. The paper sags."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.2,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "preamble",
+        "glow",
+        "clause",
+        "addendum"
+      ],
+      "phaseBadges": {
+        "preamble": " \ud83d\udcdc PREAMBLE",
+        "glow": " \u2728 GLOWING",
+        "clause": " \ud83d\udcdd CLAUSE",
+        "addendum": " \ud83d\udcce ADDENDUM"
+      },
+      "phaseMap": {
+        "declare": "glow",
+        "windup": "glow",
+        "resolve": "clause",
+        "idle": "preamble"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "terms",
+      "noticeText": "A towering scroll, unrolling toward you.",
+      "painText": "The paper tears along a fold. The glow flickers.",
+      "knownCue": "The text glows before a clause activates \u2014 legible.",
+      "knownTactics": "Examine it \u2014 the loophole dismisses it. Object early."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 4
+  },
+  {
+    "id": "callback",
+    "activity": "nocturnal",
+    "name": "The Callback",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      260,
+      320
+    ],
+    "attack": {
+      "name": "Encore",
+      "damage": [
+        30,
+        50
+      ],
+      "telegraph": "It speaks \u2014 in their voice, saying things they said. The face is too symmetrical. The eyes don't track. The wrongness is the telegraph.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "the funeral \u2014 speak to it AS the person, say goodbye properly, and it loses coherence",
+      "name it as NOT them \u2014 the village's naming debate as combat",
+      "noticing the wrongness is the knowledge gate \u2014 look at the eyes"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is grief. Do not eat grief."
+    },
+    "parts": [
+      "a face that isn't theirs (it comes off like a mask)"
+    ],
+    "behavior": "ambush",
+    "codexStages": {
+      "unknown": "Someone you know, walking wrong. You know the walk. The walk is wrong.",
+      "observed": "It wears the face and voice of one of your dead \u2014 drawn from your actual dead, your broadcast history. It doesn't attack your HP first; it attacks your willingness to fight it. The face is too symmetrical. The eyes don't track. Noticing the wrongness is the knowledge gate.",
+      "slain": "Moves: Encore (grief as a weapon \u2014 trauma/morale first, HP second). Counter: the funeral. Speak to it AS the person. Say goodbye properly \u2014 a real beat \u2014 and it loses coherence. Or: the village collectively names it as NOT them \u2014 the naming-debate mechanic as combat. (Shepherd of the Dead: this is their shadow.)"
+    },
+    "systemDesignation": "CLIP-SHOW-3 (mined from your footage)",
+    "aggression": "ambush",
+    "follows": true,
+    "fear": "farewells",
+    "speed": 3,
+    "emoji": "\ud83d\udc64",
+    "unknown": "someone you know, walking wrong",
+    "vibe": "the family thread, weaponized \u2014 it knows what makes you hesitate",
+    "cues": {
+      "curious": [
+        "\"Hey,\" it says, in their voice. \"It's me.\" It is not."
+      ],
+      "warn": [
+        "The face smiles wrong. The eyes don't track. It's about to do the thing they used to do."
+      ],
+      "fearful": [
+        "\"Goodbye,\" you say, and mean it. The face loosens. It's losing coherence."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.25,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "approach",
+        "speak",
+        "encore",
+        "falter"
+      ],
+      "phaseBadges": {
+        "approach": " \ud83d\udc64 APPROACHING",
+        "speak": " \ud83d\udde3\ufe0f SPEAKING",
+        "encore": " \ud83c\udfad ENCORE",
+        "falter": " \ud83d\ude36 FALTERING"
+      },
+      "phaseMap": {
+        "declare": "speak",
+        "windup": "speak",
+        "resolve": "encore",
+        "idle": "approach"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "callback",
+      "noticeText": "Someone you know, walking wrong, coming closer.",
+      "painText": "The face slips \u2014 for a second it's just... wrong, and everyone sees it.",
+      "knownCue": "The wrongness: too symmetrical, eyes don't track.",
+      "knownTactics": "Say goodbye properly. Or name it as NOT them."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 3
+  },
+  {
+    "id": "buffering",
+    "activity": "both",
+    "name": "Buffering",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      280,
+      340
+    ],
+    "attack": {
+      "name": "Catch Up",
+      "damage": [
+        40,
+        60
+      ],
+      "telegraph": "Its telegraphs describe the FUTURE \u2014 'it will step left.' Afterimages trail it; the faintest frame is the real present. You must pre-dodge \u2014 or stop predicting entirely.",
+      "pattern": {
+        "type": "ambush"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "stop predicting \u2014 close your eyes and swing at where it IS, not the projection",
+      "stand perfectly still \u2014 it aims at your future position, and your future position is HERE",
+      "the faintest frame is the real one"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a compression artifact. Do not eat the compression artifact."
+    },
+    "parts": [
+      "a hung frame (it stutters in your pack)",
+      "afterimage residue (faint, cold)"
+    ],
+    "behavior": "drifter",
+    "codexStages": {
+      "unknown": "A stutter in the world. Frames of something hang in the air where nothing is.",
+      "observed": "It exists 3 seconds in the past. You hit where it was; it hits where you WILL be \u2014 the System's stream delay, embodied. It stutters: frames hang in the air. The faintest frame is the one that's really there. Its telegraphs describe the future.",
+      "slain": "Moves: Catch Up (strikes where you WILL be \u2014 pre-dodge, or don't move at all). Counter: stop predicting. Close your eyes and swing at where it IS. Or stand perfectly still \u2014 it aims at your future position, and your future position is HERE. (All-Seeing Detective: their prediction fantasy breaks \u2014 it lives in THEIR domain.)"
+    },
+    "systemDesignation": "STREAM-DELAY-1 (a compression artifact that achieved malice)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "stillness",
+    "speed": 5,
+    "emoji": "\u23f3",
+    "unknown": "a stutter in the world",
+    "vibe": "three seconds ago, and angry about it",
+    "cues": {
+      "curious": [
+        "A frame of it hangs in the air. Then another. It's buffering."
+      ],
+      "warn": [
+        "\"IT WILL STEP LEFT,\" the world says. The faintest frame twitches."
+      ],
+      "fearful": [
+        "The frames collapse into one \u2014 the present, caught. It's exposed."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.2,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "stutter",
+        "afterimage",
+        "catchup",
+        "sync"
+      ],
+      "phaseBadges": {
+        "stutter": " \u23f3 STUTTERING",
+        "afterimage": " \ud83d\udc65 AFTERIMAGE",
+        "catchup": " \u23e9 CATCHING UP",
+        "sync": " \ud83d\udd04 SYNCED"
+      },
+      "phaseMap": {
+        "declare": "afterimage",
+        "windup": "afterimage",
+        "resolve": "catchup",
+        "idle": "stutter"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "buffering",
+      "noticeText": "Frames of something, hanging in empty air.",
+      "painText": "A frame shatters \u2014 the past cracks, briefly.",
+      "knownCue": "The faintest frame is the real present.",
+      "knownTactics": "Attack the present, not the projection. Or don't move."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 4
+  },
+  {
+    "id": "ad_break",
+    "activity": "both",
+    "name": "Ad Break",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      320,
+      380
+    ],
+    "attack": {
+      "name": "Sponsored Pause",
+      "damage": [
+        20,
+        35
+      ],
+      "telegraph": "A giant floating AD glyph with a PROGRESS BAR \u2014 the bar is the telegraph. During the pause it repositions and heals, and you watch. After the bar fills, a 'skip ad' beat appears: skip faster if the audience likes you. Or look away \u2014 the ad's power is that you WATCH.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "patience \u2014 wait for the skip beat",
+      "look away \u2014 the ad's power is that you WATCH",
+      "kill the sponsor-creature riding the glyph and the ad shortens"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is sponsored content. Do not eat the sponsored content."
+    },
+    "parts": [
+      "the sponsor-creature's smile (trophy)",
+      "a fragment of progress bar"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "An interruption with a progress bar. The fight... pauses. You're watching something.",
+      "observed": "It pauses the fight for an ad \u2014 a giant AD glyph with a progress bar. During the pause it repositions and heals, and you watch. A small smiling sponsor-creature rides the glyph. The System apologizes for this one. The apology is also sponsored.",
+      "slain": "Moves: Sponsored Pause (the fight stops; it repositions and heals). Counter, three ways, all lateral: patience (wait for the skip beat \u2014 faster if the audience likes you), inattention (look away), or murder the sponsor (kill the rider and the ad shortens). It's a pacing monster, not a build check. (Market God: they understand sponsors \u2014 home turf.)"
+    },
+    "systemDesignation": "INVENTORY-7 (the sponsors demanded inventory)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "inattention",
+    "speed": 1,
+    "emoji": "\ud83d\udcfa",
+    "unknown": "an interruption with a progress bar",
+    "vibe": "the sponsors demanded inventory, and the System complied",
+    "cues": {
+      "curious": [
+        "\"WE'LL BE RIGHT BACK,\" says the sky."
+      ],
+      "warn": [
+        "The AD glyph brightens. The progress bar starts filling. Don't watch. DON'T watch."
+      ],
+      "fearful": [
+        "\"SKIP AD\" \u2014 the bar completes, the glyph flickers out."
+      ]
+    },
+    "wave": 3,
+    "pierce": 0.15,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "preroll",
+        "pause",
+        "skip",
+        "resume"
+      ],
+      "phaseBadges": {
+        "preroll": " \ud83d\udcfa PREROLL",
+        "pause": " \u23f8\ufe0f PAUSED",
+        "skip": " \u23ed SKIP?",
+        "resume": " \u25b6\ufe0f RESUMED"
+      },
+      "phaseMap": {
+        "declare": "preroll",
+        "windup": "pause",
+        "resolve": "pause",
+        "idle": "resume"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "ad break",
+      "noticeText": "The world holds up a progress bar. An ad is coming.",
+      "painText": "The glyph glitches \u2014 the sponsor-creature winces.",
+      "knownCue": "The progress bar \u2014 and the skip beat when it fills.",
+      "knownTactics": "Look away, wait for skip, or kill the sponsor."
+    },
+    "loot": {
+      "chance": 0.15,
+      "tier": 2,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 6
+  },
+  {
+    "id": "congregation",
+    "activity": "diurnal",
+    "name": "The Congregation",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      900,
+      1100
+    ],
+    "attack": {
+      "name": "Absolution",
+      "damage": [
+        50,
+        70
+      ],
+      "telegraph": "The steeple RINGS before it strikes \u2014 the bell is the telegraph. The offer comes first, always: trauma washed, at the price of obedience (a geas). It must invite before it can compel \u2014 its own liturgy binds it.",
+      "pattern": {
+        "type": "beam"
+      },
+      "damageType": "sonic"
+    },
+    "weaknesses": [
+      "heresy \u2014 argue theology with it; it MUST engage, bound by liturgy",
+      "bring a TRUE believer \u2014 it can't process genuine faith, only performed faith",
+      "the offer is genuine \u2014 that's what makes it a monster. Refuse."
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a church. Do not eat the church."
+    },
+    "parts": [
+      "a pew-tooth",
+      "the bell-clapper (still rings)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A church where the hymns are static. The door is open. The door is always open.",
+      "observed": "A walking chapel; the pews are teeth; the bell is the weapon. It offers absolution \u2014 real: trauma and corruption washed \u2014 at the price of obedience, a geas: do a thing. The offer is genuine. That's what makes it a monster. The steeple rings before it strikes.",
+      "slain": "Moves: Invitation (must invite before it can compel), Absolution (the bell rings, then the strike \u2014 plus a geas if you accepted). Counter: heresy. Argue theology \u2014 it MUST engage, bound by liturgy. Or bring a TRUE believer \u2014 it can't process genuine faith, only performed faith; the real thing breaks the counterfeit. (Corruption builds: the easy wash IS the temptation \u2014 the fight is refusing.)"
+    },
+    "systemDesignation": "MINISTRY-5 (the System found religion in the ratings)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "heresy",
+    "speed": 2,
+    "emoji": "\u26ea",
+    "unknown": "a church where the hymns are static",
+    "vibe": "faith as a weapon \u2014 the invitation is always spoken, never sprung",
+    "cues": {
+      "curious": [
+        "\"COME AS YOU ARE,\" the chapel says. The door is open."
+      ],
+      "warn": [
+        "The steeple rings \u2014 once. The offer is coming first. It always comes first."
+      ],
+      "fearful": [
+        "\"GO IN PEACE,\" it says, uncertain. The hymns stutter."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.3,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "procession",
+        "invite",
+        "absolve",
+        "recessional"
+      ],
+      "phaseBadges": {
+        "procession": " \u26ea PROCESSION",
+        "invite": " \ud83d\ude4f INVITING",
+        "absolve": " \ud83d\udd14 ABSOLVING",
+        "recessional": " \ud83d\udcdc RECESSIONAL"
+      },
+      "phaseMap": {
+        "declare": "invite",
+        "windup": "invite",
+        "resolve": "absolve",
+        "idle": "procession"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "congregation",
+      "noticeText": "A walking chapel, hymns crackling like static.",
+      "painText": "A pew-tooth cracks. The bell rings off-key.",
+      "knownCue": "The steeple rings before it strikes.",
+      "knownTactics": "Argue theology \u2014 liturgy binds it. Or bring true faith."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 10
+  },
+  {
+    "id": "strike",
+    "activity": "diurnal",
+    "name": "The Strike",
+    "biomes": [
+      "grassland",
+      "se_woodlands"
+    ],
+    "hp": [
+      1000,
+      1200
+    ],
+    "attack": {
+      "name": "Walkout",
+      "damage": [
+        45,
+        65
+      ],
+      "telegraph": "The rat's eyes INFLATE before a shutdown \u2014 and it posts its demands first, a real readable list. Your abilities, your items, the grid itself goes on strike: dead turns where nothing works. The strike is always announced.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "negotiate \u2014 meet ONE demand and it stands down a round",
+      "scab: do the grid's job yourself, manually and costly \u2014 doing the work breaks the strike's morale",
+      "read the demands \u2014 they're honest, and the schedule is announced"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a labor action. Do not eat the labor action."
+    },
+    "parts": [
+      "a picket-sign tooth",
+      "inflatable hide (it squeaks when struck)"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "An inflatable rat the size of a house. It's not attacking. That's worse.",
+      "observed": "The classic inflatable strike rat, building-sized. It doesn't attack you \u2014 it stops everything ELSE. Abilities, items, the grid itself goes on strike: dead turns where nothing works. The eyes inflate before a shutdown, and the demands are posted first \u2014 a real, readable list.",
+      "slain": "Moves: Walkout (shutdown turns \u2014 nothing works, announced in advance via the demands list). Counter: negotiate \u2014 meet ONE demand and it stands down a round. Or scab: do the grid's job yourself, manual and costly \u2014 doing the work breaks the strike's morale. (Market God: their whole game is leverage \u2014 this is leverage aimed AT them. Unkillable: their game is outlasting \u2014 the strike outlasts.)"
+    },
+    "systemDesignation": "LOCAL-404 (the picket line walked off the set)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "scabs",
+    "speed": 1,
+    "emoji": "\ud83d\udc00",
+    "unknown": "an inflatable rat the size of a house",
+    "vibe": "the System's labor content, scaled up \u2014 it doesn't fight, it withholds",
+    "cues": {
+      "curious": [
+        "The rat looms. A picket sign is raised. The demands are posted."
+      ],
+      "warn": [
+        "The eyes inflate \u2014 slowly, terribly. The shutdown is coming."
+      ],
+      "fearful": [
+        "The rat deflates slightly. One demand, met. It stands down a round."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.35,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 7,
+      "phases": [
+        "picket",
+        "demands",
+        "walkout",
+        "negotiate"
+      ],
+      "phaseBadges": {
+        "picket": " \ud83d\udc00 PICKETING",
+        "demands": " \ud83d\udccb DEMANDS",
+        "walkout": " \ud83d\udeab WALKOUT",
+        "negotiate": " \ud83e\udd1d NEGOTIATING"
+      },
+      "phaseMap": {
+        "declare": "demands",
+        "windup": "demands",
+        "resolve": "walkout",
+        "idle": "picket"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "strike",
+      "noticeText": "A house-sized inflatable rat, holding a sign.",
+      "painText": "The hide squeaks \u2014 air hisses from a puncture.",
+      "knownCue": "The eyes inflate before a shutdown. Demands are posted first.",
+      "knownTactics": "Meet one demand, or scab the grid's job yourself."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 8
+  },
+  {
+    "id": "influencer",
+    "activity": "both",
+    "name": "The Influencer",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      850,
+      1050
+    ],
+    "attack": {
+      "name": "Ratio",
+      "damage": [
+        40,
+        60
+      ],
+      "telegraph": "The ring light BRIGHTENS before it acts. It doesn't fight you \u2014 it turns the AUDIENCE against you: fans become haters, care packages stop, System favor drains. Its followers are literal \u2014 small fan-creatures that buff it. Kill them first.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "ratio it \u2014 be MORE entertaining; the fight becomes a popularity contest (played, not RNG)",
+      "cancel it first \u2014 dig up its dirt; detective work as combat prep",
+      "kill the followers and it's just a person with good lighting"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a personal brand. Do not eat the personal brand."
+    },
+    "parts": [
+      "the ring-light rig (hardware)",
+      "a follower's phone (cracked, still filming)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "Someone the light loves. The light follows it around. So do the little ones.",
+      "observed": "Pure charisma with a ring-light halo \u2014 the halo is hardware, a rig. It doesn't fight you; it turns the audience against you. Fans become haters, care packages stop, favor drains. Its followers are literal small fan-creatures that buff it \u2014 the Influencer is the head, the followers are the real body.",
+      "slain": "Moves: Ratio (favor drain, fan-turning \u2014 the ring light brightens first). Counter: ratio it \u2014 be MORE entertaining; the fight becomes a popularity contest, played not RNG. Or cancel it first: dig up its dirt \u2014 detective gameplay as combat prep; the fight starts before the fight. Or just kill the followers \u2014 then it's a person with good lighting. (Shepherd/Socialite: their domain is people \u2014 this is the rival.)"
+    },
+    "systemDesignation": "TALENT-1 (the show found its star, and it's not you)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "ratios",
+    "speed": 3,
+    "emoji": "\ud83e\udd33",
+    "unknown": "someone the light loves",
+    "vibe": "the show found its star \u2014 the followers are the real body",
+    "cues": {
+      "curious": [
+        "\"OMG you guys,\" it says to no one visible. The light flares."
+      ],
+      "warn": [
+        "The ring light brightens to noon. The followers lean in, filming."
+      ],
+      "fearful": [
+        "The light flickers. A follower lowers its phone. The ratio is turning."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.25,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "glowup",
+        "brighten",
+        "ratio",
+        "apology"
+      ],
+      "phaseBadges": {
+        "glowup": " \u2728 GLOW-UP",
+        "brighten": " \ud83d\udd06 BRIGHTENING",
+        "ratio": " \ud83d\udc8b RATIO",
+        "apology": " \ud83d\ude4f APOLOGY?"
+      },
+      "phaseMap": {
+        "declare": "brighten",
+        "windup": "brighten",
+        "resolve": "ratio",
+        "idle": "glowup"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "influencer",
+      "noticeText": "Someone the light loves, ring-light blazing.",
+      "painText": "The rig sparks \u2014 the halo flickers. A follower gasps.",
+      "knownCue": "The ring light brightens before it acts.",
+      "knownTactics": "Kill the followers first. Or out-entertain it."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 8
+  },
+  {
+    "id": "audit",
+    "activity": "diurnal",
+    "name": "The Audit",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1100,
+      1300
+    ],
+    "attack": {
+      "name": "Assessment",
+      "damage": [
+        55,
+        75
+      ],
+      "telegraph": "The abacus beads CLICK before a tax. The audit runs on a SCHEDULE \u2014 announced rounds \u2014 and its clipboard shows YOUR sheet: every ability, item, synergy under review. Anything 'inefficient' gets taxed (temporarily weakened). Read the clipboard \u2014 it tells you what's about to be taxed.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "be inefficient ON PURPOSE \u2014 it can't tax what doesn't optimize",
+      "front-load everything between the announced audit rounds",
+      "read the clipboard \u2014 knowledge of the schedule is the counter"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a tax authority. Do not eat the tax authority."
+    },
+    "parts": [
+      "abacus beads (they still count you)",
+      "your file (take it back)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A grey man with your paperwork. He has your paperwork. How does he have your paperwork.",
+      "observed": "Grey, clipboard, abacus \u2014 the most boring-looking thing in the wave, which is the joke and the horror. It audits your build: every ability, item, synergy reviewed; anything 'inefficient' is taxed, temporarily weakened. The abacus clicks before a tax; the audit runs on announced rounds; the clipboard shows YOUR sheet.",
+      "slain": "Moves: Assessment (scheduled build taxes \u2014 the clipboard telegraphs what's next). The anti-godhood monster. Counter: be inefficient ON PURPOSE \u2014 it can't tax what doesn't optimize. The min-maxer's nightmare: the optimal counter is deliberate jank. Or front-load everything between the announced audit rounds. (EVERY godhood build is auditable \u2014 Market God especially; their wealth is the most auditable thing in the game.)"
+    },
+    "systemDesignation": "FINANCE-FIELD-2 (the finance department got field agents)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "jank",
+    "speed": 2,
+    "emoji": "\ud83e\uddfe",
+    "unknown": "a grey man with your paperwork",
+    "vibe": "the most boring-looking thing in the wave \u2014 which is the joke and the horror",
+    "cues": {
+      "curious": [
+        "\"LET'S REVIEW YOUR FILINGS,\" says the grey man, pleasantly."
+      ],
+      "warn": [
+        "The abacus beads click \u2014 faster. An audit round is coming."
+      ],
+      "fearful": [
+        "\"...INEFFICIENCIES NOTED,\" it says, retreating. \"WE'LL BE BACK.\""
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.4,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 5,
+      "phases": [
+        "review",
+        "click",
+        "assess",
+        "file"
+      ],
+      "phaseBadges": {
+        "review": " \ud83d\udccb REVIEWING",
+        "click": " \ud83e\uddee CLICKING",
+        "assess": " \ud83d\udc8c ASSESSING",
+        "file": " \ud83d\uddc2\ufe0f FILING"
+      },
+      "phaseMap": {
+        "declare": "click",
+        "windup": "click",
+        "resolve": "assess",
+        "idle": "review"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "audit",
+      "noticeText": "A grey man, clipboard in hand, reviewing you.",
+      "painText": "The clipboard cracks. \"THAT WAS NOT IN THE BUDGET.\"",
+      "knownCue": "The abacus clicks before a tax. The schedule is announced.",
+      "knownTactics": "Deliberate jank between audit rounds. Read the clipboard."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 10
+  },
+  {
+    "id": "reunion",
+    "activity": "nocturnal",
+    "name": "The Reunion",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1200,
+      1400
+    ],
+    "attack": {
+      "name": "Your Move",
+      "damage": [
+        60,
+        80
+      ],
+      "telegraph": "Faces surface on its body before it uses YOUR moves \u2014 you see whose face, you know what's coming. It has your fight history: every tactic you've ever used. The telegraph is recognition.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "it only knows your PAST \u2014 do something you've never done; novelty is literally the weapon",
+      "the counter is playing differently \u2014 the game tracks your action history"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is everyone you've buried. Do not eat everyone you've buried."
+    },
+    "parts": [
+      "a face that finally lets go",
+      "your own tactics, written down (take notes)"
+    ],
+    "behavior": "pack",
+    "codexStages": {
+      "unknown": "Everyone you've buried, standing up. It moves like a crowd, not a creature.",
+      "observed": "The village you failed, given teeth \u2014 a gestalt of dead scholars and villagers. A mass of almost-people; the faces are the organs. It knows every tactic you've ever used \u2014 it has your fight history. Faces surface on its body before it uses your moves.",
+      "slain": "Moves: Your Move (your own tactics, echoed \u2014 the face telegraphs which). Counter: it only knows your PAST \u2014 do something you've never done. The game tracks your action history; novelty is literally the weapon. The counter is playing differently. (One-Person Army: they have ONE tactic \u2014 the Reunion has it memorized. Apex Predator: their patterns ARE their identity.)"
+    },
+    "systemDesignation": "CLIP-SHOW-9 (the clip show, with a body count)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "novelty",
+    "speed": 3,
+    "emoji": "\ud83e\udec2",
+    "unknown": "everyone you've buried, standing up",
+    "vibe": "the village you failed, given teeth \u2014 it moves like a crowd",
+    "cues": {
+      "curious": [
+        "The faces turn toward you \u2014 all of them, at once. They remember you."
+      ],
+      "warn": [
+        "A familiar face surfaces, mid-shout. It's about to do YOUR move."
+      ],
+      "fearful": [
+        "The faces blur \u2014 it doesn't know this one. You're doing something new."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.45,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "gather",
+        "surface",
+        "echo",
+        "scatter"
+      ],
+      "phaseBadges": {
+        "gather": " \ud83e\udec2 GATHERING",
+        "surface": " \ud83d\udc64 SURFACING",
+        "echo": " \ud83e\ude9e ECHOING",
+        "scatter": " \ud83c\udf2b\ufe0f SCATTERING"
+      },
+      "phaseMap": {
+        "declare": "surface",
+        "windup": "surface",
+        "resolve": "echo",
+        "idle": "gather"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "reunion",
+      "noticeText": "A crowd-shaped thing, faces surfacing like organs.",
+      "painText": "A face goes still \u2014 released. The mass shudders.",
+      "knownCue": "The face surfaces before your move comes back.",
+      "knownTactics": "Novelty \u2014 do what you've never done."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 12
+  },
+  {
+    "id": "suburb",
+    "activity": "both",
+    "name": "The Suburb",
+    "biomes": [
+      "grassland"
+    ],
+    "hp": [
+      1300,
+      1500
+    ],
+    "attack": {
+      "name": "Property Tax",
+      "damage": [
+        35,
+        55
+      ],
+      "telegraph": "The streetlights FLICKER before the tax. The houses have teeth (of course). The 'for sale' signs count down your remaining rests. It offers safety, warmth, normalcy \u2014 a real choice: rest inside and heal, but each rest costs a memory or a bond.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "you can't kill it \u2014 LEAVE. Navigation is victory; the fight is a timer",
+      "bring the wild inside: it's sterile; introduce something alive \u2014 a plant, a stray, a rumor \u2014 and it can't cope",
+      "rest inside and heal, but each rest costs a memory or a bond \u2014 count your rests"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a cul-de-sac. Do not eat the cul-de-sac."
+    },
+    "parts": [
+      "a mailbox (the letters are addressed to you)",
+      "a 'for sale' sign (countdown stopped)"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "A street that wasn't there yesterday. Lawns. Mailboxes. A dog that isn't a dog.",
+      "observed": "A cul-de-sac \u2014 comfort as a trap. It offers safety, warmth, normalcy, and it means it: rest inside and genuinely heal. But each rest costs a memory or a bond. The streetlights flicker before the tax; the 'for sale' signs count down your remaining rests. The wrongness is in the details, and the details are the telegraphs.",
+      "slain": "Moves: Property Tax (memory/bond cost per rest \u2014 the flicker telegraphs it). You don't kill a suburb; you ESCAPE it \u2014 the win condition is leaving, the fight is a timer. Counter: LEAVE. Or bring the wild inside: it's sterile; introduce something alive \u2014 a plant, a stray, a rumor \u2014 and it can't cope. (Farstrider: their domain is leaving \u2014 this is their boss fight. Living Garden: their garden vs its lawns \u2014 the thematic grudge match.)"
+    },
+    "systemDesignation": "FOCUS-GROUP-12 (viewers miss 'normal')",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "the wild",
+    "speed": 1,
+    "emoji": "\ud83c\udfd8\ufe0f",
+    "unknown": "a street that wasn't there yesterday",
+    "vibe": "comfort as a trap \u2014 the lawns are too green, the dog isn't a dog",
+    "cues": {
+      "curious": [
+        "A 'for sale' sign turns toward you. The price is... reasonable."
+      ],
+      "warn": [
+        "The streetlights flicker \u2014 all of them, in sequence. The tax is coming."
+      ],
+      "fearful": [
+        "A weed cracks the driveway. The lawns recoil. It's sterile; it can't cope."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.2,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 7,
+      "phases": [
+        "culdesac",
+        "flicker",
+        "tax",
+        "openhouse"
+      ],
+      "phaseBadges": {
+        "culdesac": " \ud83c\udfd8\ufe0f CUL-DE-SAC",
+        "flicker": " \ud83d\udca1 FLICKERING",
+        "tax": " \ud83e\uddfe TAXING",
+        "openhouse": " \ud83c\udfe1 OPEN HOUSE"
+      },
+      "phaseMap": {
+        "declare": "flicker",
+        "windup": "flicker",
+        "resolve": "tax",
+        "idle": "culdesac"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "suburb",
+      "noticeText": "A street that wasn't there yesterday. The lawns are too green.",
+      "painText": "A mailbox falls over. The street doesn't know how to react.",
+      "knownCue": "The streetlights flicker before the tax.",
+      "knownTactics": "Leave. Or bring something alive inside."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 14
+  },
+  {
+    "id": "eulogy",
+    "activity": "nocturnal",
+    "name": "The Eulogy",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      900,
+      1100
+    ],
+    "attack": {
+      "name": "Final Chapter",
+      "damage": [
+        50,
+        70
+      ],
+      "telegraph": "The narration itself \u2014 it tells you what's coming, honestly, always: 'and then they ran.' The spotlight narrows as the story nears its end. It's a doom counter that gains weight each round. When the story finishes, you die \u2014 unless you've changed the narrative.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "interrupt \u2014 it's a STORY and stories need listeners; contradict the narration with your actions (it says you run \u2014 you advance)",
+      "give it a better ending \u2014 a real narrative choice, with witnesses",
+      "doom deaths trigger phoenix_clause normally \u2014 unkillable means unkillable"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a prestige drama. Do not eat the prestige drama."
+    },
+    "parts": [
+      "a page of the script (your death, crossed out)",
+      "the spotlight bulb (still warm)"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "A voice practicing your name in past tense. The spotlight finds you before you see it.",
+      "observed": "No body \u2014 a voice with a spotlight. The System's prestige drama division. It narrates your death before it happens: a doom counter gaining weight each round, honest and always. The spotlight is the health bar \u2014 it widens when the story falters.",
+      "slain": "Moves: Final Chapter (doom narration \u2014 the story finishing IS the damage). Counter: interrupt \u2014 contradict the narration with your actions; it says you run, you advance. Or give it a better ending \u2014 a real narrative choice, with witnesses. Ruling, Steve: doom-countdown deaths trigger phoenix_clause and second_wind the same as any death \u2014 unkillable means unkillable. (Undying Ward: their 'no one dies on my watch' vs this \u2014 the anti-that. Detective: fight story with story.)"
+    },
+    "systemDesignation": "PRESTIGE-3 (the prestige drama division)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "interruptions",
+    "speed": 1,
+    "emoji": "\ud83c\udf99\ufe0f",
+    "unknown": "a voice practicing your name in past tense",
+    "vibe": "the System's prestige drama division \u2014 the narration is honest, and that's the horror",
+    "cues": {
+      "curious": [
+        "\"OUR STORY BEGINS,\" says the dark, \"at the end.\""
+      ],
+      "warn": [
+        "\"AND THEN THEY RAN.\" The spotlight narrows. The story is gaining weight."
+      ],
+      "fearful": [
+        "\"...AND THEN THEY\u2014\" The voice falters. You did something unscripted."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.3,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "overture",
+        "narrate",
+        "tighten",
+        "finale"
+      ],
+      "phaseBadges": {
+        "overture": " \ud83c\udf99\ufe0f OVERTURE",
+        "narrate": " \ud83d\udcdc NARRATING",
+        "tighten": " \ud83d\udd26 TIGHTENING",
+        "finale": " \u2728 FINALE"
+      },
+      "phaseMap": {
+        "declare": "narrate",
+        "windup": "tighten",
+        "resolve": "finale",
+        "idle": "overture"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "eulogy",
+      "noticeText": "A spotlight, narrowing, and a voice in past tense.",
+      "painText": "The narration stumbles \u2014 a page flutters loose from the script.",
+      "knownCue": "The narration tells you what's coming. Always.",
+      "knownTactics": "Contradict it. Or give it a better ending."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 8
+  },
+  {
+    "id": "algorithm",
+    "activity": "both",
+    "name": "The Algorithm",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1000,
+      1200
+    ],
+    "attack": {
+      "name": "Engagement",
+      "damage": [
+        45,
+        65
+      ],
+      "telegraph": "The thumbnails \u2014 it shows clickbait previews of its next move. The telegraph is literally a trailer. It rearranges the fight \u2014 your position, your available actions \u2014 toward 'engagement.' The highlighted thumbnail is the tell.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "be unpredictable \u2014 it's about the NEXT action, not history",
+      "lose on purpose \u2014 it optimizes for engagement, and the most engaging thing is an UPSET; tanking as strategy"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a recommender system. Do not eat the recommender system."
+    },
+    "parts": [
+      "a thumbnail (it's you, mid-fight)",
+      "a progress bar (stuck at 99%)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "A wall of almost-faces, all watching you. It knows what you want before you do.",
+      "observed": "The System's recommender, embodied \u2014 a shifting mass of thumbnails, progress bars, preview panes. It rearranges the fight toward engagement: your position, your available actions. It's usually right about what you want. That's the scary part. The thumbnails preview its next move.",
+      "slain": "Moves: Engagement (rearranges your position and available actions \u2014 the highlighted thumbnail telegraphs what's next). Counter: be unpredictable \u2014 same family as the Reunion's counter, but here it's about the NEXT action, not history. Or: it optimizes for engagement, and the most engaging thing is an UPSET \u2014 lose on purpose and it can't model you. Tanking as strategy. (All-Seeing Detective: their predictions vs its optimization \u2014 the mirror match. Between/Drifter: unpredictability is their domain \u2014 home turf.)"
+    },
+    "systemDesignation": "RECOMMENDER-1 (it knows what you want)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "unpredictability",
+    "speed": 3,
+    "emoji": "\ud83d\udda5\ufe0f",
+    "unknown": "a wall of almost-faces, all watching you",
+    "vibe": "the recommender, embodied \u2014 usually right, and that's the scary part",
+    "cues": {
+      "curious": [
+        "The thumbnails reshuffle. One of them is you, five seconds from now."
+      ],
+      "warn": [
+        "A thumbnail highlights \u2014 the trailer for what's next. Watch it."
+      ],
+      "fearful": [
+        "The previews glitch \u2014 static where your next move should be. It can't model this."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.35,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "browse",
+        "preview",
+        "engage",
+        "buffer"
+      ],
+      "phaseBadges": {
+        "browse": " \ud83d\udda5\ufe0f BROWSING",
+        "preview": " \u25b6\ufe0f PREVIEWING",
+        "engage": " \ud83d\udc8b ENGAGING",
+        "buffer": " \u23f3 BUFFERING"
+      },
+      "phaseMap": {
+        "declare": "preview",
+        "windup": "preview",
+        "resolve": "engage",
+        "idle": "browse"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "algorithm",
+      "noticeText": "A wall of almost-faces, thumbnails reshuffling.",
+      "painText": "A preview pane cracks \u2014 the recommendations stutter.",
+      "knownCue": "The highlighted thumbnail \u2014 the trailer.",
+      "knownTactics": "Unpredictability. Or tank on purpose."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 10
+  },
+  {
+    "id": "eater",
+    "activity": "both",
+    "name": "The Eater",
+    "biomes": [
+      "se_woodlands",
+      "grassland"
+    ],
+    "hp": [
+      950,
+      1150
+    ],
+    "attack": {
+      "name": "Gorge",
+      "damage": [
+        45,
+        75
+      ],
+      "telegraph": "It SMACKS \u2014 audible chewing from a mile off, drooling toward the richest food on the grid. It eats the GRID first: crops, forage, carcasses, pack food \u2014 and grows stronger with every thousand calories (+15 damage per 2000 kcal consumed in the fight). Its belly visibly swells as it eats. The belly is the telegraph AND the health bar.",
+      "pattern": {
+        "type": "rush"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "poison the meal \u2014 it can't tell good food from bad; feed it spoiled or diseased meat",
+      "starve the field \u2014 burn your own crops and deny it fuel",
+      "it gorges, it doesn't chew \u2014 and it eats the grid first, you second. Guard the pantry."
+    ],
+    "edible": {
+      "calories": 4500,
+      "note": "It ate everything. Now it's food. The System finds this hilarious. Cook it thoroughly \u2014 you don't know where it's been, and neither does it."
+    },
+    "parts": [
+      "distended belly-hide (enormous)",
+      "a tooth like a shovel",
+      "its last meal (identify it first)"
+    ],
+    "behavior": "drifter",
+    "codexStages": {
+      "unknown": "A sound like a feast with no people at it. Smacking. From the treeline. Getting closer.",
+      "observed": "The aliens watched us eat and thought it looked like so much fun they let a monster try it. A vast vertical maw on stubby legs \u2014 the mouth IS the weapon. It ate a whole blackberry thicket first, then a deer carcass, then it looked at us. Its belly swells with every meal, and it hits harder with every thousand calories. Including people.",
+      "slain": "Moves: Gorge (+15 damage per 2000 kcal consumed in the fight \u2014 it eats the GRID: crops, forage, carcasses, pack food, then you), Smack-Rush (lunges at the richest food source). Dark mirror of the food thesis: humans eat to become gods; it eats to become a monster. Counter: poison the meal \u2014 it can't tell good food from bad. Or starve the field \u2014 burn your own crops and deny it fuel. This is the Living Garden's predator \u2014 the wave-4 answer to the food economy."
+    },
+    "systemDesignation": "GUEST-DINER-1 (it asked to try)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "spoiled meat",
+    "speed": 4,
+    "emoji": "\ud83d\udc44",
+    "unknown": "a sound like a feast with no people at it",
+    "vibe": "the aliens watched humans eat and thought it looked like fun \u2014 a vast maw that eats the grid",
+    "cues": {
+      "curious": [
+        "Smacking, from the treeline. Rhythmic. Getting closer."
+      ],
+      "warn": [
+        "The smacking stops \u2014 it's found the richest food here. It's looking at your pack. At you."
+      ],
+      "fearful": [
+        "The belly sloshes, overfull. It eyes a spoiled carcass... and hesitates. It can't tell."
+      ]
+    },
+    "wave": 4,
+    "pierce": 0.35,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 7,
+      "phases": [
+        "sniff",
+        "smack",
+        "gorge",
+        "sated"
+      ],
+      "phaseBadges": {
+        "sniff": " \ud83d\udc43 SNIFFING",
+        "smack": " \ud83d\udc44 SMACKING",
+        "gorge": " \ud83c\udf7d\ufe0f GORGING",
+        "sated": " \ud83d\ude0c SATED?"
+      },
+      "phaseMap": {
+        "declare": "smack",
+        "windup": "smack",
+        "resolve": "gorge",
+        "idle": "sniff"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "eater",
+      "noticeText": "Smacking from the treeline \u2014 a vast maw on stubby legs.",
+      "painText": "The belly jolts \u2014 something inside sloshes wrong.",
+      "knownCue": "The swelling belly \u2014 telegraph and health bar.",
+      "knownTactics": "Poison the meal, or starve the field. Guard the pantry."
+    },
+    "loot": {
+      "chance": 0.12,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 12
+  },
+  {
+    "id": "cancellation",
+    "activity": "both",
+    "name": "The Cancellation",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1600,
+      2000
+    ],
+    "attack": {
+      "name": "Under Review",
+      "damage": [
+        70,
+        100
+      ],
+      "telegraph": "A giant STAMP descends slowly \u2014 the longest telegraph in the game. The ink is red. It doesn't fight you \u2014 it fights your EXISTENCE in the show: fans, codex entries, broadcast presence. Deletes buffs, un-teaches abilities temporarily ('under review'), silences System favor. You have time. Use it.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "go off-script \u2014 it can only cancel what's IN the script; improvise (use abilities in ways never intended)",
+      "spend audience favor \u2014 the audience can overrule a cancellation (renewal campaign as combat)",
+      "the stamp is slow \u2014 you have time. Use it."
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a standards department. Do not eat the standards department."
+    },
+    "parts": [
+      "the red stamp (it still works. do not press it)",
+      "your cancellation letter (framed?)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "The sky, clearing its throat. A shadow like a stamp, very high up.",
+      "observed": "The standards department finally lost patience. It doesn't fight you \u2014 it fights your existence in the show: fans turn, codex entries go 'under review', broadcast presence thins. Buffs get deleted; abilities get un-taught temporarily. The STAMP descends slowly \u2014 the longest telegraph in the game \u2014 and the ink is red.",
+      "slain": "Moves: Under Review (un-teaching, buff deletion, favor silence \u2014 telegraphed by the slow red stamp). The anti-player monster. Counter: go off-script \u2014 it can only cancel what's IN the script; improvise, use abilities in ways never intended, and it can't file the paperwork. Or spend audience favor: the audience can overrule a cancellation \u2014 renewal campaign as combat. (EVERYONE is pressured \u2014 Shepherd especially; their echoes are the easiest thing to cancel.)"
+    },
+    "systemDesignation": "STANDARDS-1 (patience: exhausted)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "improv",
+    "speed": 1,
+    "emoji": "\u274c",
+    "unknown": "the sky, clearing its throat",
+    "vibe": "bureaucracy at a geological scale \u2014 the show is fighting back",
+    "cues": {
+      "curious": [
+        "The sky clears its throat. Ahem. Everyone looks up."
+      ],
+      "warn": [
+        "The STAMP descends \u2014 slowly, redly. You have time. Use it."
+      ],
+      "fearful": [
+        "The stamp hesitates \u2014 mid-air. That wasn't in the script. It can't file this."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.6,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 8,
+      "phases": [
+        "throatclear",
+        "descend",
+        "stamp",
+        "filed"
+      ],
+      "phaseBadges": {
+        "throatclear": " \u26c5 CLEARING THROAT",
+        "descend": " \ud83d\udcc9 DESCENDING",
+        "stamp": " \u274c STAMPING",
+        "filed": " \ud83d\uddc2\ufe0f FILED"
+      },
+      "phaseMap": {
+        "declare": "descend",
+        "windup": "descend",
+        "resolve": "stamp",
+        "idle": "throatclear"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "cancellation",
+      "noticeText": "The sky clears its throat. A stamp-shaped shadow, very high.",
+      "painText": "The stamp wobbles \u2014 red ink spatters the sky.",
+      "knownCue": "The slow red stamp \u2014 the longest telegraph in the game.",
+      "knownTactics": "Improvise \u2014 off-script can't be filed. Or spend favor."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 4,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Tier 4 earned through hardest challenges at low rates."
+    },
+    "armor": 16
+  },
+  {
+    "id": "editor",
+    "activity": "nocturnal",
+    "name": "The Editor",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1500,
+      1900
+    ],
+    "attack": {
+      "name": "Cut",
+      "damage": [
+        80,
+        110
+      ],
+      "telegraph": "The scissors SNIP slowly \u2014 you hear it coming. It cuts things OUT: your last turn (redo it), your position (you're suddenly elsewhere), your ally ('left on the cutting-room floor' for 3 rounds). Film strips hang from it showing what's about to be cut \u2014 readable telegraph.",
+      "pattern": {
+        "type": "line"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "the cutting-room floor \u2014 what's cut isn't GONE, it's somewhere; go back for them",
+      "continuity errors \u2014 do two contradictory things and it can't cut cleanly"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is post-production. Do not eat post-production."
+    },
+    "parts": [
+      "a film strip (you're on it, mid-sentence)",
+      "a snipped scene (take it back from the cutting-room floor)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "Scissors, and the world getting shorter. The trees are closer together than they were.",
+      "observed": "Tower-sized scissors; the film strips are the organs. Post-production, live: it cuts your last turn (redo it), your position (suddenly elsewhere), your ally \u2014 left on the cutting-room floor for 3 rounds. The scissors snip slowly; the film strips show what's about to be cut.",
+      "slain": "Moves: Cut (excisions \u2014 turn, position, ally; telegraphed by the snip and the strips). Counter: the cutting-room floor \u2014 what's cut isn't GONE, it's somewhere; the counter is going back for them. Or continuity errors: do two contradictory things and it can't cut cleanly. (Between/Drifter: their whole thing is being elsewhere \u2014 the Editor does it TO you. Apex Predator: their positioning game, shredded.)"
+    },
+    "systemDesignation": "POST-PROD-9 (the director's cut, and you're not the director)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "continuity errors",
+    "speed": 3,
+    "emoji": "\u2702\ufe0f",
+    "unknown": "scissors, and the world getting shorter",
+    "vibe": "the director's cut \u2014 and you're not the director",
+    "cues": {
+      "curious": [
+        "Snip. ...Snip. The world gets slightly shorter."
+      ],
+      "warn": [
+        "The scissors open \u2014 slowly. The film strips show what's about to be cut."
+      ],
+      "fearful": [
+        "The blades jam \u2014 on a contradiction. It can't cut cleanly."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.65,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "assembly",
+        "snip",
+        "cut",
+        "floor"
+      ],
+      "phaseBadges": {
+        "assembly": " \ud83c\udfac ASSEMBLY",
+        "snip": " \u2702\ufe0f SNIPPING",
+        "cut": " \u2716\ufe0f CUTTING",
+        "floor": " \ud83d\udccb CUTTING-ROOM FLOOR"
+      },
+      "phaseMap": {
+        "declare": "snip",
+        "windup": "snip",
+        "resolve": "cut",
+        "idle": "assembly"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "editor",
+      "noticeText": "Tower-sized scissors, film strips hanging like organs.",
+      "painText": "A blade nicks \u2014 the snip stutters.",
+      "knownCue": "The slow snip; the film strips show what's next.",
+      "knownTactics": "Retrieve from the cutting-room floor. Contradict yourself."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 4,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Tier 4 earned through hardest challenges at low rates."
+    },
+    "armor": 18
+  },
+  {
+    "id": "rerun",
+    "activity": "both",
+    "name": "The Rerun",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1200,
+      1500
+    ],
+    "attack": {
+      "name": "Take Twelve",
+      "damage": [
+        60,
+        90
+      ],
+      "telegraph": "A clapperboard \u2014 it CLAPS before a reset, and the take number increments. Every 5 rounds the fight RESTARTS: HP resets both sides, but IT remembers and you don't. You can count down. The number is always visible.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "leave messages for yourself \u2014 write in the journal/codex BETWEEN resets; writing persists",
+      "win FAST \u2014 kill it within 5 rounds; a pure DPS check, the one place a stat check is honest",
+      "between takes the set is visible \u2014 a brief vulnerability window"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a repeat broadcast. Do not eat the repeat broadcast."
+    },
+    "parts": [
+      "the clapperboard (take 12)",
+      "a studio light (hot, brief)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "D\u00e9j\u00e0 vu with teeth. You've done this before. You haven't done this before.",
+      "observed": "Every 5 rounds, the fight RESTARTS \u2014 HP resets both sides, but IT remembers and you don't. The episode airs again. A clapperboard claps before each reset; the take number increments, always visible. Between takes, the set is visible \u2014 and briefly vulnerable.",
+      "slain": "Moves: Take Twelve (the reset \u2014 countdown via the clapperboard). Counter: leave messages for yourself \u2014 the knowledge system as weapon; write in the journal/codex BETWEEN resets, writing persists. Or win FAST: kill it within 5 rounds \u2014 a pure DPS check, the one place a stat check is honest. (Detective/All-Seeing: their knowledge persists \u2014 the intended counter. One-Person Army: the DPS race is their domain.)"
+    },
+    "systemDesignation": "PROGRAMMING-4 (the network ordered more episodes)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "fast kills",
+    "speed": 2,
+    "emoji": "\ud83d\udd01",
+    "unknown": "d\u00e9j\u00e0 vu with teeth",
+    "vibe": "the network ordered more episodes \u2014 the episode airs again",
+    "cues": {
+      "curious": [
+        "\"TAKE TWELVE,\" says the sky. You've heard this before."
+      ],
+      "warn": [
+        "The clapperboard rises. The take number increments. Count down."
+      ],
+      "fearful": [
+        "The clapperboard wobbles \u2014 the reset stutters. You're winning too fast."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.5,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "take",
+        "clap",
+        "reset",
+        "air"
+      ],
+      "phaseBadges": {
+        "take": " \ud83c\udfac TAKE 12",
+        "clap": " \ud83d\udc4f CLAP",
+        "reset": " \ud83d\udd01 RESETTING",
+        "air": " \ud83d\udcfa ON AIR"
+      },
+      "phaseMap": {
+        "declare": "clap",
+        "windup": "clap",
+        "resolve": "reset",
+        "idle": "take"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "rerun",
+      "noticeText": "A clapperboard, and a feeling you've been here.",
+      "painText": "The clapperboard cracks \u2014 take 13 will be late.",
+      "knownCue": "The clap; the incrementing take number.",
+      "knownTactics": "Write between resets. Or kill it in 5 rounds."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 14
+  },
+  {
+    "id": "spoiler",
+    "activity": "both",
+    "name": "The Spoiler",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1300,
+      1600
+    ],
+    "attack": {
+      "name": "Leaked Ending",
+      "damage": [
+        75,
+        105
+      ],
+      "telegraph": "Trailer-voice announcements \u2014 the telegraph IS the announcement: it tells you how the fight ends, truthfully. Announced outcomes gain weight under the System (announced things happen). The poster changes to show the announced outcome. The honesty is the horror.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "it must tell the truth \u2014 ask it the RIGHT question ('what happens if I do X?') and the answer binds IT too",
+      "fulfill the spoiler on YOUR terms: it says you fall \u2014 fall PRONE, deliberately, and the prophecy is satisfied cheaply"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a trailer. Do not eat the trailer."
+    },
+    "parts": [
+      "the key art (the ending, spoiled)",
+      "a trailer script (it's all true)"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "A voiceover that knows too much. The trailer told you everything. The trailer was right.",
+      "observed": "No body \u2014 a voiceover with key art. The marketing department leaked the finale. It tells you how the fight ends \u2014 truthfully \u2014 and announced outcomes gain weight under the System: announced things happen. The poster changes to show the announced outcome.",
+      "slain": "Moves: Leaked Ending (truthful announcements that gain weight \u2014 the announcement IS the telegraph). Counter: it must tell the truth \u2014 ask it the RIGHT question ('what happens if I do X?') and the answer binds IT too. Or fulfill the spoiler on YOUR terms: it says you fall \u2014 fall PRONE, deliberately, and the prophecy is satisfied cheaply. Undertale as hell. (Detective: truth as weapon \u2014 their arena. Eulogy veterans: same family, scaled up \u2014 Eulogy is the doom you INTERRUPT, Spoiler is the truth you EXPLOIT.)"
+    },
+    "systemDesignation": "MARKETING-2 (the trailer told you everything)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "good questions",
+    "speed": 1,
+    "emoji": "\ud83d\udce2",
+    "unknown": "a voiceover that knows too much",
+    "vibe": "the marketing department leaked the finale \u2014 and it was right",
+    "cues": {
+      "curious": [
+        "\"IN A WORLD...\" begins the voiceover. It's talking about you."
+      ],
+      "warn": [
+        "\"AND THEN THEY FELL.\" The poster changes. It's showing the ending."
+      ],
+      "fearful": [
+        "\"...UNLESS\u2014\" The voiceover falters. You asked the right question."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.55,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 7,
+      "phases": [
+        "teaser",
+        "announce",
+        "poster",
+        "release"
+      ],
+      "phaseBadges": {
+        "teaser": " \ud83d\udce2 TEASER",
+        "announce": " \ud83d\udce2 ANNOUNCING",
+        "poster": " \ud83d\uddbc\ufe0f POSTER",
+        "release": " \ud83c\udf9f\ufe0f RELEASE"
+      },
+      "phaseMap": {
+        "declare": "announce",
+        "windup": "announce",
+        "resolve": "release",
+        "idle": "teaser"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "spoiler",
+      "noticeText": "A voiceover, and key art showing... you. Later.",
+      "painText": "The key art tears \u2014 the ending smudges.",
+      "knownCue": "The announcement \u2014 and the changing poster.",
+      "knownTactics": "Ask binding questions. Fulfill prophecies cheaply."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 14
+  },
+  {
+    "id": "timeslot",
+    "activity": "both",
+    "name": "The Timeslot",
+    "biomes": [
+      "grassland",
+      "se_woodlands"
+    ],
+    "hp": [
+      1400,
+      1700
+    ],
+    "attack": {
+      "name": "Reschedule",
+      "damage": [
+        65,
+        95
+      ],
+      "telegraph": "A giant TV guide \u2014 the highlighted slot shows where you're going next: worse and worse venues (a burning building, a wave-4 suburb, mid-air). Always readable, always in advance. Programming. Venues arrive with their own natives.",
+      "pattern": {
+        "type": "burst"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "own the venue \u2014 every venue has a native; befriend it, or be FROM somewhere worse",
+      "get bumped: be so boring the show moves you to a better slot"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a programming schedule. Do not eat the programming schedule."
+    },
+    "parts": [
+      "the remote (one big red button \u2014 it never presses it)",
+      "a TV guide (last week's, useless)"
+    ],
+    "behavior": "drifter",
+    "codexStages": {
+      "unknown": "The ground, getting a new address. The trees look... scheduled.",
+      "observed": "It moves the fight \u2014 reschedules you to worse and worse venues. A giant TV guide; the highlighted slot shows where you're going next, always readable, always in advance. The schedule changed. The schedule always changes. Venues arrive with their own natives.",
+      "slain": "Moves: Reschedule (venue change + venue hazards \u2014 the guide telegraphs the next slot). Counter: own the venue \u2014 every venue has a native; befriend it, or be FROM somewhere worse. Or get bumped: be so boring the show moves you to a better slot (the Focus Group's counter, weaponized at wave 5). (Farstrider: venues are their domain. Unkillable: their game is enduring \u2014 the venues test exactly that.)"
+    },
+    "systemDesignation": "PROGRAMMING-1 (the schedule always changes)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "boredom",
+    "speed": 3,
+    "emoji": "\ud83d\udcc5",
+    "unknown": "the ground, getting a new address",
+    "vibe": "programming \u2014 the schedule changed, and it's worse now",
+    "cues": {
+      "curious": [
+        "The TV guide flips a page. Your slot is highlighted. It's not a good slot."
+      ],
+      "warn": [
+        "The highlighted slot blinks. The venue is changing. Hold onto something."
+      ],
+      "fearful": [
+        "The guide flips back \u2014 quickly. You're too boring for this slot."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.5,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 7,
+      "phases": [
+        "listing",
+        "highlight",
+        "reschedule",
+        "bump"
+      ],
+      "phaseBadges": {
+        "listing": " \ud83d\udcc5 LISTING",
+        "highlight": " \ud83d\udd26 HIGHLIGHTED",
+        "reschedule": " \ud83d\udccd RESCHEDULING",
+        "bump": " \ud83d\udcce BUMPED"
+      },
+      "phaseMap": {
+        "declare": "highlight",
+        "windup": "highlight",
+        "resolve": "reschedule",
+        "idle": "listing"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "timeslot",
+      "noticeText": "A giant TV guide, pages turning by themselves.",
+      "painText": "The guide tears \u2014 a page of venues flutters loose.",
+      "knownCue": "The highlighted slot \u2014 always in advance.",
+      "knownTactics": "Befriend the venue's natives. Or be boring."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 15
+  },
+  {
+    "id": "nielsen",
+    "activity": "both",
+    "name": "The Nielsen",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1100,
+      1400
+    ],
+    "attack": {
+      "name": "Sweeps Week",
+      "damage": [
+        50,
+        80
+      ],
+      "telegraph": "The pupil DILATES before it acts. It doesn't attack \u2014 it WATCHES, and what it watches becomes real: its gaze buffs itself, and a visible viewer counter scales the fight's difficulty. Viewers arrive when you do flashy things. The counter is always visible \u2014 honest. You can watch the audience arrive.",
+      "pattern": {
+        "type": "single"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "FIGHT BORING \u2014 the smallest, dullest actions starve it of viewers; the epic win is refusing to be epic",
+      "perform DELIBERATELY \u2014 if you must be watched, be watched on your terms"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is ratings. Do not eat the ratings."
+    },
+    "parts": [
+      "the remote (one big red button \u2014 the threat is enough)",
+      "a viewer counter (stuck on your number)"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "Being watched, physically. The air has a pupil in it.",
+      "observed": "A single giant eye with a remote. Ratings, embodied \u2014 the most-watched thing in the room is you. It doesn't attack; it WATCHES, and what it watches becomes real: its gaze buffs itself, and a visible viewer counter scales the fight. Viewers arrive when you do flashy things. The remote has one big red button. It never presses it. The threat is enough.",
+      "slain": "Moves: Sweeps Week (viewer-scaled difficulty \u2014 the counter is the telegraph; the pupil dilates before it acts). Counter, the most radical in the book: FIGHT BORING. The smallest, dullest actions starve it of viewers; the epic win is refusing to be epic. Or perform DELIBERATELY (the Influencer's lesson: if you must be watched, be watched on your terms). (One-Person Army: their rage is CONTENT \u2014 the Nielsen feasts. Shepherd: their growing party is a growing audience \u2014 the strength becomes the trap.)"
+    },
+    "systemDesignation": "RATINGS-1 (the most-watched thing in the room is you)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "boredom",
+    "speed": 1,
+    "emoji": "\ud83d\udc41\ufe0f",
+    "unknown": "being watched, physically",
+    "vibe": "ratings, embodied \u2014 you can watch the audience arrive",
+    "cues": {
+      "curious": [
+        "The eye opens. The viewer counter ticks up. Hello, audience."
+      ],
+      "warn": [
+        "The pupil dilates \u2014 the counter climbing. It's about to get real."
+      ],
+      "fearful": [
+        "The counter stalls... dips. The eye blinks, uncertain. Stay boring."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.4,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 8,
+      "phases": [
+        "watch",
+        "dilate",
+        "sweeps",
+        "signoff"
+      ],
+      "phaseBadges": {
+        "watch": " \ud83d\udc41\ufe0f WATCHING",
+        "dilate": " \ud83d\udd0d DILATING",
+        "sweeps": " \ud83d\udcfa SWEEPS",
+        "signoff": " \ud83d\udcbf SIGN-OFF"
+      },
+      "phaseMap": {
+        "declare": "dilate",
+        "windup": "dilate",
+        "resolve": "sweeps",
+        "idle": "watch"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "nielsen",
+      "noticeText": "A giant eye, opening. A viewer counter, ticking up.",
+      "painText": "The eye waters \u2014 the counter flickers.",
+      "knownCue": "The dilating pupil; the honest viewer counter.",
+      "knownTactics": "Fight boring. Starve it of viewers."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 12
+  },
+  {
+    "id": "finale",
+    "activity": "both",
+    "name": "The Finale",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1800,
+      2200
+    ],
+    "attack": {
+      "name": "Season Finale",
+      "damage": [
+        60,
+        85
+      ],
+      "telegraph": "It GROWS every round \u2014 visible escalation, you can SEE the finale coming. Once per fight it declares a finale: a 3-round countdown to a massive UNAVOIDABLE strike [150,200] (the season finale). You can't dodge it. You feed it: sacrifice a thing \u2014 an item, an ability charge, a memory \u2014 and it passes. The countdown is diegetic ('previously on...' segments).",
+      "pattern": {
+        "type": "beam"
+      },
+      "damageType": "physical"
+    },
+    "weaknesses": [
+      "the sacrifice \u2014 WHAT will you feed it? (a real, painful choice \u2014 the game at its best)",
+      "END IT FIRST \u2014 the DPS race, honest",
+      "doom deaths trigger phoenix_clause normally \u2014 unkillable means unkillable"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a season finale. Do not eat the season finale."
+    },
+    "parts": [
+      "the falling title card (dodge the rerun)",
+      "a 'previously on...' segment (it's you)"
+    ],
+    "behavior": "territorial",
+    "codexStages": {
+      "unknown": "The sky, getting bigger. It starts sky-sized and gets bigger.",
+      "observed": "Every season needs its climax. This one is yours. It grows every round \u2014 scale as telegraph. Once per fight it declares a finale: 3 rounds to a massive unavoidable strike, and you can see it coming the whole time. The finale strike is a falling title card.",
+      "slain": "Moves: Season Finale (normal strikes [60,85]; once per fight, a 3-round countdown to an UNAVOIDABLE [150,200] finale strike). Counter: the sacrifice \u2014 feed it a thing (an item, an ability charge, a memory) and it passes; WHAT will you feed it is a real, painful choice. Or END IT FIRST \u2014 the DPS race, honest again. Ruling, Steve: doom-countdown deaths trigger phoenix_clause the same as any death \u2014 unkillable means unkillable. (Unkillable: their whole fantasy vs the un-outlastable \u2014 the intended wall. Undying Ward: their 'no one dies' vs the finale \u2014 the cruelest matchup in the book.)"
+    },
+    "systemDesignation": "SEASON-FINALE (live)",
+    "aggression": "territorial",
+    "follows": true,
+    "fear": "cancellation",
+    "speed": 2,
+    "emoji": "\ud83c\udf0c",
+    "unknown": "the sky, getting bigger",
+    "vibe": "every season needs its climax \u2014 this one is yours",
+    "cues": {
+      "curious": [
+        "\"PREVIOUSLY ON...\" The sky replays your life. It's been watching."
+      ],
+      "warn": [
+        "It grows \u2014 visibly. \"THE FINALE,\" says the sky. \"THREE ROUNDS.\""
+      ],
+      "fearful": [
+        "The growth stalls. The title card wavers, mid-fall. Feed it, or finish it."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.75,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 8,
+      "phases": [
+        "previously",
+        "grow",
+        "declare",
+        "titlecard"
+      ],
+      "phaseBadges": {
+        "previously": " \ud83c\udf0c PREVIOUSLY",
+        "grow": " \ud83d\udcc8 GROWING",
+        "declare": " \ud83d\udce2 FINALE",
+        "titlecard": " \ud83c\udfac TITLE CARD"
+      },
+      "phaseMap": {
+        "declare": "declare",
+        "windup": "declare",
+        "resolve": "titlecard",
+        "idle": "grow"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "finale",
+      "noticeText": "The sky, getting bigger. 'Previously on...' \u2014 it's you.",
+      "painText": "The title card cracks \u2014 the finale flickers.",
+      "knownCue": "The growth; the 3-round 'previously on' countdown.",
+      "knownTactics": "Feed it something painful, or end it first."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 4,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05). Tier 4 earned through hardest challenges at low rates."
+    },
+    "armor": 20
+  },
+  {
+    "id": "network_note",
+    "activity": "diurnal",
+    "name": "The Network Note",
+    "biomes": [
+      "se_woodlands"
+    ],
+    "hp": [
+      1000,
+      1300
+    ],
+    "attack": {
+      "name": "Just Fix It",
+      "damage": [
+        55,
+        80
+      ],
+      "telegraph": "The hovering memo's text is VISIBLE \u2014 you can read the incoming buff before it lands: 'the wolf should have lasers now' \u2014 and then it does. The pen underlines before the buff applies. (Knowledge-gating applies: you have to actually read it.) Mid-fight, it 'fixes' the other monsters. The executives are watching.",
+      "pattern": {
+        "type": "direct"
+      },
+      "damageType": "psychic"
+    },
+    "weaknesses": [
+      "kill it FIRST \u2014 it's support; the rare 'focus the buffoon' correct call",
+      "give it BAD notes \u2014 it takes suggestions; plant a terrible idea ('the wolf should be SMALLER') and it 'fixes' the enemy into uselessness"
+    ],
+    "edible": {
+      "calories": 0,
+      "note": "It is a memo. Do not eat the memo."
+    },
+    "parts": [
+      "the red pen (it underlines)",
+      "a memo ('the wolf should have lasers now' \u2014 it does)"
+    ],
+    "behavior": "passive",
+    "codexStages": {
+      "unknown": "A memo, cc'd to the sky. The worst meeting you've ever been in, with teeth.",
+      "observed": "It gives the System notes \u2014 LIVE. Mid-fight, it 'fixes' the other monsters, and the memo's text is visible: you can read the incoming buff before it lands, if you actually read it. The pen underlines before the buff applies.",
+      "slain": "Moves: Just Fix It (buff aura for allies + direct damage \u2014 the memo telegraphs the buff). Counter: kill it FIRST \u2014 it's support; the rare 'focus the buffoon' correct call. Or give it BAD notes: it takes suggestions \u2014 plant a terrible idea ('the wolf should be smaller') and it 'fixes' the enemy into uselessness. Social engineering as combat. (Detective: their information game \u2014 the memo is readable. Everyone: it's a force multiplier \u2014 the priority target.)"
+    },
+    "systemDesignation": "EXEC-1 (the executives are watching)",
+    "aggression": "territorial",
+    "follows": false,
+    "fear": "bad ideas",
+    "speed": 2,
+    "emoji": "\ud83d\udcdd",
+    "unknown": "a memo, cc'd to the sky",
+    "vibe": "the worst meeting you've ever been in, with teeth \u2014 the executives are watching",
+    "cues": {
+      "curious": [
+        "\"QUICK NOTE,\" says the memo. The pen hovers."
+      ],
+      "warn": [
+        "The pen underlines \u2014 twice. A buff is incoming. Read the memo."
+      ],
+      "fearful": [
+        "\"...REVERT THAT,\" says the memo, quickly. The pen shakes."
+      ]
+    },
+    "wave": 5,
+    "pierce": 0.45,
+    "encounter": {
+      "fifo": true,
+      "noticeRange": 6,
+      "phases": [
+        "cc",
+        "underline",
+        "fix",
+        "revert"
+      ],
+      "phaseBadges": {
+        "cc": " \ud83d\udcdd CC'D",
+        "underline": " \u2712\ufe0f UNDERLINING",
+        "fix": " \ud83d\udd27 FIXING",
+        "revert": " \u21a9\ufe0f REVERTING"
+      },
+      "phaseMap": {
+        "declare": "underline",
+        "windup": "underline",
+        "resolve": "fix",
+        "idle": "cc"
+      },
+      "telegraphGate": "pattern",
+      "shortName": "network note",
+      "noticeText": "A memo, hovering, cc'd to the sky.",
+      "painText": "The memo crumples at the corner. \"NOTED.\"",
+      "knownCue": "The visible memo text; the underlining pen.",
+      "knownTactics": "Focus it first. Or feed it terrible ideas."
+    },
+    "loot": {
+      "chance": 0.1,
+      "tier": 3,
+      "note": "Alien loot: low chance, tier scales with monster strength (Steve 2026-10-05)."
+    },
+    "armor": 12
   }
 ]
