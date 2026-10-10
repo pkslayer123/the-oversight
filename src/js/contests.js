@@ -103,6 +103,8 @@
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
 //   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
+//   - summons_ratings_recovery: a delivered stunt REALLY moves the numbers — +2 viewership plus recordMoment's +1, because the stunt copy promised "the numbers tick UP" while the engine moved nothing (the dip never recovered, so the next dawn could re-summon on the same dip); phone-it-in promises nothing and moves nothing (code: _showEnd, break-it fame-seeker 2026-10-10)
+//   - together_unity_once: a watch-together win grants unity only through its choice's narrated do.unity — the old silent +1 in _showEnd's 'won' else-branch doubled the snacks choice's unity with no line said (code: _showEnd, break-it fame-seeker 2026-10-10)
 //   - summons_castability: the ratings summons is for the PLAYER specifically — a dead (over/health<=0) or exiled scholar is not summoned. The tick falls through to normal scheduling (unconsumed slot) and fireRatingsSummons refuses out loud (code: contestTick, fireRatingsSummons, break-it contest r10 2026-10-09)
 //   - summons_budget: ratings summons consume the shared 2/week TV budget like contests and shows (code: contestTick)
 //   - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
@@ -754,13 +756,31 @@
         this.addNotability('player', 'showmanship');
         sayFavor(isSummons ? 3 : 2, (isSummons ? 'ratings stunt' : 'show: ' + showName));
         try { this.leadShift('showmanship', 1); } catch (e) {}
-      } else {
-        try { this.leadShift('unity', 1); } catch (e) {}
       }
+      // TOGETHER WINS (break-it fame-seeker 2026-10-10): no generic unity
+      // shift here — the watch-together win choice carries its own do.unity
+      // with a narrating note (the snacks choice's "the village settles in
+      // around you"). A second, un-narrated +1 here silently doubled it.
+      // No silent actions.
       // The stunt shakes a care package loose (canon: summons tie to care
       // packages). Rate-limited inside apCarePackage — a whiff is said out
       // loud, never silent (break-it shows 2026-10-09).
       if (isSummons) {
+        // HONEST (break-it fame-seeker 2026-10-10): the stunt copy promised
+        // "the numbers tick UP" but nothing moved viewership — the dip that
+        // summoned you never recovered, so the next dawn's tick could read
+        // the same dip and re-summon you immediately. A delivered stunt
+        // moves the needle: +2 here, plus recordMoment's +1. The numbers
+        // really tick up — the copy was already said out loud, now the
+        // engine agrees. (Phoning it in promises nothing, and moves nothing.)
+        try {
+          const vv = this.state.village || {};
+          const cur = (vv.viewership == null)
+            ? (typeof this.havenViewership === 'function' ? this.havenViewership() : 0)
+            : vv.viewership;
+          vv.viewership = cur + 2;
+        } catch (e) {}
+        try { if (this.recordMoment) this.recordMoment('Ratings stunt delivered — the numbers ticked up.'); } catch (e) {}
         let pkg = false;
         try { if (this.apCarePackage) pkg = !!this.apCarePackage(); } catch (e) {}
         if (!pkg) this.sysSay(`📺 The fans aren't organized enough yet — no care package this time. The stunt still counted.`);

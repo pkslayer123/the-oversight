@@ -2,8 +2,16 @@
   {
     "date": "2026-10-10",
     "notes": [
-      "Issue Challenge is a real dare now: call someone out in front of everyone. The village hears it — the bold respect the nerve, some call it showing off. The bout comes when hands are thrown. Once a day.",
-      "End It Before It Starts actually ends it: your reputation walks in first and the dispute dies on the spot — but they will remember the look, and not fondly. Once a day.",
+      "A delivered ratings stunt really moves the ratings now: when you give the galaxy its moment, the numbers tick up for real \u2014 and the System won't drag you back on camera off the same slump twice.",
+      "Watching the village's shows together pays what it promises: the good-snacks watch party brings the village closer exactly once, no hidden double-counting."
+    ],
+    "version": "f1cb0e5d-20261010-052413"
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
+      "Issue Challenge is a real dare now: call someone out in front of everyone. The village hears it \u2014 the bold respect the nerve, some call it showing off. The bout comes when hands are thrown. Once a day.",
+      "End It Before It Starts actually ends it: your reputation walks in first and the dispute dies on the spot \u2014 but they will remember the look, and not fondly. Once a day.",
       "Fighting abilities land the moment you use them: Brace is up before the counter-swing, and a War Cry can stop the hit that's already coming."
     ],
     "version": "f1cb0e5d-20261010-052413"
@@ -11,9 +19,9 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "Haven's first link with another village is a moment now: the System's coordination layer comes online, and you choose Haven's first gesture — a gift of food, your speaker's three days, or cold ink. They're watching.",
-      "Village negotiations are played, not rolled: a village that won't take your terms counters with their own price — accept it, sweeten it with real food, or walk away from the table.",
-      "You can seal an understanding with a village, sealed with a feast — no tribute, no bowing. Their fire opens to your people: a guest's meal, once a day.",
+      "Haven's first link with another village is a moment now: the System's coordination layer comes online, and you choose Haven's first gesture \u2014 a gift of food, your speaker's three days, or cold ink. They're watching.",
+      "Village negotiations are played, not rolled: a village that won't take your terms counters with their own price \u2014 accept it, sweeten it with real food, or walk away from the table.",
+      "You can seal an understanding with a village, sealed with a feast \u2014 no tribute, no bowing. Their fire opens to your people: a guest's meal, once a day.",
       "Diplomacy is knowledge-gated now: villages you've never heard of don't show up as proposals. Travelers' rumors actually reach you."
     ],
     "version": "db5a862c-20261009-232417"
@@ -22,19 +30,19 @@
     "version": "c69c1beb-20261009-171111",
     "date": "2026-10-09",
     "notes": [
-      "Corruption: a dark mirror to trust. What you do in the dark changes what you are — and people can feel it, even when they can't name it.",
-      "You can butcher the dead for meat now — and eat it. The first time will haunt you. It gets easier. That's the horror.",
-      "In a healthy village, discovered cannibalism means exile. In a starving or corrupted one, the rules change — and fear becomes its own currency.",
+      "Corruption: a dark mirror to trust. What you do in the dark changes what you are \u2014 and people can feel it, even when they can't name it.",
+      "You can butcher the dead for meat now \u2014 and eat it. The first time will haunt you. It gets easier. That's the horror.",
+      "In a healthy village, discovered cannibalism means exile. In a starving or corrupted one, the rules change \u2014 and fear becomes its own currency.",
       "Rare dark pasts: sometimes you wake as one of the village's hidden dark ones, with a history that explains it."
     ]
   },
   {
     "date": "2026-10-09",
     "notes": [
-      "Running from a fight is no longer a coin flip — chasers chase you across the map now. Slow ones fall behind, fast ones gain on you, and you'll always see it happening.",
-      "The hushwolf does not give up. Once it's decided you're prey, only Haven's walls or killing it will end the hunt — the Codex says so, and so will the howls.",
+      "Running from a fight is no longer a coin flip \u2014 chasers chase you across the map now. Slow ones fall behind, fast ones gain on you, and you'll always see it happening.",
+      "The hushwolf does not give up. Once it's decided you're prey, only Haven's walls or killing it will end the hunt \u2014 the Codex says so, and so will the howls.",
       "The wild things hit harder and take more killing than before. Armor is the answer: a geared fighter barely feels what flattens an unarmored one.",
-      "Fixed: your wielded weapon's damage bonus wasn't being applied at all — spears (and every other weapon) hit properly again."
+      "Fixed: your wielded weapon's damage bonus wasn't being applied at all \u2014 spears (and every other weapon) hit properly again."
     ],
     "version": "db5a862c-20261009-232417"
   },
@@ -42,7 +50,7 @@
     "date": "2026-10-09",
     "notes": [
       "Villagers fight with better judgment: they commit to fights they can win, call for help when outmatched, and only flee when it's truly hopeless.",
-      "The fallen keep their real belongings on the body — open the pack to take, leave, or use. Keepsakes are buried with their owner.",
+      "The fallen keep their real belongings on the body \u2014 open the pack to take, leave, or use. Keepsakes are buried with their owner.",
       "Crafting menu now shows every recipe you've seen, with honest odds. Villagers fetch their own armor and use the pharmacy before a healer."
     ],
     "version": "165fd846-20261009-170208"
@@ -50,7 +58,7 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "The Craft screen now lists recipes you're learning — early attempts are honest blind tries (materials stay hidden until you've learned them).",
+      "The Craft screen now lists recipes you're learning \u2014 early attempts are honest blind tries (materials stay hidden until you've learned them).",
       "Map monster popups no longer name creatures the village hasn't named yet."
     ],
     "version": "a6d63840-20261009-165835"
@@ -58,7 +66,7 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "Gristlefit rage can lash out at allies mid-fight — and now they remember it. Trust drops, and it haunts you.",
+      "Gristlefit rage can lash out at allies mid-fight \u2014 and now they remember it. Trust drops, and it haunts you.",
       "Trying to strike an ally in a fight gets an honest refusal instead of silence."
     ],
     "version": "4bb5cc7e-20261009-165604"
@@ -66,8 +74,8 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "Boiling water now honestly costs time and energy — bulk purification was free on the action clock.",
-      "Storms wrecking your camp wake you with a start — no more sleeping through the destruction in tent-quality comfort.",
+      "Boiling water now honestly costs time and energy \u2014 bulk purification was free on the action clock.",
+      "Storms wrecking your camp wake you with a start \u2014 no more sleeping through the destruction in tent-quality comfort.",
       "Rain and storm water now respect your carry limit."
     ],
     "version": "d3d1494c-20261009-162902"
@@ -86,8 +94,8 @@
     "notes": [
       "Your gear is yours: villagers keep their own belongings. The village stash only holds what someone deliberately deposits.",
       "New armory (weapons) and pharmacy (medicine) sections in the village stash.",
-      "The dead carry their real belongings — open their packs and loot.",
-      "13 craftable weapons and armor (spears, bows, bark armor, hide armor…) through the normal crafting menu."
+      "The dead carry their real belongings \u2014 open their packs and loot.",
+      "13 craftable weapons and armor (spears, bows, bark armor, hide armor\u2026) through the normal crafting menu."
     ],
     "version": "a208a9e-20261009-161955"
   },
@@ -102,7 +110,7 @@
   {
     "date": "2026-10-09",
     "notes": [
-      "Fixed villagers fighting unarmed — they now actually equip the weapons they carry.",
+      "Fixed villagers fighting unarmed \u2014 they now actually equip the weapons they carry.",
       "Villagers gear up and get patched up by the healer before heading into danger."
     ],
     "version": "94fa7f7-20261009-154608"
@@ -121,12 +129,5 @@
       "Fixed betrayal fights breaking across save/load."
     ],
     "version": "df2d54c-20261009-150701"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Fixed pemmican showing the wrong calories."
-    ],
-    "version": "43cbee3-20261009-144413"
   }
 ]
