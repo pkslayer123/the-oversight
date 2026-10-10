@@ -221,6 +221,7 @@ Alien TV contests and shows that interrupt village life. Contests are FEARED hig
 - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
 - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
+- summons_castability: the ratings summons is for the PLAYER specifically — a dead (over/health<=0) or exiled scholar is not summoned. The tick falls through to normal scheduling (unconsumed slot) and fireRatingsSummons refuses out loud (code: contestTick, fireRatingsSummons, break-it contest r10 2026-10-09)
 - summons_budget: ratings summons consume the shared 2/week TV budget like contests and shows (code: contestTick)
 - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
 - win_tax_announced: the -5 hp winner's mark is said out loud, never silent — a hidden HP tax is a lie (code: _contestEnd, Steve 2026-10-08)
@@ -519,11 +520,12 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 ### food (`food.js`)
 Food reality system. Food must be known-edible AND in edible state. Processing changes net calories.
 
-**Provides:** foodMarker(), cleanCarcass(), carcassToMeat(), cookFood(), renderFat(), pemmicanSets(), pemmicanPlan()     (per-set picks + honest bar counts, no consumption), pemmicanPreview()  (honest {sets, bars} for the UI label), makePemmican(), cookTransform(), cookClassFor(), cookOutcome(), consumeCookFire(), downgradeOutcome(), stacksMatch()       (fungibility gate for stack merging), spoilBonusDays()    (preservation_instinct shelf-life bonus), isSpoiled()         (bonus-aware spoilage boundary)
+**Provides:** foodMarker(), cleanCarcass(), carcassToMeat(), cookFood(), renderFat(), pemmicanSets(), pemmicanPlan()     (per-set picks + honest bar counts, no consumption), pemmicanPreview()  (honest {sets, bars} for the UI label), makePemmican(), cookTransform(), cookClassFor(), cookOutcome(), consumeCookFire(), downgradeOutcome(), stacksMatch()       (fungibility gate for stack merging), spoilBonusDays()    (preservation_instinct shelf-life bonus), isSpoiled()         (bonus-aware spoilage boundary), experimentWith()    (nibble: calorie/sickness knowledge without ID; bridges testCautiously)
 
 **Rules:**
 - raw_penalty: true (code: food.js)
 - processing_required: true (code: food.js)
+- experiment_bridges: true (code: food.js — nibbles grant calSense/riskSense on the L0 entry, never identify; testCautiously reads entry.experiments)
 - no_creation: true (code: food.js — processing never nets kcal; specialist preserve capped at 1.00x)
 
 **Consumes:** scholar.inventory, state.codex.plants

@@ -103,6 +103,7 @@
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
 //   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
+//   - summons_castability: the ratings summons is for the PLAYER specifically — a dead (over/health<=0) or exiled scholar is not summoned. The tick falls through to normal scheduling (unconsumed slot) and fireRatingsSummons refuses out loud (code: contestTick, fireRatingsSummons, break-it contest r10 2026-10-09)
 //   - summons_budget: ratings summons consume the shared 2/week TV budget like contests and shows (code: contestTick)
 //   - villager_prize_real: a watched villager win grants real pantry rations ("Winner's share"), not a placeholder line (code: _contestEnd, Steve 2026-10-08)
 //   - win_tax_announced: the -5 hp winner's mark is said out loud, never silent — a hidden HP tax is a lie (code: _contestEnd, Steve 2026-10-08)
@@ -291,8 +292,19 @@
     // — no doc covers it; noted here, not invented silently. Played via
     // fireRatingsSummons, inside the same 2/week budget.
     if (ratingsDipping && Math.random() < 0.20) {
-      this.state.showBudget.used++;
-      return { id: '__summons' };
+      // SUMMONS CASTABILITY (break-it contest r10 2026-10-09): the summons is
+      // for YOU — the player, on camera, live. The eligibility check above
+      // only proves the village has someone to televise; it does not prove
+      // YOU are in any state to be summoned. A dead (over/health<=0) or
+      // exiled scholar used to get the modal anyway — a promo stunt for a
+      // corpse. Not castable: the slot falls through to normal scheduling
+      // (contest/show), unconsumed — the show goes on without you.
+      const s = this.state.scholar || {};
+      const playerCastable = !this.state.over && (s.health || 0) > 0 && !s.exiled;
+      if (playerCastable) {
+        this.state.showBudget.used++;
+        return { id: '__summons' };
+      }
     }
     const isContest = Math.random() < contestShare;
     const event = isContest ? this.pickContest() : this.pickShow();
@@ -813,6 +825,14 @@
   // break-it shows 2026-10-09 removed the extra curio double-dip), phone it
   // in, or refuse on camera (a sequence, with consequences).
   G.fireRatingsSummons = function() {
+    // CASTABILITY (break-it contest r10 2026-10-09): belt-and-suspenders with
+    // the tick gate above — direct/debug callers must not summon a corpse or
+    // an exile either. Said out loud, never a silent void.
+    const s0 = this.state.scholar || {};
+    if (this.state.over || (s0.health || 0) <= 0 || s0.exiled) {
+      this.sysSay(`📺 The System looks for its star... and finds no one fit for the cameras. The summons dies in the green room.`);
+      return null;
+    }
     this.sysSay(`📺 RATINGS SUMMONS — the numbers are soft and the System is nervous.`);
     this.sysSay(`📺 "WE NEED A MOMENT. YOU WILL PROVIDE THE MOMENT." The cameras are already rolling.`);
     try { this.audioEvent('contestTaken'); } catch (e) {}
@@ -3524,7 +3544,15 @@
     const isShowKind = ac.kind === 'show' || ac.kind === 'summons';
     if (next === 'WIN') return isShowKind ? this._showEnd(ac, 'won', d.prize) : this._contestEnd(ac, 'won', d.prize);
     if (next === 'LOSE') return isShowKind ? this._showEnd(ac, 'lost', false) : this._contestEnd(ac, 'lost', false);
-    if (next === 'MIXED') return this._showEnd(ac, 'mixed', d.prize);
+    if (next === 'MIXED') {
+      // MIXED is a show terminal (fans+shame). A contest landing here would
+      // be downgraded into the show economy (showbiz favor, no prize table,
+      // no winner's mark, contestWin notability never granted) — no contest
+      // authors MIXED, but a mis-authored phase must never silently become a
+      // show ending. Contests land as contests; same 'lost' fallback as a
+      // bad numeric next (break-it contest r10 2026-10-09).
+      return isShowKind ? this._showEnd(ac, 'mixed', d.prize) : this._contestEnd(ac, 'lost', false);
+    }
     if (next === 'SHOW_VILLAGER') return this._showVillagerEnd(ac);
     if (next === 'DIE') return isShowKind ? this._showEnd(ac, 'lost', false) : this._contestDie(ac, choice.label);
     if (next === 'REFUSE') return isShowKind ? this._showEnd(ac, 'refused', false) : this._contestRefuse(ac);
