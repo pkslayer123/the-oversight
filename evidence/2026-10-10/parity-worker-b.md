@@ -34,3 +34,7 @@ F1 conquest-raid UI, F2 river-trader UI, F3 fan-package open button, F4 quiet-wo
 
 45/45 green: test-reach-{landlord,moot,raid,trader,beats,wavebeat}-20261010.js.
 `node --check` clean on game.js, contests.js, comms.js, hierarchy.js, progression.js; monsters.json valid.
+
+## Landing note
+
+Rebased onto maintree/master (7e44cce6) mid-run. Two conflicts, both resolved by taking the sibling's (drifter break-it) version: (1) app.js raid UI — sibling's "Muster war party" calls the same Game.raidVillage engine my F1 wired, so my duplicative hunks were dropped; (2) contests.js moot_show — sibling independently found and fixed the same id collision (their comment + regression test kept). All 45 proofs re-run green on the new base.
