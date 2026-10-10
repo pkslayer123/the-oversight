@@ -115,3 +115,68 @@ anywhere — a fake affordance. No swap mechanic exists in canon. Removed
 
 No [needs-eyes]: no feel/UI changes players would notice beyond bugfix
 correctness (numbers that were dead now work; dead button gone).
+
+---
+
+## Second run 2026-10-10 (late) — the 12-button backlog: BROKE + FIXED
+
+Commit: f5794463 [needs-eyes]. The earlier run's "REFERRED" backlog item
+(12 unwired-but-honest ability actions) is now CLOSED: all 12 are wired or
+deduped. Proof: `scripts/test-abilities-break-20261010.js` — 67/67 green × 3
+seeds (20261010, 7, 99). Before-fix run recorded: 12 wiring failures +
+dead_aim advancing the world twice per tap.
+
+### K1. TWELVE DEAD BUTTONS → 10 wired, 2 deduped
+`activatableAbilities()` surfaced 12 data-declared actions with no
+`ABILITY_ACTION_IMPLS` entry; every tap answered "isn't wired up yet —
+this is a bug, not a feature." Wired in `src/js/abilityActions.js`, each
+honoring its data copy as the contract and reusing existing engine hooks:
+molt.shed_skin (shares the weekly budget with the auto-molt death cheat —
+once/week, 2 with refuses_death; heal full, gear lost), scream_cheese.scream
+(delegates to tbPlayerScream({viaAbility:true}); framework owns the turn +
+20 kcal), pocket_sand.throw_sand (nearest live monster, blind=2 — engine
+already 50%-misses while blind>0), grave_robber.rob_grave (lootCorpse
+takeAll = "better gear than normal looting"; party witnesses −15 trust each),
+mediator.mediate_dispute (hottest known dispute via mediateConflict, now
+taking the drama.resolve_bonus the copy promises — new opts.resolveBonus),
+leech.leech_stance (stance flag; tbDamage redirects half of nearby-ally
+damage to the player via addHealth; clears in tbBeginTurn), scarecrow.
+stage_injury (arms stagedInjury; checkTraps forces the next eligible trap to
+catch — skips the 40% roll + trap-shyness; empty woods don't consume it),
+peacemaker.walk_in (talk check 35 + 2×drama.resolve_bonus cap 90: success =
+monsters fled, Elders exempt; failure = exposed, no dodge until next turn),
+peacemaker.make_friends (−50 tension on hottest dispute, resolves ≤10),
+water_breathing.dive_deep (creek/wetland tile only; modest sunken salvage;
+once per tile per day). echo_location.echo_locate and purify.purify_poison
+REMOVED from data — pure duplicates of working legacy buttons (one live
+button + one "bug" button for the same ability). Every new action got a
+precheck: refused taps cost nothing, and the precheck drives the button's
+disabled state.
+
+### K2. DEAD_AIM DOUBLE-ADVANCE (honesty, combat)
+'dead_aim.dead_aim_shot' cost {turn:true, kcal:50} AND its impl called
+tbAfterPlayerAction() directly; the framework then spent the turn again —
+the monster acted twice per tap. Fix: impl no longer self-advances.
+Sibling sweep: no other impl self-advances (only dead_aim did).
+
+### Held (re-verified, not assumed)
+6-slot law on all grant paths; blood_magic 2/day-part + wound gate;
+second_wind daily cap; synergy stacking slot-bounded (all 5
+combat.strike_damage multipliers need 7 abilities > 6 slots; achievable
+6-slot ceiling ≈ x2.27 — scary-good, not infinite); XP L3 ceiling;
+tidecaller discovery completes via the synthetic skill path (3 uses).
+
+### Stale test lock-ins updated to the new contract
+test-combat-r7-20261009.js T8, test-combat-r2-deadcode-20261008.js X1,
+test-combat-break-deadcode-20261008.js D3 (tbPlayerScream now reached via
+useAbility — the single-entry direction), all green.
+Pre-existing failures NOT mine (identical on HEAD via stash):
+test-combat-r3-deadcode.js D1 (harness file-list drift: broadcast.js/
+corruption.js), test-villager-xp-20261009.js c3, test-combat-r2 X2-fear
+(static-scan artifact).
+
+### [needs-eyes]
+Dead_aim taps now advance the world once (monsters act half as often after
+a dead-aim tap — the old double was the bug); scream costs the copy's
+20 kcal through the ability bar (the old combat button was free); 10
+abilities gained working buttons.
