@@ -105,3 +105,7 @@ dead-never-act (9/16 — the 7 failures are W1/W2, now fixed).
   "How to Human" show title — "the aliens attempt a human tutorial episode"
   is the in-fiction joke, not mechanical language); trust reasons now flow
   (380/500 with real reasons in the verification run, was 0/500).
+- Rebased onto maintree/master (b4daaced); re-ran on the new base:
+  test-weird-dead-trust 10/10 x3 seeds, social-r12 ALL GREEN, social-r11
+  18/18, ontology 57/57. Branch parity-audit-c @ 1670d940 — ready for
+  coordinator --ff-only merge. No push, no bump (ship loop owns that).
