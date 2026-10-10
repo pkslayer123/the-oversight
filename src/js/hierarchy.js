@@ -466,6 +466,15 @@
       if (this.state.networkLive && !this.state.accordUnanswered) return null;
       this.state.networkLive = true;
       this.state.accordUnanswered = false;
+      // SWITCHBOARD (parity 2026-10-10): the office arrives with the regional
+      // game — stage the appointment beat. The player picks who holds the
+      // words (the deliberate choice is who you lose to the relay).
+      try {
+        if (this.switchboardAvailable && this.switchboardAvailable()) {
+          this.state.pendingSwitchboard = { day: (this.state.scholar || {}).day || 0 };
+          this.say('📡 The relay needs hands. Every message in and out of Haven — runners\' pleas, traders\' word, all of it — should pass through ONE pair of hands. Name who holds the words. (The choice is up top: every candidate costs something different, and the village will react.)');
+        }
+      } catch (e) {}
       var other = this._linkOther(link, HOME);
       this.state.pendingAccord = { linkId: link.id, day: (this.state.scholar || {}).day || 0 };
       var rep = null;

@@ -236,6 +236,71 @@
       (tgKnown ? `<div class="cs-telegraph">⚠ ${esc(Game.tbTelegraphCue ? Game.tbTelegraphCue(tg) : 'incoming!')}</div>` : '') +
       `</div></div>`;
   }
+  // beatsRowHTML: open village-agency + comms + switchboard beats, each with
+  // its honest answer buttons. (parity 2026-10-10: these beats were
+  // engine-only — the narration staged them but the player had no buttons.
+  // Everything built must be reachable.)
+  function beatsRowHTML() {
+    const out = [];
+    try {
+      const st = Game.state;
+      const pb = st.pendingBeg;
+      if (pb) {
+        let vnm = 'their fire';
+        try { const v = Game._otherVillage ? Game._otherVillage(pb.villageId) : null; if (v && v.name) vnm = v.name; } catch (e) {}
+        out.push(`<div class="statrow beat-open">🥣 <b>${esc(pb.speaker || 'A speaker')}</b> of ${esc(vnm)} begs food (~${(pb.amount || 1500).toLocaleString()} kcal). <button class="btn sm" data-beat="beg:give">Give it</button> <button class="btn sm ghost" data-beat="beg:refuse">Refuse</button></div>`);
+      }
+      const prd = st.pendingRaidDefense;
+      if (prd) {
+        out.push(`<div class="statrow beat-open">🌙 <b>${esc(prd.champion || 'Raiders')}</b> at the treeline — ~${(prd.demand || 2000).toLocaleString()} kcal or blood. <button class="btn sm" data-beat="raiddef:give">Pay</button> <button class="btn sm ghost" data-beat="raiddef:hold">Hold the line</button> <button class="btn sm ghost" data-beat="raiddef:fight">Fight them</button></div>`);
+      }
+      const ps = st.pendingSuccession;
+      if (ps && ps.claimants && ps.claimants.length >= 2) {
+        const a = ps.claimants[0].name || 'One', b = ps.claimants[1].name || 'Another';
+        let vnm = 'a village';
+        try { const v = Game._otherVillage ? Game._otherVillage(ps.villageId) : null; if (v && v.name) vnm = v.name; } catch (e) {}
+        out.push(`<div class="statrow beat-open">👑 ${esc(vnm)}'s fire is contested: <b>${esc(a)}</b> vs <b>${esc(b)}</b>. <button class="btn sm" data-beat="succ:backA">Back ${esc(a)}</button> <button class="btn sm ghost" data-beat="succ:backB">Back ${esc(b)}</button> <button class="btn sm ghost" data-beat="succ:extort">Extort both</button> <button class="btn sm ghost" data-beat="succ:stayOut">Stay out</button></div>`);
+      }
+      const pp = st.pendingPetition;
+      if (pp) {
+        const names = (pp.petitioners || []).map(p => p.name).join(', ');
+        const asked = pp.interviews || [];
+        const maxQ = pp.maxInterviews || 3;
+        const qs = [['why', 'Why did you leave?'], ['bring', 'What do you bring?'], ['cause', 'What happened there?'], ['origin', 'Where exactly?']];
+        const qbtns = asked.length >= maxQ
+          ? '<span class="small" style="opacity:.6">(the room grows restless — no more questions)</span>'
+          : qs.filter(q => asked.indexOf(q[0]) < 0).map(q => `<button class="btn sm ghost" data-beat="pet:q:${q[0]}:${pp.id}">${esc(q[1])}</button>`).join(' ');
+        const mootBtn = (!pp.vote && !pp.awaitingPlayerVote) ? `<button class="btn sm" data-beat="pet:moot:${pp.id}">Call a moot</button>` : '';
+        const voteBtns = pp.awaitingPlayerVote ? `<button class="btn sm" data-beat="pet:vote:accept:${pp.id}">Vote: take them in</button> <button class="btn sm ghost" data-beat="pet:vote:reject:${pp.id}">Vote: turn away</button>` : '';
+        const doorBtn = (!pp.vote && !pp.awaitingPlayerVote) ? `<button class="btn sm ghost" data-beat="pet:vote:reject:${pp.id}">Turn them away at the fire</button>` : '';
+        out.push(`<div class="statrow beat-open">🌒 <b>Petitioners at your fire:</b> ${esc(names)}${pp.cause ? ` (${esc(pp.cause)})` : ''}.<br>${qbtns} ${mootBtn} ${voteBtns} ${doorBtn}</div>`);
+      }
+      let ac = null;
+      try { ac = Game.aidCrisis ? Game.aidCrisis() : null; } catch (e) {}
+      if (ac) {
+        const cryBtn = (() => { try { const abs = Game.aidCryAbilities ? (Game.aidCryAbilities() || []) : []; return abs.length ? ` <button class="btn sm ghost" data-beat="aid:cry:${abs[0].id || abs[0]}">Ability cry (${esc(abs[0].name || abs[0].id || abs[0])})</button>` : ''; } catch (e) { return ''; } })();
+        out.push(`<div class="statrow beat-open">🚨 <b>${esc(ac.name || 'A crisis')}</b> at the door — call for help: <button class="btn sm" data-beat="aid:runner">Send a runner</button> <button class="btn sm ghost" data-beat="aid:signal">Light the signal fire</button> <button class="btn sm ghost" data-beat="aid:system">System relay</button>${cryBtn}</div>`);
+      }
+      // SWITCHBOARD (parity 2026-10-10): the office arrives with the regional
+      // game — the appointment was engine-only. Name who holds the words.
+      if (st.pendingSwitchboard) {
+        let cands = [];
+        try { cands = Game.switchboardCandidates ? (Game.switchboardCandidates() || []) : []; } catch (e) {}
+        const cbtns = cands.slice(0, 4).map(c => `<button class="btn sm ghost" data-beat="sw:appoint:${c.id}" title="${esc(c.cost || '')}${c.risk ? ' — ' + esc(c.risk) : ''}">${esc(c.name || c.id)}</button>`).join(' ');
+        out.push(`<div class="statrow beat-open">📡 <b>The relay needs hands.</b> Name Haven's voice — every message in and out passes through them. Hover a name for the cost.<br>${cbtns || '<span class="small">(no candidates hale right now)</span>'}</div>`);
+      }
+      try {
+        const sw = Game.switchboard ? Game.switchboard() : null;
+        if (sw && sw.holderId) {
+          let hn = sw.holderId;
+          try { hn = Game.displayName ? String(Game.displayName(sw.holderId)).split(' ')[0] : hn; } catch (e) {}
+          out.push(`<div class="statrow beat-open">📡 <b>Relay holder: ${esc(hn)}</b> (${esc(sw.stage || 'village relay')}) — routed ${sw.routed || 0}, delayed ${sw.delayed || 0}, edited ${sw.edited || 0}. <button class="btn sm ghost" data-beat="sw:log">Read the relay log</button> <button class="btn sm ghost" data-beat="sw:confront">Confront ${esc(hn)}</button></div>`);
+        }
+      } catch (e) {}
+    } catch (e) {}
+    return out.join('');
+  }
+
   function statusBars(st) {
     const feastTag = st.feastState === 'gorged' ? ' ⚡⚡ GORGED' : st.feastState === 'feasting' ? ' ⚡ feasting' : '';
     // THE BANK: one pool. The FOOD bar IS the reserve — cap grows with bank
@@ -270,7 +335,7 @@
       statRow('PACK 🎒', st.invKcal + ' kcal · ' + st.packKg + '/' + st.packCap + ' kg', st.packKg / st.packCap * 100, st.packKg >= st.packCap, '', 'pack') +
       statRow('WATER', st.hydration + '% · ' + st.waterCleanL + 'L clean', st.hydration, st.hydration < 30) +
       (Game.state && Game.state.systemArrived ? statRow('SYSTEM', st.integration + '% integrated', st.integration, false) : '') +
-      contestRow + afflictionRow(st);
+      contestRow + beatsRowHTML() + afflictionRow(st);
   }
 
   // DISEASE (Steve 2026-10-09): affliction chips — symptoms until diagnosed,
@@ -932,6 +997,9 @@
     if (label === 'Go inside') { Game.enterBuilding(); return; }
     if (label === 'Rest' || label === 'Rest (a while)') { Game.doAction('rest'); return; }
     if (label === 'Search') { Game.searchRoom(cx, cy); return; }
+    // QUIET WOODS (parity 2026-10-10): the day-16 hushwolf event's
+    // investigate action — a day-part tracking the circling pack.
+    if (label === 'Investigate the quiet woods') { Game.investigateQuietWoods(); return; }
     // GARDEN (depletion 2026-10-10): the farming build. Sow opens a seed
     // chooser — seed choice is knowledge, and the player picks.
     if (label === 'Make a garden plot') { Game.makePlot(); refresh(); return; }
@@ -1011,6 +1079,15 @@
         } catch (e) {}
       }
     }
+    // QUIET WOODS (parity 2026-10-10): the day-16 hushwolf event promised an
+    // "Investigate (a day-part)" contextual action that was never wired. The
+    // pack circles until investigated or it comes for you.
+    try {
+      if (Game.state.scholar && Game.state.scholar.quietWoods && !seen.has('Investigate the quiet woods')) {
+        seen.add('Investigate the quiet woods');
+        items.push({ cx: px, cy: py, label: 'Investigate the quiet woods' });
+      }
+    } catch (e) {}
     return items;
   }
 
@@ -12877,7 +12954,7 @@
               if (isPlant && !Game.canShow('plant', i.plantId, 'kcal')) return "?";
             }
             return (i.kcalEach || 0) * i.units;
-          } catch (e) { return (i.kcalEach || 0) * i.units; } })()} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${(Game.isSpoiled && Game.isSpoiled(i)) ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">${(() => { try { return Game.channelLabel ? Game.channelLabel() : '💛 Channel'; } catch (e) { return '💛 Channel'; } })()}</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}${Game.isStashableWeapon(i) ? ` <button class="btn ghost sm" data-stashweapon="${idx}" title="Deposit to the armory — becomes communal">Armory</button>` : ''}${Game.isMedicine(i) ? ` <button class="btn ghost sm" data-stashmed="${idx}" title="Deposit to the pharmacy — becomes communal">Pharmacy</button>` : ''}</p>`;
+          } catch (e) { return (i.kcalEach || 0) * i.units; } })()} kcal · ${(((i.kg || 0.1)) * i.units).toFixed(1)} kg)${foodMark}${i.bonded ? ` <span class="small" title="Bonded relic \u2014 grown, not found">bond ${i.bond || 0}${(i.enhancements || []).length ? ' \u00B7 ' + i.enhancements.join(', ') : ''}</span>` : ''}${(Game.isKeepsake && Game.isKeepsake(i)) ? ' <span class="small" style="opacity:.6">keepsake</span>' : ''}${(() => { try { const et = Game.keepsakeEffectText ? Game.keepsakeEffectText(i) : null; return et ? ` <span class="small" style="opacity:.75">⚙ ${et}</span>` : ''; } catch (e) { return ''; } })()}${(Game.isSpoiled && Game.isSpoiled(i)) ? ' \u26A0 spoiled' : ''}${i.bookId ? ` <button class="btn ghost sm" data-read="${i.bookId}">Read</button>` : ''}${Game.isUsable(i) && !i.bonded ? ` <button class="btn ghost sm" data-use="${idx}">Use</button>` : ''}${i.unopened ? ` <button class="btn ghost sm" data-openpkg="1">Open it (a day-part, on camera)</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-eatone="${idx}">Eat</button>` : ''}${foodBtns}${i._cookable ? ` <button class="btn ghost sm" data-cook="${idx}">Cook</button>` : ''}${Game.isWeapon(i) ? ` <button class="btn ghost sm" data-equip-w="${idx}">Equip</button>` : ''}${Game.isArmor(i) ? ` <button class="btn ghost sm" data-equip-a="${idx}">Wear</button>` : ''}${(Game.isKeepsake && Game.isKeepsake(i) && Game.sentimentTaught && Game.sentimentTaught()) ? ` <button class="btn ghost sm" data-channel="${idx}">${(() => { try { return Game.channelLabel ? Game.channelLabel() : '💛 Channel'; } catch (e) { return '💛 Channel'; } })()}</button>` : ''}${(i.kcalEach || 0) > 0 && i.edible !== false && !i.bonded ? ` <button class="btn ghost sm" data-donate="${idx}">Donate</button>` : ''}${!i.bonded && !(Game.isKeepsake && Game.isKeepsake(i)) ? ` <button class="btn ghost sm" data-drop="${idx}">Leave it</button>` : ''}${i.material ? ` <button class="btn ghost sm" data-stashmat="${idx}">Stash</button>` : ''}${Game.isStashableTool(i) ? ` <button class="btn ghost sm" data-stashtool="${idx}">Stash</button>` : ''}${Game.isStashableWeapon(i) ? ` <button class="btn ghost sm" data-stashweapon="${idx}" title="Deposit to the armory — becomes communal">Armory</button>` : ''}${Game.isMedicine(i) ? ` <button class="btn ghost sm" data-stashmed="${idx}" title="Deposit to the pharmacy — becomes communal">Pharmacy</button>` : ''}</p>`;
         }).join('') : '<p class="small">Empty. The world provides.</p>'}
         ${stashSectionHtml()}
         ${tools.length ? `<h3 style="margin-top:12px">🔧 Tools</h3>${tools.map(t => `<p class="small"><b>${t.name}</b> (${t.uses} uses left) <button class="btn ghost sm" data-settrap="${t.recipeId}">Set</button></p>`).join('')}` : ''}
@@ -12903,6 +12980,9 @@
     slot.querySelectorAll('[data-settrap]').forEach(b => b.onclick = (e) => { Game.setTrap(b.dataset.settrap); inlineView.result = 'Trap set.'; refresh(); });
     slot.querySelectorAll('[data-read]').forEach(b => b.onclick = rewire(() => Game.readBook(b.dataset.read), 'You read.'));
     slot.querySelectorAll('[data-use]').forEach(b => b.onclick = rewire(() => Game.useItem(+b.dataset.use), 'Used.'));
+    // FAN PACKAGE (parity 2026-10-10): the unopened package promised a Use
+    // path ("Use it from your pack") that never existed. Open it on camera.
+    slot.querySelectorAll('[data-openpkg]').forEach(b => b.onclick = rewire(() => Game.openFanPackage(), 'Opened.'));
     slot.querySelectorAll('[data-eatone]').forEach(b => b.onclick = rewire(() => Game.eatOne(+b.dataset.eatone), 'Eaten.'));
     slot.querySelectorAll('[data-channel]').forEach(b => b.onclick = rewire(() => Game.channelSentiment(+b.dataset.channel), 'Channeled.'));
     slot.querySelectorAll('[data-cook]').forEach(b => b.onclick = rewire(() => Game.cookFood(+b.dataset.cook), 'Cooked.'));
@@ -13935,6 +14015,42 @@
     document.querySelectorAll('[data-stash-med]').forEach(b => b.onclick = () => { Game.takeMedicine(b.dataset.stashMed); refresh(); });
     // Visitors (Haven panel). Trade opens the cart; ware buys are real exchanges.
     document.querySelectorAll('[data-visitor-act]').forEach(b => b.onclick = () => { Game.visitorInteract(b.dataset.visitorAct, b.dataset.how); refresh(); });
+    // RIVER TRADER (parity 2026-10-10): the day-21 trader's feed/trade/snub
+    // were engine-only. Feed and snub are direct; trade takes a good id
+    // (or none — the trader sizes Haven up).
+    document.querySelectorAll('[data-trader]').forEach(b => b.onclick = () => {
+      const spec = b.dataset.trader || '';
+      if (spec === 'feed') Game.feedRiverTrader();
+      else if (spec === 'snub') Game.snubRiverTrader();
+      else if (spec === 'trade') Game.tradeRiverTrader();
+      else if (spec.startsWith('trade:')) Game.tradeRiverTrader(spec.slice(6));
+      refresh();
+    });
+    // BEATS PANEL (parity 2026-10-10): open village-agency / comms /
+    // switchboard beats — engine-only until now. Every button answers aloud.
+    document.querySelectorAll('[data-beat]').forEach(b => b.onclick = () => {
+      const spec = (b.dataset.beat || '').split(':');
+      const kind = spec[0];
+      if (kind === 'beg') Game.answerBeg(spec[1]);
+      else if (kind === 'raiddef') Game.answerRaidDefense(spec[1]);
+      else if (kind === 'succ') Game.answerSuccession(spec[1]);
+      else if (kind === 'pet') {
+        const act = spec[1], petId = spec[3] || (Game.state.pendingPetition || {}).id;
+        if (act === 'q') Game.petitionInterview(petId, spec[2]);
+        else if (act === 'moot') Game.conductPetitionMoot(petId);
+        else if (act === 'vote') Game.answerPetition(petId, spec[2]);
+      }
+      else if (kind === 'aid') {
+        if (spec[1] === 'cry') Game.callForHelp('cry', { abilityId: spec[2] });
+        else Game.callForHelp(spec[1]);
+      }
+      else if (kind === 'sw') {
+        if (spec[1] === 'appoint') Game.appointSwitchboard(spec[2]);
+        else if (spec[1] === 'log') Game.switchboardLog();
+        else if (spec[1] === 'confront') Game.confrontSwitchboard();
+      }
+      refresh();
+    });
     document.querySelectorAll('[data-ware-buy]').forEach(b => b.onclick = () => { const p = b.dataset.wareBuy.split(':'); Game.visitorBuyWare(p[0], +p[1]); refresh(); });
     document.querySelectorAll('[data-ware-sell]').forEach(b => b.onclick = () => { const p = b.dataset.wareSell.split(':'); Game.traderSell(p[0], +p[1]); refresh(); });
     // Membership: remote applications + shelter building (Haven panel).
@@ -13943,6 +14059,8 @@
     document.querySelectorAll('[data-mship-build]').forEach(b => b.onclick = () => { Game.buildShelter(); refresh(); });
     // Hierarchy: tribute + demands (Haven panel).
     document.querySelectorAll('[data-link-pay]').forEach(b => b.onclick = () => { Game.payTribute(b.dataset.linkPay); refresh(); });
+    // AID DEBT (parity 2026-10-10): repayable aloud — was engine-only.
+    document.querySelectorAll('[data-link-repay]').forEach(b => b.onclick = () => { Game.repayAidDebt(b.dataset.linkRepay); refresh(); });
     // Hierarchy: propose a link (drifter loop 2026-10-08 — was engine-only).
     document.querySelectorAll('[data-link-propose-sub]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposeSub, { asSubordinate: true, tributeKcalPerWeek: 4000 }); refresh(); });
     document.querySelectorAll('[data-link-propose-prim]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposePrim, { asSubordinate: false, tributeKcalPerWeek: 4000 }); refresh(); });
@@ -13950,6 +14068,10 @@
     document.querySelectorAll('[data-counter-accept]').forEach(b => b.onclick = () => { Game.answerCounter('accept'); refresh(); });
     document.querySelectorAll('[data-counter-sweeten]').forEach(b => b.onclick = () => { Game.answerCounter('sweeten'); refresh(); });
     document.querySelectorAll('[data-counter-walk]').forEach(b => b.onclick = () => { Game.answerCounter('walk'); refresh(); });
+    // Hierarchy: the conquest road — raidVillage musters, answerRaid resolves
+    // (parity 2026-10-10: the whole force path was engine-only, unwired).
+    document.querySelectorAll('[data-link-raid]').forEach(b => b.onclick = () => { Game.raidVillage(b.dataset.linkRaid); refresh(); });
+    document.querySelectorAll('[data-raid-answer]').forEach(b => b.onclick = () => { Game.answerRaid(b.dataset.raidAnswer); refresh(); });
     // Regional dawn: Haven's first gesture (regional audit 2026-10-09).
     document.querySelectorAll('[data-accord-gift]').forEach(b => b.onclick = () => { Game.answerAccord('gift'); refresh(); });
     document.querySelectorAll('[data-accord-visit]').forEach(b => b.onclick = () => { Game.answerAccord('visit'); refresh(); });
@@ -14309,7 +14431,18 @@
         <button class="btn sm" id="x-pantry">Take from pantry</button>
         <div id="haven-stores-slot"></div>
         ${Game.stashHtml()}
-        ${Game.visitorHtml ? Game.visitorHtml() : ''}`;
+        ${Game.visitorHtml ? Game.visitorHtml() : ''}
+        ${(() => {
+          // RIVER TRADER (parity 2026-10-10): the day-21 trader's
+          // feed/trade/snub actions were engine-only, unwired. The trader is
+          // here till dusk — feed (600 kcal), trade a day-part for one of
+          // three goods, or snub (free, but the river remembers).
+          try {
+            const rt = Game.state.scholar && Game.state.scholar.riverTrader;
+            if (!rt || rt.day !== (Game.state.scholar.day || 1)) return '';
+            return `<p class="small" style="margin-top:8px"><b>🐪 River trader</b> (downriver village — here till dusk): news, some of it true. Feed a guest (~600 kcal from the stores) or trade a day-part away.<br><button class="btn sm" data-trader="feed">🍲 Feed them (600 kcal)</button><br><span style="opacity:.75">Trade a day-part:</span> <button class="btn sm ghost" data-trader="trade:knife">Steel knife (400 kcal)</button> <button class="btn sm ghost" data-trader="trade:salt">Downriver salt (350 kcal)</button> <button class="btn sm ghost" data-trader="trade:rope">River rope (250 kcal)</button> <button class="btn sm ghost" data-trader="trade" title="Let the trader size up what Haven needs most">Let them choose</button> <button class="btn sm ghost" data-trader="snub">Rudeness is free</button></p>`;
+          } catch (e) { return ''; }
+        })()}`;
       })()}
       <button class="btn sm ghost" id="x-caches">📍 Caches</button>
       ${(() => {
@@ -14384,6 +14517,10 @@
                   const paid = (l.tributePaidWeek >= Math.floor(Game.state.scholar.day / 7));
                   let h = `<p class="small">⛓️ ${sub ? 'Bows to ' + nm : nm + ' bows to Haven'} · trust ${l.trust} · tribute ${l.tributeKcalPerWeek.toLocaleString()} kcal/wk${sub ? (paid ? ' (paid ✓)' : ' (DUE ⚠)') : ''}`;
                   if (sub && !paid) h += ` <button class="btn sm" data-link-pay="${l.id}">Pay tribute</button>`;
+                  // AID DEBT (parity 2026-10-10): their foragers left their
+                  // fields — repayable aloud via repayAidDebt (was
+                  // engine-only). Partial payment honored.
+                  if ((l.aidDebtKcal || 0) > 0) h += ` <button class="btn sm" data-link-repay="${l.id}">Repay aid debt (${l.aidDebtKcal.toLocaleString()} kcal)</button>`;
                   // BREAK-IT (social r2 2026-10-08): renegotiateLink /
                   // bidForPrimacy / breakLink were engine-only — a
                   // subordinate could never climb or break away (same class

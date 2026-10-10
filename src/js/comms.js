@@ -871,6 +871,8 @@
         routed: 0, delayed: 0, edited: 0, skimmed: 0, log: [],
         mootVoiceLost: !!c.isTalker, lastLeadDay: -1,
       };
+      // The appointment beat is answered — clear the pending flag.
+      try { this.state.pendingSwitchboard = null; } catch (e) {}
       try { this.tickAction(16); } catch (e) {}
       // TELEVISED APPOINTMENT BEAT.
       try {
@@ -913,6 +915,12 @@
       var nm = _first(this, sw.holderId);
       this.state.switchboard = null;
       this.say('📡 ' + nm + ' is out of the relay — ' + (why || 'done') + '. The messages go back to runners and smoke, unheld.');
+      // The office stands vacant — the appointment beat returns.
+      try {
+        if (this.switchboardAvailable && this.switchboardAvailable()) {
+          this.state.pendingSwitchboard = { day: _day(this) };
+        }
+      } catch (e) {}
       return true;
     },
 
@@ -1029,6 +1037,25 @@
       try { if (this.leadShift) this.leadShift('fracture', 1); } catch (e) {}
       this.removeSwitchboard('fired for editing the relay');
       return admits ? 'confessed' : 'denied';
+    },
+
+    // switchboardLog: read the relay log aloud — evidence, not accusation.
+    // (parity 2026-10-10: the office existed but had no UI surface; the log
+    // is the discoverability half of the corruption surface. Reading is
+    // safe; CONFRONTING on a clean log costs the accuser.)
+    switchboardLog() {
+      var sw = this.switchboard();
+      if (!sw) { this.say('There\'s no office — the relay has no holder.'); return null; }
+      var hn = _first(this, sw.holderId);
+      var log = sw.log || [];
+      this.say('📡 The relay log, in ' + hn + '\'s hand: ' + (sw.routed || 0) + ' routed, ' + (sw.delayed || 0) + ' delayed, ' + (sw.edited || 0) + ' edited.');
+      if (!log.length) { this.say('(Nothing but clean carries. So far.)'); return 'clean'; }
+      var recent = log.slice(-6);
+      for (var i = 0; i < recent.length; i++) {
+        var e = recent[i];
+        this.say('· day ' + (e.day || '?') + ' — ' + (e.kind || 'a message') + ': ' + (e.decision || 'carried') + (e.note ? ' (' + e.note + ')' : '') + '.');
+      }
+      return 'read';
     },
 
   };

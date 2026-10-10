@@ -506,6 +506,9 @@
         const d = this.deedState();
         if (!d.wavesFaced[monsterId]) d.wavesFaced[monsterId] = wave;
       } catch (e) {}
+      // Engagement feeds the unlock gates (player AND villager fights) —
+      // the unlock beat must land whichever path earned it.
+      try { if (typeof this.checkWaveUnlockBeat === 'function') this.checkWaveUnlockBeat(); } catch (e) {}
     },
     // deedGateReady: the Arc IV want-gate's deed check, and the tableScene's
     // defense-in-depth re-check. Returns the full breakdown so beat text

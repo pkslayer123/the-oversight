@@ -15022,11 +15022,16 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // nothing vanishes entirely, but the night belongs to nocturnal things.
     creatureWeight(def) {
       const act = def.activity || 'both';
-      if (act === 'both') return 1;
+      // SPAWN WEIGHT (parity audit 2026-10-10): data-driven rarity lever.
+      // Default 1. The landlord (wave-2 signature, "the ground is the
+      // monster") never appeared in 48 organic 200-day runs — not broken,
+      // just 1/15th of a crowded wave-2 pool sharing a 3-5 world cap.
+      const sw = (def && def.spawnWeight) || 1;
+      if (act === 'both') return sw;
       const part = this.dayPart; // 0 dawn, 1 midday, 2 dusk, 3 night
-      if (part === 3) return act === 'nocturnal' ? 3 : act === 'crepuscular' ? 1 : 0.25;
-      if (part === 0 || part === 2) return act === 'crepuscular' ? 3 : act === 'nocturnal' ? 0.5 : 1;
-      return act === 'diurnal' ? 3 : act === 'nocturnal' ? 0.15 : 1;
+      if (part === 3) return (act === 'nocturnal' ? 3 : act === 'crepuscular' ? 1 : 0.25) * sw;
+      if (part === 0 || part === 2) return (act === 'crepuscular' ? 3 : act === 'nocturnal' ? 0.5 : 1) * sw;
+      return (act === 'diurnal' ? 3 : act === 'nocturnal' ? 0.15 : 1) * sw;
     },
     // MONSTER WAVES: which monsters can spawn right now.
     // Single source of truth for the wave gate (Steve 2026-10-08, break-it
@@ -24392,9 +24397,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       return r >= ni;
     },
     // waveUnlockBeat: the woven beat for a new wave's arrival (Steve
-    // 2026-10-10). Reactive — called from the waveAfter > waveBefore check,
-    // never on a timer. Each wave recontextualizes the last; the System says
-    // so, in its own voice. (Wave 2's beat lives in checkSystemArrival.)
+    // 2026-10-10). Reactive — fired by checkWaveUnlockBeat (the idempotent
+    // choke point) from every path that can earn an unlock, never on a timer.
+    // Each wave recontextualizes the last; the System says so, in its own
+    // voice. (Wave 2's beat lives in checkSystemArrival.)
     waveUnlockBeat(wave) {
       if (wave === 3) {
         this.say('📺 "Oh, you survived the AUDIENCE NOTES? Cute. We\'ve stopped pretending these are animals now. That was the FINAL DRAFT, folks — what comes out of the treeline next was never alive the way you mean it."');
@@ -24407,6 +24413,36 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.say('(The sky clears its throat. The show is defending itself.)');
       }
     },
+    // checkWaveUnlockBeat: the unlock-beat choke point (parity 2026-10-10).
+    // The wave gates are fed by THREE paths — player kills, villager
+    // field-fight kills, and the engagement feed (faced/fled counts) — but
+    // the old beat only fired on the player-combat-end path. Measured: 91
+    // of 144 organic runs unlocked wave 3, the beat fired twice — the rest
+    // earned it through villager fights and engagement. The System's voice
+    // names every wave the moment it lands, whichever path earned it.
+    // Idempotent: state._waveAnnounced tracks the last announced wave.
+    checkWaveUnlockBeat() {
+      let waveAfter = 1;
+      try { waveAfter = this.unlockedWave(); } catch (e) { return; }
+      // ADOPT-ON-FIRST-SEEN (parity 2026-10-10): in-flight games may already
+      // sit at wave 2+ with their beats played (wave 2's beat lives in
+      // checkSystemArrival). Only NEW rises announce — never re-announce.
+      if (this.state._waveAnnounced == null) { this.state._waveAnnounced = waveAfter; return; }
+      if (waveAfter <= this.state._waveAnnounced) return;
+      this.state._waveAnnounced = waveAfter;
+      // HONESTY (break-it 2026-10-09): "talent released" is only true when
+      // the new wave actually has monsters in the roster.
+      const hasTalent = (this.data.monsters || []).some(m => (m.wave || 1) === waveAfter);
+      this.sysSay(hasTalent
+        ? `📺 RATINGS ARE UP! The producers are pleased. New casting directives incoming — Wave ${waveAfter} talent has been released into your sector.`
+        : `📺 RATINGS ARE UP! The producers are pleased. Wave ${waveAfter} protocols active — the challenges escalate, the stakes sharpen. The woods feel... expectant.`);
+      // WAVE BEATS (Steve 2026-10-10): each wave unlocks with a woven beat
+      // in the System's voice — reactive (fires on the unlock, never on a
+      // timer), naming the wave's identity. Wave 2's beat lives in
+      // checkSystemArrival; waves 3-5 land here, where the unlock happens.
+      try { this.waveUnlockBeat(waveAfter); } catch (e) {}
+      this.audioEvent('waveUnlock');
+    },
     // Track kills by wave for unlock gates
     recordWaveKill(monsterId) {
       const mdef = this.data.monsters.find(m => m.id === monsterId);
@@ -24416,6 +24452,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       this.state.waveKills[wave] = (this.state.waveKills[wave] || 0) + 1;
       // Wave 4 slain feeds readiness
       if (wave === 4) this.state.wave4Slain = (this.state.wave4Slain || 0) + 1;
+      // Kills feed the unlock gates from every path (player combat AND
+      // villager field fights) — the beat must land whichever path earned it.
+      try { this.checkWaveUnlockBeat(); } catch (e) {}
     },
 
     // WAVE RATIO (Steve 2026-10-06): which wave a fresh spawn belongs to.
@@ -32801,7 +32840,6 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // next wave (day-gated). The System watches — prove you can handle it.
       this.state.combatWins = this.state.combatWins || 0;
       this.state.combatLosses = this.state.combatLosses || 0;
-      const waveBefore = this.unlockedWave();
       if (result === 'won') {
         this.state.combatWins++;
         // Record kills by wave for unlock gates. ONE BODY = ONE KILL
@@ -32826,26 +32864,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.leadShift('force', 1);
       }
       else if (result === 'lost') this.state.combatLosses++;
-      // Check for wave unlock (System escalation)
-      const waveAfter = this.unlockedWave();
-      if (waveAfter > waveBefore) {
-        // HONESTY (break-it 2026-10-09): "talent released" is only true when
-        // the new wave actually has monsters. Wave 3 unlocks (day 25 + 8
-        // wave-2 kills) with an empty monster roster — the old line promised
-        // beasts that never came. The escalation wave 3 DOES bring (contest
-        // formats, hotter variants) is said instead; when wave-3 monsters
-        // ship, the talent line becomes true on its own.
-        const hasTalent = (this.data.monsters || []).some(m => (m.wave || 1) === waveAfter);
-        this.sysSay(hasTalent
-          ? `📺 RATINGS ARE UP! The producers are pleased. New casting directives incoming — Wave ${waveAfter} talent has been released into your sector.`
-          : `📺 RATINGS ARE UP! The producers are pleased. Wave ${waveAfter} protocols active — the challenges escalate, the stakes sharpen. The woods feel... expectant.`);
-        // WAVE BEATS (Steve 2026-10-10): each wave unlocks with a woven beat
-        // in the System's voice — reactive (fires on the unlock, never on a
-        // timer), naming the wave's identity. Wave 2's beat lives in
-        // checkSystemArrival; waves 3-5 land here, where the unlock happens.
-        try { this.waveUnlockBeat(waveAfter); } catch (e) {}
-        this.audioEvent('waveUnlock');
-      }
+      // Check for wave unlock (System escalation) — via the idempotent
+      // choke point: villager field fights and the engagement feed can earn
+      // unlocks outside player combat, and the beat must land there too.
+      try { this.checkWaveUnlockBeat(); } catch (e) {}
       // AUDIO HYGIENE (Steve): killing the deer left the beam's hum playing.
       // NOTHING outlives its encounter — stop every sustained loop on ANY
       // ending (won, lost, fled, routed). combatEnd is idempotent.
