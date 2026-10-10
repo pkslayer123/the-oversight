@@ -5018,7 +5018,11 @@
           }
         }
         if (best) {
-          pile.splice(bestIdx, 1);
+          // UNITS (miser break-it 2026-10-10): the borrower takes ONE weapon —
+          // a merged 2-stack entry is decremented, not devoured whole.
+          const taken = pile[bestIdx];
+          taken.units = (taken.units || 1) - 1;
+          if (taken.units <= 0) pile.splice(bestIdx, 1);
           try { if (this.stashLog) this.stashLog('take', best, 1, vid); } catch (e2) {}
           person.items = person.items || [];
           person.items.push(best);
@@ -5091,11 +5095,17 @@
           const pick = bestFit || biggest;
           if (pick) {
             const idx = pile.indexOf(pick);
-            if (idx >= 0) pile.splice(idx, 1);
+            // DOSES (miser break-it 2026-10-10): one use is one dose — a
+            // 3-dose bottle survives two more hurts. The entry is spliced
+            // only when the last dose goes. Legacy unit-less entries count
+            // as a single dose.
+            pick.doses = (pick.doses == null ? 1 : pick.doses) - 1;
+            if (idx >= 0 && pick.doses <= 0) pile.splice(idx, 1);
             try { if (this.stashLog) this.stashLog('take', pick.name || pick.itemId, 1, vid); } catch (e2) {}
             v.health[vid] = Math.min(100, cur + (bestFit ? bestFitAmt : biggestAmt));
             try {
-              this.say(`🩹 ${nm} is hurting (${cur} HP) — takes ${pick.name || 'medicine'} from the pharmacy before heading out. (${cur} → ${v.health[vid]} HP)`);
+              const doseNote = pick.doses > 0 ? ` (${pick.doses} dose${pick.doses === 1 ? '' : 's'} left)` : '';
+              this.say(`🩹 ${nm} is hurting (${cur} HP) — takes ${pick.name || 'medicine'} from the pharmacy before heading out.${doseNote} (${cur} → ${v.health[vid]} HP)`);
             } catch (e2) {}
             return false;
           }

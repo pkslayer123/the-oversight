@@ -42,6 +42,9 @@
 //   - villageTrustLevel()
 // rules:
 //   - ash_gear_honored: depositing ashOf-tagged gear (from a phoenix ash-pile) at Haven honors the dead -- trust +8 + honoring gossip, gear enters village circulation; armor/misc have no deposit hook (no communal armor pile, canon) (code: phoenixHonorDeposit, Steve 2026-10-09)
+//   - pharmacy_identity: stash entries keep medicine identity (medType, doses) and units -- a dosed bottle donated and returned comes back dosed and usable, never a brick; dosed medicine never merges in stacksMatch (dose pools are per-bottle) (code: _depositStashedItem, _takeStashedItem, stacksMatch, miser break-it 2026-10-10)
+//   - no_midfight_storage: bury/dig/take-from-cache and all stash donate/take paths refuse mid-fight (tickAction no-ops in combat = free actions) and after death (code: buryCache, digUpCache, takeFromCache, donateMaterial, takeMaterial, donateTool, takeTool, _depositStashedItem, _takeStashedItem, miser break-it 2026-10-10)
+//   - npc_consumes_honestly: NPC armory borrows take one unit (entry decremented); NPC pharmacy use spends one dose (entry spliced only at zero) (code: villagerGearUp, villagerHealCheck, miser break-it 2026-10-10)
 // consumes:
 //   - scholar.inventory
 //   - state.codex
@@ -326,6 +329,9 @@
       return avg >= 50 ? 'open' : avg >= 25 ? 'wary' : 'closed';
     },
     donateMaterial(mat, n) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       // PHYSICAL STORES (miser break-it 2026-10-08): the stash is in the hall —
       // takeMaterial already refuses remote hands ("The stash is in the hall.
       // Your hands are not."). Donating had no gate: the pack UI's Stash button
@@ -368,6 +374,9 @@
       return this.tickAction(2) || this.status();
     },
     takeMaterial(mat, n) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
         this.say('The stash is in the hall. Your hands are not.');
         return null;
@@ -457,6 +466,9 @@
       return true;
     },
     donateTool(idx) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       // PHYSICAL STORES (miser break-it 2026-10-08): same gate as donateMaterial
       // — tools don't teleport into the hall either.
       if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
@@ -478,7 +490,10 @@
       if (this.isKeepsake && this.isKeepsake(item)) { this.say("That's yours. Not the village's."); return null; }
       inv.splice(idx, 1);
       const st = this.stashState();
-      st.tools.push({ itemId: id, name: item.name || def.name });
+      // UNITS (miser break-it 2026-10-10): the stash strips entries — a
+      // merged 2-stack donated whole used to come back as one (the other
+      // unit silently destroyed). The entry keeps its count now.
+      st.tools.push({ itemId: id, name: item.name || def.name, units: item.units || 1 });
       this.stashLog('give', item.name || def.name, 1);
       const vid = this.state.scholar.villagerId;
       // ASH GEAR HONORED (Steve 2026-10-09): bringing a phoenix victim's
@@ -502,6 +517,9 @@
       return this.tickAction(2) || this.status();
     },
     takeTool(itemId) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
         this.say('The stash is in the hall. Your hands are not.');
         return null;
@@ -515,12 +533,14 @@
       // over-capacity take — takeTool didn't, so borrowing at a full pack
       // silently overfilled it (measured 22.2kg carried vs 20kg max).
       // Checked BEFORE the splice: a refused take leaves the stash untouched.
+      // UNITS (miser break-it 2026-10-10): weigh the whole entry, not one.
       const inv = this.state.scholar.inventory || [];
       const carry = inv.reduce((t2, it) => t2 + (it.kg || 0) * (it.units || 1), 0) + (this.waterWeight ? this.waterWeight() : 0);
       const max = this.carryCapacity ? this.carryCapacity() : 20;
-      if (carry + (def.kg || 0.8) > max) { this.say(`Too heavy for the ${st.tools[i].name}. Lighten your pack first.`); return null; }
+      const takeUnits = st.tools[i].units || 1;
+      if (carry + (def.kg || 0.8) * takeUnits > max) { this.say(`Too heavy for the ${st.tools[i].name}. Lighten your pack first.`); return null; }
       const [tool] = st.tools.splice(i, 1);
-      inv.push({ itemId, name: tool.name, units: 1, kcalEach: 0, kg: def.kg || 0.8 });
+      inv.push({ itemId, name: tool.name, units: takeUnits, kcalEach: 0, kg: def.kg || 0.8 });
       this.stashLog('take', tool.name, 1);
       // TAKE-BACK (miser break-it 2026-10-08): only when you take a tool YOU
       // left and haven't re-taken. Borrowing a DIFFERENT tool is normal
@@ -542,7 +562,7 @@
         this.say(`You take the ${tool.name}. In this village, people notice who takes tools.`);
         this.observe('hoard');
       } else {
-        this.say(`Took the ${tool.name} from the stash. Bring it back when you're done.`);
+        this.say(`Took the ${tool.name}${takeUnits > 1 ? ` ×${takeUnits}` : ''} from the stash. Bring ${takeUnits > 1 ? 'them' : 'it'} back when you're done.`);
       }
       return this.tickAction(2) || this.status();
     },
@@ -569,6 +589,9 @@
     // medicine deposits. Mirrors donateTool's gates: physical stores, bonded,
     // ledger, trust. Deposit is the consent that makes an item communal.
     _depositStashedItem(idx, section, kindLabel) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
         this.say('The stash is in the hall. Your hands are not.');
         return null;
@@ -595,7 +618,16 @@
       const id = item.itemId || item.id;
       const def = (this.data.items || []).find(i => i.id === id) || {};
       const st = this.stashState();
-      st[section].push({ itemId: id, name: item.name || def.name || id, kg: item.kg != null ? item.kg : (def.kg || 0.3) });
+      // PHARMACY IDENTITY (miser break-it 2026-10-10): the stash used to
+      // strip entries to {itemId, name} — a dosed medicine came back from
+      // the pharmacy as an unusable brick (medType/doses gone; the
+      // affliction UI requires both). Medicine keeps its dosing; every
+      // section keeps its units (a merged 2-stack donated whole must come
+      // back whole, not as one).
+      const entry = { itemId: id, name: item.name || def.name || id,
+        kg: item.kg != null ? item.kg : (def.kg || 0.3), units: item.units || 1 };
+      if (section === 'medicine') { entry.medType = item.medType; entry.doses = item.doses; }
+      st[section].push(entry);
       this.stashLog('give', item.name || def.name || id, 1);
       const vid = this.state.scholar.villagerId;
       const il = this._stashItemLedgers(vid, section === 'weapons' ? 'Weapon' : 'Medicine');
@@ -617,6 +649,9 @@
     donateMedicine(idx) { return this._depositStashedItem(idx, 'medicine', 'pharmacy'); },
     // _takeStashedItem(section, itemId, kindLabel): shared spine for takes.
     _takeStashedItem(section, itemId, kindLabel) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       if (this.havenStoresAccess && this.havenStoresAccess() === 'none') {
         this.say('The stash is in the hall. Your hands are not.');
         return null;
@@ -629,9 +664,16 @@
       const inv = this.state.scholar.inventory || [];
       const carry = inv.reduce((t2, it) => t2 + (it.kg || 0) * (it.units || 1), 0) + (this.waterWeight ? this.waterWeight() : 0);
       const max = this.carryCapacity ? this.carryCapacity() : 20;
-      if (carry + (def.kg || 0.5) > max) { this.say(`Too heavy for the ${pile[i].name}. Lighten your pack first.`); return null; }
+      // UNITS (miser break-it 2026-10-10): weigh the whole entry, not one.
+      const takeUnits = pile[i].units || 1;
+      if (carry + (def.kg || 0.5) * takeUnits > max) { this.say(`Too heavy for the ${pile[i].name}. Lighten your pack first.`); return null; }
       const [entry] = pile.splice(i, 1);
-      inv.push({ itemId, name: entry.name, units: 1, kcalEach: 0, kg: def.kg || entry.kg || 0.5 });
+      // PHARMACY IDENTITY (miser break-it 2026-10-10): restore what the
+      // deposit preserved — medType/doses/units. A dosed bottle comes home
+      // dosed, usable from the pack exactly as before.
+      const back = { itemId, name: entry.name, units: takeUnits, kcalEach: 0, kg: def.kg || entry.kg || 0.5 };
+      if (entry.medType) { back.medType = entry.medType; back.doses = entry.doses; }
+      inv.push(back);
       this.stashLog('take', entry.name, 1);
       // TAKE-BACK (miser break-it 2026-10-09): mirrors the tool rule —
       // re-taking your own un-returned deposit is noticed, -5. Taking
@@ -646,7 +688,7 @@
         v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 5);
         this.say(`You took back the ${entry.name} you left. They noticed. Trust -5.`);
       }
-      this.say(`Took the ${entry.name} from the ${kindLabel}.`);
+      this.say(`Took the ${entry.name}${takeUnits > 1 ? ` ×${takeUnits}` : ''} from the ${kindLabel}.`);
       return this.tickAction(2) || this.status();
     },
     takeWeapon(itemId) { return this._takeStashedItem('weapons', itemId, 'armory'); },
@@ -681,16 +723,16 @@
           `</div>`;
       }).join('');
       const tools = (st.tools || []).map(t =>
-        `<span class="small">🔧 ${t.name} <button class="btn ghost sm" data-stash-tool="${t.itemId}">Take</button></span>`
+        `<span class="small">🔧 ${t.name}${(t.units || 1) > 1 ? ` ×${t.units}` : ''} <button class="btn ghost sm" data-stash-tool="${t.itemId}">Take</button></span>`
       ).join(' · ') || '<span class="small" style="opacity:.6">no spare tools</span>';
       // ARMORY + PHARMACY (Steve 2026-10-09): section filters on the same
       // stash. Weapons open armory, medicine opens pharmacy — deposit-gated,
       // takeable by any villager once deposited.
       const weapons = (st.weapons || []).map(t =>
-        `<span class="small">⚔️ ${t.name} <button class="btn ghost sm" data-stash-weapon="${t.itemId}">Take</button></span>`
+        `<span class="small">⚔️ ${t.name}${(t.units || 1) > 1 ? ` ×${t.units}` : ''} <button class="btn ghost sm" data-stash-weapon="${t.itemId}">Take</button></span>`
       ).join(' · ') || '<span class="small" style="opacity:.6">no weapons</span>';
       const medicine = (st.medicine || []).map(t =>
-        `<span class="small">💊 ${t.name} <button class="btn ghost sm" data-stash-med="${t.itemId}">Take</button></span>`
+        `<span class="small">💊 ${t.name}${(t.units || 1) > 1 ? ` ×${t.units}` : ''}${t.doses != null ? ` (${t.doses} dose${t.doses === 1 ? '' : 's'})` : ''} <button class="btn ghost sm" data-stash-med="${t.itemId}">Take</button></span>`
       ).join(' · ') || '<span class="small" style="opacity:.6">no medicine</span>';
       return `<p class="small" style="margin-top:8px"><b>📦 Village stash</b> <span style="opacity:.6">(${lvlNote})</span></p>` +
         rows +
@@ -748,6 +790,12 @@
     },
     // buryCache(kind, key, qty): kind 'material' (key = mat id) or 'food' (key = inventory idx).
     buryCache(kind, key, qty) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): tickAction no-ops in
+      // combat, so burying mid-fight cost 0 ticks instead of the promised
+      // 32 — a free action. Same class as the boilWater mid-fight guard.
+      // The dead don't bury.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       qty = Math.floor(qty || 0);
       if (qty <= 0) { this.say('Bury what, exactly?'); return null; }
       const items = [];
@@ -832,6 +880,9 @@
       return this.tickAction(32) || this.status();
     },
     digUpCache(id) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       const caches = this.playerCaches();
       const i = caches.findIndex(c => c.id === id);
       if (i < 0) return null;
@@ -911,6 +962,9 @@
     // A take attempted on a robbed cache discovers the theft at the hole —
     // reaching into the earth IS checking it (same rule as digUpCache).
     takeFromCache(cacheId, itemIdx, qty) {
+      // MID-FIGHT / OVER (miser break-it 2026-10-10): see buryCache.
+      if (this.over) return null;
+      if (this.inCombat && this.inCombat()) { this.say('Not mid-fight — finish it first.'); return null; }
       const caches = this.playerCaches();
       const c = caches.find(x => x.id === cacheId);
       if (!c) return null;

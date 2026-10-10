@@ -87,3 +87,23 @@ cache greets you with disturbed earth and an empty hole.
   refusal, ash-honor +8 honesty, bury/take/dig softlock + honesty regressions).
 - `scripts/test-miser-attack-20261009.js` — 16 adversarial checks (armory/
   pharmacy trust farms, section-filter bypass, stale cache take).
+- `scripts/test-miser-pharmacy-20261010.js` — 22 adversarial checks (pharmacy
+  round-trip strips medType/doses → bricked medicine; dosed-medicine merge
+  laundering in stacksMatch; mid-combat free bury/dig/take/donate; bury-after-
+  death; NPC armory/pharmacy honest consumption; bury-everything strand
+  softlock attempt — held).
+
+## Pharmacy identity (miser break-it 2026-10-10)
+
+Stash entries keep medicine identity: `{itemId, name, kg, units, medType,
+doses}`. A dosed bottle donated and returned comes back dosed and usable
+from the pack — the old strip to `{itemId, name}` silently lobotomized it
+(the affliction UI needs `medType` + `doses > 0`, so returned medicine was
+an unusable brick). Every section keeps its units now: a merged 2-stack
+donated whole comes back whole, and the weight checks weigh the whole
+entry. Dosed medicine never merges (`stacksMatch`): dose pools are
+per-bottle — merging a 1-dose bottle into a 3-dose stack destroyed a dose.
+NPC consumption is honest too: an armory borrow takes one unit (entry
+decremented), a pharmacy use spends one dose (entry spliced only at zero).
+Stash/armory/pharmacy refuse mid-fight (the clock freezes in combat, so a
+32-tick bury would have been free) and after death.

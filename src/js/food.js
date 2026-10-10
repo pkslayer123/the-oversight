@@ -2294,6 +2294,12 @@
     stacksMatch(a, b) {
       if (!a || !b) return false;
       if ((a.name || '') !== (b.name || '')) return false;
+      // DOSED MEDICINE (miser break-it 2026-10-10): a dose pool is per-bottle,
+      // not per-stack — merging a 1-dose bottle into a 3-dose stack silently
+      // destroyed a dose (4 real doses became a 3-dose pool for 2 bottles),
+      // and a merged stack donated to the pharmacy lost whole bottles. Every
+      // bottle rides alone.
+      if (a.medType || b.medType) return false;
       const num = (v) => (v === undefined || v === null) ? null : Number(v);
       if (num(a.kcalEach) !== num(b.kcalEach)) return false;
       if (num(a.spoilDay) !== num(b.spoilDay)) return false;

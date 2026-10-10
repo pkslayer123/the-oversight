@@ -791,6 +791,9 @@ Tool prerequisites, raw materials, village stash ledger, personal caches. (Save/
 
 **Rules:**
 - ash_gear_honored: depositing ashOf-tagged gear (from a phoenix ash-pile) at Haven honors the dead -- trust +8 + honoring gossip, gear enters village circulation; armor/misc have no deposit hook (no communal armor pile, canon) (code: phoenixHonorDeposit, Steve 2026-10-09)
+- pharmacy_identity: stash entries keep medicine identity (medType, doses) and units -- a dosed bottle donated and returned comes back dosed and usable, never a brick; dosed medicine never merges in stacksMatch (dose pools are per-bottle) (code: _depositStashedItem, _takeStashedItem, stacksMatch, miser break-it 2026-10-10)
+- no_midfight_storage: bury/dig/take-from-cache and all stash donate/take paths refuse mid-fight (tickAction no-ops in combat = free actions) and after death (code: buryCache, digUpCache, takeFromCache, donateMaterial, takeMaterial, donateTool, takeTool, _depositStashedItem, _takeStashedItem, miser break-it 2026-10-10)
+- npc_consumes_honestly: NPC armory borrows take one unit (entry decremented); NPC pharmacy use spends one dose (entry spliced only at zero) (code: villagerGearUp, villagerHealCheck, miser break-it 2026-10-10)
 
 **Consumes:** scholar.inventory, state.codex
 
