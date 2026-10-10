@@ -15,12 +15,16 @@
 //   - channelSentiment(idx)
 //   - channelReadyKeepsakes()
 //   - channelLabel()
+//   - deedState()
+//   - recordDeedFight(monsterId)
+//   - deedGateReady()
 // rules:
 //   - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
 //   - ability_cap: 6 (code: progression.js)
 //   - feast_surge_gate: 3 abilities at L3 (code: progression.js — channelSentiment; was all-maxed, unwalkable per 2026-10-09 audit)
 //   - arc2_deed: true (code: progression.js — checkArc requires breadth>=6 or a held contest; the beat text is honest again)
 //   - arc3_crucible: 2 crisis kinds (code: progression.js — checkArc; grave-first runs get the acknowledgment line)
+//   - arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs 3+ distinct wave-3+ monsters fought incl. 1 wave-4+, 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept)
 //   - sentiment_at_60: true (code: progression.js — slotMoment(60); was 80)
 //   - audience_encore: true (code: progression.js — checkAudienceEncore, recurring post-40 trials)
 // consumes:
@@ -418,6 +422,73 @@
       if (this.state.systemArrived) n += 5;
       return n;
     },
+
+    // ---------- THE ENDGAME DEED GATE ----------
+    // Steve 2026-10-10: "You shouldn't be able to beat the game without going
+    // through a majority of game content. Don't gate on knowledge because
+    // some places won't allow people to get knowledge unlocked in other
+    // regions." A weak day-47 scholar (regional, wave-2 max, thin contests)
+    // walked into the table on devotion metrics — the gates measured
+    // channels, integration and codex breadth, not capability. Now the table
+    // judges DEEDS:
+    //   - 3+ DISTINCT wave-3+ monsters FOUGHT (blow-by-blow, not unlocked —
+    //     fed by the startCombat/recordWaveKill/fieldFight wraps below)
+    //   - at least 1 of them wave-4+ (fought, not just unlocked)
+    //   - 3+ contests SURVIVED (the player taken and lived; death, refusal
+    //     and watched-villager contests don't count — fed by _cxCountHeld)
+    //   - scaleRank() >= 'national' (the table judges a world power, not a
+    //     neighborhood — regional primacy is real standing but the
+    //     deliberate call is: insufficient)
+    //   - 3+ distinct crises weathered (pg.crises, already tracked)
+    // Plus the food-thesis deeds (sentimentTaught, feastSurgeUsed — deeds,
+    // not knowledge) and stage >= 3 (earned standing, not regional
+    // knowledge). Everything reactive — no calendar thresholds beyond what
+    // the deed paths already imply.
+    deedState() {
+      const pg = this.progState();
+      pg.deeds = pg.deeds || {};
+      if (!pg.deeds.wavesFaced || typeof pg.deeds.wavesFaced !== 'object') pg.deeds.wavesFaced = {};
+      pg.deeds.contestsSurvived = pg.deeds.contestsSurvived | 0;
+      return pg.deeds;
+    },
+    // recordDeedFight: a real blow-by-blow fight happened against this
+    // monster. Keyed by monster id (distinct monsters), value = wave.
+    // Called by the wraps below — the feed is the fight itself, never UI.
+    recordDeedFight(monsterId) {
+      try {
+        if (!monsterId) return;
+        const mdef = (this.data.monsters || []).find(m => m.id === monsterId);
+        const wave = (mdef && mdef.wave) || 1;
+        if (wave < 3) return; // wave 1-2 fights are the whole game, not the gate
+        const d = this.deedState();
+        if (!d.wavesFaced[monsterId]) d.wavesFaced[monsterId] = wave;
+      } catch (e) {}
+    },
+    // deedGateReady: the Arc IV want-gate's deed check, and the tableScene's
+    // defense-in-depth re-check. Returns the full breakdown so beat text
+    // and tests can be honest about WHICH deed is missing.
+    deedGateReady() {
+      const pg = this.progState(), d = this.deedState();
+      const faced = d.wavesFaced || {};
+      let w3 = 0, w4 = 0;
+      for (const mid of Object.keys(faced)) {
+        const w = faced[mid] | 0;
+        if (w >= 3) w3++;
+        if (w >= 4) w4++;
+      }
+      const waves = w3 >= 3 && w4 >= 1;
+      const contestsN = d.contestsSurvived || 0;
+      const contests = contestsN >= 3;
+      const crisesN = Object.keys(pg.crises || {}).length;
+      const crises = crisesN >= 3;
+      let rank = 'village';
+      try { rank = (typeof this.scaleRank === 'function') ? this.scaleRank() : 'village'; } catch (e) {}
+      // National is the bar: the table judges a world power. Regional
+      // primacy is real standing (it feeds the wave-4 unlock gate) but it
+      // is a neighborhood — deliberate call, documented as insufficient.
+      const scale = rank === 'national' || rank === 'global';
+      return { ok: !!(waves && contests && crises && scale), waves, contests, crises, scale, w3, w4, contestsN, crisesN, rank };
+    },
     checkArc() {
       const pg = this.progState(), s = this.state.scholar;
       const stage = this.integrationStage();
@@ -439,7 +510,23 @@
       // read as attrition, not bonding. Two distinct crises = something the
       // village survived TOGETHER.
       if (want >= 2 && stage >= 2 && breadth >= 12 && crises >= 2) want = 3;
-      if (want >= 3 && stage >= 3 && pg.sentimentTaught && breadth >= 25 && s.prog.feastSurgeUsed) want = 4;
+      // ARC IV DEED GATE (Steve 2026-10-10): the old breadth>=25 was a
+      // KNOWLEDGE gate — knowledge is regional; some regions can't unlock
+      // other regions' knowledge, so it gated the endgame on where you
+      // landed. "You shouldn't be able to beat the game without going
+      // through a majority of game content." The gate is deeds now —
+      // deedGateReady() below: waves faced, contests survived, scale,
+      // crises. sentimentTaught + feastSurgeUsed stay (food-thesis deeds,
+      // not knowledge) and stage>=3 stays (earned standing).
+      if (want >= 3 && stage >= 3 && pg.sentimentTaught && s.prog.feastSurgeUsed && this.deedGateReady().ok) want = 4;
+      // TABLE RE-FIRE (deed gate 2026-10-10): the tableScene's
+      // defense-in-depth re-check can clear tableWaiting without firing;
+      // when the deeds hold again the invitation is re-extended — aloud,
+      // never silently.
+      if (pg.arc >= 4 && !pg.tableWaiting && !pg.tableDone && this.deedGateReady().ok) {
+        pg.tableWaiting = true;
+        this.say('The table is being set. They are watching to see who comes to it.');
+      }
       if (want > pg.arc) {
         pg.arc = want;
         this.arcBeat(want);
@@ -473,7 +560,7 @@
           this.progState().tableWaiting = true;
           this.say('The table is being set. They are watching to see who comes to it.');
         } catch (e) {}
-        this.say(`◈ ARC IV — THE INEFFICIENCY. SYSTEM: "ROUNDING ERROR RECLASSIFIED: ANOMALY. Organic consumption yields impossible output. Recalculating. Recalculating." — They finally see it. The thing they laughed at — needing to EAT — is the engine. Their confusion is your weapon now. One day there will be a table, and humanity will need a case to make. You're building it. (Feastburn burns hotter from here.)`);
+        this.say(`◈ ARC IV — THE INEFFICIENCY. SYSTEM: "ROUNDING ERROR RECLASSIFIED: ANOMALY. Organic consumption yields impossible output. Recalculating. Recalculating." — They finally see it. The thing they laughed at — needing to EAT — is the engine. Their confusion is your weapon now. You fought their Final Draft and their Mirror Draft, lived through their Show, weathered the worst together, and built something bigger than a village. One day there will be a table, and humanity will need a case to make. The case is made of deeds, not words — and yours are done. (Feastburn burns hotter from here.)`);
         try { this.state.scholar.arc4burn = 1.25; } catch (e) {}
       }
       try { this.save(); } catch (e) {}
@@ -849,5 +936,89 @@
       try { this.progDaily(); } catch (e) {}
       return _endDay ? _endDay.call(this) : undefined;
     };
+
+    // DEED FEEDS (endgame deed gate 2026-10-10): pg.deeds is fed from real
+    // code paths only — no calendar, no UI. All wraps defensive and
+    // exception-guarded: a deed failure can never break gameplay.
+    const _deedWrap = (name, after, before) => {
+      const orig = Game[name];
+      if (typeof orig !== 'function') return;
+      Game[name] = function (...args) {
+        let pre = null;
+        if (before) { try { pre = before.call(this, args); } catch (e) {} }
+        const r = orig.apply(this, args);
+        if (after) { try { after.call(this, args, r, pre); } catch (e) {} }
+        return r;
+      };
+    };
+    // WAVES FACED: startCombat is the player's blow-by-blow fight entry —
+    // record the fight that ACTUALLY starts. The double-tap refusal path
+    // creates no new tbfight and records nothing; fleeing still counts —
+    // you stood on the grid with it. Read the monster id off the new
+    // tbfight (exact), never off the args (the no-id path resolves
+    // pendingMonsterId inside).
+    _deedWrap('startCombat',
+      function (args, r, pre) {
+        const nf = this.tbfight;
+        if (!nf || nf === pre || nf.over) return; // refused — no fight started
+        const m = (nf.fighters || []).find(f => f.kind === 'monster' && f.monsterId);
+        if (m && m.monsterId && this.recordDeedFight) this.recordDeedFight(m.monsterId);
+      },
+      function () { try { return this.tbfight || null; } catch (e) { return null; } });
+    // recordWaveKill catches every real kill path (player TB kills,
+    // villager field/patrol kills): a kill is the strongest proof of a
+    // fight — the village's fights count too (the village is the
+    // protagonist).
+    _deedWrap('recordWaveKill', function (args) {
+      if (args[0] && this.recordDeedFight) this.recordDeedFight(args[0]);
+    });
+    // fieldFight is the villager blow-by-blow fight (patrols, wild
+    // encounters, expeditions) — its module loads AFTER this one, so the
+    // wrap attaches lazily on first progDaily. A real fight is any
+    // outcome but 'evade' (saw it, gave it room, lived — no fight).
+    const _attachFieldFight = () => {
+      try {
+        if (this._deedFieldFightWrapped || typeof this.fieldFight !== 'function') return;
+        this._deedFieldFightWrapped = true;
+        const origFF = this.fieldFight;
+        const self = this;
+        this.fieldFight = function (...args) {
+          const r = origFF.apply(this, args);
+          try {
+            const mdef = args[1];
+            if (r && r.outcome && r.outcome !== 'evade' && mdef && mdef.id) self.recordDeedFight(mdef.id);
+          } catch (e) {}
+          return r;
+        };
+      } catch (e) {}
+    };
+    const _progDailyOrig = Game.progDaily;
+    Game.progDaily = function () {
+      try { _attachFieldFight.call(this); } catch (e) {}
+      return _progDailyOrig ? _progDailyOrig.call(this) : undefined;
+    };
+    // CONTESTS SURVIVED: _cxCountHeld is the single choke every contest
+    // terminal flows through (end/die/refuse/arena-lost), once-guarded per
+    // contest object. "Survived" = the player was taken AND lived:
+    // death terminals (_contestDie, the arena-lost branch) and refusals
+    // are marked before they reach the choke; watched-villager contests
+    // never had the player at risk.
+    _deedWrap('_contestDie', null, function (args) {
+      try { const ac = args[0]; if (ac) ac._deedDied = true; } catch (e) {}
+    });
+    _deedWrap('_contestArenaAfter', null, function (args) {
+      try { if (args[1] === 'lost' && this.state && this.state.activeContest) this.state.activeContest._deedDied = true; } catch (e) {}
+    });
+    _deedWrap('_cxCountHeld', function (args) {
+      const ac = args[0];
+      if (!ac || ac._deedSurvivalCounted) return;
+      if (ac.participant === 'player' && !ac._deedDied && !ac._refused) {
+        ac._deedSurvivalCounted = true;
+        try {
+          const d = this.deedState ? this.deedState() : null;
+          if (d) d.contestsSurvived = (d.contestsSurvived || 0) + 1;
+        } catch (e) {}
+      }
+    });
   })();
 })();

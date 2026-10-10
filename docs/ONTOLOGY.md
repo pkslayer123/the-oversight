@@ -682,6 +682,7 @@ The Leadership Vector. No single ending — ending is sum of leadership choices.
 - unified/fractured is a felt state machine, not a number; transitions are narrated, direction-aware, always visible — you live it (code: unityState, _checkUnityTransition)
 - foodShared vs foodHoarded resolve to a felt stance; stance transitions are narrated with social consequences (code: foodStance, _checkFoodStance)
 - the player's own epithet is never shown until hearsAboutSelf() (code: ledgerBeat)
+- table_deed_recheck: true (code: ledger.js — tableScene re-verifies deedGateReady() at dawn; a stale tableWaiting is withdrawn aloud, never fired silently)
 
 **Consumes:** state.leadership
 
@@ -782,7 +783,7 @@ Perception system. Proximity hints, spotting.
 ### progression (`progression.js`)
 Character progression. XP, levels, abilities.
 
-**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), progState(), fireCrisis(kind, ctx), progDaily(), slotMoment(), teachSentiment(), channelSentiment(idx), channelReadyKeepsakes(), channelLabel()
+**Provides:** abilitySlots(), accrueRelicBond(item), integrationStage(), checkTrial(id), completeTrial(id), progState(), fireCrisis(kind, ctx), progDaily(), slotMoment(), teachSentiment(), channelSentiment(idx), channelReadyKeepsakes(), channelLabel(), deedState(), recordDeedFight(monsterId), deedGateReady()
 
 **Rules:**
 - crisis_once: true (code: progression.js — fireCrisis dedupes via pg.crises keys; one per kind per run)
@@ -790,6 +791,7 @@ Character progression. XP, levels, abilities.
 - feast_surge_gate: 3 abilities at L3 (code: progression.js — channelSentiment; was all-maxed, unwalkable per 2026-10-09 audit)
 - arc2_deed: true (code: progression.js — checkArc requires breadth>=6 or a held contest; the beat text is honest again)
 - arc3_crucible: 2 crisis kinds (code: progression.js — checkArc; grave-first runs get the acknowledgment line)
+- arc4_deed_gate: true (code: progression.js — checkArc; Steve 2026-10-10: no knowledge gate — the table needs 3+ distinct wave-3+ monsters fought incl. 1 wave-4+, 3+ contests survived, scaleRank national+, 3+ crises; sentimentTaught + feastSurgeUsed + stage>=3 kept)
 - sentiment_at_60: true (code: progression.js — slotMoment(60); was 80)
 - audience_encore: true (code: progression.js — checkAudienceEncore, recurring post-40 trials)
 

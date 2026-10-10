@@ -22,6 +22,7 @@
 //   - unified/fractured is a felt state machine, not a number; transitions are narrated, direction-aware, always visible — you live it (code: unityState, _checkUnityTransition)
 //   - foodShared vs foodHoarded resolve to a felt stance; stance transitions are narrated with social consequences (code: foodStance, _checkFoodStance)
 //   - the player's own epithet is never shown until hearsAboutSelf() (code: ledgerBeat)
+//   - table_deed_recheck: true (code: ledger.js — tableScene re-verifies deedGateReady() at dawn; a stale tableWaiting is withdrawn aloud, never fired silently)
 // consumes:
 //   - state.leadership
 // ============ THE LEADERSHIP VECTOR ============
@@ -553,6 +554,21 @@
     tableScene() {
       const s = this.state.scholar, pg = this.progState();
       if (pg.tableDone) return;
+      // DEED-GATE RE-CHECK (endgame deed gate 2026-10-10): checkArc's
+      // want-gate is the primary gate; the scene re-verifies at dawn,
+      // defense in depth. If the deeds no longer hold (stale tableWaiting,
+      // a realm that dissolved overnight), the table does NOT fire — said
+      // aloud, never silently. tableWaiting clears WITHOUT setting
+      // tableDone; checkArc's re-fire re-extends the invitation when the
+      // deeds hold again.
+      try {
+        if (typeof this.deedGateReady === 'function' && !this.deedGateReady().ok) {
+          pg.tableWaiting = false;
+          this.say('◈ THE TABLE — the ring of pale light flickers... and does not come. The System is embarrassed. "YOUR CASE IS NOT COMPLETE. THE DEEDS ARE NOT ALL DONE. WE WILL... RESCHEDULE." The table is withdrawn — for now. It will be set again when the deeds are done.');
+          try { this.save(); } catch (e) {}
+          return;
+        }
+      } catch (e) {}
       pg.tableDone = true;
       const frame = this.endingFrame() === 'unwritten' ? 'indispensable' : this.endingFrame();
       const F = FRAMES[frame];
