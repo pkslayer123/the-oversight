@@ -11147,9 +11147,11 @@
         return null;
       }
       const t = this.playerTile();
-      if (t.type !== 'creek' && t.type !== 'wetland') {
-        // ponds and puddles hold small fish too — the tile check is for rivers;
-        // the cell check (water) already passed. Fish are smaller here.
+      const FISH_IDS = ['creek_chub', 'bluegill']; // same stock the gill net fishes
+      const still = !(t.type === 'creek' || t.type === 'wetland');
+      if (still) {
+        // ponds and puddles hold small fish too — the tile check is for rivers.
+        // Fish are smaller here, and the yield below is honest about it.
         this.say('Still water. Small fish, maybe. Worth a try.');
       }
       const known = this.fishKnown();
@@ -11162,16 +11164,39 @@
         chance = Math.min(0.85, chance + 0.25);
         yieldMult = 1.3;
       }
+      if (still) { chance *= 0.6; yieldMult *= 0.6; } // small fish, honestly
+      // ECOLOGY (hunter playtest 2026-10-10): the hand line used to conjure a
+      // flat 500-900 kcal "fish" from ANY water — up to 6x a bluegill's real
+      // 150 kcal — with no population check and no decrement. The gill net
+      // was fixed to fish the tile's real stock on 2026-10-09; the active
+      // action fishes the same water, so it fishes the same stock. A fished-
+      // out creek tells you so, like the net does. One fish per catch, and
+      // the population pays for it.
+      const _wl = t.wildlife || this.backfillWildlife(t, this.map.px, this.map.py, t.type === 'pond' ? 'creek' : t.type);
+      const fishHere = FISH_IDS.filter(id => (_wl[id] || 0) > 0);
       s.kcal = Math.max(0, (s.kcal || 0) - 60);
       if (s.week1) s.week1.fish = (s.week1.fish || 0) + 1;
+      if (!fishHere.length) {
+        this.say(`Nothing biting — this water's been fished out. Try another creek.`);
+        this.tele('fish', { known, kcal: 0, cost: 60 });
+        return this.tickAction(32) || this.status();
+      }
       if (Math.random() < chance) {
-        const kcal = Math.round((known ? 500 + Math.floor(Math.random() * 400) : 150 + Math.floor(Math.random() * 200)) * yieldMult);
+        const fid = fishHere[Math.floor(Math.random() * fishHere.length)];
+        _wl[fid]--; if (_wl[fid] <= 0) delete _wl[fid];
+        // REAL FISH, REAL KCAL: the catch keeps its species' gross — the same
+        // species-honesty the net got on 2026-10-09. fishing.yield is the
+        // skill channel for nets; the line's 1.3x is the tackle channel here.
+        const adef = (this.data.animals || []).find(a => a.id === fid) || { id: fid, name: 'fish', calories: 200 };
+        const kcal = Math.round((adef.calories || 200) * yieldMult);
         // FOOD REALITY: a fish is a carcass — clean it (knife), don't just eat it.
-        const animal = (this.data.animals || []).find(a => a.id === 'fish') || { id: 'fish', name: 'fish', calories: kcal };
-        s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'fished'));
-        if (known) this.say(`You read the water — the deep cut by the bank, the shade line. A fish takes it. About ${kcal} kcal — clean it quickly (knife).`);
+        s.inventory.push(this.foodCarcass(adef, kcal, s.day, 'fished'));
+        // a body in hand teaches you what it was — same as a trap/net catch.
+        try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(fid); } catch (e) {}
+        const fname = (adef.name || 'fish').toLowerCase();
+        if (known) this.say(`You read the water — the deep cut by the bank, the shade line. A ${fname} takes it. About ${kcal} kcal — clean it quickly (knife).`);
         else {
-          this.say(`You thrash the shallows and — a fish! Luck, mostly. About ${kcal} kcal — clean it quickly (knife).`);
+          this.say(`You thrash the shallows and — a ${fname}! Luck, mostly. About ${kcal} kcal — clean it quickly (knife).`);
           // learned the wet way: catching teaches a little
           if (Math.random() < 0.25) { this.state.codex = this.state.codex || {}; this.state.codex.fishWise = true; this.say('(Something about the way the water moved stuck with you. You read water a little better now.)'); }
         }
