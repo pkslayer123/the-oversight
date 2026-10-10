@@ -2,6 +2,13 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Other villages are alive now, the way yours is. A village you know can split apart \u2014 and when it does, the breakaways may walk out of the treeline at dusk and ask for your fire, every one of them named. Your village votes on it at a moot, and the loudest voices on both sides say their piece first. Taking people in means more mouths to feed, and their reputation walks in with them: harbor the eaters and every other fire will remember. You\u2019ll also hear about their hunger, their dead leaders, and their schisms through travelers \u2014 late, and not always right. And if a starving village comes begging \u2014 or comes with spears \u2014 that\u2019s a real choice too."
+    ],
+    "version": "pending-ship"
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "When something with teeth is at your door, you can call for help four ways now: send a runner (slow, and the road is genuinely dangerous), light the signal fire (fast, but every fire for miles sees it \u2014 including the wrong ones), ask the System to carry the call (it's enthusiastic, it mistranslates, and it will collect a favor), or let out an ability cry like a War Cry (fast and honest, if your build earned one). Help arrives as a real party led by a named face from their village \u2014 and their foragers leaving their fields is a debt you'll repay, in food or in trust.",
       "Once your village links with another, you can appoint someone to run the relay \u2014 the switchboard. Every message in and out passes through their hands, and they can hurry it, sit on it, or rewrite it. Choose carefully: your best talker costs the moots their voice, your weakest forager costs you the village's mood, and a schemer with the relay is a story waiting to happen. Watch the log.",
       "Haven can grow now: stockpile food, wood, stone and preserved food and the village raises the Longhouse (room for 16), the Palisade (room for 20 \u2014 walls that bleed raiders and keep your sleep safe), and the Granary (room for 24, slower spoilage, a deeper famine reserve). The System tells you exactly what each one costs, the Haven panel shows your progress, and the village talks about what's missing.",
@@ -76,14 +83,14 @@
     "version": "db5a862c-20261009-232417"
   },
   {
-    "version": "c69c1beb-20261009-171111",
     "date": "2026-10-09",
     "notes": [
       "Corruption: a dark mirror to trust. What you do in the dark changes what you are \u2014 and people can feel it, even when they can't name it.",
       "You can butcher the dead for meat now \u2014 and eat it. The first time will haunt you. It gets easier. That's the horror.",
       "In a healthy village, discovered cannibalism means exile. In a starving or corrupted one, the rules change \u2014 and fear becomes its own currency.",
       "Rare dark pasts: sometimes you wake as one of the village's hidden dark ones, with a history that explains it."
-    ]
+    ],
+    "version": "c69c1beb-20261009-171111"
   },
   {
     "date": "2026-10-09",
@@ -119,14 +126,5 @@
       "Trying to strike an ally in a fight gets an honest refusal instead of silence."
     ],
     "version": "4bb5cc7e-20261009-165604"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Boiling water now honestly costs time and energy \u2014 bulk purification was free on the action clock.",
-      "Storms wrecking your camp wake you with a start \u2014 no more sleeping through the destruction in tent-quality comfort.",
-      "Rain and storm water now respect your carry limit."
-    ],
-    "version": "d3d1494c-20261009-162902"
   }
 ]

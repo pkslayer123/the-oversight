@@ -931,6 +931,22 @@ Truth/distortion. Claim-gossip corrects (tellers share the truth); action-gossip
 
 **Consumes:** village.gossip
 
+### villageAgency (`villageAgency.js`)
+Foreign villages as players — inner life (famine, succession, schism), splinter events, petition-to-join beats, rumor-carried internal events.
+
+**Provides:** villageAgencyDaily(), ensureFaces(v), havenPopCap(), havenRoom(), openPetition(pet), petitionInterview(petitionId, qid), conductPetitionMoot(petitionId), answerPetition(petitionId, how), aidVillage(villageId, kcal), answerBeg(how), answerRaidDefense(how), answerSuccession(how), stageSuccessionBeat(villageId), queueVillageEventRumor(villageId, kind, opts), fireSplinter(villageId, cause), _vaInner(v), _vaSimInner(v), _vaStartSuccession(v), _vaResolveSuccession(v, backedIdx), _vaPickSplinterCause(v), _vaSplinterMembers(v, n), _vaMakeSplinterVillage(v, remainers, cause, kcal, day), _vaPetitionScore(vid, pet, ppm, mood), _vaFinishPetition(pet, playerAccept), _vaAdmitPetitioners(pet), _vaTurnAway(pet, why), _vaPetitionConsequences(pet, accepted), _vaFamineAct(v), _vaStageBeg(v), _vaStageRaidDefense(v), _vaRumorText(v, kind, wrong, opts), _vaPantryPerMouth()
+
+**Rules:**
+- camera_rule: max 3 named faces per village (speaker, leader, champion); every beat goes through them, everything else via rumors (code: villageAgency.js)
+- petition_never_silent: intake is always a played beat with a vote; never silent population ticks (code: villageAgency.js)
+- cap_is_ceiling: havenPopCap() is the haven workstream's hook — reads their growthTier when present, falls back to 12/16/20/24 (code: villageAgency.js)
+- knowledge_never_gates: a starving stranger doesn't check your codex; no beat here is knowledge-gated (code: villageAgency.js)
+- reactive_not_calendar: schisms, succession, famine fire from conditions (hunger, tension, leader death), never timers (code: villageAgency.js)
+- rumors_delayed_wrong: internal events arrive delayed, possibly wrong, never omniscience — only for known villages (code: villageAgency.js)
+- evil_is_legitimate: a cannibal splinter is content, not a bug; accepting them has real, lasting consequences (code: villageAgency.js)
+
+**Consumes:** state.otherVillages[].faces, state.otherVillages[].inner, state.otherVillages[].famine, state.pendingPetition, state.petitionQueue, state.pendingBeg, state.pendingRaidDefense, state.pendingSuccession, state.scholar.rumors (type 'village_event')
+
 ### villager-agency (`villager-agency.js`)
 Villager AI. Villagers act on their own with goals and routines.
 
