@@ -662,6 +662,26 @@
         betrayal: true, betrayer: vid, aggressor: opts.aggressor || 'npc',
       };
       try { this.villageEvent('betrayal'); } catch (e) {}
+      // WITNESSED DUEL (brawler loop 2026-10-10): the challenge dare
+      // (war_cry.challenge) promised a witnessed, non-lethal bout "when
+      // hands are thrown." An outstanding dare (memory 'you_challenged',
+      // <=3 days old) against this betrayer gives the fight TERMS:
+      // witnessed, to yield. Mark it so the aftermath honors the terms —
+      // and so breaking them (a killing) has teeth. The dare is the
+      // player's to spend: it resolves when the duel does.
+      let duel = null;
+      try {
+        const mems = ((((this.state || {}).village || {}).memory || {})[vid]) || [];
+        const day = ((this.state || {}).scholar || {}).day || 0;
+        const dare = mems.filter(m => m && m.t === 'you_challenged' && day - (m.day || 0) <= 3).pop();
+        if (dare) duel = { challenged: vid, day: dare.day };
+      } catch (e) {}
+      if (duel) {
+        this.tbfight.duel = duel;
+        const dname = this.displayName(vid);
+        this.say(`🤝 THE DARE STANDS. You challenged ${dname} in front of everyone — witnessed, to yield, non-lethal. The village is watching. Hold to the terms.`);
+        try { this.remember(vid, 'duel_terms', 'fighting you under the challenge terms: witnessed, to yield'); } catch (e) {}
+      }
       // The opening is an ATTACK, not a murder — the outcome isn't known yet.
       // If it becomes a killing, the aftermath upgrades the village's read.
       try { this.observe(opts.aggressor === 'player' ? 'attack' : 'fight', { target: vid }); } catch (e) {}
@@ -674,10 +694,25 @@
       this._lastBetrayal = {
         betrayer: vid, aggressor: opts.aggressor || 'npc',
         witnesses: fighters.filter(x => x.kind === 'villager' && x.alive).map(x => x.villagerId),
-        betrayerDead: false,
+        betrayerDead: false, duel: duel,
       };
       this.tbBeginTurn();
       return this.tbfight;
+    },
+
+    // WITNESSED DUEL (brawler loop 2026-10-10): the dare is spent once the
+    // duel resolves (yield or death). Remove the outstanding 'you_challenged'
+    // entry so a stale dare can't bless a second fight — and record how the
+    // bout actually ended. On flee/routed the dare stands (hands thrown, but
+    // the bout went unanswered).
+    _duelResolveDare(duel) {
+      if (!duel || !duel.challenged) return;
+      try {
+        const v = this.state.village || {};
+        const mems = (v.memory || {})[duel.challenged] || [];
+        v.memory[duel.challenged] = mems.filter(m => !(m && m.t === 'you_challenged' && (m.day || 0) === duel.day));
+        this.remember(duel.challenged, 'duel_fought', 'the challenge dare was answered under the terms');
+      } catch (e) {}
     },
 
     // Aftermath: who saw, who tells, what it costs.
@@ -1279,6 +1314,31 @@
       const yielder = f.fighters.find(x => x.kind === 'hostile' && x.yielded && x.alive);
       if (result === 'betrayal_yielded' && yielder) {
         const yname = this.displayName(yielder.villagerId);
+        // WITNESSED DUEL (brawler loop 2026-10-10): the dare's terms held —
+        // to yield, witnessed, non-lethal. Winner takes respect, loser takes
+        // humility (REP, never trust — canon). A fought bout is still grim,
+        // but it's not an ambush: the terror fallout is softer.
+        if (f.duel) {
+          const wit = f.fighters.filter(x => x.kind === 'villager' && x.alive && !x.fled).map(x => x.villagerId);
+          this.say(`${yname} yields — on their knees, in front of everyone. The dare is answered. The bout is over.`);
+          this.sysSay('A YIELD! The duel ends as promised — non-lethal, witnessed. The gamblers pay out.');
+          try {
+            // The winner (you, standing) takes respect; the yielder takes humility.
+            this.seedGossip('duel_won', { brave: 6, competent: 2 }, wit);
+            this.seedGossip('duel_lost', { brave: -4 }, wit);
+            for (const wid of wit) this.bumpTrust(wid, -10);
+            this.bumpTrust(yielder.villagerId, -20);
+            try { this.remember(yielder.villagerId, 'lost_duel', 'yielded to you under the challenge terms, witnessed'); } catch (e2) {}
+            // The dare is spent — hands were thrown, terms held.
+            this._duelResolveDare(f.duel);
+          } catch (e) {}
+          try { this.addTrauma(8); } catch (e) {}
+          this.tbfight = null;
+          try { const bv = this.state.village; if (bv.betray) delete bv.betray[yielder.villagerId]; } catch (e) {}
+          this._lastBetrayal = null;
+          this._betrayAggressor = null;
+          return;
+        }
         this.say(`${yname} is alive. Shaking. They won't look at you. Nobody will, for a while.`);
         this.sysSay('AND THEY YIELD! The audience... doesn\'t know how to feel about this one. The gamblers are refunding bets.');
         // Yielding is witnessed by everyone still standing — terror spreads.
@@ -1319,6 +1379,16 @@
               for (const c of (j.crimes || [])) {
                 if (c.type === 'attack' && c.victim === f.betrayer && !c.caseId && c.witnessed !== false) c.witnessed = false;
               }
+            }
+            // WITNESSED DUEL (brawler loop 2026-10-10): the terms were
+            // non-lethal. A witnessed killing under a sworn dare is
+            // oath-breaking — the village names it. Teeth for the terms.
+            if (f.duel && seen && f.betrayer) {
+              const wit = f.fighters.filter(x => x.kind === 'villager' && x.alive && !x.fled).map(x => x.villagerId);
+              this.seedGossip('duel_broken', { honest: -20, generous: -10, brave: -5 }, wit);
+              for (const wid of wit) this.bumpTrust(wid, -15);
+              this.say(`The terms were YIELD. Everyone saw that. You swore a witnessed bout and brought home a corpse.`);
+              this._duelResolveDare(f.duel);
             }
           } catch (e) {}
         } else {
