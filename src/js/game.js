@@ -17011,6 +17011,19 @@
         this.say(`Your back-eyes catch it first — ${mname}, at the flap, coming IN. You're out the other side before it gets inside. (no ambush)`);
         return;
       }
+      // EURIKA (alien virus; break-it disease r11 2026-10-10): mosquito-sense —
+      // warm bodies register before eyes do. The def promises "ambushes
+      // announce themselves first"; the tent breach IS an ambush, and the old
+      // code gave a eurika carrier zero warning here while eyes_in_back got
+      // the flap-catch. Same treatment: you're out before it gets inside.
+      if (this.hasStatus && this.hasStatus('scholar', 'eurika')) {
+        s.insideTent = null;
+        s.tentSmoke = 0;
+        this.pendingEncounter = true;
+        this.pendingMonsterId = monsterId;
+        this.say(`Your skin prickles — warmth, moving, close, on the wrong side of the canvas. The sensory hairs knew before your eyes did. You're out the other side before it gets inside. (eurika-sense: no ambush)`);
+        return;
+      }
       if ((mdef.size || 1) >= 2) {
         const ins = s.insideTent;
         // (break-it camps-2 2026-10-08): clear insideTent BEFORE wreckTent —
@@ -19629,7 +19642,10 @@
         }
         // iron_stomach: unsafe food is a gamble. Base 20% chance of -5 health;
         // an iron stomach shrugs most of it off.
-        if (it.safe === false) {
+        // SHELLGUT (break-it disease r11 2026-10-10): the armored gut is
+        // immune to ingested poison — the def promises "nothing ingested can
+        // touch you", and the old code still let the suspect-food roll bite.
+        if (it.safe === false && !shellgut) {
           // PUSH THROUGH (iron_stomach, Steve 2026-10-07): while the gut is
           // settled, unsafe food can't poison you. The action does something.
           if ((scholar.pushThroughParts || 0) > 0) {
@@ -19806,11 +19822,15 @@
         return;
       }
       // Safety checks (same as eat(): symbiote, poison, disease)
+      // SHELLGUT (break-it disease r11 2026-10-10): armored gut — the
+      // suspect-food poison roll can't touch you (same gate as eat()).
+      // Declared up here: the unsafe roll sits above the old declaration site.
+      const shellgut1 = this.hasStatus && this.hasStatus('scholar', 'shellgut');
       if (it.safe === false && this.hasAbility('symbiote') && !it.symWarned) {
         it.symWarned = true;
         this.say(`Your gut churns a warning — the ${it.name} is wrong. (symbiote: unsafe food)`);
       }
-      if (it.safe === false) {
+      if (it.safe === false && !shellgut1) {
         // PUSH THROUGH (iron_stomach, Steve 2026-10-07): while the gut is
         // settled, unsafe food can't poison you. The action does something.
         if ((scholar.pushThroughParts || 0) > 0) {
@@ -19824,7 +19844,7 @@
         }
       }
       // SHELLGUT (Steve 2026-10-08): armor gut — nothing ingested touches you.
-      const shellgut1 = this.hasStatus && this.hasStatus('scholar', 'shellgut');
+      // (declared above, at the safety checks: the unsafe roll needs it early)
       if (it.diseaseRisk && !shellgut1 && Math.random() < it.diseaseRisk.p) {
         this.addHealth(-it.diseaseRisk.dmg);
         // DISEASE (statusEffects engine, Steve 2026-10-07): data-driven, ticks per dayPart.
@@ -22039,7 +22059,14 @@
     villagerFoodPoisoning(v, vid, exposure) {
       if (!v || !exposure || v.sick[vid]) return 0;
       let nm = 'Someone';
-      try { const p = this.getPerson(vid); if (p) nm = String(p.name).split(' ')[0]; } catch (e) {}
+      let person = null;
+      try { person = this.getPerson(vid); if (person) nm = String(person.name).split(' ')[0]; } catch (e) {}
+      // SHELLGUT (break-it disease r11 2026-10-10): a villager carrying the
+      // armored-gut quirk gets the same immunity you do — ingested poison and
+      // food-borne disease slide off. Rot still collects (desperation is
+      // desperation; the design comment below says so explicitly).
+      let armored = false;
+      try { armored = !!(this.hasStatus && person && this.hasStatus(person, 'shellgut')); } catch (e) {}
       const sicken = (name, days, severity, line, memNote) => {
         v.sick = v.sick || {};
         v.sick[vid] = { name, daysLeft: days, severity };
@@ -22055,17 +22082,17 @@
       }
       // RAW: the same gamble you take eating it yourself.
       for (const r of (exposure.raw || [])) {
-        if (Math.random() < (r.p || 0.2))
+        if (!armored && Math.random() < (r.p || 0.2))
           return sicken('food poisoning (' + (r.note || 'raw') + ')', 3 + Math.floor(Math.random() * 4), 1,
             `🤢 ${nm} ate ${r.note || 'raw food'} — fever by nightfall.`, 'food poisoning from their meal');
       }
       // UNSAFE: the 20% you face on suspect food.
-      if (exposure.unsafe && Math.random() < 0.2)
+      if (!armored && exposure.unsafe && Math.random() < 0.2)
         return sicken('bad belly', 2 + Math.floor(Math.random() * 3), 1,
           `🤢 ${nm}'s stomach knots — something in their meal was off.`, 'bad belly from their meal');
       // POISON
       for (const r of (exposure.poison || [])) {
-        if (Math.random() < (r.p || 0.2))
+        if (!armored && Math.random() < (r.p || 0.2))
           return sicken('poisoned (' + (r.note || 'toxin') + ')', 3 + Math.floor(Math.random() * 3), 2,
             `☠️ ${nm} was poisoned — ${r.note || 'something toxic in the meal'}.`, 'poisoned by their meal');
       }
