@@ -136,6 +136,9 @@
     // days at another fire is away, honestly shown. (Regional audit
     // 2026-10-09: m.loaned was set but never surfaced anywhere — the "walks
     // out for three days" was a fiction. Now the panel shows it.)
+    // DRIFTER BREAK-IT 2026-10-10: away PARTIES (raid/defense/trade) and
+    // raid-wound recoveries count too — they were the same fiction one layer
+    // down (state.raidParty/covenantAway/tradeAway written, never read).
     awayMembers() {
       var out = [];
       try {
@@ -143,15 +146,30 @@
         var ag = null;
         try { ag = this.agencyState ? this.agencyState() : null; } catch (e) {}
         var loanedVid = null;
+        var m = null;
         try {
-          var m = this.mshipState ? this.mshipState() : null;
+          m = this.mshipState ? this.mshipState() : null;
           var day = (this.state.scholar || {}).day || 0;
           if (m && m.loaned && day < (m.loaned.untilDay || 0)) loanedVid = m.loaned.vid;
         } catch (e2) {}
+        var partyVids = {};
+        var woundedVids = {};
+        try {
+          var day2 = (this.state.scholar || {}).day || 0;
+          var ps = (m && m.awayParties) || [];
+          for (var pi = 0; pi < ps.length; pi++) {
+            if (day2 < (ps[pi].untilDay || 0)) {
+              var pv = ps[pi].vids || [];
+              for (var pj = 0; pj < pv.length; pj++) partyVids[pv[pj]] = 1;
+            }
+          }
+          var wu = (m && m.woundedUntil) || {};
+          for (var wk in wu) if ((wu[wk] || 0) > day2) woundedVids[wk] = 1;
+        } catch (e3) {}
         for (var i = 0; i < roster.length; i++) {
           var id = roster[i];
           if (id === this.villagerId) continue;
-          var away = (id === loanedVid);
+          var away = (id === loanedVid) || !!partyVids[id] || !!woundedVids[id];
           if (ag && ag.exped && ag.exped[id] && ag.exped[id].status === 'away') away = true;
           // npcNodeTravel away-system: villagers have node positions
           try {
@@ -774,11 +792,67 @@
       } catch (e) {}
     },
 
+    // awayPartiesReturnTick: the away parties (raid/defense/trade) walk back
+    // in when their days are served — said aloud, like the loaned return.
+    // Trade favors deliver their priced repayment WITH the party ("repaid
+    // after", not instantly on sending). Raid-wound recoveries are announced
+    // too: a week of healing is a week, honestly kept.
+    // DRIFTER BREAK-IT 2026-10-10: state.raidParty/covenantAway/tradeAway
+    // were write-only — nobody ever came home because nobody tracked the
+    // leaving. Parties ride m.awayParties now; this is the other half.
+    awayPartiesReturnTick() {
+      try {
+        var m = this.mshipState();
+        if (!m) return;
+        var day = (this.state.scholar || {}).day || 0;
+        var ps = m.awayParties || [];
+        if (ps.length) {
+          var keep = [];
+          for (var i = 0; i < ps.length; i++) {
+            var p = ps[i];
+            if (day < (p.untilDay || 0)) { keep.push(p); continue; }
+            var names = [];
+            try {
+              var vs = p.vids || [];
+              for (var j = 0; j < vs.length; j++) names.push(String(this.displayName(vs[j])).split(' ')[0]);
+            } catch (e2) {}
+            var tonm = 'the road';
+            try { tonm = (this._ovName && p.to) ? this._ovName(p.to) : (p.to || tonm); } catch (e3) {}
+            var kindWord = p.kind === 'raid' ? 'the raid' : p.kind === 'defense' ? 'the treeline' : p.kind === 'trade' ? 'the favor' : 'the road';
+            this.say(`${names.join(', ')} walk${names.length === 1 ? 's' : ''} back in — ${kindWord} at ${tonm}, days served. Still ours; membership never needed presence.`);
+            if ((p.repayKcal || 0) > 0) {
+              try {
+                var v = this.state.village || {}; v.pantry = v.pantry || [];
+                v.pantry.push({ name: 'Favor repaid — ' + tonm, kcalEach: Math.round(p.repayKcal), units: 1, spoilDay: day + 21 });
+                this.say(`🤝 The favor comes home with them: ${Math.round(p.repayKcal).toLocaleString()} kcal repaid, real food, into the pantry.`);
+              } catch (e4) {}
+            }
+            try { if (this.ledgerAdd) this.ledgerAdd('membership', 'party-return:' + (p.kind || '?')); } catch (e5) {}
+          }
+          m.awayParties = keep;
+        }
+        var wu = m.woundedUntil || {};
+        var wks = Object.keys(wu);
+        if (wks.length) {
+          var wkeep = {};
+          for (var wi = 0; wi < wks.length; wi++) {
+            var wk = wks[wi];
+            if ((wu[wk] || 0) > day) { wkeep[wk] = wu[wk]; continue; }
+            var wnm = 'Someone';
+            try { wnm = String(this.displayName(wk)).split(' ')[0]; } catch (e6) {}
+            this.say(`${wnm} is back on their feet — the raid's wounds closed. A week of healing is a week.`);
+          }
+          m.woundedUntil = wkeep;
+        }
+      } catch (e) {}
+    },
+
     membershipDaily() {
       try { this.considerApplications(); } catch (e) {}
       try { this.arrivalTick(); } catch (e) {}
       try { this.crowdingTick(); } catch (e) {}
       try { this.loanedReturnTick(); } catch (e) {}
+      try { this.awayPartiesReturnTick(); } catch (e) {}
     },
   };
 
@@ -852,6 +926,13 @@
     try {
       this.severMembership(this.villagerId, how);
       this.say('The pantry is closed to you. The book stays behind. To Haven, you are not one of ours anymore. Membership asked nothing — no presence, no check-ins. Exile is the one way to lose it.');
+      // DRIFTER BREAK-IT 2026-10-10: a mustered war party answers to its
+      // commander — the cast-out commands nothing. The muster dissolves
+      // rather than hanging forever (answerRaid refuses non-members).
+      if (this.state.pendingRaid) {
+        this.state.pendingRaid = null;
+        this.say('The war party you mustered stands down — it answers to Haven\'s council now, not to the road. No blood on your leaving.');
+      }
     } catch (e) {}
     return r;
   };

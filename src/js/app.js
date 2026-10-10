@@ -13961,6 +13961,17 @@
     document.querySelectorAll('[data-link-reneg]').forEach(b => b.onclick = () => { Game.renegotiateLink(b.dataset.linkReneg); refresh(); });
     document.querySelectorAll('[data-link-bid]').forEach(b => b.onclick = () => { Game.bidForPrimacy(b.dataset.linkBid); refresh(); });
     document.querySelectorAll('[data-link-break]').forEach(b => b.onclick = () => { Game.breakLink(b.dataset.linkBreak, 'gambit'); refresh(); });
+    // National ladder initiations + league resolutions (drifter break-it
+    // 2026-10-10 — proposeCovenant/proposeTrade/raidVillage and every answer
+    // verb were engine-only; pendingRaid could never be resolved at all).
+    document.querySelectorAll('[data-covenant-propose]').forEach(b => b.onclick = () => { Game.proposeCovenant(b.dataset.covenantPropose); refresh(); });
+    document.querySelectorAll('[data-trade-propose]').forEach(b => b.onclick = () => { Game.proposeTrade(b.dataset.tradePropose); refresh(); });
+    document.querySelectorAll('[data-raid-muster]').forEach(b => b.onclick = () => { Game.raidVillage(b.dataset.raidMuster); refresh(); });
+    document.querySelectorAll('[data-raid-answer]').forEach(b => b.onclick = () => { Game.answerRaid(b.dataset.raidAnswer); refresh(); });
+    document.querySelectorAll('[data-defense]').forEach(b => b.onclick = () => { Game.answerDefenseCall(b.dataset.defense, b.dataset.how); refresh(); });
+    document.querySelectorAll('[data-tradecall]').forEach(b => b.onclick = () => { Game.answerTradeCall(b.dataset.tradecall, b.dataset.how); refresh(); });
+    document.querySelectorAll('[data-crisis]').forEach(b => b.onclick = () => { Game.answerCovenantCrisis(b.dataset.crisis, b.dataset.how); refresh(); });
+    document.querySelectorAll('[data-pool-draw]').forEach(b => b.onclick = () => { Game.drawLeaguePool(parseInt(b.dataset.poolDraw, 10) || 0); refresh(); });
     wirePanel(st, n);
     wireContextBar();
     wireSelfBar();
@@ -14355,8 +14366,12 @@
                 // REGIONAL DAWN (2026-10-09): once the first link forms, the
                 // System's coordination layer is visibly online — the header
                 // grows from "Links" to "NETWORK (regional)".
+                // DRIFTER BREAK-IT 2026-10-10: this used to ASSIGN (html =),
+                // discarding the national/global beat buttons above whenever
+                // any link existed — and national always requires a polity,
+                // so the beats were never answerable in practice. Append.
                 const netLive = !!Game.state.networkLive;
-                html = `<div style="margin-top:4px"><p class="small"><b>⛓️ ${netLive ? 'NETWORK (regional)' : 'Links'}:</b></p>` + links.map(l => {
+                html += `<div style="margin-top:4px"><p class="small"><b>⛓️ ${netLive ? 'NETWORK (regional)' : 'Links'}:</b></p>` + links.map(l => {
                   const other = l.subordinate === 'haven' ? l.primary : l.subordinate;
                   const nm = Game._ovName(other);
                   const sub = l.subordinate === 'haven';
@@ -14369,6 +14384,14 @@
                   // as the proposeLink gap the drifter loop wired).
                   if (sub) h += ` <button class="btn sm ghost" data-link-reneg="${l.id}">Renegotiate</button> <button class="btn sm ghost" data-link-bid="${l.id}">Bid for primacy</button> <button class="btn sm ghost" data-link-break="${l.id}">🗡️ Break away</button>`;
                   if (l.pendingDemand) h += `<br>📯 ${l.pendingDemand.detail}<br><button class="btn sm" data-demand-yes="${l.id}">Honor it</button> <button class="btn sm ghost" data-demand-no="${l.id}">Refuse</button>`;
+                  // DRIFTER BREAK-IT 2026-10-10: the covenant/trade league's
+                  // played resolutions were engine-only — pendingDefense
+                  // (15%/week), pendingTradeCall (12%/week), and
+                  // pendingCovenantCrisis fired and could never be answered.
+                  // Same class as the proposeLink gap.
+                  if (l.pendingDefense) h += `<br>🔥 <b>${esc(nm)}'s treeline is burning — they call the covenant.</b><br><button class="btn sm" data-defense="${l.id}" data-how="send">🛡️ Send two villagers (3 days)</button> <button class="btn sm ghost" data-defense="${l.id}" data-how="refuse">Refuse aloud (trust −10)</button>`;
+                  if (l.pendingTradeCall) h += `<br>📯 <b>${esc(nm)} asks for help — hands, not tariff.</b><br><button class="btn sm" data-tradecall="${l.id}" data-how="send">🤝 Send help (priced favor)</button> <button class="btn sm ghost" data-tradecall="${l.id}" data-how="refuse">Refuse aloud (−4 trust)</button>`;
+                  if (l.pendingCovenantCrisis) h += `<br>⚡ <b>${esc(nm)} challenges the ${l.kind === 'covenant' ? 'covenant' : 'charter'} — concede, hold, or release.</b><br><button class="btn sm" data-crisis="${l.id}" data-how="concede">Concede (better terms)</button> <button class="btn sm ghost" data-crisis="${l.id}" data-how="hold">Hold the line</button> <button class="btn sm ghost" data-crisis="${l.id}" data-how="release">Release with honor</button>`;
                   // REGIONAL DAWN (2026-10-09): the first link stages a
                   // played beat — Haven's first gesture toward the other
                   // fire. Real costs, real consequences.
@@ -14404,12 +14427,37 @@
                   const pnm = (pv && pv.name) || 'them';
                   html += `<div style="margin-top:4px"><p class="small"><b>⛓️ ${esc(pnm)} counters:</b> ${esc(pc.terms)}<br><button class="btn sm" data-counter-accept>Accept their terms</button> <button class="btn sm ghost" data-counter-sweeten>Sweeten it (1,500 kcal)</button> <button class="btn sm ghost" data-counter-walk>Walk away</button></p></div>`;
                 }
+                // DRIFTER BREAK-IT 2026-10-10: the national ladder's
+                // initiation verbs were engine-only — proposeCovenant,
+                // proposeTrade, raidVillage had zero UI callers, and a
+                // mustered war party (pendingRaid) could never be answered.
+                // State-driven like the beats above: answerable whether or
+                // not any unlinked village remains.
+                const sch0 = Game.state.scholar || {};
+                const canPledge0 = !(sch0.exiled || sch0.joinedVillage);
+                const pr0 = Game.state.pendingRaid;
+                if (pr0) {
+                  const pv0 = (Game.state.otherVillages || []).find(x => x.id === pr0.target);
+                  const pnm0 = (pv0 && pv0.name) || 'them';
+                  html += `<div style="margin-top:4px"><p class="small">⚔️ <b>War party mustered against ${esc(pnm0)}:</b> ${(pr0.fighters || []).length} fighters, three days gone, blood on the table.<br><button class="btn sm" data-raid-answer="strike">STRIKE — take them by force</button> <button class="btn sm ghost" data-raid-answer="terms">Offer terms — yield or bleed</button> <button class="btn sm ghost" data-raid-answer="withdraw">Withdraw the party</button></p></div>`;
+                }
+                try {
+                  const covLinks0 = Game._peerLinks ? Game._peerLinks('covenant') : [];
+                  if (covLinks0.length && canPledge0) {
+                    const pool0 = Game.leaguePool ? Game.leaguePool() : 0;
+                    html += `<div style="margin-top:4px"><p class="small">🌾 <b>League granary:</b> ${pool0.toLocaleString()} kcal under no one's roof — every fire pours 2,000 kcal/week.<br><button class="btn sm" data-pool-draw="2000">Draw 2,000 (famine relief)</button> <button class="btn sm ghost" data-pool-draw="${pool0}">Draw it all</button></p></div>`;
+                  }
+                } catch (e) {}
                 if (cands.length) {
+                  const sch = Game.state.scholar || {};
+                  const canPledge = !(sch.exiled || sch.joinedVillage);
                   html += '<div style="margin-top:4px"><p class="small" style="opacity:.75"><b>⛓️ No link yet — propose one:</b></p>' + cands.map(v => {
                     const op = v.opinion || 0;
                     const opTxt = op >= 20 ? ' (they think well of us)' : op <= -20 ? ' (they think poorly of us)' : '';
                     const allied = Game.isAllied && Game.isAllied('haven', v.id);
-                    return `<p class="small">${v.name || v.id}${opTxt}<br><button class="btn sm ghost" data-link-propose-sub="${v.id}">Bow to them (4k kcal/wk)</button> <button class="btn sm ghost" data-link-propose-prim="${v.id}">Ask them to bow</button>${allied ? '' : ` <button class="btn sm ghost" data-ally-propose="${v.id}">🤝 Understanding</button>`}</p>`;
+                    let btns = `<button class="btn sm ghost" data-link-propose-sub="${v.id}">Bow to them (4k kcal/wk)</button> <button class="btn sm ghost" data-link-propose-prim="${v.id}">Ask them to bow</button>`;
+                    if (canPledge) btns += ` <button class="btn sm ghost" data-covenant-propose="${v.id}">🤝 Covenant (league of equals)</button> <button class="btn sm ghost" data-trade-propose="${v.id}">📜 Trade league</button> <button class="btn sm ghost" data-raid-muster="${v.id}">⚔️ Muster war party</button>`;
+                    return `<p class="small">${v.name || v.id}${opTxt}<br>${btns}${allied ? '' : ` <button class="btn sm ghost" data-ally-propose="${v.id}">🤝 Understanding</button>`}</p>`;
                   }).join('') + '</div>';
                 }
               }

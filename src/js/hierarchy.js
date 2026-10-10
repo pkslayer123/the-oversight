@@ -1899,10 +1899,30 @@
         var onm = this._ovName(this._linkOther(link, HOME));
         if (link.poolLive && this.state._leaguePoolWeek !== this._week()) {
           this.state._leaguePoolWeek = this._week();
-          var members = this._peerLinks('covenant').length;
           var havenShare = (link.concessionUntil || 0) > day ? Math.round((link.poolKcalPerWeek || 2000) / 2) : (link.poolKcalPerWeek || 2000);
           var paid = this._removePantryKcal(havenShare);
-          var theirs = 2000 * members;
+          // DRIFTER BREAK-IT 2026-10-10: their 2,000 kcal/week per fire used
+          // to appear from thin air — "real food in and out" held only for
+          // Haven's share. Every fire pours from its own stores now; a fire
+          // that can't cover its share pours what it has, and the league
+          // notices the shortfall (trust -2 on that link, said aloud in the
+          // council's book).
+          var theirs = 0;
+          var covs = this._peerLinks('covenant');
+          for (var pi = 0; pi < covs.length; pi++) {
+            var pOther = this._linkOther(covs[pi], HOME);
+            var pOv = pOther ? this._otherVillage(pOther) : null;
+            var pGive = 0;
+            if (pOv) {
+              pGive = Math.min(2000, Math.max(0, Math.round(pOv.pantryKcal || 0)));
+              pOv.pantryKcal = Math.max(0, (pOv.pantryKcal || 0) - pGive);
+            }
+            theirs += pGive;
+            if (pGive < 2000) {
+              covs[pi].trust = Math.max(0, (covs[pi].trust || 0) - 2);
+              this._linkNote(covs[pi], 'pool', (pOv ? (pOv.name || 'They') : 'They') + ' poured short this week (' + pGive.toLocaleString() + ' of 2,000 kcal) — the council counts it.');
+            }
+          }
           this.state.leaguePoolKcal = (this.state.leaguePoolKcal || 0) + paid + theirs;
           this._linkNote(link, 'pool', 'Pool week: Haven poured ' + paid.toLocaleString() + ' kcal; the league poured ' + theirs.toLocaleString() + '.');
           if (paid < havenShare) {
@@ -1989,10 +2009,51 @@
           var id = roster[i];
           if (id === me) continue;
           if (!this.isMember(id)) continue;
+          // DRIFTER BREAK-IT 2026-10-10: the away muster used to re-draft
+          // villagers already out (raid party, defense call, wounded) —
+          // the same two people could be "sent" to three fires at once.
+          try { if (this._isAwayVid(id)) continue; } catch (e2) {}
           out.push(id);
         }
       } catch (e) {}
       return out;
+    },
+
+    // _sendAwayParty: the multi-person version of the representative loan.
+    // vids walk out for `days` days — real absence: awayMembers() shows them,
+    // _musterAway won't re-draft them, and awayPartiesReturnTick says the
+    // return aloud. kind: 'raid' | 'defense' | 'trade'. opts.repayKcal is
+    // delivered to the pantry on return (the trade favor's "repaid after").
+    _sendAwayParty(vids, days, to, kind, opts) {
+      var m = null;
+      try { m = this.mshipState(); } catch (e) { return; }
+      if (!m) return;
+      var day = (this.state.scholar || {}).day || 0;
+      m.awayParties = m.awayParties || [];
+      m.awayParties.push({
+        vids: (vids || []).slice(),
+        untilDay: day + (days || 3),
+        to: to, kind: kind || 'service',
+        repayKcal: (opts && opts.repayKcal) || 0,
+      });
+    },
+
+    // _isAwayVid: is this roster member currently out (loaned, partied, or
+    // recovering from raid wounds)? Informational reads only.
+    _isAwayVid(vid) {
+      try {
+        var m = this.mshipState ? this.mshipState() : null;
+        if (!m) return false;
+        var day = (this.state.scholar || {}).day || 0;
+        if (m.loaned && day < (m.loaned.untilDay || 0) && m.loaned.vid === vid) return true;
+        var ps = m.awayParties || [];
+        for (var i = 0; i < ps.length; i++) {
+          if (day < (ps[i].untilDay || 0) && (ps[i].vids || []).indexOf(vid) >= 0) return true;
+        }
+        var w = m.woundedUntil || {};
+        if ((w[vid] || 0) > day) return true;
+      } catch (e) {}
+      return false;
     },
 
     // answerDefenseCall: a covenant defense call, answered. 'send' costs a
@@ -2016,7 +2077,7 @@
           this.say(`There's no one to send — Haven's bench is empty. The covenant notices the empty bench. (Trust -4.)`);
           return 'empty';
         }
-        this.state.covenantAway = { vids: sent, untilDay: day + 3, linkId: link.id, to: other };
+        this._sendAwayParty(sent, 3, onm, 'defense');
         link.trust = Math.min(100, link.trust + 8);
         this._linkNote(link, 'defense', 'Answered the call: ' + sent.length + ' villagers, 3 days.');
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-sent:' + other); } catch (e) {}
@@ -2052,9 +2113,12 @@
           this.say(`There's no one to send — Haven's bench is empty. They note the difference between a refusal and an empty bench. (Trust -2.)`);
           return 'empty';
         }
-        this.state.tradeAway = { vids: sent, untilDay: day + 3, linkId: link.id, to: other };
-        var v = this.state.village || {}; v.pantry = v.pantry || [];
-        v.pantry.push({ name: 'Favor repaid — ' + onm, kcalEach: 1500, units: 1, spoilDay: day + 21 });
+        // DRIFTER BREAK-IT 2026-10-10: state.tradeAway was write-only ("villagers
+        // walk out for three days" never happened), and the 1,500 kcal favor
+        // landed in the pantry INSTANTLY while the copy promised "repaid
+        // after". The party walks out for real now; the repayment arrives
+        // with them, on return, via the away-parties return tick.
+        this._sendAwayParty(sent, 3, onm, 'trade', { repayKcal: 1500 });
         link.trust = Math.min(100, link.trust + 6);
         this._linkNote(link, 'favor', 'Sent help as a priced favor (+1,500 kcal repaid).');
         this.say(`🤝 Haven sends ${sent.length} villagers to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +6.)`);
@@ -2195,15 +2259,22 @@
       }
       // strike: blood and fire
       this.state.pendingRaid = null;
-      this.state.raidParty = { vids: pr.fighters.slice(), untilDay: day + 3, target: pr.target };
+      // DRIFTER BREAK-IT 2026-10-10: state.raidParty was write-only — "raiders
+      // gone three days" was copy the engine never ran, and state.raidWounds
+      // the same ("wounded for a week" never kept anyone home). Both now ride
+      // the away-party mechanism: real absence, announced returns.
+      this._sendAwayParty(pr.fighters, 3, nm, 'raid');
       var dead = [], wounded = [];
       for (var i = 0; i < pr.fighters.length; i++) {
         var r = R();
         if (r < 0.15) dead.push(pr.fighters[i]);
         else if (r < 0.45) wounded.push(pr.fighters[i]);
       }
-      var wounds = this.state.raidWounds = this.state.raidWounds || {};
-      for (var wi = 0; wi < wounded.length; wi++) wounds[wounded[wi]] = day + 7;
+      try {
+        var mm = this.mshipState();
+        mm.woundedUntil = mm.woundedUntil || {};
+        for (var wi = 0; wi < wounded.length; wi++) mm.woundedUntil[wounded[wi]] = day + 7;
+      } catch (e2) {}
       for (var di = 0; di < dead.length; di++) {
         var dnm = 'Someone';
         try { dnm = String(this.displayName(dead[di])); } catch (e) {}
@@ -2382,5 +2453,35 @@
     try { if (this.hierarchyDaily) this.hierarchyDaily(); } catch (e) {}
     return _membershipDaily ? _membershipDaily.call(this) : undefined;
   };
+
+  // DRIFTER BREAK-IT 2026-10-10: the national-ladder verbs are Haven-council
+  // verbs — mustering Haven's fighters, pledging its food, answering its
+  // calls. The exiled have no standing to call them (same class as
+  // membership.js's pantry wraps); a scholar eating at another fire can't
+  // pledge Haven's table either. The UI hides these buttons for non-members,
+  // and the engine holds the line too (a hostile drifter calling
+  // Game.raidVillage straight from exile gets refused, not a free war
+  // party). NOTE: these wraps live here, not in membership.js — that file
+  // loads BEFORE hierarchy.js, so G.proposeCovenant et al don't exist yet
+  // when its wraps run (the guard silently no-ops). Same-object wraps must
+  // run after the methods they wrap.
+  function _blockIfNotHaven(G, fnName) {
+    var _fn = G[fnName];
+    if (!_fn) return;
+    G[fnName] = function () {
+      var s = this.state.scholar || {};
+      if (s.exiled) { this.say('Haven\'s council doesn\'t take orders from the road. Exile means exile.'); return null; }
+      if (s.joinedVillage) { this.say('You eat at another fire now — Haven\'s table isn\'t yours to pledge.'); return null; }
+      return _fn.apply(this, arguments);
+    };
+  }
+  _blockIfNotHaven(G, 'proposeCovenant');
+  _blockIfNotHaven(G, 'proposeTrade');
+  _blockIfNotHaven(G, 'raidVillage');
+  _blockIfNotHaven(G, 'answerRaid');
+  _blockIfNotHaven(G, 'answerDefenseCall');
+  _blockIfNotHaven(G, 'answerTradeCall');
+  _blockIfNotHaven(G, 'answerCovenantCrisis');
+  _blockIfNotHaven(G, 'drawLeaguePool');
 
 })();

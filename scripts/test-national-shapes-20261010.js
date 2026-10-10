@@ -167,7 +167,12 @@ function ok(cond, label) {
   says.length = 0;
   const tD0 = covA.trust;
   ok(Game.answerDefenseCall(covA.id, 'send') === 'sent', 'defense call answered: sent');
-  ok(!!Game.state.covenantAway && Game.state.covenantAway.vids.length === 2, 'two villagers away 3 days (real absence)');
+  // DRIFTER BREAK-IT 2026-10-10: state.covenantAway was write-only — the old
+  // assertion below locked in the fiction's implementation detail. The party
+  // rides the away-party mechanism now: real absence, announced return.
+  const dParty = (Game.mshipState().awayParties || []).find(p => p.kind === 'defense');
+  ok(!!dParty && dParty.vids.length === 2 && dParty.untilDay === (Game.state.scholar.day || 0) + 3, 'two villagers away 3 days (real absence)');
+  ok(dParty.vids.every(id => Game.awayMembers().indexOf(id) >= 0), 'the away pair shows in awayMembers');
   ok(covA.trust === Math.min(100, tD0 + 8), 'answering the call: trust +8');
   // mutual defense: refuse aloud, league-wide cost
   covA.pendingDefense = { day: 0 };
@@ -245,8 +250,16 @@ function ok(cond, label) {
   trA.pendingTradeCall = { day: 0 };
   const panF = Game.state.village.pantry.length;
   ok(Game.answerTradeCall(trA.id, 'send') === 'sent', 'help sent as a priced favor');
+  // DRIFTER BREAK-IT 2026-10-10: the favor used to land INSTANTLY while the
+  // copy promised "repaid after" — the old assertion below locked in the bug.
+  // The repayment arrives WITH the party, on return, as real food.
+  ok(!Game.state.village.pantry.slice(panF).some(it => /Favor repaid/.test(it.name || '')), 'favor NOT repaid instantly ("repaid after" is honest now)');
+  const tDay = Game.state.scholar.day || 0;
+  Game.state.scholar.day = tDay + 3;
+  Game.membershipDaily();
   const favor = Game.state.village.pantry.slice(panF).find(it => /Favor repaid/.test(it.name || ''));
-  ok(!!favor && favor.kcalEach === 1500, 'favor repaid: 1,500 kcal real food');
+  ok(!!favor && favor.kcalEach === 1500, 'favor repaid on return: 1,500 kcal real food');
+  Game.state.scholar.day = tDay;
   // trade crisis, covenant-style
   Game.covenantCrisis(trB.id, 'strain');
   ok(Game.answerCovenantCrisis(trB.id, 'concede') === 'conceded', 'charter crisis conceded');
@@ -271,7 +284,10 @@ function ok(cond, label) {
   ok(slink.trust === 15 && slink.tributeKcalPerWeek === 7000, 'duress terms: trust 15, tribute 7,000');
   ok((Game.state.otherVillages.find(v => v.id === qA.id).opinion || 0) <= -40, 'hatred: opinion -40');
   ok(Game.state.village.pantry.some(it => /Raid spoils/.test(it.name || '')), 'loot arrives as real food');
-  ok(!!Game.state.raidParty && Game.state.raidParty.vids.length >= 2, 'raiders away 3 days (real absence)');
+  // DRIFTER BREAK-IT 2026-10-10: state.raidParty was write-only — same fix
+  // class as covenantAway above. Raiders ride awayParties now.
+  const rParty = (Game.mshipState().awayParties || []).find(p => p.kind === 'raid');
+  ok(!!rParty && rParty.vids.length >= 2, 'raiders away 3 days (real absence)');
   ok(saidHas(/said plainly/), 'blood cost said aloud');
   // terms: the strong yield without blood (distinct from courtship climb)
   ok(Game.raidVillage(qB.id) === true, 'muster against a second fire');
