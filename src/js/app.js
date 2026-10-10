@@ -364,7 +364,13 @@
       </div>`;
     }).join('');
     el.querySelectorAll('[data-load]').forEach(b => b.onclick = () => {
-      if (Game.load(b.dataset.load)) expeditionScreen();
+      // WALK PURGE (break-it travel r10 2026-10-10): MoveAnim's step queue is
+      // in-memory UI state — Game.load swaps the world underneath it, but the
+      // queue kept draining: queued path steps walked the RELOADED bearer
+      // (kcal, ticks, monster turns for steps never authorized post-load),
+      // even across saves (Continue a different expedition mid-walk). A load
+      // is a fresh session for the feet: stop everything before rendering.
+      if (Game.load(b.dataset.load)) { try { S.MoveAnim.stopAll(); } catch (e) {} expeditionScreen(); }
       else {
         // LOAD HONESTY (break-it persistence 2026-10-08): a save that can't load
         // (corrupt, version-mismatched, or deleted in another tab) must say so —
@@ -13271,6 +13277,11 @@
   // step through the animator — never a teleport. onDone(ok) fires when the
   // walk's steps all resolve (ok=false if interrupted or blocked).
   let walkSeq = 0;
+  // walkToken: supersede guard for chained walks (break-it travel r10).
+  // walkPathAnimated chains one step at a time; a newer walk (or a purge)
+  // retires the old token so a stale in-flight step can't keep the old walk
+  // alive. The superseded walk's onDone(false) fires honestly at supersede.
+  let walkToken = { current: null };
   function walkPathAnimated(tx, ty, onDone) {
     if (Game.inCombat()) return false;
     const path = Game.beginPathWalk(tx, ty);
@@ -13278,14 +13289,38 @@
     if (!path.length) { if (onDone) onDone(true); return true; }
     const walkId = 'w' + (++walkSeq);
     MoveAnim.purgeKind('path');
-    let px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
-    let pending = 0, okAll = true;
-    for (const [x, y] of path) {
-      pending++;
-      MoveAnim.enqueue({ dx: x - px, dy: y - py, kind: 'path', walkId, ms: MoveAnim.pathMs })
-        .then((ok) => { okAll = okAll && ok; if (--pending === 0 && onDone) onDone(okAll); });
-      px = x; py = y;
+    // LONG-WALK HONESTY (break-it travel r10 2026-10-10): the old code
+    // bulk-enqueued the whole path, but MoveAnim caps its queue at maxQueue
+    // (10) — paths longer than 11 steps silently truncated: the label quoted
+    // the full walk, the player stopped early, and onDone(false) fired while
+    // steps were still animating. Chain one step at a time instead: the queue
+    // never fills, the FULL path lands, and any refusal/purge stops the chain
+    // cleanly (no skipped squares, no phantom drain).
+    const token = { id: walkId, onDone: onDone || null };
+    const prev = walkToken.current;
+    walkToken.current = token;
+    if (prev && prev !== token && typeof prev.onDone === 'function') {
+      try { prev.onDone(false); } catch (e) {}
     }
+    let idx = 0, okAll = true;
+    const stepNext = () => {
+      if (walkToken.current !== token) return; // superseded — stay dead
+      if (idx >= path.length) { if (onDone) { try { onDone(okAll); } catch (e) {} } return; }
+      const [x, y] = path[idx];
+      // dx/dy resolve against the CURRENT position at enqueue time (same as
+      // the old bulk form resolved per step) — a step always aims at the
+      // next planned square, never a stale offset.
+      const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
+      MoveAnim.enqueue({ dx: x - px, dy: y - py, kind: 'path', walkId, ms: MoveAnim.pathMs })
+        .then((ok) => {
+          if (walkToken.current !== token) return; // purged mid-flight
+          okAll = okAll && ok;
+          if (!ok) { if (onDone) { try { onDone(false); } catch (e) {} } return; } // refused: combat, death, blocked — stop here
+          idx++;
+          stepNext();
+        });
+    };
+    stepNext();
     return true;
   }
   function wireDpad() {

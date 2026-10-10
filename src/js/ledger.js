@@ -621,6 +621,13 @@
     // leadership vector — a new face. The only game overs: the village
     // achieves its ending (the table), or the village dies out.
     playerDeath(cause) {
+      // WALK PURGE (break-it travel r10 2026-10-10): a death mid-walk left
+      // MoveAnim's in-memory step queue draining — the mantle passes (over
+      // stays false), so the queued path steps kept executing and walked the
+      // NEW bearer on the dead player's intent, charging the new body. Death
+      // ends the walk, full stop. Guarded: the animator is UI-side and absent
+      // in node harnesses.
+      try { if (typeof Scattering !== 'undefined' && Scattering.MoveAnim) Scattering.MoveAnim.stopAll(); } catch (e) {}
       const s = this.state.scholar, v = this.state.village;
       const oldId = this.villagerId;
       const oldChar = (this.data.villagers || []).find(x => x.id === oldId) || {};
