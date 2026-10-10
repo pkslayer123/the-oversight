@@ -189,7 +189,6 @@
       "phaseBadges": {
         "silence": " \ud83e\udd2b SILENCE",
         "circle": " \ud83d\udc15 CIRCLING",
-        "rush": " \ud83d\udca8 RUSH",
         "withdraw": " \ud83c\udfc3 WITHDRAW"
       },
       "phaseMap": {
@@ -205,7 +204,7 @@
       "noticeAudio": "wolfSilence",
       "aggroAudio": "wolfSnarl",
       "knownTactics": "Wound the lead and the pack breaks. They fear fire \u2014 they remember being dogs.",
-      "comment": "Pack hunter: birds go quiet at combat start; first-spawned is the lead. Wounding the lead below half breaks coordination (pack hesitates, stops focusing); killing the lead usually routs the rest.",
+      "comment": "NO RUSH BADGE (break-it 2026-10-10): Steve killed the grid rush indicator 2026-10-06 - Silent Rush gives no warning. The stale beamPhase rendered a standing RUSH badge post-learning; removed. Pack hunter: birds go quiet at combat start; first-spawned is the lead. Wounding the lead below half breaks coordination (pack hesitates, stops focusing); killing the lead usually routs the rest.",
       "knownCue": "They go quiet before the rush. If the birds stop, they're already moving."
     },
     "loot": {
@@ -913,7 +912,6 @@
       ],
       "phaseBadges": {
         "rock": " \ud83e\udea8 ROCK",
-        "snap": " \u26a1 SNAP",
         "bunker": " \ud83d\udee1 BUNKER"
       },
       "phaseMap": {
@@ -929,7 +927,7 @@
       "quiet": true,
       "resolveAudio": "turtleSnap",
       "knownTactics": "Don't step next to it. It can't chase \u2014 just walk around. When it seals up, wait it out.",
-      "comment": "A rock with opinions: never moves, snaps anything adjacent with no warning. Below half HP it bunkers (2 turns, ~invulnerable). The queue stays silent \u2014 it's a rock.",
+      "comment": "NO SNAP BADGE (break-it 2026-10-10): the snap has no warning - a stale phaseBadges.snap rendered a standing SNAP warning post-learning; removed. A rock with opinions: never moves, snaps anything adjacent with no warning. Below half HP it bunkers (2 turns, ~invulnerable). The queue stays silent \u2014 it's a rock.",
       "knownCue": "It's slow but the snap is fast. Don't stand in front of it."
     },
     "loot": {
