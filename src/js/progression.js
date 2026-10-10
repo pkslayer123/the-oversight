@@ -448,8 +448,20 @@
         { id: 'haul', text: 'Haul 3,000 kcal to the pantry within 3 days.', need: 3000, have: 0, kind: 'pantry' },
         { id: 'identify', text: 'Fully identify 3 plants (knowledge level 3) within 3 days.', need: 3, have: 0, kind: 'identify' },
       ];
-      const roll = Math.random();
-      const t = roll < 0.45 ? tasks[0] : roll < 0.7 ? tasks[1] : tasks[2];
+      // IDENTIFY AVAILABILITY (gap-integration 2026-10-10): late-game there
+      // may be fewer than 3 plants left below L3 — offering the task then is
+      // a dead offer the player can only fail. Drop it from the pool when
+      // uncompletable; the hauls stay.
+      const _cx = (this.state.codex || {}).plants || {};
+      const _belowL3 = Object.values(_cx).filter(e => (e.level || 0) < 3).length;
+      const _pool = _belowL3 >= 3 ? tasks : tasks.filter(t => t.id !== 'identify');
+      let t;
+      if (_pool.length === tasks.length) {
+        const roll = Math.random();
+        t = roll < 0.45 ? tasks[0] : roll < 0.7 ? tasks[1] : tasks[2];
+      } else {
+        t = _pool[Math.floor(Math.random() * _pool.length)];
+      }
       if (t.kind === 'pantry') { try { t.start = this.pantryKcal ? this.pantryKcal() : 0; } catch (e) { t.start = 0; } }
       if (t.kind === 'identify') {
         t.startN = Object.values((this.state.codex || {}).plants || {}).filter(e => (e.level || 0) >= 3).length;
@@ -539,6 +551,15 @@
       this.checkStruggle();
       // audience encore: recurring post-40 trials (pacing build 2026-10-10)
       this.checkAudienceEncore();
+      // system quests: the System's curiosity is recurring — complete what's
+      // teachable, then offer the next one (~1/6 days, only when something's
+      // teachable). (gap-integration 2026-10-10)
+      try { if (this.checkSystemQuest) this.checkSystemQuest(); } catch (e) {}
+      try {
+        if (!this.state.scholar.activeQuest && this.offerSystemQuest && Math.random() < 0.15) {
+          this.offerSystemQuest('daily');
+        }
+      } catch (e) {}
       // arc watch
       this.checkArc();
       // comfort flag: making bad days smaller, including your own

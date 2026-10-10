@@ -511,6 +511,21 @@
     const milestone = now >= v._peakViewership + 5;
     if (now > v._peakViewership) v._peakViewership = now;
     if (milestone) {
+      // RATINGS MILESTONE (gap-integration 2026-10-10): a new all-time
+      // viewership high by a real margin (+5) — more eyes on the village,
+      // more of the village the System can hold. Deed-reactive (viewership
+      // moves on notable deeds via recordMoment), declining returns:
+      // 6, 5, 4, 3, then 2 — never a hard cap.
+      try {
+        const pg = this.progState ? this.progState() : null;
+        if (pg) {
+          pg.ratingMilestones = (pg.ratingMilestones || 0) + 1;
+          const amt = Math.max(2, 7 - pg.ratingMilestones);
+          if (this.integrate) this.integrate(amt, 'ratings milestone');
+          if (this.sysSay) this.sysSay(`SYSTEM: "VIEWERSHIP RECORD. More of them are watching than ever. We are watching you watch them watch us. (+${amt} integration)"`);
+          else if (this.say) this.say(`◈ VIEWERSHIP RECORD — more eyes on the village than ever. The System leans in. (+${amt} integration)`);
+        }
+      } catch (err) {}
       return { who: 'together', why: 'milestone', note: null };
     }
     const weighted = cands.map(c => ({ c, w: this.notabilityWeight(c.id) }));

@@ -16037,6 +16037,23 @@
         if (n >= majority) {
           e.villageName = name;
           this.say(`It's settled. The village is calling it "${name}." The ${this.journalName()} keeps it.`);
+          // NAMING IS A DEED (gap-integration 2026-10-10): the village agreed
+          // on a name — the System learned what to call it. Integration,
+          // one-shot per monster, declining returns (the first names teach
+          // it the most): 6, 5, 4, 3, then 2.
+          try {
+            const pg = this.progState ? this.progState() : null;
+            if (pg) {
+              pg.namedMonsterGrants = pg.namedMonsterGrants || {};
+              if (!pg.namedMonsterGrants[mid]) {
+                pg.namedMonsterGrants[mid] = true;
+                const nn = Object.keys(pg.namedMonsterGrants).length;
+                const amt = Math.max(2, 7 - nn);
+                this.integrate(amt, 'monster named');
+                this.say(`◈ The System files the name away with visible satisfaction. It has so few words for things that bleed. (+${amt} integration)`);
+              }
+            }
+          } catch (err) {}
           // meat in packs learns the name too — if you know, it shows
           this.refreshMeatNames(mid);
           // live fighters get the name too
@@ -18412,8 +18429,12 @@
       this.say('\u{1F43A} HOWLS in the distance. Closer than before. The System chirps: "Oh! We made those! Are they... too many? We can make fewer?" (New monster: hushwolf pack.)');
     },
     evSystemTask(ev) {
-      this.say('\u{1F4DC} SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Bring us a plant you\'ve fully identified (Codex L3)."');
-      this.state.scholar.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
+      // SYSTEM QUEST LINE (gap-integration 2026-10-10): the old version set
+      // an activeQuest with NO type - checkQuest's dispatch ignored it, so
+      // this quest could never complete (dead line, integration-wall audit).
+      // Now it offers a real System quest: teachable, completable, recurring.
+      this.say('📋 SYSTEM QUEST: "We\'ve been thinking. You know things we don\'t. Teach us? Show us a plant you know COMPLETELY (Codex L3). We will watch very closely, which is our entire personality."');
+      try { this.offerSystemQuest('event'); } catch (e) {}
     },
 
 // ============================================================================
@@ -19580,12 +19601,17 @@
       // GHOST-QUEST GUARD (break-it social r9 2026-10-09): a quest whose giver
       // is gone (old saves, or any path that missed removeVillager's lapse)
       // can never be turned in — the dead don't take dandelions. Lapse aloud.
-      if (q.giver && !((this.state.village || {}).roster || []).includes(q.giver) && q.giver !== this.villagerId) {
+      // SYSTEM quests (gap-integration 2026-10-10): the giver is 'system' — never
+      // on the roster, never dead. The ghost-guard must not lapse them.
+      if (q.giver && q.giver !== 'system' && !((this.state.village || {}).roster || []).includes(q.giver) && q.giver !== this.villagerId) {
         this.state.scholar.activeQuest = null;
         const nm = (() => { try { return this.displayName(q.giver); } catch (e) { return 'They'; } })();
         this.say(`${nm} is gone. The errand lapses — nobody's waiting on it now.`);
         return;
       }
+      // SYSTEM QUESTS (gap-integration 2026-10-10): deed-checked, not
+      // kind-checked — teaching completes whenever the knowledge lands.
+      if (q.type === 'system_teach') { this.checkSystemQuest(); return; }
       if (q.type === 'bring' && kind === 'forage') {
         const has = this.state.scholar.inventory.filter(i => i.plantId === q.plant).reduce((t, i) => t + i.units, 0);
         if (has >= q.qty) {
@@ -19618,6 +19644,68 @@
           this.say(`✅ You saw the ${q.tileType}. ${this.displayName(q.giver)} nods. "Good. Now we know." (+integration)`);
         }
       }
+    },
+
+    // ============ SYSTEM QUESTS (gap-integration 2026-10-10) ============
+    // The System is alien and curious — it can't learn food/feelings alone,
+    // so it asks the village to TEACH it. Deeds, not calendar: a quest is
+    // offered only when something is teachable (a known plant below L3),
+    // and completes the moment a NEW plant reaches full identification.
+    // Rewards decline as the System's ignorance shrinks (8, 6, 4, then 2)
+    // — declining returns, never a hard cap. This revives the dead
+    // day-12 system_task line AND fills the 40+ quest gap the code comment
+    // promised ("System quests come at integration 40+") but never built.
+    systemQuestReward() {
+      let n = 0;
+      try { n = (this.progState() || {}).systemQuests || 0; } catch (e) {}
+      return Math.max(2, 8 - n * 2);
+    },
+    systemQuestsDone() {
+      try { return (this.progState() || {}).systemQuests || 0; } catch (e) { return 0; }
+    },
+    offerSystemQuest(via) {
+      const s = this.state.scholar;
+      if (!this.state.systemArrived) return false;
+      if (s.activeQuest) return false;
+      const cx = (this.state.codex || {}).plants || {};
+      const teachable = Object.keys(cx).filter(pid => (cx[pid].level || 1) < 3);
+      if (!teachable.length) return false; // nothing to teach — stay quiet
+      const startN = Object.values(cx).filter(e => (e.level || 0) >= 3).length;
+      const rw = this.systemQuestReward();
+      const n = teachable.length;
+      s.activeQuest = {
+        type: 'system_teach', giver: 'system', giverName: 'the System',
+        startN, reward: rw,
+        text: `📋 SYSTEM QUEST: "Teach us? Show us a plant you know COMPLETELY (Codex L3) — ${n} candidate${n === 1 ? '' : 's'} in your notes. We will watch very closely. Reward: integration."`,
+      };
+      if (via !== 'silent') this.say(s.activeQuest.text);
+      try { this.save(); } catch (e) {}
+      return true;
+    },
+    checkSystemQuest() {
+      const s = this.state.scholar;
+      let q = s.activeQuest;
+      // LEGACY (gap-integration 2026-10-10): pre-fix saves hold the dead
+      // {id:'system_task'} shape with no type — it could never complete and
+      // would block new offers forever. Convert it, don't strand it.
+      if (q && q.id === 'system_task' && !q.type) {
+        s.activeQuest = null;
+        this.offerSystemQuest('silent');
+        q = s.activeQuest;
+      }
+      if (!q || q.type !== 'system_teach') return false;
+      const cx = (this.state.codex || {}).plants || {};
+      const n = Object.values(cx).filter(e => (e.level || 0) >= 3).length;
+      if (n <= (q.startN || 0)) return false;
+      s.activeQuest = null;
+      try { const pg = this.progState(); pg.systemQuests = (pg.systemQuests || 0) + 1; } catch (e) {}
+      const amt = (q.reward != null) ? q.reward : this.systemQuestReward();
+      this.integrate(amt, 'system quest');
+      try { if (this.ledgerAdd) this.ledgerAdd('showmanship', 1); } catch (e) {}
+      try { if (this.recordMoment) this.recordMoment("Taught the System something it didn't know."); } catch (e) {}
+      this.say(`✅ The System watched the whole lesson twice. "NOTED. Filing under: things that are food, which is still a confusing category." (+${amt} integration)`);
+      try { this.save(); } catch (e) {}
+      return true;
     },
 
     // --- free minors ---
