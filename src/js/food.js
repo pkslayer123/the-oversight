@@ -19,9 +19,11 @@
 //   - stacksMatch()       (fungibility gate for stack merging)
 //   - spoilBonusDays()    (preservation_instinct shelf-life bonus)
 //   - isSpoiled()         (bonus-aware spoilage boundary)
+//   - experimentWith()    (nibble: calorie/sickness knowledge without ID; bridges testCautiously)
 // rules:
 //   - raw_penalty: true (code: food.js)
 //   - processing_required: true (code: food.js)
+//   - experiment_bridges: true (code: food.js — nibbles grant calSense/riskSense on the L0 entry, never identify; testCautiously reads entry.experiments)
 //   - no_creation: true (code: food.js — processing never nets kcal; specialist preserve capped at 1.00x)
 // consumes:
 //   - scholar.inventory
@@ -755,7 +757,24 @@
     foodMarker(it) {
       if (!it) return '';
       let m;
-      if (it.foodState === 'unknown') m = '? unknown \u2014 not food yet';
+      if (it.foodState === 'unknown') {
+        m = '? unknown \u2014 not food yet';
+        // EXPERIMENTS (Steve 2026-10-09): nibbles teach without naming. The
+        // marker shows what your body learned about the plurality species —
+        // never the name.
+        try {
+          const comp = it.lump || {};
+          let pid = null, best = -1;
+          for (const c of Object.keys(comp)) { if (comp[c].units > best) { best = comp[c].units; pid = c; } }
+          const en = pid && this.state.codex.plants[pid];
+          if (en && (en.calSense || en.riskSense)) {
+            const bits = [];
+            if (en.calSense) bits.push('nibbled: ' + en.calSense + ' fuel');
+            if (en.riskSense) bits.push(({ dangerous: 'DANGEROUS', 'cook-first': 'cook it first', care: 'eat with care', uncertain: 'uncertain \u2014 be careful', 'seems-safe': 'seems safe' })[en.riskSense] || en.riskSense);
+            m = '? unknown \u2014 ' + bits.join(', ');
+          }
+        } catch (e) {}
+      }
       else if (it.foodState === 'in_shell') m = 'needs shelling';
       else if (it.foodState === 'carcass') {
         if (this.isSpoiled(it)) m = 'spoiled — beyond cleaning';
@@ -1301,6 +1320,15 @@
       } catch (e) {}
       const hint = lump.hint;
       let riskMult = fieldwork ? 0.6 : 1;
+      // EXPERIMENTS (Steve 2026-10-09): nibbles bridge into the full test.
+      // Each one did part of the tasting already — the body knows this
+      // stranger a little. Safer (x0.85^n, floor 0.5) and the waits shrink.
+      let expN = 0;
+      try { expN = (this.state.codex.plants[pid] || {}).experiments || 0; } catch (e) {}
+      if (expN > 0) {
+        riskMult *= Math.pow(0.85, expN);
+        if (riskMult < 0.5) riskMult = 0.5;
+      }
       if (hint) {
         const correct = (hint.kind === 'safe' && (ed === 'safe' || ed === 'caution')) ||
                         (hint.kind === 'avoid' && (ed === 'avoid' || ed === 'cook'));
@@ -1376,10 +1404,15 @@
       }
 
       // the careful protocol
+      // EXPERIMENTS (Steve 2026-10-09): nibbles shorten the waits — the
+      // tasting is partly done already. Honest discount, stated up front.
+      const wMul = expN > 0 ? Math.max(0.6, 1 - 0.1 * expN) : 1;
+      const WT = (t) => Math.max(1, Math.round(t * wMul));
+      if (expN > 0) this.say(`You've nibbled this ${expN === 1 ? 'once' : expN + ' times'} — the inspection is partly done. Shorter waits, steadier stomach.`);
       this.say('You set aside an afternoon. Inspect, skin, lips, taste, meal — with waits between. This is how you learn without dying.');
-      this.tickAction(4);
+      this.tickAction(WT(4));
       this.say('Inspect: color, smell, bruising. Nothing alarming. (The dangerous ones rarely announce themselves.)');
-      this.tickAction(12);
+      this.tickAction(WT(12));
       if (ed === 'avoid' && R(0.3)) {
         this.say('Skin test: where you rubbed it, the skin itches and reddens. Bad sign. You stop — wisely.');
         queasy(false);
@@ -1387,7 +1420,7 @@
         return null;
       }
       this.say('Skin test: two hours, no reaction. So far so good.');
-      this.tickAction(8);
+      this.tickAction(WT(8));
       if (ed === 'avoid' && R(0.35)) {
         this.say('Lips: numbness, spreading. You spit it out. NOT food — and now you know its name the hard way.');
         queasy(false);
@@ -1395,7 +1428,7 @@
         return null;
       }
       this.say('Lips: no numbness, no burn. Cautiously onward.');
-      this.tickAction(16);
+      this.tickAction(WT(16));
       if ((ed === 'avoid' && R(0.4)) || (ed === 'cook' && R(0.3)) || (ed === 'caution' && R(0.15))) {
         queasy(ed === 'avoid');
         this.say(ed === 'cook'
@@ -1405,7 +1438,7 @@
         return null;
       }
       this.say('Taste: a tiny nibble, chewed slowly. Nothing happens. The hardest part is waiting.');
-      this.tickAction(24);
+      this.tickAction(WT(24));
       if ((ed === 'avoid' && R(0.5)) || (ed === 'cook' && R(0.4)) || (ed === 'caution' && R(0.2))) {
         queasy(ed !== 'caution');
         this.say('The small meal disagrees with you. Lesson learned — honestly, not fatally.');
@@ -1414,6 +1447,100 @@
       }
       this.say(`The meal sits fine. ${ed === 'safe' ? 'Food. Real food, and now it has a name.' : ed === 'cook' ? 'Food — but your gut is clear: cook it.' : 'Edible, with care.'} (64 ticks, an afternoon honestly spent)`);
       identifyAs(ed);
+      return null;
+    },
+
+    // experimentWith(idx, container): EXPERIMENT (Steve 2026-10-09).
+    // Foraged stuff is experimentable: a nibble + a wait teaches CALORIE
+    // knowledge (how filling it is) and SICKNESS knowledge (does your body
+    // object) WITHOUT naming the plant. Partial knowledge, honestly earned —
+    // the bridge between "mystery lump" and the full cautious test.
+    //
+    // Costs 8 ticks + 1 unit of the lump's plurality species. Small honest
+    // risks. Never identifies: the name stays unearned until the real work
+    // (test, teaching, books) is done. Each experiment counts toward the
+    // cautious test (testCautiously reads entry.experiments: risk x0.85^n,
+    // waits shortened) — the paths bridge instead of competing.
+    experimentWith(idx, container) {
+      const cont = container || this.state.scholar.inventory;
+      const lump = cont[idx];
+      if (!lump || !lump.lump) { this.say('Nothing to experiment with there.'); return null; }
+      const comp = lump.lump;
+      const pids = Object.keys(comp);
+      if (!pids.length) { this.say('The bag is empty.'); return null; }
+      let pid = pids[0], best = -1;
+      for (const c of pids) { if (comp[c].units > best) { best = comp[c].units; pid = c; } }
+      const p = (this.data.plants || []).find(x => x.id === pid);
+      if (!p) return null;
+      if (this.plantKnown(pid)) { this.say('You already know this one — no need to experiment.'); return null; }
+      const ed = p.edibility || 'safe';
+      // Level-0 entry: bookkeeping only, never a name (K0 honesty — the Codex
+      // must not list it). calSense/riskSense live here, pre-identification.
+      const entry = this.state.codex.plants[pid] = this.state.codex.plants[pid] || { level: 0, harvests: 0, tastings: 0 };
+      const n = entry.experiments || 0;
+      if (n >= 4) { this.say('Nibbling taught you everything nibbling can. Time for the full cautious test — or find someone who knows.'); return null; }
+      // The nibble is real: one shoot of the plurality species, eaten.
+      const e = comp[pid];
+      e.units -= 1; lump.units -= 1;
+      if (e.units <= 0) delete comp[pid];
+      if (lump.units <= 0) cont.splice(cont.indexOf(lump), 1);
+      this.say('You pick out a few shoots that look alike. A nibble, chewed slowly — then you wait, and listen to your body.');
+      this.tickAction(8);
+      const s = this.state.scholar;
+      const R = (base) => Math.random() < base;
+      // SICKNESS KNOWLEDGE first: the body votes. Small honest risks. A bad
+      // roll means you spit it out — no calories, a lesson, an energy cost.
+      let spat = false;
+      const queasy = (sev) => {
+        const eLoss = sev ? 25 : 12;
+        s.energy = Math.max(0, (s.energy || 100) - eLoss);
+        this.say(sev
+          ? `Your stomach heaves — you spit it out. Your body votes NO. (-${eLoss} energy)`
+          : `Your stomach knots a little. A warning, not a wound. (-${eLoss} energy)`);
+      };
+      if (ed === 'avoid' && R(0.4)) {
+        queasy(true); spat = true;
+        entry.riskSense = 'dangerous';
+        this.say('The Codex notes it, nameless: this one is DANGEROUS. No name yet — but your gut has a file on it.');
+      } else if (ed === 'cook' && R(0.3)) {
+        queasy(false); spat = true;
+        entry.riskSense = 'cook-first';
+        this.say('Raw sits wrong. Your gut is fairly sure: cook it first. Noted — still no name.');
+      } else if (ed === 'caution' && R(0.2)) {
+        if (!entry.riskSense) {
+          entry.riskSense = 'care';
+          this.say('A faint unease, passing. Edible, probably — in care. Noted.');
+        }
+      } else if (!entry.riskSense) {
+        // No reaction. Honest about what that proves: not much, for the
+        // dangerous ones. The sense stays provisional.
+        entry.riskSense = ed === 'avoid' ? 'uncertain' : 'seems-safe';
+        this.say(ed === 'avoid'
+          ? 'No reaction this time — lucky, maybe. Your gut still doesn\u2019t trust it. (noted: uncertain)'
+          : 'An hour, no reaction. Your body files it under: probably fine. (noted)');
+      }
+      // CALORIE KNOWLEDGE: what you kept down fills you honestly — a quarter
+      // of a unit. The sense (meager/modest/hearty/rich) is the knowledge;
+      // the kcal are the lesson's tuition, paid in full.
+      if (!spat) {
+        const kcal = Math.max(1, Math.round((p.caloriesPerUnit || 0) * 0.25));
+        const cpu = p.caloriesPerUnit || 0;
+        const band = cpu < 30 ? 'meager' : cpu < 80 ? 'modest' : cpu < 150 ? 'hearty' : 'rich';
+        if (!entry.calSense) {
+          entry.calSense = band;
+          this.say({
+            meager: 'Barely anything in it — your stomach barely notices.',
+            modest: 'A little warmth. Some energy here.',
+            hearty: 'Surprisingly filling for a nibble — this one has real energy in it.',
+            rich: 'Dense. Your body wakes up. This is serious food, if it\u2019s safe.',
+          }[band] + ` (+${kcal} kcal — felt, not counted. The Codex notes the sense of it.)`);
+        } else {
+          this.say(`Another nibble. Same story: ${band} fuel. (+${kcal} kcal)`);
+        }
+        s.kcal = Math.min(this.kcalCap ? this.kcalCap() : 3000, (s.kcal || 0) + kcal);
+      }
+      entry.experiments = n + 1;
+      this.say(`That\u2019s experiment ${entry.experiments} on this mystery. ${entry.experiments < 4 ? 'The full cautious test will go easier now — you\u2019ve done part of the tasting already.' : 'Nibbling has taught all it can.'}`);
       return null;
     },
 

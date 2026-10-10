@@ -12353,6 +12353,7 @@
         }
       } catch (e) {}
       html += ` <button class="btn ghost sm" data-stash-test="${idx}">Test cautiously</button>`;
+      html += ` <button class="btn ghost sm" data-stash-experiment="${idx}" title="Nibble it: learn how filling it is and whether your body objects — without naming it. 8 ticks.">Nibble</button>`;
       html += ` <button class="btn ghost sm" data-stash-rush="${idx}">Rush it</button>`;
       html += ` <button class="btn ghost sm" data-stash-watch="${idx}">Watch the fauna</button>`;
       if (Game.state.systemArrived) {
@@ -12718,6 +12719,7 @@
             // just at camp. Sorting stays camp-only (flat surface, good light).
             if (i.lump) {
               foodBtns += ` <button class="btn ghost sm" data-test="${idx}">Test cautiously</button>`;
+              foodBtns += ` <button class="btn ghost sm" data-experiment="${idx}" title="Nibble it: learn how filling it is and whether your body objects — without naming it. 8 ticks.">Nibble</button>`;
               foodBtns += ` <button class="btn ghost sm" data-rush="${idx}">Rush it</button>`;
               foodBtns += ` <button class="btn ghost sm" data-watch="${idx}">Watch the fauna</button>`;
             }
@@ -12798,6 +12800,7 @@
     // FIELD IDENTIFICATION: the cautious test works from the pack, anywhere.
     const packOf = () => Game.state.scholar.inventory;
     slot.querySelectorAll('[data-test]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.test, {}, packOf()), 'Tested.'));
+    slot.querySelectorAll('[data-experiment]').forEach(b => b.onclick = rewire(() => Game.experimentWith(+b.dataset.experiment, packOf()), 'Nibbled.'));
     slot.querySelectorAll('[data-rush]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.rush, { rush: true }, packOf()), 'Rushed.'));
     slot.querySelectorAll('[data-watch]').forEach(b => b.onclick = rewire(() => Game.watchFauna(+b.dataset.watch, packOf()), 'Watched.'));
     slot.querySelectorAll('[data-clean]').forEach(b => b.onclick = rewire(() => Game.cleanCarcass(+b.dataset.clean), 'Cleaned.'));
@@ -12812,6 +12815,7 @@
     slot.querySelectorAll('[data-stash-sort]').forEach(b => b.onclick = rewire(() => Game.sortBag(null, +b.dataset.stashSort, stashOf()), 'Sorted.'));
     slot.querySelectorAll('[data-stash-sortask]').forEach(b => b.onclick = rewire(() => Game.sortBag(b.dataset.vid, +b.dataset.stashSortask, stashOf()), 'Sorted.'));
     slot.querySelectorAll('[data-stash-test]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.stashTest, {}, stashOf()), 'Tested.'));
+    slot.querySelectorAll('[data-stash-experiment]').forEach(b => b.onclick = rewire(() => Game.experimentWith(+b.dataset.stashExperiment, stashOf()), 'Nibbled.'));
     slot.querySelectorAll('[data-stash-rush]').forEach(b => b.onclick = rewire(() => Game.testCautiously(+b.dataset.stashRush, { rush: true }, stashOf()), 'Rushed.'));
     slot.querySelectorAll('[data-stash-watch]').forEach(b => b.onclick = rewire(() => Game.watchFauna(+b.dataset.stashWatch, stashOf()), 'Watched.'));
     slot.querySelectorAll('[data-stash-system]').forEach(b => b.onclick = rewire(() => Game.askSystemAbout(+b.dataset.stashSystem, stashOf()), 'Asked.'));
