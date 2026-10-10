@@ -3710,6 +3710,9 @@
 
   G._contestEnd = function(ac, outcome, prize) {
     try { this.tele('contest_end', { id: (ac && ac.contestId) || '?', outcome: outcome || '?' }); } catch (e) {}
+    // CONTEST COUNTER (pacing build 2026-10-10): Arc II gates on a real deed —
+    // a held contest counts. Every end path flows through here.
+    try { this.state.contestsHeld = (this.state.contestsHeld || 0) + 1; } catch (e) {}
     const contest = this._cxScaledContest(ac);
     const s = this.state.scholar;
     const isWatch = ac.participant && ac.participant !== 'player';

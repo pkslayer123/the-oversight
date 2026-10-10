@@ -337,7 +337,14 @@
       const breadth = this.codexBreadth();
       const crises = Object.keys(pg.crises || {}).length;
       let want = 1;
-      if (this.state.systemArrived && (s.day || 0) >= 7 && this.villageNotabilityScore() >= 10) want = 2;
+      // ARC II HONESTY (pacing build 2026-10-10, Steve: "Continue all
+      // proposed"): the old gate (notability>=10) was mathematically true for
+      // every village by day 7 — a timer wearing reactive's clothes, while the
+      // beat text claimed "not because the plot says so." Now the Show arrives
+      // when the village has DONE something notable: real knowledge breadth,
+      // or a televised contest already survived. The beat text is true again.
+      const deedDone = breadth >= 6 || (this.state.contestsHeld || 0) >= 1;
+      if (this.state.systemArrived && (s.day || 0) >= 7 && this.villageNotabilityScore() >= 10 && deedDone) want = 2;
       // ARC III CRUCIBLE (pacing build 2026-10-10): was crises>=1, but
       // first-grave fires in ~every run by day 13 — "someone died in week two"
       // read as attrition, not bonding. Two distinct crises = something the

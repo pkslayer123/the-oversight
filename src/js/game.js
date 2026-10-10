@@ -6201,7 +6201,7 @@
       //     L1 map village power, L2 wildlife + travelers, L3 rosters + strategy.
       //   scholar.integration 0-100: NEURAL INTERFACE DEPTH. How much of YOU the
       //     System can hold. Grows via integrate() (discoveries, books, quests).
-      //     Gates abilitySlots(): 20->2, 40->3, 60->4, 80->6.
+      //     Gates abilitySlots(): 20->2, 35->3, 50->4, 65->5, 80->6.
       // Linking a codex does NOT grant ability slots. The beat below keeps the
       // two honest: the System celebrates its sharper eyes, then reminds you
       // where slots actually come from.
@@ -17670,9 +17670,14 @@
     // abilitySlots: how many abilities can you hold? Integration-based.
     abilitySlots() {
       const integ = this.state.scholar.integration || 5;
+      // SLOT LADDER (pacing build 2026-10-10, Steve: "Continue all proposed"):
+      // was 20->2, 40->3, 60->4, 80->6 — measured play sat at integ ~35-53
+      // with 1 ability and 3 slots, so synergies were 0/240. Pure granularity;
+      // no cap lowered, no ceiling moved.
       if (integ >= 80) return 6;
-      if (integ >= 60) return 4;
-      if (integ >= 40) return 3;
+      if (integ >= 65) return 5;
+      if (integ >= 50) return 4;
+      if (integ >= 35) return 3;
       if (integ >= 20) return 2;
       return 1;
     },
