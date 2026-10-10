@@ -10,6 +10,17 @@
 //   - judgeLink(a, b)
 //   - proposeLink(a, b)
 //   - answerCounter(how)
+//   - proposeCovenant(vid)
+//   - proposeTrade(vid)
+//   - raidVillage(vid)
+//   - answerRaid(how)
+//   - covenantCrisis(linkId, why)
+//   - answerCovenantCrisis(linkId, how)
+//   - answerDefenseCall(linkId, how)
+//   - answerTradeCall(linkId, how)
+//   - drawLeaguePool(kcal)
+//   - leaguePool()
+//   - refuseTheScale()
 //   - answerDemand(a, b)
 //   - payTribute(a, b)
 //   - primaryDemand(linkId)
@@ -30,6 +41,11 @@
 //   - scaleRank()
 //   - polityOf(villageId)
 //   - _havenPolity()
+//   - _belongPolity()
+//   - _covenantPolity()
+//   - _tradePolity()
+//   - _peerLinks(kind)
+//   - _linkOther(link, id)
 //   - foreignPolities()
 //   - _foreignPolitySim()
 //   - _checkNational()
@@ -54,9 +70,14 @@
 //   - tribute_is_real_food: when our subordinate pays, the kcal arrive as a real spoil-dated pantry item — "the pantry grows" is engine, not copy. (code: hierarchy.js)
 //   - the_moment_survives: a pending accord killed by a broken first link is said aloud and restaged on the next link (accordUnanswered) — the Regional Dawn moment is never lost silently. (code: hierarchy.js)
 //   - scale_is_a_ladder: scaleRank() returns village/regional/national/global from the nationalLive/globalLive/networkLive flags — global implies national implies regional, never a skip. Read it defensively; it never throws. (code: hierarchy.js)
-//   - national_is_a_polity: a polity is one primary with >=3 active subordinates (four fires is a realm; two is a pact). Haven reaches national by LEADING (primary of >=3) or BELONGING (valued subordinate: trust >=60, arrears 0, link >=21 days to a primary whose realm holds >=4 villages). Both are deed-reactive and take seasons — no calendar path. (code: hierarchy.js)
-//   - the_court_is_played: national and global transitions stage played beats with real-cost choices (feast/host/cold; swear/serve/walk; champion/feast/decline). Walking away from the Binding refuses the scale; the court dies aloud if the realm dissolves mid-beat. (code: hierarchy.js)
+//   - national_is_a_polity: a polity is one primary with >=3 active subordinates (four fires is a realm; two is a pact). Haven reaches national SIX ways (docs/SCALE.md, Steve 2026-10-10): LEAD (primary of >=3), BELONG (valued subordinate: trust >=60, arrears 0, link >=21 days to a primary whose realm holds >=4 villages), COVENANT (league of >=4 fires with no primary — mutual defense + shared pool, council votes played), TRADE (trade league of >=4 fires — pooled routes, tariff income, no mutual defense), CONQUEST (a led realm where every subordinate was taken by force — raid-to-subjugate, tribute under duress), or REFUSE (a played, permanent refusal of the scale). All are deed-reactive and take seasons — no calendar path. (code: hierarchy.js)
+//   - the_court_is_played: national and global transitions stage played beats with real-cost choices (feast/host/cold; swear/serve/walk; champion/feast/decline; the founding council's pact/pool; the charter's sign/bargain; the iron court's yoke/mercy/release). Walking away from the Binding refuses the scale's shape; the court dies aloud if the realm dissolves mid-beat. Every national beat also offers REFUSE — the scale itself can be refused, permanently and aloud. (code: hierarchy.js)
 //   - national_is_a_live_state: national/global are live, not titles — when the realm dissolves (no qualifying polity, no pending beat) nationalLive and globalLive clear, the pending global summons dies, and every loss is said aloud. The oath's trust is proportional to the kcal sealed (like the feast-court and accord gift) — a 0-kcal oath buys token trust, never the full +12. (code: hierarchy.js)
+//   - peers_have_no_primary: covenant/trade links are peer links (kind, a/b fields) — no primary, no subordinate. Primacy bids, tribute demands, and vassal succession don't apply; crises are covenant-style (concede/hold/release), and any member can trigger one. (code: hierarchy.js)
+//   - conquest_is_blood: raidVillage/answerRaid is the force path — casualties via registerDeath, wounds marked, loot as real food, subjugation at trust 15 / opinion -40 / 7,000 kcal duress tribute. Conquered links can sabotage or revolt while trust < 30; mercy converts them to courtship links. Distinct from bidForPrimacy's courtship climb. (code: hierarchy.js)
+//   - league_pool_is_real_food: covenant pool contributions leave the pantry weekly; draws move real kcal back; shorts are said aloud and cost trust. Trade tariff income arrives as real food; route upkeep is real food out. (code: hierarchy.js)
+//   - trade_has_no_swords: trade-league help requests carry no defense obligation — Haven may refuse aloud (small trust cost, the charter said so) or send help as a priced favor. Covenant defense calls are obligations: sending costs a party, refusing costs trust league-wide. (code: hierarchy.js)
+//   - knowledge_never_gates_the_scale: peer proposals, raids, and all four new national beats are never knowledge-gated — force and trade don't ask what you know. (code: hierarchy.js)
 //   - foreign_fires_climb_too: known, unlinked villages bind among themselves off-screen (~seasonal); Haven hears through traders — delayed, possibly wrong, never omniscience. (code: hierarchy.js)
 //   - the_world_watches: global = national + deed-reactive viewership >= 40, staged as the played pre-table beat "The Watchers". The table itself is the ending, not this. (code: hierarchy.js)
 //   - national_routes_tribute: when national, subordinate tribute grain arrives at x1.25 via the System's logistics layer — and the arrival line says the true amount. Copy and engine agree. (code: hierarchy.js)
@@ -123,7 +144,11 @@
     villageLinks(villageId) {
       var id = villageId || HOME;
       return this.hierarchyState().filter(function (l) {
-        return l.status === 'active' && (l.primary === id || l.subordinate === id);
+        if (l.status !== 'active') return false;
+        if (l.primary === id || l.subordinate === id) return true;
+        // peer links (covenant/trade): no primary — matched on a/b.
+        if ((l.kind === 'covenant' || l.kind === 'trade') && (l.a === id || l.b === id)) return true;
+        return false;
       });
     },
 
@@ -134,8 +159,31 @@
         if (l.status !== 'active') continue;
         if ((l.primary === HOME && l.subordinate === otherId) ||
             (l.subordinate === HOME && l.primary === otherId)) return l;
+        if ((l.kind === 'covenant' || l.kind === 'trade') &&
+            ((l.a === HOME && l.b === otherId) || (l.b === HOME && l.a === otherId))) return l;
       }
       return null;
+    },
+
+    // _linkOther: the far end of a link, whatever its kind.
+    _linkOther(link, id) {
+      id = id || HOME;
+      if (link.primary === id) return link.subordinate;
+      if (link.subordinate === id) return link.primary;
+      if (link.a === id) return link.b;
+      if (link.b === id) return link.a;
+      return null;
+    },
+
+    // _peerLinks: Haven's active peer links of a kind ('covenant'|'trade').
+    _peerLinks(kind) {
+      var out = [];
+      var links = this.hierarchyState();
+      for (var i = 0; i < links.length; i++) {
+        var l = links[i];
+        if (l.status === 'active' && l.kind === kind && (l.a === HOME || l.b === HOME)) out.push(l);
+      }
+      return out;
     },
 
     _otherVillage(id) {
@@ -309,6 +357,13 @@
       var nm = (ov && ov.name) || 'them';
       if (how === 'accept') {
         this.state.pendingCounter = null;
+        if (c.kind === 'covenant' || c.kind === 'trade') {
+          return this._formPeerLink(c.targetId, {
+            kind: c.kind,
+            poolKcalPerWeek: c.kind === 'covenant' ? 2500 : undefined,
+            tariffRate: c.kind === 'trade' ? 1200 : undefined,
+          });
+        }
         return this._formLink(c.targetId, { asSubordinate: c.asSubordinate, tributeKcalPerWeek: c.tributeKcalPerWeek }, null);
       }
       if (how === 'sweeten') {
@@ -317,10 +372,11 @@
           this.say(`The pantry can't cover the sweetener — only ${paid.toLocaleString()} kcal to hand. They watch you count. The offer stands; the table waits.`);
           return 'counter';
         }
-        var j2 = this.judgeLink(c.targetId, c.opts);
+        var j2 = (c.kind === 'covenant' || c.kind === 'trade') ? this._judgePeer(c.targetId, c.opts) : this.judgeLink(c.targetId, c.opts);
         if (j2.score + 12 >= 45) {
           this.state.pendingCounter = null;
           this.say(`The gift talks. ${nm} reconsiders — at YOUR terms.`);
+          if (c.kind === 'covenant' || c.kind === 'trade') return this._formPeerLink(c.targetId, { kind: c.kind });
           return this._formLink(c.targetId, c.opts, j2);
         }
         this._nudgeOpinion(c.targetId, -5);
@@ -407,7 +463,7 @@
       if (this.state.networkLive && !this.state.accordUnanswered) return null;
       this.state.networkLive = true;
       this.state.accordUnanswered = false;
-      var other = link.subordinate === HOME ? link.primary : link.subordinate;
+      var other = this._linkOther(link, HOME);
       this.state.pendingAccord = { linkId: link.id, day: (this.state.scholar || {}).day || 0 };
       var rep = null;
       try { rep = this.representative(); } catch (e) {}
@@ -427,7 +483,7 @@
       var link = null;
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) if (links[i].id === pa.linkId) { link = links[i]; break; }
-      var other = link ? (link.subordinate === HOME ? link.primary : link.subordinate) : null;
+      var other = link ? this._linkOther(link, HOME) : null;
       var onm = other ? this._ovName(other) : 'them';
       if (!link || link.status !== 'active') {
         // THE MOMENT SURVIVES (break-it regional 2026-10-10, third pass):
@@ -565,7 +621,7 @@
     // links formed before this existed.
     _designateSpeaker(link) {
       try {
-        var other = link.subordinate === HOME ? link.primary : link.subordinate;
+        var other = this._linkOther(link, HOME);
         if (!other || other === HOME) return;
         var ov = this._otherVillage(other);
         var roster = (ov && ov.roster) || [];
@@ -591,6 +647,9 @@
           (function (self, link) {
             try {
               if (link.status !== 'active') return;
+              // peer links tick on their own rails (covenant/trade sections).
+              if (link.kind === 'covenant') { self.covenantTick(link); return; }
+              if (link.kind === 'trade') { self.tradeTick(link); return; }
               if (link.subordinate === HOME) {
                 // THE TRUE SHORTFALL, CHARGED ONCE (break-it regional
                 // 2026-10-09; boundary fix 2026-10-10): the tick runs at the
@@ -622,6 +681,29 @@
                 if (R() < 0.2) self.primaryDemand(link.id);
               } else if (link.primary === HOME) {
                 // our subordinate pays us — abstracted, trust-weighted
+                // CONQUEST IS BLOOD (2026-10-10): tribute under duress is a
+                // countdown, not a settlement. While a conquered link sits
+                // under trust 30, the tribute can arrive sabotaged — or the
+                // yoke gets thrown off entirely. Mercy (the iron court's
+                // answer) clears the conquered flag and ends this.
+                if (link.conquered && link.trust < 30) {
+                  if (R() < 0.05) {
+                    self._linkNote(link, 'revolt', 'The yoke is thrown off.');
+                    try { if (self._nudgeOpinion) self._nudgeOpinion(link.subordinate, -20); } catch (e) {}
+                    self.say(`🔥 ${self._ovName(link.subordinate)} rises — the yoke is thrown off, loudly, in front of everyone. Tribute under duress was never tribute. It was a countdown.`);
+                    try { if (self.ledgerAdd) self.ledgerAdd('hierarchy', 'revolt:' + link.subordinate); } catch (e) {}
+                    self.breakLink(link.id, 'revolt');
+                    return;
+                  }
+                  if (R() < 0.12) {
+                    var _half = Math.round(link.tributeKcalPerWeek / 2);
+                    link.arrears += _half;
+                    link.trust = Math.max(0, link.trust - 4);
+                    self._linkNote(link, 'sabotage', 'Tribute arrived light — grain "lost on the road." Arrears +' + _half.toLocaleString() + ' kcal.');
+                    if (R() < 0.5) self.say(`🌾 ${self._ovName(link.subordinate)}'s tribute arrives light — half the grain "lost on the road." Nobody believes it. Sabotage wears a thin mask. (Arrears +${_half.toLocaleString()} kcal.)`);
+                    return;
+                  }
+                }
                 if (R() < link.trust / 100) {
                   link.trust = Math.min(100, link.trust + 1);
                   // THE PANTRY GROWS (break-it regional 2026-10-10, third
@@ -810,16 +892,30 @@
       if (!link || link.status !== 'active') return null;
       link.status = 'broken';
       link.pendingDemand = null; // demands die with the link (break-it 2026-10-10)
-      var other = link.subordinate === HOME ? link.primary : link.subordinate;
+      link.pendingDefense = null; link.pendingTradeCall = null; link.pendingCovenantCrisis = null;
+      var other = this._linkOther(link, HOME);
       var weAreSub = link.subordinate === HOME;
+      var isPeer = (link.kind === 'covenant' || link.kind === 'trade');
       var ov = this._otherVillage(other);
       var hit = how === 'gambit' ? 30 : 15;
+      if (isPeer && (how === 'released' || how === 'seceded')) hit = 5; // an honored parting, not a betrayal
       if (ov) ov.opinion = Math.max(-100, Math.min(100, (ov.opinion || 0) - hit));
       this._linkNote(link, 'broken', 'Link broken (' + (how || 'severed') + ').');
       try {
         this.seedGossip('broke_' + link.id, { loyal: -6 }, (this.npcIds ? this.npcIds().slice(0, 4) : []));
       } catch (e) {}
       try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'broke:' + other + ':' + (how || '')); } catch (e) {}
+      if (isPeer) {
+        var kindName = link.kind === 'covenant' ? 'covenant' : 'trade league';
+        if (how === 'released') {
+          this.say(`🤝 Haven lets ${this._ovName(other)} walk out of the ${kindName} with honor — no chains, no hard words. They'll remember the letting-go longer than the league.`);
+        } else if (how === 'seceded' || how === 'revolt') {
+          this.say(`⛓️‍💥 ${this._ovName(other)} tears out of the ${kindName} — ${how === 'revolt' ? 'the yoke is thrown off, loudly' : 'the league couldn\'t hold them'}. Word travels: the ${kindName} bleeds.`);
+        } else {
+          this.say(`The ${kindName} with ${this._ovName(other)} is broken (${how || 'severed'}). What was built over weeks comes apart in a sentence.`);
+        }
+        return true;
+      }
       if (weAreSub && how === 'gambit') {
         this.say(`🗡️ The vassal's gambit: Haven breaks with ${this._ovName(other)}. No more tribute, no more calls — and no more protection. Word will travel: Haven broke faith. (${this._ovName(other)}'s opinion: ${ov ? ov.opinion : 'unknown'})`);
       } else {
@@ -923,7 +1019,12 @@
         try { nm = String(this.displayName(vid)).split(' ')[0]; } catch (e) {}
         this.say(`🕯️ ${nm} is dead — and the dead hold no treaties. Every link Haven has shakes.`);
         for (var i = 0; i < links.length; i++) {
-          try { this.successionCrisis(links[i].id); } catch (e) {}
+          try {
+            var _dl = links[i];
+            // peer leagues shake covenant-style, not vassal-style
+            if (_dl.kind === 'covenant' || _dl.kind === 'trade') this.covenantCrisis(_dl.id, 'leader-death');
+            else this.successionCrisis(_dl.id);
+          } catch (e) {}
         }
       } catch (e) {}
     },
@@ -964,6 +1065,8 @@
       var link = null;
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active') return null;
+      // peer leagues shake covenant-style
+      if (link.kind === 'covenant' || link.kind === 'trade') return this.covenantCrisis(link.id, 'their-speaker-died');
       link.trust = Math.max(0, link.trust - 15);
       var other = link.subordinate === HOME ? link.primary : link.subordinate;
       if (link.subordinate === HOME) {
@@ -1038,13 +1141,16 @@
       var links = this.hierarchyState();
       var i, l;
       if (id === HOME) {
-        var subs = [];
+        var subs = [], subLinks = [];
         for (i = 0; i < links.length; i++) {
           l = links[i];
-          if (l.status === 'active' && l.primary === HOME) subs.push(l.subordinate);
+          if (l.status === 'active' && l.primary === HOME) { subs.push(l.subordinate); subLinks.push(l); }
         }
         if (subs.length >= 3) {
-          return { primary: HOME, villages: ['haven'].concat(subs), size: subs.length + 1, led: true };
+          // CONQUEST (2026-10-10): a led realm where every subordinate was
+          // taken by force stages the Iron Court, not the First Court.
+          var byConquest = subLinks.length > 0 && subLinks.every(function (x) { return !!x.conquered; });
+          return { primary: HOME, villages: ['haven'].concat(subs), size: subs.length + 1, led: true, shape: byConquest ? 'conquest' : 'lead', byConquest: byConquest };
         }
         return null;
       }
@@ -1058,14 +1164,23 @@
       for (i = 0; i < fps.length; i++) if (fps[i].primary === id) { fp = fps[i]; break; }
       var size = 2 + (fp ? fp.subs.length : 0); // primary + Haven + their subs
       if (size < 4) return null;
-      return { primary: id, villages: [id, 'haven'].concat(fp ? fp.subs : []), size: size, led: false };
+      return { primary: id, villages: [id, 'haven'].concat(fp ? fp.subs : []), size: size, led: false, shape: 'belong' };
     },
 
-    // _havenPolity: Haven's polity on either road — led first, belonging
-    // second.
+    // _havenPolity: Haven's polity on any road — led first, belonging
+    // second, then the peer leagues. Priority order is a documented design
+    // call (docs/SCALE.md): the head's realm outranks the oath, which
+    // outranks the leagues. Walking away from one shape's beat defers only
+    // that shape — the next qualifying shape's beat stages instead.
     _havenPolity() {
-      var p = this.polityOf(HOME);
-      if (p) return p;
+      var cands = [this.polityOf(HOME), this._belongPolity(), this._covenantPolity(), this._tradePolity()];
+      for (var i = 0; i < cands.length; i++) if (cands[i]) return cands[i];
+      return null;
+    },
+
+    // _belongPolity: the BELONG road, extracted from _havenPolity so
+    // _checkNational can stage shapes by priority.
+    _belongPolity() {
       var links = this.hierarchyState();
       for (var i = 0; i < links.length; i++) {
         var l = links[i];
@@ -1075,6 +1190,27 @@
         }
       }
       return null;
+    },
+
+    // _covenantPolity: the COVENANT road — a league of >=4 fires with no
+    // primary. Four fires under no head is a polity; three is a pact.
+    // Mutual defense + shared tribute pool; decisions by council vote.
+    _covenantPolity() {
+      var ls = this._peerLinks('covenant');
+      if (ls.length < 3) return null;
+      var vs = ['haven'];
+      for (var i = 0; i < ls.length; i++) vs.push(ls[i].a === HOME ? ls[i].b : ls[i].a);
+      return { primary: null, villages: vs, size: vs.length, led: false, shape: 'covenant', links: ls };
+    },
+
+    // _tradePolity: the TRADE road — a league of >=4 fires bound by the
+    // charter. Pooled trade routes, tariff income, no mutual defense.
+    _tradePolity() {
+      var ls = this._peerLinks('trade');
+      if (ls.length < 3) return null;
+      var vs = ['haven'];
+      for (var i = 0; i < ls.length; i++) vs.push(ls[i].a === HOME ? ls[i].b : ls[i].a);
+      return { primary: null, villages: vs, size: vs.length, led: false, shape: 'trade', links: ls };
     },
 
     // _foreignPolitySim: weekly, off-screen. When >=2 known, unlinked
@@ -1126,7 +1262,11 @@
 
     // _checkNational: stages the national beat when a polity qualifies with
     // Haven in it. Called daily — the beat lands the morning after the deed
-    // that earned it, like rumor delivery at the day boundary.
+    // that earned it, like rumor delivery at the day boundary. Shapes are
+    // checked in _havenPolity priority order; walking away from one shape's
+    // beat defers only that shape (the next qualifying shape's beat stages
+    // instead — walking is how the player picks their road). A refused
+    // scale never re-stages: the offer comes once.
     _checkNational() {
       try {
         var p = this._havenPolity();
@@ -1152,37 +1292,68 @@
           return;
         }
         if (this.state.nationalLive || this.state.pendingNational) return;
-        if (p) this.stageNationalBeat(p);
+        if (this.state.scaleRefused) return;
+        var day = (this.state.scholar || {}).day || 0;
+        var defer = this.state._natDefer || {};
+        var cands = [this.polityOf(HOME), this._belongPolity(), this._covenantPolity(), this._tradePolity()];
+        for (var i = 0; i < cands.length; i++) {
+          var p2 = cands[i];
+          if (p2 && !(defer[p2.shape] > day)) { this.stageNationalBeat(p2); return; }
+        }
       } catch (e) {}
     },
 
-    // stageNationalBeat: THE MOMENT Haven becomes national. Two shapes
-    // (docs/SCALE.md): LEAD — "The First Court", the subordinate speakers
-    // ride in and Haven sets the terms of its realm (feast/host/cold).
-    // BELONG — "The Binding", the polity's court summons Haven's speaker
-    // (swear/serve/walk). Never a silent threshold flip.
+    // stageNationalBeat: THE MOMENT Haven becomes national — five shapes
+    // (docs/SCALE.md). LEAD — "The First Court" (feast/host/cold). CONQUEST —
+    // "The Iron Court" (yoke/mercy/release). BELONG — "The Binding"
+    // (swear/serve/walk). COVENANT — "The Founding Council" (pact/pool/walk).
+    // TRADE — "The Charter" (sign/bargain/walk). Every shape also offers
+    // REFUSE — the scale itself, refused permanently and aloud. Never a
+    // silent threshold flip.
     stageNationalBeat(polity) {
       if (!polity || this.state.nationalLive || this.state.pendingNational) return null;
       this.state.pendingNational = {
-        led: !!polity.led, primary: polity.primary,
+        led: !!polity.led, primary: polity.primary, shape: polity.shape || (polity.led ? 'lead' : 'belong'),
         villages: polity.villages.slice(),
         day: (this.state.scholar || {}).day || 0,
       };
       var pn = this.state.pendingNational;
-      if (pn.led) {
+      var refuseLine = `Or REFUSE the scale itself — stay a free fire at regional, whatever that costs. The System will not offer twice.`;
+      if (pn.shape === 'lead') {
         var names = [];
         for (var i = 0; i < pn.villages.length; i++) {
           if (pn.villages[i] !== 'haven') names.push(this._ovName(pn.villages[i]));
         }
         this.say(`◈ SYSTEM: "Four fires. One head. GOVERNANCE LAYER: online — polity tribute routing, the court calendar, famine reserves. You built a realm. Try not to lose it the way you found it."`);
-        this.say(`👑 Speakers from ${names.join(', ')} ride in for the first court — and every one of them is measuring you. FEAST them from a shared granary (5,000 kcal, no strings), HOST the court at Haven's fire (your speaker's time), or write the law in COLD ink (they'll pay more and love you less).`);
+        this.say(`👑 Speakers from ${names.join(', ')} ride in for the first court — and every one of them is measuring you. FEAST them from a shared granary (5,000 kcal, no strings), HOST the court at Haven's fire (your speaker's time), or write the law in COLD ink (they'll pay more and love you less). ${refuseLine}`);
+      } else if (pn.shape === 'conquest') {
+        var cnames = [];
+        for (var ci = 0; ci < pn.villages.length; ci++) {
+          if (pn.villages[ci] !== 'haven') cnames.push(this._ovName(pn.villages[ci]));
+        }
+        this.say(`◈ SYSTEM: "Four fires. One head. Taken, not given. GOVERNANCE LAYER: online — the war-ledger, the garrison calendar, the tribute routes. You built this with blood. The audience is still applauding."`);
+        this.say(`⚔️ The speakers of ${cnames.join(', ')} kneel because they lost — not because they chose. This is the Iron Court, and the realm is listening for what kind of conqueror you are. Hold the YOKE (tribute up, fear is mortar), show MERCY (ease the yoke — tribute down to courtship terms, hatred decays), or RELEASE them all and let the realm dissolve. ${refuseLine}`);
+      } else if (pn.shape === 'covenant') {
+        var lnames = [];
+        for (var li = 0; li < pn.villages.length; li++) {
+          if (pn.villages[li] !== 'haven') lnames.push(this._ovName(pn.villages[li]));
+        }
+        this.say(`◈ SYSTEM: "Four fires. NO head. Interesting. GOVERNANCE LAYER: online — the council calendar, the mutual-defense ledger, the shared granary. A league of equals. The audience has never seen one survive. Prove them wrong."`);
+        this.say(`🤝 The founding council: speakers from ${lnames.join(', ')} sit in a circle — no throne, no kneeling. This league needs its first act. Swear the war-PACT (mutual defense — any member's call is answered, or refused aloud), found the shared POOL (2,000 kcal a week from every fire into one granary, drawn in famine), or WALK from this table for now. ${refuseLine}`);
+      } else if (pn.shape === 'trade') {
+        var tnames = [];
+        for (var ti = 0; ti < pn.villages.length; ti++) {
+          if (pn.villages[ti] !== 'haven') tnames.push(this._ovName(pn.villages[ti]));
+        }
+        this.say(`◈ SYSTEM: "Four fires. One ledger. GOVERNANCE LAYER: online — the route registry, the tariff tables, the charter. No swords in this polity. The audience finds that either wise or hilarious."`);
+        this.say(`📜 The charter of ${tnames.join(', ')} waits for Haven's seal: pooled trade routes, tariff income every week — and no mutual defense, written plainly so nobody can pretend otherwise. SIGN at the table rate, BARGAIN for a better tariff (they'll answer aloud), or WALK from this table for now. ${refuseLine}`);
       } else {
         var nm = this._ovName(pn.primary);
         this.say(`◈ SYSTEM: "You are not the head of this. That is the point. A realm of ${polity.size} fires — and ${nm} wants Haven's oath. The audience LOVES a binding."`);
-        this.say(`📯 ${nm}'s court summons Haven's speaker. SWEAR the oath of the realm (a gift seals it), SERVE at their court (seven days of your speaker's life), or WALK — break the link and stay a free fire. Refusal is a choice, and it is remembered.`);
+        this.say(`📯 ${nm}'s court summons Haven's speaker. SWEAR the oath of the realm (a gift seals it), SERVE at their court (seven days of your speaker's life), or WALK — break the link and stay a free fire. Refusal is a choice, and it is remembered. ${refuseLine}`);
       }
-      try { if (this.journalNote) this.journalNote('village', 'national', pn.led ? 'The first court: Haven leads a polity of ' + pn.villages.length + ' villages.' : 'The Binding: ' + this._ovName(pn.primary) + '\'s court summons Haven\'s oath.'); } catch (e) {}
-      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'national-beat'); } catch (e) {}
+      try { if (this.journalNote) this.journalNote('village', 'national', 'National beat staged: ' + pn.shape + ' (' + pn.villages.length + ' villages).'); } catch (e) {}
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'national-beat:' + pn.shape); } catch (e) {}
       return true;
     },
 
@@ -1198,7 +1369,20 @@
       try { rep = this.representative(); } catch (e) {}
       try { rnm = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
 
-      if (pn.led) {
+      // REFUSE THE SCALE (2026-10-10): every national beat offers 'refuse' —
+      // the scale itself, refused permanently and aloud. See refuseTheScale.
+      if (how === 'refuse') return this.refuseTheScale();
+      // WALK from a league table defers that shape's offer (the next
+      // qualifying shape's beat stages instead — walking picks the road).
+      if (how === 'walk' && (pn.shape === 'covenant' || pn.shape === 'trade')) {
+        this.state.pendingNational = null;
+        var defer = this.state._natDefer = this.state._natDefer || {};
+        defer[pn.shape] = day + 14;
+        this.say(`🚶 Haven walks from the ${pn.shape === 'covenant' ? 'council' : 'charter'} table — for now. The league stands as bilateral bonds; the polity can wait two weeks. Other roads stay open.`);
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'national-deferred:' + pn.shape); } catch (e) {}
+        return 'deferred';
+      }
+      if (pn.shape === 'lead') {
         // Haven is the head. The realm must still hold >=3 subordinates —
         // if it dissolved before the court sat, the beat dies aloud.
         var subs = [];
@@ -1257,7 +1441,53 @@
           }
           this.say(`⚖️ Haven writes the law in cold ink: tribute up 10%, terms standard, no favorites. ${onames.join(', ')} bow — and do not love you for it. The realm holds. Fear is a kind of mortar. (Trust -12 with each.)`);
         }
-      } else {
+      } else if (pn.shape === 'conquest') {
+        // The Iron Court. The war-realm must still hold >=3 conquered
+        // subordinates — if it dissolved before the court sat, the beat
+        // dies aloud.
+        var csubs = [];
+        for (var cqi = 0; cqi < links.length; cqi++) {
+          var cql = links[cqi];
+          if (cql.status === 'active' && cql.primary === HOME && cql.conquered) csubs.push(cql);
+        }
+        if (csubs.length < 3) {
+          this.state.pendingNational = null;
+          this.say('The Iron Court never sits — the war-realm came apart before the conquerors arrived. Broken yokes make gossip, not polities.');
+          return null;
+        }
+        this.state.pendingNational = null;
+        var csubNames = [];
+        for (var cni = 0; cni < pn.villages.length; cni++) {
+          if (pn.villages[cni] !== 'haven') csubNames.push(this._ovName(pn.villages[cni]));
+        }
+        var csi;
+        if (how === 'yoke') {
+          for (csi = 0; csi < csubs.length; csi++) {
+            csubs[csi].tributeKcalPerWeek = Math.round(csubs[csi].tributeKcalPerWeek * 1.1);
+            csubs[csi].trust = Math.max(0, csubs[csi].trust - 12);
+            this._nudgeOpinion(csubs[csi].subordinate, -10);
+            this._linkNote(csubs[csi], 'iron-court', 'The yoke holds: tribute up 10%.');
+          }
+          this.say(`⚔️ The Iron Court's answer: the YOKE. Tribute up 10%, terms standard, garrisons doubled. ${csubNames.join(', ')} kneel lower — and hate you cleaner. The realm holds. Fear is a kind of mortar. (Trust -12 with each.)`);
+        } else if (how === 'mercy') {
+          for (csi = 0; csi < csubs.length; csi++) {
+            csubs[csi].conquered = false;
+            csubs[csi].tributeKcalPerWeek = 4000;
+            csubs[csi].trust = Math.min(100, csubs[csi].trust + 8);
+            this._nudgeOpinion(csubs[csi].subordinate, 10);
+            this._linkNote(csubs[csi], 'iron-court', 'Mercy: the yoke eased — courtship terms now.');
+          }
+          this.say(`🕊️ The Iron Court's answer: MERCY. The yoke comes off — tribute back to courtship terms, 4,000 kcal a week, and the hatred starts to decay. ${csubNames.join(', ')} don't trust it yet. They might, in a season. (Trust +8 with each.)`);
+        } else {
+          // release: the realm dissolves, loudly
+          for (csi = 0; csi < csubs.length; csi++) {
+            this.breakLink(csubs[csi].id, 'released');
+          }
+          this.say(`🕊️ Haven opens the cages. ${csubNames.join(', ')} walk out free — the war-realm dissolves before it ever sat as a court. They'll remember the yoke. They'll remember the release longer.`);
+          try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'iron-court-released'); } catch (e) {}
+          return 'released';
+        }
+      } else if (pn.shape === 'belong') {
         // Haven belongs. The court wants the oath.
         var link = this.linkWith(pn.primary);
         if (!link || link.status !== 'active' || link.subordinate !== HOME) {
@@ -1296,6 +1526,100 @@
             this.say('There is no speaker to send — the court gets word and promises instead. It lands softer. (Trust +4.)');
           }
         }
+      } else if (pn.shape === 'covenant') {
+        // The Founding Council. The league must still hold >=3 covenant
+        // bonds — if it dissolved before the council sat, the beat dies
+        // aloud.
+        var covLinks = this._peerLinks('covenant');
+        if (covLinks.length < 3) {
+          this.state.pendingNational = null;
+          this.say('The founding council never sits — the league came apart before the speakers arrived. Three bonds make a league; fewer make gossip.');
+          return null;
+        }
+        this.state.pendingNational = null;
+        var vnames = [];
+        for (var vni = 0; vni < covLinks.length; vni++) {
+          vnames.push(this._ovName(covLinks[vni].a === HOME ? covLinks[vni].b : covLinks[vni].a));
+        }
+        var vsi;
+        // The league carries both pillars after the founding; the choice is
+        // which act founds it — the war-pact (trust) or the shared granary
+        // (an opening pour into the pool, said aloud).
+        for (vsi = 0; vsi < covLinks.length; vsi++) {
+          covLinks[vsi].warOath = true;
+          covLinks[vsi].poolLive = true;
+        }
+        if (how === 'pact') {
+          for (vsi = 0; vsi < covLinks.length; vsi++) {
+            covLinks[vsi].trust = Math.min(100, covLinks[vsi].trust + 8);
+            this._linkNote(covLinks[vsi], 'council', 'The war-pact sworn: mutual defense.');
+          }
+          this.say(`🤝 The war-pact is sworn — no throne, no kneeling, just hands on the table. When any member's treeline burns, the league answers: Haven sends hands (two villagers, three days) or refuses aloud and the whole league hears it. ${vnames.join(', ')} — equals, now, in war as in council. The shared granary opens beside it: 2,000 kcal a week from every fire. (Trust +8 each.)`);
+        } else {
+          var opened = 0;
+          for (vsi = 0; vsi < covLinks.length; vsi++) {
+            covLinks[vsi].trust = Math.min(100, covLinks[vsi].trust + 6);
+            this._linkNote(covLinks[vsi], 'council', 'The shared pool founded.');
+            opened += 2000;
+          }
+          this.state.leaguePoolKcal = (this.state.leaguePoolKcal || 0) + opened;
+          this.say(`🌾 The shared granary is founded: ${vnames.join(', ')} each pour 2,000 kcal into one pool — ${opened.toLocaleString()} kcal under no one's roof and everyone's. Draw on it in famine; every draw is written in the council's book. The war-pact is sworn beside it: any member's call gets answered, or refused aloud. (Trust +6 each.)`);
+        }
+      } else if (pn.shape === 'trade') {
+        // The Charter. The league must still hold >=3 trade bonds.
+        var trLinks = this._peerLinks('trade');
+        if (trLinks.length < 3) {
+          this.state.pendingNational = null;
+          this.say('The charter is never sealed — the league came apart before the ink dried. Three routes make a charter; fewer make gossip.');
+          return null;
+        }
+        this.state.pendingNational = null;
+        var tnames2 = [];
+        for (var tni = 0; tni < trLinks.length; tni++) {
+          tnames2.push(this._ovName(trLinks[tni].a === HOME ? trLinks[tni].b : trLinks[tni].a));
+        }
+        var tsi;
+        if (how === 'sign') {
+          for (tsi = 0; tsi < trLinks.length; tsi++) {
+            trLinks[tsi].chartered = true;
+            trLinks[tsi].tariffRate = 1000;
+            trLinks[tsi].trust = Math.min(100, trLinks[tsi].trust + 6);
+            this._linkNote(trLinks[tsi], 'charter', 'Sealed at the table rate (1,000 kcal/week).');
+          }
+          this.say(`📜 Haven seals the charter at the table rate: pooled routes, 1,000 kcal a week in tariff per route, 400 out in upkeep. And the clause everyone reads twice: no mutual defense — when a member calls for help, Haven may refuse aloud, and the charter says that's allowed. (Trust +6 each.)`);
+        } else {
+          // bargain: demand 1,500 — each member answers aloud, by opinion.
+          // Played, not rolled: the courtship you did (or didn't) is the
+          // negotiation.
+          var held = 0;
+          for (tsi = 0; tsi < trLinks.length; tsi++) {
+            var tl = trLinks[tsi];
+            tl.chartered = true;
+            var tother = tl.a === HOME ? tl.b : tl.a;
+            var top = 0;
+            try { var _tov = this._otherVillage(tother); top = (_tov && _tov.opinion) || 0; } catch (e) {}
+            if (top >= 10) {
+              tl.tariffRate = 1500; tl.trust = Math.max(0, tl.trust - 5); held++;
+              this._linkNote(tl, 'charter', 'Bargained up: 1,500 kcal/week tariff.');
+            } else {
+              tl.tariffRate = 1000; tl.trust = Math.max(0, tl.trust - 3);
+              this._linkNote(tl, 'charter', 'Bargain refused aloud: table rate stands.');
+            }
+          }
+          if (held === trLinks.length) {
+            this.say(`📜 Haven bargains hard — and ${tnames2.join(', ')} all swallow the 1,500 kcal tariff. They didn't like it. The routes are richer for it. (Trust -5 each.)`);
+          } else if (held === 0) {
+            this.say(`📜 Haven pushes for 1,500 — and every fire at the table says no, aloud. The charter seals at the table rate anyway; they heard you push. (Trust -3 each.)`);
+          } else {
+            this.say(`📜 A split table: ${held} of ${trLinks.length} fires accept the 1,500 kcal tariff, the rest hold at 1,000 — said aloud, no hard feelings beyond the honest kind.`);
+          }
+        }
+      } else {
+        // unknown shape — defensive: never set nationalLive on a beat we
+        // don't understand.
+        this.state.pendingNational = null;
+        this.say('The court scatters — something about the summons didn\'t parse, and the System hates a malformed ceremony more than a refusal. The offer dies unmade.');
+        return null;
       }
       // THE COURT SAT (or the oath was sworn): Haven is national.
       this.state.nationalLive = true;
@@ -1423,6 +1747,489 @@
       } catch (e) {}
     },
 
+    // ---------- PEER POLITIES: COVENANT & TRADE ----------
+
+    // _judgePeer: the courtship for equals. No primary, no tribute upward —
+    // the score is about respect and appetite for the table. Base 38 like
+    // judgeLink; equals-at-the-table is its own +10. NEVER knowledge-gated
+    // (knowledge_never_gates_the_scale): force and trade don't ask what
+    // you know.
+    _judgePeer(targetId, opts) {
+      opts = opts || {};
+      var score = 38, reasons = [];
+      var rep = this.representative();
+      var repS = rep ? rep.standing : 0;
+      score += Math.min(20, repS / 2);
+      if (rep) {
+        var rn = 'Someone';
+        try { rn = String(this.displayName(rep.id)).split(' ')[0]; } catch (e) {}
+        reasons.push(rn + ' speaks for Haven — earned, not appointed.');
+      }
+      var ov = this._otherVillage(targetId);
+      var opinion = ov ? (ov.opinion || 0) : 0;
+      score += opinion / 2;
+      if (opinion >= 20) reasons.push('They think well of Haven.');
+      else if (opinion <= -20) reasons.push('They think poorly of Haven.');
+      if (this.isAllied && this.isAllied(HOME, targetId)) { score += 15; reasons.push('Already allies — this is the next step.'); }
+      score += 10;
+      reasons.push('No one kneels at this table — that is the offer.');
+      score += R() * 20 - 10;
+      return { score: Math.round(score), reasons: reasons, rep: rep };
+    },
+
+    // _proposePeer: shared courtship for covenant ('covenant') and trade
+    // ('trade'). Same played bands as proposeLink (>=55 accept, 35-54
+    // counter, <35 decline) — the negotiation is the climb.
+    _proposePeer(targetId, kind) {
+      var ov = this._otherVillage(targetId);
+      if (!ov || targetId === HOME) { this.say('No one to bind.'); return null; }
+      if (this.linkWith(targetId)) { this.say('There is already a link. One organization, one link — tend it.'); return null; }
+      if (this.state.pendingCounter) { this.say('There is already an offer on the table — answer it first.'); return 'counter'; }
+      var j = this._judgePeer(targetId, { kind: kind });
+      var nm = ov.name || 'them';
+      var opinion = ov.opinion || 0;
+      var kindName = kind === 'covenant' ? 'covenant' : 'charter';
+      if (opinion <= -20) {
+        this.say(`${nm} declines the ${kindName}. ${j.reasons.join(' ')} The door isn't shut forever — but it is shut today.`);
+        try { this._nudgeOpinion(targetId, -5); } catch (e) {}
+        return null;
+      }
+      if (j.score >= 55) return this._formPeerLink(targetId, { kind: kind });
+      if (j.score >= 35) return this._stagePeerCounter(targetId, { kind: kind }, j);
+      this.say(`${nm} declines the ${kindName}. ${j.reasons.join(' ')} The door isn't shut — just not today.`);
+      try { this._nudgeOpinion(targetId, -5); } catch (e) {}
+      return null;
+    },
+
+    // proposeCovenant: a league of equals — mutual defense + shared pool,
+    // council votes, no primary.
+    proposeCovenant(targetId) { return this._proposePeer(targetId, 'covenant'); },
+
+    // proposeTrade: the charter — pooled routes, tariff income, no mutual
+    // defense (written plainly).
+    proposeTrade(targetId) { return this._proposePeer(targetId, 'trade'); },
+
+    // _stagePeerCounter: the middle band for peer proposals — they name
+    // their price (a richer pool share / a higher tariff), played.
+    _stagePeerCounter(targetId, opts, j) {
+      var ov = this._otherVillage(targetId);
+      var nm = (ov && ov.name) || 'them';
+      var c = {
+        targetId: targetId, opts: opts, kind: opts.kind,
+        day: (this.state.scholar || {}).day || 0,
+      };
+      c.terms = opts.kind === 'covenant'
+        ? `They'll swear the covenant — but every fire pours 2,500 kcal a week into the shared pool, not 2,000. Take it or leave it.`
+        : `They'll sign the charter — but the tariff is 1,200 kcal a week, not 1,000. Take it or leave it.`;
+      this.state.pendingCounter = c;
+      this.say(`⛓️ ${nm} doesn't say no. They say: "${c.terms}" The table is set — accept their terms, sweeten the offer, or walk away.`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'peer-counter:' + targetId + ':' + opts.kind); } catch (e) {}
+      return 'counter';
+    },
+
+    // _formPeerLink: the single place peer links are born. kind 'covenant'
+    // (mutual defense + shared pool) or 'trade' (routes + tariff, no
+    // defense). No primary/subordinate — peers_have_no_primary.
+    _formPeerLink(targetId, opts) {
+      opts = opts || {};
+      var kind = opts.kind || 'covenant';
+      var ov = this._otherVillage(targetId);
+      var nm = (ov && ov.name) || 'them';
+      var link = {
+        id: 'link_' + Date.now().toString(36) + Math.floor(R() * 999),
+        kind: kind, a: HOME, b: targetId,
+        primary: null, subordinate: null,
+        trust: 30,
+        history: [], status: 'active',
+        day: (this.state.scholar || {}).day || 0,
+        theirSpeaker: null,
+      };
+      if (kind === 'covenant') {
+        link.poolKcalPerWeek = opts.poolKcalPerWeek || 2000;
+        link.obligations = ['mutual-defense', 'pool'];
+      } else {
+        link.tariffRate = opts.tariffRate || 1000;
+        link.obligations = ['routes'];
+      }
+      this.hierarchyState().push(link);
+      this._designateSpeaker(link);
+      this._linkNote(link, 'formed', kind === 'covenant' ? 'Covenant sworn with ' + nm + ' — equals.' : 'Charter signed with ' + nm + '.');
+      var rep = null, rn = 'Someone';
+      try { rep = this.representative(); } catch (e) {}
+      try { rn = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
+      if (kind === 'covenant') {
+        this.say(`🤝 ${rn} brings it home: a COVENANT with ${nm} — no primary, no kneeling. Mutual defense and a shared pool, decided by council vote. Equals. The relationship starts at trust 30.`);
+      } else {
+        this.say(`📜 ${rn} brings it home: a CHARTER with ${nm} — pooled trade routes, tariff income, and the clause in plain ink: no mutual defense. The relationship starts at trust 30.`);
+      }
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'peer:' + kind + ':' + targetId); } catch (e) {}
+      if (!this.state.networkLive || this.state.accordUnanswered) this.stageFirstAccord(link);
+      return link;
+    },
+
+    // covenantTick: the league's weekly accounting. Haven's pool share
+    // leaves the pantry as REAL food (league_pool_is_real_food); the other
+    // fires' shares arrive abstractly, said aloud when they land. Defense
+    // calls are reactive — a member's treeline burns, or it doesn't.
+    covenantTick(link) {
+      try {
+        var day = (this.state.scholar || {}).day || 0;
+        var onm = this._ovName(this._linkOther(link, HOME));
+        if (link.poolLive && this.state._leaguePoolWeek !== this._week()) {
+          this.state._leaguePoolWeek = this._week();
+          var members = this._peerLinks('covenant').length;
+          var havenShare = (link.concessionUntil || 0) > day ? Math.round((link.poolKcalPerWeek || 2000) / 2) : (link.poolKcalPerWeek || 2000);
+          var paid = this._removePantryKcal(havenShare);
+          var theirs = 2000 * members;
+          this.state.leaguePoolKcal = (this.state.leaguePoolKcal || 0) + paid + theirs;
+          this._linkNote(link, 'pool', 'Pool week: Haven poured ' + paid.toLocaleString() + ' kcal; the league poured ' + theirs.toLocaleString() + '.');
+          if (paid < havenShare) {
+            var ls = this._peerLinks('covenant');
+            for (var i = 0; i < ls.length; i++) ls[i].trust = Math.max(0, ls[i].trust - 4);
+            this.say(`🌾 Haven's share of the league pool comes up short — ${paid.toLocaleString()} of ${havenShare.toLocaleString()} kcal. The council counts it. (Trust -4 across the league.)`);
+          } else if (R() < 0.4) {
+            this.say(`🌾 The league pool grows: ${(paid + theirs).toLocaleString()} kcal this week — Haven's share and the other fires'. The granary under no one's roof fills.`);
+          }
+          try { if (this.journalNote) this.journalNote('village', 'pool', 'League pool week: +' + (paid + theirs).toLocaleString() + ' kcal.'); } catch (e) {}
+        } else if (!link.poolLive) {
+          link.trust = Math.min(100, link.trust + 1);
+        }
+        if (link.warOath && !link.pendingDefense && R() < 0.15) {
+          link.pendingDefense = { day: day };
+          this._linkNote(link, 'call', onm + ' calls the covenant: their treeline is hot.');
+          this.say(`🔥 ${onm}'s treeline is burning — they call the covenant. The war-pact is not a suggestion: send two villagers for three days, or refuse aloud and let the whole league hear it.`);
+          try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-call:' + this._linkOther(link, HOME)); } catch (e) {}
+        }
+        // a strained member challenges the league — any member can trigger
+        if (!link.pendingCovenantCrisis && !link.pendingDefense && link.trust < 40 && R() < 0.10) {
+          this.covenantCrisis(link.id, 'strain');
+        }
+      } catch (e) {}
+    },
+
+    // tradeTick: the charter's weekly accounting. Tariff income arrives as
+    // real food; route upkeep leaves as real food. Help requests arrive
+    // separately — and may be refused aloud (trade_has_no_swords).
+    tradeTick(link) {
+      try {
+        var day = (this.state.scholar || {}).day || 0;
+        var other = this._linkOther(link, HOME);
+        var onm = this._ovName(other);
+        if (!link.chartered) { link.trust = Math.min(100, link.trust + 1); return; }
+        var rate = link.tariffRate || 1000;
+        var v = this.state.village || {}; v.pantry = v.pantry || [];
+        v.pantry.push({ name: 'Route tariff — ' + onm, kcalEach: rate, units: 1, spoilDay: day + 21 });
+        var upkeep = this._removePantryKcal(400);
+        link.trust = Math.min(100, link.trust + 1);
+        this._linkNote(link, 'tariff', 'Tariff +' + rate.toLocaleString() + ' kcal; upkeep -' + upkeep.toLocaleString() + ' kcal.');
+        if (R() < 0.3) this.say(`📜 The ${onm} route pays: ${rate.toLocaleString()} kcal of tariff into the pantry, ${upkeep.toLocaleString()} out in upkeep. The charter earns its ink.`);
+        if (!link.pendingTradeCall && R() < 0.12) {
+          link.pendingTradeCall = { day: day };
+          this._linkNote(link, 'call', onm + ' asks for help — hands, not tariff.');
+          this.say(`📯 ${onm} asks Haven for help — hands, not tariff. The charter has no swords: Haven may refuse aloud (the charter allows it), or send help as a priced favor.`);
+          try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'trade-call:' + other); } catch (e) {}
+        }
+      } catch (e) {}
+    },
+
+    // leaguePool: read the shared granary. Draws move real food.
+    leaguePool() {
+      return Math.max(0, Math.round(this.state.leaguePoolKcal || 0));
+    },
+
+    // drawLeaguePool: famine relief — real kcal from the pool to the
+    // pantry, written in the council's book. Empty pool says so aloud.
+    drawLeaguePool(kcal) {
+      var pool = this.leaguePool();
+      if (pool <= 0) {
+        this.say(`The league granary is empty — nothing to draw. The council's book shows every pour and every draw; this week it shows nothing.`);
+        return 0;
+      }
+      var take = Math.min(pool, Math.max(0, Math.round(kcal || 0)));
+      if (take <= 0) return 0;
+      this.state.leaguePoolKcal = pool - take;
+      var day = (this.state.scholar || {}).day || 0;
+      var v = this.state.village || {}; v.pantry = v.pantry || [];
+      v.pantry.push({ name: 'League granary draw', kcalEach: take, units: 1, spoilDay: day + 14 });
+      this.say(`🌾 Haven draws ${take.toLocaleString()} kcal from the league granary — real food, written in the council's book. ${this.leaguePool().toLocaleString()} kcal remain under no one's roof.`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'pool-draw:' + take); } catch (e) {}
+      return take;
+    },
+
+    // _musterAway: pick n roster members (never the player) for league
+    // service. Returns the ids; empty when the bench is empty.
+    _musterAway(n, what) {
+      var out = [];
+      try {
+        var roster = this.state.village.roster || [];
+        var me = this.villagerId;
+        for (var i = 0; i < roster.length && out.length < n; i++) {
+          var id = roster[i];
+          if (id === me) continue;
+          if (!this.isMember(id)) continue;
+          out.push(id);
+        }
+      } catch (e) {}
+      return out;
+    },
+
+    // answerDefenseCall: a covenant defense call, answered. 'send' costs a
+    // party (two villagers, three days — real absence); 'refuse' is said
+    // aloud and costs trust league-wide (trade_has_no_swords does NOT
+    // apply here — the war-pact is an obligation).
+    answerDefenseCall(linkId, how) {
+      var links = this.hierarchyState();
+      var link = null;
+      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
+      if (!link || !link.pendingDefense) return null;
+      if (link.status !== 'active' || link.kind !== 'covenant') { link.pendingDefense = null; return null; }
+      var other = this._linkOther(link, HOME);
+      var onm = this._ovName(other);
+      var day = (this.state.scholar || {}).day || 0;
+      link.pendingDefense = null;
+      if (how === 'send') {
+        var sent = this._musterAway(2, 'defense');
+        if (!sent.length) {
+          link.trust = Math.max(0, link.trust - 4);
+          this.say(`There's no one to send — Haven's bench is empty. The covenant notices the empty bench. (Trust -4.)`);
+          return 'empty';
+        }
+        this.state.covenantAway = { vids: sent, untilDay: day + 3, linkId: link.id, to: other };
+        link.trust = Math.min(100, link.trust + 8);
+        this._linkNote(link, 'defense', 'Answered the call: ' + sent.length + ' villagers, 3 days.');
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-sent:' + other); } catch (e) {}
+        this.say(`🛡️ Haven answers: ${sent.length} villagers walk out to ${onm}'s treeline for three days. The war-pact holds because it's held. (Trust +8.)`);
+        return 'sent';
+      }
+      var ls = this._peerLinks('covenant');
+      for (var i2 = 0; i2 < ls.length; i2++) ls[i2].trust = Math.max(0, ls[i2].trust - 10);
+      this._linkNote(link, 'defense', 'REFUSED the call — aloud.');
+      try { this.seedGossip('defense_refused_' + link.id, { loyal: -6 }, (this.npcIds ? this.npcIds().slice(0, 4) : [])); } catch (e) {}
+      this.say(`🔥 Haven refuses ${onm}'s call — aloud, in council, no excuses dressed up. The war-pact remembers refusals longer than battles. (Trust -10 across the league.)`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-refused:' + other); } catch (e) {}
+      return 'refused';
+    },
+
+    // answerTradeCall: a trade-league help request. The charter has no
+    // swords — 'refuse' is allowed and said aloud (small trust cost);
+    // 'send' is a priced favor (1,500 kcal repaid after — real food).
+    answerTradeCall(linkId, how) {
+      var links = this.hierarchyState();
+      var link = null;
+      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
+      if (!link || !link.pendingTradeCall) return null;
+      if (link.status !== 'active' || link.kind !== 'trade') { link.pendingTradeCall = null; return null; }
+      var other = this._linkOther(link, HOME);
+      var onm = this._ovName(other);
+      var day = (this.state.scholar || {}).day || 0;
+      link.pendingTradeCall = null;
+      if (how === 'send') {
+        var sent = this._musterAway(2, 'favor');
+        if (!sent.length) {
+          link.trust = Math.max(0, link.trust - 2);
+          this.say(`There's no one to send — Haven's bench is empty. They note the difference between a refusal and an empty bench. (Trust -2.)`);
+          return 'empty';
+        }
+        this.state.tradeAway = { vids: sent, untilDay: day + 3, linkId: link.id, to: other };
+        var v = this.state.village || {}; v.pantry = v.pantry || [];
+        v.pantry.push({ name: 'Favor repaid — ' + onm, kcalEach: 1500, units: 1, spoilDay: day + 21 });
+        link.trust = Math.min(100, link.trust + 6);
+        this._linkNote(link, 'favor', 'Sent help as a priced favor (+1,500 kcal repaid).');
+        this.say(`🤝 Haven sends ${sent.length} villagers to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +6.)`);
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'favor-sent:' + other); } catch (e) {}
+        return 'sent';
+      }
+      link.trust = Math.max(0, link.trust - 4);
+      this._linkNote(link, 'favor', 'Refused aloud — the charter allows it.');
+      this.say(`📜 Haven refuses ${onm} — aloud, and the charter backs it: no mutual defense, written plainly. They knew the terms when they signed. (Trust -4.)`);
+      return 'refused';
+    },
+
+    // covenantCrisis: any member can trigger a succession-style crisis —
+    // their speaker died, Haven's did, or the strain got loud. Played:
+    // CONCEDE (better terms, the league holds), HOLD (the line — they may
+    // walk), or RELEASE (let them walk with honor).
+    covenantCrisis(linkId, why) {
+      var links = this.hierarchyState();
+      var link = null;
+      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
+      if (!link || link.status !== 'active') return null;
+      if (link.kind !== 'covenant' && link.kind !== 'trade') return this.successionCrisis(linkId);
+      if (link.pendingCovenantCrisis) return 'pending';
+      link.pendingCovenantCrisis = { why: why || 'strain', day: (this.state.scholar || {}).day || 0 };
+      var other = this._linkOther(link, HOME);
+      var onm = this._ovName(other);
+      var kindName = link.kind === 'covenant' ? 'covenant' : 'charter';
+      link.trust = Math.max(0, link.trust - 10);
+      this._linkNote(link, 'crisis', 'Crisis: ' + (why || 'strain') + '.');
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'covenant-crisis:' + other); } catch (e) {}
+      if (why === 'their-speaker-died') {
+        this.say(`🕯️ ${onm}'s speaker is dead — and the ${kindName} shakes. Their council wants new terms, or out. CONCEDE (better terms, the league holds), HOLD the line (they may walk), or RELEASE them with honor.`);
+      } else if (why === 'leader-death') {
+        this.say(`🕯️ Haven grieves — and ${onm} tests the ${kindName} in the chaos. Their speaker wants new terms, or out. CONCEDE, HOLD, or RELEASE.`);
+      } else {
+        this.say(`⚡ ${onm} challenges the ${kindName} — the strain got loud. Their speaker names their price, or the door. CONCEDE (better terms), HOLD the line, or RELEASE them with honor.`);
+      }
+      return 'crisis';
+    },
+
+    // answerCovenantCrisis: resolve the league crisis. Every option is
+    // priced: concede buys the league, hold risks it, release honors the
+    // leaving.
+    answerCovenantCrisis(linkId, how) {
+      var links = this.hierarchyState();
+      var link = null;
+      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
+      if (!link || !link.pendingCovenantCrisis) return null;
+      if (link.status !== 'active') { link.pendingCovenantCrisis = null; return null; }
+      var other = this._linkOther(link, HOME);
+      var onm = this._ovName(other);
+      var day = (this.state.scholar || {}).day || 0;
+      var kindName = link.kind === 'covenant' ? 'covenant' : 'charter';
+      link.pendingCovenantCrisis = null;
+      if (how === 'concede') {
+        if (link.kind === 'covenant') {
+          link.concessionUntil = day + 28;
+          this.say(`🤝 Haven concedes: ${onm}'s pool share halves for four weeks. The ${kindName} holds — bought, honestly, and everyone knows the price. (Trust +8.)`);
+        } else {
+          link.tariffRate = Math.max(500, Math.round((link.tariffRate || 1000) * 0.75));
+          this.say(`🤝 Haven concedes: the ${onm} route tariff drops to ${link.tariffRate.toLocaleString()} kcal a week. The ${kindName} holds — bought, honestly. (Trust +8.)`);
+        }
+        link.trust = Math.min(100, link.trust + 8);
+        this._linkNote(link, 'crisis', 'Conceded better terms; the league holds.');
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'crisis-conceded:' + other); } catch (e) {}
+        return 'conceded';
+      }
+      if (how === 'hold') {
+        link.trust = Math.max(0, link.trust - 10);
+        this._linkNote(link, 'crisis', 'Held the line.');
+        if (link.trust < 20) {
+          this.say(`Haven holds the line — and ${onm} walks. The ${kindName} couldn't hold them.`);
+          this.breakLink(link.id, 'seceded');
+          return 'seceded';
+        }
+        this.say(`Haven holds the line. ${onm}'s speaker sits back down — slowly. The ${kindName} holds its breath, and holds. (Trust -10.)`);
+        return 'held';
+      }
+      this._linkNote(link, 'crisis', 'Released with honor.');
+      this.say(`🤝 Haven opens the door: ${onm} walks out of the ${kindName} with honor — no chains, no hard words. A league that can't be left isn't a league.`);
+      this.breakLink(link.id, 'released');
+      return 'released';
+    },
+
+    // ---------- CONQUEST ----------
+
+    // raidVillage: the conquest road's first step — muster a war party.
+    // Played: STRIKE (blood and fire), offer TERMS (yield or bleed), or
+    // WITHDRAW. Distinct from bidForPrimacy's courtship: force, not
+    // climbing. Never knowledge-gated.
+    raidVillage(vid) {
+      var ov = this._otherVillage(vid);
+      if (!ov || vid === HOME) { this.say('No one to raid.'); return null; }
+      if (this.linkWith(vid)) { this.say('Already bound — you don\'t raid your own table.'); return null; }
+      if (this.state.pendingRaid) { this.say('A war party is already mustered — answer it first.'); return null; }
+      var fighters = this._musterAway(4, 'raid');
+      if (fighters.length < 2) {
+        this.say('Not enough fighters to raid — Haven needs at least two besides you. The war party never musters.');
+        return null;
+      }
+      var nm = ov.name || 'them';
+      this.state.pendingRaid = { target: vid, fighters: fighters, day: (this.state.scholar || {}).day || 0 };
+      this.say(`⚔️ The war party musters against ${nm}: ${fighters.length} fighters, three days gone, blood on the table. STRIKE and take them by force — the dead don't negotiate. Offer TERMS — yield or bleed. Or WITHDRAW the party before it marches.`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'raid-mustered:' + vid); } catch (e) {}
+      return true;
+    },
+
+    // answerRaid: resolve the muster. 'strike' pays blood for a subjugated
+    // village (trust 15, opinion -40, 7,000 kcal/week duress tribute);
+    // 'terms' lets the strong yield without blood; 'withdraw' costs face.
+    answerRaid(how) {
+      var pr = this.state.pendingRaid;
+      if (!pr) return null;
+      var ov = this._otherVillage(pr.target);
+      var nm = (ov && ov.name) || 'them';
+      var day = (this.state.scholar || {}).day || 0;
+      if (how === 'withdraw') {
+        this.state.pendingRaid = null;
+        try { this._nudgeOpinion(pr.target, -10); } catch (e) {}
+        this.say(`The war party stands down. ${nm} heard it muster — they'll remember the almost. (Opinion -10.)`);
+        return 'withdrawn';
+      }
+      if (how === 'terms') {
+        var ourS = 0, theirS = 0;
+        try { ourS = this.regionalStanding(); theirS = this.villageStandingOf(pr.target); } catch (e) {}
+        if (ourS >= theirS * 1.2 && ourS > 0) {
+          this.state.pendingRaid = null;
+          var ylink = this._formLink(pr.target, { asSubordinate: false, tributeKcalPerWeek: 5000 }, null);
+          ylink.conquered = true; ylink.trust = 25;
+          try { this._nudgeOpinion(pr.target, -25); } catch (e) {}
+          this._linkNote(ylink, 'conquered', 'Yielded to the war party without blood. Tribute 5,000 kcal/week under duress.');
+          this.say(`⚔️ ${nm} looks at the war party on their horizon — and chooses the tribute over the pyre. No blood today. The yoke is lighter for it, not light. (Trust 25, opinion -25, tribute 5,000 kcal/week.)`);
+          try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'yielded:' + pr.target); } catch (e) {}
+          return ylink;
+        }
+        this.say(`${nm} refuses the terms — laughs at them, even. The table is still set: STRIKE, or WITHDRAW.`);
+        return 'refused';
+      }
+      // strike: blood and fire
+      this.state.pendingRaid = null;
+      this.state.raidParty = { vids: pr.fighters.slice(), untilDay: day + 3, target: pr.target };
+      var dead = [], wounded = [];
+      for (var i = 0; i < pr.fighters.length; i++) {
+        var r = R();
+        if (r < 0.15) dead.push(pr.fighters[i]);
+        else if (r < 0.45) wounded.push(pr.fighters[i]);
+      }
+      var wounds = this.state.raidWounds = this.state.raidWounds || {};
+      for (var wi = 0; wi < wounded.length; wi++) wounds[wounded[wi]] = day + 7;
+      for (var di = 0; di < dead.length; di++) {
+        var dnm = 'Someone';
+        try { dnm = String(this.displayName(dead[di])); } catch (e) {}
+        try { this.registerDeath({ kind: 'person', villagerId: dead[di], name: dnm, cause: 'raid' }); } catch (e) {}
+      }
+      var slink = this._formLink(pr.target, { asSubordinate: false, tributeKcalPerWeek: 7000 }, null);
+      slink.conquered = true; slink.trust = 15;
+      try { this._nudgeOpinion(pr.target, -40); } catch (e) {}
+      this._linkNote(slink, 'conquered', 'Taken by force. Tribute 7,000 kcal/week under duress.');
+      var loot = 3000 + Math.floor(R() * 3000);
+      try {
+        var v = this.state.village || {}; v.pantry = v.pantry || [];
+        v.pantry.push({ name: 'Raid spoils — ' + nm, kcalEach: loot, units: 1, spoilDay: day + 14 });
+      } catch (e) {}
+      var wnames = [];
+      for (var wni = 0; wni < wounded.length; wni++) {
+        try { wnames.push(String(this.displayName(wounded[wni])).split(' ')[0]); } catch (e) {}
+      }
+      var costLine = (dead.length ? dead.length + ' dead' : 'no dead') + (wounded.length ? ', ' + wnames.join(', ') + ' wounded for a week' : ', none wounded');
+      this.say(`⚔️ ${nm} burns, and then it kneels. The cost, said plainly: ${costLine}. Spoils: ${loot.toLocaleString()} kcal. The yoke: 7,000 kcal a week, trust 15, hatred at -40. This is what conquest costs. Everybody saw.`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'conquered:' + pr.target); } catch (e) {}
+      try { if (this.recordMoment) this.recordMoment('Haven took ' + nm + ' by force.'); } catch (e) {}
+      return slink;
+    },
+
+    // ---------- REFUSE THE SCALE ----------
+
+    // refuseTheScale: the sixth road — a played, permanent refusal of the
+    // national scale. Real benefits (every kcal stays in Haven's pantry:
+    // no oath, no court, no tithe, no pool shares) and real costs (no
+    // x1.25 polity logistics, no league to call when the late waves come,
+    // the table stays distant — coalition-or-death stays honest). The
+    // offer never returns: _checkNational skips a refused scale.
+    refuseTheScale() {
+      var pn = this.state.pendingNational;
+      this.state.pendingNational = null;
+      var day = (this.state.scholar || {}).day || 0;
+      this.state.scaleRefused = true;
+      this.state.scaleRefusedDay = day;
+      this.state.scaleRefusedShape = pn ? pn.shape : 'offered';
+      this.say(`◈ SYSTEM: "Noted. The offer is withdrawn — permanently. No court. No oath. No tithe. The audience is... divided. Half of them just subscribed."`);
+      this.say(`🚶 Haven refuses the scale. Every kcal stays in Haven's pantry — no one's court, no one's oath, no pool shares, no tariffs. The price, said plainly: no polity logistics (tribute comes in whole, never ×1.25), no league to call when the late waves come, and the table stays distant. Coalition or death — Haven walks it alone.`);
+      try { if (this.journalNote) this.journalNote('village', 'national', 'Haven REFUSED the national scale — permanently. A free fire, whatever it costs.'); } catch (e) {}
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'scale-refused'); } catch (e) {}
+      try { if (this.recordMoment) this.recordMoment('Haven refused the national scale.'); } catch (e) {}
+      return 'refused';
+    },
+
     // ---------- DAILY ----------
 
     // deliverVillageRumors: the traveler's word, actually delivered. The
@@ -1473,6 +2280,12 @@
           var links = this.villageLinks ? this.villageLinks('haven') : [];
           for (var i = 0; i < links.length; i++) {
             if (links[i].subordinate === 'haven') this.proveWorth(links[i].id, vid, magnitude);
+            // peer leagues hear of deeds too — a league respects strength
+            else if ((links[i].kind === 'covenant' || links[i].kind === 'trade') &&
+                     (links[i].a === 'haven' || links[i].b === 'haven')) {
+              var g = Math.min(4, Math.max(1, Math.round((magnitude || 0) / 4)));
+              links[i].trust = Math.min(100, links[i].trust + g);
+            }
           }
         }
       } catch (e) {}

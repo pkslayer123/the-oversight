@@ -29,7 +29,8 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
   "three villages plus surplus" sketch Steve rejected as gameable becomes a bar about
   *relationships held*, not villages counted — each subordinate is a live trust/tribute
   relationship, any of which can snap.)
-- **Haven's two roads in** (contract: "leads or belongs to"):
+- **Haven's six roads in** (Steve approved all six 2026-10-10; contract: "leads or
+  belongs to" is now one of six):
   - **LEAD** — Haven is primary of ≥3 active subordinates. The built realm. Earned via
     bidForPrimacy (standing ≥ 90% of theirs, trust ≥ 60, one hard conversation per week)
     or by being the stronger from the start and holding it.
@@ -38,13 +39,43 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
     valued-subordinate bar, one notch below `kingdomEndingEligible`'s 70). Steve's
     standing rule: you may NOT end the game at the top — joining another kingdom is a
     legitimate earned outcome, and this is its doorway.
+  - **COVENANT** — Haven holds covenant links with ≥3 other villages: a league with
+    **no primary**. Peer links (`kind: 'covenant'`, no primary/subordinate) — mutual
+    defense (any member's call is answered with two villagers for three days, or
+    refused aloud at −10 trust league-wide) + a shared tribute pool (2,000 kcal/week
+    per fire, real food in and out; famine draws are written in the council's book).
+    Decisions by council vote (played). Any member can trigger a succession-style
+    crisis — concede (better terms), hold the line (they may secede), or release them
+    with honor.
+  - **TRADE** — Haven holds trade links with ≥3 other villages: an economic polity.
+    Pooled trade routes pay tariff income weekly (1,000 kcal/route, real food in;
+    400 kcal route upkeep, real food out). **No mutual defense obligation** — when a
+    member asks for help, Haven may refuse aloud (the charter allows it, −4 trust) or
+    send help as a priced favor (1,500 kcal repaid after).
+  - **CONQUEST** — Haven holds ≥3 subordinates **taken by force** (`raidVillage` /
+    `answerRaid`: muster a war party, then strike, offer terms, or withdraw). Real
+    costs: casualties via registerDeath, wounds marked, raiders gone three days,
+    hatred (opinion −40), tribute under duress (7,000 kcal/week, trust 15). Conquered
+    fires can sabotage tribute or revolt while trust < 30. Distinct from
+    courtship-based primacy bids: force, not climbing.
+  - **REFUSE** — a played, permanent refusal of the scale itself, offered on every
+    national beat. Real benefits: every kcal stays in Haven's pantry (no oath, no
+    court, no tithe, no pool shares). Real costs: no ×1.25 polity logistics, no
+    league to call when the late waves come, the table stays distant —
+    coalition-or-death stays honest (wave 5 stays locked at regional). The bilateral
+    relationships survive; only the polity is refused. The offer never returns
+    (`state.scaleRefused`).
+- **Shape priority** (documented design call): when several shapes qualify at once,
+  the beat stages in order lead → belong → covenant → trade. Walking away from a
+  league table defers only that shape 14 days — the next qualifying shape's beat
+  stages instead, so walking is how the player picks their road.
 - **The region lives without you:** known, unlinked villages bind among themselves
   off-screen (weekly, ~seasonal cadence, `state.foreignPolities`). Haven hears through
   traders — delayed, possibly wrong, never omniscience. Other fires are climbing too;
   a foreign polity that reaches 4+ is the BELONG road's precondition, and a rumor
   ("X has bound Y") is how you learn.
-- **The beat — played, never a silent flip.** Staged the morning after the deed that
-  earned it (day boundary, like rumor delivery):
+- **The beats — played, never a silent flip.** Staged the morning after the deed that
+  earned it (day boundary, like rumor delivery). Every beat also offers REFUSE:
   - LEAD → **The First Court**: the subordinate speakers ride in. Choose:
     - **FEAST** — open a shared granary: 5,000 kcal, no strings (trust +10 each,
       proportional if the pantry is thin — honor is proportional, never free).
@@ -52,22 +83,44 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
       (representative loaned 7 days — a real absence; trust +6 each).
     - **COLD** — write the law in cold ink: tribute standardized +10%, trust −12 each,
       opinion −5. Fear is a kind of mortar. The realm holds; it doesn't love you.
+  - CONQUEST → **The Iron Court**: the speakers kneel because they lost. Choose:
+    - **YOKE** — tribute +10%, trust −12 each, opinion −10. Fear is mortar.
+    - **MERCY** — the yoke eases: tribute back to courtship terms (4,000 kcal/week),
+      trust +8 each, opinion +10, conquered flags cleared (sabotage/revolt end).
+    - **RELEASE** — open the cages: every conquered link breaks with honor, the
+      war-realm dissolves, national stays unachieved.
   - BELONG → **The Binding**: the polity's court summons Haven's speaker. Choose:
     - **SWEAR** — the oath, sealed with 3,000 kcal (trust +12).
     - **SERVE** — seven days of your speaker's life at their court (trust +8).
     - **WALK** — break the link and stay a free fire. **Refusal is a real choice: the
       scale is refused with it** (national stays unachieved; the realm continues
       without Haven). No punishment beyond the relationship's own logic.
-  - If the realm dissolves before the court sits (links break mid-beat), the beat dies
+  - COVENANT → **The Founding Council**: no throne, no kneeling. Choose the founding act:
+    - **PACT** — swear the war-pact (mutual defense; trust +8 each). The shared pool
+      opens beside it.
+    - **POOL** — found the shared granary: every fire pours 2,000 kcal in, said aloud
+      (trust +6 each). The war-pact is sworn beside it.
+    - **WALK** — leave the table for now (this shape's offer defers 14 days).
+  - TRADE → **The Charter**: pooled routes, tariff, the no-swords clause in plain ink.
+    - **SIGN** — seal at the table rate: 1,000 kcal/week tariff per route (trust +6 each).
+    - **BARGAIN** — demand 1,500: each fire answers aloud by opinion (≥10 accepts at
+      trust −5; refuses at trust −3, table rate stands).
+    - **WALK** — leave the table for now (this shape's offer defers 14 days).
+  - If the realm/league dissolves before the beat's answer, the beat dies
     **aloud**, not silently.
 - **National unlocks (real, small, honest):**
   - **Polity logistics:** the System's governance layer routes tribute — subordinate
     tribute grain arrives at **×1.25** (the number is said aloud in the arrival line;
-    copy and engine agree).
+    copy and engine agree). Only while national; refused scales get tribute whole.
   - **Polity news:** weekly, traders carry word between the polity's fires (delayed,
     possibly wrong).
+  - **League pool** (covenant): shared granary, drawn in famine via
+    `Game.drawLeaguePool(kcal)` — real food both directions.
+  - **Tariff income** (trade): weekly per-route tariff, real food.
   - `kingdomEndingEligible()` (the valued-subordinate ending frame) keeps working as
     designed — the BELONG road is its on-ramp.
+- **Knowledge never gates the scale:** peer proposals, raids, and all four new beats
+  are never knowledge-gated — force and trade don't ask what you know.
 - **Anti-speedrun:** the climb is paced in weeks (the table is a weekly verb), trust is
   deed-earned, tribute is real food, foreign polities grow off-screen slowly. No pure
   calendar path exists.
@@ -107,12 +160,22 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
   `led=true` means Haven is the head. Note: the BELONG polity is queried as
   `polityOf(primaryId)`, not `polityOf('haven')`.
 - Beats are state-driven so the UI can render them without engine changes:
-  - `state.pendingNational = {led, primary, villages[], day}` →
-    `Game.answerNationalChoice('feast'|'host'|'cold' | 'swear'|'serve'|'walk')`
+  - `state.pendingNational = {led, shape, primary, villages[], day}` →
+    `Game.answerNationalChoice('feast'|'host'|'cold' | 'swear'|'serve'|'walk' | 'pact'|'pool' | 'sign'|'bargain' | 'yoke'|'mercy'|'release' | 'refuse')`
+    (`shape` is one of `lead|belong|covenant|trade|conquest`; `'refuse'` is offered on
+    every beat and permanently refuses the scale via `state.scaleRefused`; `'walk'` on
+    covenant/trade defers that shape 14 days via `state._natDefer`)
   - `state.pendingGlobal = {viewership, day}` →
     `Game.answerGlobalChoice('champion'|'feast'|'decline')`
   - (UI wiring in app.js is a separate workstream — same pattern as
     `state.pendingAccord` / `Game.answerAccord`.)
+- Peer-polity API: `Game.proposeCovenant(vid)` / `Game.proposeTrade(vid)` (played
+  courtship bands, counter-offers via `pendingCounter.kind`), `Game.raidVillage(vid)` /
+  `Game.answerRaid('strike'|'terms'|'withdraw')`, `Game.covenantCrisis(linkId, why)` /
+  `Game.answerCovenantCrisis(linkId, 'concede'|'hold'|'release')`,
+  `Game.answerDefenseCall(linkId, 'send'|'refuse')` (covenant),
+  `Game.answerTradeCall(linkId, 'send'|'refuse')` (trade),
+  `Game.leaguePool()` / `Game.drawLeaguePool(kcal)`, `Game.refuseTheScale()`.
 - `Game.foreignPolities()` — foreign bindings `{primary, subs[], day}` for the region
   view / rumor systems.
 
@@ -128,6 +191,20 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
 - Foreign polity cadence: ~22%/week when ≥2 candidates — seasonal, not scheduled.
 - Logistics bonus: ×1.25. Small enough to never replace tribute; big enough to feel
   the System working.
+- Covenant pool share: 2,000 kcal/week per fire (2,500 when accepted on a
+  counter's terms; halved for 4 weeks after a conceded crisis). Famine draws
+  unlimited against the pool balance.
+- Trade tariff: 1,000 kcal/week per route in, 400 kcal upkeep out (1,200 when
+  accepted on a counter's terms; 1,500 when bargained up at the charter).
+  Priced favor: 1,500 kcal repaid after.
+- Raid casualties: 15% death / 30% wounded (7 days) per raider, 2–4 raiders.
+  Duress tribute 7,000 kcal/week (trust 15); bloodless yield 5,000 (trust 25);
+  mercy resets to 4,000 courtship terms. Rebellion while trust < 30: 5%/week
+  revolt, 12%/week sabotage (half tribute "lost on the road").
+- Defense calls: covenant 15%/week per link (warOath); trade help requests
+  12%/week per link (chartered). Answering costs two villagers for three days.
+- Shape priority: lead > belong > covenant > trade. League-table walk defers
+  that shape 14 days.
 
 ## Change log
 
@@ -135,3 +212,12 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
 - 2026-10-10: endgame deed gate retuned (Steve: ~100-day target, every wave
   1-5 must be fought — 5/5/4/3/2 distinct per wave). scaleRank's national+
   bar is unchanged; the gate reads it alongside the per-wave deed bars.
+- 2026-10-10: all six national shapes implemented (prog2-national workstream,
+  Steve approved 2026-10-10): covenant (league of equals — mutual defense +
+  shared pool, council votes played, member-triggered crises), trade league
+  (pooled routes, tariff income, no mutual defense — refusals aloud), conquest
+  (raid-to-subjugate: real casualties, hatred, duress tribute, rebellion
+  risk), refuse the scale (played, permanent: keeps all tribute; costs the
+  ×1.25 logistics, the coalition, the table). Every beat offers REFUSE;
+  knowledge never gates the scale. Proof: scripts/test-national-shapes-20261010.js
+  (green ×3 seeds); regressions: test-scale-ladder + hierarchy-break green.
