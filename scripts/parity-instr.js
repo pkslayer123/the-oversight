@@ -110,18 +110,14 @@ function instrumentParity(Game) {
   wrap('offerSystemQuest', function () { C.quests.offered++; });
   wrap('checkSystemQuest', function () {});
   wrap('unlockSynergy', function () { C.synergy++; });
-  wrap('openPetition', function (G, a) {
-    // openPetition(pet) — pet.opener? check
-    try {
-      const pet = a[0] || {};
-      if (pet.opener && pet.opener !== G.villagerId) C.petitions.openedByVillager++;
-      else C.petitions.openedByPlayer++;
-    } catch (e) { C.petitions.openedByPlayer++; }
-  });
+  // openPetition(pet): petitioners ARRIVE at the fire — a villager-driven
+  // event (outsiders petitioning), never player-initiated. Count villager-side.
+  wrap('openPetition', function () { C.petitions.openedByVillager++; });
   wrap('conductPetitionMoot', function () { C.petitions.moots++; });
   wrap('fireRatingsSummons', function () { C.ratingsSummons++; });
   wrap('contestChoose', function () { C.contests.playerPlays++; });
   wrap('contestResolveGroup', function () { C.contests.villagerResolved++; });
+  wrap('contestResolveVillager', function () { C.contests.villagerResolved++; });
   wrap('inviteToParty', function () { C.party.playerInvites++; });
   wrap('startExpedition', function () { C.party.villagerExpeditions++; });
   wrap('villagerDayProduction', function () { C.production.abstract++; });

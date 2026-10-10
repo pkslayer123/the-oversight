@@ -144,6 +144,26 @@
           varmor = S.equipment.armorOf(vp, this.data.items) || 0;
       } catch (e) {}
 
+      // VILLAGER ABILITIES (parity 2026-10-10, Worker A): the System grants
+      // villagers abilities for real deeds (villagerGainXP) — but nothing
+      // ever READ them (npcHasAbility was only consulted for phoenix_clause
+      // burn eligibility). A granted ability that never fires is a lie. Each
+      // held ability below translates its player-facing effect into the
+      // off-screen fight's own terms. All draws go through lroll/RR so the
+      // contest engine's seeded resolution path stays deterministic.
+      var vAbs = [];
+      try {
+        if (typeof this.npcHasAbility === 'function')
+          vAbs = (((this.state.village || {}).npcAbilities || {})[vid] || []).slice();
+      } catch (e) {}
+      var vHasAb = function (id) { return vAbs.indexOf(id) >= 0; };
+      // one-shot ability state, reset per fight
+      var abAim = false, abAimed = false, abWarCried = false, abScreamed = false,
+          abBraced = false, abDebtSettled = false, abStun = 0, abRoundTaken = 0,
+          abLastRoundTaken = 0, abHaymakerRound = false;
+      var abNight = false;
+      try { abNight = this.isNight ? this.isNight() : false; } catch (e) {}
+
       // ---- monster stats (real) ----
       var hpDef = mdef.hp || [20, 20];
       var members = [];
@@ -192,6 +212,11 @@
         var evade = 0.35 + Math.min(0.30, tracking * 0.01) + behaviorMod
           - 0.02 * mSpeed - 0.03 * mNotice + 0.05 * mSize
           + (potential ? 0.05 : 0);
+        // ABILITIES: game_sense reads the sign; tracker knows the patterns;
+        // echo_location hears in the dark. Real attention, not luck.
+        if (vHasAb('game_sense')) evade += 0.10;
+        if (vHasAb('tracker')) evade += 0.05;
+        if (vHasAb('echo_location') && abNight) evade += 0.10;
         evade = clamp(evade, 0.05, 0.90);
         if (RR() < evade) {
           rec.outcome = 'evade';
@@ -200,6 +225,15 @@
           return rec;
         }
         rec.log.push(vName + ' walks straight into the ' + mName + '. No avoiding it.');
+        // ABILITY — AMBUSH (lay_wait): they were waiting too. Contact was
+        // made, but the monster didn't see THEM first: one free opening
+        // strike before round 1, the tactical formula, verbatim.
+        if (vHasAb('ambush')) {
+          var _od = lroll([4 + wb, 8 + wb]);
+          members[0].hp -= _od; rec.mDealt += _od;
+          if (members[0].hp <= 0) members[0].alive = false;
+          rec.log.push(vName + ' was already waiting — ambush! Opening strike for ' + _od + '.');
+        }
       }
 
       // ---- rounds ----
@@ -240,11 +274,24 @@
       }
       for (var round = 1; round <= MAX_ROUNDS; round++) {
         rec.rounds = round;
+        abRoundTaken = 0;
+        // ABILITY — HAYMAKER (throw_haymaker): every 3rd round the villager
+        // winds up — the strike below lands double, but the windup leaves
+        // them open (the monster's hits land +2 this round). The telegraph
+        // is the price.
+        abHaymakerRound = (round % 3 === 0) && vHasAb('haymaker');
+        // ABILITY stuns (war_cry / scream_cheese): the monster hesitates —
+        // its whole attack phase is skipped this round.
+        var mStunnedThisRound = false;
+        if (abStun > 0) {
+          abStun--; mStunnedThisRound = true;
+          rec.log.push('R' + round + ': the ' + mName + ' hesitates — ' + vName + ' bought a breath.');
+        }
         var mInit = mSpeed + RR() * 2, vInit = 3 + RR() * 2;
         var mFirst = mInit >= vInit;
         var acted = [mFirst ? 'm' : 'v', mFirst ? 'v' : 'm'];
         for (var ai = 0; ai < 2; ai++) {
-          if (acted[ai] === 'm') {
+          if (acted[ai] === 'm' && !mStunnedThisRound) {
             // every live pack member acts — pack hunters hunt as a pack
             for (var mi = 0; mi < members.length; mi++) {
               if (members[mi].hp <= 0 || !vAlive) continue;
@@ -254,6 +301,8 @@
               var thrash = 0;
               if (mdef.id === 'gallowdeer') thrash = lroll([10, 16]);
               var total = d + thrash;
+              // ABILITY — HAYMAKER windup: the big swing leaves them open.
+              if (abHaymakerRound) total += 2;
               // PARTY-UP: the pack splits its attention — the ally who rushed
               // in is exposed (no armor) and draws some of the hits.
               var hittingAlly = allyIn && allyHp > 0 && RR() < 0.4;
@@ -286,7 +335,19 @@
                   } catch (e) {}
                 }
               } else {
-                vHp -= total; rec.vTaken += total;
+                // ABILITY — UNBREAKABLE (brace): the player's brace is a 60%
+                // reduction on the next hit, bought with a turn. Off-screen
+                // there's no turn to spend — the villager braces once per
+                // fight, reactively, the first hit after they've felt the
+                // monster's strength (vHp < max): same 60% reduction, same
+                // once-per-fight honesty.
+                if (!abBraced && vHasAb('unbreakable') && total > 0 && vHp < vHpMax) {
+                  abBraced = true;
+                  var _pre = total;
+                  total = Math.round(total * 0.4);
+                  rec.log.push(vName + ' braces — takes it on the shoulder, rolling with it. ' + _pre + ' → ' + total + '. (Unbreakable)');
+                }
+                vHp -= total; rec.vTaken += total; abRoundTaken += total;
                 rec.log.push('R' + round + ': ' + atkName + ' hits ' + vName + ' for ' + total + ' (' + Math.max(0, vHp) + ' left)');
               }
             }
@@ -295,10 +356,37 @@
             var lead = null;
             for (var li = 0; li < members.length; li++) { if (members[li].hp > 0) { lead = members[li]; break; } }
             if (!lead) break;
-            var vd = lroll([4 + wb, 8 + wb]); // tactical formula, verbatim
-            lead.hp -= vd; rec.mDealt += vd;
-            if (lead.hp <= 0) lead.alive = false;
-            rec.log.push('R' + round + ': ' + vName + ' strikes for ' + vd + ' (' + Math.max(0, lead.hp) + ' left)');
+            // ABILITY — PATIENT AIM (take_aim): the patient hunter's call.
+            // Full health, fresh monster: spend this turn going still. The
+            // next strike is 2.5x and cannot miss — the exposure is the
+            // rounds already survived un-aimed.
+            if (!abAimed && vHasAb('patient_aim') && !abAim && vHp >= vHpMax && lead.hp > lead.maxHp * 0.5) {
+              abAimed = true; abAim = true;
+              rec.log.push('R' + round + ': ' + vName + ' goes still. Breath slows. The world narrows to the target. (Take Aim — next shot 2.5x)');
+            } else {
+              var vd = lroll([4 + wb, 8 + wb]); // tactical formula, verbatim
+              var abNote = '';
+              if (abAim) { vd = Math.round(vd * 2.5); abAim = false; abNote += ' (aimed 2.5x)'; }
+              // ABILITY — HAYMAKER: the windup is the telegraph; the landing
+              // is the punctuation.
+              if (abHaymakerRound) { vd = vd * 2; abNote += ' (HAYMAKER x2)'; }
+              // ABILITY — STALK: the stalker's opening — first blood, +4.
+              if (round === 1 && vHasAb('stalk')) { vd += 4; abNote += ' (stalker\'s opening +4)'; }
+              // ABILITY — DEAD AIM: the executioner's shot — a wounded lead
+              // gets the patient kill.
+              if (lead.hp < lead.maxHp * 0.25 && vHasAb('dead_aim')) { vd = vd * 2; abNote += ' (dead aim x2)'; }
+              // ABILITY — BLOOD TRAIL: the blood tells everything — follow
+              // it in, +2 against a bleeding lead.
+              else if (lead.hp < lead.maxHp * 0.5 && vHasAb('blood_trail')) { vd += 2; abNote += ' (blood trail +2)'; }
+              // ABILITY — TRADE OF BLOWS (settle_debt): every hit taken is a
+              // hit given back with interest. Once per fight.
+              if (!abDebtSettled && vHasAb('trade_of_blows') && abLastRoundTaken > 20) {
+                abDebtSettled = true; vd = Math.round(vd * 1.5); abNote += ' (debt settled 1.5x)';
+              }
+              lead.hp -= vd; rec.mDealt += vd;
+              if (lead.hp <= 0) lead.alive = false;
+              rec.log.push('R' + round + ': ' + vName + ' strikes for ' + vd + abNote + ' (' + Math.max(0, lead.hp) + ' left)');
+            }
             // the ally fights too — a second pair of hands, off-balance from
             // rushing in. A new combatant, not a buff to anyone's stats.
             if (allyIn && allyHp > 0 && lead.hp > 0) {
@@ -348,19 +436,20 @@
           // trajectory is legible (drops long before the lead falls) and no
           // help is coming — alone, or help already went down. Holding to
           // the bravery floor here doesn't turn it around; it turns a
-          // survivable flight into a death. This is the perversity the
-          // contest cheer exposed: +15 bravery from the crowd's roar pushed
-          // the flee threshold so low that cheered villagers died in fights
-          // uncheered villagers fled — cheer converted 'lost' into 'died'
-          // and never added a win. Believable flight: they run while they
-          // still can. (Implements the documented intent above — "Hopeless
-          // and alone -> believable flight" — which the old chain never
-          // delivered: it fell through to the bravery threshold.)
-          // ARENA PROTOCOL (Gap 4, 2026-10-10): a sealed contest arena has
-          // no flight — the System doesn't open the gate mid-fight. The
-          // fight runs to its real conclusion (vKill/vDie/mFlee). Wild
-          // fights keep the believable flight.
-          if (opts.noFlee) {
+          // survivable flight into a death. Believable flight: they run
+          // while running still works. (The war_cry rally below fires
+          // first, once — a held line, not a held delusion.)
+          // ABILITY — WAR CRY (bellow): once per fight, when the trajectory
+          // turns hopeless, the cry steadies the arm and staggers the
+          // monster — it hesitates (loses its next attack) and the flee
+          // line drops: they hold longer. It's not the volume. It's the
+          // promise. Fires instead of fleeing this round; the next round
+          // decides again, honestly.
+          if (!abWarCried && vHasAb('war_cry') && !opts.noFlee) {
+            abWarCried = true; abStun = 1;
+            fleeAt = Math.max(0.05, fleeAt - 0.15);
+            rec.log.push(vName + ' BELLOWS — not volume, a promise. The ' + mName + ' falters. They hold the line a little longer. (War Cry)');
+          } else if (opts.noFlee) {
             if (!rec.gateShut) { rec.gateShut = true; rec.log.push(vName + ' sees how this ends — but the gate is shut. No running.'); }
           } else {
             rec.outcome = 'vFlee'; rec.fleeHopeless = true; rec.fleeHpFrac = vHp / vHpMax;
@@ -369,6 +458,14 @@
           }
         }
         if ((vHp / vHpMax) < fleeAt) {
+          // ABILITY — SCREAM CHEESE (scream): once per fight, hurting, the
+          // scream comes out — "AAAAA! The milk is cheese now!" — and the
+          // monster reels, dizzy. It loses its next attack. The throat
+          // hurts. Worth it.
+          if (!abScreamed && vHasAb('scream_cheese')) {
+            abScreamed = true; abStun = 1;
+            rec.log.push(vName + ' SCREAMS — the milk is cheese now! The ' + mName + ' reels, dizzy. (Scream Cheese)');
+          }
           // ARENA PROTOCOL: sealed — past the sane line, still in. The
           // crowd leans in. (Logged once; the log feeds gossip.)
           if (opts.noFlee) {
@@ -390,6 +487,8 @@
           break;
         }
         if ((members[0].hp / members[0].maxHp) < mBreak) { rec.outcome = 'mFlee'; break; }
+        // ABILITY bookkeeping: the debt of this round settles the next.
+        abLastRoundTaken = abRoundTaken;
       }
       if (!rec.outcome) {
         // round cap: the worse-off side disengages

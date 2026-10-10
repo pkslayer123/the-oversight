@@ -4851,6 +4851,102 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (ids.length) try { this.checkPromises('task'); } catch (e) {}
     },
 
+    // villagerHuntResolve(vid, eff): the hunt duty through the SAME chance
+    // machinery the player hunts with (huntAnimal) — parity 2026-10-10,
+    // Worker A. Picks a REAL animal from a REAL nearby tile's wildlife (the
+    // same ecology object the player's traps and line draw from — a hunted-
+    // out tile honestly yields nothing), then resolves the stalk with the
+    // villager's own inputs: occupation (hunter background +20%, like the
+    // player's), weapon bonus from their equipped gear (villagerGearUp arms
+    // them before they walk out), and held abilities (tracker +0.3 like the
+    // player's L1, game_sense x1.4 find chance — the same modifiers
+    // huntAnimal applies). A kill is butchered at the animal's real kcal
+    // (field_dressing: +30% waste reduction — the same butcherYieldFrac the
+    // player gets) and the wildlife count decrements. Returns
+    // {kcal, msg, note}. The duty's injury roll stays with the caller.
+    villagerHuntResolve(vid, eff) {
+      const v = this.state.village || {};
+      const hx = v.px ?? 4, hy = v.py ?? 4;
+      let first = 'Someone';
+      try { const p = this.getPerson(vid); if (p && p.name) first = String(p.name).split(' ')[0]; } catch (e) {}
+      // arm up from their own gear — a hunter walks out armed, like you do
+      try { if (this.villagerGearUp) this.villagerGearUp(vid, false); } catch (e) {}
+      // nearest tile with real prey wildlife (not fish-only water)
+      let best = null;
+      try {
+        for (let y = 0; y < 9 && !best; y++) for (let x = 0; x < 9; x++) {
+          const t = this.tileAt(x, y);
+          if (!t || t.type === 'haven') continue;
+          const wl = t.wildlife || this.backfillWildlife(t, x, y);
+          if (!wl) continue;
+          const preyIds = Object.keys(wl).filter(id => (wl[id] || 0) > 0 && !/chub|bluegill|minnow|crayfish|frog|turtle/i.test(id));
+          if (!preyIds.length) continue;
+          const d = Math.abs(x - hx) + Math.abs(y - hy);
+          if (!best || d < best.d) best = { t, wl, preyIds, d };
+        }
+      } catch (e) {}
+      try { if (this.villagerGainXP) this.villagerGainXP(vid, 'field', 1, 'hunting'); } catch (e) {}
+      if (!best) {
+        return { kcal: 0, msg: `🏹 ${first} works the grounds all day — the wild is hunted out. Nothing to bring home. The village needs new ground.` };
+      }
+      // pick the animal, weighted by what's actually there
+      let animal = null, aid = null;
+      try {
+        const bag = [];
+        for (const id of best.preyIds) {
+          const n = Math.min(6, best.wl[id] || 0);
+          for (let i = 0; i < n; i++) bag.push(id);
+        }
+        if (bag.length) aid = bag[Math.floor(Math.random() * bag.length)];
+        animal = (this.data.animals || []).find(a => a.id === aid) || null;
+      } catch (e) {}
+      if (!animal) {
+        return { kcal: 0, msg: `🏹 ${first} finds sign but no game worth the stalk. Nothing to bring home.` };
+      }
+      // the chance: the player's huntAnimal machinery, villager inputs
+      let base = animal.difficulty === 'easy' ? 0.7 : animal.difficulty === 'medium' ? 0.4 : 0.15;
+      let isHunter = false;
+      try {
+        const vp = this.getPerson(vid) || {};
+        isHunter = String(vp.formerOccupation || '').toLowerCase().includes('hunter');
+      } catch (e) {}
+      let wbonus = 0;
+      try {
+        const S = (typeof globalThis !== 'undefined' ? globalThis.Scattering : null) || {};
+        const person = this.getPerson(vid);
+        if (S.equipment && person) wbonus = (S.equipment.weaponBonusOf(person, this.data.items) || 0) / 100;
+      } catch (e) {}
+      let trackBonus = 0, findMult = 1;
+      try {
+        if (this.npcHasAbility) {
+          if (this.npcHasAbility(vid, 'tracker')) trackBonus = 0.3;
+          if (this.npcHasAbility(vid, 'game_sense')) findMult = 1.4;
+        }
+      } catch (e) {}
+      const chance = Math.min(0.95, (base + (isHunter ? 0.2 : 0) + wbonus * eff + trackBonus) * findMult);
+      if (Math.random() >= chance) {
+        return { kcal: 0, msg: `🏹 ${first} stalks a ${animal.name || 'animal'} all morning — it winds them and it's gone. Nothing to bring home.` };
+      }
+      // the kill: real kcal, real butchering, real ecology decrement
+      let frac = 0.6;
+      try {
+        if (this.npcHasAbility && this.npcHasAbility(vid, 'field_dressing')) frac = 0.78; // +30% waste reduction, like the player's
+      } catch (e) {}
+      const kcal = Math.max(50, Math.round((animal.calories || 400) * frac * eff));
+      try { best.wl[aid] = Math.max(0, (best.wl[aid] || 1) - 1); } catch (e) {}
+      try { if (this.villagerGainXP) this.villagerGainXP(vid, 'field', 1, 'clean kill'); } catch (e) {}
+      try {
+        this.state.codex.animalEncounters = this.state.codex.animalEncounters || {};
+        this.state.codex.animalEncounters[aid] = (this.state.codex.animalEncounters[aid] || 0) + 1;
+      } catch (e) {}
+      const aname = animal.name || 'game';
+      return {
+        kcal,
+        msg: `🏹 ${first} brings down a ${aname} — clean kill, +${kcal} kcal to the pantry.`,
+        note: isHunter ? 'Old hands. They\'ve done this before.' : null,
+      };
+    },
+
     resolveOneAssignment(vid, a) {
       const v = this.state.village;
       const vp = (this.data.villagers || []).find(x => x.id === vid)
@@ -4914,16 +5010,23 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.say(`🌿 ${first} returns with foraged food: +${kcal} kcal to the pantry.${landNote}${learned}`);
         this.bumpTrust(vid, 2, 'hauled foraged food to the pantry');
       } else if (a.task === 'hunt') {
-        const kcal = Math.round(R(400, 900) * eff);
+        // PARITY (2026-10-10, Worker A): the hunt duty used to be a flat
+        // R(400,900) kcal roll — the same hunter got the same meat from
+        // hunted-out ground or virgin ground, bare-handed or armed. Now it
+        // resolves through villagerHuntResolve: a REAL animal from a REAL
+        // tile's wildlife, the villager's own gear/occupation/abilities on
+        // the same chance machinery the player hunts with (huntAnimal).
+        const hr = this.villagerHuntResolve(vid, eff);
+        const kcal = hr.kcal;
         const injuryRisk = temp === 'bold' ? 0.22 : temp === 'cautious' ? 0.08 : 0.15;
         const injuryRoll = Math.max(0.03, injuryRisk / Math.max(0.7, comp));
-        this.stockPantry(kcal, 'Game meat');
+        if (kcal > 0) this.stockPantry(kcal, 'Game meat');
         if (Math.random() < injuryRoll) {
           const dmg = R(10, 30);
           this.hurtVillager(vid, dmg, 'hunting');
-          this.say(`🏹 ${first} brings back meat (+${kcal} kcal) but got hurt out there (-${dmg} health). The wild charges interest.`);
+          this.say(`🏹 ${first} brings back meat (+${kcal} kcal) but got hurt out there (-${dmg} health). The wild charges interest.${hr.note ? ' ' + hr.note : ''}`);
         } else {
-          this.say(`🏹 ${first} returns with meat: +${kcal} kcal to the pantry. Clean hunt.`);
+          this.say(hr.msg || `🏹 ${first} returns with meat: +${kcal} kcal to the pantry. Clean hunt.`);
         }
         this.bumpTrust(vid, 2, 'brought back meat from the hunt');
       } else if (a.task === 'wood') {
@@ -23547,23 +23650,31 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       };
       // MONSTER WEIRDNESS first — the story. The same chances you face.
       // Villagers are people too — a villager who howls at night is a story.
+      // ABILITY (parity 2026-10-10, Worker A): purify / iron_stomach aren't
+      // flavor — a villager holding one knows what's safe and has the gut
+      // for the rest. Sicken chances halve, the same way the player's gut
+      // does. (Spoiled-desperation still collects: rot is rot.)
+      let gutResist = 1;
+      try {
+        if (this.npcHasAbility && (this.npcHasAbility(vid, 'purify') || this.npcHasAbility(vid, 'iron_stomach'))) gutResist = 0.5;
+      } catch (e) {}
       for (const m of (exposure.monster || [])) {
         if (this.villagerMonsterWeirdness(vid,
           { plantId: 'meat_' + m.mid, foodState: m.cooked ? 'cooked' : 'raw', name: m.name })) return 1;
       }
       // RAW: the same gamble you take eating it yourself.
       for (const r of (exposure.raw || [])) {
-        if (!armored && Math.random() < (r.p || 0.2))
+        if (!armored && Math.random() < (r.p || 0.2) * gutResist)
           return sicken('food poisoning (' + (r.note || 'raw') + ')', 3 + Math.floor(Math.random() * 4), 1,
             `🤢 ${nm} ate ${r.note || 'raw food'} — fever by nightfall.`, 'food poisoning from their meal');
       }
       // UNSAFE: the 20% you face on suspect food.
-      if (!armored && exposure.unsafe && Math.random() < 0.2)
+      if (!armored && exposure.unsafe && Math.random() < 0.2 * gutResist)
         return sicken('bad belly', 2 + Math.floor(Math.random() * 3), 1,
           `🤢 ${nm}'s stomach knots — something in their meal was off.`, 'bad belly from their meal');
       // POISON
       for (const r of (exposure.poison || [])) {
-        if (!armored && Math.random() < (r.p || 0.2))
+        if (!armored && Math.random() < (r.p || 0.2) * gutResist)
           return sicken('poisoned (' + (r.note || 'toxin') + ')', 3 + Math.floor(Math.random() * 3), 2,
             `☠️ ${nm} was poisoned — ${r.note || 'something toxic in the meal'}.`, 'poisoned by their meal');
       }
@@ -23745,6 +23856,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
 
     // villagerCareTick(nm): medical villagers tend the sick — the division of
     // knowledge at work. Quiet, mostly: the remember() keeps the books.
+    // ABILITY (parity 2026-10-10, Worker A): a medic holding triage (the
+    // System's grant, earned through craft XP) tends with trained hands —
+    // two patients per round instead of one. The player's triage multiplies
+    // healing; the villager's multiplies reach.
     villagerCareTick(nm) {
       const v = this.state.village || {};
       const sickIds = Object.keys(v.sick || {});
@@ -23758,12 +23873,20 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         return /nurse|medic|doctor|paramedic|midwife|veterinarian|pharmacist|herbalist|dentist/i.test(occ);
       });
       if (!medics.length) return;
+      const tendedThisTick = new Set();
       for (const mid of medics) {
-        const target = sickIds.find(id => id !== mid && (v.sick[id].daysLeft || 0) > 1);
-        if (!target) break;
-        v.sick[target].daysLeft -= 1;
-        try { if (this.remember) this.remember(mid, 'tended', 'tended ' + nm(target) + ' through the fever'); } catch (e) {}
-        if (Math.random() < 0.25) this.say(`${nm(mid)} sits with ${nm(target)} — cool cloth, bitter tea, watching the breathing.`);
+        let reach = 1;
+        try { if (this.npcHasAbility && this.npcHasAbility(mid, 'triage')) reach = 2; } catch (e) {}
+        for (let t = 0; t < reach; t++) {
+          // spread the care: prefer a patient nobody's sat with yet this tick
+          let target = sickIds.find(id => id !== mid && !tendedThisTick.has(id) && (v.sick[id].daysLeft || 0) > 1);
+          if (!target) target = sickIds.find(id => id !== mid && (v.sick[id].daysLeft || 0) > 1);
+          if (!target) break;
+          v.sick[target].daysLeft -= 1;
+          tendedThisTick.add(target);
+          try { if (this.remember) this.remember(mid, 'tended', 'tended ' + nm(target) + ' through the fever'); } catch (e) {}
+          if (Math.random() < 0.25) this.say(`${nm(mid)} sits with ${nm(target)} — cool cloth, bitter tea, watching the breathing.`);
+        }
       }
     },
 
@@ -27294,6 +27417,20 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           if (absorb > 0) this.say(`${t.name}'s gear absorbs ${absorb}.`);
         }
       }
+      // UNBREAKABLE (parity audit 2026-10-10): villager allies in tactical
+      // combat brace like the player does — once per fight, the first hit
+      // after they've been hurt is reduced 60% (same number as the
+      // player's brace, reactive here because there's no turn to spend).
+      if (t.kind === 'villager' && t.villagerId && !t._unbreakableBraced && final > 0 && t.hp < t.maxHp) {
+        try {
+          if (this.npcHasAbility && this.npcHasAbility(t.villagerId, 'unbreakable')) {
+            t._unbreakableBraced = true;
+            const pre = final;
+            final = Math.round(final * 0.4);
+            this.say(`${t.name} braces — takes it on the shoulder, rolling with it. ${pre} → ${final}. (Unbreakable)`);
+          }
+        } catch (e) {}
+      }
       // PHASE BLADE (alien loot): ignores armor — the sealed shell might as
       // well not be there. Checked the same way as the torch-vs-golem rule.
       let ignoresArmor = false;
@@ -27812,7 +27949,20 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // EQUIPMENT (Steve 2026-10-06): villagers hit with their equipped weapon.
           // Half bonus — they're helpers, not heroes. A spear still matters (+15).
           const wb = Math.round((v.wbonus || 0) / 2);
-          const dmg = a.type === 'strike' ? S.combat.roll([4 + wb, 8 + wb]) : S.combat.roll([2, 4]);
+          let dmg = a.type === 'strike' ? S.combat.roll([4 + wb, 8 + wb]) : S.combat.roll([2, 4]);
+          // HAYMAKER (parity audit 2026-10-10): a villager ally with haymaker
+          // puts their whole body into every third swing — same rhythm as
+          // the player's haymaker (round-counted, telegraphed, honestly
+          // announced when it lands).
+          try {
+            if (a.type === 'strike' && v.villagerId && this.npcHasAbility && this.npcHasAbility(v.villagerId, 'haymaker')) {
+              v._haymakerSwings = (v._haymakerSwings || 0) + 1;
+              if (v._haymakerSwings % 3 === 0) {
+                dmg = Math.round(dmg * 2);
+                this.say(`${v.name} puts everything into the swing — HAYMAKER! (${dmg})`);
+              }
+            }
+          } catch (e) {}
           this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${this.encTheName(t)}.`);
           this.tbDamage(t.key, dmg, v.name);
           // HIGHBEAM: hurting the deer moves them to the front of its list.

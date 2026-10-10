@@ -3,7 +3,7 @@
 // sweep-parity results file. Usage: node scripts/analyze-parity.js [results.json]
 'use strict';
 const path = require('path');
-const F = process.argv[2] || path.join(__dirname, 'sweep-parity-results.json');
+const F = path.resolve(process.cwd(), process.argv[2] || path.join(__dirname, 'sweep-parity-results.json'));
 const rows = require(F);
 
 const sum = (rs, f) => rs.reduce((t, r) => t + (f(r) || 0), 0);
