@@ -194,5 +194,6 @@ system that asks for that gets redesigned or cut.
 4. **Deed-gate bars (5/5/4/3/2)** — KEPT 2026-10-10. The loops report whether
    organic runs can reach them.
 5. **Switchboard: office, not god path** — decided 2026-10-10 (see above).
-6. **The "interesting half" fiction** — children ineligible + half of adults
-   erased: lock it as canon, or soften?
+6. **The "interesting half" fiction** — LOCKED as canon 2026-10-10:
+   children ineligible; only ~half of adults "deemed interesting enough" —
+   the rest erased. ~460M Havens of 12, ~500m apart on habitable land.
