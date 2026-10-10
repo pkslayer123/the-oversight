@@ -62,7 +62,25 @@ Per-requirement completion (60 runs): w1 ≥5 distinct 42/60 (70%); w2 ≥5 1/60
 
 Harness fixes found during development: travel in `daily` sets pendingEncounter which blocks `sleep()` → clock stuck (travel belongs in `upkeep`); `startCombat` records the deed immediately, so "flee if faced" needs a faced-before-fight snapshot. Evidence: `evidence/2026-10-10/parity-worker-e.md`; policy `scripts/policies/winseek.js`; results `scripts/sweep-winseek-results.json`.
 
+## Worker B — Reachability sweep (LANDDED as `da792281`)
+
+144-run organic sweep (200-day caps) + 48-run monster matrix. Full report: `evidence/2026-10-10/parity-worker-b.md`.
+
+**Coverage:** contests 44/44, shows 29/30, wave-3 unlock 91/144 runs, synergies marginal (only peacemakers_voice), waves 4–5 0 faced (scale-gated, known), r5 revivals all confirmed firing (comms calls 96, petitions 279, ratings summons 50, raids→aid crisis live, trials 80, feast_burn 1697).
+
+**Fixes:** (1) **Landlord spawn weight** — full kit worked end-to-end but it was 1/15th of wave-2 sharing a 3–5 world cap (~1 spawn/600 run-days); new data-driven `spawnWeight` lever, landlord → 3 (17.2%). (2) Six reachability UI/beats fixes: conquest-raid UI, river-trader UI, fan-package open, quiet-woods investigate, beats panel + switchboard office, wave-unlock beat from all paths. (3) Moot id collision — verified duplicative of Worker D's fix; took the sibling version on rebase.
+
+**Dead-but-unfixable (reported LOUD):** wave 3/4/5 signature mechanics still copy-only (doom countdown, eulogy, rerun, cuts, eater growth) — awaiting Steve's mechanism pick per r14 plan, not silently patched. Waves 4–5, scale ladder: bal-scale territory, not reachability bugs. Gavel, review_drone, 62/85 abilities: reachable but rare/bot-blind, not dead.
+
+## Synthesis — what the audit changed and what it didn't
+
+**Fixed (all proof-tested, landed):** villager combat abilities (0 → real kit use); villager hunt duty (flat roll → real depletion); 6 dead-trust bugs (corpses mentoring, dead conflicts, mantle mourner, dread trust, ambush dead-mark, trust reasons); "The Moot" TV show never aired (id collision); landlord spawn weight; 6 reachability UI fixes; ratings-dip weekly-drift reconciliation (r13 23/23); contest/show organic fire verified playable.
+
+**Not fixed (beyond mechanics, need design calls):** the survival wall — every organic policy dies median ~day 24–36; haven tiers never built (0/60); scale never leaves village (0/60 winseek runs); waves 3–5 signature mechanics copy-only; late-game parity unverified.
+
 ## Worker B — Reachability sweep (IN FLIGHT)
+
+This section is superseded by the completed section above.
 
 Instrumented coverage over long organic runs; coverage table system → organic fire count → verdict. Report lands on completion; evidence `evidence/2026-10-10/parity-worker-b.md` (pending).
 
