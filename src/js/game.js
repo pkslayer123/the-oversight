@@ -10449,12 +10449,29 @@
         this.say(`Your camp is gone — ${r}. ${tentBit}, the fire's scattered cold. That's the deal with camps: they're not havens.`);
       }
       // TENT ROOMS: if you were inside the tent, the wreck dumps you outside.
+      // BREAK-IT CAMPS-9 (2026-10-09): only evict when the tent you're in is
+      // actually gone. The old code dumped insideTent unconditionally — the
+      // STRUCK path ('you packed up the tent', which never packs the tent
+      // you're in — packTent refuses) evicted you from a STANDING tent with
+      // "The canvas comes down around you", a lie: two tents on the camp
+      // tile, inside A, pack B -> struck breakCamp -> you were thrown out of
+      // intact tent A. Now the dump checks the room: cell still a yours
+      // non-shredded tent -> you stay inside; gone/wrecked -> honest eviction.
       try {
         const s = this.state.scholar;
-        if (s && s.insideTent) {
-          s.insideTent = null;
-          s.tentSmoke = 0;
-          this.say('The canvas comes down around you — you crawl out into the open, coughing.');
+        const ins = s && s.insideTent;
+        if (ins) {
+          let roomStands = false;
+          try {
+            const d = this.genDetail(ins.tx, ins.ty);
+            const sec = typeof this.tentSecretAt === 'function' ? this.tentSecretAt(ins.tx, ins.ty, ins.cx, ins.cy) : null;
+            roomStands = !!(d[ins.cy] && d[ins.cy][ins.cx] === 'tent' && sec && sec.yours && sec.condition !== 'shredded');
+          } catch (e) { roomStands = false; }
+          if (!roomStands) {
+            s.insideTent = null;
+            s.tentSmoke = 0;
+            this.say('The canvas comes down around you — you crawl out into the open, coughing.');
+          }
         }
       } catch (e) {}
       delete this.state.camp;
