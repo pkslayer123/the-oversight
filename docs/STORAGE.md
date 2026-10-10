@@ -92,6 +92,11 @@ cache greets you with disturbed earth and an empty hole.
   laundering in stacksMatch; mid-combat free bury/dig/take/donate; bury-after-
   death; NPC armory/pharmacy honest consumption; bury-everything strand
   softlock attempt — held).
+- `scripts/test-miser-section-chronic-20261010.js` — 12 adversarial checks
+  (section chronic net-taker hole: 24 section takes of others' deposits were
+  trust-free and invisible to _stashTotalNet; takeTool/_takeStashedItem now
+  apply the -20 chronic block like takeMaterial; material control; donate-all
+  + take-back softlock; "Take 5" partial-take honesty).
 
 ## Pharmacy identity (miser break-it 2026-10-10)
 
@@ -107,3 +112,15 @@ NPC consumption is honest too: an armory borrow takes one unit (entry
 decremented), a pharmacy use spends one dose (entry spliced only at zero).
 Stash/armory/pharmacy refuse mid-fight (the clock freezes in combat, so a
 32-tick bury would have been free) and after death.
+
+## Section chronic net-taker rule (miser break-it 2026-10-10)
+
+`_stashTotalNet` used to sum only the material ledgers — the chronic
+net-taker rule (net < −20 → −2 trust per take, "observed hoarding") never
+saw the tool pile, armory or pharmacy. Draining all three sections of other
+people's deposits cost nothing: measured 24 section takes, trust 15 → 15,
+totalNet 0. Theft that is never socially punished. Now `_stashTotalNet` sums
+all four ledgers (materials + tool/weapon/medicine), and `takeTool` /
+`_takeStashedItem` apply the same chronic block as `takeMaterial`. Section
+takes count per entry (one take = one unit of net), consistent with the
+take-back sting accounting.

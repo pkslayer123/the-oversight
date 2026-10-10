@@ -45,6 +45,7 @@
 //   - pharmacy_identity: stash entries keep medicine identity (medType, doses) and units -- a dosed bottle donated and returned comes back dosed and usable, never a brick; dosed medicine never merges in stacksMatch (dose pools are per-bottle) (code: _depositStashedItem, _takeStashedItem, stacksMatch, miser break-it 2026-10-10)
 //   - no_midfight_storage: bury/dig/take-from-cache and all stash donate/take paths refuse mid-fight (tickAction no-ops in combat = free actions) and after death (code: buryCache, digUpCache, takeFromCache, donateMaterial, takeMaterial, donateTool, takeTool, _depositStashedItem, _takeStashedItem, miser break-it 2026-10-10)
 //   - npc_consumes_honestly: NPC armory borrows take one unit (entry decremented); NPC pharmacy use spends one dose (entry spliced only at zero) (code: villagerGearUp, villagerHealCheck, miser break-it 2026-10-10)
+//   - section_chronic: the chronic net-taker rule covers the item sections too — _stashTotalNet sums materials + tool/weapon/medicine ledgers, and takeTool/_takeStashedItem apply the -20 chronic block (-2 trust, observe('hoard')) exactly like takeMaterial (code: _stashTotalNet, takeTool, _takeStashedItem, miser break-it 2026-10-10)
 // consumes:
 //   - scholar.inventory
 //   - state.codex
@@ -314,7 +315,16 @@
     _stashTotalNet(vid) {
       const led = this._stashLedgers(vid);
       const sum = (o) => Object.values(o).reduce((t, x) => t + (x || 0), 0);
-      return sum(led.gives) - sum(led.takes);
+      let total = sum(led.gives) - sum(led.takes);
+      // SECTION NETS (miser break-it 2026-10-10): the chronic net-taker rule
+      // only read the material ledgers — draining the tool pile, armory and
+      // pharmacy of other people's deposits never counted, so section theft
+      // was free. Theft from the sections is theft from the stash too.
+      for (const section of ['Tool', 'Weapon', 'Medicine']) {
+        const il = this._stashItemLedgers(vid, section);
+        total += sum(il.gives) - sum(il.takes);
+      }
+      return total;
     },
     // villageTrustLevel: open (nobody worries), wary, closed (hoard and hide).
     villageTrustLevel() {
@@ -557,6 +567,16 @@
         v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 5);
         this.say('You took back the tool you left. They noticed. Trust -5.');
       }
+      // CHRONIC NET-TAKER (miser break-it 2026-10-10): section takes used to
+      // be invisible to the chronic rule — the whole tool pile could walk out
+      // with zero consequence. Same ledger, same punishment as materials.
+      const totalNet = this._stashTotalNet(vid2);
+      if (totalNet < -20) {
+        v2.trust = v2.trust || {};
+        v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 2);
+        this.observe('hoard');
+        if (Math.random() < 0.4) this.say('Someone watches you take from the stash. They say nothing. The ledger says everything.');
+      }
       const lvl = this.villageTrustLevel();
       if (lvl === 'closed' && Math.random() < 0.5) {
         this.say(`You take the ${tool.name}. In this village, people notice who takes tools.`);
@@ -687,6 +707,15 @@
         v2.trust = v2.trust || {};
         v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 5);
         this.say(`You took back the ${entry.name} you left. They noticed. Trust -5.`);
+      }
+      // CHRONIC NET-TAKER (miser break-it 2026-10-10): same hole as takeTool
+      // — the armory and pharmacy were invisible to the chronic rule.
+      const totalNet2 = this._stashTotalNet(vid2);
+      if (totalNet2 < -20) {
+        v2.trust = v2.trust || {};
+        v2.trust[vid2] = Math.max(0, (v2.trust[vid2] === undefined ? 15 : v2.trust[vid2]) - 2);
+        this.observe('hoard');
+        if (Math.random() < 0.4) this.say('Someone watches you take from the stash. They say nothing. The ledger says everything.');
       }
       this.say(`Took the ${entry.name}${takeUnits > 1 ? ` ×${takeUnits}` : ''} from the ${kindLabel}.`);
       return this.tickAction(2) || this.status();
