@@ -441,10 +441,13 @@
         this.say(`Noted: ${this._calledName(pid)} ${partKey} — ${n} of ${all.length} parts known.`);
       }
       // The part learned is a diary beat too — the use, in the current hand.
+      // BELIEVED NAME (break-it knowledge 2026-10-10 r2): the diary is the
+      // player's hand — a false label is still their label until corrected.
+      // The say-line above already used _calledName; the diary didn't.
       try {
         const pl = this.plantPartsList(pid).find(x => x.key === partKey);
         this.writePlantEntry(pid, 'part', this.journalVoiceLine('part', this.journalVoice(),
-          { pname: p.name || pid, part: partKey, use: (pl && pl.use) || 'a use' }));
+          { pname: this._calledName(pid), part: partKey, use: (pl && pl.use) || 'a use' }));
         this.journalTouch('part');
       } catch (e2) {}
       return true;
@@ -473,10 +476,12 @@
       const e = (this.state.codex.plants || {})[pid];
       if (!e || !e.thin) return false;
       e.thin = false;
-      const p = (this.data.plants || []).find(x => x.id === pid) || {};
-      this.say(`Confirmed: ${p.name || pid}. You'd only heard it third-hand${by ? ` — ${by} showed you proper` : ''}. Now it's solid.`);
+      // BELIEVED NAME (break-it knowledge 2026-10-10 r2): the confirmation is
+      // the player's hand — a false label is still their label.
+      const called = this._calledName(pid);
+      this.say(`Confirmed: ${called}. You'd only heard it third-hand${by ? ` — ${by} showed you proper` : ''}. Now it's solid.`);
       try {
-        this.writePlantEntry(pid, 'confirm', this.journalVoiceLine('confirm', this.journalVoice(), { pname: p.name || pid }));
+        this.writePlantEntry(pid, 'confirm', this.journalVoiceLine('confirm', this.journalVoice(), { pname: called }));
         this.journalTouch('confirm');
       } catch (e2) {}
       return true;
@@ -736,9 +741,9 @@
     // ---- WIRING POINTS (app.js reads this — journal.js edits no other file) ----
     // 5. app.js :: Codex/Journal screen header: this.journalOpening() ->
     //    {line, staleness, lives}. Call this.journalTouch('read') when the
-    //    screen OPENS so neglect is measured against reading too. (UNWIRED
-    //    as of 2026-10-08 — the header still uses its own subtitle; the
-    //    function is live and tested, awaiting the header pass.)
+    //    screen OPENS so neglect is measured against reading too.
+    //    (WIRED — the header renders jo.line; journalTouch('read') on open
+    //    is still a future pass.)
     // 6. app.js :: per-plant journal view: this.plantJournalEntry(pid) ->
     //    {name, line, entries, marginalia, marks, gaps} or null at k0.
     //    WIRED (break-it 2026-10-08) via the codexEntries() wrap — the Codex

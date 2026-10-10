@@ -12670,9 +12670,17 @@
       // learn from it — their knowledge waits for the homecoming beat.
       const away = !this.playerAtHaven();
       const me = this.villagerId;
+      // TAUGHT[]/CODEX SYNC (break-it knowledge 2026-10-10 r2): the player's
+      // own taught[] is synced with their codex by identifyPlant (see the
+      // comment there). The ambient rumor loop never identifies — it only
+      // writes taught[] — so the player is not a learner here: their
+      // listening path is the fireside 0.6 identify roll (identifyPlant
+      // syncs taught[] itself). Leaving them in the learner pool minted
+      // silent knowledge-factor credit for plants the codex doesn't know.
+      // (The player CAN still teach the fire: knows() is unchanged.)
       for (const pid of Object.keys(v.plantRumors)) {
         const knows = rid => (v.taught[rid] || []).includes(pid) && !(away && rid === me);
-        const canLearn = rid => !(away && rid === me);
+        const canLearn = rid => rid !== me && !(away && rid === me);
         const knowers = roster.filter(knows);
         const learners = roster.filter(rid => !knows(rid) && canLearn(rid));
         if (!learners.length) { delete v.plantRumors[pid]; continue; }
@@ -13485,8 +13493,16 @@
       // EVERYONE at the fire learns it. Fireside knowledge is village knowledge —
       // this is the slow background growth that saves the village: even without
       // the player, the village gets smarter (slowly) about its land.
+      // TAUGHT[]/CODEX SYNC (break-it knowledge 2026-10-10 r2): the player is
+      // excluded from the ambient loop — their learning path is the presence-
+      // gated 0.6 identifyPlant roll below, which syncs taught[] with the
+      // codex itself. (Matches the wrong-teaching branch above, which already
+      // skips the player.)
       try {
-        for (const rid of (this.state.village.roster || [])) this.villagerLearnsPlant(rid, pid, 'fireside');
+        for (const rid of (this.state.village.roster || [])) {
+          if (rid === this.villagerId) continue;
+          this.villagerLearnsPlant(rid, pid, 'fireside');
+        }
       } catch (e) {}
       const journalWord = this.state.systemArrived ? 'Codex' : 'journal';
       const lines = [
@@ -19310,11 +19326,15 @@
                 const who = entry.taughtByName || 'someone';
                 this.say(`\u2605 Wait. This isn't ${entry.wrongAs} — handling it yourself, the leaves, the smell, it's obvious now. ${who} taught you wrong. (The Codex corrects the record. You can call them out in conversation.)`);
                 // deliberate liars are marked as such — the callout beat
-                // treats them differently (break-it 2026-10-09: was hardcoded false)
+                // treats them differently. (break-it knowledge 2026-10-10 r2:
+                // wb2[pid] threw ReferenceError here — pid isn't in scope in
+                // the harvested loop (only h.plantId is) — and the try/catch
+                // swallowed it, so the 2026-10-09 fix never fired and every
+                // liar read as an honest mistake.)
                 let wasDeliberate = false;
                 try {
                   const wb2 = ((this.state.village || {}).wrongAbout || {})[entry.taughtBy] || {};
-                  wasDeliberate = !!((wb2[pid] || {}).deliberate);
+                  wasDeliberate = !!((wb2[h.plantId] || {}).deliberate);
                 } catch (err) {}
                 entry.contested = { by: entry.taughtBy, byName: who, claim: entry.wrongAs,
                   claimPid: entry.wrongPid, deliberate: wasDeliberate, day: (this.state.scholar || {}).day || 0 };

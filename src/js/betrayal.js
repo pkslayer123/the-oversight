@@ -2078,7 +2078,11 @@
         const lvl = (trustIn >= 60 && theirLvl >= 3) ? 3 : Math.min(2, theirLvl);
         mine[pid] = { level: lvl, identifiedDay: s.day, harvests: 0, tastings: 0, learnedFrom: ov.name,
           // a good teacher accelerates: shared knowledge gives a head start, not mastery.
-          // You still need to USE it to truly know it. (XP to next level is halved.)
+          // The deeper levels still need your own hands (tastings, harvests).
+          // (break-it knowledge 2026-10-10 r2: the old copy promised a
+          // nonexistent XP discount on the next level — there is no plant-XP
+          // mechanic at all; sharedHeadStart is a write-only flag nothing
+          // reads. Copy now matches the engine.)
           sharedHeadStart: true };
         const pname = p ? p.name : pid;
         this.say(`You sit with ${ov.name}. ${focusWord.charAt(0).toUpperCase() + focusWord.slice(1)} shows you ${pname} — where it grows, what it looks like, the part that won't kill you. (${pname}: knowledge L${lvl}, learned from ${ov.name}.)`);
