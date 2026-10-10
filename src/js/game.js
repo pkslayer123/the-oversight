@@ -20729,7 +20729,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         } else {
           msg = `You work the patch: ${knownBits.join(', ')} — and ${unknownBits.join(', ')} you can't name yet.${woodBit}${recoverBit}`;
         }
-        this.say(msg);
+        // (forager break-it 2026-10-10: the branch used to say(msg) here AND
+        // fall through to doAction's generic tail say — every sweep narrated
+        // twice. The tail owns the single narration; the branch just sets msg.)
         // discovery labels the place: the map remembers the BEST find here.
         for (const pid of Object.keys(bySpecies)) {
           const plant = bySpecies[pid].plant;
