@@ -709,6 +709,12 @@
     try { r = this.showResolveVillager(pid, { id: ac.showId }, { cheer: ac.cheer || 0, heckle: !!ac.heckle }); } catch (e) {}
     const outcome = (r && r.outcome) || 'both';
     ac.phase = 'done';
+    // BROADCAST MODE: the commentators call the villager's fate — tied to
+    // the actual result, never a generic line. Must fire while the broadcast
+    // is LIVE: broadcastEnd below kills the frame, and broadcastBeat is a
+    // no-op once it's dead (break-it shows 2026-10-10: the beat sat AFTER
+    // broadcastEnd and never fired — dead commentary).
+    try { this.broadcastBeat('SHOW_VILLAGER_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     this.sysSay('📺 ───');
@@ -728,8 +734,6 @@
     try { this.leadShift('showmanship', 1); } catch (e) {}
     // VILLAGER XP (Steve 2026-10-09): being on television teaches.
     try { if (this.villagerGainXP) this.villagerGainXP(pid, 'social', 1, 'show'); } catch (e) {}
-    // BROADCAST MODE: the commentators call the villager's fate.
-    try { this.broadcastBeat('SHOW_VILLAGER_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     return { done: true, outcome: 'show_' + outcome };
   };
 
@@ -745,6 +749,12 @@
     const isSummons = ac.kind === 'summons';
     const showName = ac.showName || 'the show';
     ac.phase = 'done';
+    // BROADCAST MODE: the commentators call the outcome — tied to the
+    // actual result, never a generic line. Must fire while the broadcast is
+    // LIVE: broadcastEnd below kills the frame, and broadcastBeat is a no-op
+    // once it's dead (break-it shows 2026-10-10: the beat sat AFTER
+    // broadcastEnd and never fired — dead commentary).
+    try { this.broadcastBeat('SHOW_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
     this.state.activeContest = null;
     this.sysSay('📺 ───');
@@ -810,9 +820,6 @@
         sayFavor(isSummons ? -2 : -1, 'refused ' + (isSummons ? 'the ratings summons' : showName));
       }
     }
-    // BROADCAST MODE: the commentators call the outcome — tied to the
-    // actual result, never a generic line.
-    try { this.broadcastBeat('SHOW_' + String(outcome).toUpperCase(), ac); } catch (e) {}
     // Prize: a wacky alien curio, real and usable (apGrantItem), never
     // dinner (canon). Edible items are filtered OUT — the "Can labeled
     // BEANS" (350 kcal) used to be grantable here, which is dinner wearing a
