@@ -1089,9 +1089,11 @@
   };
 
   // 3. Legacy askAbout path (same facts, deduped by journalLearn).
+  // (socialite r11 2026-10-10: forward opts — the inConvo flag must survive
+  // this wrapper or the gossip double-charge fix silently dies here.)
   const origAskAbout = Game.askAbout;
-  if (origAskAbout) Game.askAbout = function (vid, topic) {
-    const r = origAskAbout.call(this, vid, topic);
+  if (origAskAbout) Game.askAbout = function (vid, topic, opts) {
+    const r = origAskAbout.call(this, vid, topic, opts);
     try {
       if (r && r.ok && topic === 'goal') {
         const gid = this.npcGoal(vid);

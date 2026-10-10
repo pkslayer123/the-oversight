@@ -1227,7 +1227,7 @@
         // Social context = you're talking to someone. Default to the active
         // conversation partner; the UI passes no target for social actions.
         try {
-          var convos = (v && v.convos) || {};
+          var convos = (v && v.conv) || {}; // socialite r11 2026-10-10: was the plural key (dead; convoGet stores v.conv) — the active-partner default never found anyone
           for (var cid in convos) {
             if (convos[cid] && convos[cid].active && (v.roster || []).indexOf(cid) >= 0 && cid !== game.villagerId) { vid = cid; break; }
           }
@@ -1413,7 +1413,7 @@
         // Social context = you're talking to someone. Default to the active
         // conversation partner; the UI passes no target for social actions.
         try {
-          var convos = (v && v.convos) || {};
+          var convos = (v && v.conv) || {}; // socialite r11 2026-10-10: was the plural key (dead; convoGet stores v.conv) — the active-partner default never found anyone
           for (var cid in convos) {
             if (convos[cid] && convos[cid].active && (v.roster || []).indexOf(cid) >= 0 && cid !== game.villagerId) { vid = cid; break; }
           }

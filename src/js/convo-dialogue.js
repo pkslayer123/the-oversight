@@ -253,9 +253,12 @@
         const line = favorLine;
         c.transcript.push({ who: 'them', text: line });
         this.sayLine(vid, line);
-        // Mark help offered AND resolve the want so we don't loop.
-        // The favor is now stated; the beat should move on.
-        c.offeredHelp = true;
+        // Resolve the want so we don't loop — the favor is now stated and the
+        // beat moves on. NOTE (socialite r11 2026-10-10): this does NOT set
+        // c.offeredHelp. That's the FORMAL vow's flag (offer_help ->
+        // promiseHelp, tracked, can rot). A casual "how can I help" must not
+        // lock the formal promise out of the menu for the rest of this
+        // conversation — asking, then committing, is the honest escalation.
         if (c.want) c.want.stage = 1; // engaged, not looping
         return { line, choices: this.convoChoices(vid), ended: false, transcript: c.transcript.slice() };
       }

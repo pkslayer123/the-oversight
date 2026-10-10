@@ -3602,7 +3602,7 @@
     // 'goal' -> learn what they want (may reveal goal pre-System)
     // 'gossip' -> "heard anything?" (surfaces gossip they've heard)
     // 'village' -> "how's everyone?" (morale/atmosphere readout)
-    askAbout(vid, topic) {
+    askAbout(vid, topic, opts) {
       const v = this.data.villagers.find(x => x.id === vid)
         /* unified: getPerson */;
       if (!v) return null;
@@ -3610,7 +3610,12 @@
       const known = this.state.systemArrived || this.nameKnown(vid);
       const goal = this.npcGoal(vid);
       const want = this.goalWant(vid);
-      this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
+      // HONESTY (socialite r11 2026-10-10): the conversation already charged
+      // 10 kcal on open (named on the Talk button). The old unconditional
+      // charge here double-billed every in-conversation gossip ask — a silent
+      // 20-kcal conversation contradicting CONVERSATIONS.md. The standalone
+      // person-card path (app.js) keeps its own honest 10-kcal verb cost.
+      if (!(opts && opts.inConvo)) this.state.scholar.kcal = Math.max(0, (this.state.scholar.kcal || 0) - 10);
       if (topic === 'goal') {
         // learning their goal: once known, it's stored and usable
         const vg = this.state.village;

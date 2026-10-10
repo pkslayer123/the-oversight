@@ -1939,7 +1939,7 @@
         const said = [];
         const origSay = this.say;
         this.say = (t) => { said.push(String(t)); };
-        try { this.askAbout(vid, 'gossip'); } catch (e) {}
+        try { this.askAbout(vid, 'gossip', { inConvo: true }); } catch (e) {}
         this.say = origSay;
         c.thread = 'gossip'; c.depth = 1;
         // QUOTE HYGIENE (fix 2026-10-07): askAbout formats beats as
@@ -3067,10 +3067,14 @@
     startConvo(vid) {
       // MODAL (Steve 2026-10-05): one conversation at a time. If another is
       // active, end it first — you can't talk to two people at once.
+      // BREAK-IT (socialite r11 2026-10-10): this iterated the plural key —
+      // a property that never exists (convoGet stores in v.conv). The modal
+      // rule was dead: 12 simultaneous "active" conversations, whole village
+      // engaged.
       const v = this.state.village;
-      for (const otherId of Object.keys(v.convos || {})) {
+      for (const otherId of Object.keys(v.conv || {})) {
         if (otherId !== vid) {
-          const oc = (v.convos || {})[otherId];
+          const oc = (v.conv || {})[otherId];
           if (oc && oc.active) {
             oc.active = false; oc.over = true;
             try {
@@ -3147,7 +3151,12 @@
       this.setEngaged(vid, 2);
       if (this.state.scholar.week1) this.state.scholar.week1.talk++;
       this.notePlaystyle('social');
-      this.gainAbilityXP('diplomat', 1);
+      // DIPLOMAT XP (socialite r11 2026-10-10): practice is the conversation,
+      // not the opening. The old on-open grant farmed diplomat L3 (trust 3x,
+      // unprompted secrets) via 35 zero-exchange open/leave cycles — 35
+      // ticks, 350 kcal, or free at 0 kcal. XP now lands in endConvo, gated
+      // on at least one real exchange.
+      // (was: this.gainAbilityXP('diplomat', 1); — removed, see endConvo)
       // LANGUAGE: the barrier is discovered in conversation, never listed.
       const comm = this.commLevel(vid);
       const firstMet = !(v.met || {})[vid];
@@ -4248,6 +4257,10 @@
       // still costs.
       const stipend = c.exchanges >= 3 ? 3 : (c.exchanges >= 1 ? 1 : 0);
       if (stipend > 0) this.resolveConsequence(vid, { trust: stipend, temper: 'neutral', name: 'endConvo:talk' });
+      // DIPLOMAT XP (socialite r11 2026-10-10): earned by the conversation,
+      // not the opening — a hello-goodbye (0 exchanges) teaches nothing.
+      // Moved here from startConvo (open/leave XP farm: 35 cycles to L3).
+      if (c.exchanges >= 1) { try { this.gainAbilityXP('diplomat', 1); } catch (e) {} }
       const cm = Math.max(-3, Math.min(3, c.mood || 0));
       if (cm !== 0 && c.exchanges >= 3 && c.substantive) this.resolveConsequence(vid, { trust: cm, temper: 'neutral', name: 'endConvo:mood-lingers' });
       try { this.observe('talk', { noTrust: true }); } catch (e) {}
