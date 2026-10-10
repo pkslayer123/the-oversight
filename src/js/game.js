@@ -27695,7 +27695,12 @@
             this.say('The charge leaves the ground churned and broken — wreckage underfoot. It will slow you down.');
           }
         }
-        this.audioEvent('impact');
+        // PATTERN-HONEST RESOLVE (break-it audio 2026-10-10): the pattern is
+        // right here in tg — pass it so impact() dispatches the pattern's own
+        // resolve voice (chargeImpact, droneBeam, lineStrike...) instead of
+        // the generic impactWild. Bespoke resolveAudio still layers on top.
+        const _rpt = (tg.pattern || {}).type;
+        this.audioEvent('impact', { pattern: _rpt, beam: _rpt === 'beam', highbeam: /highbeam/i.test(m.name || '') });
         if (rcfg.resolveAudio) this.audioEvent(rcfg.resolveAudio);
         // INSPIRATION: the bloom. White flare, then the long gutter down.
         if (this.biIs(m) && (tg.pattern || {}).type === 'burst') {
@@ -29445,7 +29450,10 @@
               this.say(`${t.name} is on the line — the voice won't stop. Hit the caller to hang it up.`);
             }
             this.audioEvent('serviceRush', {});
-            this.audioEvent('impact', {});
+            // PATTERN-HONEST RESOLVE (break-it audio 2026-10-10): the rush
+            // resolve layers the pattern voice under the bespoke one —
+            // impactWild was the wrong fallthrough here.
+            this.audioEvent('impact', { pattern: 'rush' });
           } else {
             this.say('It rushes the empty air where the ringing said you\'d be. "HELLO? Hello??"');
           }

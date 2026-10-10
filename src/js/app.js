@@ -10766,7 +10766,7 @@
         if (pat === 'beam' || (d && d.beam)) beamTechWindup(dur);
         else if (pat === 'burst') burstWindup(dur);
         else if (pat === 'charge') chargeWindup(dur);
-        else if (pat === 'direct') lockonTick(dur);
+        else if (pat === 'direct' || pat === 'lockon') lockonTick(dur); // 'lockon' is a real pattern type in game.js (tbMonsterTurn) — same voice
         else if (pat === 'line') lineWindup(dur);
         else if (pat === 'rush') rushWindup();
         else if (pat === 'single') diveWindup(dur);
@@ -10779,7 +10779,7 @@
         if (pat === 'beam' || (d && d.beam)) { droneBeam(); return; }
         if (pat === 'burst') { burstDetonate(); return; }
         if (pat === 'charge') { chargeImpact(); return; }
-        if (pat === 'direct') { lockonHit(); return; }
+        if (pat === 'direct' || pat === 'lockon') { lockonHit(); return; }
         if (pat === 'line') { lineStrike(); return; }
         if (pat === 'rush') { rushHit(); return; }
         if (pat === 'single') { diveImpact(); return; }
@@ -11008,7 +11008,8 @@
       // PATTERN SYNTHS (Steve 2026-10-06): generic-per-pattern beats for the
       // wave-2 flesh-out siblings — call directly, or let telegraph()/impact()
       // dispatch them by pattern. Patterns: beam, burst, charge, direct,
-      // line, rush, single, ambush. (The deer's beam is separate: beamCharge/
+      // line, rush, single, ambush (+ lockon, a real game.js pattern type
+      // mapped to the lockon pair). (The deer's beam is separate: beamCharge/
       // beamFire are the animal; droneBeam is the machine.)
       patternWindup(d) {
         const pat = (d && d.pattern) || '';
@@ -11016,7 +11017,7 @@
         if (pat === 'beam' || (d && d.beam)) beamTechWindup(dur);
         else if (pat === 'burst') burstWindup(dur);
         else if (pat === 'charge') chargeWindup(dur);
-        else if (pat === 'direct') lockonTick(dur);
+        else if (pat === 'direct' || pat === 'lockon') lockonTick(dur); // 'lockon' is a real pattern type in game.js (tbMonsterTurn) — same voice
         else if (pat === 'line') lineWindup(dur);
         else if (pat === 'rush') rushWindup();
         else if (pat === 'single') diveWindup(dur);
