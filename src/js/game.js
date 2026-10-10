@@ -10496,7 +10496,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         vw.clean -= 1;
       }
       // HAULING WATER IS WORK. 10 kcal per liter. (nothing is free)
-      s.kcal = Math.max(0, (s.kcal || 0) - 10);
+      // COST HONESTY (survivalist loop 2026-10-10): the charge was silent —
+      // the button says 'Fill water (1L)' and the result named no cost, so a
+      // thirsty player bled 100 kcal over 10 fills with no accounting anywhere.
+      // Name what was actually spent (clamped at 0 — an empty body hauls on fumes).
+      const haulBefore = s.kcal || 0;
+      s.kcal = Math.max(0, haulBefore - 10);
+      const haulSpent = Math.round(haulBefore - s.kcal);
       const quality = atHaven ? 'clean' : 'risky';
       // NAME THE WATER (survivalist loop 2026-10-08): the old fallback called
       // every non-creek source "Wild source (unknown)" — wetlands and ponds
@@ -10505,7 +10511,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const source = atHaven ? 'Haven well' : `${wname} source (unknown)`;
       s.water.push({ liters: 1, quality, source });
       const left = atHaven ? ` Cistern: ${Math.floor((this.state.village.water || {}).clean || 0)}L left.` : '';
-      this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg).${left}`);
+      this.say(`Filled 1L (${quality} — ${source}). ${s.water.length}L carried (${s.water.length}kg). (-${haulSpent} kcal hauling, 1 tick.)${left}`);
       // ACTION CLOCK: filling a bottle = 1 tick.
       this.tickAction(1);
       return null;
@@ -20357,14 +20363,19 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // triage: practiced hands heal more, even resting.
           scholar.health = Math.min(this.maxHealth(), scholar.health + Math.round(this.modTarget('healing.amount', 5)));
         }
-        scholar.kcal = Math.max(0, (scholar.kcal || 0) - S.calories.ACTION_COSTS.rest);
+        // COST HONESTY (survivalist loop 2026-10-10): the message billed the full
+        // 40 kcal even when the body held less — clamped at 0, nothing spent,
+        // the copy still said -40. Name what was actually spent.
+        const restKcalBefore = scholar.kcal || 0;
+        scholar.kcal = Math.max(0, restKcalBefore - S.calories.ACTION_COSTS.rest);
+        const restSpent = Math.round(restKcalBefore - scholar.kcal);
         // COST HONESTY: rest burns 96 ticks + the ACTION_COSTS.rest kcal — most
         // of the day part. The message names both so rest feels earned, not stolen.
         msg = coldShiver
-          ? `You huddle and try to rest through most of the ${DAY_PARTS[this.dayPart] || 'day'} — but the cold snap won't let go. Shivering the whole time, no real recovery. (-${S.calories.ACTION_COSTS.rest} kcal — the work happened; the cold kept the recovery. No healing while exposed in the cold, energy can't rise past 40. Fire, the hall, or your tent.)`
+          ? `You huddle and try to rest through most of the ${DAY_PARTS[this.dayPart] || 'day'} — but the cold snap won't let go. Shivering the whole time, no real recovery. (-${restSpent} kcal — the work happened; the cold kept the recovery. No healing while exposed in the cold, energy can't rise past 40. Fire, the hall, or your tent.)`
           : crisis
           ? `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy — but your body has nothing to rebuild with. (No healing while starving or dehydrated: eat and drink first.)`
-          : `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy. (-${S.calories.ACTION_COSTS.rest} kcal — rest burns fuel too.)`;
+          : `You settle in and rest through most of the ${DAY_PARTS[this.dayPart] || 'day'}. Breath slows. +${restGain} energy. (-${restSpent} kcal — rest burns fuel too.)`;
       } else if (kind === 'wait') {
         // HONEST WAIT (survivalist loop 2026-10-10): the world moves while you
         // wait — monsterTurn runs per batch and a hungry pack can engage
