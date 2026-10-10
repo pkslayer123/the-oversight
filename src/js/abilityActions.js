@@ -231,7 +231,32 @@
           return false;
         }
       }
-      var costCheck = this.payActionCost(def.action.cost);
+      // TURN-LAST ORDERING (brawler break-it 2026-10-10): the turn handler
+      // advances the world — the monster acts on the spent turn — so paying
+      // it before dispatch let the response land before the effect. Brace's
+      // "next incoming damage" wasn't up for the hit the tap itself provoked,
+      // and settle_debt cashed in the activation-turn hit. Strike applies its
+      // effect before the response; abilities now match: pay everything
+      // except the turn, run the impl, THEN spend the turn. The turn's
+      // usability is still prechecked atomically — no kcal paid for a turn
+      // you can't spend.
+      var fullCost = def.action.cost || {};
+      if (fullCost.turn) {
+        if (!this.inCombat()) {
+          this.say('This costs your combat turn — only usable in a fight. (' + (def.action.name || actionId) + ')');
+          return false;
+        }
+        var _pp = this.tbFighter ? this.tbFighter('p') : null;
+        if (_pp && _pp.acted) {
+          this.say('Already acted this turn. (' + (def.action.name || actionId) + ')');
+          return false;
+        }
+      }
+      var costNoTurn = {};
+      for (var _ck in fullCost) {
+        if (fullCost.hasOwnProperty(_ck) && _ck !== 'turn') costNoTurn[_ck] = fullCost[_ck];
+      }
+      var costCheck = this.payActionCost(costNoTurn);
       if (!costCheck.ok) {
         this.say(costCheck.why + ' (' + (def.action.name || actionId) + ')');
         return false;
@@ -249,6 +274,11 @@
       var result;
       try { result = impl(this, target); }
       finally { this.say = _say; }
+      // The turn is spent AFTER the effect lands (see TURN-LAST ORDERING
+      // above). Fizzle or fire, the tap took the turn — same as before.
+      if (fullCost.turn && typeof COST_HANDLERS !== 'undefined' && COST_HANDLERS.turn) {
+        try { COST_HANDLERS.turn(this, fullCost.turn); } catch (e) {}
+      }
       if (result === false) {
         if (_said === 0) this.say('Nothing happened. (' + (def.action.name || actionId) + ' fizzled.)');
       } else {
@@ -655,6 +685,19 @@
       if (game.state.scholar.shakeOffUsed)
         return { ok: false, why: 'Already shaken off this fight.' };
       return { ok: true };
+    },
+    'war_cry.bellow': function (game) {
+      // NO FOES (brawler break-it 2026-10-10): bellowing at an empty room
+      // spent the turn + 30 kcal on a known no-op, then lied "they hold
+      // their ground". Refuse before payment.
+      var f = game.tbfight;
+      if (!f || f.over) return { ok: false, why: 'No fight to bellow in.' };
+      for (var i = 0; i < f.fighters.length; i++) {
+        var m = f.fighters[i];
+        if ((m.kind === 'monster' || m.kind === 'hostile') && m.alive && !m.fled)
+          return { ok: true };
+      }
+      return { ok: false, why: 'No one left to bellow at.' };
     },
     'animal_ken.calm_beast': function (game, target) {
       // The bar passes no target (self/none actions); the impl needs a live
@@ -1081,7 +1124,52 @@
     },
 
     'war_cry.challenge': function (game, target) {
-      game.say('You issue the challenge — a bout, non-lethal, witnessed. Winner gains respect. Loser gains humility. Someone will answer, or they\'ll lose face. (Issue Challenge)');
+      // HONESTY (brawler break-it 2026-10-10): the old impl narrated a bout
+      // that never happened — no fight, no respect, no humility. The button
+      // is the DARE: public, witnessed, and real. The bout itself comes later
+      // (real fight, content-run); the dare moves the room NOW.
+      var s = game.state.scholar, v = game.state.village;
+      var vid = target;
+      if (!vid) {
+        // Social context = you're talking to someone. Default to the active
+        // conversation partner; the UI passes no target for social actions.
+        try {
+          var convos = (v && v.convos) || {};
+          for (var cid in convos) {
+            if (convos[cid] && convos[cid].active && (v.roster || []).indexOf(cid) >= 0 && cid !== game.villagerId) { vid = cid; break; }
+          }
+        } catch (e) {}
+      }
+      var onRoster = vid && (v.roster || []).indexOf(vid) >= 0 && vid !== game.villagerId;
+      if (!onRoster) {
+        game.say('A challenge needs someone to challenge — and they have to be here, alive, and one of yours. Talk to them first. (Issue Challenge)');
+        return false;
+      }
+      // ONE DARE A DAY (brawler break-it 2026-10-10): the dare is public and
+      // the village judges it — but twelve challenges a day for free rep is
+      // a farm. The village stops being impressed after the first.
+      if (s.challengeDay === s.day) {
+        game.say('You already threw down a challenge today. The village is still talking about it — another one just looks desperate. (Issue Challenge — once a day.)');
+        return false;
+      }
+      s.challengeDay = s.day;
+      var dname = game.displayName(vid);
+      try { game.remember(vid, 'you_challenged', 'challenged to a witnessed non-lethal bout'); } catch (e) {}
+      // PUBLIC DARE: the village hears it. The bold respect the nerve; some
+      // think it's showing off. Gossip moves REP (canon), never trust.
+      try { game.seedGossip('challenged', { brave: 4, generous: -2 }, [vid]); } catch (e) {}
+      var temp = 'steady';
+      try { temp = game.npcTemper ? game.npcTemper(vid) : 'steady'; } catch (e) {}
+      var resp;
+      if (temp === 'bold' || temp === 'prickly' || temp === 'intense') {
+        resp = dname + ' grins — slow, wide. "Anytime." The dare stands. (They will remember this.)';
+      } else if (temp === 'cautious' || temp === 'withdrawn') {
+        resp = dname + ' goes pale and looks at the ground. No answer — and the whole village saw that. (They yield the dare.)';
+        try { game.seedGossip('yielded', { who: vid, brave: -4 }, [vid]); } catch (e) {}
+      } else {
+        resp = dname + ' holds your gaze, then nods once. "Witnessed." (The dare stands.)';
+      }
+      game.say('You point at ' + dname + ', in front of everyone. "You. A bout. Non-lethal. Witnessed." ' + resp + ' (Issue Challenge — the dare is public; the bout comes when hands are thrown.)');
       return true;
     },
 
@@ -1220,7 +1308,44 @@
     },
 
     'intimidating_presence.end_it_before': function (game, target) {
-      game.say('Your reputation walks in before you do. Most disputes resolve in your favor without a hand raised. Some will resent you for it later. (End It Before It Starts)');
+      // HONESTY (brawler break-it 2026-10-10): the old impl said "most
+      // disputes resolve in your favor" and "some will resent you" — and did
+      // neither. Now the posturing is real: the target yields THIS dispute
+      // (memory + the room hears it) and the promised resentment lands as a
+      // real trust hit. Theft is allowed; posturing is too — but socially
+      // punished.
+      var s = game.state.scholar, v = game.state.village;
+      var vid = target;
+      if (!vid) {
+        // Social context = you're talking to someone. Default to the active
+        // conversation partner; the UI passes no target for social actions.
+        try {
+          var convos = (v && v.convos) || {};
+          for (var cid in convos) {
+            if (convos[cid] && convos[cid].active && (v.roster || []).indexOf(cid) >= 0 && cid !== game.villagerId) { vid = cid; break; }
+          }
+        } catch (e) {}
+      }
+      var onRoster = vid && (v.roster || []).indexOf(vid) >= 0 && vid !== game.villagerId;
+      if (!onRoster) {
+        game.say('Posturing needs an audience — someone whose dispute you are ending. Talk to them first. (End It Before It Starts)');
+        return false;
+      }
+      // ONCE A DAY (brawler break-it 2026-10-10): throwing your weight around
+      // twice a day just makes you the bully — and the resentment stacks.
+      if (s.postureDay === s.day) {
+        game.say('You already threw your weight around today. Doing it twice makes you the bully, not the legend. (End It Before It Starts — once a day.)');
+        return false;
+      }
+      s.postureDay = s.day;
+      var dname = game.displayName(vid);
+      // THE PROMISED RESENTMENT: the copy said "some resent you for it" —
+      // so they do. Trust, not rep: this is personal.
+      try { game.bumpTrust(vid, -5); } catch (e) {}
+      try { game.remember(vid, 'you_postured', 'made the room yield without raising a hand'); } catch (e) {}
+      // The room hears it. Strong, not straight: brave up, honest down.
+      try { game.seedGossip('postured', { brave: 3, honest: -3 }, [vid]); } catch (e) {}
+      game.say('Your reputation walks in before you do. You do not raise a hand — you do not need to. ' + dname + ' yields the point, and the room feels it. The dispute ends here. The resentment does not. (End It Before It Starts — they will remember the look, and not fondly.)');
       return true;
     },
 

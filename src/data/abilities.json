@@ -1500,7 +1500,7 @@
         "cost": {
           "time_min": 5
         },
-        "effect": "Your reputation precedes you. Most disputes resolve in your favor without violence. Some resent you for it."
+        "effect": "Your reputation walks in before you do. You make your point without raising a hand \u2014 the dispute ends here. They will remember the look, and not fondly. (-5 trust with the target. Once a day.)"
       }
     ],
     "name": "Intimidating Presence",
@@ -1960,7 +1960,7 @@
         "cost": {
           "time_min": 5
         },
-        "effect": "Challenge a villager to a non-lethal bout. Winner gains respect. Loser gains humility."
+        "effect": "Issue a public dare to a villager: a non-lethal bout, witnessed. The village hears it \u2014 the bold respect the nerve, some call it showing off. The dare stands until hands are thrown. Once a day."
       }
     ],
     "paths": [
