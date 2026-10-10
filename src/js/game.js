@@ -1548,9 +1548,13 @@
       const fa = this.displayName(c.a), fb = this.displayName(c.b);
       const incidents = [
         () => { this.say(`You find ${fa} and ${fb} in a sharp, quiet argument. It stops when you approach. Neither explains.`); c.tension = Math.min(100, c.tension + 5); },
-        () => { this.say(`${fa} corners you by the fire: "Don't share your haul with ${fb}." It's not a request.`); trust[c.a] = Math.min(100, (trust[c.a] || 10) + 2); trust[c.b] = Math.max(0, (trust[c.b] || 10) - 2); },
+        // BREAK-IT (social r10 2026-10-10, sibling sweep): the old (trust[x] ||
+        // 10) writes resurrected real-0 trust (a hater cornering you left at
+        // 0 -> 12). bumpTrust keeps one math: progressive gains, whole
+        // penalties, real 0 stays 0.
+        () => { this.say(`${fa} corners you by the fire: "Don't share your haul with ${fb}." It's not a request.`); this.bumpTrust(c.a, 2, 'sided with them in a conflict'); this.bumpTrust(c.b, -2, 'cold-shouldered in a conflict'); },
         () => { this.say(`${fb} eats apart from the others tonight. ${fa} doesn't look up. The fire feels smaller.`); },
-        () => { this.say(`You carry a message from ${fa} to ${fb}. It's not kind. You deliver it anyway. That's what neighbors do, apparently.`); trust[c.a] = Math.min(100, (trust[c.a] || 10) + 2); trust[c.b] = Math.max(0, (trust[c.b] || 10) - 3); c.tension = Math.min(100, c.tension + 3); },
+        () => { this.say(`You carry a message from ${fa} to ${fb}. It's not kind. You deliver it anyway. That's what neighbors do, apparently.`); this.bumpTrust(c.a, 2, 'carried their message'); this.bumpTrust(c.b, -3, 'carried an unkind message'); c.tension = Math.min(100, c.tension + 3); },
       ];
       incidents[Math.floor(Math.random() * incidents.length)]();
     },
@@ -4057,11 +4061,36 @@
       const taskName = (this.delegateTasks()[task] || {}).name || task;
       v.taskLeads = v.taskLeads || {};
       v.taskLeads[task] = cid;
-      const t = v.trust || (v.trust = {});
-      t[cid] = Math.min(100, (t[cid] || 10) + 10);
+      // BREAK-IT (social r10 2026-10-10): the old flat +10 bypassed
+      // trustGainProgressive — every other gain in the game scales ("the math
+      // should be one math", r5) — and (t[cid] || 10) resurrected a real-0
+      // trust to 20. At 95 it jumped straight to 100, breaking the 90-100
+      // "one point at a time" law. Yielding is a real act (a domain changes
+      // hands), so no 40 words-cap — but it scales like every other gain.
+      // bumpTrust keeps progressive scaling, trust.gain_mult, and 0-preservation.
+      this.bumpTrust(cid, 10, 'yielded leadership challenge');
       v.heat = v.heat || {};
       v.heat[cid] = 0;
       v.challenge = null;
+      // ALLIES REMEMBER (break-it social r10 2026-10-10): askSupport writes
+      // v.allies but nothing ever read it — "allies expect to be treated
+      // well" was dead copy. Yielding to a contender someone backed you
+      // against spends that alliance: they hold a grievance (it feeds
+      // motiveBetween like every other grievance), and the alliance clears.
+      try {
+        v.allies = v.allies || {};
+        const cname = this.displayName(cid);
+        for (const aid of Object.keys(v.allies)) {
+          if (v.allies[aid] !== cid) continue;
+          const onRoster = (v.roster || []).includes(aid);
+          delete v.allies[aid];
+          if (!onRoster) continue;
+          const aname = this.displayName(aid);
+          if (typeof this.recordGrievance === 'function') this.recordGrievance(aid, this.villagerId, 'abandoned_alliance', 14);
+          try { this.remember(aid, 'betrayed_ally', 'backed you against ' + cname + '; you yielded'); } catch (e2) {}
+          this.say(`${aname} stood with you against ${cname} — and you just handed them the fire. They won't forget it.`);
+        }
+      } catch (e) {}
       this.say(`${this.displayName(cid)} nods slowly. "Good call." They start organizing the ${taskName} crews their way.`);
       this.save();
       return { ok: true, result: `You let them lead ${taskName}. They'll work it every part — and build their own base doing it.` };
@@ -4074,11 +4103,25 @@
       const v = this.state.village;
       const ch = v.challenge || {};
       const cid = ch.cid || vid;
-      const t = v.trust || (v.trust = {});
-      t[cid] = Math.max(0, (t[cid] || 10) - 5);
+      // BREAK-IT (social r10 2026-10-10): (t[cid] || 10) resurrected a real-0
+      // trust to 5 — standing your ground against someone who hates you made
+      // them like you slightly. Penalties land whole and 0 stays 0 (bumpTrust).
+      this.bumpTrust(cid, -5, 'stood ground on leadership challenge');
       v.heat = v.heat || {};
       v.heat[cid] = 0;
       v.challenge = null;
+      // Alliances against this contender are spent well — they backed you and
+      // you held. The memory stays (it has a read site: convoMemoryAbout).
+      try {
+        v.allies = v.allies || {};
+        for (const aid of Object.keys(v.allies)) {
+          if (v.allies[aid] !== cid) continue;
+          delete v.allies[aid];
+          if ((v.roster || []).includes(aid)) {
+            try { this.remember(aid, 'stood_together', 'backed you against ' + this.displayName(cid) + '; you held'); } catch (e2) {}
+          }
+        }
+      } catch (e) {}
       this.say(`${this.displayName(cid)} holds your gaze, then looks away. "Fine. Your funeral." This isn't over — but it's quiet. For now.`);
       this.save();
       return { ok: true, result: 'You held your ground.' };
@@ -12735,8 +12778,11 @@
             `${d} folds their arms. "Sure. Your call. For now."`,
           ];
           this.say(lines[Math.floor(Math.random() * lines.length)]);
-          const t = v.trust || (v.trust = {});
-          t[cid] = Math.max(0, (t[cid] || 10) - 2);
+          // BREAK-IT (social r10 2026-10-10): (t[cid] || 10) resurrected a
+          // real-0 trust to 8 — watching you give orders made a hater like
+          // you. A penalty that pays. bumpTrust keeps a real 0 at 0 (same
+          // class as the standGround/declineInvite fixes this run).
+          this.bumpTrust(cid, -2, 'gave orders over a contender');
           if (v.heat[cid] >= 3 && !v.challenge) {
             v.challenge = { cid, task, age: 0 };
             this.say(`${d} steps closer. "We need to talk. About who's actually running things here."`);
@@ -17516,7 +17562,11 @@
         for (const vid of Object.keys(v.trust)) {
           // gains are progressive per villager; losses land whole (break-it 2026-10-08)
           const adj = amt > 0 ? this.trustGainProgressive(vid, amt) : amt;
-          v.trust[vid] = Math.max(0, (v.trust[vid] || 15) + adj);
+          // BREAK-IT (social r10 2026-10-10, sibling sweep): (v.trust[vid] ||
+          // 15) resurrected a real-0 trust on penalty paths (fear_aura -10 on
+          // a hater: 0 -> 5). The key exists here — no default needed; a real
+          // 0 stays 0 under the max(0, ...) clamp.
+          v.trust[vid] = Math.max(0, v.trust[vid] + adj);
         }
         this.say(why);
       };
@@ -18204,7 +18254,10 @@
         for (const vid of Object.keys(v.trust)) {
           const g = this.trustGainProgressive(vid, baseBonus);
           if (g > appliedMax) appliedMax = g;
-          v.trust[vid] = Math.min(100, (v.trust[vid] || 15) + g);
+          // BREAK-IT (social r10 2026-10-10, sibling sweep): (v.trust[vid] ||
+          // 15) resurrected a real-0 trust to 15+g — the mediator's speech
+          // made haters like you. The key exists here; a real 0 stays 0.
+          v.trust[vid] = Math.min(100, v.trust[vid] + g);
         }
         this.say(`You sit everyone down. You listen. Nobody yells. (mediator: village trust +${appliedMax})`);
         this.noteAbilityUse('mediator');
@@ -18334,7 +18387,10 @@
       for (const vid of Object.keys(v.trust)) {
         // gains are progressive per villager; losses are raw — rudeness is honest (break-it 2026-10-08)
         const g = n > 0 ? this.trustGainProgressive(vid, n) : n;
-        v.trust[vid] = Math.max(0, Math.min(100, (v.trust[vid] || 15) + g));
+        // BREAK-IT (social r10 2026-10-10, sibling sweep): (v.trust[vid] ||
+        // 15) resurrected a real-0 trust on penalty paths. The key exists
+        // here; a real 0 stays 0.
+        v.trust[vid] = Math.max(0, Math.min(100, v.trust[vid] + g));
       }
     },
     // _evAvgTrust(): mean village trust, for social branches.

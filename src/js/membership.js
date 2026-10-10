@@ -284,11 +284,13 @@
         var v = this.state.village || {};
         var over = (v.roster || []).length - this.housingCap();
         if (over <= 0) return;
-        var t = v.trust || {};
         for (var i = 0; i < (v.roster || []).length; i++) {
           var id = v.roster[i];
           if (id === this.villagerId) continue;
-          t[id] = Math.max(0, (t[id] || 20) - 1);
+          // BREAK-IT (social r10 2026-10-10, sibling sweep): (t[id] || 20)
+          // resurrected a real-0 trust to 19 — overcrowding made haters like
+          // you. Penalties land whole and 0 stays 0 (bumpTrust).
+          this.bumpTrust(id, -1, 'overcrowding frays the village');
         }
         if (R() < 0.3) {
           this.say(`Too many bodies, not enough roof — ${over} sleeping rough. The village frays a little. Build shelter, or don't grow.`);

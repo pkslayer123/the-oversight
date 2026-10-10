@@ -106,7 +106,10 @@ function seedGame() {
     ok('2: taskLeads records the contender', (v.taskLeads || {}).forage === C);
     ok('2: challenge cleared', v.challenge === null);
     ok('2: heat reset', (v.heat[C] || 0) === 0);
-    ok('2: contender trust +10', (v.trust[C] || 0) === Math.min(100, before + 10));
+    // BREAK-IT (social r10 2026-10-10): the old assertion pinned the flat +10
+    // (no progressive scaling, ||10 resurrection) — the bug. Yielding is a
+    // real act, but gains scale like every other gain: progressive pipeline.
+    ok('2: contender trust scales progressively (no flat +10)', (v.trust[C] || 0) === Math.min(100, before + Game.trustGainProgressive(C, 10)));
     ok('2: yield announced diegetically', said.some(s => /Good call/i.test(s)));
   }
 
@@ -164,8 +167,11 @@ function seedGame() {
     ok('6: askSupport succeeds at trust 60', r && r.ok);
     ok('6: contender heat drops by 2', (v.heat[C] || 0) === 1);
     ok('6: ally recorded', (v.allies || {})[R] === C);
-    // +5 trust plus the coalition observe's small trust drift (dTrust=+1)
-    ok('6: supporter trust up', (v.trust[R] || 0) >= trustBefore + 5);
+    // BREAK-IT (social r10 2026-10-10): the old assertion expected the flat
+    // +5 plus the coalition observe's trust drift — the drift was killed by
+    // r2's noTrust (words move rep, not trust), and the +5 scales
+    // progressively like every other gain (measured 60 -> 62 here).
+    ok('6: supporter trust up (progressive)', (v.trust[R] || 0) === trustBefore + Game.trustGainProgressive(R, 5));
     const { v: v2, R: R2 } = seedGame();
     v2.trust[R2] = 10;
     ok('6: low trust refuses', Game.askSupport(R2) === null);

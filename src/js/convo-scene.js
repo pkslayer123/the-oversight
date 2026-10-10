@@ -263,6 +263,12 @@
         you_threatened: 'what you said to me',
         confronted: 'what you accused me of',
         shared_goal: 'what we talked about wanting',
+        // BREAK-IT (social r10 2026-10-10): askSupport/yieldChallenge/standGround
+        // wrote 'ally'/'betrayed_ally'/'stood_together' memories with no read
+        // site — Telltale-theater rule: every write needs a later read.
+        ally: 'who stood with you',
+        betrayed_ally: 'the alliance you broke',
+        stood_together: 'when you held the line together',
       };
       return MEM_LABELS[memType] || null;
     },

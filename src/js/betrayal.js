@@ -358,8 +358,10 @@
       const hist = this.inviteHistory(vid);
       hist.pending = null;
       hist.count++;
-      const t = this.state.village.trust || {};
-      t[vid] = Math.max(0, (t[vid] || 10) - 1);
+      // BREAK-IT (social r10 2026-10-10): (t[vid] || 10) resurrected a real-0
+      // trust to 9 — declining their invitation PAID a hater. Penalties land
+      // whole and 0 stays 0 (bumpTrust; same class as the leadership fixes).
+      this.bumpTrust(vid, -1, 'declined their invitation');
       return `"Another time, then." A small thing, pocketed.`;
     },
     resolveInvite(vid, defId) {
@@ -834,6 +836,20 @@
     // every removal does now.
     try { if (v.positions) delete v.positions[vid]; } catch (e) {}
     try { if (v.nodePos) delete v.nodePos[vid]; } catch (e) {}
+    // LEADERSHIP HYGIENE (break-it social r10 2026-10-10): a removed
+    // contender's heat, challenge, and alliances die with them. The old code
+    // left v.challenge pointing at a ghost — agencyLeadershipTick
+    // early-returns while any challenge is set (no new challenges until the
+    // ghost's challenge aged out ~8 parts), yield/standGround spoke lines to
+    // someone who'd walked out, and askSupport could rally support against
+    // stale heat for an exiled contender.
+    try {
+      if (v.heat) delete v.heat[vid];
+      if (v.challenge && v.challenge.cid === vid) v.challenge = null;
+      if (v.allies) for (const aid of Object.keys(v.allies)) {
+        if (aid === vid || v.allies[aid] === vid) delete v.allies[aid];
+      }
+    } catch (e) {}
     // DOUBT CLOSURE (detective 2026-10-09e): open doubts about the removed
     // die with them — resolved as UNANSWERED, never silently dropped or
     // left open with no resolution path. Truth module owns the closer;
