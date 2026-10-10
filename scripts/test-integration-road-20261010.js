@@ -53,8 +53,10 @@ async function sectionSystemQuests(Game, tag) {
   check(`${tag} plants identified`, pids.every(pid => Game.plantKnown(pid)));
 
   // A. evSystemTask offers a REAL quest (not the dead {id:'system_task'} shape)
+  // (bal-scale 2026-10-10: the system line lives in activeSystemQuest, its
+  // own slot — a villager quest in activeQuest no longer blocks it.)
   Game.evSystemTask({});
-  let q = s.activeQuest;
+  let q = s.activeSystemQuest;
   check(`${tag} evSystemTask sets quest`, !!q);
   check(`${tag} quest has completable type`, q && q.type === 'system_teach', JSON.stringify(q && { id: q.id, type: q.type }));
   check(`${tag} quest not the dead shape`, !q || q.id !== 'system_task');
@@ -63,16 +65,16 @@ async function sectionSystemQuests(Game, tag) {
   const startN = q ? q.startN : -1;
   check(`${tag} startN snapshots L3 count`, q && startN === l3count(Game));
 
-  // B. Ghost-quest guard must NOT lapse system quests
+  // B. Ghost-quest guard must NOT lapse system quests (own slot now)
   Game.checkQuest('forage');
-  check(`${tag} ghost guard spares system quest`, s.activeQuest && s.activeQuest.type === 'system_teach');
+  check(`${tag} ghost guard spares system quest`, s.activeSystemQuest && s.activeSystemQuest.type === 'system_teach');
 
   // C. Completing: push a plant to L3, check completes with +8
   const before = integ(Game);
   Game.state.codex.plants[pids[0]].level = 3;
   const done = Game.checkSystemQuest();
   check(`${tag} checkSystemQuest completes`, done === true);
-  check(`${tag} quest cleared`, !s.activeQuest);
+  check(`${tag} quest cleared`, !s.activeSystemQuest);
   check(`${tag} integration +8`, integ(Game) === before + 8, `${before} -> ${integ(Game)}`);
   check(`${tag} systemQuests counter 1`, Game.systemQuestsDone() === 1);
 
@@ -80,7 +82,7 @@ async function sectionSystemQuests(Game, tag) {
   const expected = [6, 4, 2, 2];
   for (let i = 0; i < expected.length; i++) {
     Game.offerSystemQuest('test');
-    const qq = s.activeQuest;
+    const qq = s.activeSystemQuest;
     check(`${tag} quest ${i + 2} reward ${expected[i]}`, qq && qq.reward === expected[i], 'got ' + (qq && qq.reward));
     const b2 = integ(Game);
     const pid = pids[i + 1] || pids[0];
@@ -90,11 +92,14 @@ async function sectionSystemQuests(Game, tag) {
   }
   check(`${tag} five quests done`, Game.systemQuestsDone() === 5);
 
-  // E. Offer refusals
+  // E. Offer refusals — and the slot separation (bal-scale 2026-10-10):
+  // a village quest NO LONGER blocks the System's line; each keeps its slot.
   s.activeQuest = { type: 'bring', plant: 'x', qty: 1 }; // a village quest
-  check(`${tag} offer refused when quest active`, Game.offerSystemQuest('test') === false);
+  check(`${tag} offer fires despite village quest`, Game.offerSystemQuest('test') === true);
+  check(`${tag} system quest in its own slot`, !!(s.activeSystemQuest && s.activeSystemQuest.type === 'system_teach'));
   check(`${tag} active village quest preserved`, s.activeQuest.type === 'bring');
   s.activeQuest = null;
+  s.activeSystemQuest = null;
   for (const pid of Object.keys(Game.state.codex.plants)) Game.state.codex.plants[pid].level = 3;
   check(`${tag} offer refused when nothing teachable`, Game.offerSystemQuest('test') === false);
   Game.state.systemArrived = false;
@@ -102,22 +107,31 @@ async function sectionSystemQuests(Game, tag) {
   check(`${tag} offer refused pre-arrival`, Game.offerSystemQuest('test') === false);
   Game.state.systemArrived = true;
 
-  // E2. Legacy migration: dead {id:'system_task'} shape converts
+  // E2. Legacy migration: dead {id:'system_task'} shape converts into the
+  // system slot (bal-scale 2026-10-10), and a legacy system_teach in
+  // activeQuest routes there too — the villager slot is left clean.
   s.activeQuest = { id: 'system_task', desc: 'Bring a fully-identified plant (L3) to the System' };
   Game.checkSystemQuest();
-  const mq = s.activeQuest;
+  const mq = s.activeSystemQuest;
   check(`${tag} legacy system_task migrates`, !!mq && mq.type === 'system_teach', JSON.stringify(mq && { id: mq.id, type: mq.type }));
-  s.activeQuest = null;
+  check(`${tag} legacy migration clears villager slot`, !s.activeQuest);
+  s.activeSystemQuest = null;
+  const l3now = l3count(Game);
+  s.activeQuest = { type: 'system_teach', giver: 'system', startN: l3now, reward: 8 };
+  Game.checkSystemQuest();
+  check(`${tag} legacy activeQuest system_teach routes to system slot`, !!(s.activeSystemQuest && s.activeSystemQuest.type === 'system_teach') && !s.activeQuest);
+  s.activeSystemQuest = null;
 
   // F. doAction-path dispatch: system quest completes via checkQuest(kind)
+  // (also with NO villager quest active — the system slot is independent)
   Game.state.codex.plants[pids[5]].level = 1; // re-teachable BEFORE offering
   Game.offerSystemQuest('test');
-  check(`${tag} re-offer works when teachable again`, !!(s.activeQuest && s.activeQuest.type === 'system_teach'));
+  check(`${tag} re-offer works when teachable again`, !!(s.activeSystemQuest && s.activeSystemQuest.type === 'system_teach'));
   const b3 = integ(Game);
   const n3 = l3count(Game);
   Game.state.codex.plants[pids[5]].level = 3;
   Game.checkQuest('rest');
-  check(`${tag} checkQuest(kind) completes system quest`, !s.activeQuest && l3count(Game) === n3 + 1 && integ(Game) > b3);
+  check(`${tag} checkQuest(kind) completes system quest`, !s.activeSystemQuest && l3count(Game) === n3 + 1 && integ(Game) > b3);
 }
 
 async function sectionNaming(Game, tag) {

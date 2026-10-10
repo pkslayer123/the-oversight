@@ -4392,7 +4392,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     },
 
     // village quests: the people ask. light, passive, human.
-    // (System quests come at integration 40+ — the overlay takes over.)
+    // Villager errands (bring/visit). The System's line is separate
+    // (activeSystemQuest, its own slot + play-weighted cadence) — a villager
+    // quest never blocks it, and it never blocks villager quests.
     maybeOfferQuest() {
       const s = this.state.scholar;
       if (s.activeQuest || (s.integration || 0) >= 40) return;
@@ -6499,7 +6501,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // When you meet one mid-game, it has history — catch-up sim runs days since start.
     genVillages() {
       const villages = [];
-      const nVillages = 2 + Math.floor(Math.random() * 2); // 2-3
+      // 3-4 villages (bal-scale 2026-10-10; was 2-3). The national ladder's
+      // bars are relationship counts — LEAD needs 3 subordinate links,
+      // covenant/trade need 3 peer links, BELONG needs a foreign 4-realm —
+      // and with 2 villages national was mathematically unreachable. Canon:
+      // villages are NEAR (~500m apart, PROGRESSION.md #5), so more fires
+      // fits the fiction; contact happens early via the rumor boost.
+      const nVillages = 3 + Math.floor(Math.random() * 2); // 3-4
       // Villages settle the best available ground — never garbage. Rank every
       // tile outside the haven zone by what its turf can hold, and pick from
       // the top. (An absolute threshold fails on poor maps: the old try-60
@@ -6942,7 +6950,15 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const hx = 4, hy = 4; // haven at center of 9x9
       const dist = Math.abs(village.x - hx) + Math.abs(village.y - hy);
       // Closer = more likely to hear about. 2 tiles: ~5%/day. 8 tiles: ~1%/day.
-      const rumorChance = Math.max(0.01, 0.06 - dist * 0.007);
+      let rumorChance = Math.max(0.01, 0.06 - dist * 0.007);
+      // EARLY CONTACT (bal-scale 2026-10-10; PROGRESSION.md #5: villages are
+      // NEAR and contact happens EARLY). The old curve heard the nearest fire
+      // ~day 22 on average — the scale ladder had no on-ramp inside a normal
+      // life. Close villages are heard of in the first two weeks now (~28%/
+      // day at dist<=4 → the nearest fire is known ~day 4-5, not ~day 22).
+      // Still a rumor roll, never a calendar grant — travelers walk, or not.
+      const day = (this.state.scholar || {}).day || 0;
+      if (day < 15 && dist <= 4) rumorChance = Math.max(rumorChance, 0.28);
       if (Math.random() < rumorChance) {
         village.rumored = true;
         village.rumorDay = this.state.scholar.day;
@@ -20444,6 +20460,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
 
     checkQuest(kind) {
       const q = this.state.scholar.activeQuest;
+      // SYSTEM QUESTS (bal-scale 2026-10-10): the system line has its own
+      // slot and completes on ANY action — teaching lands mid-day, not on
+      // the daily tick. Checked even when no villager quest is active.
+      try { if ((this.state.scholar || {}).activeSystemQuest) this.checkSystemQuest(); } catch (e) {}
       if (!q) return;
       // GHOST-QUEST GUARD (break-it social r9 2026-10-09): a quest whose giver
       // is gone (old saves, or any path that missed removeVillager's lapse)
@@ -20458,7 +20478,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       }
       // SYSTEM QUESTS (gap-integration 2026-10-10): deed-checked, not
       // kind-checked — teaching completes whenever the knowledge lands.
-      if (q.type === 'system_teach') { this.checkSystemQuest(); return; }
+      // (bal-scale 2026-10-10: the system line lives in activeSystemQuest,
+      // its own slot — but legacy saves may still hold it in activeQuest.)
+      if (q && q.type === 'system_teach') { this.checkSystemQuest(); return; }
       if (q.type === 'bring' && kind === 'forage') {
         const has = this.state.scholar.inventory.filter(i => i.plantId === q.plant).reduce((t, i) => t + i.units, 0);
         if (has >= q.qty) {
@@ -20513,39 +20535,72 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     offerSystemQuest(via) {
       const s = this.state.scholar;
       if (!this.state.systemArrived) return false;
-      if (s.activeQuest) return false;
+      // SYSTEM QUEST SLOT (bal-scale 2026-10-10): the System's line used to
+      // share activeQuest with villager errands — a 'visit' quest sat in the
+      // slot for 30 days and the System never got a word in (measured: 0/8
+      // runs completed a system quest, 4/8 blocked by a villager quest). The
+      // System's curiosity is its own track now; villager quests are
+      // untouched. Legacy saves holding system_teach in activeQuest still
+      // complete via checkQuest's routing below.
+      if (s.activeSystemQuest) return false;
+      const day = s.day || 0;
+      // PLAY-WEIGHTED CADENCE (bal-scale 2026-10-10): integration is earned
+      // by play, not by surviving 40 coin flips. The old flat 15%/day
+      // assumed ~40-day lives; shorter lives starved the quest window.
+      // Base 15%, +30% when an arc advanced in the last 7 days, +30% when a
+      // region link formed in the last 7 days, and a completed lesson chains
+      // the next offer within ~3 days (if something's teachable). The System
+      // leans in when the village is going somewhere. Event offers bypass
+      // the roll — an explicit event is already the System leaning in.
+      if (via === 'daily') {
+        let chance = 0.15, pg = null;
+        try { pg = this.progState(); } catch (e) {}
+        if (pg) {
+          if (day - (pg.lastArcDay || -999) <= 7) chance += 0.30;
+          if (day - (pg.lastSystemQuestDay || -999) <= 3) chance += 0.50;
+        }
+        if (day - (this.state.lastLinkDay || -999) <= 7) chance += 0.30;
+        if (Math.random() >= Math.min(0.92, chance)) return false;
+      }
       const cx = (this.state.codex || {}).plants || {};
       const teachable = Object.keys(cx).filter(pid => (cx[pid].level || 1) < 3);
       if (!teachable.length) return false; // nothing to teach — stay quiet
       const startN = Object.values(cx).filter(e => (e.level || 0) >= 3).length;
       const rw = this.systemQuestReward();
       const n = teachable.length;
-      s.activeQuest = {
+      s.activeSystemQuest = {
         type: 'system_teach', giver: 'system', giverName: 'the System',
         startN, reward: rw,
         text: `📋 SYSTEM QUEST: "Teach us? Show us a plant you know COMPLETELY (Codex L3) — ${n} candidate${n === 1 ? '' : 's'} in your notes. We will watch very closely. Reward: integration."`,
       };
-      if (via !== 'silent') this.say(s.activeQuest.text);
+      if (via !== 'silent') this.say(s.activeSystemQuest.text);
       try { this.save(); } catch (e) {}
       return true;
     },
     checkSystemQuest() {
       const s = this.state.scholar;
-      let q = s.activeQuest;
+      let q = s.activeSystemQuest;
       // LEGACY (gap-integration 2026-10-10): pre-fix saves hold the dead
       // {id:'system_task'} shape with no type — it could never complete and
       // would block new offers forever. Convert it, don't strand it.
-      if (q && q.id === 'system_task' && !q.type) {
+      // LEGACY-2 (bal-scale 2026-10-10): system_teach used to live in
+      // activeQuest; route it into the system slot on sight.
+      if (!q && s.activeQuest && (s.activeQuest.type === 'system_teach' ||
+          (s.activeQuest.id === 'system_task' && !s.activeQuest.type))) {
+        q = s.activeSystemQuest = s.activeQuest;
         s.activeQuest = null;
+      }
+      if (q && q.id === 'system_task' && !q.type) {
+        s.activeSystemQuest = null;
         this.offerSystemQuest('silent');
-        q = s.activeQuest;
+        q = s.activeSystemQuest;
       }
       if (!q || q.type !== 'system_teach') return false;
       const cx = (this.state.codex || {}).plants || {};
       const n = Object.values(cx).filter(e => (e.level || 0) >= 3).length;
       if (n <= (q.startN || 0)) return false;
-      s.activeQuest = null;
-      try { const pg = this.progState(); pg.systemQuests = (pg.systemQuests || 0) + 1; } catch (e) {}
+      s.activeSystemQuest = null;
+      try { const pg = this.progState(); pg.systemQuests = (pg.systemQuests || 0) + 1; pg.lastSystemQuestDay = s.day || 0; } catch (e) {}
       const amt = (q.reward != null) ? q.reward : this.systemQuestReward();
       this.integrate(amt, 'system quest');
       try { if (this.ledgerAdd) this.ledgerAdd('showmanship', 1); } catch (e) {}
@@ -33365,6 +33420,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         rosterCount: (this.state.village.roster || []).length,
         integration: Math.round(this.state.scholar.integration || 5),
         activeQuest: this.state.scholar.activeQuest || null,
+        // SYSTEM QUEST SLOT (bal-scale 2026-10-10): the System's line lives
+        // apart from villager errands — surfaced here so the UI can render
+        // it alongside (UI wiring is the app.js workstream's area).
+        activeSystemQuest: this.state.scholar.activeSystemQuest || null,
         hungryDays: this.state.village.hungryDays || 0,
         packKg: Math.round(this.packWeight() * 10) / 10,
         packCap: this.packCapacity(),

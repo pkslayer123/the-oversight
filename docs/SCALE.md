@@ -188,7 +188,16 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
   national is the doorway, the ending is the room).
 - Global viewership bar: 40. Other villages drift 2–60; Haven at 40 is plausibly
   top-of-board without being endgame-only.
-- Foreign polity cadence: ~22%/week when ≥2 candidates — seasonal, not scheduled.
+- Foreign polity cadence: ~30%/week when ≥2 candidates (bal-scale 2026-10-10;
+  was 22%), 65% grow-bias toward existing polities — seasonal, not scheduled,
+  but a 4-realm forms in ~2 months so the BELONG road is reachable by ~day 80.
+- Village count: 3–4 (bal-scale 2026-10-10; was 2–3). With 2 villages national
+  was mathematically unreachable (LEAD needs 3 subs, covenant/trade 3 peers,
+  BELONG a foreign 4-realm). Canon: villages are NEAR (~500m, PROGRESSION.md #5).
+- Early contact: villages within 4 tiles are heard of at ~28%/day for the
+  first 15 days (bal-scale 2026-10-10; base curve unchanged after) — the
+  nearest fire is known ~day 4–5, not ~day 22 (PROGRESSION.md #5: contact
+  happens EARLY).
 - Logistics bonus: ×1.25. Small enough to never replace tribute; big enough to feel
   the System working.
 - Covenant pool share: 2,000 kcal/week per fire (2,500 when accepted on a

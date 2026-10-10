@@ -414,6 +414,9 @@
       };
       this.hierarchyState().push(link);
       this._designateSpeaker(link);
+      // LINK DAY (bal-scale 2026-10-10): the System leans in when the village
+      // moves — link formation weights the system-quest offer chance.
+      try { this.state.lastLinkDay = (this.state.scholar || {}).day || 0; } catch (e) {}
       // DEBTS SURVIVE THE BREAK (break-it regional 2026-10-10, third pass):
       // the old code wiped arrears on re-link — rack up debt, break, re-form,
       // clean slate. The graph remembers: a new link with the same pair
@@ -1248,10 +1251,17 @@
           if (!inFp) cands.push(v);
         }
         if (cands.length < 2) return;
-        if (R() > 0.22) return;
+        // FOREIGN CADENCE (bal-scale 2026-10-10; was 22%/wk, grow-bias 50%).
+        // The BELONG road needs a foreign 4-realm (primary + 3 subs); at the
+        // old rate a 4-realm took ~a season+, putting national-by-~80 out of
+        // reach on that road. 30%/wk with a 65% grow bias: a pair forms in
+        // ~3 weeks, a 4-realm in ~2 months — still seasonal, still slow, but
+        // reachable inside the every-wave gate's window. The region climbs
+        // without you; it just doesn't outrun you anymore.
+        if (R() > 0.30) return;
         var a = pick(cands);
         var anm = this._ovName(a.id);
-        if (fps.length && R() < 0.5) {
+        if (fps.length && R() < 0.65) {
           var fp = pick(fps);
           if (fp.primary !== a.id && fp.subs.indexOf(a.id) < 0) {
             fp.subs.push(a.id);
@@ -1862,6 +1872,9 @@
       }
       this.hierarchyState().push(link);
       this._designateSpeaker(link);
+      // LINK DAY (bal-scale 2026-10-10): peer links count as the village
+      // moving too — the System's offer cadence weights on it.
+      try { this.state.lastLinkDay = (this.state.scholar || {}).day || 0; } catch (e) {}
       this._linkNote(link, 'formed', kind === 'covenant' ? 'Covenant sworn with ' + nm + ' — equals.' : 'Charter signed with ' + nm + '.');
       var rep = null, rn = 'Someone';
       try { rep = this.representative(); } catch (e) {}

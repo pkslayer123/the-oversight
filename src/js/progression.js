@@ -571,6 +571,10 @@
       }
       if (want > pg.arc) {
         pg.arc = want;
+        // ARC DAY (bal-scale 2026-10-10): the System leans in when the
+        // village moves — arc advancement weights the system-quest offer
+        // chance (see offerSystemQuest's play-weighted cadence).
+        try { pg.lastArcDay = (this.state.scholar || {}).day || 0; } catch (e) {}
         this.arcBeat(want);
       }
     },
@@ -738,14 +742,12 @@
       // audience encore: recurring post-40 trials (pacing build 2026-10-10)
       this.checkAudienceEncore();
       // system quests: the System's curiosity is recurring — complete what's
-      // teachable, then offer the next one (~1/6 days, only when something's
-      // teachable). (gap-integration 2026-10-10)
+      // teachable, then offer the next one. CADENCE (bal-scale 2026-10-10):
+      // the chance is play-weighted inside offerSystemQuest (arc/link/
+      // completion recency), not a flat 15%/day — integration is earned by
+      // play, not by surviving coin flips. (gap-integration 2026-10-10)
       try { if (this.checkSystemQuest) this.checkSystemQuest(); } catch (e) {}
-      try {
-        if (!this.state.scholar.activeQuest && this.offerSystemQuest && Math.random() < 0.15) {
-          this.offerSystemQuest('daily');
-        }
-      } catch (e) {}
+      try { if (this.offerSystemQuest) this.offerSystemQuest('daily'); } catch (e) {}
       // arc watch
       this.checkArc();
       // comfort flag: making bad days smaller, including your own
