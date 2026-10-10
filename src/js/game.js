@@ -11185,6 +11185,36 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } catch (e) {}
       return killed;
     },
+    // campAbandonLoss(px, py): read-only preview of what abandoning the camp
+    // on (px,py) costs — the yours-tents breakCamp's sweep will wreck and the
+    // live tracked fires killCampFires will douse. Mirrors both paths exactly:
+    // the sweep takes every yours-tent on the tile regardless of condition,
+    // killCampFires takes every tracked entry on the tile (grid or interior).
+    // The "Set up camp" confirm names the real loss instead of promising one
+    // tent and one fire. (break-it camps R12 2026-10-10: copy-vs-engine honesty
+    // — the old confirm said "its tent is wrecked, its fire dies" while the
+    // engine wrecks every yours-tent and douses every tracked fire.)
+    campAbandonLoss(px, py) {
+      let tents = 0, fires = 0;
+      try {
+        const detail = this.genDetail(px, py);
+        const t = this.tileAt(px, py);
+        for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+          if (detail[y] && detail[y][x] === 'tent') {
+            const sec = t.secrets && t.secrets[x + ',' + y];
+            if (sec && sec.yours) tents++;
+          }
+        }
+      } catch (e) {}
+      try {
+        this.sweepDeadFires();
+        const now = this._absTick();
+        for (const f of (this.state.fires || [])) {
+          if (f.tx === px && f.ty === py && f.till > now) fires++;
+        }
+      } catch (e) {}
+      return { tents, fires };
+    },
     breakCamp(reason) {
       if (!this.state.camp) return;
       const c = this.state.camp;
@@ -11246,10 +11276,17 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           (fireLeft ? ` The fire keeps burning; it'll die on its own.` : ``) +
           ` That's the deal with camps: they're not havens.`);
       } else {
+        // COUNT HONESTY (break-it camps R12 2026-10-10): the old fire bit
+        // mourned one fire unconditionally. A camp tile can hold several live
+        // fires (two fires for a big cook) — killCampFires douses them all, so
+        // the mourning names the real count. The tent bit keeps its R11 form:
+        // wrecked === 0 in the destroyed path always means the wrecker one
+        // call up (wreckTent, destroyCell, the breach branch) already wrecked
+        // it — "The tent's wrecked" is the honest line there (R11 H1).
         const tentBit = wrecked > 1 ? `The ${wrecked} tents are wrecked` : `The tent's wrecked`;
         // COLD-PIT HONESTY (break-it camps R10 2026-10-10): name the fire only
         // when the camp's end actually killed one — a cold pit gets an honest line.
-        const fireBit = firesKilled > 0 ? `, the fire's scattered cold` : `, the fire was already cold`;
+        const fireBit = firesKilled > 1 ? `, the ${firesKilled} fires are scattered cold` : firesKilled === 1 ? `, the fire's scattered cold` : `, the fire was already cold`;
         this.say(`Your camp is gone — ${r}. ${tentBit}${fireBit}. That's the deal with camps: they're not havens.`);
       }
       // TENT ROOMS: if you were inside the tent, the wreck dumps you outside.

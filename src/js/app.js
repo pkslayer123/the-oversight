@@ -905,10 +905,23 @@
       // BREAK-IT CAMPS-2 (2026-10-08): setting up on a new tile ABANDONS the
       // old camp (its tent is wrecked, its fire dies) — the confirm names
       // that cost honestly, per "expensive buttons name their cost".
+      // COUNT HONESTY (break-it camps R12 2026-10-10): the old copy promised
+      // "its tent ... its fire" (singular) while the engine wrecks every
+      // yours-tent and douses every tracked fire on the old tile. Name the
+      // real loss via the read-only preview.
       const old = Game.state.camp;
       const abandon = old && (old.px !== Game.map.px || old.py !== Game.map.py);
+      let lossBit = '';
+      if (abandon) {
+        const loss = Game.campAbandonLoss ? Game.campAbandonLoss(old.px, old.py) : { tents: 1, fires: 1 };
+        const tb = loss.tents > 1 ? `its ${loss.tents} tents are wrecked`
+          : loss.tents === 1 ? `its tent is wrecked` : `it has no tent left to wreck`;
+        const fb = loss.fires > 1 ? `its ${loss.fires} fires die`
+          : loss.fires === 1 ? `its fire dies` : `its fire is already cold`;
+        lossBit = `Your OLD camp is abandoned — ${tb}, ${fb}. `;
+      }
       const msg = abandon
-        ? 'Set up camp here? Your OLD camp is abandoned — its tent is wrecked, its fire dies. The new camp is a shitty, breakable version of a haven. You can only have one camp.'
+        ? `Set up camp here? ${lossBit}The new camp is a shitty, breakable version of a haven. You can only have one camp.`
         : 'Set up camp here? Your tent and fire become a camp — a shitty, breakable version of a haven. You can only have one camp.';
       if (confirm(msg)) {
         Game.setUpCamp();
