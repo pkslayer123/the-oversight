@@ -1698,6 +1698,21 @@
       }
       s.probation = null;
     } catch (e) {}
+    // TENT ROOMS (break-it camps r11 2026-10-10): exile walks you out of the
+    // village — and out of the tent. The old code left s.insideTent (and any
+    // pending tent breach) set: the engine kept believing you were inside a
+    // tent standing back at the old fire, so shelteredFromSky(), the tent
+    // room screen, and the tent's interior fire all worked from tiles away —
+    // remote cooking, storm shelter with no canvas, "Rain hammers the canvas"
+    // while walking open ground. Same class as the death path (ledger.js
+    // camps-3). The pitched tent itself STAYS — walk back and reclaim it.
+    try {
+      if (s.insideTent) {
+        s.insideTent = null; s.tentSmoke = 0;
+        this.say('You crawl out of the tent — canvas, poles, your fire pan. It stays pitched behind you; maybe you\'ll walk back for it. The road takes everything else.');
+      }
+      this.pendingEncounter = false; this.pendingMonsterId = null; this.pendingInTent = false;
+    } catch (e) {}
     try { this.recordTrauma('exile'); } catch (e) {}
     return true;
   },
