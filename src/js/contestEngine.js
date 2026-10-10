@@ -646,11 +646,15 @@
         const v = this.state.village || {};
         trend = (v.viewership || 0) - (v._lastWeekViewership || v.viewership || 0);
       } catch (e) {}
+      // (break-it contests r13 2026-10-10: the slipping branch was dead —
+      // viewership never declined in live play, so chance contests were
+      // always "flat → the trusted". Ratings decay in contestTick makes
+      // declines real; the threshold is < 0 to match the scheduler.)
       const stats = {};
       for (const pid of pids) stats[pid] = this._cxStats(pid);
       let winner;
       let why;
-      if (trend < -1) {
+      if (trend < 0) {
         winner = pids.reduce((a, b) => stats[a].nota >= stats[b].nota ? a : b);
         why = 'the ratings are slipping — the System gives the audience its favorite';
       } else if (trend > 1) {

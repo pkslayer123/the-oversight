@@ -127,9 +127,14 @@ section records the implemented behavior (code: `contestTick`,
 
 **Trigger.** Inside the normal TV scheduling (`contestTick`, day 14+): the
 System schedules television like a producer — base 0.25/day, +0.15 when
-viewership is declining week-over-week, −0.10 when ratings are high and
-rising, +0.10 after a recent death or fracture (clamped 0.05–0.60). When
-ratings are dipping and the scheduling roll passes, there is a 20% chance
+viewership is declining day-over-day, −0.10 when ratings are high and
+rising, +0.10 after a recent death or fracture (clamped 0.05–0.60). Attention
+fades: viewership decays −1/day at dawn once the show starts, floored at 0 —
+quiet stretches genuinely go soft; big plays (recordMoment +1, a delivered
+stunt +3) outrun the fade. (Break-it contests r13 2026-10-10: the dip
+detector was wired to a signal that could never fire — viewership only grew
+in live play, so the summons never aired. The decay makes the trigger real.)
+When ratings are dipping and the scheduling roll passes, there is a 20% chance
 the slot becomes a ratings summons instead of a contest or show pull.
 
 **Budget.** The summons counts against the same 2/week combined

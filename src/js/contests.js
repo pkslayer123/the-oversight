@@ -76,11 +76,11 @@
 //   - watch_beats_specific: each contest gets its own 3 watch beats (setup/turn/ending) — the fiction of THAT contest, not generic filler; veteran watchers get a coaching line (code: _contestWatchBeat, _contestWatchPhases, Steve 2026-10-06); price/impress/exchange/auction beats added — generic fallback no longer reachable by any pool contest (code: _contestWatchBeat T table, Steve 2026-10-06)
 //   - single_prefix: phase texts carry their own 📺 prefix; _cxPhaseSay never doubles it (code: _cxPhaseSay, Steve 2026-10-05)
 //   - played_not_rng: "contests are to be played, not as RNG" (Steve 2026-10-08) — flat die: death rolls REMOVED from all phases; death comes from real damage (health→0), real fights (arena), or deterministic pursuit (Maw). SUPERSEDES risk_rebalance_20261006 and wounds_feed_closer (Gauntlet is now 3 real arena waves; wounds carry as health, not odds) (code: contestChoose, Steve 2026-10-08)
-//   - arena_fights: Blood pit/gauntlet/siege send the player into REAL tactical fights — contest modal suspends (arenaSuspended), grid becomes arena, tbEnd resumes via _contestArenaAfter (won→next wave/WIN, lost→death processed, fled→LOSE+shame). Weapon choices grant real items (code: _contestArena, _contestArenaAfter, contestChoose d.arena/d.grantWeapon, tbEnd hook, Steve 2026-10-08); duel/tithe stay phase-engine (tb has no villager enemies; tithe is a ritual) — documented, not hidden
+//   - arena_fights: Blood pit/gauntlet/siege send the player into REAL tactical fights — contest modal suspends (arenaSuspended), grid becomes arena, tbEnd resumes via _contestArenaAfter (won→next wave/WIN, lost→death processed, fled→LOSE with the crowd's disappointment said aloud + showmanship, no mechanical shame). Weapon choices grant real items (code: _contestArena, _contestArenaAfter, contestChoose d.arena/d.grantWeapon, tbEnd hook, Steve 2026-10-08); duel/tithe stay phase-engine (tb has no villager enemies; tithe is a ritual) — documented, not hidden
 //   - moot_standing: moot is argued not rolled — rhetorical standing (trust/10 + notability×2 base, sway per choice) vs System demand; deterministic judgment (code: _contestMoot, contestChoose MOOT_JUDGE, Steve 2026-10-08)
 //   - maw_pursuit: the Maw is a deterministic pursuit — distance 3, choices move it, 0 = caught (death). No rolls (code: _contestMaw, contestChoose MAW_JUDGE, Steve 2026-10-08)
 //   - ratings_casting: the System wants its stars — picks weighted by notabilityWeight (ONE shared weight: depth + impact, Steve 2026-10-09), 10% whim dark-horse path (uniform, announced). The lead pick is weighted too when the player isn't castable (break-it 2026-10-09: the old lead fallback was uniform and unannounced, so fame never mattered for a solo lead). Recast honors the bias (code: fireContest, resolveContest, Steve 2026-10-08)
-//   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08; DIP-SIGNAL FIX audit-shows 2026-10-09: the dip was compared AFTER _lastWeekViewership was overwritten — always false, the 75% branch was dead; now computed once from the trend)
+//   - ratings_scheduling: scheduling driven by ratings/drama — base 0.25/day, +0.15 viewership declining, -0.10 ratings high/rising, +0.10 recent death/fracture; clamp 0.05–0.60; 2/week budget holds; 75% contest share when ratings dip (code: contestTick, Steve 2026-10-08; DIP-SIGNAL FIX audit-shows 2026-10-09: the dip was compared AFTER _lastWeekViewership was overwritten — always false, the 75% branch was dead; now computed once from the trend; DECAY FIX break-it r13 2026-10-10: viewership never declined in live play so the dip STILL never fired — attention now fades -1/day at dawn, dip = any day-over-day decline)
 //   - contest_knowledge: repeats build codex.contests levels 1-3; level 2 unlocks coaching in the intro, level 3 (veteran) reads hits coming (code: contestLearn, _cxCoaching, contestChoose, Steve 2026-10-05)
 //   - social_costs: do.fracture/do.unity shift the leadership ledger — winning can cost the village (code: contestChoose, Steve 2026-10-06)
 //   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08; moot 'Walk out'->MOOT_JUDGE win fixed break-it 2026-10-09) (code: contestPlayable, contestChoose, Steve 2026-10-06)
@@ -104,7 +104,7 @@
 //   - show_no_death: TV doesn't kill — show/summons damage clamps at 1 HP and DIE terminals land as a bad night; shows are lower-stakes than contests by canon (code: contestChoose, docs/CONTESTS.md)
 //   - villager_show_fates: a pulled villager comes home with fans or shame, sometimes both — deterministic score (2 base + 2/showmanship notability + stable per-villager hash + player cheer), fans>=7, shame<=3, else both; gossip seeds the village talk (code: showResolveVillager, _showVillagerEnd, audit-shows 2026-10-09)
 //   - show_favor: show beats move the showbiz fan club via do.fanLane ({lane, n, why} or bare n); shame still moves it +1, said out loud — the galaxy loves a trainwreck (code: contestChoose, _showEnd, _showVillagerEnd, audit-shows 2026-10-09)
-//   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly)
+//   - ratings_summons: when viewership dips, 20% of scheduled TV is a played ratings summons — do the stunt (real cost, showbiz favor, shakes a care package loose — THE prize, singular), phone it in, or refuse on camera; canon basis is the OVERSIGHT design (Steve 2026-10-04), no doc covers it (code: contestTick, fireRatingsSummons, audit-shows 2026-10-09; break-it shows 2026-10-09: removed the double-dip curio grant, gated the 200 kcal honestly; break-it r13 2026-10-10: UNREACHABLE until the ratings-decay fix — the dip trigger never fired in live play)
 //   - summons_ratings_recovery: a delivered stunt REALLY moves the numbers — +2 viewership plus recordMoment's +1, because the stunt copy promised "the numbers tick UP" while the engine moved nothing (the dip never recovered, so the next dawn could re-summon on the same dip); phone-it-in promises nothing and moves nothing (code: _showEnd, break-it fame-seeker 2026-10-10)
 //   - together_unity_once: a watch-together win grants unity only through its choice's narrated do.unity — the old silent +1 in _showEnd's 'won' else-branch doubled the snacks choice's unity with no line said (code: _showEnd, break-it fame-seeker 2026-10-10)
 //   - summons_castability: the ratings summons is for the PLAYER specifically — a dead (over/health<=0) or exiled scholar is not summoned. The tick falls through to normal scheduling (unconsumed slot) and fireRatingsSummons refuses out loud (code: contestTick, fireRatingsSummons, break-it contest r10 2026-10-09)
@@ -286,14 +286,30 @@
     // before _lastWeekViewership is overwritten below. The old code compared
     // v.viewership < v._lastWeekViewership AFTER the update — always false,
     // so the "75% contest when the numbers are bad" branch was dead.
+    // RATINGS DECAY (break-it contests r13 2026-10-10): the dip branch was
+    // STILL dead after that fix — different reason. Viewership only ever
+    // GREW in live play (recordMoment +1, sticky havenViewership init;
+    // every decrement lived in dead code paths: declineChallenge,
+    // arenaAct — both zero live callers), so `trend < -1` could never fire
+    // and the ratings summons — a canon system (Steve 2026-10-04) with a
+    // played stunt, real costs, and a care-package prize — NEVER aired.
+    // Attention fades: -1/day once the show starts (day 14+), floored at 0.
+    // Quiet stretches genuinely go soft; big plays still outrun the fade.
+    // Dips are real, rare, and recoverable (the stunt's +2 viewership plus
+    // recordMoment's +1). The key keeps its week-named legacy for save
+    // compat — the signal is day-over-day, said honestly here.
     let ratingsDipping = false;
     try {
       const v = this.state.village || {};
-      const now = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0);
+      let now = 0;
+      try { now = (typeof this.havenViewership === 'function') ? this.havenViewership() : (v.viewership || 0); } catch (e) { now = 0; }
+      // havenViewership pins v.viewership on first read; decay the pinned value.
+      try { v.viewership = Math.max(0, (v.viewership == null ? now : v.viewership) - 1); } catch (e2) {}
+      now = (v.viewership == null ? now : v.viewership);
       const lastWeek = v._lastWeekViewership;
       if (lastWeek !== undefined && lastWeek !== null) {
         const trend = now - lastWeek;
-        if (trend < -1) { chance += 0.15; ratingsDipping = true; }
+        if (trend < 0) { chance += 0.15; ratingsDipping = true; }
         else if (trend > 2) chance -= 0.10;
       }
       v._lastWeekViewership = now;

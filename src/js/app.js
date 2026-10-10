@@ -11658,7 +11658,7 @@
     const bc = Game.state && Game.state.broadcast;
     const bcLive = !!(bc && bc.live);
     const liveBug = bcLive ? `<div class="broadcast-live-bug"><span class="live-dot"></span>LIVE</div>` : '';
-    const watching = (bcLive && ac.participant !== 'player')
+    const watching = (bcLive && Game.broadcastWatching(ac))
       ? `<div class="broadcast-watching-ribbon">🔭 YOU ARE WATCHING — this is a scene playing out, not your life</div>` : '';
     const ticker = bcLive ? Game.broadcastTickerHTML() : '';
     return `<div class="dialogue-box contest-box${bcLive ? ' broadcast-on' : ''}">${liveBug}<div class="dlg-head">${tag}</div>${watching}<div class="dlg-line">${text}</div>${ticker}<div class="inline-btns">${btns}</div></div>`;
