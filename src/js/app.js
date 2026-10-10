@@ -784,8 +784,15 @@
           // The old order spent the 20 kcal and announced the crossing, then
           // travelTo could refuse (dead with the card open) — charged for a
           // swim that never happened, and the log lied about it.
+          // HONESTY (break-it travel r8 2026-10-10): the far bank can kill
+          // you (your own pit trap) — travelTo returns undefined, not null.
+          // If the mantle passes, the NEW bearer wakes at Haven having swum
+          // nothing: charging them the toll and grinning about it bills the
+          // wrong person for a crossing they never made. (Game.over covers
+          // the village-wiped case; the bearer check covers the mantle.)
+          const bearerBefore = Game.villagerId;
           const swam = Game.travelTo(x, y, true);
-          if (swam === null) { refresh(); return; }
+          if (swam === null || Game.over || Game.villagerId !== bearerBefore) { refresh(); return; }
           Game.state.scholar.kcal = Math.max(0, Game.state.scholar.kcal - 20);
           Game.say('You swim across, cold and grinning.');
           refresh(); return;

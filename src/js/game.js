@@ -87,6 +87,7 @@
 //   - walk_bills_landed_squares: beginPathWalk validates affordability and announces the quote but charges nothing; pathStep levies walkStepKcal() per landed square, so an interrupted walk (combat starts mid-path) never bills squares never walked (code: pathStep, break-it travel r6 2026-10-09)
 //   - travel_world_step_priced: travelTimeStep's needs+gossip world-step is proportional to player time actually spent — each travel banks its elapsed dayTicks; every 128 banked (one day-part) releases one step. The zero-tick ping-pong (2026-10-08) and the 1-tick re-arm (r7) buy nothing the clock didn't pay for. Exception (by design): the first crossing ever and each new day's first crossing grant one step — the crossing itself is a beat (code: travelTimeStep, break-it travel r7 2026-10-09)
 //   - one_monster_per_tile: the engine is singular (monsterAt, scholar.monster alias, perception, combat) — wanderWorldMonsters never wanders onto an occupied tile, pickWorldTile never picks one for maintenance spawns, the wanderer circles off claimed ground, and followers hold at the boundary rather than chasing onto it; stacking made phantoms the engine can't perceive or fight (deliberate same-species packs, e.g. the hushwolf trio, are the exception — they ship with their own flows) (code: wanderWorldMonsters, pickWorldTile, checkEncounter, travelTo, break-it travel r7 2026-10-09)
+//   - glasswing_dive_drives_off: the dive slams onto the player tile — if another monster claimed the ground while the shadow circled, the impact drives it to an adjacent tile (still out there, wounds kept); stacking would make startCombat delete the wrong monster and drop the promised grounded window (code: gwTrapTick, break-it travel r8 2026-10-10)
 //   - world_monsters_live: monsters exist on tiles independent of the player (state.worldMonsters); they persist when you leave, wander between tiles, and villagers fight them (code: worldTick, Steve 2026-10-06)
 //   - maps_are_social: pre-System, ground knowledge spreads by comparing maps in conversation (code: compareMaps, Steve 2026-10-06)
 //   - load_resets_session_death: load() clears villageLost (session state of a dead run, not save data) — a Continued living run always has a home (code: load, break-it persistence r5 2026-10-09)
@@ -8158,7 +8159,12 @@
       const res = this.travelTo(nx, ny);
       // HONESTY (break-it travel 2026-10-09): travelTo can still refuse
       // (this.over) — don't report a crossing that never happened.
-      return { moved: res !== null, dir: ex.dir };
+      // HONESTY (break-it travel r8 2026-10-10): travelTo can also KILL you
+      // on the way in (your own pit trap) — it returns undefined, so
+      // `res !== null` reads true and the d-pad layer reported moved:true
+      // for a corpse (MoveAnim.clearHold ran for the dead). A corpse moves
+      // nothing: report the crossing honestly.
+      return { moved: res !== null && !this.over, dir: ex.dir };
     },
     // findWalkableEntry: nearest walkable cell to a desired entry point.
     // The edge you want might be water, trees, or wall — BFS outward to
@@ -16096,6 +16102,54 @@
                   }
                 }
               }
+            }
+          } catch (e) {}
+          // ONE MONSTER PER TILE (break-it travel r8 2026-10-10): the dive
+          // slams onto the player tile. If another monster claimed this
+          // ground while the shadow circled (the arming removed the
+          // glasswing, so the tile reads empty), the impact drives it off —
+          // it flees to an adjacent tile, still out there. The old code
+          // stacked the glasswing on top, and startCombat then (1) deleted
+          // the WRONG monster via removeWorldMonster(playerMonster()) — a
+          // free silent kill of a beast never fought, (2) built the fighter
+          // at the old monster's grid cell with its phase flags, silently
+          // dropping the grounded window the dive narration promised, and
+          // (3) left a phantom glasswing on the tile after the fight — a
+          // second fight for one trap. (Design call, Steve-overridable: the
+          // dive is the aggressor and keeps the tile; the driven-off monster
+          // keeps its wounds and its tile, one step over.)
+          try {
+            const prior = this.monsterAt(this.map.px, this.map.py);
+            if (prior) {
+              const dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+              for (let i = dirs.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = dirs[i]; dirs[i] = dirs[j]; dirs[j] = tmp;
+              }
+              let fled = false;
+              for (const dd of dirs) {
+                const ax = this.map.px + dd[0], ay = this.map.py + dd[1];
+                if (ax < 0 || ax > 8 || ay < 0 || ay > 8) continue;
+                if (this.isSafeTile(ax, ay)) continue;
+                if (this.monsterAt(ax, ay)) continue;
+                prior.tx = ax; prior.ty = ay;
+                try {
+                  const spot = this.findWalkableEntry(ax, ay, Math.floor(Math.random() * 9), Math.floor(Math.random() * 9));
+                  prior.mx = spot.x; prior.my = spot.y;
+                } catch (e2) { prior.mx = 4; prior.my = 4; }
+                prior.lostSight = 0;
+                this.touchTileScene(this.map.px, this.map.py); this.touchTileScene(ax, ay);
+                fled = true; break;
+              }
+              const mn = this.monsterNoun(prior.id);
+              const something = /^something\b/i.test(mn);
+              if (!fled) this.removeWorldMonster(prior);
+              if (something) this.say(fled
+                ? 'The impact drives something off into the dark — bolting, still out there. The wings are HERE.'
+                : 'The impact scatters something into the dark — driven off by bigger wings.');
+              else this.say(fled
+                ? `The impact drives the ${mn} off — it bolts for the treeline, still out there. The wings are HERE.`
+                : `The impact scatters the ${mn} — driven off by bigger wings, gone into the dark.`);
             }
           } catch (e) {}
           this.spawnWorldMonster({ id: trap.monsterId }, this.map.px, this.map.py, { mx: trap.tileX, my: trap.tileY, beamPhase: 'grounded',
