@@ -2250,6 +2250,11 @@
       if (dr(a.diseaseRisk) !== dr(b.diseaseRisk)) return false;
       const pr = (r) => r ? `${r.p}|${r.dmg}|${r.note || ''}` : '';
       if (pr(a.poisonRisk) !== pr(b.poisonRisk)) return false;
+      // TRICHINOSIS (break-it food 2026-10-10): wormy and clean never merge —
+      // the merge target's fields win, so a missing comparison launders the
+      // worms out of a stack (donate/take-back round trip, cache dig-up).
+      const pz = (r) => r ? `${r.id || ''}|${r.p}` : '';
+      if (pz(a.parasiteRisk) !== pz(b.parasiteRisk)) return false;
       return true;
     },
 
@@ -2279,6 +2284,9 @@
         // as takeFromPantry's takenStack.
         poisonRisk: item.poisonRisk, hiddenKcal: item.hiddenKcal,
         rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, burnt: item.burnt,
+        // TRICHINOSIS (break-it food 2026-10-10): parasiteRisk rides the same
+        // contract — the pantry never washes worms (only a real cooking does).
+        parasiteRisk: item.parasiteRisk,
       });
       vv.pantryKcal = vv.pantry.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
       return true;
@@ -2370,10 +2378,21 @@
         }
       } else if (task === 'cook' || task === 'preserver') {
         const tech = task === 'preserver' ? 'preserve' : 'cook';
+        // LABEL HONESTY (break-it food 2026-10-10, K3 class): the old line
+        // hardcoded '32' for cook — but the engine charges the class time
+        // (monster meat 40, tubers 40, grain/legume 48, fruit/greens 12).
+        // Mirror cookFood's dispatch exactly; smoking is a flat 16.
+        let youTicks = 16;
+        if (task === 'cook') {
+          const wcls = this.cookClassFor(it) || {};
+          if (it.foodKind === 'meat' && (it.foodState === 'cleaned' || it.undercooked)) youTicks = wcls.time || 32;
+          else if (it.needsCooking && it.diseaseRisk) youTicks = wcls.time || 16;
+          else youTicks = 32; // legacy rawKcal path: the engine charges a flat 32
+        }
         opts.push({
           id: 'you',
           label: `${verb} yourself`,
-          detail: `${task === 'cook' ? '32' : task === 'preserver' ? '16' : '8'} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
+          detail: `${youTicks} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
           // HONESTY (break-it food r4): the old preserver line said 8 ticks —
           // smoking costs 16 (Steve 2026-10-09: "1/8 of a day seems about
           // correct"). These cook/preserver/shell branches are unwired from

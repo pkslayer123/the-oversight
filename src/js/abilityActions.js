@@ -1389,7 +1389,9 @@
       // identical stack — name-only merging laundered kcalEach upward and
       // stripped processing state here too.
       var takenStack = { name: item.name, kcalEach: item.kcalEach, units: take, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item',
-        plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, needsCooking: item.needsCooking, prep: item.prep };
+        plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, needsCooking: item.needsCooking, prep: item.prep,
+        // TRICHINOSIS (break-it food 2026-10-10): a light lift doesn't wash worms either.
+        parasiteRisk: item.parasiteRisk };
       var existing = inv.find(function (it) { return game.stacksMatch(it, takenStack); });
       if (existing) existing.units += take;
       else inv.push(takenStack);

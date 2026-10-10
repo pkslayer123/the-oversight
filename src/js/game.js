@@ -5584,7 +5584,10 @@
             foodKind: item.foodKind, foodState: item.foodState, edible: item.edible,
             hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk,
             poisonRisk: item.poisonRisk, wellMade: item.wellMade, burnt: item.burnt,
-            needsCooking: item.needsCooking, rawKcal: item.rawKcal, cookedKcal: item.cookedKcal });
+            needsCooking: item.needsCooking, rawKcal: item.rawKcal, cookedKcal: item.cookedKcal,
+            // TRICHINOSIS (break-it food 2026-10-10): the homecoming pool
+            // never washes worms — same contract as takenStack.
+            parasiteRisk: item.parasiteRisk });
         }
         // first return: someone explains the pooling. after that, it's understood.
         if (!vv.pooledFoodExplained && give.length) {
@@ -5713,7 +5716,10 @@
           diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk,
           needsCooking: item.needsCooking, wellMade: item.wellMade,
           hiddenKcal: item.hiddenKcal, rawKcal: item.rawKcal,
-          cookedKcal: item.cookedKcal, burnt: item.burnt, prep: item.prep });
+          cookedKcal: item.cookedKcal, burnt: item.burnt, prep: item.prep,
+          // TRICHINOSIS (break-it food 2026-10-10): exile amends don't wash
+          // worms either — same field contract as takenStack.
+          parasiteRisk: item.parasiteRisk });
       }
       s.inventory = (s.inventory || []).filter(i => !giveSet.has(i));
       const givenKcal = Math.round(give.reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 0), 0));
@@ -11360,7 +11366,9 @@
         // contaminated spoilDay clocks, and dropped diseaseRisk silently.
         const takenStack = { name: item.name, kcalEach: item.kcalEach, units: canTake, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking,
           // FOOD REALITY: keep processing state — the haul stays workable.
-          plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, prep: item.prep };
+          plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, prep: item.prep,
+          // TRICHINOSIS (break-it food 2026-10-10): the take never washes worms.
+          parasiteRisk: item.parasiteRisk };
         const existing = inv.find(i => this.stacksMatch(i, takenStack));
         if (existing) existing.units += canTake;
         else inv.push(takenStack);
@@ -11500,7 +11508,9 @@
       // taken-back "cleaned" portion forgot it was cleaned (uncookable,
       // untestable — a phantom downgrade).
       const takenStack = { name: item.name, kcalEach: item.kcalEach, units: 1, spoilDay: item.spoilDay, safe: item.safe, kg: item.kg, unit: item.unit || 'item', rawKcal: item.rawKcal, cookedKcal: item.cookedKcal, needsCooking: item.needsCooking,
-        plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, prep: item.prep };
+        plantId: item.plantId, foodKind: item.foodKind, foodState: item.foodState, edible: item.edible, hiddenKcal: item.hiddenKcal, diseaseRisk: item.diseaseRisk, poisonRisk: item.poisonRisk, wellMade: item.wellMade, prep: item.prep,
+          // TRICHINOSIS (break-it food 2026-10-10): the take never washes worms.
+          parasiteRisk: item.parasiteRisk };
       const existing = inv.find(i => this.stacksMatch(i, takenStack));
       if (existing) {
         existing.units++;

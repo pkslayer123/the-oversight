@@ -15,7 +15,10 @@
 //       underground that their own pack would still call edible.
 //   F3. EXPLOIT: re-cook / re-preserve spoil refresh (held — re-cook only
 //       reachable via the orig path once, kcal capped at gross, spoilDay
-//       untouched by orig; re-preserve refused outright).
+//       untouched by orig; re-preserve refused outright). Undercooked re-cook
+//       is DELIBERATE (break-it disease r10); F3b's old seed-dependent
+//       failure was that feature, not a bug — the assertion now pins the
+//       first outcome to cooked-through.
 //   F4. SOFTLOCK: eatOne on spoiled food refuses with a say, no state change,
 //       no phantom removal; digUpCache from the wrong node refuses with the
 //       cache intact.
@@ -178,7 +181,16 @@ function freshGame() {
     // real cleaned meat (no rawKcal): wrapper path
     const meat = { name: 'Turkey (cleaned)', kcalEach: 100, units: 4, spoilDay: day + 2, safe: false, kg: 0.5, unit: 'portion', plantId: 'meat_turkey', foodKind: 'meat', foodState: 'cleaned', edible: true, hiddenKcal: 1000, diseaseRisk: { p: 0.35, dmg: 12, note: 'raw meat' }, prep: 'x' };
     s.inventory = [meat];
+    // STALE-ASSERTION FIX (break-it food 2026-10-10): the old F3b assumed the
+    // first cook always lands cooked-through. Under the deliberate
+    // undercooked re-cook feature it can land undercooked (seed-dependent) —
+    // and then the second cook is SUPPOSED to fire (F3e/F3f). Pin the first
+    // outcome to perfect so F3b tests the real invariant: cooked-through
+    // meat refuses re-cook.
+    const ocoB = Game.cookOutcome;
+    Game.cookOutcome = () => ({ key: 'perfect', mult: 1.0 });
     Game.cookFood(0);
+    Game.cookOutcome = ocoB;
     const m1 = s.inventory[0];
     ok('F3a. first cook lands', m1.foodState === 'cooked' && m1.spoilDay === day + 5, `state=${m1.foodState} spoilDay=${m1.spoilDay}`);
     const kcal1 = m1.kcalEach * m1.units;

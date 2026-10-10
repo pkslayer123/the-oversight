@@ -788,6 +788,9 @@
           edible: it.edible, hiddenKcal: it.hiddenKcal, rawKcal: it.rawKcal,
           cookedKcal: it.cookedKcal, diseaseRisk: riskCopy(it.diseaseRisk),
           poisonRisk: riskCopy(it.poisonRisk), needsCooking: it.needsCooking,
+          // TRICHINOSIS (break-it food 2026-10-10): the earth doesn't cure
+          // worms — parasiteRisk rides the same contract, copied not aliased.
+          parasiteRisk: riskCopy(it.parasiteRisk),
           wellMade: it.wellMade, burnt: it.burnt, prep: it.prep,
           bonded: it.bonded, keepsake: it.keepsake, stolen: it.stolen,
         });
