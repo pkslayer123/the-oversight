@@ -32,3 +32,43 @@ Canon read: docs/CANON.md, docs/MONSTER-WAVES.md. No canon doc covers the tactic
 ## Files changed
 - `src/data/monsters.json` — removed 2 badge entries + 2 guard comments (6 lines touched)
 - `scripts/test-combat-break-20261010.js` — proof suite (new)
+
+---
+
+# Second pass — 2026-10-10 13:08 CDT run (independent concurrent pass at target 0)
+
+A second instance of this loop attacked combat independently (same target index 0 before this run advanced it to 1). Different attack surface, one real catch — fixed, proven, landed on top of the above.
+
+## The catch: SNAKE-SPLIT REWARD MULTIPLICATION (EXPLOIT — fixed)
+
+**Mechanism.** `Ducks in a Row` (14 segments, one spawn, 2100 kcal, 10% tier-2 alien-loot roll, wave 1) can be split by `tbSnakeSplit` into fragments that carry **new snakeIds**. `tbEnd`'s two reward de-dupe loops keyed on the bare `snakeId`, so every fragment paid the full reward for one creature. A hostile player killing middle segments (cheap, since segments are thin) got:
+
+- one duck → **7× carcasses (14,700 kcal)**
+- **7× alien-loot rolls** (10% tier-2 each)
+- **7× wave-1 kills** toward the wave-2 gate (which needs only 4)
+
+Same bug class as the r6 "ONE BODY = ONE KILL" fix — reopened via the split path. (No combat-specific canon doc exists; monster behavior checked against MONSTER-WAVES.md for wave-gating honesty.)
+
+**Fix** (src/js/game.js): spawn stamps `snakeRoot` (the original snakeId) on every segment; `tbSnakeSplit` deliberately preserves it; new `tbSnakeLineageKey()` de-dupes both `tbEnd` loops (wave-kill counting + carcass/loot rewards) by lineage. Splits still happen — only the payout is unified. Save/load safe (fighters are JSON-copied wholesale; pre-fix saves fall back to `snakeId`).
+
+**Proof**: `scripts/test-break-combat-snake-split-rewards-20261010.js` — **8/8 checks × 3 seeds (1, 7, 42)**. The script first demonstrates the exploit on the pre-fix shape (7× rewards) and then verifies the fix: exactly 1 wave kill / 1 carcass / 1 loot roll with splits still occurring (the harder fight survives the fix). Re-run green after the coordinator-side rebase onto maintree/master (17d784e1, mid-run sibling landing) and after the --ff-only merge.
+
+**Regressions**: `test-break-monsters5-wavekills.js` 4/4. `test-ducks-split-20261006.js` 17/18 — the 1 failure is pre-existing and stale (expects duck HP [8,12]; data is now [12,18] after wave-2 hardening), left for routing, not touched.
+
+Ontology validator: 53/53, release permitted; `docs/ONTOLOGY.md` regenerated in the same commit.
+
+## Attack surfaces that HELD (no fix needed)
+
+- **EXPLOIT — XP loops**: `practice()` hard-caps at stat 10 (grindable, but intended "earned by doing"); dodge-practice costs real hits. Villager 'help' is once-per-fight, +12, honesty-gated on actual HP healed.
+- **EXPLOIT — reward routing**: patrol/wild villager kills route loot to the killer via `villagerKillLoot`; the carcass stays in the world to rot — the player banks nothing risk-free.
+- **SOFTLOCK**: belltoad chorus arrival is geometric (always eventually spawns, mdef always attached); `resetPerFightFlags()` clears `_pendingPack` (no phantom cross-fight spawns); async chain guards on `f.over`; disengage recursion bounded.
+- **HONESTY**: strike/beam/shrapnel all narrate `tbDamage`'s landed number; villager armor has the r8 zero-absorb narration gate; style score is display-only flavor (no mechanical promise to break); flee/disengage copy matches engine behavior.
+- **DEAD CODE**: all 46 `src/js` files cross-checked against index.html script tags — all loaded (an initial lowercase-only grep falsely flagged 8 camelCase files; each verified individually). `mbRunPreTurn` is genuinely called from `tbMonsterTurn`.
+
+## Sibling sweep (same bug class: identity reassignment → per-body reward multiplication)
+
+Checked and clear: pack monsters (separate creatures, correct), fieldFights-vs-snake (1 member/1 kill — conservative, correct), chorus reinforcements (genuinely new creatures, correct), hummice (separate fighters, correct), union-rep picketers (separate summons, correct), contest arena kills (route through `tbEnd`, covered by the fix), `duckState`-by-snakeId (behavior state only, not rewards). No other instances found.
+
+## Landing (second pass)
+
+Worker branch `break-combat` committed by worker as 9d529bb0; rebased by coordinator onto maintree/master (17d784e1), proof re-run green (8/8), merged fast-forward to master as 909f1b44. No `[needs-eyes]` (anti-exploit fix, invisible to honest players). Merged locally, pending ship.
