@@ -178,7 +178,7 @@
         const mentor = this.bestMentor();
         if (mentor) {
           this.say(`◈ THE MENTOR — ${this.displayName(mentor)} watches ${fname} work, then reaches over. "No. Like this." An hour later something has unlocked that no manual could teach. (Ability slots: ${this.abilitySlots()})`);
-          try { this.bumpTrust(mentor, 4); } catch (e) {}
+          try { this.bumpTrust(mentor, 4, 'mentored you through the slot moment'); } catch (e) {}
         } else {
           this.say(`◈ THE MENTOR — nobody left to teach ${fname}. So the System tries, clumsily, to be a teacher. It almost works. (Ability slots: ${this.abilitySlots()})`);
         }
@@ -204,7 +204,12 @@
     bestMentor() {
       try {
         const trust = (this.state.village.trust || {});
-        const ids = Object.keys(trust).filter(id => id !== this.villagerId);
+        // DEAD NEVER MENTOR (weirdness hunt 2026-10-10): the trust map is
+        // never pruned on death, so the old Object.keys(trust) pick could
+        // name a corpse — narrated as teaching you, plus a post-mortem trust
+        // bump. The living roster is the candidate pool.
+        const live = new Set((this.state.village.roster || []));
+        const ids = Object.keys(trust).filter(id => id !== this.villagerId && live.has(id));
         ids.sort((a, b) => (trust[b] || 0) - (trust[a] || 0));
         return ids[0] || null;
       } catch (e) { return null; }

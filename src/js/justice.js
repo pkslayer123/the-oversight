@@ -943,11 +943,13 @@
 
   // Cold shoulder: kindness lands softer when the village has gone quiet.
   const origBumpTrust = G.bumpTrust;
-  G.bumpTrust = function (vid, n) {
+  G.bumpTrust = function (vid, n, reason) {
     if (n > 0 && this.justiceCold && this.justiceCold() && vid !== this.villagerId) {
       n = Math.ceil(n / 2);
     }
-    return origBumpTrust.call(this, vid, n);
+    // WEIRDNESS HUNT (2026-10-10): the old wrapper dropped `reason`, so all
+    // trust telemetry arrived as '?' — no reputation delta had a cause.
+    return origBumpTrust.call(this, vid, n, reason);
   };
 
   // Crime recording: murder via villageEvent, attack via playerAttacks.

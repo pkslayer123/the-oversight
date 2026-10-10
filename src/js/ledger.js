@@ -765,7 +765,11 @@
       const newName = newChar.name || 'someone';
       const newFirst = newName.split(' ')[0];
       // "you're not her." — the village reacts to the change.
-      const closeId = Object.keys(trust).filter(id => id !== newId && (trust[id] || 0) > 55)
+      // DEAD NEVER SPEAK (weirdness hunt 2026-10-10): the old pick read the
+      // unpruned trust map, so a corpse could deliver the "you're not her"
+      // line. Only the living roster can look at you.
+      const liveRoster = new Set(v.roster || []);
+      const closeId = Object.keys(trust).filter(id => id !== newId && liveRoster.has(id) && (trust[id] || 0) > 55)
         .sort((a, b) => (trust[b] || 0) - (trust[a] || 0))[0];
       if (closeId) {
         const cn = ((this.data.villagers || []).find(x => x.id === closeId) || {}).name || 'Someone';

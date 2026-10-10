@@ -1526,6 +1526,20 @@
       const trust = v.trust || {};
       for (const c of v.conflicts) {
         if (c.resolved) continue;
+        // DEAD PARTY (weirdness hunt 2026-10-10): a conflict with someone gone
+        // (dead, exiled, fled) is over — the living don't carry messages for
+        // corpses, and simmer incidents used to narrate + bump trust for the
+        // dead. Resolve quietly with a journal trace, never a scene.
+        const gone = (id) => !(v.roster || []).includes(id);
+        if (gone(c.a) || gone(c.b)) {
+          c.resolved = true; c.tension = 0;
+          try {
+            const nm = (id) => { try { return this.displayName(id); } catch (e) { return 'someone'; } };
+            if (this.journalNote) this.journalNote('village', 'grief',
+              `The old argument between ${nm(c.a)} and ${nm(c.b)} ended — one of them is gone.`);
+          } catch (e) {}
+          continue;
+        }
         if (!c.known && day >= 3) {
           // TALK COUNT (dialog rethink 2026-10-08): the pre-rethink
           // state.talkIdx counter is dead — nothing writes it since talkTo
@@ -1559,6 +1573,9 @@
     // actions (who you favor) ARE the choice. The game keeps score.
     conflictIncident(c) {
       const v = this.state.village;
+      // DEAD PARTY (weirdness hunt 2026-10-10): defense in depth behind the
+      // socialSimmer prune — a direct call with a gone party does nothing.
+      if (!(v.roster || []).includes(c.a) || !(v.roster || []).includes(c.b)) return;
       const trust = v.trust = v.trust || {};
       const va = (this.data.villagers || []).find(x => x.id === c.a) || {};
       const vb = (this.data.villagers || []).find(x => x.id === c.b) || {};
@@ -2482,7 +2499,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const trust = ((this.state.village || {}).trust || {})[vid] || 10;
       const witnesses = ((this.state.village || {}).roster || []).filter(rid => rid !== vid && rid !== this.villagerId);
       const isPublic = !!opts.public && witnesses.length > 0;
-      const bumpTrust = (id, d) => { try { this.bumpTrust(id, d); } catch (err) {
+      const bumpTrust = (id, d, why) => { try { this.bumpTrust(id, d, why || 'called out over a contested teaching'); } catch (err) {
         const t = (this.state.village.trust = this.state.village.trust || {}); t[id] = Math.max(0, Math.min(100, (t[id] || 10) + d)); } };
       if (!isPublic && trust >= 30) {
         // DONE WELL: private, high rapport. Grace lands.
@@ -3992,6 +4009,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const c = (v.conflicts || []).find(x => !x.resolved && x.known && (x.a === vid || x.b === vid));
       if (!c) { this.say("There's nothing to mediate with them."); return null; }
       const other = c.a === vid ? c.b : c.a;
+      // DEAD PARTY (weirdness hunt 2026-10-10): the other side is gone — the
+      // conflict is over, not mediable.
+      if (!(v.roster || []).includes(other)) { this.say("That argument ended when they left. There's nothing left to mediate."); return null; }
       const ta = (v.trust || {})[vid] || 10, tb = (v.trust || {})[other] || 10;
       if (ta < 40 || tb < 40) {
         this.say(`They don't trust you enough yet to let you into this. (Need 40+ with both.)`);
@@ -4892,7 +4912,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // See villagerCuriousExamine — attention is cheap, knowledge isn't free.
         try { this.villagerCuriousExamine(vid); } catch (e) {}
         this.say(`🌿 ${first} returns with foraged food: +${kcal} kcal to the pantry.${landNote}${learned}`);
-        this.bumpTrust(vid, 2);
+        this.bumpTrust(vid, 2, 'hauled foraged food to the pantry');
       } else if (a.task === 'hunt') {
         const kcal = Math.round(R(400, 900) * eff);
         const injuryRisk = temp === 'bold' ? 0.22 : temp === 'cautious' ? 0.08 : 0.15;
@@ -4905,7 +4925,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         } else {
           this.say(`🏹 ${first} returns with meat: +${kcal} kcal to the pantry. Clean hunt.`);
         }
-        this.bumpTrust(vid, 2);
+        this.bumpTrust(vid, 2, 'brought back meat from the hunt');
       } else if (a.task === 'wood') {
         const wood = Math.max(2, Math.round(R(3, 6) * eff));
         // VILLAGE WOODPILE (Steve 2026-10-08): village work stocks the village
@@ -4914,7 +4934,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         const vv = this.state.village;
         vv.wood = (vv.wood || 0) + wood;
         this.say(`🪵 ${first} hauls back ${wood} wood. The pile grows. (${vv.wood} logs now.)`);
-        this.bumpTrust(vid, 1);
+        this.bumpTrust(vid, 1, 'hauled wood for the pile');
       } else if (a.task === 'stone') {
         // STONE (haven growth 2026-10-10): building stone for the palisade.
         // Pry loose stone from creek beds and hillsides — scarcer than wood,
@@ -4927,7 +4947,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           pile = st.materials.stone;
         } catch (e) {}
         this.say(`🪨 ${first} pries ${stone} stone loose from the creek bed. The building pile grows. (${pile} stone now.)`);
-        this.bumpTrust(vid, 1);
+        this.bumpTrust(vid, 1, 'pried stone from the creek bed');
       } else if (a.task === 'water') {
         const liters = Math.max(4, Math.round(R(10, 14) * eff));
         const vw = this.state.village.water = this.state.village.water || { clean: 0, dirty: 0 };
@@ -4940,7 +4960,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.say(added >= liters
           ? `💧 ${first} returns with ${liters}L of creek water. Risky until the hearth boils it.`
           : `💧 ${first} returns with ${liters}L, but the cistern only holds ${added}L more.`);
-        this.bumpTrust(vid, 1);
+        this.bumpTrust(vid, 1, 'fetched creek water');
       } else if (a.task === 'garden') {
         // GARDEN (depletion 2026-10-10): the farming build, worked by
         // villagers. They tend every live plot (tending is the build's cost)
@@ -4971,7 +4991,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           if (kcal > 0) this.stockPantry(kcal, 'Garden harvest');
           this.say(`🌱 ${first} works the garden — watered, weeded, turned${n ? `, and brings in a harvest (+${kcal} kcal to the pantry)` : '. Nothing ripe yet'}.`);
           try { this.villagerGainXP(vid, 'field', 1, 'gardening'); } catch (e) {}
-          this.bumpTrust(vid, 1);
+          this.bumpTrust(vid, 1, 'worked the garden');
         }
       } else if (a.task === 'fish') {
         // FISH DUTY (bal-survival 2026-10-10): the second food leg. A villager
@@ -5009,7 +5029,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           if (fkcal > 0) this.stockPantry(fkcal, 'Fish catch');
           this.say(`🎣 ${first} worked the creek — ${fn} fish, +${fkcal} kcal to the pantry.`);
           try { this.villagerGainXP(vid, 'field', 1, 'fishing'); } catch (e) {}
-          this.bumpTrust(vid, 1);
+          this.bumpTrust(vid, 1, 'worked the creek for fish');
         }
       } else if (a.task === 'cook' || a.task === 'tend' || a.task === 'teach' || a.task === 'mend') {
         // HAVEN ROLES (Steve 2026-10-09): haven work is contribution. The
@@ -5050,7 +5070,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           } catch (e) {}
         }
         this.say(`${roleLine} (+${credit} contribution recognized.)`);
-        this.bumpTrust(vid, 2);
+        this.bumpTrust(vid, 2, 'kept the haven work going');
       } else if (a.task === 'scout') {
         // reveal tiles around haven + small chance of a find
         let revealed = 0;
@@ -5081,7 +5101,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           find = ` Found a forgotten cache: +${kcal} kcal.`;
         }
         this.say(`🔭 ${first} scouts the land: mapped ${revealed} new area${revealed === 1 ? '' : 's'}.${find}`);
-        this.bumpTrust(vid, 2);
+        this.bumpTrust(vid, 2, 'scouted and mapped new land');
       } else if (a.task === 'patrol') {
         this.resolvePatrol(vid, first);
       }
@@ -12564,7 +12584,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
               if (this.map.px === hx && this.map.py === hy) {
                 this.say(`🌿 ${first} returns from foraging the wilds: +${kcal} kcal to the pantry.`);
               }
-              this.bumpTrust(rid, 1);
+              this.bumpTrust(rid, 1, 'foraged the wilds for the village');
             } else if (away.purpose === 'explore') {
               if (this.map.px === hx && this.map.py === hy && Math.random() < 0.6) {
                 const dirs = ['north', 'south', 'east', 'west'];
@@ -15193,7 +15213,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           break;
         }
         tell(`\u2694\uFE0F ${summary} It's still out there, somewhere.`);
-        try { this.bumpTrust(vid, 2); } catch (e) {}
+        try { this.bumpTrust(vid, 2, 'stood down a monster and walked home'); } catch (e) {}
       } else if (rec.outcome === 'vFlee') {
         // real wounds from the real fight — not a scaled table number
         try { this.hurtVillager(vid, rec.vTaken, 'monster'); } catch (e) {}
@@ -20902,8 +20922,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } catch (e) {}
       if (dz.id === 'witness_maw') {
         try {
+          // DEAD NEVER FLINCH (weirdness hunt 2026-10-10): the old loop read
+          // the unpruned trust map and dropped dead villagers' trust too.
+          // Only the living edge away from you around the fire.
           const trust = (this.state.village && this.state.village.trust) || {};
-          for (const vid of Object.keys(trust)) trust[vid] = Math.max(0, (trust[vid] || 0) - 2);
+          for (const vid of (this.state.village.roster || [])) trust[vid] = Math.max(0, (trust[vid] || 0) - 2);
           this.say('Around the fire, people edge away from you. The black tears do that. (-2 trust, everyone)');
         } catch (e) {}
       }

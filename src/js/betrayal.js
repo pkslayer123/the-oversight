@@ -905,7 +905,10 @@
     // DEAD IS DEAD (2026-10-08): 'killed' removals must mark the villager
     // record — vpOf(vid).dead is read by game code (party skips, System
     // fragments, record filters) and must not lie about a corpse.
-    if (how === 'killed') {
+    // WEIRDNESS HUNT (2026-10-10): 'ambushed' is also a death
+    // (simNpcAmbush registers the death, then removes) — the old
+    // killed-only check left ambush victims reading as alive.
+    if (how === 'killed' || how === 'ambushed') {
       try {
         const rec = (this.data.villagers || []).find(x => x.id === vid)
           || (this.data.background_survivors || []).find(x => x.id === vid);
