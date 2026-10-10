@@ -151,7 +151,7 @@
           "time_min": 30,
           "kcal": 40
         },
-        "effect": "Break down a carcass into usable meat plus hide, sinew, bone. Your Field Dressing skill already kept more meat at the kill \u2014 this is the deliberate work of breaking it down."
+        "effect": "Break down a carcass into usable meat plus hide, sinew, bone. Your Field Dressing skill wastes less of the carcass \u2014 this is the deliberate work of breaking it down."
       }
     ],
     "paths": [

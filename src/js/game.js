@@ -2778,7 +2778,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const mx = this.state.scholar.mx ?? 4, my = this.state.scholar.my ?? 4;
       t.traps.push({ recipeId, mx, my, setDay: this.state.scholar.day, uses: tool.uses });
       // remove from tools (it's set now)
-      this.state.scholar.tools = this.state.scholar.tools.filter(x => x !== tool);
+      // TOOLS GUARD (hunter break-it 2026-10-10): the snare-wire path builds
+      // a synthetic tool without touching the tools array — on a fresh game
+      // (wire found, never crafted) scholar.tools is undefined and the bare
+      // .filter threw mid-action: wire consumed, trap landed, time cost and
+      // message never ran. Same || [] guard craft() already uses.
+      this.state.scholar.tools = (this.state.scholar.tools || []).filter(x => x !== tool);
       // SETTING COSTS TIME (hunter loop 2026-10-08): setting traps was free —
       // the pit recipe's own text says "labor to dig". Digging a pit is a big
       // job (96 ticks, about a fifth of the day); staking a snare is quick
@@ -2879,12 +2884,14 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             _wl[catchId]--; if (_wl[catchId] <= 0) delete _wl[catchId];
             const animal = this.data.animals.find(a => a.id === catchId);
             // FOOD REALITY: trapped game is a carcass too — clean it, don't just eat it.
-            // MEAT YIELD (hunter break-it 2026-10-08b): a trapped kill is a kill.
-            // hunt.meat_yield bakes into the carcass here, the same as strike
-            // kills (encounters.js) — your skill kept more of the carcass at
-            // the catch. dress_game converts; it never multiplies.
-            let catchKcal = animal.calories;
-            try { catchKcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
+            // SPECIES-HONEST GROSS (hunter break-it 2026-10-10): the carcass
+            // keeps the animal's real gross. hunt.meat_yield used to multiply
+            // it here — Field Dressing L3 x Clean Kill printed 3.3x the
+            // chemical energy, the same energy-creation class as the pemmican
+            // printer. Skill is waste reduction now, applied at the cleaning
+            // (butcherYieldFrac, capped 0.95) — the cards promise "less
+            // waste" and "full yield", both bounded by the gross.
+            const catchKcal = animal.calories;
             this.state.scholar.inventory.push(this.foodCarcass(animal, catchKcal, this.state.scholar.day, 'trapped'));
             // a body in hand teaches you what it was — same as a kill.
             try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(catchId); } catch (e) {}
@@ -3007,7 +3014,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // the one trap with no uses. Tackle frays: 16 catches, like any good net.
       // DEPLETION 2026-10-10: 12 → 16 — fishing is a build now, and a build's
       // tools need legs. The creek's real stock is still the limit.
-      t.nets.push({ mx, my, setDay: this.state.scholar.day, uses: 12 });
+      t.nets.push({ mx, my, setDay: this.state.scholar.day, uses: 16 });
       this.consumeItem('gill_net', 1);
       this.say('You stake the gill net across the current. Check it tomorrow.');
       return this.tickAction(16) || this.status();
@@ -3040,17 +3047,16 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             continue;
           }
           if (net.uses == null) net.uses = 16; // backfill pre-fix nets
-          // SYNERGY (fix 2026-10-09): tidecaller grants fishing.yield and
-          // fishing.rare_chance — wire them into the net check.
-          // BREAK-IT abilities 2026-10-10: resolve through allModifiers()
-          // (abilities + synergies + relics + KNOWLEDGE) instead of raw
-          // collectModifiers — the fishing SKILL's fish_yield/fish_rare now
-          // amplify nets too, as designed. Deliberately NOT this.mods():
-          // the Versatile Generalist buildBonus ("+10% to everything")
-          // reaching net yields is a separate design call, and the net
-          // test pins exact species gross.
+          // SYNERGY (fix 2026-10-09, reworked hunter break-it 2026-10-10):
+          // tidecaller grants fishing.yield and fishing.rare_chance. The rare
+          // chance fires here (a chance, not energy); the yield applies at
+          // the cleaning — butcherYieldFrac reads fishing.yield for
+          // how='netted', where skill is waste reduction, never gross
+          // inflation. Deliberately NOT this.mods(): the Versatile
+          // Generalist buildBonus ("+10% to everything") reaching net yields
+          // is a separate design call, and the net test pins exact species
+          // gross.
           const _fm = this.allModifiers();
-          const fishYield = S.modifiers.resolve(1, 'fishing.yield', _fm, {});
           const fishRare = S.modifiers.resolve(0, 'fishing.rare_chance', _fm, {});
           // DEPLETION 2026-10-10: 0.35 → 0.6 — fishing is a build now. The
           // creek's real stock (bigger now, faster-breeding) is the limit,
@@ -3074,7 +3080,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
               // "fish". The net fishes the tile's own stock; the catch keeps
               // its species' real gross. fishing.yield is the skill channel.
               const adef = (this.data.animals || []).find(a => a.id === fid) || { id: fid, name: 'fish', calories: 200 };
-              const kcal = Math.round((adef.calories || 200) * fishYield);
+              // SPECIES-HONEST GROSS (hunter break-it 2026-10-10): the catch
+              // keeps the species' real gross — fishing.yield used to inflate
+              // it (tidecaller x fishing L3 = 2.18x a bluegill's chemical
+              // energy). The skill is waste reduction at the cleaning now
+              // (butcherYieldFrac), like hunt.meat_yield. fishing.yield is
+              // still the skill channel — just an honest one.
+              const kcal = adef.calories || 200;
               this.state.scholar.inventory.push(this.foodCarcass(adef, kcal, this.state.scholar.day, 'netted'));
               // a body in hand teaches you what it was — same as a trap catch.
               try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(fid); } catch (e) {}
@@ -11644,12 +11656,16 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // for you — and it fishes still water properly, not just "maybe."
       const hasLine = this.hasItem('fishing_line');
       let chance = known ? 0.5 : 0.18;
-      let yieldMult = 1;
+      // TACKLE HONESTY (hunter break-it 2026-10-10): the line's x1.3 used to
+      // inflate the fish's gross — a 150-kcal bluegill became 195 kcal of
+      // meat, energy created. The line reads the water (chance), it doesn't
+      // fatten the fish. Still water holds smaller fish, honestly (x0.6) —
+      // a reduction, not a creation.
+      let yieldMult = still ? 0.6 : 1;
       if (hasLine) {
         chance = Math.min(0.85, chance + 0.25);
-        yieldMult = 1.3;
       }
-      if (still) { chance *= 0.6; yieldMult *= 0.6; } // small fish, honestly
+      if (still) { chance *= 0.6; } // small fish, honestly
       // ECOLOGY (hunter playtest 2026-10-10): the hand line used to conjure a
       // flat 500-900 kcal "fish" from ANY water — up to 6x a bluegill's real
       // 150 kcal — with no population check and no decrement. The gill net
@@ -11671,7 +11687,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         _wl[fid]--; if (_wl[fid] <= 0) delete _wl[fid];
         // REAL FISH, REAL KCAL: the catch keeps its species' gross — the same
         // species-honesty the net got on 2026-10-09. fishing.yield is the
-        // skill channel for nets; the line's 1.3x is the tackle channel here.
+        // skill channel at the cleaning (butcherYieldFrac), never gross
+        // inflation (hunter break-it 2026-10-10). yieldMult only ever
+        // REDUCES now (still water: smaller fish, honestly).
         const adef = (this.data.animals || []).find(a => a.id === fid) || { id: fid, name: 'fish', calories: 200 };
         const kcal = Math.round((adef.calories || 200) * yieldMult);
         // FOOD REALITY: a fish is a carcass — clean it (knife), don't just eat it.
@@ -12327,8 +12345,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (Math.random() < chance) {
         // caught!
         s.animal = null;
-        // field_dressing: you know where the meat is. More yield per kill.
-        const kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories));
+        // SPECIES-HONEST GROSS (hunter break-it 2026-10-10): the carcass
+        // keeps the animal's real gross. Field Dressing's "more yield per
+        // kill" is waste reduction at the cleaning (butcherYieldFrac), not
+        // gross inflation — energy is never created.
+        const kcal = animal.calories;
         // FOOD REALITY: a kill is a carcass, not food. Clean it (knife) quickly.
         // ENERGY WEAPONS (Steve 2026-10-05): beam weapons and overkill elemental
         // abilities char the meat. You get charred remains — 10% calories, no

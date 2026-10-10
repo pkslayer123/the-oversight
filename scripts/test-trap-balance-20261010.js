@@ -135,7 +135,9 @@ function countCarcasses(Game) {
     }
     console.log(`  INFO net: ${nights} successful nights, ${totalFish} fish`);
     check('gill net hauls multiple fish some nights', multiHaul, `nights=${nights} fish=${totalFish}`);
-    check('gill net still finite (12 uses = 12 fish, then rags)', totalFish <= 12, `fish=${totalFish}`);
+    // NET LIFE (hunter break-it 2026-10-10): 16 uses per the DEPLETION
+    // design (the push said 12 — half-applied change, fixed).
+    check('gill net still finite (16 uses = 16 fish, then rags)', totalFish <= 16, `fish=${totalFish}`);
   }
 
   // ---- 5. REGRESSION: snare still works; shy hint message fires

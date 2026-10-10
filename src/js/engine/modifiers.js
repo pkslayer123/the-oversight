@@ -134,6 +134,12 @@
     unseen_hand: [{ target: 'forage.yield', op: 'multiply', value: 1.15 }],
     careful_hands: [{ target: 'forage.yield', op: 'multiply', value: 1.2 }],
     blood_remembers: [{ target: 'hunt.success', op: 'add', value: 0.15 }],
+    // RELIC HONESTY (hunter break-it 2026-10-10): butchers_friend's card
+    // promises "Carcass utilization +15%" but the enhancement was missing
+    // here — dead at runtime, the card lied. Utilization is waste reduction:
+    // it now feeds hunt.meat_yield, which butcherYieldFrac applies at the
+    // cleaning, capped at 0.95 of the species-honest gross.
+    butchers_friend: [{ target: 'hunt.meat_yield', op: 'multiply', value: 1.15 }],
     quick_spark: [{ target: 'forage.yield', op: 'multiply', value: 1.15 }],
     trail_ghost: [{ target: 'travel.encounter', op: 'multiply', value: 0.6 }],
     steady_ground: [{ target: 'travel.cost_mult', op: 'multiply', value: 0.9 }],

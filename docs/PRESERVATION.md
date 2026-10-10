@@ -53,3 +53,13 @@ must earn meaningful rewards — that's the whole point of the ladder.
   1058 -> 1200, 113%). Bars stay whole (full sets still pay 3), but each
   set's bars carry that set's ~97% retention: small sets pay honest small
   bars. Energy is never created.
+- 2026-10-10 (hunter break-it): hunt.meat_yield / fishing.yield no longer
+  multiply the carcass gross at the kill — Field Dressing L3 x Clean Kill
+  printed 3.3x an animal's chemical energy (65,910-kcal deer carcass). Skill
+  is waste reduction at the cleaning now (butcherYieldFrac, capped 0.95 of
+  the species-honest gross) — the cards promise "less waste" and "full
+  yield", both bounded by the gross. Numbers identical in the normal range
+  (0.40 x Y either way); only the impossible region is gone. Hand-line x1.3
+  tackle inflation removed (tackle reads water = chance, not fatter fish);
+  gill net uses 12 -> 16 (half-applied DEPLETION change); Butcher's Friend
+  relic wired (was dead, card lied).

@@ -264,7 +264,7 @@
       return {
         plantId: 'meat_' + animal.id, foodKind: 'meat', foodState: 'carcass',
         edible: false, units: 1, kcalEach: 0, hiddenKcal: kcal,
-        spoilDay: day + 2, unit: 'carcass',
+        spoilDay: day + 2, unit: 'carcass', how: how || 'hunted',
         ...(charred ? { charred: true } : {}),
         name: animal.name + (how === 'trapped' ? ' (trapped)' : charred ? ' (charred remains)' : ' (carcass)'),
         prep: isToad
@@ -444,16 +444,34 @@
     // instant safe kcal — no knife, no cooking, no trichinosis, rot accepted.
     // The card promised "usable meat plus hide, sinew, bone"; the engine
     // delivered neither meat nor parts. Now the card is the engine.)
+    // BUTCHER YIELD (hunter break-it 2026-10-10): skill is waste reduction,
+    // not energy creation. hunt.meat_yield / fishing.yield used to multiply
+    // the carcass GROSS at the kill — Field Dressing L3 (1.3^3=2.197) x Clean
+    // Kill (x1.5) printed 3.3x an animal's chemical energy (a 20,000-kcal
+    // deer became a 65,910-kcal carcass). The cards promise "less waste" and
+    // "full yield" — both capped at the gross. The carcass keeps the
+    // species' real gross; skill raises the cleaning yield toward it, capped
+    // at 0.95. Shared by carcassToMeat, the kill-line footer, and the
+    // delegation label — one number everywhere, no copy drift.
+    butcherYieldFrac(how) {
+      const base = this.knowsTechnique('clean') ? 0.40 : 0.30;
+      const target = (how === 'netted' || how === 'fished') ? 'fishing.yield' : 'hunt.meat_yield';
+      let y = 1;
+      try { y = this.modTarget(target, 1); } catch (e) {}
+      return Math.min(0.95, base * y);
+    },
+
     carcassToMeat(inv, i, knows) {
       const it = inv[i];
       const gross = it.hiddenKcal || 0;
       const got = [];
-      // yield: known 40%, blind-messy 30%.
+      // yield: known 40%, blind-messy 30% — raised toward the gross by skill
+      // (butcherYieldFrac), never above it.
       // PORTION LAW (Steve 2026-10-09, bear rework): no 30k-kcal slabs.
       // Portions cap at ~500 kcal — a 2000-kcal day takes four 500s. Big
       // game becomes many honest pieces, not one lump. (Engine-wide: deer,
       // elk, moose, bison all chunk the same way.)
-      const yfrac = knows ? 0.40 : 0.30;
+      const yfrac = this.butcherYieldFrac(it.how);
       const net = Math.round(gross * yfrac);
       const units = Math.max(1, Math.round(net / 500));
       const per = Math.round(net / units);
@@ -584,7 +602,9 @@
       }
       const knows = this.knowsTechnique('clean');
       let n = 0;
+      let firstHow = null;
       for (const i of targets) {
+        if (firstHow == null) firstHow = inv[i].how;
         this.carcassToMeat(inv, i, knows);
         n++;
         const it = inv[i];
@@ -594,9 +614,18 @@
         }
       }
       this.tickAction(8 * n);
+      // YIELD HONESTY (hunter break-it 2026-10-10): the skill bonus lives at
+      // the cleaning now, not the kill — name it here, with the kept share,
+      // so the bigger haul is explained, not mysterious.
+      let yieldNote = '';
+      try {
+        const yf = this.butcherYieldFrac(firstHow);
+        const base = knows ? 0.40 : 0.30;
+        if (yf > base + 0.005) yieldNote = ` (Field Dressing — less waste, kept ~${Math.round(yf * 100)}%.)`;
+      } catch (e) {}
       this.say(knows
-        ? `Cleaned ${n} carcass${n > 1 ? 'es' : ''} — quick, practiced cuts. Honest portions, ~500 kcal each. (${8 * n} ticks)`
-        : `You hack at it clumsily — it takes a while and you waste some. But it worked, and your hands learned. (${8 * n} ticks)`);
+        ? `Cleaned ${n} carcass${n > 1 ? 'es' : ''} — quick, practiced cuts. Honest portions, ~500 kcal each.${yieldNote} (${8 * n} ticks)`
+        : `You hack at it clumsily — it takes a while and you waste some. But it worked, and your hands learned.${yieldNote} (${8 * n} ticks)`);
       // AUDIO (Steve 2026-10-06): the butcher's beat — wet work, done.
       try { this.audioEvent('animalButcher'); } catch (e) {}
       this.noteToolUse && this.noteToolUse();
@@ -2497,7 +2526,10 @@
       const verb = TASK_VERB[task] || 'Do it';
       if (task === 'butcher') {
         const gross = it.hiddenKcal || 0;
-        const youKcal = Math.round(gross * (this.knowsTechnique('clean') ? 0.40 : 0.30));
+        // YIELD HONESTY (hunter break-it 2026-10-10): the label must promise
+        // the same fraction the knife delivers (butcherYieldFrac) — the old
+        // flat 40/30% lied once skill entered the picture.
+        const youKcal = Math.round(gross * this.butcherYieldFrac(it.how));
         const specKcal = spec ? Math.round(gross * (0.40 + 0.04 * spec.skill)) : 0;
         opts.push({
           id: 'you',

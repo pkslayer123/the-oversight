@@ -108,8 +108,18 @@ function dress(s) { return Game.useAbility('field_dressing', 'dress_game'); }
         meat.parasiteRisk && meat.parasiteRisk.id === 'trichinosis',
         `parasiteRisk=${JSON.stringify(meat.parasiteRisk)}`);
       check('bear: raw disease risk attached', !!meat.diseaseRisk, 'no diseaseRisk');
-      check('bear: portion law (24 x ~500 kcal at 40% of 30000)', meat.units === 24 && meat.kcalEach === 500,
-        `units=${meat.units} kcalEach=${meat.kcalEach}`);
+      // PORTION LAW + SKILL (hunter break-it 2026-10-10): the scholar holds
+      // Field Dressing L1 (x1.3) — the bonus is waste reduction at the
+      // cleaning now, so the honest expectation is the shared helper's
+      // fraction, not a flat 40%. Skill earns; the gross stays 30000.
+      const yf = Game.butcherYieldFrac('hunted');
+      const expNet = Math.round(30000 * yf);
+      const expUnits = Math.max(1, Math.round(expNet / 500));
+      check('bear: portion law at the honest yield fraction (' + expUnits + ' x ~500 kcal)',
+        meat.units === expUnits && Math.abs(meat.kcalEach - Math.round(expNet / expUnits)) <= 1,
+        `units=${meat.units} kcalEach=${meat.kcalEach} (expected ${expUnits} x ~${Math.round(expNet / expUnits)})`);
+      check('bear: cleaned total never exceeds the 30000 gross',
+        meat.units * meat.kcalEach <= 30000, `total=${meat.units * meat.kcalEach}`);
     }
     const fat = s.inventory.filter(i => i.foodKind === 'fat' && i.foodState === 'raw');
     check('bear: 6 raw fat slabs (canon BEAR.md)', fat.reduce((a, i) => a + (i.units || 1), 0) === 6, `fat units=${fat.reduce((a, i) => a + (i.units || 1), 0)}`);

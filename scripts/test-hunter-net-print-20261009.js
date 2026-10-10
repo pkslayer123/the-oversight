@@ -9,8 +9,11 @@
 //      carcass gross (up to 4x a bluegill's chemical energy) and named it
 //      a generic "fish", bypassing both the ecology and the energy law
 //      ("energy is never created" — cooking model, Steve 2026-10-08).
-//      Post-fix: gross = round(species.calories * fishing.yield), real
-//      species carcass, body-in-hand identification like traps.
+//      Post-fix (hunter break-it 2026-10-10): gross = species.calories,
+//      exactly — the r2 allowance of fishing.yield on the gross is closed;
+//      skill is waste reduction at the cleaning (butcherYieldFrac), never
+//      gross inflation. Real species carcass, body-in-hand identification
+//      like traps.
 //   E2 SOFTLOCK — fished-out net sits silent forever. checkNets skipped
 //      empty water with NO message (traps have quietTold). A player can
 //      check a dead net every dawn forever; uses never decrement on a miss,
@@ -105,17 +108,19 @@ function speciesCal(id) {
     const gross = c ? c.hiddenKcal : null;
     console.log('  caught item:', c ? c.name : '(none)', 'gross:', gross);
     // BREAK-IT abilities r2 2026-10-10: the fishing SKILL (knowledge.json)
-    // now amplifies nets through allModifiers() — a fisherman scholar's
-    // Reading the Water L2 lands 200 x 1.15 = 230. The tripwire's target is
-    // the old 300-600 FLAT printer, not legit skill modifiers: expect
-    // species gross x the resolved fishing.yield (same pipeline as the net).
-    const S = globalThis.Scattering;
-    const expGross = Math.round(S.modifiers.resolve(200, 'fishing.yield', Game.allModifiers(), {}));
-    check('E1 net pays species gross x fishing.yield (chub)', gross === expGross, 'gross=' + gross + ' expected=' + expGross);
+    // amplified nets through allModifiers(). Hunter break-it 2026-10-10
+    // closed that: the catch keeps the species' EXACT gross; skill applies
+    // at the cleaning (butcherYieldFrac). The tripwire's target is any
+    // gross above the species' real calories — energy is never created.
+    check('E1 net pays the species gross exactly (chub)', gross === 200, 'gross=' + gross);
     check('E1 gross is never the old 300-600 flat printer', gross < 300, 'gross=' + gross);
     check('E1 carcass is the real species, not generic "fish"', c && /creek chub/i.test(c.name), c && c.name);
     check('E1 catch message names the species', msgs.some(m => /creek chub/i.test(m)), msgs.join(' | ').slice(0, 160));
-    check('E1 ecology decremented (4 -> 3)', (t.wildlife.creek_chub || 0) === 3, JSON.stringify(t.wildlife));
+    // HAUL (balance 2026-10-10): a successful night hauls 1-3 fish; the
+    // forced roll (random=0) takes the full 3. Ecology pays per fish.
+    const haulN = s.inventory.filter(i => i && i.foodState === 'carcass').length;
+    check('E1 ecology decremented per fish of the haul (4 -> ' + (4 - haulN) + ')',
+      (t.wildlife.creek_chub || 0) === 4 - haulN, JSON.stringify(t.wildlife));
     check('E1 bluegill gross is 150, never >= 300', true); // covered by chub; bluegill probed next
   }
   {
@@ -142,7 +147,9 @@ function speciesCal(id) {
     check('E2 empty water is announced (once, not silent)', q1.length === 1, q1.length + ' msgs');
     check('E2 not nagged every dawn', q2.length === 0, q2.length + ' msgs');
     const net = t.nets[0];
-    check('E2 net survives the quiet (not broken)', !!net && net.uses === 12, 'uses=' + (net && net.uses));
+    // NET LIFE (hunter break-it 2026-10-10): the DEPLETION comment promises
+    // 16 catches; the push said 12 (half-applied change). 16 is the design.
+    check('E2 net survives the quiet (not broken)', !!net && net.uses === 16, 'uses=' + (net && net.uses));
   }
 
   // ---- E3: uses lifecycle honesty ----
@@ -152,7 +159,9 @@ function speciesCal(id) {
     t.wildlife = { creek_chub: 4 };
     sayLog(() => forcedCatch(t));
     const net = t.nets[0];
-    check('E3 net uses decrement on catch (12 -> 11)', net && net.uses === 11, 'uses=' + (net && net.uses));
+    // uses fray per fish of the haul: forced roll takes 3 -> 16 - 3 = 13.
+    const haulN = 3;
+    check('E3 net uses decrement per fish of the haul (16 -> 13)', net && net.uses === 16 - haulN, 'uses=' + (net && net.uses));
   }
 
   // ---- E4: pemmican small-input retention (regression guard) ----

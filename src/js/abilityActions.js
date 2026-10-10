@@ -935,10 +935,11 @@
         inv.splice(idx, 1);
         return false;
       }
-      // NO DOUBLE-DIP (hunter loop 2026-10-07): the hunt.meat_yield modifier
-      // is baked into hiddenKcal when the carcass is created — at the strike
-      // kill AND at the trap catch (game.js checkTraps). Your skill earned the
-      // bigger carcass then. Dressing converts it to usable meat + parts; it
+      // NO DOUBLE-DIP (hunter loop 2026-10-07, reworked break-it 2026-10-10):
+      // the hunt.meat_yield skill bonus applies exactly once, at the
+      // conversion (carcassToMeat -> butcherYieldFrac): skill is waste
+      // reduction, capped at 0.95 of the species-honest gross — never gross
+      // inflation. Dressing converts the carcass to usable meat + parts; it
       // multiplies nothing, so it claims no multiplier in the text either
       // (hunter break-it 2026-10-08b: the old "(Field Dressing ×1.3)" line
       // implied the dress action applied the bonus — for trapped game it had

@@ -699,14 +699,15 @@
       }
     } catch (e) {}
     if (!core) core = 'About ' + kcal + ' kcal of meat on the bone.';
-    // FIELD-DRESSING BONUS (hunter wiring 2026-10-07): the kill's kcal
-    // already carries hunt.meat_yield — the caller applied it just above.
-    // Name the skill here, at the kill, the way dress_game names it at the
-    // carcass. Same phrasing both places, one fiction.
+    // FIELD-DRESSING HONESTY (hunter break-it 2026-10-10): the skill bonus
+    // lives at the cleaning now (butcherYieldFrac), not the kill — naming a
+    // xN multiplier here would lie about the carcass in hand. Name the
+    // promise instead: less waste when you clean it. The footer below shows
+    // the actual numbers.
     var dressTxt = '';
     try {
       var dm = this.modTarget('hunt.meat_yield', 100) / 100;
-      if (dm > 1.01) dressTxt = ' (Field Dressing ×' + (Math.round(dm * 100) / 100) + ' — your skill kept more of the carcass.)';
+      if (dm > 1.01) dressTxt = ' (Field Dressing — less waste when you clean it.)';
     } catch (e) {}
     return core + dressTxt + ' ' + this.encButcherHonesty(kcal, animal);
   };
@@ -737,6 +738,10 @@
       }
     } catch (e) {}
     var frac = knowsClean ? 0.40 : 0.30;
+    // YIELD HONESTY (hunter break-it 2026-10-10): the footer must promise the
+    // same fraction the knife delivers — skill raises it toward the gross
+    // (butcherYieldFrac), so read the shared helper, not a flat constant.
+    try { if (typeof this.butcherYieldFrac === 'function') frac = this.butcherYieldFrac('hunted'); } catch (e) {}
     // PORTION LAW (Steve 2026-10-09, bear rework): portions are honest —
     // ~500 kcal each, so big game becomes many pieces, never one slab.
     var net = Math.round((kcal || 0) * frac);
@@ -987,8 +992,10 @@
       return true;
     }
     s.animal = null;
+    // SPECIES-HONEST GROSS (hunter break-it 2026-10-10): the carcass keeps
+    // the animal's real gross — skill is waste reduction at the cleaning
+    // (butcherYieldFrac), never gross inflation.
     var kcal = animal.calories;
-    try { kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
     try { s.inventory.push(this.foodCarcass(animal, kcal, s.day, 'hunted')); } catch (e) {}
     this.encIdentifyAnimal(a.id); // a kill teaches you what it was — before the name is said
     try {
@@ -2373,8 +2380,10 @@
     if (roll < chance) {
       s.animal = null;
       this.encHuntPracticed('kill'); // a clean kill teaches double
+      // SPECIES-HONEST GROSS (hunter break-it 2026-10-10): the carcass keeps
+      // the animal's real gross — skill is waste reduction at the cleaning
+      // (butcherYieldFrac), never gross inflation.
       var kcal = animal.calories;
-      try { kcal = Math.round(this.modTarget('hunt.meat_yield', animal.calories)); } catch (e) {}
       this.encIdentifyAnimal(a.id); // a kill teaches you what it was — BEFORE the name is said
       // ENERGY WEAPONS (Steve 2026-10-05): beams char meat — 10% calories as
       // charred remains, no hide/bones. You can't hunt with a searcaster.
