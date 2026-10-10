@@ -1022,6 +1022,16 @@
       const pick = a => a[Math.floor(Math.random() * a.length)];
       // sims call newGame repeatedly in one process — clear last expedition's cast
       this.data.villagers = (this.data.villagers || []).filter(v => !(v.id || '').startsWith('gen_'));
+      // PER-EXPEDITION DEATH MARKS (break-it contests r11 2026-10-10): 'killed'
+      // removals set rec.dead=true on the SHARED data objects (betrayal.js —
+      // "must not lie about a corpse"). Those marks are per-expedition: without
+      // clearing, a villager killed in run N stays dead in run N+1 on the same
+      // page load — newGame can draw them into the new roster, but isMember()
+      // reads vp.dead, so they arrive as phantom non-members: ineligible for
+      // contests, skipped by party code, wrong everywhere. A new expedition
+      // is a new cast — the dead stay buried in their own run.
+      for (const v of (this.data.villagers || [])) { if (v.dead) delete v.dead; }
+      for (const v of (this.data.background_survivors || [])) { if (v.dead) delete v.dead; }
       const origin = playerOrigin || pick(cg.sampleOrigins || ['somewhere']);
       const usedNames = new Set();
       const usedOccs = new Set();

@@ -31,6 +31,15 @@ is computed from legible factors and SHOWN (leaderboard screen):
 The village can see the eligibility list change. Being near the cut is its
 own dread — coveted and feared, per the design.
 
+**Casting, as implemented (Steve 2026-10-08/09 — supersedes the viewership-rank
+gate above for who is actually taken):** the System wants its stars. Picks are
+weighted by notability (ONE shared weight: deed depth + impact — `notabilityWeight`
+in contests.js), never uniform. The player is the surest star and is taken first
+when castable; otherwise the lead is drawn weighted too. The 10% System's-whim
+path is uniform but ANNOUNCED ("the System's whim"), never silent. The eligibility
+panel shows notability notes — the earned "why was I picked." Viewership still
+drives *scheduling* (ratings-dip scheduling), not casting.
+
 ## Scheduling — the 2/week budget
 
 Contests and TV-show pulls share ONE budget: **max ~2 per week combined**.

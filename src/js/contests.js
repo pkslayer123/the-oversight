@@ -1655,15 +1655,9 @@
     return `📺 ${contest.name}. ${contest.desc}\n\n${riskLine}\n\nThe lights come up. You can hear the crowd — millions of them, somewhere past the sky.` + this._cxCoaching(contest);
   };
 
-  G._cxWin = function(contest, prizeText) {
-    return { text: `📺 ${contest.name} — OVER. The crowd is on its feet. Somewhere, impossibly far away, something like cheering shakes the air.\n\n${prizeText || 'You won.'}`,
-      choices: [{ label: 'Take the win', sub: 'collect', do: { prize: true, notability: 'contestWin' }, next: 'WIN' }] };
-  };
-
-  G._cxLose = function(contest, text) {
-    return { text: `📺 ${contest.name} — OVER.\n\n${text || 'You survived. The audience is polite. Polite is worse than booing.'}`,
-      choices: [{ label: 'Walk away', sub: 'alive, barely', do: {}, next: 'LOSE' }] };
-  };
+  // (break-it contests r11 2026-10-10: the old _cxWin/_cxLose shared helpers
+  // were dead code — zero call sites repo-wide; every bespoke builder
+  // authors its own win/lose phases. Removed, not left to rot.)
 
   // Phase texts carry their own 📺 prefix (see _cxIntro). Say them as-is;
   // never stack another 📺 in front (Steve 2026-10-05: double-prefix fix).
@@ -3703,9 +3697,21 @@
       this.sysSay(`📺 ${contest.name} — the beast.`);
       try { this.sysSay('📺 ' + this._contestDeathLine(contest, 'the arena', 'You')); } catch (e) {}
       this.sysSay('📺 The Death Reel will be tasteful. It won\'t be.');
+      // RESOLVE HYGIENE (break-it contests r11 2026-10-10): this death path
+      // skipped what every other contest-death path does — the Resolve beat
+      // (audio pass 5 wired _contestEnd/_contestDie/_contestRefuse), the
+      // heartbeatStop (a sustained tithe heartbeat thumped on forever), and
+      // the sympathetic-dim drama beat. Same class, same fix.
+      try { this._cxBeat(this._cxB(ac.contestId, 'Resolve')); } catch (e) {}
+      try { this.audioEvent('heartbeatStop'); } catch (e) {}
+      try {
+        let integ = 0;
+        try { integ = this.systemIntegrationLevel ? this.systemIntegrationLevel() : 0; } catch (e2) {}
+        this.drama('contest', { type: 'loser', name: 'You', integration: integ });
+      } catch (e3) {}
       ac.phase = 'done';
       try { this.broadcastEnd(); } catch (e) {} // BROADCAST MODE: the frame always lifts explicitly (Steve 2026-10-09)
-    this.state.activeContest = null;
+      this.state.activeContest = null;
       if (ac.others && ac.others.length) {
         try { this._contestResolveOthers(ac); } catch (e) {}
       }
@@ -3970,6 +3976,14 @@
       // village will get all week — seed it before the roster removal so the
       // name still resolves.
       this._cxGossip('died', ac.participant, contest.name);
+      // COURAGE HONESTY (break-it contests r11 2026-10-10): cheer is real
+      // bravery — it holds them in the fight longer. In a losing fight that
+      // courage can be what kills them (the hopeless now flee, but the
+      // losing-but-not-hopeless still gamble). If you cheered them on, the
+      // game says so out loud — no silent cost.
+      if ((ac.cheer || 0) > 0) {
+        this.sysSay(`📺 They heard you. They held the line longer than wisdom allowed — for you, for the noise, for the cameras. The crowd is quieter now.`);
+      }
       // _cxKillContestant: removeVillager alone is a no-op wrapper — the
       // dead must actually leave the roster.
       this._cxKillContestant(ac.participant);

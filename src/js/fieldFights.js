@@ -312,9 +312,22 @@
           rec.calledHelp = true;
           rec.log.push(vName + ' is losing — shouts for help! ' + allyName + ' charges in!');
           try { if (this.bumpTrust) this.bumpTrust(allyVid, 1); } catch (e) {}
-        } else if (hopeless && helpCalled && !allyIn) {
-          // help came and went down — now it's truly hopeless
-          rec.outcome = 'vFlee'; rec.fleeHopeless = true; rec.fleeHpFrac = vHp / vHpMax; break;
+        } else if (hopeless) {
+          // HOPELESS AND ALONE (break-it contests r11 2026-10-10): the
+          // trajectory is legible (drops long before the lead falls) and no
+          // help is coming — alone, or help already went down. Holding to
+          // the bravery floor here doesn't turn it around; it turns a
+          // survivable flight into a death. This is the perversity the
+          // contest cheer exposed: +15 bravery from the crowd's roar pushed
+          // the flee threshold so low that cheered villagers died in fights
+          // uncheered villagers fled — cheer converted 'lost' into 'died'
+          // and never added a win. Believable flight: they run while they
+          // still can. (Implements the documented intent above — "Hopeless
+          // and alone -> believable flight" — which the old chain never
+          // delivered: it fell through to the bravery threshold.)
+          rec.outcome = 'vFlee'; rec.fleeHopeless = true; rec.fleeHpFrac = vHp / vHpMax;
+          rec.log.push(vName + ' sees how this ends — and runs while running still works.');
+          break;
         }
         if ((vHp / vHpMax) < fleeAt) { rec.outcome = 'vFlee'; rec.fleeHopeless = hopeless; rec.fleeHpFrac = vHp / vHpMax; break; }
         // THE LEAD FALLS: the pack coordinates through the lead animal —
