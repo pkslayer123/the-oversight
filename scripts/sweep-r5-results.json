@@ -1,0 +1,12204 @@
+[
+ {
+  "seed": 1,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 812,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 24
+  },
+  "waveDay": {
+   "2": 26
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "Hushpuppy",
+   "the night",
+   "Glasswing Darter",
+   "sickness",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "the night",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 35,
+   "splinter": 2,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 2,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 932,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 13,
+   "3": 28
+  },
+  "table": false,
+  "won": false,
+  "days": 30,
+  "stage": 2,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   5,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 1,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "monster",
+   "a wound that wouldn't close",
+   "the night",
+   "combat",
+   "villager combat",
+   "the night",
+   "villager combat",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 5,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 34,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "haven_tierup": 1,
+   "splinter": 2,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 3,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1028,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 41,
+  "stage": 3,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 10,
+  "w": [
+   5,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "villager combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "the night",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "the night",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 46,
+   "splinter": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "trial_complete": 1,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 4,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 685,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 15,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 28,
+  "stage": 2,
+  "breadth": 31,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "Hushpuppy",
+   "the night",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "villager combat",
+   "villager combat",
+   "Night Court",
+   "the night",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 31,
+   "splinter": 2,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 5,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 786,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 12,
+   "3": 24
+  },
+  "waveDay": {
+   "2": 10,
+   "3": 26
+  },
+  "table": false,
+  "won": false,
+  "days": 40,
+  "stage": 2,
+  "breadth": 27,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 11,
+  "w": [
+   4,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "the expedition",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 41,
+   "splinter": 4,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 6,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 792,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 15
+  },
+  "table": false,
+  "won": false,
+  "days": 44,
+  "stage": 3,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   6,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "White Noise",
+   "villager combat",
+   "monster",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "starvation",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 8,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 47,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 2,
+   "petition_open": 1,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 7,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 621,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 34,
+  "stage": 2,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "villager combat",
+   "a wound that wouldn't close",
+   "contest",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 35,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 3,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 8,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 962,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 22
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 3,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "monster",
+   "combat",
+   "ambush",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "the night",
+   "sickness",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 41,
+   "ratings_summons": 1,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 9,
+  "policy": "competent",
+  "endReason": "survived",
+  "ms": 70780,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 16
+  },
+  "table": false,
+  "won": false,
+  "days": 25,
+  "stage": 2,
+  "breadth": 23,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "sickness",
+   "the night",
+   "combat",
+   "monster",
+   "monster",
+   "the night",
+   "villager combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 27,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 10,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 822,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 3,
+  "breadth": 41,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   8,
+   4,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "the night",
+   "combat",
+   "combat",
+   "starvation",
+   "villager combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 12,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 41,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 11,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1260,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 3,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 1,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 36,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "ratings_summons": 1,
+   "haven_tierup": 1,
+   "splinter": 4,
+   "petition_open": 7
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 12,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1191,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 30
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 3,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "contest",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "sickness",
+   "monster",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 40,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 4,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 13,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 975,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 33,
+  "stage": 3,
+  "breadth": 39,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "ambush",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "thirst",
+   "monster",
+   "sickness",
+   "the night",
+   "combat",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 36,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "trial_complete": 1,
+   "splinter": 3,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 14,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 852,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 11,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 31,
+  "stage": 2,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "Hushpuppy",
+   "monster",
+   "monster",
+   "the night",
+   "combat",
+   "the expedition",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 33,
+   "ratings_summons": 1,
+   "splinter": 3,
+   "petition_open": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 15,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1199,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 34
+  },
+  "waveDay": {
+   "2": 19
+  },
+  "table": false,
+  "won": false,
+  "days": 36,
+  "stage": 3,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 12,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 2,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 39,
+   "splinter": 2,
+   "petition_open": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 16,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1283,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 31,
+   "3": 37
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 3,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 12,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "a wound that wouldn't close",
+   "the night",
+   "monster",
+   "the night",
+   "the night",
+   "combat",
+   "the night",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 42,
+   "splinter": 3,
+   "petition_open": 5,
+   "trial_complete": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 17,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 2152,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 9,
+   "3": 33
+  },
+  "table": false,
+  "won": false,
+  "days": 57,
+  "stage": 2,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 21,
+  "w": [
+   6,
+   4,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "a wound that wouldn't close",
+   "villager combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "the night",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 14,
+   "2": 3
+  },
+  "util": {
+   "sq_offer": 63,
+   "ratings_summons": 4,
+   "splinter": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 18,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1566,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 21
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 2,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "monster",
+   "monster",
+   "sickness",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 34,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 19,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1470,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 16,
+   "3": 31
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 3,
+  "breadth": 42,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 10,
+  "w": [
+   6,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "monster",
+   "sickness",
+   "the night",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "monster",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "starvation",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 5,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 37,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 20,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1670,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 34,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 36,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 2,
+   "petition_open": 3,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 21,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 870,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 24,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "Glasswing Darter",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 22,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1530,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 31
+  },
+  "waveDay": {
+   "2": 30,
+   "3": 37
+  },
+  "table": false,
+  "won": false,
+  "days": 40,
+  "stage": 3,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 2,
+  "w": [
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "sickness",
+   "villager combat",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 44,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 3,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 23,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 611,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 18
+  },
+  "table": false,
+  "won": false,
+  "days": 20,
+  "stage": 2,
+  "breadth": 26,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 22,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 24,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1390,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 41
+  },
+  "table": false,
+  "won": false,
+  "days": 45,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 13,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "sickness",
+   "the night",
+   "monster",
+   "a wound that wouldn't close",
+   "monster",
+   "contest",
+   "contest",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "contest",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 47,
+   "ratings_summons": 3,
+   "splinter": 4,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 25,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1165,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 33,
+  "stage": 2,
+  "breadth": 40,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   3,
+   3,
+   1,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "villager combat",
+   "ambush",
+   "combat",
+   "monster",
+   "the night",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4,
+   "2": 3
+  },
+  "util": {
+   "sq_offer": 35,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 26,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 816,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 24
+  },
+  "table": false,
+  "won": false,
+  "days": 30,
+  "stage": 2,
+  "breadth": 32,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 34
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 27,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1213,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 13,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 17,
+   "3": 35
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 3,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 2,
+  "w": [
+   5,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "ambush",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "the expedition",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 39,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 2,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 28,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 954,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 18
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 3,
+  "breadth": 40,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   6,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "villager combat",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "sickness",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 7
+  },
+  "util": {
+   "sq_offer": 42,
+   "splinter": 3,
+   "petition_open": 4,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 29,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 433,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 3,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "starvation",
+   "starvation",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 30,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1574,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 18,
+   "3": 38
+  },
+  "table": false,
+  "won": false,
+  "days": 41,
+  "stage": 2,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 12,
+  "w": [
+   5,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 44,
+   "splinter": 3,
+   "petition_open": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 31,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 2482,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 20
+  },
+  "table": false,
+  "won": false,
+  "days": 46,
+  "stage": 3,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 14,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 6,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "sickness",
+   "the night",
+   "combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 49,
+   "splinter": 3,
+   "petition_open": 4,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 32,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 2002,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 24
+  },
+  "waveDay": {
+   "2": 19,
+   "3": 31
+  },
+  "table": false,
+  "won": false,
+  "days": 39,
+  "stage": 2,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 1,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the expedition",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 41,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "haven_tierup": 1,
+   "splinter": 3,
+   "petition_open": 5,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 33,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1198,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 16
+  },
+  "table": false,
+  "won": false,
+  "days": 36,
+  "stage": 3,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "monster",
+   "a wound that wouldn't close",
+   "combat",
+   "the night",
+   "starvation",
+   "a wound that wouldn't close",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 38,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 4,
+   "petition_open": 5,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 34,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 702,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 22,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "sickness",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "sickness",
+   "starvation",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 24,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 35,
+  "policy": "competent",
+  "endReason": "survived",
+  "ms": 8317,
+  "arc": 2,
+  "arcDay": {
+   "1": 2,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 11,
+  "stage": 1,
+  "breadth": 23,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 2,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 10
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 36,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1105,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 3,
+  "breadth": 25,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 2,
+  "l3plants": 2,
+  "synergies": 0,
+  "deaths": [
+   "Highbeam Deer",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "monster",
+   "the night",
+   "sickness",
+   "combat",
+   "combat",
+   "sickness",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 29,
+   "splinter": 2,
+   "petition_open": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 37,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1159,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 23,
+  "stage": 2,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 2,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "a wound that wouldn't close",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "starvation",
+   "starvation",
+   "starvation",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "sickness",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 25,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 38,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1316,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 19
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "the night",
+   "a wound that wouldn't close",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 35,
+   "splinter": 3,
+   "petition_open": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 39,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 819,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "a wound that wouldn't close",
+   "the night",
+   "sickness",
+   "the night",
+   "a wound that wouldn't close",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 39,
+   "splinter": 4,
+   "petition_open": 4,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 40,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1636,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 29
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 48,
+  "stage": 3,
+  "breadth": 40,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   5,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "a wound that wouldn't close",
+   "villager combat",
+   "the night",
+   "combat",
+   "villager combat",
+   "starvation",
+   "the night",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 5,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 54,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "ratings_summons": 2,
+   "splinter": 3,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 41,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1202,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 11,
+   "3": 24
+  },
+  "waveDay": {
+   "2": 13,
+   "3": 26
+  },
+  "table": false,
+  "won": false,
+  "days": 45,
+  "stage": 3,
+  "breadth": 36,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   4,
+   1,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "monster",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 8
+  },
+  "util": {
+   "sq_offer": 46,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "ratings_summons": 1,
+   "splinter": 2,
+   "petition_open": 2,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 42,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 849,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 24,
+  "stage": 2,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "monster",
+   "combat",
+   "monster",
+   "the night",
+   "thirst",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 26,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "trial_complete": 1,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 43,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 907,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 11,
+   "3": 22
+  },
+  "waveDay": {
+   "2": 23
+  },
+  "table": false,
+  "won": false,
+  "days": 34,
+  "stage": 2,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "monster",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "the night",
+   "sickness",
+   "sickness",
+   "the night",
+   "the night",
+   "monster",
+   "starvation",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 39,
+   "splinter": 2,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 44,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1188,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 23
+  },
+  "waveDay": {
+   "2": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 2,
+  "breadth": 26,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "the night",
+   "monster",
+   "monster",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "villager combat",
+   "the night",
+   "a wound that wouldn't close",
+   "the night",
+   "starvation",
+   "the night",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 45,
+   "splinter": 4,
+   "petition_open": 6,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 45,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 652,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 23,
+  "stage": 2,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "sickness",
+   "sickness",
+   "combat",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 25,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 46,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1435,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 28
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 3,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 10,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "Highbeam Deer",
+   "monster",
+   "a wound that wouldn't close",
+   "the night",
+   "the night",
+   "a wound that wouldn't close",
+   "starvation",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 39,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 5
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 47,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 905,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 20
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "monster",
+   "monster",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "the night",
+   "the night",
+   "sickness",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 43,
+   "ratings_summons": 1,
+   "splinter": 3,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 48,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 717,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 9,
+   "3": 27
+  },
+  "table": false,
+  "won": false,
+  "days": 28,
+  "stage": 2,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "the expedition",
+   "contest",
+   "combat",
+   "combat",
+   "sickness",
+   "the night",
+   "sickness",
+   "starvation",
+   "the night",
+   "starvation",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 5
+  },
+  "util": {
+   "sq_offer": 31,
+   "splinter": 2,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 49,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1209,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 15,
+   "3": 34
+  },
+  "table": false,
+  "won": false,
+  "days": 40,
+  "stage": 2,
+  "breadth": 39,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   6,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "monster",
+   "monster",
+   "villager combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 7,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 41,
+   "splinter": 4,
+   "petition_open": 7,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 50,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1236,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 15
+  },
+  "table": false,
+  "won": false,
+  "days": 30,
+  "stage": 2,
+  "breadth": 44,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "thirst",
+   "a wound that wouldn't close",
+   "the night"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 33,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 4,
+   "petition_open": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 51,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1739,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 19
+  },
+  "table": false,
+  "won": false,
+  "days": 33,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 36,
+   "splinter": 4,
+   "petition_open": 7,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 52,
+  "policy": "competent",
+  "endReason": "survived",
+  "ms": 6942,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 19,
+   "3": 35
+  },
+  "table": false,
+  "won": false,
+  "days": 39,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   5,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "sickness",
+   "villager combat",
+   "the night",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "a wound that wouldn't close",
+   "monster"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 43,
+   "splinter": 3,
+   "petition_open": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 53,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 903,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 23
+  },
+  "waveDay": {
+   "2": 22
+  },
+  "table": false,
+  "won": false,
+  "days": 39,
+  "stage": 3,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 11,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 43,
+   "splinter": 3,
+   "petition_open": 4,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 54,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 1058,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 24,
+   "3": 34
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 3,
+  "breadth": 43,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "Hushpuppy",
+   "the night",
+   "villager combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 42,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "trial_complete": 1,
+   "splinter": 3,
+   "petition_open": 5
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 55,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 873,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 3,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   4,
+   4,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "sickness",
+   "villager combat",
+   "sickness",
+   "combat",
+   "combat",
+   "sickness",
+   "a wound that wouldn't close",
+   "monster",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 29,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 1,
+   "petition_open": 1,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 56,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 853,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 34
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "ambush",
+   "the night",
+   "the night",
+   "combat",
+   "a wound that wouldn't close",
+   "the night",
+   "sickness",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 43,
+   "ratings_summons": 1,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 57,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 878,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 2,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 2,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 37,
+   "splinter": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 58,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 878,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 13,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 3,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 11,
+  "w": [
+   4,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "starvation",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 38,
+   "splinter": 2,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 59,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 863,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 13,
+   "3": 27
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 3,
+  "breadth": 44,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 10,
+  "w": [
+   6,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "villager combat",
+   "a wound that wouldn't close",
+   "combat",
+   "villager combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 5,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 37,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 3,
+   "petition_open": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 60,
+  "policy": "competent",
+  "endReason": "village-lost",
+  "ms": 948,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 20
+  },
+  "table": false,
+  "won": false,
+  "days": 39,
+  "stage": 3,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "Hushpuppy",
+   "the night",
+   "sickness",
+   "starvation",
+   "contest"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 41,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "splinter": 2,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 1,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 821,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 22,
+   "3": 30
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 2,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 23,
+  "w": [
+   5,
+   2,
+   2,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "Highbeam Deer",
+   "a wound that wouldn't close",
+   "the night",
+   "monster",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "the night",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat"
+  ],
+  "channels": 15,
+  "lessons": 9,
+  "backed": 6,
+  "bites": 0,
+  "waveKills": {
+   "1": 4,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 40,
+   "ratings_summons": 1,
+   "splinter": 3,
+   "petition_open": 4,
+   "sentiment_teach": 1,
+   "sentiment_channel": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 2,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 885,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 12,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 34,
+  "stage": 3,
+  "breadth": 26,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 44,
+  "w": [
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 1,
+  "deaths": [
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "the night"
+  ],
+  "channels": 50,
+  "lessons": 3,
+  "backed": 4,
+  "bites": 2,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 36,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 51,
+   "synergy_unlock": 1,
+   "splinter": 2,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 3,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 635,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 25,
+  "stage": 3,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 47,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "sickness",
+   "starvation",
+   "starvation",
+   "starvation",
+   "sickness",
+   "monster",
+   "the night",
+   "sickness",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 34,
+  "lessons": 0,
+  "backed": 4,
+  "bites": 0,
+  "waveKills": {
+   "1": 6,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 28,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 35,
+   "synergy_unlock": 1,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 4,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 795,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 15
+  },
+  "table": false,
+  "won": false,
+  "days": 28,
+  "stage": 3,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 24,
+  "w": [
+   5,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "sickness",
+   "combat",
+   "villager combat",
+   "thirst",
+   "monster",
+   "monster",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "sickness"
+  ],
+  "channels": 17,
+  "lessons": 1,
+  "backed": 5,
+  "bites": 1,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 30,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 18,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 5,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 905,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 11,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 3,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 52,
+  "w": [
+   6,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 1,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "sickness",
+   "sickness",
+   "the night",
+   "the night",
+   "combat",
+   "monster",
+   "sickness",
+   "combat",
+   "a wound that wouldn't close",
+   "monster",
+   "sickness",
+   "combat",
+   "combat"
+  ],
+  "channels": 44,
+  "lessons": 0,
+  "backed": 4,
+  "bites": 3,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 40,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 45,
+   "splinter": 4,
+   "petition_open": 3,
+   "synergy_unlock": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 6,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1203,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 12,
+   "3": 28
+  },
+  "table": false,
+  "won": false,
+  "days": 41,
+  "stage": 3,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 45,
+  "w": [
+   4,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "a wound that wouldn't close",
+   "the night",
+   "monster",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "sickness",
+   "a wound that wouldn't close",
+   "combat"
+  ],
+  "channels": 130,
+  "lessons": 4,
+  "backed": 5,
+  "bites": 0,
+  "waveKills": {
+   "1": 4,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 43,
+   "sentiment_teach": 1,
+   "sentiment_channel": 131,
+   "trial_complete": 1,
+   "synergy_unlock": 1,
+   "splinter": 1,
+   "petition_open": 1,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 7,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1239,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 11,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 36,
+  "stage": 3,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 24,
+  "w": [
+   2,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "sickness",
+   "contest",
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "starvation"
+  ],
+  "channels": 12,
+  "lessons": 1,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {
+   "1": 1,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 37,
+   "splinter": 2,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 13,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 8,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1439,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 11,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 27
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 3,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 37,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 18,
+  "lessons": 9,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 29,
+   "trial_complete": 3,
+   "splinter": 1,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 19
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 9,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1273,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 35
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 3,
+  "breadth": 42,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 39,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "combat",
+   "monster",
+   "contest",
+   "the night",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 63,
+  "lessons": 3,
+  "backed": 7,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 40,
+   "trial_complete": 2,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 64,
+   "synergy_unlock": 1,
+   "splinter": 4,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 10,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 949,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 11,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 34,
+  "stage": 3,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 35,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "Big Big",
+   "the night",
+   "Big Big",
+   "villager combat",
+   "monster",
+   "a wound that wouldn't close",
+   "the night",
+   "villager combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "the night",
+   "combat"
+  ],
+  "channels": 63,
+  "lessons": 9,
+  "backed": 5,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 38,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 64,
+   "synergy_unlock": 1,
+   "splinter": 3,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 11,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 829,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 9,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 3,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 43,
+  "w": [
+   6,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 1,
+  "deaths": [
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "a wound that wouldn't close",
+   "sickness",
+   "contest",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "channels": 33,
+  "lessons": 1,
+  "backed": 5,
+  "bites": 1,
+  "waveKills": {
+   "1": 5,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 28,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 34,
+   "synergy_unlock": 1,
+   "splinter": 2,
+   "petition_open": 2,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 12,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 915,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 10
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 31,
+  "stage": 3,
+  "breadth": 47,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 26,
+  "w": [
+   7,
+   2,
+   2,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "villager combat",
+   "Ugly-Eyes",
+   "villager combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "combat"
+  ],
+  "channels": 49,
+  "lessons": 9,
+  "backed": 9,
+  "bites": 0,
+  "waveKills": {
+   "1": 6,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 32,
+   "sentiment_teach": 1,
+   "sentiment_channel": 50,
+   "splinter": 3,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 13,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 801,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 3,
+  "breadth": 39,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 17,
+  "w": [
+   4,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "ambush",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the expedition",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "starvation"
+  ],
+  "channels": 34,
+  "lessons": 3,
+  "backed": 8,
+  "bites": 0,
+  "waveKills": {
+   "1": 9
+  },
+  "util": {
+   "sq_offer": 33,
+   "sentiment_teach": 1,
+   "sentiment_channel": 35,
+   "splinter": 2,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 14,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 904,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 12,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 11,
+   "3": 29
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 3,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 42,
+  "w": [
+   4,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "the night",
+   "monster",
+   "monster",
+   "villager combat",
+   "combat",
+   "sickness",
+   "the night",
+   "villager combat",
+   "sickness",
+   "combat",
+   "combat",
+   "starvation",
+   "combat"
+  ],
+  "channels": 37,
+  "lessons": 6,
+  "backed": 9,
+  "bites": 0,
+  "waveKills": {
+   "1": 4,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 34,
+   "ratings_summons": 1,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 38,
+   "synergy_unlock": 1,
+   "splinter": 3,
+   "petition_open": 5
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 15,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1122,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 41
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 55,
+  "stage": 3,
+  "breadth": 40,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 40,
+  "w": [
+   6,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 1,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 1,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "a wound that wouldn't close",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "starvation",
+   "combat"
+  ],
+  "channels": 67,
+  "lessons": 2,
+  "backed": 4,
+  "bites": 1,
+  "waveKills": {
+   "1": 7
+  },
+  "util": {
+   "sq_offer": 58,
+   "haven_tierup": 1,
+   "splinter": 4,
+   "petition_open": 6,
+   "ratings_summons": 4,
+   "sentiment_teach": 1,
+   "sentiment_channel": 68,
+   "trial_complete": 1,
+   "synergy_unlock": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 16,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 925,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 3,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 46,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "monster",
+   "monster",
+   "the night",
+   "the night",
+   "villager combat",
+   "combat",
+   "starvation",
+   "combat",
+   "a wound that wouldn't close",
+   "sickness"
+  ],
+  "channels": 58,
+  "lessons": 0,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {
+   "1": 5
+  },
+  "util": {
+   "sq_offer": 36,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 59,
+   "synergy_unlock": 1,
+   "splinter": 3,
+   "petition_open": 1,
+   "ratings_summons": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 17,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 733,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 13
+  },
+  "table": false,
+  "won": false,
+  "days": 25,
+  "stage": 3,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 24,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "The Paparazzo",
+   "the night",
+   "monster",
+   "the night",
+   "monster",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 13,
+  "lessons": 0,
+  "backed": 4,
+  "bites": 1,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 27,
+   "sentiment_teach": 1,
+   "sentiment_channel": 14,
+   "trial_complete": 1,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 18,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 979,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 29,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 38,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "monster",
+   "the expedition",
+   "monster",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "the night",
+   "combat",
+   "combat"
+  ],
+  "channels": 24,
+  "lessons": 1,
+  "backed": 1,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 31,
+   "trial_complete": 1,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 25,
+   "synergy_unlock": 1,
+   "splinter": 3,
+   "petition_open": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 19,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1020,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 3,
+  "breadth": 40,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 43,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "monster",
+   "combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "monster",
+   "the night",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "sickness",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 47,
+  "lessons": 1,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 40,
+   "ratings_summons": 1,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 48,
+   "synergy_unlock": 1,
+   "splinter": 2,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 20,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 635,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 16,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 28,
+  "stage": 3,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 17,
+  "w": [
+   2,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "monster",
+   "the night",
+   "monster",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "a wound that wouldn't close",
+   "sickness",
+   "combat"
+  ],
+  "channels": 21,
+  "lessons": 5,
+  "backed": 4,
+  "bites": 0,
+  "waveKills": {
+   "1": 2,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 30,
+   "sentiment_teach": 1,
+   "sentiment_channel": 22,
+   "splinter": 3,
+   "petition_open": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 21,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 376,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 18,
+  "stage": 2,
+  "breadth": 24,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "Glasswing Darter",
+   "monster",
+   "combat",
+   "combat",
+   "starvation",
+   "the night",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 1,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 20
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 22,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 797,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 20
+  },
+  "table": false,
+  "won": false,
+  "days": 36,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 35,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "a wound that wouldn't close",
+   "villager combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "the night",
+   "the night",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 49,
+  "lessons": 3,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 40,
+   "splinter": 3,
+   "petition_open": 5,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 50,
+   "synergy_unlock": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 23,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 753,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 22
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 2,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 18,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "the expedition",
+   "monster",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "channels": 45,
+  "lessons": 5,
+  "backed": 5,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 37,
+   "sentiment_teach": 1,
+   "sentiment_channel": 46,
+   "splinter": 3,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 24,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 535,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 23,
+  "stage": 2,
+  "breadth": 33,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "starvation",
+   "starvation",
+   "starvation",
+   "sickness",
+   "combat",
+   "sickness",
+   "sickness",
+   "the night",
+   "sickness",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 7,
+  "backed": 6,
+  "bites": 0,
+  "waveKills": {
+   "1": 12,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 26,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 25,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 786,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 3,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 35,
+  "w": [
+   4,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 36,
+  "lessons": 8,
+  "backed": 10,
+  "bites": 0,
+  "waveKills": {
+   "1": 5,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 29,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 37,
+   "synergy_unlock": 1,
+   "splinter": 3,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 26,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 944,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 22,
+   "3": 28
+  },
+  "table": false,
+  "won": false,
+  "days": 30,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 16,
+  "w": [
+   2,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "monster",
+   "monster",
+   "the night",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "monster",
+   "combat"
+  ],
+  "channels": 3,
+  "lessons": 0,
+  "backed": 1,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 32,
+   "sentiment_teach": 1,
+   "sentiment_channel": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 27,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 838,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 12,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 40,
+  "stage": 3,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 19,
+  "w": [
+   5,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "sickness",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "Extended Warranty",
+   "monster",
+   "monster",
+   "the night",
+   "combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "sickness",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 47,
+  "lessons": 4,
+  "backed": 5,
+  "bites": 0,
+  "waveKills": {
+   "1": 11
+  },
+  "util": {
+   "sq_offer": 43,
+   "sentiment_teach": 1,
+   "sentiment_channel": 48,
+   "splinter": 2,
+   "petition_open": 1,
+   "ratings_summons": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 28,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1005,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 11,
+   "3": 30
+  },
+  "table": false,
+  "won": false,
+  "days": 40,
+  "stage": 3,
+  "breadth": 45,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 47,
+  "w": [
+   2,
+   3,
+   3,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "monster",
+   "the night",
+   "combat",
+   "sickness",
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 71,
+  "lessons": 2,
+  "backed": 9,
+  "bites": 0,
+  "waveKills": {
+   "1": 6,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 42,
+   "ratings_summons": 2,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 72,
+   "synergy_unlock": 1,
+   "splinter": 3,
+   "petition_open": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 29,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 591,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 3,
+  "breadth": 36,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 41,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 2,
+  "synergies": 1,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "starvation",
+   "starvation",
+   "the night",
+   "sickness",
+   "a wound that wouldn't close",
+   "combat"
+  ],
+  "channels": 15,
+  "lessons": 0,
+  "backed": 3,
+  "bites": 2,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 29,
+   "splinter": 1,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 16,
+   "trial_complete": 1,
+   "synergy_unlock": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 30,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 627,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 2,
+  "breadth": 25,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 15,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "monster",
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 6,
+  "lessons": 2,
+  "backed": 5,
+  "bites": 0,
+  "waveKills": {
+   "1": 11
+  },
+  "util": {
+   "sq_offer": 31,
+   "splinter": 3,
+   "petition_open": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 7
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 31,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1569,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 26
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 25,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "thirst",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "starvation",
+   "a wound that wouldn't close"
+  ],
+  "channels": 14,
+  "lessons": 1,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 35,
+   "sentiment_teach": 1,
+   "sentiment_channel": 15,
+   "splinter": 2,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 32,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 1078,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 19
+  },
+  "table": false,
+  "won": false,
+  "days": 29,
+  "stage": 2,
+  "breadth": 36,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 25,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 1,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "Choir Toad",
+   "a wound that wouldn't close",
+   "sickness",
+   "the night",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat"
+  ],
+  "channels": 14,
+  "lessons": 1,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {
+   "1": 2,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 32,
+   "ratings_summons": 1,
+   "haven_tierup": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 15,
+   "splinter": 3,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 33,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 868,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 30,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 21,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "Hushpuppy",
+   "monster",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 20,
+  "lessons": 1,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 32,
+   "splinter": 4,
+   "petition_open": 6,
+   "sentiment_teach": 1,
+   "sentiment_channel": 21
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 34,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 656,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 21
+  },
+  "table": false,
+  "won": false,
+  "days": 21,
+  "stage": 2,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "starvation",
+   "starvation",
+   "the night",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 2,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 23,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 35,
+  "policy": "progress",
+  "endReason": "survived",
+  "ms": 7514,
+  "arc": 2,
+  "arcDay": {
+   "1": 2,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 11,
+  "stage": 1,
+  "breadth": 23,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 2,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 1,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 10
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 36,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 773,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 11,
+   "3": 31
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 3,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 26,
+  "w": [
+   6,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 2,
+  "l3plants": 2,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "sickness",
+   "combat",
+   "sickness",
+   "sickness",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 28,
+  "lessons": 3,
+  "backed": 7,
+  "bites": 4,
+  "waveKills": {
+   "1": 2,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 33,
+   "sentiment_teach": 1,
+   "sentiment_channel": 29,
+   "splinter": 3,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 37,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 334,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "monster",
+   "sickness",
+   "Nightlight",
+   "starvation",
+   "starvation",
+   "thirst",
+   "sickness",
+   "the night",
+   "thirst",
+   "sickness",
+   "sickness",
+   "starvation"
+  ],
+  "channels": 11,
+  "lessons": 3,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 19,
+   "sentiment_teach": 1,
+   "sentiment_channel": 12
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 38,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 549,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 22
+  },
+  "table": false,
+  "won": false,
+  "days": 31,
+  "stage": 3,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 41,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "sickness",
+   "the night",
+   "monster",
+   "monster",
+   "monster",
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 45,
+  "lessons": 9,
+  "backed": 1,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 35,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 46,
+   "synergy_unlock": 1,
+   "splinter": 2,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 39,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 323,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 20,
+  "stage": 2,
+  "breadth": 24,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "ambush",
+   "thirst",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "monster",
+   "the night",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 2,
+  "lessons": 0,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 22,
+   "sentiment_teach": 1,
+   "sentiment_channel": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 40,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 799,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 18,
+   "3": 31
+  },
+  "table": false,
+  "won": false,
+  "days": 31,
+  "stage": 2,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 22,
+  "w": [
+   4,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "combat",
+   "the night",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "a wound that wouldn't close",
+   "the night",
+   "combat",
+   "combat"
+  ],
+  "channels": 33,
+  "lessons": 2,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 3,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 34,
+   "sentiment_teach": 1,
+   "sentiment_channel": 34,
+   "splinter": 3,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 41,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 451,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 11,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 13,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 31,
+  "stage": 3,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 35,
+  "w": [
+   5,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "villager combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "the night",
+   "combat",
+   "combat"
+  ],
+  "channels": 57,
+  "lessons": 1,
+  "backed": 4,
+  "bites": 0,
+  "waveKills": {
+   "1": 2,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 34,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 58,
+   "synergy_unlock": 1,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 42,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 441,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 26
+  },
+  "table": false,
+  "won": false,
+  "days": 30,
+  "stage": 2,
+  "breadth": 36,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 17,
+  "w": [
+   9,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "monster",
+   "the night",
+   "villager combat",
+   "monster",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "a wound that wouldn't close",
+   "sickness"
+  ],
+  "channels": 16,
+  "lessons": 14,
+  "backed": 9,
+  "bites": 0,
+  "waveKills": {
+   "1": 6
+  },
+  "util": {
+   "sq_offer": 32,
+   "sentiment_teach": 1,
+   "sentiment_channel": 17,
+   "splinter": 4,
+   "petition_open": 4
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 43,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 407,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 20
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 2,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 12,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "the night",
+   "a wound that wouldn't close",
+   "sickness",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 6,
+  "lessons": 6,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 30,
+   "splinter": 1,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 7
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 44,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 623,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 12
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 27,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 27,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "sickness",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "starvation"
+  ],
+  "channels": 26,
+  "lessons": 2,
+  "backed": 4,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 30,
+   "sentiment_teach": 1,
+   "sentiment_channel": 27,
+   "splinter": 2,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 45,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 421,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 12
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 25,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "thirst",
+   "contest",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "starvation",
+   "the night",
+   "starvation"
+  ],
+  "channels": 6,
+  "lessons": 1,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 4,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 28,
+   "sentiment_teach": 1,
+   "sentiment_channel": 7,
+   "trial_complete": 1,
+   "splinter": 2,
+   "petition_open": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 46,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 423,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 12,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 16
+  },
+  "table": false,
+  "won": false,
+  "days": 28,
+  "stage": 3,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 42,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "combat",
+   "monster",
+   "the night",
+   "combat",
+   "sickness",
+   "a wound that wouldn't close",
+   "sickness",
+   "the night",
+   "starvation"
+  ],
+  "channels": 52,
+  "lessons": 1,
+  "backed": 4,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 31,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 53,
+   "ratings_summons": 1,
+   "synergy_unlock": 1,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 47,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 577,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 15,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 38,
+  "stage": 3,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 41,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "Nostalgia",
+   "sickness",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "the night",
+   "the night",
+   "combat"
+  ],
+  "channels": 26,
+  "lessons": 4,
+  "backed": 4,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 41,
+   "splinter": 3,
+   "petition_open": 5,
+   "sentiment_teach": 1,
+   "sentiment_channel": 27,
+   "trial_complete": 1,
+   "synergy_unlock": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 48,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 476,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 9,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 32,
+  "stage": 3,
+  "breadth": 26,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 43,
+  "w": [
+   5,
+   2,
+   2,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 1,
+  "deaths": [
+   "the expedition",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "Extended Warranty",
+   "villager combat",
+   "sickness",
+   "the expedition",
+   "combat",
+   "a wound that wouldn't close",
+   "monster",
+   "combat",
+   "combat"
+  ],
+  "channels": 41,
+  "lessons": 4,
+  "backed": 6,
+  "bites": 1,
+  "waveKills": {
+   "1": 8
+  },
+  "util": {
+   "sq_offer": 33,
+   "sentiment_teach": 1,
+   "sentiment_channel": 42,
+   "trial_complete": 1,
+   "splinter": 2,
+   "petition_open": 1,
+   "synergy_unlock": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 49,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 509,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 22,
+   "3": 35
+  },
+  "table": false,
+  "won": false,
+  "days": 36,
+  "stage": 3,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 42,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "combat",
+   "villager combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "starvation",
+   "combat",
+   "starvation"
+  ],
+  "channels": 47,
+  "lessons": 3,
+  "backed": 7,
+  "bites": 0,
+  "waveKills": {
+   "1": 3,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 37,
+   "trial_complete": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 48,
+   "synergy_unlock": 1,
+   "splinter": 4,
+   "petition_open": 7
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 50,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 564,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 24
+  },
+  "waveDay": {
+   "2": 22,
+   "3": 32
+  },
+  "table": false,
+  "won": false,
+  "days": 44,
+  "stage": 3,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 36,
+  "w": [
+   4,
+   2,
+   1,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "combat",
+   "villager combat",
+   "monster",
+   "combat",
+   "sickness",
+   "a wound that wouldn't close",
+   "sickness",
+   "the night",
+   "combat"
+  ],
+  "channels": 96,
+  "lessons": 0,
+  "backed": 7,
+  "bites": 0,
+  "waveKills": {
+   "1": 4,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 47,
+   "ratings_summons": 1,
+   "splinter": 4,
+   "petition_open": 5,
+   "sentiment_teach": 1,
+   "sentiment_channel": 97,
+   "trial_complete": 2,
+   "synergy_unlock": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 51,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 560,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 37,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 17,
+  "w": [
+   4,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "the night",
+   "the night",
+   "villager combat",
+   "sickness",
+   "combat",
+   "combat",
+   "the night",
+   "combat"
+  ],
+  "channels": 13,
+  "lessons": 3,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {
+   "1": 2,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 41,
+   "splinter": 4,
+   "petition_open": 6,
+   "sentiment_teach": 1,
+   "sentiment_channel": 14
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 52,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 384,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 24
+  },
+  "table": false,
+  "won": false,
+  "days": 28,
+  "stage": 2,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 38,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 1,
+  "deaths": [
+   "the night",
+   "monster",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "thirst",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "the expedition"
+  ],
+  "channels": 20,
+  "lessons": 4,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 31,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 21,
+   "synergy_unlock": 1,
+   "splinter": 2,
+   "petition_open": 3
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 53,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 513,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 20,
+   "3": 28
+  },
+  "table": false,
+  "won": false,
+  "days": 35,
+  "stage": 2,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 26,
+  "w": [
+   3,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 57,
+  "lessons": 3,
+  "backed": 4,
+  "bites": 2,
+  "waveKills": {
+   "1": 6,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 36,
+   "sentiment_teach": 1,
+   "sentiment_channel": 58,
+   "splinter": 3,
+   "petition_open": 5
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 54,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 520,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 19,
+   "3": 30
+  },
+  "table": false,
+  "won": false,
+  "days": 34,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 23,
+  "w": [
+   2,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "monster",
+   "the night",
+   "villager combat",
+   "combat"
+  ],
+  "channels": 27,
+  "lessons": 0,
+  "backed": 1,
+  "bites": 0,
+  "waveKills": {
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 38,
+   "splinter": 3,
+   "petition_open": 5,
+   "sentiment_teach": 1,
+   "sentiment_channel": 28
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 55,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 651,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 8,
+   "3": 25
+  },
+  "table": false,
+  "won": false,
+  "days": 34,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 28,
+  "w": [
+   3,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "villager combat",
+   "the night",
+   "sickness",
+   "sickness",
+   "monster",
+   "monster",
+   "monster",
+   "a wound that wouldn't close",
+   "the night",
+   "villager combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "channels": 16,
+  "lessons": 0,
+  "backed": 3,
+  "bites": 2,
+  "waveKills": {
+   "1": 3,
+   "2": 2
+  },
+  "util": {
+   "sq_offer": 37,
+   "sentiment_teach": 1,
+   "sentiment_channel": 17,
+   "splinter": 4,
+   "petition_open": 6
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 56,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 438,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 20
+  },
+  "waveDay": {
+   "2": 18
+  },
+  "table": false,
+  "won": false,
+  "days": 31,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 1,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "a toad like a war drum, throat swelling",
+   "sickness",
+   "monster",
+   "monster",
+   "villager combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "villager combat",
+   "the night",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 5,
+  "backed": 1,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 34,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 57,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 527,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 19
+  },
+  "waveDay": {
+   "2": 18
+  },
+  "table": false,
+  "won": false,
+  "days": 33,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 23,
+  "w": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 2,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 32,
+  "lessons": 10,
+  "backed": 3,
+  "bites": 1,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 35,
+   "splinter": 2,
+   "petition_open": 3,
+   "sentiment_teach": 1,
+   "sentiment_channel": 33
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 58,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 348,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 10,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 23,
+  "stage": 2,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 16,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "Grief Counselor",
+   "combat",
+   "combat",
+   "ambush",
+   "sickness",
+   "starvation",
+   "Nightlight",
+   "sickness",
+   "a wound that wouldn't close",
+   "sickness",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 9,
+  "lessons": 2,
+  "backed": 4,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 25,
+   "sentiment_teach": 1,
+   "sentiment_channel": 10
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 59,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 450,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 31,
+  "stage": 2,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 19,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "the night",
+   "monster",
+   "monster",
+   "villager combat",
+   "villager combat",
+   "monster",
+   "combat",
+   "a wound that wouldn't close",
+   "the night",
+   "a wound that wouldn't close",
+   "starvation"
+  ],
+  "channels": 9,
+  "lessons": 2,
+  "backed": 2,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 34,
+   "splinter": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 10,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 60,
+  "policy": "progress",
+  "endReason": "village-lost",
+  "ms": 660,
+  "arc": 3,
+  "arcDay": {
+   "1": 2,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {
+   "2": 20,
+   "3": 29
+  },
+  "table": false,
+  "won": false,
+  "days": 41,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 18,
+  "w": [
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 3,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "the night",
+   "villager combat",
+   "sickness",
+   "combat",
+   "the night",
+   "the night"
+  ],
+  "channels": 18,
+  "lessons": 13,
+  "backed": 3,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 47,
+   "splinter": 2,
+   "petition_open": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 19
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 1,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 285,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 22,
+  "stage": 2,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the thing with headlights for eyes, standing too still",
+   "the night",
+   "combat",
+   "combat",
+   "sickness",
+   "sickness",
+   "starvation",
+   "starvation",
+   "the night",
+   "starvation",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 25
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 2,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 200,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 23,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "sickness",
+   "the night",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 3,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 185,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 15
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 22,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "the night",
+   "villager combat",
+   "monster",
+   "combat",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 19,
+   "ratings_summons": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 4,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 301,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 15
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 18,
+  "stage": 1,
+  "breadth": 18,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "thirst",
+   "thirst",
+   "the night",
+   "thirst",
+   "thirst",
+   "thirst",
+   "starvation",
+   "the night",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 22
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 5,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 173,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 26,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "sickness",
+   "combat",
+   "combat",
+   "thirst",
+   "monster",
+   "combat",
+   "starvation",
+   "thirst",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 6,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 172,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 11,
+   "3": 12
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 12,
+  "stage": 2,
+  "breadth": 18,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "ambush",
+   "villager combat",
+   "the night",
+   "monster",
+   "combat",
+   "thirst",
+   "thirst",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 14,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 7,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 165,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 26,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "monster",
+   "combat",
+   "combat",
+   "monster",
+   "monster",
+   "sickness",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 8,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 219,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 11,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 19
+  },
+  "table": false,
+  "won": false,
+  "days": 19,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "a wound that wouldn't close",
+   "the night",
+   "monster",
+   "monster",
+   "thirst",
+   "villager combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 21
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 9,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 97,
+  "arc": 2,
+  "arcDay": {
+   "1": 1
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 10,
+  "stage": 1,
+  "breadth": 15,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 10
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 10,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 177,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 24,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "thirst",
+   "starvation",
+   "thirst",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 11,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 158,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 10
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 13,
+  "stage": 1,
+  "breadth": 17,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "Choir Toad",
+   "the night",
+   "thirst",
+   "starvation",
+   "thirst",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 15
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 12,
+  "policy": "mvc",
+  "endReason": "survived",
+  "ms": 591,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 13,
+  "stage": 1,
+  "breadth": 24,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "villager combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 14
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 13,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 170,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "thirst",
+   "ambush",
+   "a wound that wouldn't close",
+   "thirst",
+   "thirst",
+   "sickness",
+   "thirst",
+   "sickness",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 14,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 191,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "Grief Counselor",
+   "a wound that wouldn't close",
+   "sickness",
+   "starvation",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 15,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 182,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 11
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   4,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "villager combat",
+   "a wound that wouldn't close",
+   "the night",
+   "thirst",
+   "sickness",
+   "sickness",
+   "combat",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 17,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 16,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 315,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 19,
+  "stage": 2,
+  "breadth": 24,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "combat",
+   "villager combat",
+   "thirst",
+   "sickness",
+   "starvation",
+   "starvation",
+   "thirst",
+   "a wound that wouldn't close",
+   "starvation",
+   "starvation",
+   "the night",
+   "sickness",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 22,
+   "splinter": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 17,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 165,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 14,
+  "stage": 1,
+  "breadth": 18,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "starvation",
+   "thirst",
+   "sickness",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 15
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 18,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 242,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 10
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 18,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   2,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "thirst",
+   "combat",
+   "combat",
+   "monster",
+   "villager combat",
+   "sickness",
+   "starvation",
+   "thirst",
+   "sickness",
+   "starvation",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 19
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 19,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 235,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 17
+  },
+  "table": false,
+  "won": false,
+  "days": 23,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "a wound that wouldn't close",
+   "the night",
+   "combat",
+   "the night",
+   "starvation",
+   "thirst",
+   "combat",
+   "a wound that wouldn't close",
+   "sickness",
+   "monster",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 27,
+   "ratings_summons": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 20,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 326,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 1,
+  "breadth": 15,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "a wound that wouldn't close",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 21,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 342,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 11
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "thirst",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 22,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 228,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 12
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 14,
+  "stage": 2,
+  "breadth": 22,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "a dog-shaped silence at the treeline",
+   "ambush",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "monster",
+   "the night",
+   "starvation",
+   "combat",
+   "starvation",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 23,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 297,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 10
+  },
+  "waveDay": {
+   "2": 15
+  },
+  "table": false,
+  "won": false,
+  "days": 18,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "Choir Toad",
+   "thirst",
+   "thirst",
+   "thirst",
+   "combat",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 19
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 24,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 261,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 12
+  },
+  "waveDay": {
+   "2": 13
+  },
+  "table": false,
+  "won": false,
+  "days": 13,
+  "stage": 1,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 14
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 25,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 262,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 11
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 1,
+  "breadth": 19,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 26,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 378,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 25,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "thirst",
+   "starvation",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 27,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 179,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 10,
+   "3": 15
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 25,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "combat",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 28,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 264,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 13
+  },
+  "table": false,
+  "won": false,
+  "days": 25,
+  "stage": 2,
+  "breadth": 24,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "a wound that wouldn't close",
+   "sickness",
+   "thirst",
+   "sickness",
+   "sickness",
+   "combat",
+   "thirst",
+   "thirst",
+   "thirst",
+   "combat",
+   "the night"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 27,
+   "trial_complete": 1,
+   "splinter": 2,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1,
+   "petition_open": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 29,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 257,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 17
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 23,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 8,
+  "w": [
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 2,
+  "l3plants": 2,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "sickness",
+   "a wound that wouldn't close",
+   "the night",
+   "thirst",
+   "combat",
+   "monster",
+   "combat",
+   "starvation",
+   "sickness",
+   "sickness",
+   "thirst",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 25,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 30,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 158,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "combat",
+   "starvation",
+   "starvation",
+   "thirst",
+   "sickness",
+   "the night"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 4
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 31,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 327,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 10
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 13,
+  "stage": 1,
+  "breadth": 17,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "villager combat",
+   "combat",
+   "starvation",
+   "thirst",
+   "sickness",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 15
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 32,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 169,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 23,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 2,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "the night",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 33,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 161,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 14,
+  "stage": 2,
+  "breadth": 23,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "thirst",
+   "the night",
+   "thirst",
+   "villager combat",
+   "combat",
+   "the expedition",
+   "combat",
+   "starvation",
+   "starvation",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 34,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 178,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 1,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "combat",
+   "combat",
+   "villager combat",
+   "sickness",
+   "starvation",
+   "starvation",
+   "a wound that wouldn't close",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 35,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 197,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 15
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 27,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "sickness",
+   "combat",
+   "villager combat",
+   "the night",
+   "starvation",
+   "starvation",
+   "starvation",
+   "starvation",
+   "thirst",
+   "sickness",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 19
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 36,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 206,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 10
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 18,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 1,
+  "l3plants": 1,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "monster",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 19,
+   "ratings_summons": 2
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 37,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 179,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 10,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 22,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "combat",
+   "combat",
+   "monster",
+   "the night",
+   "thirst",
+   "thirst",
+   "sickness",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "thirst",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 38,
+  "policy": "mvc",
+  "endReason": "survived",
+  "ms": 3737,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 1,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 1,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 39,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 153,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 13
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "thirst",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "a wound that wouldn't close",
+   "thirst",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 40,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 189,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 13
+  },
+  "table": false,
+  "won": false,
+  "days": 18,
+  "stage": 2,
+  "breadth": 28,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 2,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 20
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 41,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 163,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 14
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 23,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "villager combat",
+   "villager combat",
+   "sickness",
+   "the night",
+   "monster",
+   "starvation",
+   "thirst",
+   "contest",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 42,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 228,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 21
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 24,
+  "stage": 2,
+  "breadth": 26,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "contest",
+   "monster",
+   "thirst",
+   "thirst",
+   "sickness",
+   "thirst",
+   "the night",
+   "starvation",
+   "sickness",
+   "a wound that wouldn't close"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 27
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 43,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 166,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 1,
+  "breadth": 22,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "monster",
+   "combat",
+   "combat",
+   "thirst",
+   "thirst",
+   "a wound that wouldn't close",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 44,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 244,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 11
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 14,
+  "stage": 2,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "combat",
+   "villager combat",
+   "thirst",
+   "the night",
+   "starvation",
+   "starvation",
+   "starvation",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 45,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 147,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 10
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "monster",
+   "thirst",
+   "thirst",
+   "sickness",
+   "sickness",
+   "starvation",
+   "thirst",
+   "the night"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 46,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 176,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 1,
+  "breadth": 26,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "starvation",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 47,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 210,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 12
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 18,
+  "stage": 2,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "monster",
+   "combat",
+   "the night",
+   "starvation",
+   "starvation",
+   "thirst",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 20
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 48,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 159,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 17,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "sickness",
+   "monster",
+   "combat",
+   "combat",
+   "Highbeam Deer",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 49,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 195,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 11
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 13,
+  "stage": 1,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "combat",
+   "combat",
+   "thirst",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 15
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 50,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 164,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 10,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 16,
+  "stage": 2,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "thirst",
+   "sickness",
+   "thirst",
+   "thirst",
+   "sickness",
+   "thirst",
+   "sickness",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 17
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 51,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 261,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 12
+  },
+  "waveDay": {
+   "2": 11
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 30,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "thirst",
+   "sickness",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 19,
+   "trial_complete": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 52,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 185,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 2,
+  "breadth": 23,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "villager combat",
+   "ambush",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "thirst",
+   "thirst",
+   "villager combat",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 16
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 53,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 189,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 16
+  },
+  "waveDay": {
+   "2": 10
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 26,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   3,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "the night",
+   "thirst",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 19
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 54,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 164,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 12
+  },
+  "waveDay": {
+   "2": 8
+  },
+  "table": false,
+  "won": false,
+  "days": 13,
+  "stage": 2,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "thirst",
+   "starvation",
+   "starvation",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 15
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 55,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 191,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 11
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "ambush",
+   "thirst",
+   "the night",
+   "combat",
+   "combat",
+   "starvation",
+   "thirst",
+   "thirst",
+   "sickness"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1,
+   "2": 1
+  },
+  "util": {
+   "sq_offer": 19
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 56,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 223,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 18
+  },
+  "waveDay": {
+   "2": 15
+  },
+  "table": false,
+  "won": false,
+  "days": 20,
+  "stage": 2,
+  "breadth": 26,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "thirst",
+   "sickness",
+   "a wound that wouldn't close",
+   "thirst",
+   "sickness",
+   "Highbeam Deer",
+   "ambush",
+   "starvation",
+   "the night"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 1
+  },
+  "util": {
+   "sq_offer": 22,
+   "trial_complete": 1,
+   "sentiment_teach": 1,
+   "sentiment_channel": 1
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 57,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 164,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 9
+  },
+  "table": false,
+  "won": false,
+  "days": 14,
+  "stage": 2,
+  "breadth": 22,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "starvation",
+   "starvation",
+   "thirst",
+   "sickness",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 15
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 58,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 170,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {
+   "2": 14
+  },
+  "table": false,
+  "won": false,
+  "days": 15,
+  "stage": 1,
+  "breadth": 21,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 5,
+  "w": [
+   2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "the night",
+   "ambush",
+   "a wound that wouldn't close",
+   "combat",
+   "the expedition",
+   "combat",
+   "the night",
+   "starvation",
+   "sickness",
+   "villager combat",
+   "thirst"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 3
+  },
+  "util": {
+   "sq_offer": 18
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 59,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 146,
+  "arc": 2,
+  "arcDay": {
+   "1": 1,
+   "2": 9
+  },
+  "waveDay": {},
+  "table": false,
+  "won": false,
+  "days": 13,
+  "stage": 1,
+  "breadth": 20,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 1,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "ambush",
+   "combat"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {},
+  "util": {
+   "sq_offer": 14
+  },
+  "utilMissing": []
+ },
+ {
+  "seed": 60,
+  "policy": "mvc",
+  "endReason": "village-lost",
+  "ms": 187,
+  "arc": 3,
+  "arcDay": {
+   "1": 1,
+   "2": 9,
+   "3": 15
+  },
+  "waveDay": {
+   "2": 12
+  },
+  "table": false,
+  "won": false,
+  "days": 17,
+  "stage": 2,
+  "breadth": 29,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 0,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "rank": "village",
+  "gate": false,
+  "havenTier": 0,
+  "maxWave": 2,
+  "sq": 0,
+  "l3plants": 0,
+  "synergies": 0,
+  "deaths": [
+   "combat",
+   "thirst",
+   "villager combat",
+   "villager combat",
+   "thirst",
+   "the night",
+   "starvation"
+  ],
+  "channels": 0,
+  "lessons": 0,
+  "backed": 0,
+  "bites": 0,
+  "waveKills": {
+   "1": 2
+  },
+  "util": {
+   "sq_offer": 19,
+   "ratings_summons": 2
+  },
+  "utilMissing": []
+ }
+]
