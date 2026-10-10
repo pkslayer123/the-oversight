@@ -27,6 +27,19 @@
 //   - answerAccord(how)
 //   - deliverVillageRumors()
 //   - kingdomEndingEligible()
+//   - scaleRank()
+//   - polityOf(villageId)
+//   - _havenPolity()
+//   - foreignPolities()
+//   - _foreignPolitySim()
+//   - _checkNational()
+//   - stageNationalBeat(polity)
+//   - answerNationalChoice(how)
+//   - _checkGlobal()
+//   - stageGlobalBeat(v)
+//   - answerGlobalChoice(how)
+//   - polityNews()
+//   - worldFeed()
 //   - _nudgeOpinion(villageId, delta)
 // rules:
 //   - courtship_moves_opinion: joining a village (+5, once) and studying its codex (+3, once) raise its opinion of Haven; cold proposals usually draw a counter-offer in the 35-54 band (judgeLink base 38) — the negotiation is the climb, and acceptance is earned through courtship (generosity bonus needs opinion 5+). (code: hierarchy.js)
@@ -40,6 +53,12 @@
 //   - the_table_burns_the_books: bidForPrimacy's flip clears old arrears (the new primary writes the books) and SAYS so — silent forgiveness was an exploit-shaped honesty hole. (code: hierarchy.js)
 //   - tribute_is_real_food: when our subordinate pays, the kcal arrive as a real spoil-dated pantry item — "the pantry grows" is engine, not copy. (code: hierarchy.js)
 //   - the_moment_survives: a pending accord killed by a broken first link is said aloud and restaged on the next link (accordUnanswered) — the Regional Dawn moment is never lost silently. (code: hierarchy.js)
+//   - scale_is_a_ladder: scaleRank() returns village/regional/national/global from the nationalLive/globalLive/networkLive flags — global implies national implies regional, never a skip. Read it defensively; it never throws. (code: hierarchy.js)
+//   - national_is_a_polity: a polity is one primary with >=3 active subordinates (four fires is a realm; two is a pact). Haven reaches national by LEADING (primary of >=3) or BELONGING (valued subordinate: trust >=60, arrears 0, link >=21 days to a primary whose realm holds >=4 villages). Both are deed-reactive and take seasons — no calendar path. (code: hierarchy.js)
+//   - the_court_is_played: national and global transitions stage played beats with real-cost choices (feast/host/cold; swear/serve/walk; champion/feast/decline). Walking away from the Binding refuses the scale; the court dies aloud if the realm dissolves mid-beat. (code: hierarchy.js)
+//   - foreign_fires_climb_too: known, unlinked villages bind among themselves off-screen (~seasonal); Haven hears through traders — delayed, possibly wrong, never omniscience. (code: hierarchy.js)
+//   - the_world_watches: global = national + deed-reactive viewership >= 40, staged as the played pre-table beat "The Watchers". The table itself is the ending, not this. (code: hierarchy.js)
+//   - national_routes_tribute: when national, subordinate tribute grain arrives at x1.25 via the System's logistics layer — and the arrival line says the true amount. Copy and engine agree. (code: hierarchy.js)
 //   - demand_honor_is_proportional: honoring a tribute demand with a thin pantry grants proportional trust and honest copy, never a free +8 on empty hands; an already-loaned representative extends instead of being clobbered. (code: hierarchy.js)
 //   - the_table_is_weekly: renegotiateLink/bidForPrimacy are one hard conversation per week (lastTableWeek) — the climb is paced in weeks, not ground out in an afternoon. (code: hierarchy.js)
 //   - diplomacy_is_knowledge_gated: proposeLink/proposeAlliance refuse villages the player never heard of or visited (knowsVillage). (code: hierarchy.js)
@@ -609,13 +628,20 @@
                   // nothing — a copy/engine lie. Tribute is real food (the
                   // metabolism system makes it REAL): it arrives as grain,
                   // spoil-dated, like any other haul.
+                  // NATIONAL ROUTES TRIBUTE (2026-10-10): the governance
+                  // layer's logistics route the harvest — x1.25, and the
+                  // arrival line says the true amount.
                   try {
                     var _v = self.state.village || {}; _v.pantry = _v.pantry || [];
                     var _day = (self.state.scholar || {}).day || 0;
-                    _v.pantry.push({ name: 'Tribute grain from ' + self._ovName(link.subordinate), kcalEach: link.tributeKcalPerWeek, units: 1, spoilDay: _day + 21 });
+                    var _mult = 1;
+                    try { if (self.state.nationalLive) _mult = 1.25; } catch (e) {}
+                    var _amt = Math.round(link.tributeKcalPerWeek * _mult);
+                    _v.pantry.push({ name: 'Tribute grain from ' + self._ovName(link.subordinate), kcalEach: _amt, units: 1, spoilDay: _day + 21 });
                   } catch (e) {}
                   self._linkNote(link, 'tribute', self._ovName(link.subordinate) + ' paid. The pantry grows.');
-                  if (R() < 0.35) self.say(`🌾 Tribute from ${self._ovName(link.subordinate)} arrives — ${link.tributeKcalPerWeek.toLocaleString()} kcal of grain into the pantry. Their fields, our fire.`);
+                  var _said = (typeof _amt === 'number' && isFinite(_amt)) ? _amt : link.tributeKcalPerWeek;
+                  if (R() < 0.35) self.say(`🌾 Tribute from ${self._ovName(link.subordinate)} arrives — ${_said.toLocaleString()} kcal of grain into the pantry. Their fields, our fire.`);
                 } else {
                   link.arrears += link.tributeKcalPerWeek;
                   link.trust = Math.max(0, link.trust - 4);
@@ -971,6 +997,405 @@
       return { eligible: false };
     },
 
+    // ---------- THE SCALE LADDER ----------
+
+    // scaleRank: the single scale API. Other systems (wave gating, the
+    // endgame deed gate) read scale through this — defensively, never by
+    // reading flags. The ladder builds: global implies national implies
+    // regional. Never throws.
+    scaleRank() {
+      try {
+        if (this.state.globalLive) return 'global';
+        if (this.state.nationalLive) return 'national';
+        if (this.state.networkLive) return 'regional';
+      } catch (e) {}
+      return 'village';
+    },
+
+    // foreignPolities: polities that don't include Haven — entries
+    // {primary, subs[], day}. The region has its own agendas: foreign
+    // bindings form off-screen (_foreignPolitySim) and Haven hears about
+    // them through traders, never omnisciently.
+    foreignPolities() {
+      this.state.foreignPolities = this.state.foreignPolities || [];
+      return this.state.foreignPolities;
+    },
+
+    // polityOf: the polity a village belongs to, or null. A polity is one
+    // primary with >=3 active subordinates — four fires under one head is a
+    // realm; two is a pact. Haven reaches it two ways (docs/SCALE.md):
+    //   LEAD — Haven is primary of >=3 active subordinates (the built realm).
+    //   BELONG — Haven is a subordinate in good standing (trust >=60, no
+    //     arrears, link >=21 days — the valued-subordinate bar) to a primary
+    //     whose realm holds >=4 villages.
+    // Both are deed-reactive (links formed, trust earned, tribute paid) and
+    // take seasons. Note: the BELONG polity is queried as
+    // polityOf(primaryId), not polityOf('haven') — use _havenPolity() for
+    // Haven's own polity either way.
+    polityOf(villageId) {
+      var id = villageId || HOME;
+      var links = this.hierarchyState();
+      var i, l;
+      if (id === HOME) {
+        var subs = [];
+        for (i = 0; i < links.length; i++) {
+          l = links[i];
+          if (l.status === 'active' && l.primary === HOME) subs.push(l.subordinate);
+        }
+        if (subs.length >= 3) {
+          return { primary: HOME, villages: ['haven'].concat(subs), size: subs.length + 1, led: true };
+        }
+        return null;
+      }
+      l = this.linkWith(id);
+      if (!l || l.status !== 'active' || l.subordinate !== HOME) return null;
+      var day = (this.state.scholar || {}).day || 0;
+      var good = l.trust >= 60 && (l.arrears || 0) === 0 && (day - (l.day || 0)) >= 21;
+      if (!good) return null;
+      var fp = null;
+      var fps = this.foreignPolities();
+      for (i = 0; i < fps.length; i++) if (fps[i].primary === id) { fp = fps[i]; break; }
+      var size = 2 + (fp ? fp.subs.length : 0); // primary + Haven + their subs
+      if (size < 4) return null;
+      return { primary: id, villages: [id, 'haven'].concat(fp ? fp.subs : []), size: size, led: false };
+    },
+
+    // _havenPolity: Haven's polity on either road — led first, belonging
+    // second.
+    _havenPolity() {
+      var p = this.polityOf(HOME);
+      if (p) return p;
+      var links = this.hierarchyState();
+      for (var i = 0; i < links.length; i++) {
+        var l = links[i];
+        if (l.status === 'active' && l.subordinate === HOME) {
+          var bp = this.polityOf(l.primary);
+          if (bp) return bp;
+        }
+      }
+      return null;
+    },
+
+    // _foreignPolitySim: weekly, off-screen. When >=2 known, unlinked
+    // villages exist outside any polity, they may bind (or join an existing
+    // foreign polity). ~Seasonal cadence — the region's politics move in
+    // seasons, and Haven hears late through traders.
+    _foreignPolitySim() {
+      try {
+        var s = this.state;
+        if (!s.networkLive) return;
+        var wk = this._week();
+        if (s._lastForeignPolityWeek === wk) return;
+        s._lastForeignPolityWeek = wk;
+        var oV = s.otherVillages || [];
+        var fps = this.foreignPolities();
+        var cands = [];
+        for (var i = 0; i < oV.length; i++) {
+          var v = oV[i];
+          if (!v || v.id === 'haven') continue;
+          if (!this.knowsVillage(v)) continue;
+          if (this.linkWith(v.id)) continue; // Haven's business is Haven's
+          var inFp = false;
+          for (var j = 0; j < fps.length; j++) {
+            if (fps[j].primary === v.id || fps[j].subs.indexOf(v.id) >= 0) { inFp = true; break; }
+          }
+          if (!inFp) cands.push(v);
+        }
+        if (cands.length < 2) return;
+        if (R() > 0.22) return;
+        var a = pick(cands);
+        var anm = this._ovName(a.id);
+        if (fps.length && R() < 0.5) {
+          var fp = pick(fps);
+          if (fp.primary !== a.id && fp.subs.indexOf(a.id) < 0) {
+            fp.subs.push(a.id);
+            this.say(`🧳 Word comes late, through traders: ${anm} has bound itself to ${this._ovName(fp.primary)}. The region's map is being redrawn — not by Haven.`);
+            try { if (this.journalNote) this.journalNote('village', 'polity', anm + ' bound itself to ' + this._ovName(fp.primary) + '.'); } catch (e) {}
+            return;
+          }
+        }
+        var rest = cands.filter(function (x) { return x.id !== a.id; });
+        var b = pick(rest);
+        if (!b) return;
+        fps.push({ primary: a.id, subs: [b.id], day: (s.scholar || {}).day || 0 });
+        this.say(`🧳 Word comes late, through traders: ${anm} and ${this._ovName(b.id)} have bound together — ${anm} primary. Other fires are climbing, too.`);
+        try { if (this.journalNote) this.journalNote('village', 'polity', anm + ' and ' + this._ovName(b.id) + ' bound; ' + anm + ' primary.'); } catch (e) {}
+      } catch (e) {}
+    },
+
+    // _checkNational: stages the national beat when a polity qualifies with
+    // Haven in it. Called daily — the beat lands the morning after the deed
+    // that earned it, like rumor delivery at the day boundary.
+    _checkNational() {
+      try {
+        if (this.state.nationalLive || this.state.pendingNational) return;
+        var p = this._havenPolity();
+        if (p) this.stageNationalBeat(p);
+      } catch (e) {}
+    },
+
+    // stageNationalBeat: THE MOMENT Haven becomes national. Two shapes
+    // (docs/SCALE.md): LEAD — "The First Court", the subordinate speakers
+    // ride in and Haven sets the terms of its realm (feast/host/cold).
+    // BELONG — "The Binding", the polity's court summons Haven's speaker
+    // (swear/serve/walk). Never a silent threshold flip.
+    stageNationalBeat(polity) {
+      if (!polity || this.state.nationalLive || this.state.pendingNational) return null;
+      this.state.pendingNational = {
+        led: !!polity.led, primary: polity.primary,
+        villages: polity.villages.slice(),
+        day: (this.state.scholar || {}).day || 0,
+      };
+      var pn = this.state.pendingNational;
+      if (pn.led) {
+        var names = [];
+        for (var i = 0; i < pn.villages.length; i++) {
+          if (pn.villages[i] !== 'haven') names.push(this._ovName(pn.villages[i]));
+        }
+        this.say(`◈ SYSTEM: "Four fires. One head. GOVERNANCE LAYER: online — polity tribute routing, the court calendar, famine reserves. You built a realm. Try not to lose it the way you found it."`);
+        this.say(`👑 Speakers from ${names.join(', ')} ride in for the first court — and every one of them is measuring you. FEAST them from a shared granary (5,000 kcal, no strings), HOST the court at Haven's fire (your speaker's time), or write the law in COLD ink (they'll pay more and love you less).`);
+      } else {
+        var nm = this._ovName(pn.primary);
+        this.say(`◈ SYSTEM: "You are not the head of this. That is the point. A realm of ${polity.size} fires — and ${nm} wants Haven's oath. The audience LOVES a binding."`);
+        this.say(`📯 ${nm}'s court summons Haven's speaker. SWEAR the oath of the realm (a gift seals it), SERVE at their court (seven days of your speaker's life), or WALK — break the link and stay a free fire. Refusal is a choice, and it is remembered.`);
+      }
+      try { if (this.journalNote) this.journalNote('village', 'national', pn.led ? 'The first court: Haven leads a polity of ' + pn.villages.length + ' villages.' : 'The Binding: ' + this._ovName(pn.primary) + '\'s court summons Haven\'s oath.'); } catch (e) {}
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'national-beat'); } catch (e) {}
+      return true;
+    },
+
+    // answerNationalChoice: the court's answer. Every option has a real
+    // cost — food, time, or love. 'walk' (belong case) refuses the scale:
+    // the realm continues without Haven and national stays unachieved.
+    answerNationalChoice(how) {
+      var pn = this.state.pendingNational;
+      if (!pn) return null;
+      var links = this.hierarchyState();
+      var day = (this.state.scholar || {}).day || 0;
+      var rep = null, rnm = 'Someone';
+      try { rep = this.representative(); } catch (e) {}
+      try { rnm = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
+
+      if (pn.led) {
+        // Haven is the head. The realm must still hold >=3 subordinates —
+        // if it dissolved before the court sat, the beat dies aloud.
+        var subs = [];
+        for (var i = 0; i < links.length; i++) {
+          var l = links[i];
+          if (l.status === 'active' && l.primary === HOME) subs.push(l);
+        }
+        if (subs.length < 3) {
+          this.state.pendingNational = null;
+          this.say('The court never sits — the realm came apart before the speakers arrived. Three fires make a polity; fewer make gossip.');
+          return null;
+        }
+        this.state.pendingNational = null;
+        var onames = [];
+        for (var oi = 0; oi < pn.villages.length; oi++) {
+          if (pn.villages[oi] !== 'haven') onames.push(this._ovName(pn.villages[oi]));
+        }
+        var si;
+        if (how === 'feast') {
+          // HONOR IS PROPORTIONAL: trust follows the food, never free.
+          var paid = this._removePantryKcal(5000);
+          var gain = paid >= 5000 ? 10 : Math.max(2, Math.round(10 * paid / 5000));
+          for (si = 0; si < subs.length; si++) {
+            subs[si].trust = Math.min(100, subs[si].trust + gain);
+            this._nudgeOpinion(subs[si].subordinate, paid >= 5000 ? 5 : 2);
+            this._linkNote(subs[si], 'court', 'First court: shared granary feast (' + paid.toLocaleString() + ' kcal).');
+          }
+          if (paid >= 5000) {
+            this.say(`🍲 The shared granary opens: 5,000 kcal for every fire of the realm, no strings. ${onames.join(', ')} count it — and remember who fed them first. (Trust +${gain} with each.)`);
+          } else {
+            this.say(`🍲 Haven opens the granary — ${paid.toLocaleString()} kcal, all it holds. An honest feast, not a grand one. They count it anyway. (Trust +${gain} with each.)`);
+          }
+        } else if (how === 'host') {
+          var m = this.mshipState();
+          if (rep && rep.id !== this.villagerId && !(m.loaned && day < (m.loaned.untilDay || 0))) {
+            m.loaned = { vid: rep.id, untilDay: day + 7, to: 'the first court' };
+            for (si = 0; si < subs.length; si++) {
+              subs[si].trust = Math.min(100, subs[si].trust + 6);
+              this._linkNote(subs[si], 'court', 'First court hosted at Haven\'s fire.');
+            }
+            this.say(`🏕️ The court sits at Haven's fire for seven days — ${rnm} holds the room, hears every grievance, pours every cup. Still ours; membership needs no presence. (Trust +6 with each.)`);
+          } else {
+            for (si = 0; si < subs.length; si++) {
+              subs[si].trust = Math.min(100, subs[si].trust + 3);
+              this._linkNote(subs[si], 'court', 'First court: word sent — no speaker to host it.');
+            }
+            this.say('There is no speaker to hold the room — the court gets word and promises instead. It lands softer. (Trust +3 with each.)');
+          }
+        } else {
+          // cold: the iron price — tribute standardized up, trust down.
+          for (si = 0; si < subs.length; si++) {
+            subs[si].tributeKcalPerWeek = Math.round(subs[si].tributeKcalPerWeek * 1.1);
+            subs[si].trust = Math.max(0, subs[si].trust - 12);
+            this._nudgeOpinion(subs[si].subordinate, -5);
+            this._linkNote(subs[si], 'court', 'First court: the law in cold ink. Tribute up 10%.');
+          }
+          this.say(`⚖️ Haven writes the law in cold ink: tribute up 10%, terms standard, no favorites. ${onames.join(', ')} bow — and do not love you for it. The realm holds. Fear is a kind of mortar. (Trust -12 with each.)`);
+        }
+      } else {
+        // Haven belongs. The court wants the oath.
+        var link = this.linkWith(pn.primary);
+        if (!link || link.status !== 'active' || link.subordinate !== HOME) {
+          this.state.pendingNational = null;
+          this.say('The Binding never happens — the link came apart before the oath was sworn. The court moves on without Haven.');
+          return null;
+        }
+        this.state.pendingNational = null;
+        var onm = this._ovName(pn.primary);
+        if (how === 'walk') {
+          this.say(`🚶 Haven walks away from ${onm}'s table — a free fire, whatever that costs. The realm continues without you. The door is not shut forever. It is shut today.`);
+          this.breakLink(link.id, 'gambit');
+          return 'walked';
+        }
+        if (how === 'swear') {
+          var oath = this._removePantryKcal(3000);
+          link.trust = Math.min(100, link.trust + 12);
+          this._nudgeOpinion(pn.primary, 5);
+          this._linkNote(link, 'binding', 'Swore the oath of the realm (' + oath.toLocaleString() + ' kcal gift).');
+          this.say(`🤝 ${rnm} kneels at ${onm}'s court and swears the oath — sealed with ${oath.toLocaleString()} kcal of Haven's harvest. The realm has its fires now, and one of them is yours. (Trust +12.)`);
+        } else {
+          var mm = this.mshipState();
+          if (rep && rep.id !== this.villagerId && !(mm.loaned && day < (mm.loaned.untilDay || 0))) {
+            mm.loaned = { vid: rep.id, untilDay: day + 7, to: pn.primary };
+            link.trust = Math.min(100, link.trust + 8);
+            this._linkNote(link, 'binding', rnm + ' serves seven days at their court.');
+            this.say(`🚶 ${rnm} rides to ${onm}'s court for seven days — Haven's face, their time. Still ours; membership needs no presence. (Trust +8.)`);
+          } else {
+            link.trust = Math.min(100, link.trust + 4);
+            this._linkNote(link, 'binding', 'No speaker to send — word and promises.');
+            this.say('There is no speaker to send — the court gets word and promises instead. It lands softer. (Trust +4.)');
+          }
+        }
+      }
+      // THE COURT SAT (or the oath was sworn): Haven is national.
+      this.state.nationalLive = true;
+      this.state.nationalDay = day;
+      try { if (this.journalNote) this.journalNote('village', 'national', 'Haven is national — ' + (pn.led ? 'the realm bows to Haven.' : 'Haven swore to ' + this._ovName(pn.primary) + '.')); } catch (e) {}
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'national-live'); } catch (e) {}
+      try { if (this.recordMoment) this.recordMoment('Haven became national — ' + (pn.led ? 'the first court sat.' : 'the oath was sworn.')); } catch (e) {}
+      return true;
+    },
+
+    // _checkGlobal: the pre-table beat. The ladder is a ladder — global only
+    // after national. Deed-reactive: viewership climbs on recordMoment (big
+    // plays), show stunts, ledger showmanship — seasons of being watched,
+    // never a calendar flip. (Threshold 40 is provisional v1 — docs/SCALE.md.)
+    _checkGlobal() {
+      try {
+        if (this.state.globalLive || this.state.pendingGlobal || !this.state.nationalLive) return;
+        var v = (typeof this.havenViewership === 'function') ? this.havenViewership() : 0;
+        if (v >= 40) this.stageGlobalBeat(v);
+      } catch (e) {}
+    },
+
+    // stageGlobalBeat: THE MOMENT Haven becomes global — "The Watchers".
+    // The audience has picked its favorite fire. This is NOT the table (the
+    // ending); it is the summons to be SEEN. Played: send your champion to
+    // the broadcast, feast the cameras, or decline on camera — and the
+    // galaxy watches you say no.
+    stageGlobalBeat(v) {
+      if (this.state.globalLive || this.state.pendingGlobal) return null;
+      this.state.pendingGlobal = { viewership: Math.round(v || 0), day: (this.state.scholar || {}).day || 0 };
+      this.say(`◈ SYSTEM: "Forty. You see the number. THE WORLD IS WATCHING. Broadcast tier: planetary — the audience has picked its favorite fire and it is YOURS. This is not the table. The table comes later. Tonight, the galaxy wants a show."`);
+      this.say(`📡 The feed floods in — fan art, messages in languages nobody speaks, a countdown that isn't yours. The audience demands Haven for the world feed: SEND your speaker into the light, FEAST the cameras with a grand showing, or DECLINE and let the galaxy watch you say no.`);
+      try { if (this.journalNote) this.journalNote('village', 'global', 'The Watchers: the world feed wants Haven.'); } catch (e) {}
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'global-beat'); } catch (e) {}
+      return true;
+    },
+
+    // answerGlobalChoice: the galaxy gets its answer. Every option lands
+    // Haven at global — the scale is the world's attention, not compliance.
+    // Declining costs viewership and is remembered.
+    answerGlobalChoice(how) {
+      var pg = this.state.pendingGlobal;
+      if (!pg) return null;
+      this.state.pendingGlobal = null;
+      var day = (this.state.scholar || {}).day || 0;
+      var rep = null, rnm = 'Someone';
+      try { rep = this.representative(); } catch (e) {}
+      try { rnm = rep ? String(this.displayName(rep.id)).split(' ')[0] : 'Someone'; } catch (e) {}
+      if (how === 'champion') {
+        var m = this.mshipState();
+        if (rep && rep.id !== this.villagerId && !(m.loaned && day < (m.loaned.untilDay || 0))) {
+          m.loaned = { vid: rep.id, untilDay: day + 7, to: 'the world feed' };
+          this.say(`📡 ${rnm} walks into the light for seven days — Haven's face on every screen in the sky. The galaxy gets its champion. The village gets the quiet.`);
+        } else {
+          this.say('There is no speaker to send — the cameras find you anyway. The galaxy gets what the galaxy wants.');
+        }
+        try { if (this.recordMoment) this.recordMoment('Haven sent its champion to the world feed.'); } catch (e) {}
+      } else if (how === 'feast') {
+        var paid = this._removePantryKcal(5000);
+        this.say(`📡 Haven feasts for the cameras — ${paid.toLocaleString()} kcal of theater, every fire of the realm at the table. The chat eats it up. Somewhere, the table makes a note.`);
+        try { if (this.recordMoment) this.recordMoment('Haven feasted the world feed.'); } catch (e) {}
+      } else {
+        var vv = this.state.village || {};
+        var cur = vv.viewership;
+        if (cur == null && typeof this.havenViewership === 'function') cur = this.havenViewership();
+        vv.viewership = Math.max(0, (cur || 0) - 10);
+        this.say('📡 Haven declines the world feed. The countdown runs without you. The galaxy watches you say no — and remembers. (Viewership -10.)');
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'global-declined'); } catch (e) {}
+      }
+      this.state.globalLive = true;
+      this.state.globalDay = day;
+      this.say(`◈ SYSTEM: "Species agency: unlocked. You are not at the table yet. But the table has your name now."`);
+      try { if (this.journalNote) this.journalNote('village', 'global', 'Haven is global — the world is watching. The table comes later.'); } catch (e) {}
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'global-live'); } catch (e) {}
+      return true;
+    },
+
+    // ---------- SCALE UNLOCKS ----------
+
+    // polityNews: NATIONAL unlock. Traders carry word between the polity's
+    // fires — delayed, possibly wrong, never omniscience. Weekly, one item.
+    polityNews() {
+      try {
+        if (!this.state.nationalLive) return;
+        var wk = this._week();
+        if (this.state._lastPolityNewsWeek === wk) return;
+        this.state._lastPolityNewsWeek = wk;
+        var p = this._havenPolity();
+        if (!p) return;
+        for (var i = 0; i < p.villages.length; i++) {
+          var id = p.villages[i];
+          if (id === 'haven') continue;
+          if (R() > 0.6) continue;
+          var ov = this._otherVillage(id);
+          var news = (ov && ov.news) || [];
+          var item = news.length ? news[Math.floor(R() * news.length)] : null;
+          var line = item || ('traders say ' + this._ovName(id) + ' had ' + pick(['a good harvest', 'a hard winter', 'a wedding', 'a feud over grain', 'a new speaker', 'a monster at the treeline']) + ' — or so the traders say');
+          this.say(`🧳 Word from ${this._ovName(id)}: ${line}`);
+          try { if (this.journalNote) this.journalNote('village', 'polity-news', 'Word from ' + this._ovName(id) + ': ' + line); } catch (e) {}
+          return;
+        }
+      } catch (e) {}
+    },
+
+    // worldFeed: GLOBAL unlock. The galaxy's cameras see everything and the
+    // chat talks — weekly word from the whole known region.
+    worldFeed() {
+      try {
+        if (!this.state.globalLive) return;
+        var wk = this._week();
+        if (this.state._lastWorldFeedWeek === wk) return;
+        this.state._lastWorldFeedWeek = wk;
+        var oV = this.state.otherVillages || [];
+        var known = [];
+        for (var i = 0; i < oV.length; i++) {
+          if (oV[i] && oV[i].id !== 'haven' && this.knowsVillage(oV[i])) known.push(oV[i]);
+        }
+        if (!known.length) return;
+        var v = pick(known);
+        var news = v.news || [];
+        var item = news.length ? news[Math.floor(R() * news.length)] : null;
+        var line = item || pick(['a harvest festival', 'a monster sighting', 'a new speaker rising', 'a feud settled', 'a wedding', 'a strange light in the sky']);
+        this.say(`📡 The world feed: ${v.name || this._ovName(v.id)} — ${line}. The chat has opinions.`);
+        try { if (this.journalNote) this.journalNote('village', 'world-feed', 'World feed: ' + (v.name || v.id) + ' — ' + line); } catch (e) {}
+      } catch (e) {}
+    },
+
     // ---------- DAILY ----------
 
     // deliverVillageRumors: the traveler's word, actually delivered. The
@@ -997,7 +1422,12 @@
 
     hierarchyDaily() {
       try { this.linkTick(); } catch (e) {}
+      try { this._foreignPolitySim(); } catch (e) {}
+      try { this._checkNational(); } catch (e) {}
+      try { this._checkGlobal(); } catch (e) {}
       try { this.deliverVillageRumors(); } catch (e) {}
+      try { this.polityNews(); } catch (e) {}
+      try { this.worldFeed(); } catch (e) {}
     },
   };
 
