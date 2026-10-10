@@ -1182,6 +1182,12 @@
   callMoot(caseId, byId) {
     const c = this.getCase(caseId); if (!c) return null;
     if (c.status !== 'open' && c.status !== 'dormant') return null;
+    // IDEMPOTENT (break-it social r11 2026-10-10): the moot is already in
+    // session (trial tallied, possibly awaiting the player's vote) — don't
+    // re-convene it. playerCaseTick fired this every day for an open case
+    // whose vote was pending, re-announcing the moot, burning tickAction(48)
+    // per day, and re-randomizing the trial under the player's feet.
+    if (c.trial) return null;
     const caller = byId || this.villagerId;
     if (this.isPlayer(caller)) {
       // PLAYER-CONVENED (Steve 2026-10-08): the moot is yours — tallyVotes
@@ -1597,11 +1603,12 @@
       const wergildVerb = (c.accused.length === 1 && this.isPlayer(c.accused[0])) || c.accused.length > 1 ? 'pay' : 'pays';
       this.say(`Food, work, public apology — ${namesCap} ${wergildVerb} it in the open, where everyone can see. The price of staying.`);
       try {
-        // WEREGILD IS REAL (break-it 2026-10-08): the old code bumped the
-        // phantom pantryKcal scalar, wiped by pantryKcalLive's end-of-day sync —
-        // the village never received it. Real food arrives as a real item.
-        if (typeof this.stockPantry === 'function') this.stockPantry(3000, 'Weregild');
-        else v.pantryKcal = (v.pantryKcal || 0) + 3000;
+        // the accused pays — once. (BREAK-IT social r11 2026-10-10: the old
+        // leading block stocked 3000 to the pantry unconditionally and the
+        // payer blocks stocked ANOTHER 3000 each — every weregild minted
+        // 3000-6000 kcal from thin air on top of the real payment. One
+        // sentence, one 3000-kcal payment: the village receives exactly what
+        // the accused pays.)
         // the player pays from their own stores — it has to hurt.
         // ABSENTIA (break-it social r6 2026-10-09): a moot fired for an
         // already-exiled player (open case + exile via a non-moot path)
@@ -3903,6 +3910,10 @@
   demandMoot(caseId) {
     const c = this.getCase(caseId); if (!c || c.playerRole !== 'accused') return null;
     if (c.status !== 'open' && c.status !== 'dormant') return null;
+    // same class as the callMoot re-convene guard (social r11): a trial
+    // already in session must not be re-run (the dossier gates this, the
+    // engine must not stack a second trial underneath).
+    if (c.trial) return null;
     this.say(`You stand before they finish gathering voices. "No more whispering. We settle this NOW — all of it, in the open." Bold. Dangerous. The fire gets built up.`);
     try { this.tickAction(24); } catch (e) {}
     return this.conductTrial(c);
@@ -4158,6 +4169,10 @@
     const day = this.state.scholar.day;
     for (const c of (bs.cases || [])) {
       if (c.playerRole !== 'accused' || c.status !== 'open') continue;
+      // BREAK-IT (social r11 2026-10-10): once the trial is in session (vote
+      // pending), the daily clock must not re-convene the moot — callMoot is
+      // idempotent now, and this guard keeps the intent explicit.
+      if (c.trial) continue;
       if (day - c.day >= (c.mootIn || 2)) {
         const aname = this.whoTag(c.accuser);
         this.say(`${this.capFirst(aname)} has gathered enough voices. This is it — tonight, at the fire.`);
@@ -4166,11 +4181,31 @@
     }
     try { this.considerPlayerAccusation(); } catch (e) {}
   },
+  // TRIAL VOTE BACKSTOP (break-it social r11 2026-10-10): the player's trial
+  // vote is cast through conversation choices — if the player never talks to
+  // anyone (away, exiled, or just ignoring the fire), the case sat at
+  // awaitingPlayerVote FOREVER: the verdict never landed and the justice
+  // ladder stayed frozen behind playerCaseOpen. Two days of silence and the
+  // village takes the count without them — same honesty as the exiled-vote
+  // line, same 2-day convention as the confrontation silence-timeout. The
+  // player can still cast the vote any time before this fires.
+  trialVoteTick() {
+    const day = this.state.scholar.day;
+    for (const c of (this.betrayalState().cases || [])) {
+      if ((c.status !== 'open' && c.status !== 'dormant') || !c.trial || !c.trial.awaitingPlayerVote) continue;
+      if (day - (c.trial.day || day) < 2) continue;
+      c.trial.awaitingPlayerVote = false;
+      c.trial.playerVoter = false; // no vote was cast: leave the denominator too, and skip the "your vote lands" copy in finishTrial
+      this.say(`The moot doesn't wait forever. Two days of silence from the fire's edge — the count is taken without you.`);
+      this.finishTrial(c, 0);
+    }
+  },
   betrayalDailyFull() {
     this.betrayalDaily();
     try { this.simBriberyTick(); } catch (e) {}
     try { this.caseDiscoveryTick(); } catch (e) {}
     try { this.playerCaseTick(); } catch (e) {}
+    try { this.trialVoteTick(); } catch (e) {}
     try { this.driftTick(); } catch (e) {}
     try { this.probationTick(); } catch (e) {}
   },
