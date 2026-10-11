@@ -7904,7 +7904,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
 
     genDetail(x, y) {
       const t = this.tileAt(x, y);
-      if (t.detail) return t.detail;
+      // HAVEN VIEWS (break-it camps r13 2026-10-10): the haven tile keeps two
+      // persistent view caches (groundsDetail/hallDetail) with t.detail as
+      // the current view's alias. Never trust t.detail blindly here — the
+      // JSON save/load duplicates the shared reference into two independent
+      // copies, and the haven branch below re-links the live cache.
+      if (t.detail && t.type !== 'haven') return t.detail;
       // HAVEN IS A BUILDING. Always the same building, every run.
       // Home base doesn't change shape. A new player learns it once.
       // INSIDE vs OUTSIDE: scholar.insideHaven tracks which you're in.
@@ -7917,6 +7922,25 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // Steve 2026-10-04: the grounds were a tent maze (15% random tents
           // ≈ 12 blocking tents) — it felt like a trap. Now: a small deliberate
           // camp, mostly open ground, clear paths from the door to the edges.
+          // GROUNDS PERSISTENCE (break-it camps r13 2026-10-10): the grounds
+          // are the player's yard — pitched tents, lit campfires, cleared
+          // brush live here. The old code cached the grounds in t.detail,
+          // which enterBuilding/exitBuilding null on every door trip to
+          // switch views — the regen silently DELETED player structures (a
+          // pitched tent gone with no message, no refund) and left its
+          // interior-fire entry in state.fires as a phantom: re-pitching the
+          // same cell inherited a FREE lit fire (same class as the camps-3
+          // packTent phantom-fire catch). The grounds get their own cache,
+          // untouched by the inside/outside view switches; the hall interior
+          // below gets one too (static, but rebuilding it per render is
+          // wasteful). SAVE MIGRATION: pre-fix saves cached the grounds in
+          // t.detail with no groundsDetail. The hall interior never contains
+          // 'lodge', so a lodged detail IS the grounds — adopt it, never
+          // rebuild over it.
+          if (!t.groundsDetail && t.detail && t.detail.some(row => row && row.includes('lodge'))) {
+            t.groundsDetail = t.detail;
+          }
+          if (t.groundsDetail) { t.detail = t.groundsDetail; return t.groundsDetail; }
           const cells = [];
           const ornd = this.detailRand(this.detailSeed(x, y) + 4242);
           for (let cy = 0; cy < 9; cy++) {
@@ -7949,6 +7973,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           for (const [gx, gy] of garden) {
             if (cells[gy] && cells[gy][gx] !== 'lodge') cells[gy][gx] = (gx + gy) % 2 ? 'plant' : 'bush';
           }
+          t.groundsDetail = cells;
           t.detail = cells;
           return cells;
         }
@@ -7965,12 +7990,23 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           ['wall','hall','hall','hall','hall','hall','hall','hall','wall'],
           ['wall','wall','wall','wall','wall','wall','wall','wall','wall'],
         ];
-        t.detail = layout;
-        // SPAWN VALIDATION: the player starts at (4,4). Ensure it's not walled in.
-        // BFS from spawn: need 15+ reachable cells and 2+ reachable doors.
-        // If the layout fails, carve — don't ship a trap.
-        this.validateSpawnArea(t, 4, 4);
-        return layout;
+        // HALL CACHE (break-it camps r13 2026-10-10): the grounds' sibling —
+        // the hall is static map-gen, but rebuilding + re-validating it on
+        // every render is wasteful. SAVE MIGRATION: pre-fix saves cached the
+        // hall in t.detail with no hallDetail. The grounds never contain
+        // 'hall' — adopt it.
+        if (!t.hallDetail && t.detail && t.detail.some(row => row && row.includes('hall'))) {
+          t.hallDetail = t.detail;
+        }
+        if (!t.hallDetail) {
+          t.hallDetail = layout;
+          // SPAWN VALIDATION: the player starts at (4,4). Ensure it's not walled in.
+          // BFS from spawn: need 15+ reachable cells and 2+ reachable doors.
+          // If the layout fails, carve — don't ship a trap.
+          this.validateSpawnArea(t, 4, 4);
+        }
+        t.detail = t.hallDetail;
+        return t.hallDetail;
       }
       const rnd = this.detailRand(this.detailSeed(x, y));
       const N = 9;
@@ -8725,6 +8761,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // NO-OP (explorer break-it 2026-10-09): re-entering while inside
       // repositioned to (4,7) — a free in-hall teleport. Refuse honestly.
       if (s.insideHaven) { this.say("You're already inside."); return false; }
+      // TENT ROOMS (break-it camps r13 2026-10-10): the lodge door is not
+      // inside your tent. Duck out through the flap first. (Unreachable from
+      // the honest UI — the tent room has no door button — engine armor for
+      // direct calls, same class as travelTo's insideTent armor.)
+      if (s.insideTent) { this.say('You duck out of the tent first — the lodge door is not in here.'); return false; }
       // STATE INTEGRITY: the hall is at Haven. Going "inside" from a
       // thicket six tiles out would desync inside/outside (and with it the
       // pantry/stash gate). Refuse anywhere but the haven node.
@@ -11091,8 +11132,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (!fires[i].inside) {
           const row = this.map.tiles[fires[i].ty];
           const t = row && row[fires[i].tx];
-          if (t && t.detail && t.detail[fires[i].cy] && t.detail[fires[i].cy][fires[i].cx] === 'fire') {
-            t.detail[fires[i].cy][fires[i].cx] = 'dirt';
+          // HAVEN GROUNDS (break-it camps r13 2026-10-10): a grid fire on the
+          // haven tile lives on the grounds view (t.groundsDetail) — t.detail
+          // may currently hold the hall interior, and sweeping the hall's
+          // cells would miss the dead fire (or read the wrong view's cell).
+          const td = (t && t.type === 'haven' && t.groundsDetail) ? t.groundsDetail : (t && t.detail);
+          if (td && td[fires[i].cy] && td[fires[i].cy][fires[i].cx] === 'fire') {
+            td[fires[i].cy][fires[i].cx] = 'dirt';
           }
         }
         fires.splice(i, 1);
@@ -25669,7 +25715,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // a bulldozer flattening your campfire was told "The fire holds. Havens
       // do not break." A player-made fire (tracked in state.fires) is a player
       // structure: it breaks. Haven/map fires still hold.
-      const unbreakable = ['hall', 'bunk', 'door', 'haven', 'sanct', 'base'];
+      // LODGE (break-it camps r13 2026-10-10): the only 'lodge' cells in the
+      // game are the haven's lodge (map-gen) — no player build-lodge action
+      // exists, so the old "player-built lodges are breakable" note had no
+      // live referent and the haven's own lodge sat outside the law's
+      // enforcement. Steve's law: havens do not break. The lodge is the haven.
+      const unbreakable = ['hall', 'bunk', 'door', 'haven', 'sanct', 'base', 'lodge'];
       if (cellType === 'fire') {
         let mine = false;
         try { mine = this.playerFireAt(cx, cy); } catch (e) {}
