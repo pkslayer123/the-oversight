@@ -4033,6 +4033,12 @@
     // start sustained audio (contestTitheEscalate fires 'heartbeat') — no
     // contest-end path stopped it, so it thumped forever after the show.
     try { this.audioEvent('heartbeatStop'); } catch (e) {}
+    // FOREIGN EYES (structural-scale 2026-10-10): the show is televised and
+    // other fires watch. A resolved contest with Haven's people in it is an
+    // engagement beat — gossip travels outward to the villages that know
+    // Haven (see Game._foreignEyes in hierarchy.js). Guarded: hierarchy may
+    // not be loaded in every harness.
+    try { if (this._foreignEyes) this._foreignEyes(contest.name, outcome); } catch (e) {}
     if (outcome === 'won') {
       // PRIZE IDEMPOTENCY (break-it contests r14 2026-10-10): _contestEnd
       // can be re-entered on the same ac — the multi-take verdict restores

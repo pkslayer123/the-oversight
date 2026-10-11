@@ -14235,6 +14235,9 @@
     document.querySelectorAll('[data-defense]').forEach(b => b.onclick = () => { Game.answerDefenseCall(b.dataset.defense, b.dataset.how); refresh(); });
     document.querySelectorAll('[data-tradecall]').forEach(b => b.onclick = () => { Game.answerTradeCall(b.dataset.tradecall, b.dataset.how); refresh(); });
     document.querySelectorAll('[data-crisis]').forEach(b => b.onclick = () => { Game.answerCovenantCrisis(b.dataset.crisis, b.dataset.how); refresh(); });
+    // STRUCTURAL-SCALE (2026-10-10): the young link's staged succession
+    // beat — same wiring pattern as the other pending beats above.
+    document.querySelectorAll('[data-reneg]').forEach(b => b.onclick = () => { Game.answerRenegotiation(b.dataset.reneg, b.dataset.how); refresh(); });
     document.querySelectorAll('[data-pool-draw]').forEach(b => b.onclick = () => { Game.drawLeaguePool(parseInt(b.dataset.poolDraw, 10) || 0); refresh(); });
     wirePanel(st, n);
     wireContextBar();
@@ -14765,6 +14768,10 @@
                   if (l.pendingDefense) h += `<br>🔥 <b>${esc(nm)}'s treeline is burning — they call the covenant.</b><br><button class="btn sm" data-defense="${l.id}" data-how="send">🛡️ Send villagers (3 days)</button> <button class="btn sm ghost" data-defense="${l.id}" data-how="refuse">Refuse aloud (trust −10)</button>`;
                   if (l.pendingTradeCall) h += `<br>📯 <b>${esc(nm)} asks for help — hands, not tariff.</b><br><button class="btn sm" data-tradecall="${l.id}" data-how="send">🤝 Send help (priced favor)</button> <button class="btn sm ghost" data-tradecall="${l.id}" data-how="refuse">Refuse aloud (−4 trust)</button>`;
                   if (l.pendingCovenantCrisis) h += `<br>⚡ <b>${esc(nm)} challenges the ${l.kind === 'covenant' ? 'covenant' : 'charter'} — concede, hold, or release.</b><br><button class="btn sm" data-crisis="${l.id}" data-how="concede">Concede (better terms)</button> <button class="btn sm ghost" data-crisis="${l.id}" data-how="hold">Hold the line</button> <button class="btn sm ghost" data-crisis="${l.id}" data-how="release">Release with honor</button>`;
+                  // STRUCTURAL-SCALE (2026-10-10): the young link's staged
+                  // succession beat — grief delays the verdict. Played:
+                  // grain, a speaker, or the silence.
+                  if (l.pendingRenegotiation) h += `<br>🕊️ <b>${esc(nm)}'s new speaker wants to talk before the tribute changes — grief delays the verdict.</b><br><button class="btn sm" data-reneg="${l.id}" data-how="gift">🕊️ Send grain (1,500 kcal)</button> <button class="btn sm ghost" data-reneg="${l.id}" data-how="visit">🚶 Send a speaker (2 days)</button> <button class="btn sm ghost" data-reneg="${l.id}" data-how="wait">Let the silence answer</button>`;
                   // REGIONAL DAWN (2026-10-09): the first link stages a
                   // played beat — Haven's first gesture toward the other
                   // fire. Real costs, real consequences.

@@ -26,6 +26,8 @@
 //   - primaryDemand(linkId)
 //   - proveWorth(linkId, vid, mag)
 //   - successionCrisis(linkId)
+//   - answerRenegotiation(linkId, how)
+//   - _renegotiationTick()
 //   - renegotiateLink(linkId)
 //   - bidForPrimacy(linkId)
 //   - villageLinks(villageId)
@@ -48,6 +50,8 @@
 //   - _linkOther(link, id)
 //   - foreignPolities()
 //   - _foreignPolitySim()
+//   - stirRegion(kind, note)
+//   - _foreignEyes(contestName, outcome)
 //   - _checkNational()
 //   - stageNationalBeat(polity)
 //   - answerNationalChoice(how)
@@ -81,7 +85,9 @@
 //   - league_pool_is_real_food: covenant pool contributions leave the pantry weekly; draws move real kcal back; shorts are said aloud and cost trust. Trade tariff income arrives as real food; route upkeep is real food out. (code: hierarchy.js)
 //   - trade_has_no_swords: trade-league help requests carry no defense obligation — Haven may refuse aloud (small trust cost, the charter said so) or send help as a priced favor. Covenant defense calls are obligations: sending costs a party, refusing costs trust league-wide. (code: hierarchy.js)
 //   - knowledge_never_gates_the_scale: peer proposals, raids, and all four new national beats are never knowledge-gated — force and trade don't ask what you know. (code: hierarchy.js)
-//   - foreign_fires_climb_too: known, unlinked villages bind among themselves off-screen (~seasonal); Haven hears through traders — delayed, possibly wrong, never omniscience. (code: hierarchy.js)
+//   - foreign_fires_climb_too: known villages bind among themselves off-screen — a slow background drift (~12%/wk) PLUS engagement-driven acceleration off stirRegion beats (trade caravans, aid sent, crises answered, contests watched abroad, new courtships); Haven hears through traders — delayed, possibly wrong, never omniscience. (code: hierarchy.js)
+//   - region_moves_on_engagement: foreign-realm growth is engagement-driven, not clock-driven — waiting banks nothing; playing advances the arc. Haven-linked villages are NOT excluded from candidacy (the old exclusion punished courting: the more Haven courted, the slower the region climbed). Still earned: momentum is deed-gated, a 4-realm takes weeks of real beats, never a calendar path. (code: hierarchy.js)
+//   - young_links_get_grace: succession on a link younger than 21 days costs -8 trust (not -15) and never snaps — instead a staged renegotiation beat (link.pendingRenegotiation, answered via answerRenegotiation: gift/visit/wait with real costs, expires aloud in 7 days). Older links still snap when trust craters — deaths hit hard. Grief delays the verdict because they're still deciding what Haven is. (code: hierarchy.js)
 //   - the_world_watches: global = national + deed-reactive viewership >= 40, staged as the played pre-table beat "The Watchers". The table itself is the ending, not this. (code: hierarchy.js)
 //   - national_routes_tribute: when national, subordinate tribute grain arrives at x1.25 via the System's logistics layer — and the arrival line says the true amount. Copy and engine agree. (code: hierarchy.js)
 //   - demand_honor_is_proportional: honoring a tribute demand with a thin pantry grants proportional trust and honest copy, never a free +8 on empty hands; an already-loaned representative extends instead of being clobbered. (code: hierarchy.js)
@@ -456,6 +462,7 @@
       // accordUnanswered: a first link that broke before its gesture restages
       // the moment on the next link (break-it regional 2026-10-10).
       if (!this.state.networkLive || this.state.accordUnanswered) this.stageFirstAccord(link);
+      try { this.stirRegion('court', targetId); } catch (e) {}
       return link;
     },
 
@@ -626,6 +633,7 @@
       if (link.tributePaidKcal >= owed) {
         link.tributePaidWeek = week; link.arrears = 0;
         this._trustGain(link, 3);
+        try { this.stirRegion('trade', 'tribute:' + link.primary); } catch (e) {}
         this._linkNote(link, 'tribute', 'Paid ' + link.tributePaidKcal.toLocaleString() + ' kcal. Current.');
         this.say(`Tribute paid: ${link.tributePaidKcal.toLocaleString()} kcal walks out of the pantry toward ${this._ovName(link.primary)}. The relationship holds.`);
       } else {
@@ -906,6 +914,7 @@
         }
         tGain = this._trustGain(link, tGain);
         this._linkNote(link, 'demand', 'Honored the call (' + d.kind + ', trust +' + tGain + ').');
+        try { this.stirRegion('aid', 'demand:' + link.primary); } catch (e) {}
         this.say(`The obligation is honored. Trust with ${this._ovName(link.primary)}: ${link.trust}.`);
       } else {
         link.trust = Math.max(0, link.trust - 15);
@@ -944,6 +953,7 @@
       link.status = 'broken';
       link.pendingDemand = null; // demands die with the link (break-it 2026-10-10)
       link.pendingDefense = null; link.pendingTradeCall = null; link.pendingCovenantCrisis = null;
+      link.pendingRenegotiation = null; // the grief-beat dies with the link — breakLink says the break aloud below
       // THE MOMENT SURVIVES (break-it regional 2026-10-10): a pending first
       // accord died WITH the link's object while state.pendingAccord kept
       // pointing at the corpse — and the accord buttons only render for
@@ -1149,9 +1159,35 @@
       var link = null;
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active') return null;
+      // successionCrisis: Haven's speaker is dead — the representative or
+      // the player. Every link shakes, but the link is with the VILLAGE, not
+      // the person (round-5 winrate 2026-10-10): the new speaker inherits it.
+      // The cost is a trust haircut (-8, not -15) plus a 7-day mourning window
+      // with no trust gains — and the chaos is still leverage (they install
+      // their own, tribute moves). The snap survives only for the neglected:
+      // trust under 20 with no upkeep for 14+ days. Death + neglect kills;
+      // death alone doesn't. Young links (<21d) get a different grief:
+      // a staged renegotiation beat instead of the mourning window — the
+      // beat's answers grant trust, so mourning would gag them. Fiction:
+      // they're still deciding what Haven is; grief delays the verdict.
+      var day0 = (this.state.scholar || {}).day || 0;
+      var other = link.subordinate === HOME ? link.primary : link.subordinate;
+      if (day0 - (link.day || 0) < 21) {
+        link.trust = Math.max(0, link.trust - 8);
+        if (!link.pendingRenegotiation) {
+          link.pendingRenegotiation = { day: day0, sub: link.subordinate === HOME };
+          this._linkNote(link, 'succession', 'Young link: grief delays the verdict — a renegotiation is staged.');
+          if (link.subordinate === HOME) {
+            this.say(`With Haven grieving, ${this._ovName(other)} installs their own speaker at the table — but the bond is young, and they're still deciding what Haven is. The new speaker wants to talk before the tribute changes. Grief delays the verdict: send grain (1,500 kcal), send a speaker (2 days), or let the silence answer.`);
+          } else {
+            this.say(`${this._ovName(other)} watches to see if Haven holds without its dead. The bond is young — they're still deciding what Haven is, and grief delays the verdict. They'll test the link — count on it, unless Haven answers first: send grain (1,500 kcal), send a speaker (2 days), or let the silence answer.`);
+          }
+        }
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'succession-grace:' + other); } catch (e) {}
+        return 'grace';
+      }
       link.trust = Math.max(0, link.trust - 8);
       this._markMourning(link);
-      var other = link.subordinate === HOME ? link.primary : link.subordinate;
       if (link.subordinate === HOME) {
         // their leverage grows in our chaos: they install their own
         link.tributeKcalPerWeek = Math.round(link.tributeKcalPerWeek * 1.5);
@@ -1209,7 +1245,90 @@
       return 'shaken';
     },
 
-    // ---------- THE EARNED ENDING ----------
+    // answerRenegotiation: resolve the young link's staged succession beat.
+    // Played, with real costs — the verdict grief delayed:
+    //   'gift' — 1,500 kcal from the pantry (proportional if thin, like
+    //     demand_honor_is_proportional): grief met with grain. Trust +8
+    //     (scaled), and the deferred tribute leverage never lands.
+    //   'visit' — Haven's speaker rides out for two days (real absence via
+    //     the away-party machinery; word and promises if the bench is
+    //     empty). Trust +5; the tribute leverage never lands.
+    //   'wait' — let the silence answer: the expiry outcome lands NOW.
+    // Unanswered beats expire after 7 days (_renegotiationTick), said aloud.
+    answerRenegotiation(linkId, how) {
+      var links = this.hierarchyState();
+      var link = null;
+      for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
+      if (!link || link.status !== 'active' || !link.pendingRenegotiation) return null;
+      var other = this._linkOther(link, HOME);
+      var onm = this._ovName(other);
+      var pr = link.pendingRenegotiation;
+      link.pendingRenegotiation = null;
+      if (how === 'gift') {
+        var paid = this._removePantryKcal(1500);
+        var frac = Math.min(1, paid / 1500);
+        var tGain = Math.round(8 * frac);
+        link.trust = Math.min(100, link.trust + tGain);
+        this._linkNote(link, 'renegotiation', 'Met grief with grain (' + paid.toLocaleString() + ' kcal, trust +' + tGain + '); the tribute leverage never landed.');
+        if (frac >= 1) this.say(`🕊️ Haven sends ${paid.toLocaleString()} kcal to ${onm}'s fire — grief met with grain. The new speaker eats with Haven's people and the tribute stays where it was. (Trust +${tGain}.)`);
+        else this.say(`🕊️ Haven sends ${paid.toLocaleString()} of 1,500 kcal — all the pantry holds. ${onm} counts the gap, but counts the gesture too. (Trust +${tGain}.)`);
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'renegotiated-gift:' + other); } catch (e) {}
+        return 'gift';
+      }
+      if (how === 'visit') {
+        var sent = this._musterAway(1, 'parley');
+        if (!sent.length) {
+          link.trust = Math.min(100, link.trust + 2);
+          this._linkNote(link, 'renegotiation', 'No speaker to send — word and promises; the tribute leverage never landed.');
+          this.say(`There's no one to send — Haven's bench is empty. Word and promises ride out instead. They note the difference, and the trying. (Trust +2.)`);
+        } else {
+          this._sendAwayParty(sent, 2, other, 'parley');
+          link.trust = Math.min(100, link.trust + 5);
+          this._linkNote(link, 'renegotiation', 'Haven\'s speaker rode out for two days (trust +5); the tribute leverage never landed.');
+          this.say(`🚶 Haven's speaker rides to ${onm}'s fire for two days — a face for the grief, not a ledger. The tribute stays where it was. (Trust +5.)`);
+        }
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'renegotiated-visit:' + other); } catch (e) {}
+        return 'visit';
+      }
+      // 'wait' (or anything unrecognized): the silence answers.
+      return this._resolveRenegotiation(link, pr, true);
+    },
+
+    // _resolveRenegotiation: the verdict lands — the link's grief curdles
+    // unanswered. Trust -6; when Haven is the subordinate, the deferred
+    // tribute leverage lands too (x1.5 — grief became leverage, said aloud).
+    _resolveRenegotiation(link, pr, chosen) {
+      var other = this._linkOther(link, HOME);
+      var onm = this._ovName(other);
+      link.trust = Math.max(0, link.trust - 6);
+      var lever = '';
+      if (pr && pr.sub) {
+        link.tributeKcalPerWeek = Math.round(link.tributeKcalPerWeek * 1.5);
+        lever = ` ${onm} installs their own speaker at the table after all — tribute rises to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. Grief became leverage, and they knew it would.`;
+      }
+      this._linkNote(link, 'renegotiation', (chosen ? 'Haven let the silence answer' : 'Seven days of silence answered for Haven') + ' (trust -6).' + (pr && pr.sub ? ' Tribute leverage landed: ' + link.tributeKcalPerWeek.toLocaleString() + ' kcal/week.' : ''));
+      this.say(`${chosen ? 'Haven lets the silence answer.' : 'Seven days of silence, and the silence answered for Haven.'} ${onm}'s new speaker reads it plainly. (Trust -6.)${lever}`);
+      try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'renegotiation-lapsed:' + other); } catch (e) {}
+      return 'lapsed';
+    },
+
+    // _renegotiationTick: daily — unanswered renegotiation beats expire
+    // aloud after 7 days. Called from hierarchyDaily.
+    _renegotiationTick() {
+      try {
+        var day = (this.state.scholar || {}).day || 0;
+        var links = this.hierarchyState();
+        for (var i = 0; i < links.length; i++) {
+          var link = links[i];
+          if (!link || link.status !== 'active' || !link.pendingRenegotiation) continue;
+          if (day - (link.pendingRenegotiation.day || 0) >= 7) {
+            var pr = link.pendingRenegotiation;
+            link.pendingRenegotiation = null;
+            this._resolveRenegotiation(link, pr, false);
+          }
+        }
+      } catch (e) {}
+    },
 
     // kingdomEndingEligible: joining another kingdom is a legitimate ending —
     // the valued subordinate at the table, there because the primary can't
@@ -1341,10 +1460,56 @@
       return { primary: null, villages: vs, size: vs.length, led: false, shape: 'trade', links: ls };
     },
 
-    // _foreignPolitySim: weekly, off-screen. When >=2 known, unlinked
-    // villages exist outside any polity, they may bind (or join an existing
-    // foreign polity). ~Seasonal cadence — the region's politics move in
-    // seasons, and Haven hears late through traders.
+    // stirRegion: a regional engagement beat the player touched. Trade
+    // caravans arriving, tribute walking out, aid sent on a call, a demand
+    // honored, a crisis answered, a contest watched abroad, a new courtship
+    // binding — each stirs the region's politics. Momentum is spent by
+    // _foreignPolitySim: the region moves this week instead of next season.
+    // Waiting banks nothing; playing advances the arc. Deed-gated, never a
+    // calendar path. Capped — a season of deeds can't buy a year of motion.
+    stirRegion(kind, note) {
+      try {
+        var s = this.state;
+        s._regionStir = Math.min(12, (s._regionStir || 0) + 1);
+        s._regionStirKinds = s._regionStirKinds || [];
+        if (s._regionStirKinds.indexOf(kind) < 0) s._regionStirKinds.push(kind);
+        try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'stir:' + kind + (note ? ':' + note : '')); } catch (e) {}
+      } catch (e) {}
+    },
+
+    // _foreignEyes: the show is televised, and other fires watch. When a
+    // contest resolves with Haven's people in it, the villages that know
+    // Haven hear — gossip travels outward too. Memorable outcomes (won,
+    // died) nudge their opinion of Haven, the lived-experience channel
+    // (courtship_moves_opinion); every resolution stirs the region.
+    _foreignEyes(contestName, outcome) {
+      try {
+        var s = this.state;
+        var oV = s.otherVillages || [];
+        var heard = 0;
+        for (var i = 0; i < oV.length; i++) {
+          var v = oV[i];
+          if (!v || v.id === 'haven') continue;
+          try { if (!this.knowsVillage(v)) continue; } catch (e) { continue; }
+          heard++;
+          if (outcome === 'won') { try { if (this._nudgeOpinion) this._nudgeOpinion(v.id, 2); } catch (e2) {} }
+          else if (outcome === 'died') { try { if (this._nudgeOpinion) this._nudgeOpinion(v.id, -2); } catch (e2) {} }
+        }
+        if (heard > 0) this.stirRegion('contest', contestName || 'the show');
+      } catch (e) {}
+    },
+
+    // _foreignPolitySim: weekly, off-screen. The region's politics move on
+    // ENGAGEMENT, not the clock (structural-scale 2026-10-10): a slow
+    // background drift (~12%/wk — the region climbs without you, canon)
+    // plus acceleration off engagement beats the player touches
+    // (stirRegion). Waiting banks nothing; playing advances the arc. Pairs
+    // form first; once a polity exists, bindings consolidate around the
+    // largest. Haven-linked
+    // villages are NOT excluded from candidacy — the old "Haven's business
+    // is Haven's" exclusion punished courting: the more Haven courted, the
+    // slower the region climbed. A fire Haven binds may still bind abroad —
+    // hedging is politics, and Haven hears about it late, like everything.
     _foreignPolitySim() {
       try {
         var s = this.state;
@@ -1352,6 +1517,7 @@
         var wk = this._week();
         if (s._lastForeignPolityWeek === wk) return;
         s._lastForeignPolityWeek = wk;
+        var stir = s._regionStir || 0;
         var oV = s.otherVillages || [];
         var fps = this.foreignPolities();
         var cands = [];
@@ -1359,7 +1525,6 @@
           var v = oV[i];
           if (!v || v.id === 'haven') continue;
           if (!this.knowsVillage(v)) continue;
-          if (this.linkWith(v.id)) continue; // Haven's business is Haven's
           var inFp = false;
           for (var j = 0; j < fps.length; j++) {
             if (fps[j].primary === v.id || fps[j].subs.indexOf(v.id) >= 0) { inFp = true; break; }
@@ -1367,30 +1532,58 @@
           if (!inFp) cands.push(v);
         }
         if (cands.length < 2) return;
-        // FOREIGN CADENCE (bal-scale 2026-10-10; was 22%/wk, grow-bias 50%).
-        // The BELONG road needs a foreign 4-realm (primary + 3 subs); at the
-        // old rate a 4-realm took ~a season+, putting national-by-~80 out of
-        // reach on that road. 30%/wk with a 65% grow bias: a pair forms in
-        // ~3 weeks, a 4-realm in ~2 months — still seasonal, still slow, but
-        // reachable inside the every-wave gate's window. The region climbs
-        // without you; it just doesn't outrun you anymore.
-        if (R() > 0.30) return;
+        // DRIFT (canon: the region climbs without you): ~12%/wk. Drift seeds
+        // pacts — a pair forms in ~2 months — but never builds past one.
+        // ENGAGEMENT (~3 banked beats move the region this week): each banked
+        // beat adds weight; the charge is spent when it fires. Waiting banks
+        // nothing; playing advances the arc.
+        var drift = R() < 0.12;
+        var fired = drift, viaStir = false;
+        if (!drift && stir > 0 && R() < Math.min(0.9, stir * 0.3)) {
+          fired = true; viaStir = true;
+          s._regionStir = Math.max(0, (s._regionStir || 0) - 2);
+        }
+        if (!fired) return;
+        var kinds = s._regionStirKinds || [];
+        s._regionStirKinds = [];
+        var kindWords = { trade: 'trade', aid: 'answered calls', crisis: 'answered crises', contest: 'the televised games', court: 'new bindings' };
+        var stirLead = (viaStir && kinds.length) ? 'Word of Haven\u2019s ' + kinds.map(function (k) { return kindWords[k] || k; }).join(', ') + ' is doing work out there — ' : '';
+        // CONSOLIDATION (structural-scale 2026-10-10): the region gathers
+        // around its rising power — once a polity exists, bindings join the
+        // largest instead of scattering into competing pairs (the old
+        // uniform pick scattered pairs until the pool saturated and nothing
+        // could ever become a realm). Drift only SEEDS pacts: a drift-fired
+        // week never grows past one pair — realmhood (a third fire kneeling)
+        // needs engagement. The region watches Haven, and Haven's deeds tip
+        // the balance.
+        var big = null, maxSubs = -1;
+        for (var fi = 0; fi < fps.length; fi++) {
+          var fsn = (fps[fi].subs || []).length;
+          if (fsn > maxSubs) { maxSubs = fsn; big = fps[fi]; }
+        }
+        if (big) {
+          if (!viaStir) return; // drift rests: pacts seed on their own; realms need a stir
+          // grow the largest: pick a binder outside it
+          var bigMembers = {};
+          bigMembers[big.primary] = 1;
+          for (var bi = 0; bi < big.subs.length; bi++) bigMembers[big.subs[bi]] = 1;
+          var growers = cands.filter(function (x) { return !bigMembers[x.id]; });
+          if (!growers.length) return;
+          var g = pick(growers);
+          var gnm = this._ovName(g.id);
+          big.subs.push(g.id);
+          this.say(`🧳 ${stirLead}Word comes late, through traders: ${gnm} has bound itself to ${this._ovName(big.primary)}. The region's map is being redrawn — not by Haven.`);
+          try { if (this.journalNote) this.journalNote('village', 'polity', gnm + ' bound itself to ' + this._ovName(big.primary) + '.'); } catch (e) {}
+          return;
+        }
+        // seed a pair — drift or engaged, when no polity exists yet
         var a = pick(cands);
         var anm = this._ovName(a.id);
-        if (fps.length && R() < 0.65) {
-          var fp = pick(fps);
-          if (fp.primary !== a.id && fp.subs.indexOf(a.id) < 0) {
-            fp.subs.push(a.id);
-            this.say(`🧳 Word comes late, through traders: ${anm} has bound itself to ${this._ovName(fp.primary)}. The region's map is being redrawn — not by Haven.`);
-            try { if (this.journalNote) this.journalNote('village', 'polity', anm + ' bound itself to ' + this._ovName(fp.primary) + '.'); } catch (e) {}
-            return;
-          }
-        }
         var rest = cands.filter(function (x) { return x.id !== a.id; });
         var b = pick(rest);
         if (!b) return;
         fps.push({ primary: a.id, subs: [b.id], day: (s.scholar || {}).day || 0 });
-        this.say(`🧳 Word comes late, through traders: ${anm} and ${this._ovName(b.id)} have bound together — ${anm} primary. Other fires are climbing, too.`);
+        this.say(`🧳 ${stirLead}Word comes late, through traders: ${anm} and ${this._ovName(b.id)} have bound together — ${anm} primary. Other fires are climbing, too.`);
         try { if (this.journalNote) this.journalNote('village', 'polity', anm + ' and ' + this._ovName(b.id) + ' bound; ' + anm + ' primary.'); } catch (e) {}
       } catch (e) {}
     },
@@ -2015,6 +2208,7 @@
       }
       try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'peer:' + kind + ':' + targetId); } catch (e) {}
       if (!this.state.networkLive || this.state.accordUnanswered) this.stageFirstAccord(link);
+      try { this.stirRegion('court', kind + ':' + targetId); } catch (e) {}
       return link;
     },
 
@@ -2093,6 +2287,7 @@
         var upkeep = this._removePantryKcal(400);
         this._trustGain(link, 1);
         this._linkNote(link, 'tariff', 'Tariff +' + rate.toLocaleString() + ' kcal; upkeep -' + upkeep.toLocaleString() + ' kcal.');
+        try { this.stirRegion('trade', onm + ' route'); } catch (e) {}
         if (R() < 0.3) this.say(`📜 The ${onm} route pays: ${rate.toLocaleString()} kcal of tariff into the pantry, ${upkeep.toLocaleString()} out in upkeep. The charter earns its ink.`);
         if (!link.pendingTradeCall && R() < 0.12) {
           link.pendingTradeCall = { day: day };
@@ -2212,6 +2407,7 @@
         this._sendAwayParty(sent, 3, other, 'defense');
         var _df = this._trustGain(link, 8);
         this._linkNote(link, 'defense', 'Answered the call: ' + sent.length + ' villagers, 3 days.');
+        try { this.stirRegion('aid', 'defense:' + other); } catch (e) {}
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-sent:' + other); } catch (e) {}
         this.say(`🛡️ Haven answers: ${sent.length} villagers walk out to ${onm}'s treeline for three days. The war-pact holds because it's held. (Trust +${_df}.)`);
         return 'sent';
@@ -2252,6 +2448,7 @@
         // with them, on return, via the away-parties return tick.
         this._sendAwayParty(sent, 3, other, 'trade', { repayKcal: 1500 });
         var _fv = this._trustGain(link, 6);
+        try { this.stirRegion('aid', 'favor:' + other); } catch (e) {}
         this._linkNote(link, 'favor', 'Sent help as a priced favor (+1,500 kcal repaid).');
         this.say(`🤝 Haven sends ${sent.length} villagers to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +${_fv}.)`);
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'favor-sent:' + other); } catch (e) {}
@@ -2313,10 +2510,14 @@
           link.tariffRate = Math.max(500, Math.round((link.tariffRate || 1000) * 0.75));
           this.say(`🤝 Haven concedes: the ${onm} route tariff drops to ${link.tariffRate.toLocaleString()} kcal a week. The ${kindName} holds — bought, honestly.`);
         }
-        var _cg = this._trustGain(link, _cgw);
+        // FIX (structural landing 2026-10-10): _cgw was undefined here — the
+        // concede path crashed with ReferenceError. Conceding buys the
+        // league; +8 matches the oath/visit-level gains elsewhere.
+        var _cg = this._trustGain(link, 8);
         this._linkNote(link, 'crisis', 'Conceded better terms; the league holds (trust +' + _cg + ').');
         this.say(`(Trust +${_cg}.)`);
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'crisis-conceded:' + other); } catch (e) {}
+        try { this.stirRegion('crisis', 'conceded:' + other); } catch (e) {}
         return 'conceded';
       }
       if (how === 'hold') {
@@ -2324,14 +2525,17 @@
         this._linkNote(link, 'crisis', 'Held the line.');
         if (link.trust < 20) {
           this.say(`Haven holds the line — and ${onm} walks. The ${kindName} couldn't hold them.`);
+          try { this.stirRegion('crisis', 'seceded:' + other); } catch (e) {}
           this.breakLink(link.id, 'seceded');
           return 'seceded';
         }
         this.say(`Haven holds the line. ${onm}'s speaker sits back down — slowly. The ${kindName} holds its breath, and holds. (Trust -10.)`);
+        try { this.stirRegion('crisis', 'held:' + other); } catch (e) {}
         return 'held';
       }
       this._linkNote(link, 'crisis', 'Released with honor.');
       this.say(`🤝 Haven opens the door: ${onm} walks out of the ${kindName} with honor — no chains, no hard words. A league that can't be left isn't a league.`);
+      try { this.stirRegion('crisis', 'released:' + other); } catch (e) {}
       this.breakLink(link.id, 'released');
       return 'released';
     },
@@ -2483,6 +2687,7 @@
     hierarchyDaily() {
       try { this.linkTick(); } catch (e) {}
       try { this._foreignPolitySim(); } catch (e) {}
+      try { this._renegotiationTick(); } catch (e) {}
       try { this._checkNational(); } catch (e) {}
       try { this._checkGlobal(); } catch (e) {}
       try { this.deliverVillageRumors(); } catch (e) {}
@@ -2615,6 +2820,7 @@
   _blockIfNotHaven(G, 'answerDefenseCall');
   _blockIfNotHaven(G, 'answerTradeCall');
   _blockIfNotHaven(G, 'answerCovenantCrisis');
+  _blockIfNotHaven(G, 'answerRenegotiation');
   _blockIfNotHaven(G, 'drawLeaguePool');
 
 })();

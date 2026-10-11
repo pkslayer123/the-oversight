@@ -191,9 +191,22 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
   national is the doorway, the ending is the room).
 - Global viewership bar: 40. Other villages drift 2–60; Haven at 40 is plausibly
   top-of-board without being endgame-only.
-- Foreign polity cadence: ~30%/week when ≥2 candidates (bal-scale 2026-10-10;
-  was 22%), 65% grow-bias toward existing polities — seasonal, not scheduled,
-  but a 4-realm forms in ~2 months so the BELONG road is reachable by ~day 80.
+- Foreign polity cadence (structural-scale 2026-10-10; was 30%/wk flat):
+  engagement-driven, not clock-driven. Background drift ~12%/wk SEEDS pacts
+  (the region climbs without you, canon — a pair forms in ~2 months) but
+  never builds past one: realmhood needs engagement. Real growth accelerates
+  off stirRegion engagement beats the player touches — trade caravans,
+  tribute paid, demands honored, aid sent, crises answered, contests watched
+  abroad, new courtships (~3 banked beats move the region that week).
+  Consolidation: once a polity exists, bindings join the largest instead of
+  scattering into competing pairs (the old uniform pick saturated the pool
+  and no realm could ever form). An engaged run grows pair → 3-fire →
+  4-realm in ~4–8 weeks; drift-only never passes a pair (waiting does
+  nothing; playing advances the arc). Haven-linked villages are no longer
+  excluded from candidacy (the old exclusion punished courting — the more
+  Haven courted, the slower the region climbed). Still earned: momentum is
+  deed-gated, never a calendar path — engagement-gated is the opposite of
+  speedrunnable.
 - Village count: 3–4 (bal-scale 2026-10-10; was 2–3). With 2 villages national
   was mathematically unreachable (LEAD needs 3 subs, covenant/trade 3 peers,
   BELONG a foreign 4-realm). Canon: villages are NEAR (~500m, PROGRESSION.md #5).
