@@ -9,6 +9,9 @@ national 0/60, feast 13/60**.
 |---|---|---|---|---|---|---|---|---|
 | 0 | baseline | — | 0/60 | 34 | 40/60 | 0/60 | 0/60 | 13/60 |
 | 1 | feast-surge regression | dry-burn consumption fix (progression.js: surge spent only by a real feastburn, r>0) + diagnosis | 0/60* | 34* | 40/60* | 0/60* | 0/60* | see notes |
+| 2 | policy-competence panel | 4 policies × 60 seeds (competent/progress-r4/winseek/oracle); oracle = winseek + win-probability assessment + arm-up/openers + aid-when-struggling | 0/60 all | 45/46/32/41 | 54/54/37/42 | 1/1/0/0 | 0/60 all | 15% (oracle, honest post-fix) |
+| 3 | oracle-v2 systems-engaged | oracle + greedy deep-systems play: in-fight abilities, daily ability practice, traplines, counter-preference targeting, feast-then-fight banking (scripts/policies/oracle-v2.js; scripts only) | 0/60 | 41 | 43/60 | 0/60 | 0/60 | 2% (1/60; oracle's 80% was the assessment burning the surge) |
+| 3-rep | oracleV2 independent replication | second implementation (scripts/policies/oracleV2.js): blow-by-blow ability ladder (all held kits), counter probing, traps/crafting, feast-then-fight, quest completion (harness-side only) | 0/60 | 48 | 46/60 | 0/60 | 0/60 | 0/60 (honest) |
 
 \* Not re-swept this round (diagnostic round; numbers are the validation
 baseline). The fix makes `feastSurgeUsed` honest: it now requires an actual
@@ -52,8 +55,6 @@ metric was masking that. Levers: lower the 300 threshold, make feasts bank
 more, teach the policy to feast-then-fight, or accept the surge as a
 late-game engine piece. Full writeup: evidence/2026-10-10/winrate-iter1-feast.md.
 
-| 2 | policy-competence panel | measurement only: 4 policies x 60 seeds x 200d (240 runs) + oracle bound | 0/240* | 32-46 | 37-54/60 | 0-1/60 | 0/60 | oracle arms 78%/uses 80% |
-
 ## Round 2 notes (2026-10-10, worker winrate-iter) — the competence panel
 
 **Oracle bound: the GAME is the bottleneck — with a caveat.** All four policies won
@@ -72,3 +73,52 @@ Other findings: winseek survives WORSE than competent (median 32d vs 45d) — it
 objectives and dies; competent turtles. ~60% of deaths are combat (player + villager).
 "The night" kills 11-18%. Feasts are the only deep system touched (winseek arms 80%,
 uses 15%; oracle arms 78%, uses 80%).
+
+## Round 3 notes (2026-10-10, worker winrate-r3)
+
+Built oracle-v2 (scripts/policies/oracle-v2.js): oracle + greedy
+in-fight abilities (brace/shake_off/field_medicine/war_cry/loom/haymaker/
+take_aim/ambush/rage/dead_aim), daily out-of-combat ability practice for
+synergy attempts, traplines when supplies + hunting knowledge exist,
+counter-preference targeting, feast-then-fight banking with a no-burn fight
+assessment. Measured on the same 60 seeds × 200d
+(scripts/winrate-iter3.js → scripts/winrate-iter3-results.json).
+
+Result: **0/60 wins, median 41d** — identical to oracle. Ability uses 2×'d
+(2.5/run), 104 practice firings, 24 banked feast patrols, 1 trap set / 2
+catches, counter-kills still 0% (mechanic dormant). The 15 runs that
+engaged ≥1 deep system survived med 32d vs 42d for the rest. Two instrument
+findings: (1) a loom-every-turn stall (24.8k ability uses in one probe run)
+fixed with per-fight ability budgets before the measured run; (2) oracle's
+80% "feast used" was the fight-start assessment burning 300 banked kcal
+(and the armed surge) just to read the multiplier — v2's no-burn
+assessment gives the honest rate, ~2%.
+
+Verdict: the game is the bottleneck, confirmed against a policy that plays
+the systems. The deep systems change a run's texture, not its destination —
+no policy has reached tier 2 / national / the table in 300 combined runs.
+Binding constraints are upstream: villages die ~day 41 to combat/the night,
+wave-3+ deed bars never fill, scale stalls at regional. Full writeup:
+evidence/2026-10-10/winrate-iter3-oracle-v2.md.
+
+### Independent replication (second worker, same worktree)
+
+A second worker independently implemented round 3 as
+`scripts/policies/oracleV2.js` (blow-by-blow ability ladder over System AND
+background abilities, counter probing, trap/craft roads, feast-then-fight
+surge override, aid+system quest completion) with its own sweep
+(`scripts/sweep-oraclev2-20261010.js`, same 60 seeds × 200d, same day loop;
+`scripts/analyze-oraclev2.js` → `scripts/sweep-oraclev2-results.json`).
+Result: **0/60 wins, median 48d, max 116d, t1 46/60, w2 36/60, national+ 0/60**
+— convergent with the primary round-3 finding. Utilization: 2.8 ability
+uses/run (2.3× round-2 oracle), 4.3 abilities held, 0.52 synergies, surge armed
+93% / used 0% (honest), aid quests 2.8 accepted / 0.3 handed in, counter-kills
+0.0% (0/399 — verified structural zero: no monster def carries a `counter`
+field), crafts/traps 0 (trap recipe knowledge never acquired in 60 runs:
+studied villages don't teach trap recipes, no books found). Deed-gate blocker:
+**scale 60/60** (regional 60/60, national+ 0/60) despite 81 codex studies and
+~7 link proposals per run — the on-ramp (hierarchy.js link-age 21d/trust 60)
+is the recommended first lever, then combat death share (~51%). Full writeup:
+evidence/2026-10-10/winrate-iter3-oraclev2.md. (Note: this worker briefly
+duplicated the round-3 table row; consolidated to the 3-rep row above. The
+other worker's `scripts/policies/oracle.js` export change is theirs.)
