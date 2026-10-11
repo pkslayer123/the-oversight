@@ -1170,7 +1170,8 @@
       s.day = 30;
       Game.state.systemArrived = true;
       Game.state.systemIntegration = 1; // apReadinessCheck: seasoned world
-      Game.state.waveKills = { 1: 4 };  // unlockedWave() >= 2
+      Game.state.waveKills = { 1: 4 };  // kept for harness telemetry readers
+      try { Game.ledgerState()[1].points = 5; } catch (e) {}  // ledger (Steve 2026-10-10): 5 w1 points -> unlockedWave() >= 2
       giveWeapon('fire_hardened_spear');
       s.health = 120;
       const placed = placeVillagers([[3, 3], [5, 5]]);

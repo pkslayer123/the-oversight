@@ -33,10 +33,17 @@ never fired in organic play — players flee, they don't farm. Unlocks now take
 kills OR engagement: w2 = day 8 + (4 w1 kills OR 2 distinct w1 faced); w3 =
 day 25 + (8 w2 kills OR 2 distinct w2 faced); w4/w5 = kill/engagement lane +
 regional/national scale. Kills are the faster lane, not the only lane; the
-5/5/4/3/2 table bars are unchanged). **Villager experiences count the same**
+5/5/4/3/2 table bars are unchanged). **SUPERSEDED 2026-10-10 by the Wave
+Ledger (section 12 below, Steve's reversal of 8730921c): unlocks are
+kills-only on a point ledger — bars {1:5,2:5,3:4,4:3,5:2} as point
+thresholds, per-type cap 2. Engagements still feed the ENDGAME deed gate
+(5/5/4/3/2), which is unchanged.** **Villager experiences count the same**
 (Steve 2026-10-10): a villager's blow-by-blow fight (fight, survive, flee, or
 kill) feeds the engagement lanes and the deed bars exactly like the player's
-— the village is the protagonist. Definitions NOT weakened: same bars, same
+— the village is the protagonist. **(Ledger update 2026-10-10: "the engagement
+lanes" no longer exist for unlocks — a villager's fight feeds the ledger ONLY
+through the kill, exactly like the player's. Fights/survives/flees still feed
+the deed bars, unchanged.)** Definitions NOT weakened: same bars, same
 distinct-monster counts, keyed by monster type (villager + player facing the
 same hushwolf = one count). The dead told no tale — a villager who DIES in
 the fight records nothing; corpses and pre-contact evades record nothing.
@@ -192,6 +199,67 @@ it:
 
 The moment the player is tracking 40 characters, the 24 stop mattering. Any
 system that asks for that gets redesigned or cut.
+
+---
+
+## 12. The Wave Ledger (Steve, 2026-10-10 — settled same turn)
+
+Wave unlocks run on **KILLS ONLY** — a per-wave, per-village, per-run point
+ledger, cumulative across player deaths (it lives on `state`, not the
+scholar; a new adventurer inherits the village's ledger).
+
+- **Kill = `pointsPerKill`** (default 1). **Counter-kill =
+  `pointsPerCounterKill`** (default 2) — a kill executed with the monster's
+  *discovered* counter (mastery bonus). The convention
+  (`Game.monsterCounterKnown`): `state.monsterCounters[id] === true` AND the
+  monster def carries a `counter` field. Verified 2026-10-10: NO monster def
+  has counter data yet — the bonus is **dormant** (the parallel
+  signature-mechanics loop will adopt the convention; until then kills never
+  score less than 1, never punished).
+- **Per monster-type cap `perTypeCap`** (default 2) per wave — breadth, not
+  farming. The 3rd kill of the same type in the same wave scores 0.
+- **Bars `barsPerWave` = {"1":5,"2":5,"3":4,"4":3,"5":2}** — Steve's settled
+  bars, now POINT thresholds. To unlock wave N+1, wave N's ledger must reach
+  barsPerWave[N]. **This is the pacing dial Steve will turn** ("It doesn't
+  sound like this will scale for a 100 day game. But write the system and we
+  can turn the rest of the levers." — calibration comes later, via sims).
+- **Day floors:** wave 2 needs day >= `wave2DayFloor` (8); waves 3+ need day
+  >= `dayFloor` (25). Floors, never scripts.
+- **Scale gates unchanged:** wave 4 needs scaleRank >= 'regional', wave 5 >=
+  'national' (`Game.scaleAtLeast`; absent scaleRank defaults 'regional').
+- The levers live in **`src/data/wave-ledger.json`** (loaded by `Game.init`,
+  `this.data.waveLedger`); the engine reads them through
+  `Game.waveLedgerCfg()` with in-code defaults, so a missing/stale file can
+  never break a kill. Module: `src/js/waveLedger.js` (loads after
+  progression.js). The System televises progress: `sysSay` beats at 50% and
+  100% of each wave's bar, idempotent via `state._ledgerAnn50/_ledgerAnnFull`;
+  one persistent progress line in `beatsRowHTML()` with honest labels
+  ("kills only").
+
+### Reversal of 8730921c (2026-10-10, Steve's call)
+
+The bal-waves engagement lanes (commit 8730921c, morning 2026-10-10) are
+**reversed for unlocks**: villager wave experiences no longer count toward
+unlocking waves. **Engagements (faced/fled) score ZERO on the ledger.**
+Villager **kills** still count — the village is the protagonist, but only
+through kills. What this means for the settled law in item 3 above: the
+"engagement lanes" paragraph is superseded; the endgame **deed gate**
+(5/5/4/3/2 distinct faced, `deedGateReady()`) is **untouched** — engagements
+still feed the deed bars, they just don't unlock waves. Tests updated
+honestly: `test-bal-waves`, `test-villager-wave-xp`, `test-wave3-5` now
+assert ledger-only gates; the engagement-feed assertions remain for the
+deed gate.
+
+### Every lever, and what turning it does
+
+| Lever | Default | Turning it up | Turning it down |
+|---|---|---|---|
+| `pointsPerKill` | 1 | kill throughput; waves unlock faster per body | slower unlocks per kill; counter bonus matters relatively more |
+| `pointsPerCounterKill` | 2 | mastery reward weight — rewards learning counters (dormant until counter data ships) | flattens mastery (1 = no bonus at all) |
+| `perTypeCap` | 2 | lets players farm one monster type longer (weaker breadth pressure) | forces breadth: 1 = every kill must be a new type (hardest) |
+| `barsPerWave` | {5,5,4,3,2} | THE pacing dial: higher bars delay every wave's unlock, stretching the 100-day game | lower bars accelerate the escalation; 1 = nearly instant |
+| `dayFloor` / `wave2DayFloor` | 25 / 8 | calendar floors rise — unlocks can't arrive before the floor no matter the kills | floors drop — reactive kills can unlock waves very early |
+| `counterBonusEnabled` (per wave) | all true | kill-switch for the mastery bonus: false on a wave means counter kills score 1 there | (same dial, per-wave granularity) |
 
 ---
 

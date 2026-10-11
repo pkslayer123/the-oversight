@@ -206,9 +206,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json', 'cooking.json', 'build-notes.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes, waveLedger] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json', 'cooking.json', 'build-notes.json', 'wave-ledger.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes, waveLedger };
       // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
@@ -24366,23 +24366,32 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // Wave 1: always — hummice, moths, raccoons, toads
     // Wave 2: day 8+ AND (4 wave-1 kills OR 2 distinct wave-1 faced) — village-wide
     // Wave 3 ("The Final Draft"): day 25+ AND (8 wave-2 kills OR 2 distinct wave-2 faced)
-    // Wave 4 ("The Mirror Draft"): (5 wave-3 kills OR 2 distinct wave-3 faced) AND scaleRank >= 'regional'
-    // Wave 5 ("The Producers"): (5 wave-4 kills OR 2 distinct wave-4 faced) AND scaleRank >= 'national'
+    // Wave 2 needs day >= wave2DayFloor; wave 3+ needs day >= dayFloor.
+    // Wave 4 ("The Mirror Draft"): wave-3 ledger filled AND scaleRank >= 'regional'
+    // Wave 5 ("The Producers"): wave-4 ledger filled AND scaleRank >= 'national'
     // (Wave 5 is the apex; readiness win comes after proving yourself there.)
-    // ENGAGEMENT LANES (bal-waves 2026-10-10): the kill-gated schedule assumed
-    // kill throughput that reactive play never produces (sweep r4: wave-2 kills
-    // median 0 — policies flee bad fights by design). Steve accepted that
-    // facing/fleeing a wave-5 fight counts as "faced" for the deed bars; the
-    // same philosophy opens the unlock gates: DISTINCT monsters of the current
-    // wave fought blow-by-blow (fights started — fled or won — via the deed
-    // feed's wavesFaced map, never UI or calendar). VILLAGER XP LAW (Steve
-    // 2026-10-10): a villager's real blow-by-blow fight (fieldFight:
-    // vKill/mFlee/vFlee) counts exactly like the player's — the village is
-    // the protagonist. The dead told no tale (vDie) and corpses are not
-    // fights (alreadyDead): they record nothing. Kills are the faster lane,
-    // not the only lane. Bars sit below the deed-gate bars (5/5/4/3/2): the
-    // unlock is the on-ramp, the deed is the mastery. Day/scale floors
-    // unchanged — reactive pacing, never calendar scripts.
+    //
+    // WAVE LEDGER (Steve 2026-10-10) — kills only, cumulative across player
+    // deaths (the ledger lives on state, not the scholar). Kill =
+    // pointsPerKill (1); a kill executed with the monster's discovered counter
+    // = pointsPerCounterKill (2, mastery bonus — dormant: no monster def has
+    // counter data yet). Per monster-type cap perTypeCap (2) per wave:
+    // breadth, not farming. barsPerWave = {1:5,2:5,3:4,4:3,5:2} — point
+    // thresholds the ledger for wave N must reach to unlock wave N+1 (the
+    // pacing dial Steve will turn; see docs/PROGRESSION.md for every lever).
+    // Day floors: wave2DayFloor (8), dayFloor (25) for waves 3+.
+    //
+    // REVERSAL of 8730921c (Steve 2026-10-10): villager wave experiences no
+    // longer count toward UNLOCKS. Engagements (faced/fled) score nothing —
+    // only kills, player or villager, via recordWaveKill -> scoreLedgerKill.
+    // waveEngaged()/waveUnlockEngage() are now unused by the engine (kept for
+    // the deed-adjacent helpers/tests). The ENDGAME deed gate
+    // (deedState().wavesFaced, progression.js) is UNTOUCHED: engagements
+    // still feed the 5/5/4/3/2 deed bars — they just don't unlock waves.
+    // waveUnlockEngage()/waveEngaged(): ENGINE-UNUSED since the Wave Ledger
+    // (2026-10-10, Steve's reversal of 8730921c) — kept for the deed-adjacent
+    // helpers and tests. Engagements still feed the ENDGAME deed gate
+    // (deedState().wavesFaced, progression.js); they no longer unlock waves.
     waveUnlockEngage() { return { 1: 2, 2: 2, 3: 2, 4: 2 }; },
     // waveEngaged(wave): distinct monsters of this wave engaged blow-by-blow.
     // Reads deedState().wavesFaced — fed by real startCombat / fieldFight /
@@ -24400,18 +24409,25 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     },
     // SCALE-DEFENSIVE (2026-10-10): scaleRank() is being built in parallel in
     // hierarchy.js. Read it defensively — works with AND without it. Absent
-    // (or unrecognized) rank defaults to 'regional': wave 4 gates on kills
-    // alone until the scale system ships; wave 5 still needs 'national'.
+    // (or unrecognized) rank defaults to 'regional': wave 4 gates on ledger
+    // points alone until the scale system ships; wave 5 still needs 'national'.
     unlockedWave() {
       const day = this.state.scholar.day || 1;
-      const kills = this.state.waveKills || {}; // {1: n, 2: n, ...}
       const rank = (typeof this.scaleRank === 'function' ? this.scaleRank() : 'regional');
-      const EB = this.waveUnlockEngage();
-      const eng = (w) => this.waveEngaged(w);
-      if (((kills[4] || 0) >= 5 || eng(4) >= (EB[4] || 2)) && this.scaleAtLeast(rank, 'national')) return 5;
-      if (((kills[3] || 0) >= 5 || eng(3) >= (EB[3] || 2)) && this.scaleAtLeast(rank, 'regional')) return 4;
-      if (day >= 25 && ((kills[2] || 0) >= 8 || eng(2) >= (EB[2] || 2))) return 3;
-      if (day >= 8 && ((kills[1] || 0) >= 4 || eng(1) >= (EB[1] || 2))) return 2;
+      let bar = { 1: 5, 2: 5, 3: 4, 4: 3, 5: 2 }, d2 = 8, dN = 25;
+      try {
+        const cfg = (typeof this.waveLedgerCfg === 'function') ? this.waveLedgerCfg() : null;
+        if (cfg) {
+          if (cfg.barsPerWave) bar = cfg.barsPerWave;
+          if (cfg.wave2DayFloor != null) d2 = cfg.wave2DayFloor;
+          if (cfg.dayFloor != null) dN = cfg.dayFloor;
+        }
+      } catch (e) {}
+      const pts = (w) => ((typeof this.waveLedgerPoints === 'function') ? (this.waveLedgerPoints(w) | 0) : 0);
+      if (pts(4) >= ((bar[4] | 0) || 3) && this.scaleAtLeast(rank, 'national')) return 5;
+      if (pts(3) >= ((bar[3] | 0) || 4) && this.scaleAtLeast(rank, 'regional')) return 4;
+      if (day >= dN && pts(2) >= ((bar[2] | 0) || 5)) return 3;
+      if (day >= d2 && pts(1) >= ((bar[1] | 0) || 5)) return 2;
       return 1;
     },
     // scaleAtLeast: compare scale ranks on the village -> regional ->
@@ -24442,12 +24458,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       }
     },
     // checkWaveUnlockBeat: the unlock-beat choke point (parity 2026-10-10).
-    // The wave gates are fed by THREE paths — player kills, villager
-    // field-fight kills, and the engagement feed (faced/fled counts) — but
-    // the old beat only fired on the player-combat-end path. Measured: 91
-    // of 144 organic runs unlocked wave 3, the beat fired twice — the rest
-    // earned it through villager fights and engagement. The System's voice
-    // names every wave the moment it lands, whichever path earned it.
+    // The wave gates are fed by kills (player combat AND villager field
+    // fights), both flowing through recordWaveKill — the ledger only scores
+    // kills (2026-10-10 ledger: engagements no longer unlock waves). The old
+    // beat fired only on the player-combat-end path; measured 91 of 144
+    // organic runs unlocked wave 3 while the beat fired twice — the rest
+    // earned it through villager fights. The System's voice names every wave
+    // the moment it lands, whichever path earned it.
     // Idempotent: state._waveAnnounced tracks the last announced wave.
     checkWaveUnlockBeat() {
       let waveAfter = 1;
@@ -24478,6 +24495,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const wave = mdef.wave || 1;
       this.state.waveKills = this.state.waveKills || {};
       this.state.waveKills[wave] = (this.state.waveKills[wave] || 0) + 1;
+      // WAVE LEDGER (Steve 2026-10-10): kills also score the ledger — the
+      // only thing that unlocks waves now. Defensive: scoring never breaks
+      // the kill path (the deed feed and beats must survive a ledger bug).
+      try { if (typeof this.scoreLedgerKill === 'function') this.scoreLedgerKill(monsterId); } catch (e) {}
       // Wave 4 slain feeds readiness
       if (wave === 4) this.state.wave4Slain = (this.state.wave4Slain || 0) + 1;
       // Kills feed the unlock gates from every path (player combat AND

@@ -506,8 +506,10 @@
         const d = this.deedState();
         if (!d.wavesFaced[monsterId]) d.wavesFaced[monsterId] = wave;
       } catch (e) {}
-      // Engagement feeds the unlock gates (player AND villager fights) —
-      // the unlock beat must land whichever path earned it.
+      // The deed feed still fires the unlock beat: a fight that happens after
+      // the ledger filled announces the wave immediately (kills and
+      // engagements both play on air; only kills score the ledger —
+      // 2026-10-10 reversal of 8730921c).
       try { if (typeof this.checkWaveUnlockBeat === 'function') this.checkWaveUnlockBeat(); } catch (e) {}
     },
     // deedGateReady: the Arc IV want-gate's deed check, and the tableScene's

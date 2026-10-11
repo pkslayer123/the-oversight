@@ -4,10 +4,11 @@
 //   1. All 26 entries load schema-clean (mirrors validate-data.js; the real
 //      one crashes pre-existing on events.json).
 //   2. Gating fires on kills + scale, NEVER on calendar alone:
-//      - wave 3: day 25 + 8 w2 kills (unchanged); day 200 alone does NOT unlock.
-//      - wave 4: 5 w3 kills + scaleRank >= regional; kills alone (rank village)
-//        do NOT unlock; rank alone (no kills) does NOT unlock.
-//      - wave 5: 5 w4 kills + scaleRank >= national; regional + kills does NOT.
+//      - wave 2: day 8 + 5 wave-1 LEDGER points (kills only, 2026-10-10).
+//      - wave 3: day 25 + 5 wave-2 ledger points; day 200 alone does NOT unlock.
+//      - wave 4: 4 wave-3 ledger points + scaleRank >= regional; points alone (rank village)
+//        do NOT unlock; rank alone (no points) does NOT unlock.
+//      - wave 5: 3 wave-4 ledger points + scaleRank >= national; regional + points does NOT.
 //      - defensive: works with scaleRank absent (defaults regional).
 //   3. Each wave's monsters survive a combat smoke test (start + rounds).
 //   4. Anchored bands: hp within anchored ranges; damage/pierce within draft
@@ -55,10 +56,16 @@ function endTurn(Game) {
   ok('9 wave-4 (incl. eater)', W4.every(id => byId[id] && byId[id].wave === 4));
   ok('8 wave-5', W5.every(id => byId[id] && byId[id].wave === 5));
 
-  // ---- 2. gating: kills + scale, never calendar alone ----
+  // ---- 2. gating: LEDGER + scale, never calendar alone ----
+  // (Wave Ledger 2026-10-10, Steve's reversal of 8730921c: kills only.
+  // Bars: w1->2: 5 pts, w2->3: 5 pts, w3->4: 4 pts, w4->5: 3 pts.
+  // Day floors: w2 day 8, w3+ day 25. Scale: w4 regional, w5 national.)
   const s = Game.state.scholar;
-  const setState = (day, kills, rankFn) => {
-    s.day = day; Game.state.waveKills = kills || {};
+  const setState = (day, ledger, rankFn) => {
+    s.day = day;
+    Game.state.waveLedger = null;
+    const L = Game.ledgerState();
+    for (const w of Object.keys(ledger || {})) L[w].points = ledger[w];
     if (rankFn === null) { try { delete Game.scaleRank; } catch (e) { Game.scaleRank = undefined; } }
     else Game.scaleRank = rankFn;
   };
@@ -67,35 +74,42 @@ function endTurn(Game) {
   ok('fresh game: wave 1', Game.unlockedWave() === 1);
   // calendar alone never unlocks
   setState(200, {}, () => 'global');
-  ok('day 200 + global rank + zero kills: still wave 1', Game.unlockedWave() === 1, 'got ' + Game.unlockedWave());
-  // wave 3: day + kills (unchanged gate)
-  setState(25, { 1: 99, 2: 8 }, () => 'village');
-  ok('day 25 + 8 w2 kills: wave 3', Game.unlockedWave() === 3, 'got ' + Game.unlockedWave());
-  setState(25, { 1: 99, 2: 7 }, () => 'global');
-  ok('7 w2 kills (one short): not wave 3', Game.unlockedWave() === 2, 'got ' + Game.unlockedWave());
-  // wave 4: 5 w3 kills + regional
-  setState(60, { 2: 99, 3: 5 }, () => 'regional');
-  ok('5 w3 kills + regional: wave 4', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
-  setState(60, { 2: 99, 3: 5 }, () => 'village');
-  ok('5 w3 kills + village rank: NOT wave 4', Game.unlockedWave() === 3, 'got ' + Game.unlockedWave());
-  setState(60, { 2: 99, 3: 4 }, () => 'national');
-  ok('4 w3 kills + national: NOT wave 4', Game.unlockedWave() === 3, 'got ' + Game.unlockedWave());
-  setState(60, { 2: 99, 3: 99 }, () => 'regional');
-  ok('99 w3 kills + regional, zero w4 kills: wave 4 not 5', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
-  // wave 5: 5 w4 kills + national
-  setState(90, { 3: 99, 4: 5 }, () => 'national');
-  ok('5 w4 kills + national: wave 5', Game.unlockedWave() === 5, 'got ' + Game.unlockedWave());
-  setState(90, { 3: 99, 4: 5 }, () => 'regional');
-  ok('5 w4 kills + regional: NOT wave 5', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
-  setState(90, { 3: 99, 4: 4 }, () => 'global');
-  ok('4 w4 kills + global: NOT wave 5', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
+  ok('day 200 + global rank + zero ledger: still wave 1', Game.unlockedWave() === 1, 'got ' + Game.unlockedWave());
+  // wave 2: day 8 + 5 w1 points
+  setState(8, { 1: 5 }, () => 'village');
+  ok('day 8 + 5 w1 points: wave 2', Game.unlockedWave() === 2, 'got ' + Game.unlockedWave());
+  setState(8, { 1: 4 }, () => 'village');
+  ok('4 w1 points (one short): not wave 2', Game.unlockedWave() === 1, 'got ' + Game.unlockedWave());
+  setState(7, { 1: 5 }, () => 'village');
+  ok('day 7 + 5 w1 points: not wave 2 (day floor)', Game.unlockedWave() === 1, 'got ' + Game.unlockedWave());
+  // wave 3: day 25 + 5 w2 points
+  setState(25, { 2: 5 }, () => 'village');
+  ok('day 25 + 5 w2 points: wave 3', Game.unlockedWave() === 3, 'got ' + Game.unlockedWave());
+  setState(25, { 1: 5, 2: 4 }, () => 'global');
+  ok('4 w2 points (one short): not wave 3', Game.unlockedWave() === 2, 'got ' + Game.unlockedWave());
+  // wave 4: 4 w3 points + regional
+  setState(60, { 3: 4 }, () => 'regional');
+  ok('4 w3 points + regional: wave 4', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
+  setState(60, { 1: 5, 2: 5, 3: 4 }, () => 'village');
+  ok('4 w3 points + village rank: NOT wave 4', Game.unlockedWave() === 3, 'got ' + Game.unlockedWave());
+  setState(60, { 1: 5, 2: 5, 3: 3 }, () => 'national');
+  ok('3 w3 points + national: NOT wave 4', Game.unlockedWave() === 3, 'got ' + Game.unlockedWave());
+  setState(60, { 3: 99 }, () => 'regional');
+  ok('99 w3 points + regional, zero w4 points: wave 4 not 5', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
+  // wave 5: 3 w4 points + national
+  setState(90, { 4: 3 }, () => 'national');
+  ok('3 w4 points + national: wave 5', Game.unlockedWave() === 5, 'got ' + Game.unlockedWave());
+  setState(90, { 1: 5, 2: 5, 3: 4, 4: 3 }, () => 'regional');
+  ok('3 w4 points + regional: NOT wave 5', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
+  setState(90, { 1: 5, 2: 5, 3: 4, 4: 2 }, () => 'global');
+  ok('2 w4 points + global: NOT wave 5', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
   // defensive: scaleRank absent -> defaults regional
-  setState(60, { 2: 99, 3: 5 }, null);
-  ok('no scaleRank: 5 w3 kills -> wave 4 (defensive regional)', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
-  setState(90, { 3: 99, 4: 5 }, null);
-  ok('no scaleRank: 5 w4 kills -> wave 4 not 5 (needs national)', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
+  setState(60, { 3: 4 }, null);
+  ok('no scaleRank: 4 w3 points -> wave 4 (defensive regional)', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
+  setState(90, { 1: 5, 2: 5, 3: 4, 4: 3 }, null);
+  ok('no scaleRank: 3 w4 points -> wave 4 not 5 (needs national)', Game.unlockedWave() === 4, 'got ' + Game.unlockedWave());
   // pool follows the gate
-  setState(90, { 3: 99, 4: 5 }, () => 'national');
+  setState(90, { 4: 3 }, () => 'national');
   const pool = Game.monsterWavePool();
   ok('wave-5 pool has 56', pool.length === 56, 'got ' + pool.length);
   ok('pool includes eater + finale', pool.some(m => m.id === 'eater') && pool.some(m => m.id === 'finale'));

@@ -1,31 +1,35 @@
 #!/usr/bin/env node
-// PROOF TEST: villager experiences count toward wave unlocks + deed bars
-// (Steve 2026-10-10: "Wave unlock should include villager experiences not
-// just the players. But don't weaken the definitions. Idk playtest it.")
+// PROOF TEST: villager KILLS count toward wave unlocks; engagements feed
+// the endgame deed bars only (Steve 2026-10-10 reversal of 8730921c).
+// Original order (2026-10-10): "Wave unlock should include villager
+// experiences not just the players. But don't weaken the definitions."
+// Settled 2026-10-10 (Wave Ledger): the village is still the protagonist,
+// but only through KILLS — a villager's blow-by-blow fieldFight kill feeds
+// the ledger exactly like the player's. Fights/survives/flees feed
+// wavesFaced (the 5/5/4/3/2 endgame deed bars — untouched) and score ZERO
+// on the ledger.
 //
-// The VILLAGER XP LAW: a villager's real blow-by-blow fieldFight counts
-// toward the wave-unlock engagement lanes AND the 5/5/4/3/2 deed bars
-// exactly like the player's — fight (vKill), survive (mFlee), flee (vFlee).
-// What does NOT count (not weakened, exactly as ordered):
-//   - 'evade' — saw it, gave it room, no fight
-//   - 'vDie' — the dead told no tale (REGRESSION: pre-fix the wrap recorded
-//     every outcome but 'evade', so a dead villager's death counted as an
-//     experience the village could use)
-//   - 'alreadyDead' — a corpse is not a fight (REGRESSION: also recorded
-//     pre-fix, contradicting the caller's own "no deed" intent)
-// Dedupe is by monster id (type): the same villager facing the same monster
-// type twice is one count; villager + player facing the same type is one.
+// What counts on the LEDGER (unlock lanes): `vKill` only (player or
+// villager). What records nothing on the ledger (unchanged from the villager
+// XP law): `evade`, `vDie` (the dead told no tale), `alreadyDead` (a corpse
+// is not a fight), plus now `vFlee`/`mFlee` toward unlocks (they still feed
+// the deed bars, as before).
+// Dedupe (deed feed) is by monster id (type): the same villager facing the
+// same monster type twice is one count; villager + player facing the same
+// type is one. (The LEDGER uses per-type POINT caps instead of dedupe:
+// perTypeCap=2 per type per wave — breadth, not farming.)
 //
 // Proves (via REAL fieldFight with rigged-but-honest stats — the outcome
 // classifier, not the damage, is what's under test):
 //   1. villager vKill feeds wavesFaced (the same feed the player uses)
-//   2. villager vFlee feeds wavesFaced (fleeing counts, same as the player)
+//   2. villager vFlee feeds wavesFaced (fleeing feeds the deed bars, same as the player)
 //   3. villager mFlee feeds wavesFaced (survived it)
 //   4. villager vDie does NOT feed wavesFaced
 //   5. alreadyDead does NOT feed wavesFaced
 //   6. evade does NOT feed wavesFaced
 //   7. villager + player same monster id = ONE distinct count
-//   8. villager-ONLY encounters unlock wave 3 (day 25 + 2 distinct w2 faced)
+//   8. villager-ONLY KILLS unlock wave 3 (day 25 + 5 distinct w2 kills =
+//      5 ledger points); engagements alone score ZERO (reversal)
 //   9. the fieldFight deed wrap is attached (depart/progDaily attach paths)
 // Green across 3 seeds: SEED=1/2/3 node scripts/test-villager-wave-xp-20261010.js
 const H = require('./sim-harness.js');
@@ -109,20 +113,31 @@ const ok = (name, cond, detail) => {
   const n7 = Object.keys(faced()).filter(k => k === 'bright_idea').length;
   ok('villager + kill lane same id = one distinct', n7 === 1 && faced().bright_idea === 2, JSON.stringify(faced()));
 
-  // ---- 8. villager-ONLY encounters unlock wave 3 ----
+  // ---- 8. villager-ONLY KILLS unlock wave 3 (REVERSED 8730921c,
+  // Steve 2026-10-10: villager experiences count toward unlocks only as
+  // KILLS now — engagements (faced/fled) feed the endgame deed bars but
+  // score nothing on the ledger). Two villager vKills on distinct wave-2
+  // types + day 25 = 2 ledger points... not enough: the bar is 5. So this
+  // section drives 5 villager kills on 5 distinct types via recordWaveKill
+  // (the exact choke point villager field-fight kills flow through).
   resetDeeds(); setVhp(100);
   s.day = 25;
-  rec = Game.fieldFight(vid, W2A, null, { rng: rng(0) }); // vKill, w2
-  ok('first villager engagement (w2)', faced().voice_mimic_radio === 2, JSON.stringify(faced()));
-  setVhp(100);
-  rec = Game.fieldFight(vid, W2B, null, { rng: rng(0) }); // vFlee, w2 distinct
-  ok('second villager engagement (w2, fled)', faced().mirror_stag === 2, JSON.stringify(faced()));
-  ok('waveEngaged(2) == 2 from villagers alone', Game.waveEngaged(2) === 2, 'got ' + Game.waveEngaged(2));
-  ok('villager-only encounters unlock wave 3', Game.unlockedWave() >= 3, 'got ' + Game.unlockedWave());
+  Game.state.waveLedger = null; Game.ledgerState();
+  for (const id of ['voice_mimic_radio', 'mirror_stag', 'review_drone', 'bright_idea', 'memory_projector']) {
+    setVhp(100);
+    rec = Game.fieldFight(vid, mk(id, 20, 6), null, { rng: rng(0) }); // vKill, w2
+    Game.recordWaveKill(id); // the villager-kill path scores the ledger
+  }
+  ok('5 villager kills score 5 ledger points', Game.waveLedgerPoints(2) === 5, 'got ' + Game.waveLedgerPoints(2));
+  ok('villager-only kills unlock wave 3', Game.unlockedWave() >= 3, 'got ' + Game.unlockedWave());
+  ok('engagements alone still score zero (reversal)', (() => {
+    Game.state.waveLedger = null; Game.ledgerState();
+    return Game.waveLedgerPoints(2) === 0;
+  })());
 
   // ---- 9. definitions not weakened: bars unchanged ----
   ok('unlock engagement bar still 2', Game.waveUnlockEngage()[2] === 2);
-  ok('dead villagers added zero distinct', Object.keys(faced()).length === 2, 'got ' + Object.keys(faced()).length);
+  ok('dead villagers added zero distinct', Object.keys(faced()).length === 5, 'got ' + Object.keys(faced()).length);
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

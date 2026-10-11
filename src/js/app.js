@@ -244,6 +244,14 @@
     const out = [];
     try {
       const st = Game.state;
+      // WAVE LEDGER (Steve 2026-10-10): persistent progress line — the System
+      // televises the ledger. ledgerProgressLine() names the first unfilled
+      // bar with honest labels ("kills only"); returns '' when every bar is
+      // full, so the line disappears at mastery.
+      try {
+        const lpl = (typeof Game.ledgerProgressLine === 'function') ? Game.ledgerProgressLine() : '';
+        if (lpl) out.push(`<div class="statrow beat-open" style="opacity:.9">${esc(lpl)}</div>`);
+      } catch (e) {}
       const pb = st.pendingBeg;
       if (pb) {
         let vnm = 'their fire';

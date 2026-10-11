@@ -1014,3 +1014,18 @@ Villager objective AI. Villagers pursue objectives instead of drifting randomly.
 
 **Consumes:** village.roster, village.away, village.nodePos, village.gossip, npcNode, npcSetNode, npcInside, npcSetInside, npcTemper, npcGoal, npcNeeds, npcRangeProfile, npcMaxDist (villager-agency.js), agencyState
 
+### waves (`waveLedger.js`)
+The Wave Ledger — wave unlocks run on KILLS ONLY. Per wave, per village, per run, cumulative across player deaths (lives on state, not the scholar).
+
+**Provides:** waveLedgerCfg(), ledgerState(), monsterCounterKnown(monsterId), scoreLedgerKill(monsterId), waveLedgerPoints(wave), ledgerProgressLine()
+
+**Rules:**
+- ledger_kills_only: true (code: waveLedger.js — scoreLedgerKill is fed ONLY by recordWaveKill; engagements/flees/evades score nothing)
+- ledger_counter_convention: true (code: waveLedger.js — monsterCounterKnown: state.monsterCounters[id]===true AND the monster def carries a `counter` field; no def has one yet, so the mastery bonus is dormant — a kill never scores less than 1)
+- ledger_per_type_cap: 2 (code: waveLedger.js — perTypeCap; breadth over farming)
+- ledger_announce_idempotent: true (code: waveLedger.js — 50%/full beats fire once per wave via state._ledgerAnn50/_ledgerAnnFull)
+- ledger_survives_scholar: true (code: waveLedger.js — ledgerState lives on this.state, not this.state.scholar)
+- ledger_reverses_8730921c: true (code: game.js — unlockedWave is ledger-only; engagement lanes removed 2026-10-10, Steve's call; the endgame deed gate is untouched)
+
+**Consumes:** —
+

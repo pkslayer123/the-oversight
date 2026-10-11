@@ -48,18 +48,17 @@ feel it.
 | mosquito | Giant freakish mosquito — plainly called "mosquito" (the shock is that it's just a mosquito). Alien-disease vector: bite can land Eurika virus or East Nile virus (see docs/DISEASES.md) | rush | crepuscular |
 | tick | Giant freakish tick — plainly called "tick". Latches on; vector for Lemons disease (alien pool, see docs/DISEASES.md) | single | both |
 
-## Wave 3: The Final Draft (day 25 + 8 wave-2 kills OR 2 distinct wave-2 faced)
+## Wave 3: The Final Draft (day 25 + 5 wave-2 LEDGER points — kills only)
 
 The System stops pretending these are animals at all. The horror: it was
 never an animal. Gating logic lives in `unlockedWave()` (game.js): day 25+
-AND (8 wave-2 kills OR 2 distinct wave-2 monsters faced blow-by-blow).
-(An older plan gated it on integration 80+ — superseded; the kill-gated
-schedule is the live gate. ENGAGEMENT LANES added 2026-10-10, bal-waves:
-sweep r4 showed wave-2 kills median 0 in organic play — policies flee bad
-fights by design — so the kill funnel never filled. Facing/fleeing a fight
-counts as "faced" (you stood on the grid; Steve accepted this for the wave-5
-deed bar). Kills are the faster lane, not the only lane. Day/scale floors
-unchanged.)
+AND the wave-2 ledger reaches 5 points (kills only — 1 point per kill, 2 per
+counter-kill, 2-point per-type cap). Levers in `src/data/wave-ledger.json`;
+see docs/PROGRESSION.md section 12.
+(HISTORY: an older plan gated it on integration 80+ — superseded. The
+bal-waves engagement lanes (2026-10-10, facing/fleeing counts as "faced")
+were REVERSED 2026-10-10 (Steve): engagements feed the endgame deed bars
+only — they never unlock waves. Day/scale floors unchanged.)
 
 9 monsters: The Redactor (censorship made flesh — redacts your weapon, your
 footing, your last turn), Gavel (holds trials from your event log; bound by
@@ -75,14 +74,16 @@ Bands (anchored — see Implementation): damage 20-70, HP 240-420, pierce
 0-0.25. Wave-3 monsters are a mid-build fight (4-6 rounds at ~64
 dmg/round); godhood builds stomp them — correctly.
 
-## Wave 4: The Mirror Draft (5 wave-3 kills OR 2 distinct wave-3 faced + scaleRank >= 'regional')
+## Wave 4: The Mirror Draft (4 wave-3 LEDGER points + scaleRank >= 'regional')
 
 Steve 2026-10-10: identity is "The Mirror Draft" (not "The Audience
 Draft"). The System has watched long enough to build monsters out of *us* —
 our fears, faiths, formats, institutions, weaponized. The horror: it's made
-of you. Gate is kills + scale, never pure calendar: 5 wave-3 kills
-(village-wide) AND scale rank >= 'regional' (`scaleAtLeast()` in game.js;
-reads `scaleRank()` defensively — works with and without hierarchy.js).
+of you. Gate is ledger points + scale, never pure calendar: 4 wave-3 ledger
+points (kills only, village-wide) AND scale rank >= 'regional'
+(`scaleAtLeast()` in game.js; reads `scaleRank()` defensively — works with
+and without hierarchy.js). (The 8730921c engagement lanes were reversed
+2026-10-10 — see Wave 3's history note.)
 
 9 monsters: The Congregation (faith as a weapon — genuine absolution at the
 price of obedience; heresy is the counter), The Strike (a house-sized
@@ -102,12 +103,13 @@ dark mirror of the food thesis).
 Bands (anchored): damage 35-95, HP 850-1500, pierce 0.2-0.5. A 4-6 round
 fight for a godhood build (~220 dmg/round).
 
-## Wave 5: The Producers (5 wave-4 kills OR 2 distinct wave-4 faced + scaleRank >= 'national')
+## Wave 5: The Producers (3 wave-4 LEDGER points + scaleRank >= 'national')
 
 Steve 2026-10-10: identity is "The Producers" (not "Oversight Fauna"). You
 are strong enough to threaten the narrative. The narrative sends its immune
 system: censors, editors, cancellers. The horror: the show is fighting back.
-Gate: 5 wave-4 kills (village-wide) AND scale rank >= 'national'.
+Gate: 3 wave-4 ledger points (kills only, village-wide) AND scale rank >=
+'national'.
 
 8 monsters: The Cancellation (fights your existence in the show — un-teaches
 abilities; go off-script or spend favor), The Editor (cuts your last turn,
@@ -137,19 +139,21 @@ ash-death; the villager pool is the cap.
 - `wave` field on each monster in `src/data/monsters.json` (schema allows it;
   `pierce` added to the schema 2026-10-10 — the armor-pierce hook's first real
   assignments).
-- `Game.monsterWavePool()` in game.js: filters by `unlockedWave()`
-  (day 8 + (4 wave-1 kills OR 2 distinct wave-1 faced) for wave 2; day 25 +
-  (8 wave-2 kills OR 2 distinct wave-2 faced) for wave 3;
-  (5 wave-3 kills OR 2 distinct wave-3 faced) + scaleRank >= 'regional' for wave 4;
-  (5 wave-4 kills OR 2 distinct wave-4 faced) + scaleRank >= 'national' for wave 5).
-  Earlier waves never leave the pool. Engagement = distinct monsters fought
-  blow-by-blow (fights started — fled or won — via deed feed wavesFaced);
-  kills are the faster lane, not the only lane (bal-waves 2026-10-10).
-  VILLAGER XP LAW (Steve 2026-10-10): a villager's real blow-by-blow fight
-  (fieldFight: vKill/mFlee/vFlee) counts exactly like the player's toward
-  the engagement lanes and the deed bars — the village is the protagonist.
-  Same bars, same distinct counts, keyed by monster type (dedupe: villager +
-  player facing the same type = one count). vDie records nothing (the dead
+- `Game.monsterWavePool()` in game.js: filters by `unlockedWave()` — the WAVE
+  LEDGER (2026-10-10, Steve's reversal of 8730921c): day 8 + 5 wave-1 ledger
+  points (kills only) for wave 2; day 25 + 5 wave-2 ledger points for wave 3;
+  4 wave-3 ledger points + scaleRank >= 'regional' for wave 4;
+  3 wave-4 ledger points + scaleRank >= 'national' for wave 5. Levers:
+  `src/data/wave-ledger.json`; docs/PROGRESSION.md section 12.
+  Earlier waves never leave the pool. Engagements (distinct monsters fought
+  blow-by-blow — fled or won — via the deed feed's wavesFaced) feed the
+  ENDGAME deed gate only; they score nothing on the ledger.
+  VILLAGER XP LAW (Steve 2026-10-10, ledger update): a villager's real
+  blow-by-blow fight feeds the deed bars exactly like the player's — and
+  villager KILLS score the ledger exactly like the player's. The village is
+  the protagonist. Deed-feed dedupe is keyed by monster type (dedupe:
+  villager + player facing the same type = one count); the LEDGER instead
+  caps points per type (perTypeCap=2). vDie records nothing (the dead
   told no tale); evade and alreadyDead record nothing. (Pre-fix, the
   fieldFight deed wrap never attached — an arrow-function `this` bug — so
   villager fights fed nothing at all; fixed 2026-10-10.)
@@ -171,7 +175,7 @@ ash-death; the villager pool is the cap.
   Producers ~day 83-99 — the bars complete inside a ~100-day game; slower
   runs slip later, reactively. The day floors in the unlock gates (day 8,
   day 25) were already floors, never scripts, and stay.
-- `checkEncounter()` uses the pool. The wanderer casts via `castMonster()`, which is wave-gated on `unlockedWave()` (day 8 + (4 wave-1 kills OR 2 distinct wave-1 faced) for wave 2) — never over-leveled, never stuck on wave 1.
+- `checkEncounter()` uses the pool. The wanderer casts via `castMonster()`, which is wave-gated on `unlockedWave()` (day 8 + 5 wave-1 ledger points for wave 2) — never over-leveled, never stuck on wave 1.
 - Wave-2 announcement woven into `checkSystemArrival()` dialogue.
 - Tests: `scripts/test-wave2.js` (gating, integrity, combat smoke), `scripts/test-wave2-harden-20261009.js` (post-hardening ranges),
   `scripts/test-wave3-5-20261010.js` (211 checks x 3 seeds: schema-clean roster,

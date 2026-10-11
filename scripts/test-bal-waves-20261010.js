@@ -29,12 +29,22 @@ async function main() {
   const s = Game.state.scholar;
 
   // ---- helpers ----
-  const W1 = ['bulldozer', 'hushwolf'];
-  const W2 = ['voice_mimic_radio', 'mirror_stag'];
-  const W3 = ['redactor', 'gavel'];
-  const W4 = ['congregation', 'strike'];
+  // Note: scoreLedgerKill caps 2 pts per monster type — every id credited
+  // below is a distinct type, so each scores exactly 1 point.
+  const W1 = ['bulldozer', 'hushwolf', 'gallowdeer', 'mirrormoth', 'belltoad'];
+  const W2 = ['voice_mimic_radio', 'mirror_stag', 'review_drone', 'bright_idea', 'memory_projector'];
+  const W3 = ['redactor', 'gavel', 'spool', 'chorus_line'];
+  const W4 = ['congregation', 'strike', 'influencer'];
   const setDay = (d) => { s.day = d; };
-  const setKills = (k) => { Game.state.waveKills = Object.assign({}, k); };
+  // setLedger({wave: [monsterIds]}): reset the ledger, credit via the REAL
+  // scorer (per-type caps enforced honestly, not hand-set points).
+  const setLedger = (pts) => {
+    Game.state.waveLedger = null;
+    Game.ledgerState();
+    for (const w of Object.keys(pts)) {
+      for (const id of pts[w]) Game.scoreLedgerKill(id);
+    }
+  };
   const setFaced = (ids) => {
     // reset the deed feed, then feed real recordDeedFight calls
     try { Game.progState().deeds = {}; } catch (e) {}
@@ -42,58 +52,61 @@ async function main() {
   };
   const realScaleRank = Game.scaleRank;
   const setRank = (r) => { Game.scaleRank = () => r; };
-
-  // ============ 1. WAVE UNLOCK ENGAGEMENT LANES ============
-  // w2: kill lane kept
-  setDay(10); setKills({ 1: 4 }); setFaced([]);
-  check('w2 kill lane (4 w1 kills, day 10) still unlocks', Game.unlockedWave() >= 2, 'uw=' + Game.unlockedWave());
-  // w2: engagement lane (NEW)
-  setDay(10); setKills({}); setFaced(W1);
-  check('w2 engagement lane (2 distinct w1 faced, 0 kills) unlocks', Game.unlockedWave() >= 2, 'uw=' + Game.unlockedWave());
+  // ============ 1. WAVE LEDGER GATES (Steve 2026-10-10 — REVERSAL of the
+  // bal-waves engagement lanes, commit 8730921c). Unlocks are ledger-only:
+  // kills score (player or villager), engagements score NOTHING toward
+  // unlocks. Bars: w1->2: 5 pts, w2->3: 5 pts, w3->4: 4 pts, w4->5: 3 pts.
+  // The endgame deed gate (5/5/4/3/2) is untouched.
+  // w2: ledger lane — 5 w1 points, day 10
+  setDay(10); setLedger({ 1: W1 }); setFaced([]);
+  check('w2 ledger lane (5 w1 kills, day 10) unlocks', Game.unlockedWave() >= 2, 'uw=' + Game.unlockedWave());
+  // w2: engagements score nothing now (REVERSED 8730921c)
+  setDay(10); setLedger({}); setFaced(['bulldozer', 'hushwolf', 'gallowdeer', 'mirrormoth']);
+  check('w2 engagement-only (4 faced, 0 kills) stays locked', Game.unlockedWave() < 2, 'uw=' + Game.unlockedWave());
   // w2: day floor holds
-  setDay(7); setKills({}); setFaced(W1);
-  check('w2 day floor (day 7, engaged) stays locked', Game.unlockedWave() < 2, 'uw=' + Game.unlockedWave());
-  // w2: bar is 2, not 1
-  setDay(10); setKills({}); setFaced([W1[0]]);
-  check('w2 needs 2 distinct (1 is not enough)', Game.unlockedWave() < 2, 'uw=' + Game.unlockedWave());
+  setDay(7); setLedger({ 1: W1 }); setFaced([]);
+  check('w2 day floor (day 7, ledger full) stays locked', Game.unlockedWave() < 2, 'uw=' + Game.unlockedWave());
+  // w2: bar is 5, not 4
+  setDay(10); setLedger({ 1: W1.slice(0, 4) }); setFaced([]);
+  check('w2 needs 5 points (4 is not enough)', Game.unlockedWave() < 2, 'uw=' + Game.unlockedWave());
 
-  // w3: kill lane kept
-  setDay(30); setKills({ 2: 8 }); setFaced([]);
-  check('w3 kill lane (8 w2 kills, day 30) still unlocks', Game.unlockedWave() >= 3, 'uw=' + Game.unlockedWave());
-  // w3: engagement lane (NEW)
-  setDay(30); setKills({}); setFaced(W2);
-  check('w3 engagement lane (2 distinct w2 faced, 0 kills) unlocks', Game.unlockedWave() >= 3, 'uw=' + Game.unlockedWave());
+  // w3: ledger lane — 5 w2 points, day 30
+  setDay(30); setLedger({ 2: W2 }); setFaced([]);
+  check('w3 ledger lane (5 w2 kills, day 30) unlocks', Game.unlockedWave() >= 3, 'uw=' + Game.unlockedWave());
+  // w3: engagements score nothing
+  setDay(30); setLedger({}); setFaced(W2);
+  check('w3 engagement-only (5 faced, 0 kills) stays locked', Game.unlockedWave() < 3, 'uw=' + Game.unlockedWave());
   // w3: day floor holds
-  setDay(24); setKills({}); setFaced(W2);
-  check('w3 day floor (day 24, engaged) stays locked', Game.unlockedWave() < 3, 'uw=' + Game.unlockedWave());
-  // w3: bar is 2, not 1
-  setDay(30); setKills({}); setFaced([W2[0]]);
-  check('w3 needs 2 distinct (1 is not enough)', Game.unlockedWave() < 3, 'uw=' + Game.unlockedWave());
+  setDay(24); setLedger({ 2: W2 }); setFaced([]);
+  check('w3 day floor (day 24, ledger full) stays locked', Game.unlockedWave() < 3, 'uw=' + Game.unlockedWave());
+  // w3: bar is 5, not 4
+  setDay(30); setLedger({ 2: W2.slice(0, 4) }); setFaced([]);
+  check('w3 needs 5 points (4 is not enough)', Game.unlockedWave() < 3, 'uw=' + Game.unlockedWave());
 
-  // w4: kill lane kept
-  setDay(60); setKills({ 3: 5 }); setFaced([]); setRank('regional');
-  check('w4 kill lane (5 w3 kills + regional) still unlocks', Game.unlockedWave() >= 4, 'uw=' + Game.unlockedWave());
-  // w4: engagement lane (NEW)
-  setDay(60); setKills({}); setFaced(W3); setRank('regional');
-  check('w4 engagement lane (2 distinct w3 faced + regional) unlocks', Game.unlockedWave() >= 4, 'uw=' + Game.unlockedWave());
+  // w4: ledger lane — 4 w3 points + regional
+  setDay(60); setLedger({ 3: W3 }); setFaced([]); setRank('regional');
+  check('w4 ledger lane (4 w3 kills + regional) unlocks', Game.unlockedWave() >= 4, 'uw=' + Game.unlockedWave());
+  // w4: engagements score nothing
+  setDay(60); setLedger({}); setFaced(['redactor', 'gavel', 'spool']); setRank('regional');
+  check('w4 engagement-only (3 faced + regional) stays locked', Game.unlockedWave() < 4, 'uw=' + Game.unlockedWave());
   // w4: scale floor holds
-  setDay(60); setKills({}); setFaced(W3); setRank('village');
-  check('w4 scale floor (engaged but village) stays locked', Game.unlockedWave() < 4, 'uw=' + Game.unlockedWave());
+  setDay(60); setLedger({ 3: W3 }); setFaced([]); setRank('village');
+  check('w4 scale floor (ledger full but village) stays locked', Game.unlockedWave() < 4, 'uw=' + Game.unlockedWave());
 
-  // w5: kill lane kept
-  setDay(90); setKills({ 4: 5 }); setFaced([]); setRank('national');
-  check('w5 kill lane (5 w4 kills + national) still unlocks', Game.unlockedWave() >= 5, 'uw=' + Game.unlockedWave());
-  // w5: engagement lane (NEW)
-  setDay(90); setKills({}); setFaced(W4); setRank('national');
-  check('w5 engagement lane (2 distinct w4 faced + national) unlocks', Game.unlockedWave() >= 5, 'uw=' + Game.unlockedWave());
+  // w5: ledger lane — 3 w4 points + national
+  setDay(90); setLedger({ 4: W4 }); setFaced([]); setRank('national');
+  check('w5 ledger lane (3 w4 kills + national) unlocks', Game.unlockedWave() >= 5, 'uw=' + Game.unlockedWave());
+  // w5: engagements score nothing
+  setDay(90); setLedger({}); setFaced(['congregation', 'strike']); setRank('national');
+  check('w5 engagement-only (2 faced + national) stays locked', Game.unlockedWave() < 5, 'uw=' + Game.unlockedWave());
   // w5: scale floor holds
-  setDay(90); setKills({}); setFaced(W4); setRank('regional');
-  check('w5 scale floor (engaged but regional) stays locked', Game.unlockedWave() < 5, 'uw=' + Game.unlockedWave());
+  setDay(90); setLedger({ 4: W4 }); setFaced([]); setRank('regional');
+  check('w5 scale floor (ledger full but regional) stays locked', Game.unlockedWave() < 5, 'uw=' + Game.unlockedWave());
   setRank('village');
   if (realScaleRank) Game.scaleRank = realScaleRank;
 
-  // waveEngaged helper reads the deed feed honestly (defensive: old HEAD
-  // lacks it entirely — assertions fail cleanly, not harness-error)
+  // waveEngaged helper still reads the deed feed honestly (engine-unused for
+  // unlocks since the ledger; the ENDGAME deed gate is its remaining reader)
   const wEng = (w) => (typeof Game.waveEngaged === 'function') ? Game.waveEngaged(w) : -1;
   setFaced(['bulldozer', 'hushwolf', 'voice_mimic_radio']);
   check('waveEngaged(1)==2', wEng(1) === 2, 'got ' + wEng(1));
