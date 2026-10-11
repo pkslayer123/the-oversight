@@ -33,7 +33,7 @@ Per-day cost breakdown (manual instrumentation, 30-day seed-3 run, % of wall):
 | `status()` UI-object build | ~10% | **no — discarded by sim drivers** |
 | `npcNodeTravel` | 8–9% | yes — villager agency |
 | `resolveAssignments` | ~5% | yes — leader assignments + gossip |
-| `save()` autosave serialization | ~2% | **no — sims never load saves** |
+| `save()` autosave serialization | ~2% | **no — proof tests exercise save/load in the harness; stub broke them (2026-10-10)** |
 | policy roads (upkeep/daily/fights) | ~30% | yes — the policy being tested |
 | `console.log` [SLEEP] diagnostics | <1% | **no — pure noise** |
 
@@ -52,9 +52,11 @@ test's shredded-tent scenario) — and returns a 6-field object. Verified
 2026-10-10: no game-code consumer reads fields off `status()` returns; sim
 drivers discard them. Full builder survives as `Game._fullStatus`.
 
-**2. Stub `save()` in sims** — keeps `syncRun()` (cheap run metadata) but
-skips `S.state.save`'s full-state `JSON.stringify`. Sims never load saves.
-Return is `true`; every game-code caller is a bare `this.save()` (only
+**2. ~~Stub `save()` in sims~~ — REVERTED 2026-10-10.** The stub assumed
+"sims never load saves", but proof tests legitimately exercise save/load in
+the harness (test-feast-buff.js G10 caught saves silently not writing). Real
+`Game.save` is kept in sims; the ~2% stringify cost is accepted —
+correctness over speed. Every game-code caller is a bare `this.save()` (only
 `app.js`, browser-only, reads the return).
 
 **3. Silence `console.log` during sim execution only** — `quietLog(fn)` in
@@ -138,7 +140,7 @@ case) the bundle measured 2.3×, because `quietLog` also kills the
 
 Per-call micro-benchmarks (same loaded mid-game state, interleaved):
 - `status()`: 0.090ms → 0.0003ms per call (**339×**)
-- `save()`: 0.028ms → 0.0002ms per call (**125×**)
+- ~~`save()`: 0.028ms → 0.0002ms per call (125×)~~ — reverted; real save kept
 - Real sims call `status()` ~14×/day and `save()` ~10×/day (drivers,
   fights, contests — more than the 4×/day from the day loop alone).
 
