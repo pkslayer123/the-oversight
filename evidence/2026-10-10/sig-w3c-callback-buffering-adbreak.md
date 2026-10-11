@@ -45,9 +45,9 @@ Periodically PAUSES the fight: visible progress bar (the bar is the telegraph). 
 - Knowledge never gates: all counterplay is discoverable in-fight via narration.
 
 ## Regressions (post-rebase onto 48b58607)
-- `scripts/test-wave3-5-20261010.js`: [to be run]
-- `scripts/test-monsters-break-r14-20261010.js`: [to be run]
-- 4 pre-existing failures on master (not chased): ad_break damage band [19,33] vs 20-70 floor, hushwolf solo 2→1, wave-3 unlock ledger-points gate ×2 — stale tests from sibling survival-attrition and wave-ledger commits, identical with/without this code.
+- `scripts/test-wave3-5-20261010.js`: 213 pass, 1 fail — the 1 fail is the known pre-existing `ad_break dmg in draft band — [19,33]` (stale band expectation).
+- `scripts/test-monsters-break-r14-20261010.js`: 113 pass, 3 fail — the 3 fails are the known pre-existing: `hushwolf solo spawns 2` (survival-attrition changed 2→1), `8 w2 kills @day30 -> wave 3`, `2 distinct w2 faced @day30 -> wave 3` (wave-ledger gate changes).
+- All 4 failures are pre-existing on master (stale tests from sibling survival-attrition and wave-ledger commits), identical with and without this code — not chased, per coordinator.
 
 ## Files changed
 - `src/js/sigW3c.js` (new): all mechanics, hooks, player actions, menu/field wiring.
