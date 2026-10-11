@@ -14431,7 +14431,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           `${fa} and ${fb} are comparing scars like trading cards.`,
         ][Math.floor(Math.random() * 4)];
       } else if (r < 0.5 && cheer) {
-        line = `${fa} got the fire going big tonight. There's almost a party feeling. Almost.`;
+        line = `${fa} got the fire going big ${tod}. There's almost a party feeling. Almost.`;
       } else if (r < 0.6) {
         // practical: someone does something useful, visibly
         this.stockPantry(100, 'Foraged food');
