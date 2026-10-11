@@ -145,7 +145,10 @@ function driveSubstantive(vid, maxTurns) {
   dip().level = 1; dip().xp = 0;
   v.trust[vid2] = 10;
   let promiseCycles = 0;
-  // force a keepable goal so promiseHelp tracks
+  // force a keepable goal so promiseHelp tracks (roster goals are RNG —
+  // npcGoal reads the data record first, so set it there)
+  { const dv2 = (Game.data.villagers || []).find(x => x.id === vid2); if (dv2) dv2.goal = 'feed'; }
+  { const dv3 = (Game.data.villagers || []).find(x => x.id === vid3); if (dv3) dv3.goal = 'feed'; } // keepable, but keepKind 'food' != 'social' so the rot check below rots instead of keeping
   const tVid2 = (v.trust[vid2] = 10);
   for (let i = 0; i < 12 && trustOf(vid2) < 100; i++) {
     const pr = Game.promiseHelp(vid2); // +6 words, tracked promise (or honest deflect)
