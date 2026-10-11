@@ -29,8 +29,16 @@ function eligibleGame(seed, day) {
   Game.state.systemIntegration = 2;
   Game.isSafeTile = () => false;
   Game.state.waveKills = { 1: 10 };
+  // WAVE LEDGER (break-it 2026-10-10 r13): unlockedWave() reads the
+  // wave-ledger kill ledger now (Steve 2026-10-10), not waveKills.
+  try { Game.ledgerState()[1].points = 5; } catch (e) {}
   Game.state.party = [{ id: 'a' }, { id: 'b' }];
-  s.day = day || 45; s.kcal = 3000;
+  s.day = day || 45;
+  // BELLY EMPTY (break-it 2026-10-10 r13): scholar kcal clamps at kcalCap
+  // (2400) on every grant — starting at 3000 made `total > 0` impossible
+  // even when every system fires (the first grant clamps 3000->2400).
+  // Empty belly: grants accumulate, the bound still guards cooldowns.
+  s.kcal = 0;
   return s;
 }
 

@@ -34,6 +34,10 @@ const _rawFresh = H.fresh.bind(H);
 function setup(day) {
   const s = _rawFresh(day);
   H.Game.state.waveKills = { 1: 10 };
+  // WAVE LEDGER (break-it 2026-10-10 r13): unlockedWave() moved off
+  // state.waveKills to the wave-ledger kill ledger (Steve 2026-10-10).
+  // 5 wave-1 ledger points fills the bar -> unlockedWave() >= 2.
+  try { H.Game.ledgerState()[1].points = 5; } catch (e) {}
   H.Game.isSafeTile = () => false;
   return s;
 }

@@ -651,6 +651,16 @@
       var prev = fighter._stance;
       fighter._stance = stance;
 
+      // MECHANICS ARE KNOWLEDGE-FREE (break-it 2026-10-10 r13): the (wealth)
+      // canon rule — broke retreats when losing, rich enrages when hurt —
+      // is unconditional. The old code set _enraged/_wantsRetreat ONLY
+      // inside the apKnowsAlien announcement gate, so a rich persona fought
+      // pre-reveal never enraged (no 1.5x damage, no beam +0.2) and broke
+      // personas skipped their retreat flag on fights 1-2. Theatrics are
+      // announced; the stance itself always applies.
+      if (stance === 'enraged') fighter._enraged = true;
+      if (stance === 'retreating') fighter._wantsRetreat = true;
+
       // Announce stance changes (they're theatrical about it)
       if (stance !== prev && this.apKnowsAlien(pid)) {
         var p = this.apPersona(pid);
@@ -663,7 +673,6 @@
           var el = enrageLines[pid] || "You've made me angry. That was expensive.";
           this.say('🎭 ' + p.name + ': "' + el + '"');
           this.say('(⚠ ' + p.name + ' is ENRAGED — hitting harder, fighting recklessly.)');
-          fighter._enraged = true;
         } else if (stance === 'retreating') {
           var retreatLines = {
             'pip_quindle': "Okay okay okay I can't afford another one of these! I'm OUT! Great fight though!",
@@ -673,7 +682,6 @@
           };
           var rl = retreatLines[pid] || "I can't afford to die here. Falling back!";
           this.say('🎭 ' + p.name + ': "' + rl + '"');
-          fighter._wantsRetreat = true;
         } else if (stance === 'cautious' && prev === 'normal') {
           this.apSayCombat(pid, 'onLosing', 0.5);
         }
@@ -981,14 +989,22 @@
       }
 
       // Fan favor: the audience judges your performance
+      // KNOWLEDGE GATE (break-it 2026-10-10 r13): the why-copy names the
+      // persona and apAdjustFavor sysSays it when |n|>=3 — pre-reveal that
+      // put "defeated Countess Sable" on the System feed on fight 1-2
+      // (the 3rd-encounter reveal runs earlier in this function, so fight 3
+      // names honestly). Pre-reveal the crowd cheers a stranger.
+      var _favKnown = false;
+      try { _favKnown = !!this.apKnowsAlien(pid); } catch (e0fk) {}
+      var _foe = _favKnown ? p.name : 'the stranger';
       if (outcome === 'won') {
         // Stylish wins please the crowd; stomping a tourist doesn't
         var gain = (p.disposition === 'sadistic') ? 6 : (p.id === 'pip_quindle' ? 1 : 4);
-        this.apAdjustFavor(gain, 'defeated ' + p.name, 'fight');
+        this.apAdjustFavor(gain, 'defeated ' + _foe, 'fight');
       } else if (outcome === 'lost') {
-        this.apAdjustFavor(-2, 'lost to ' + p.name, 'fight');
+        this.apAdjustFavor(-2, 'lost to ' + _foe, 'fight');
       } else if (outcome === 'fled') {
-        this.apAdjustFavor(-5, 'fled from ' + p.name + ' — the crowd boos', 'fight');
+        this.apAdjustFavor(-5, 'fled from ' + _foe + ' — the crowd boos', 'fight');
       }
 
       // Benevolent bond deepens
@@ -1486,13 +1502,20 @@
 
       if (per.disposition === 'sadistic') {
         // CRUEL GIFT: looks helpful, isn't — it's real AND it's a tracker.
-        this.say('📦 A package arrives, wrapped in black ribbon. The card reads: "With love, ' + per.name + '."');
+        // KNOWLEDGE GATE (break-it 2026-10-10 r13): there are no cover names
+        // in the data — per.name IS the alien truth (same class as the r11
+        // group-banter fix). The old card read "With love, Countess Sable"
+        // on encounter 1, naming them before the 3rd-encounter reveal.
+        // Pre-reveal the card is unsigned; the creep is the point.
+        var _pkgKnown = false;
+        try { _pkgKnown = !!this.apKnowsAlien(pid); } catch (e0p) {}
+        this.say('📦 A package arrives, wrapped in black ribbon. ' + (_pkgKnown
+          ? 'The card reads: "With love, ' + per.name + '."'
+          : 'The card reads: "With love." No name. You don\'t like that.'));
         // KNOWLEDGE GATE (break-it 2026-10-09 r7): "alien medkit" names the
         // alien truth — the word "alien" is gated like "MULTIPLE alien
         // players" above. Pre-reveal it's advanced tech from a sender you
-        // can't place yet. (The signed cover name stays: they signed it.)
-        var _pkgKnown = false;
-        try { _pkgKnown = !!this.apKnowsAlien(pid); } catch (e0p) {}
+        // can't place yet. (Post-reveal the card is signed — they signed it.)
         this.say('Inside: a beautiful ' + (_pkgKnown ? 'alien ' : '') + 'medkit. It\'s... ticking? No — it\'s humming. It\'s humming your name.');
         // HONEST (break-it 2026-10-08): the copy promised a medkit but none
         // was ever given. The medkit is real and usable — and it's a tracker.
@@ -1503,7 +1526,9 @@
         // {itemId,id} entry crashed useItem (no name) and never consumed
         // (no units). The medkit must actually heal when used.
         try { this.apGrantItem('medfoam_canister'); } catch (e) {}
-        this.say('(It\'s a tracker. ' + per.name + ' now knows where you sleep. The medkit is real, though — out here you don\'t throw those away.)');
+        // KNOWLEDGE GATE (break-it 2026-10-10 r13): per.name pre-reveal.
+        this.say('(' + (_pkgKnown ? 'It\'s a tracker. ' + per.name + ' now knows where you sleep.'
+          : 'It\'s a tracker. Whoever sent this now knows where you sleep.') + ' The medkit is real, though — out here you don\'t throw those away.)');
         // Player choice would go here — for now, knowledge-gated warning
         try {
           var s = this.state.scholar;
@@ -1520,8 +1545,14 @@
         return true;
       } else {
         // NEUTRAL: weird, enthusiastic, mostly harmless
-        this.say('📦 A package covered in stickers. The card: "' + per.name + '!! Hope you\'re doing great! Here\'s some stuff from home!"');
-        this.say('Inside: snacks that taste like purple, a tiny flag, and a photo of ' + per.name + ' giving a thumbs-up.');
+        // KNOWLEDGE GATE (break-it 2026-10-10 r13): the card and photo named
+        // the persona pre-reveal — same class as the sadistic card above.
+        var _npk = false;
+        try { _npk = !!this.apKnowsAlien(pid); } catch (e0n) {}
+        this.say('📦 A package covered in stickers. ' + (_npk
+          ? 'The card: "' + per.name + '!! Hope you\'re doing great! Here\'s some stuff from home!"'
+          : 'The card, in loopy handwriting: "Hope you\'re doing great! Here\'s some stuff from home!"'));
+        this.say('Inside: snacks that taste like purple, a tiny flag, and a photo of ' + (_npk ? per.name : 'someone') + ' giving a thumbs-up.');
         try { var _cap = this.kcalCap ? this.kcalCap() : 2400; this.state.scholar.kcal = Math.min(_cap, (this.state.scholar.kcal || 0) + 200); } catch (e) {}
         return true;
       }

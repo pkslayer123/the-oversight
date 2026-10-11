@@ -2,6 +2,11 @@
 // Boots the FULL src/js/*.js list in index.html order (minus DOM-only
 // app.js/sprites.js/tile-scenes.js/move-anim.js/drama.js), with one shared
 // resettable RNG installed BEFORE eval (modules capture Math.random at load).
+// PARITY RULE (break-it 2026-10-10 r13): this list must match index.html's
+// <script> order exactly (minus the DOM-only five). Drift breaks tests
+// silently — r12's eligibility suite went red the day waveLedger.js shipped
+// because unlockedWave() moved to the wave ledger and the harness never
+// loaded it. When index.html gains a node-safe script, add it here.
 // window stubbed for eval, deleted before playing (sync combat path).
 const fs = require('fs');
 const path = require('path');
@@ -31,10 +36,15 @@ global.window = global;
   'src/js/alienPlayers.js', 'src/js/storage.js', 'src/js/perceive.js',
   'src/js/carexplore.js', 'src/js/justice.js', 'src/js/food.js',
   'src/js/betrayal.js', 'src/js/corpses.js', 'src/js/corruption.js', 'src/js/lifeseed.js',
-  'src/js/progression.js', 'src/js/ledger.js', 'src/js/abilityActions.js',
-  'src/js/monsterBehaviors.js', 'src/js/statusEffects.js', 'src/js/villager-agency.js',
+  'src/js/progression.js', 'src/js/waveLedger.js', 'src/js/feastBuff.js',
+  'src/js/ledger.js', 'src/js/abilityActions.js',
+  'src/js/monsterBehaviors.js', 'src/js/partyTactics.js', 'src/js/sigW3a.js',
+  'src/js/statusEffects.js', 'src/js/sigW3b.js', 'src/js/metaProgression.js',
+  'src/js/sigW3c.js', 'src/js/villager-agency.js',
   'src/js/fieldFights.js', 'src/js/villager-objectives.js',
-  'src/js/codex-people.js', 'src/js/membership.js', 'src/js/hierarchy.js',
+  'src/js/codex-people.js', 'src/js/membership.js', 'src/js/havenGrowth.js',
+  'src/js/hierarchy.js', 'src/js/comms.js', 'src/js/safetynets.js',
+  'src/js/villageAgency.js',
   'src/js/debug-scenarios.js', 'src/js/build.js',
 ].forEach(f => eval(fs.readFileSync(path.join(ROOT, f), 'utf8')));
 delete global.window;

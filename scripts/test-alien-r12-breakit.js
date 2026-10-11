@@ -39,7 +39,11 @@ function eligibleGame(seed, day) {
   Game.state.systemArrived = true;
   Game.state.systemIntegration = 2;
   Game.isSafeTile = () => false;
-  Game.state.waveKills = { 1: 10 };
+  // WAVE LEDGER (break-it 2026-10-10 r13): unlockedWave() moved off
+  // state.waveKills to the wave-ledger kill ledger (Steve 2026-10-10).
+  // 5 wave-1 ledger points fills the bar -> unlockedWave() >= 2.
+  // (The harness must load src/js/waveLedger.js — see its parity rule.)
+  try { Game.ledgerState()[1].points = 5; } catch (e) {}
   const s = Game.state.scholar;
   s.day = day || 45; s.kcal = 3000; s.health = 100;
   Game.state.party = [{ id: 'a' }, { id: 'b' }];

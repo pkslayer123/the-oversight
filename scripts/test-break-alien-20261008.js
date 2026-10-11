@@ -21,7 +21,10 @@ const SEED = parseInt(process.env.SEED || '20261008', 10);
 function eligibleGame(day, seed) {
   RNG.reset(seed === undefined ? SEED : seed);
   const s = H.fresh(day || 45);
-  Game.state.waveKills = { 1: 10 }; // wave 2 unlocked (day>=8 + 4 wave-1 kills)
+  Game.state.waveKills = { 1: 10 }; // legacy; wave 2 now unlocks via the ledger below
+  // WAVE LEDGER (break-it 2026-10-10 r13): unlockedWave() reads the
+  // wave-ledger kill ledger (Steve 2026-10-10), not waveKills.
+  try { Game.ledgerState()[1].points = 5; } catch (e) {}
   Game.state.systemArrived = true;
   Game.state.systemIntegration = 2;
   Game.state.party = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]; // readiness: 75 + day25 = 100
@@ -34,6 +37,7 @@ function eligibleGame(day, seed) {
 function tickEligible() {
   H.fresh(30);
   Game.state.waveKills = { 1: 10 };
+  try { Game.ledgerState()[1].points = 5; } catch (e) {} // wave-ledger unlock (r13)
   Game.state.systemArrived = true;
 }
 
@@ -165,7 +169,7 @@ async function main() {
     H.clearLog();
     const dealt = Game.apBeamHit('player', 0, 'test beam', { damageType: 'alien_beam' });
     const p = Game.tbFighter('p');
-    assert(dealt > 0 && p.hp === 100 - dealt, 'seed ' + seed + ': apBeamHit("player") damages engine fighter p (' + dealt + ' dmg)');
+    assert(dealt > 0 && p.hp === Math.max(0, 100 - dealt), 'seed ' + seed + ': apBeamHit("player") damages engine fighter p (' + dealt + ' dmg)');
     assert(/beam damage/.test(H.allText()), 'seed ' + seed + ': beam announces damage (no silent whiff)');
     Game.tbfight = null;
   }
@@ -179,6 +183,7 @@ async function main() {
     for (let i = 0; i < 200; i++) {
       RNG.reset(SEED + i); H.fresh(30);
       Game.state.waveKills = { 1: 10 };
+      try { Game.ledgerState()[1].points = 5; } catch (e) {} // wave-ledger unlock (r13)
       Game.state.systemIntegration = 2;
       const ap = Game.apState();
       ap.met['old_tam'] = { encounters: 5, bond: 5, lastOutcome: 'won' }; // bonded benevolent
@@ -234,6 +239,7 @@ async function main() {
     for (let i = 0; i < 400; i++) {
       RNG.reset(9000 + i); H.fresh(30);
       Game.state.waveKills = { 1: 10 };
+      try { Game.ledgerState()[1].points = 5; } catch (e) {} // wave-ledger unlock (r13)
       Game.state.systemIntegration = 2;
       Game.state.party = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
       Game.isSafeTile = () => false;
