@@ -6876,8 +6876,6 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (dist > 2 && !joined) return 'You need to be at the village to study their codex.';
       const learned = [];
       const learnedCounts = { plants: 0, techniques: 0, recipes: 0, animals: 0 };
-      const scholar = this.state.scholar;
-      scholar.codex = scholar.codex || { plants: {}, techniques: {}, recipes: {}, animals: {} };
       // plants: learn what they know deeper than you (via grantKnowledge — Steve 2026-10-07)
       for (const [pid, entry] of Object.entries(v.codex.plants || {})) {
         if (this.grantKnowledge('plant', pid, entry.level || 1, { type: 'taught', by: v.name })) {
@@ -22105,9 +22103,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // synergy leg: discovered counts as held
           if (synIds.has(rid)) return (sch.synergies || []).includes(rid);
           // technique (from village codex): must know it
+          // (break-it knowledge 2026-10-10 r3: this read the stale
+          // scholar.codex.techniques — a store the grantKnowledge unification
+          // never writes. All 7 tech: synergy legs were unearned.)
           if (rid.startsWith('tech:')) {
             const tid = rid.slice(5);
-            return !!((this.state.scholar.codex || {}).techniques || {})[tid];
+            return !!((this.state.codex || {}).techniques || {})[tid];
           }
           // skill: must have level
           if (rid.startsWith('skill:')) {
@@ -22225,7 +22226,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             let bare = null, held = false;
             if (leg.startsWith('tech:')) {
               bare = leg.slice(5);
-              held = !!(((this.state.scholar.codex || {}).techniques || {})[bare]);
+              held = !!(((this.state.codex || {}).techniques || {})[bare]);
             } else if (leg.startsWith('skill:')) {
               bare = leg.slice(6);
               held = ((((this.state.codex || {}).skills || {})[bare] || {}).level || 0) >= minLvl2;
@@ -22477,7 +22478,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             const met = rid.startsWith('skill:')
               ? (((this.state.codex || {}).skills || {})[rid.slice(6)] || {}).level >= minLvl
               : rid.startsWith('tech:')
-                ? !!(((this.state.scholar.codex || {}).techniques || {})[rid.slice(5)])
+                ? !!(((this.state.codex || {}).techniques || {})[rid.slice(5)])
                 : this.abilityLevel(rid) >= minLvl;
             if (met) have.push(rid);
             else need.push(rid);
