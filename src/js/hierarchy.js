@@ -63,6 +63,8 @@
 //   - negotiation_is_played: proposeLink scores the courtship; >=55 accepts, 35-54 counters with the village's own terms (accept/sweeten/walk away — played, never rolled), <35 declines. (code: hierarchy.js)
 //   - regional_dawn: Haven's first-ever link stages a played beat, not a threshold flip — the System overlay grows into coordination (networkLive) and the player chooses Haven's first gesture (gift/visit/cold), each with real costs. (code: hierarchy.js)
 //   - speaker_is_named: theirSpeaker is a named person from the sim's roster; when the sim kills them, theirLeaderDied fires the mirror succession beat. (code: hierarchy.js)
+//   - succession_is_with_the_village: a speaker death costs the link a trust haircut (-8, not -15) and opens a 7-day mourning window with no trust gains — it never snaps the link by itself; the new speaker inherits the village's bond. The snap survives only for the neglected: trust under 20 with no upkeep (tribute or trust-granting deeds) for 14+ days. Death + neglect kills; death alone doesn't. (code: hierarchy.js)
+//   - trust_gains_are_choked: every trust gain routes through _trustGain (mourning blocks, gains stamp lastKeptDay) — no silent side-channel gains. (code: hierarchy.js)
 //   - rumors_are_delivered: queued village rumors are spoken one per day at the day boundary — "heard of them" is reachable. (code: hierarchy.js)
 //   - tribute_partials_dont_double_count: weekly tribute payments accumulate (tributePaidKcal); linkTick charges the true shortfall once — paying half is strictly better than paying nothing. (code: hierarchy.js)
 //   - debts_survive_the_break: re-linking a broken pair inherits the latest broken link's outstanding arrears — break to wipe the debt is an exploit the engine refuses, and says so. (code: hierarchy.js)
@@ -107,10 +109,13 @@
  * - JOINING ANOTHER KINGDOM is an earned outcome: kingdomEndingEligible()
  *   exposes the frame for the endings system — the valued subordinate at
  *   the table, there because the primary can't afford to lose them.
- * - DEATHS DETONATE HIERARCHIES: onLeaderDeath (wired into registerDeath,
+ * - DEATHS SHAKE HIERARCHIES: onLeaderDeath (wired into registerDeath,
  *   which the mantle-passing calls) triggers successionCrisis per link —
- *   the primary installs their own, the village renegotiates in the chaos,
- *   or the link snaps.
+ *   the primary installs their own, the village renegotiates in the chaos.
+ *   But the link is with the VILLAGE, not the person: a speaker death costs
+ *   a trust haircut (-8) and a 7-day mourning window, never a snap by
+ *   itself — the new speaker inherits the bond. Only neglect plus death
+ *   (trust under 20, no upkeep 14+ days) snaps.
  *
  * Self-attaching module. Load after membership.js. Chain-safe wraps.
  */
@@ -512,8 +517,7 @@
       this.state.pendingAccord = null;
       if (how === 'gift') {
         var paid = this._removePantryKcal(2000);
-        var gain = paid >= 2000 ? 10 : Math.max(2, Math.round(10 * paid / 2000));
-        link.trust = Math.min(100, link.trust + gain);
+        var gain = this._trustGain(link, paid >= 2000 ? 10 : Math.max(2, Math.round(10 * paid / 2000)));
         this._nudgeOpinion(other, paid >= 2000 ? 5 : 2);
         this._linkNote(link, 'accord', 'First gesture: gift of ' + paid.toLocaleString() + ' kcal.');
         try { this.seedGossip('accord_' + link.id, { generous: 5 }, (this.npcIds ? this.npcIds().slice(0, 4) : [])); } catch (e) {}
@@ -537,19 +541,19 @@
           if (m.loaned && day0 < (m.loaned.untilDay || 0)) {
             // LOANS DON'T CLOBBER (break-it regional 2026-10-09): the gesture
             // becomes a message instead of erasing an in-flight loan.
-            link.trust = Math.min(100, link.trust + 4);
+            var _vg = this._trustGain(link, 4);
             this._linkNote(link, 'accord', 'First gesture: word sent — the speaker was already abroad.');
-            this.say(`🚶 ${rnm} is already abroad at another fire — Haven's first gesture is a runner with word instead of a seat at the table. It lands softer. (Trust +4.)`);
+            this.say(`🚶 ${rnm} is already abroad at another fire — Haven's first gesture is a runner with word instead of a seat at the table. It lands softer. (Trust +${_vg}.)`);
           } else {
             m.loaned = { vid: rep.id, untilDay: day0 + 3, to: other };
-            link.trust = Math.min(100, link.trust + 8);
+            var _vg2 = this._trustGain(link, 8);
             this._linkNote(link, 'accord', 'First gesture: ' + rnm + ' sits at their fire.');
-            this.say(`🚶 ${rnm} walks out to sit at ${onm}'s fire for three days — Haven's face, their time. Still ours; membership needs no presence. (Trust +8.)`);
+            this.say(`🚶 ${rnm} walks out to sit at ${onm}'s fire for three days — Haven's face, their time. Still ours; membership needs no presence. (Trust +${_vg2}.)`);
           }
         } else {
-          link.trust = Math.min(100, link.trust + 8);
+          var _vg3 = this._trustGain(link, 8);
           this._linkNote(link, 'accord', 'First gesture: the player sits at their fire.');
-          this.say(`🚶 You go yourself — days of your life at a stranger's fire. That's the price of being the face Haven earned. (Trust +8.)`);
+          this.say(`🚶 You go yourself — days of your life at a stranger's fire. That's the price of being the face Haven earned. (Trust +${_vg3}.)`);
         }
         return true;
       }
@@ -621,7 +625,7 @@
       link.tributePaidKcal = (link.tributePaidKcal || 0) + paid;
       if (link.tributePaidKcal >= owed) {
         link.tributePaidWeek = week; link.arrears = 0;
-        link.trust = Math.min(100, link.trust + 3);
+        this._trustGain(link, 3);
         this._linkNote(link, 'tribute', 'Paid ' + link.tributePaidKcal.toLocaleString() + ' kcal. Current.');
         this.say(`Tribute paid: ${link.tributePaidKcal.toLocaleString()} kcal walks out of the pantry toward ${this._ovName(link.primary)}. The relationship holds.`);
       } else {
@@ -697,7 +701,7 @@
                   self._linkNote(link, 'arrears', 'Tribute short ' + paidK.toLocaleString() + '/' + link.tributeKcalPerWeek.toLocaleString() + ' kcal. Arrears ' + link.arrears.toLocaleString() + ' kcal.');
                   if (R() < 0.4) self.say(`⚠️ ${self._ovName(link.primary)} notices the missing tribute. Arrears: ${link.arrears.toLocaleString()} kcal. The air changes.`);
                 } else {
-                  link.trust = Math.min(100, link.trust + 1);
+                  self._trustGain(link, 1);
                 }
                 // the primary calls, sometimes
                 if (R() < 0.2) self.primaryDemand(link.id);
@@ -727,7 +731,7 @@
                   }
                 }
                 if (R() < link.trust / 100) {
-                  link.trust = Math.min(100, link.trust + 1);
+                  self._trustGain(link, 1);
                   // THE PANTRY GROWS (break-it regional 2026-10-10, third
                   // pass): the old code said "the pantry grows" but added
                   // nothing — a copy/engine lie. Tribute is real food (the
@@ -900,7 +904,7 @@
         } else {
           this.say('You give them your honest read. Counsel is cheap; honesty isn\'t.');
         }
-        link.trust = Math.min(100, link.trust + tGain);
+        tGain = this._trustGain(link, tGain);
         this._linkNote(link, 'demand', 'Honored the call (' + d.kind + ', trust +' + tGain + ').');
         this.say(`The obligation is honored. Trust with ${this._ovName(link.primary)}: ${link.trust}.`);
       } else {
@@ -921,8 +925,7 @@
         if (links[i].id !== linkId) continue;
         var link = links[i];
         if (link.status !== 'active' || link.subordinate !== HOME) return;
-        var gain = Math.min(6, Math.max(1, Math.round((mag || 0) / 3)));
-        link.trust = Math.min(100, link.trust + gain);
+        var gain = this._trustGain(link, Math.min(6, Math.max(1, Math.round((mag || 0) / 3))));
         if ((mag || 0) >= 8) this._linkNote(link, 'worth', 'Proved worth (deed, mag ' + mag + ').');
         return gain;
       }
@@ -1066,7 +1069,49 @@
 
     // ---------- SUCCESSION ----------
 
-    // onLeaderDeath: deaths detonate hierarchies. Wired into registerDeath
+    // _trustGain: the single choke point for trust GAINS. While a link's
+    // village grieves (mourningUntil, set by a speaker death), no gains
+    // land — grief is not bought off. Every positive gain stamps
+    // lastKeptDay: the link is being fed. Returns the gain actually applied
+    // (honest copy upstream).
+    _trustGain(link, n) {
+      try {
+        if (!link || !(n > 0)) return 0;
+        var day = (this.state.scholar || {}).day || 0;
+        if (link.mourningUntil && day < link.mourningUntil) return 0;
+        link.lastKeptDay = day;
+        link.trust = Math.min(100, link.trust + n);
+        return n;
+      } catch (e) { return 0; }
+    },
+
+    // _linkNeglected: neglect is the snap's other half. A link fed within
+    // the last 14 days — tribute current (tributePaidWeek) or any
+    // trust-granting deed (lastKeptDay) — is kept, and a kept link survives
+    // its speaker's death. A starved one doesn't. Fresh links fall back to
+    // formation day: the first two weeks are never neglect.
+    _linkNeglected(link) {
+      try {
+        var day = (this.state.scholar || {}).day || 0;
+        var lastKept = (link.lastKeptDay != null) ? link.lastKeptDay : (link.day || 0);
+        var tw = link.tributePaidWeek || -1;
+        if (tw >= 0) lastKept = Math.max(lastKept, tw * 7);
+        return (day - lastKept) >= 14;
+      } catch (e) { return false; }
+    },
+
+    // _markMourning: a speaker died — the village grieves for 7 days. No
+    // trust gains land in that window (see _trustGain). The link itself
+    // holds: it is with the village, not the person, and the new speaker
+    // inherits it.
+    _markMourning(link) {
+      try {
+        var day = (this.state.scholar || {}).day || 0;
+        link.mourningUntil = Math.max(link.mourningUntil || 0, day + 7);
+      } catch (e) {}
+    },
+
+    // onLeaderDeath: deaths shake hierarchies. Wired into registerDeath
     // (which the mantle-passing calls). The representative or the player —
     // when either falls, every link shakes.
     onLeaderDeath(vid) {
@@ -1091,29 +1136,39 @@
       } catch (e) {}
     },
 
-    // successionCrisis: the primary installs their own, the village
-    // renegotiates in the chaos, or the link snaps. Trust decides which.
+    // successionCrisis: Haven's speaker is dead — the representative or
+    // the player. Every link shakes, but the link is with the VILLAGE, not
+    // the person (round-5 winrate 2026-10-10): the new speaker inherits it.
+    // The cost is a trust haircut (-8, not -15) plus a 7-day mourning window
+    // with no trust gains — and the chaos is still leverage (they install
+    // their own, tribute moves). The snap survives only for the neglected:
+    // trust under 20 with no upkeep for 14+ days. Death + neglect kills;
+    // death alone doesn't.
     successionCrisis(linkId) {
       var links = this.hierarchyState();
       var link = null;
       for (var i = 0; i < links.length; i++) if (links[i].id === linkId) { link = links[i]; break; }
       if (!link || link.status !== 'active') return null;
-      link.trust = Math.max(0, link.trust - 15);
+      link.trust = Math.max(0, link.trust - 8);
+      this._markMourning(link);
       var other = link.subordinate === HOME ? link.primary : link.subordinate;
       if (link.subordinate === HOME) {
         // their leverage grows in our chaos: they install their own
         link.tributeKcalPerWeek = Math.round(link.tributeKcalPerWeek * 1.5);
         this._linkNote(link, 'succession', 'They installed their own speaker. Tribute up to ' + link.tributeKcalPerWeek.toLocaleString() + '.');
-        this.say(`With Haven grieving, ${this._ovName(other)} installs their own speaker at the table. Tribute rises to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. Grief is leverage, and they know it.`);
+        this.say(`With Haven grieving, ${this._ovName(other)} installs their own speaker at the table. Tribute rises to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. Grief is leverage, and they know it. The link holds — it was never with one person.`);
       } else {
-        // our subordinate tests whether we hold
-        link.trust = Math.max(0, link.trust - 10);
-        this._linkNote(link, 'succession', this._ovName(other) + ' watches to see if Haven holds.');
-        this.say(`${this._ovName(other)} watches to see if Haven holds without its dead. They'll test the link — count on it.`);
+        // our subordinate tests whether we hold — they smell the weakness
+        // and press the tribute DOWN while the chair is empty. The old -10
+        // trust stack is gone with the old -15: one death doesn't wipe
+        // weeks anymore; the test is leverage, not a wipe.
+        link.tributeKcalPerWeek = Math.max(500, Math.round(link.tributeKcalPerWeek * 0.75));
+        this._linkNote(link, 'succession', this._ovName(other) + ' pressed tribute down in Haven\'s chaos.');
+        this.say(`${this._ovName(other)} watches to see if Haven holds without its dead — and presses the tribute down to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week while the chair is empty. They'll test the link. Count on it.`);
       }
       try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'succession:' + other); } catch (e) {}
-      if (link.trust < 20) {
-        this.say('In the chaos, the link snaps. Nobody meant it. That\'s how these things go.');
+      if (link.trust < 20 && this._linkNeglected(link)) {
+        this.say('In the chaos, the neglected link snaps — no tribute, no deeds, no one left who kept it. Nobody meant it. That\'s how these things go.');
         this.breakLink(link.id, 'succession');
         return 'broken';
       }
@@ -1121,7 +1176,12 @@
     },
 
     // theirLeaderDied: the mirror — called when word comes (gossip, catch-up
-    // sim) that the other village's speaker is dead. Chaos is opportunity.
+    // sim) that the other village's speaker is dead. Chaos is opportunity,
+    // but the link is with the VILLAGE (round-5 winrate 2026-10-10): the new
+    // speaker inherits it. Cost: a trust haircut (-8, not -15) and 7 days of
+    // mourning with no trust gains. It never snaps the link by itself —
+    // unless the link was already neglected (trust under 20, no upkeep for
+    // 14+ days). Neglect plus death kills; death alone doesn't.
     theirLeaderDied(linkId) {
       var links = this.hierarchyState();
       var link = null;
@@ -1129,18 +1189,24 @@
       if (!link || link.status !== 'active') return null;
       // peer leagues shake covenant-style
       if (link.kind === 'covenant' || link.kind === 'trade') return this.covenantCrisis(link.id, 'their-speaker-died');
-      link.trust = Math.max(0, link.trust - 15);
+      link.trust = Math.max(0, link.trust - 8);
+      this._markMourning(link);
       var other = link.subordinate === HOME ? link.primary : link.subordinate;
       if (link.subordinate === HOME) {
         link.tributeKcalPerWeek = Math.max(500, Math.round(link.tributeKcalPerWeek * 0.75));
-        this._linkNote(link, 'succession', 'Their speaker died; Haven renegotiated in the chaos.');
-        this.say(`Word comes: ${this._ovName(other)}'s speaker is dead. In the chaos, Haven renegotiates — tribute down to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. The gambit would be cheap now, too. Remember that.`);
+        this._linkNote(link, 'succession', 'Their speaker died; Haven renegotiated in the chaos. The link holds to the village.');
+        this.say(`Word comes: ${this._ovName(other)}'s speaker is dead. In the chaos, Haven renegotiates — tribute down to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. The link holds: it was never with one person. They grieve; the gains wait.`);
       } else {
         link.tributeKcalPerWeek = Math.round(link.tributeKcalPerWeek * 1.5);
-        this._linkNote(link, 'succession', 'Haven installed its own speaker at their table.');
-        this.say(`Their speaker is dead. Haven installs its own at ${this._ovName(other)}'s table — the empire's manners. Tribute rises to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week.`);
+        this._linkNote(link, 'succession', 'Haven installed its own speaker at their table. The link holds to the village.');
+        this.say(`Their speaker is dead. Haven installs its own at ${this._ovName(other)}'s table — the empire's manners. Tribute rises to ${link.tributeKcalPerWeek.toLocaleString()} kcal/week. They grieve; the link holds.`);
       }
-      return true;
+      if (link.trust < 20 && this._linkNeglected(link)) {
+        this.say('In the chaos, the neglected link snaps — no tribute, no deeds, no one left who kept it. Nobody meant it. That\'s how these things go.');
+        this.breakLink(link.id, 'succession');
+        return 'broken';
+      }
+      return 'shaken';
     },
 
     // ---------- THE EARNED ENDING ----------
@@ -1474,31 +1540,37 @@
           // HONOR IS PROPORTIONAL: trust follows the food, never free.
           var paid = this._removePantryKcal(5000);
           var gain = paid >= 5000 ? 10 : Math.max(2, Math.round(10 * paid / 5000));
+          var _gr1 = 0;
           for (si = 0; si < subs.length; si++) {
-            subs[si].trust = Math.min(100, subs[si].trust + gain);
+            if (this._trustGain(subs[si], gain) < gain) _gr1++;
             this._nudgeOpinion(subs[si].subordinate, paid >= 5000 ? 5 : 2);
             this._linkNote(subs[si], 'court', 'First court: shared granary feast (' + paid.toLocaleString() + ' kcal).');
           }
+          var _gt1 = _gr1 ? ` — ${_gr1} grieving fire(s); theirs waits` : '';
           if (paid >= 5000) {
-            this.say(`🍲 The shared granary opens: 5,000 kcal for every fire of the realm, no strings. ${onames.join(', ')} count it — and remember who fed them first. (Trust +${gain} with each.)`);
+            this.say(`🍲 The shared granary opens: 5,000 kcal for every fire of the realm, no strings. ${onames.join(', ')} count it — and remember who fed them first. (Trust +${gain} with each${_gt1}.)`);
           } else {
-            this.say(`🍲 Haven opens the granary — ${paid.toLocaleString()} kcal, all it holds. An honest feast, not a grand one. They count it anyway. (Trust +${gain} with each.)`);
+            this.say(`🍲 Haven opens the granary — ${paid.toLocaleString()} kcal, all it holds. An honest feast, not a grand one. They count it anyway. (Trust +${gain} with each${_gt1}.)`);
           }
         } else if (how === 'host') {
           var m = this.mshipState();
           if (rep && rep.id !== this.villagerId && !(m.loaned && day < (m.loaned.untilDay || 0))) {
             m.loaned = { vid: rep.id, untilDay: day + 7, to: 'the first court' };
+            var _gr2 = 0;
             for (si = 0; si < subs.length; si++) {
-              subs[si].trust = Math.min(100, subs[si].trust + 6);
+              if (this._trustGain(subs[si], 6) < 6) _gr2++;
               this._linkNote(subs[si], 'court', 'First court hosted at Haven\'s fire.');
             }
-            this.say(`🏕️ The court sits at Haven's fire for seven days — ${rnm} holds the room, hears every grievance, pours every cup. Still ours; membership needs no presence. (Trust +6 with each.)`);
+            var _gt2 = _gr2 ? ` — ${_gr2} grieving fire(s); theirs waits` : '';
+            this.say(`🏕️ The court sits at Haven's fire for seven days — ${rnm} holds the room, hears every grievance, pours every cup. Still ours; membership needs no presence. (Trust +6 with each${_gt2}.)`);
           } else {
+            var _gr3 = 0;
             for (si = 0; si < subs.length; si++) {
-              subs[si].trust = Math.min(100, subs[si].trust + 3);
+              if (this._trustGain(subs[si], 3) < 3) _gr3++;
               this._linkNote(subs[si], 'court', 'First court: word sent — no speaker to host it.');
             }
-            this.say('There is no speaker to hold the room — the court gets word and promises instead. It lands softer. (Trust +3 with each.)');
+            var _gt3 = _gr3 ? ` — ${_gr3} grieving fire(s); theirs waits` : '';
+            this.say(`There is no speaker to hold the room — the court gets word and promises instead. It lands softer. (Trust +3 with each${_gt3}.)`);
           }
         } else {
           // cold: the iron price — tribute standardized up, trust down.
@@ -1539,14 +1611,16 @@
           }
           this.say(`⚔️ The Iron Court's answer: the YOKE. Tribute up 10%, terms standard, garrisons doubled. ${csubNames.join(', ')} kneel lower — and hate you cleaner. The realm holds. Fear is a kind of mortar. (Trust -12 with each.)`);
         } else if (how === 'mercy') {
+          var _gr4 = 0;
           for (csi = 0; csi < csubs.length; csi++) {
             csubs[csi].conquered = false;
             csubs[csi].tributeKcalPerWeek = 4000;
-            csubs[csi].trust = Math.min(100, csubs[csi].trust + 8);
+            if (this._trustGain(csubs[csi], 8) < 8) _gr4++;
             this._nudgeOpinion(csubs[csi].subordinate, 10);
             this._linkNote(csubs[csi], 'iron-court', 'Mercy: the yoke eased — courtship terms now.');
           }
-          this.say(`🕊️ The Iron Court's answer: MERCY. The yoke comes off — tribute back to courtship terms, 4,000 kcal a week, and the hatred starts to decay. ${csubNames.join(', ')} don't trust it yet. They might, in a season. (Trust +8 with each.)`);
+          var _gt4 = _gr4 ? ` — ${_gr4} grieving fire(s); theirs waits` : '';
+          this.say(`🕊️ The Iron Court's answer: MERCY. The yoke comes off — tribute back to courtship terms, 4,000 kcal a week, and the hatred starts to decay. ${csubNames.join(', ')} don't trust it yet. They might, in a season. (Trust +8 with each${_gt4}.)`);
         } else {
           // release: the realm dissolves, loudly
           for (csi = 0; csi < csubs.length; csi++) {
@@ -1577,8 +1651,7 @@
           // oath on an empty pantry used to buy the full +12 trust — free
           // honor. The feast-court path and the accord gift already scale;
           // the oath does too. The copy always says the true amount.
-          var ogain = oath >= 3000 ? 12 : Math.max(2, Math.round(12 * oath / 3000));
-          link.trust = Math.min(100, link.trust + ogain);
+          var ogain = this._trustGain(link, oath >= 3000 ? 12 : Math.max(2, Math.round(12 * oath / 3000)));
           this._nudgeOpinion(pn.primary, oath >= 3000 ? 5 : 2);
           this._linkNote(link, 'binding', 'Swore the oath of the realm (' + oath.toLocaleString() + ' kcal gift).');
           this.say(`🤝 ${rnm} kneels at ${onm}'s court and swears the oath — sealed with ${oath.toLocaleString()} kcal of Haven's harvest. The realm has its fires now, and one of them is yours. (Trust +${ogain}.)`);
@@ -1586,13 +1659,13 @@
           var mm = this.mshipState();
           if (rep && rep.id !== this.villagerId && !(mm.loaned && day < (mm.loaned.untilDay || 0))) {
             mm.loaned = { vid: rep.id, untilDay: day + 7, to: pn.primary };
-            link.trust = Math.min(100, link.trust + 8);
+            var _sv = this._trustGain(link, 8);
             this._linkNote(link, 'binding', rnm + ' serves seven days at their court.');
-            this.say(`🚶 ${rnm} rides to ${onm}'s court for seven days — Haven's face, their time. Still ours; membership needs no presence. (Trust +8.)`);
+            this.say(`🚶 ${rnm} rides to ${onm}'s court for seven days — Haven's face, their time. Still ours; membership needs no presence. (Trust +${_sv}.)`);
           } else {
-            link.trust = Math.min(100, link.trust + 4);
+            var _wd = this._trustGain(link, 4);
             this._linkNote(link, 'binding', 'No speaker to send — word and promises.');
-            this.say('There is no speaker to send — the court gets word and promises instead. It lands softer. (Trust +4.)');
+            this.say(`There is no speaker to send — the court gets word and promises instead. It lands softer. (Trust +${_wd}.)`);
           }
         }
       } else if (pn.shape === 'covenant') {
@@ -1619,20 +1692,24 @@
           covLinks[vsi].poolLive = true;
         }
         if (how === 'pact') {
+          var _gr5 = 0;
           for (vsi = 0; vsi < covLinks.length; vsi++) {
-            covLinks[vsi].trust = Math.min(100, covLinks[vsi].trust + 8);
+            if (this._trustGain(covLinks[vsi], 8) < 8) _gr5++;
             this._linkNote(covLinks[vsi], 'council', 'The war-pact sworn: mutual defense.');
           }
-          this.say(`🤝 The war-pact is sworn — no throne, no kneeling, just hands on the table. When any member's treeline burns, the league answers: Haven sends hands (two villagers, three days) or refuses aloud and the whole league hears it. ${vnames.join(', ')} — equals, now, in war as in council. The shared granary opens beside it: 2,000 kcal a week from every fire. (Trust +8 each.)`);
+          var _gt5 = _gr5 ? ` — ${_gr5} grieving fire(s); theirs waits` : '';
+          this.say(`🤝 The war-pact is sworn — no throne, no kneeling, just hands on the table. When any member's treeline burns, the league answers: Haven sends hands (two villagers, three days) or refuses aloud and the whole league hears it. ${vnames.join(', ')} — equals, now, in war as in council. The shared granary opens beside it: 2,000 kcal a week from every fire. (Trust +8 each${_gt5}.)`);
         } else {
           var opened = 0;
+          var _gr6 = 0;
           for (vsi = 0; vsi < covLinks.length; vsi++) {
-            covLinks[vsi].trust = Math.min(100, covLinks[vsi].trust + 6);
+            if (this._trustGain(covLinks[vsi], 6) < 6) _gr6++;
             this._linkNote(covLinks[vsi], 'council', 'The shared pool founded.');
             opened += 2000;
           }
           this.state.leaguePoolKcal = (this.state.leaguePoolKcal || 0) + opened;
-          this.say(`🌾 The shared granary is founded: ${vnames.join(', ')} each pour 2,000 kcal into one pool — ${opened.toLocaleString()} kcal under no one's roof and everyone's. Draw on it in famine; every draw is written in the council's book. The war-pact is sworn beside it: any member's call gets answered, or refused aloud. (Trust +6 each.)`);
+          var _gt6 = _gr6 ? ` — ${_gr6} grieving fire(s); theirs waits` : '';
+          this.say(`🌾 The shared granary is founded: ${vnames.join(', ')} each pour 2,000 kcal into one pool — ${opened.toLocaleString()} kcal under no one's roof and everyone's. Draw on it in famine; every draw is written in the council's book. The war-pact is sworn beside it: any member's call gets answered, or refused aloud. (Trust +6 each${_gt6}.)`);
         }
       } else if (pn.shape === 'trade') {
         // The Charter. The league must still hold >=3 trade bonds.
@@ -1649,13 +1726,15 @@
         }
         var tsi;
         if (how === 'sign') {
+          var _gr7 = 0;
           for (tsi = 0; tsi < trLinks.length; tsi++) {
             trLinks[tsi].chartered = true;
             trLinks[tsi].tariffRate = 1000;
-            trLinks[tsi].trust = Math.min(100, trLinks[tsi].trust + 6);
+            if (this._trustGain(trLinks[tsi], 6) < 6) _gr7++;
             this._linkNote(trLinks[tsi], 'charter', 'Sealed at the table rate (1,000 kcal/week).');
           }
-          this.say(`📜 Haven seals the charter at the table rate: pooled routes, 1,000 kcal a week in tariff per route, 400 out in upkeep. And the clause everyone reads twice: no mutual defense — when a member calls for help, Haven may refuse aloud, and the charter says that's allowed. (Trust +6 each.)`);
+          var _gt7 = _gr7 ? ` — ${_gr7} grieving fire(s); theirs waits` : '';
+          this.say(`📜 Haven seals the charter at the table rate: pooled routes, 1,000 kcal a week in tariff per route, 400 out in upkeep. And the clause everyone reads twice: no mutual defense — when a member calls for help, Haven may refuse aloud, and the charter says that's allowed. (Trust +6 each${_gt7}.)`);
         } else {
           // bargain: demand 1,500 — each member answers aloud, by opinion.
           // Played, not rolled: the courtship you did (or didn't) is the
@@ -1984,7 +2063,7 @@
           }
           try { if (this.journalNote) this.journalNote('village', 'pool', 'League pool week: +' + (paid + theirs).toLocaleString() + ' kcal.'); } catch (e) {}
         } else if (!link.poolLive) {
-          link.trust = Math.min(100, link.trust + 1);
+          this._trustGain(link, 1);
         }
         if (link.warOath && !link.pendingDefense && R() < 0.15) {
           link.pendingDefense = { day: day };
@@ -2007,12 +2086,12 @@
         var day = (this.state.scholar || {}).day || 0;
         var other = this._linkOther(link, HOME);
         var onm = this._ovName(other);
-        if (!link.chartered) { link.trust = Math.min(100, link.trust + 1); return; }
+        if (!link.chartered) { this._trustGain(link, 1); return; }
         var rate = link.tariffRate || 1000;
         var v = this.state.village || {}; v.pantry = v.pantry || [];
         v.pantry.push({ name: 'Route tariff — ' + onm, kcalEach: rate, units: 1, spoilDay: day + 21 });
         var upkeep = this._removePantryKcal(400);
-        link.trust = Math.min(100, link.trust + 1);
+        this._trustGain(link, 1);
         this._linkNote(link, 'tariff', 'Tariff +' + rate.toLocaleString() + ' kcal; upkeep -' + upkeep.toLocaleString() + ' kcal.');
         if (R() < 0.3) this.say(`📜 The ${onm} route pays: ${rate.toLocaleString()} kcal of tariff into the pantry, ${upkeep.toLocaleString()} out in upkeep. The charter earns its ink.`);
         if (!link.pendingTradeCall && R() < 0.12) {
@@ -2131,10 +2210,10 @@
           return 'empty';
         }
         this._sendAwayParty(sent, 3, other, 'defense');
-        link.trust = Math.min(100, link.trust + 8);
+        var _df = this._trustGain(link, 8);
         this._linkNote(link, 'defense', 'Answered the call: ' + sent.length + ' villagers, 3 days.');
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-sent:' + other); } catch (e) {}
-        this.say(`🛡️ Haven answers: ${sent.length} villagers walk out to ${onm}'s treeline for three days. The war-pact holds because it's held. (Trust +8.)`);
+        this.say(`🛡️ Haven answers: ${sent.length} villagers walk out to ${onm}'s treeline for three days. The war-pact holds because it's held. (Trust +${_df}.)`);
         return 'sent';
       }
       var ls = this._peerLinks('covenant');
@@ -2172,9 +2251,9 @@
         // after". The party walks out for real now; the repayment arrives
         // with them, on return, via the away-parties return tick.
         this._sendAwayParty(sent, 3, other, 'trade', { repayKcal: 1500 });
-        link.trust = Math.min(100, link.trust + 6);
+        var _fv = this._trustGain(link, 6);
         this._linkNote(link, 'favor', 'Sent help as a priced favor (+1,500 kcal repaid).');
-        this.say(`🤝 Haven sends ${sent.length} villagers to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +6.)`);
+        this.say(`🤝 Haven sends ${sent.length} villagers to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +${_fv}.)`);
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'favor-sent:' + other); } catch (e) {}
         return 'sent';
       }
@@ -2229,13 +2308,14 @@
       if (how === 'concede') {
         if (link.kind === 'covenant') {
           link.concessionUntil = day + 28;
-          this.say(`🤝 Haven concedes: ${onm}'s pool share halves for four weeks. The ${kindName} holds — bought, honestly, and everyone knows the price. (Trust +8.)`);
+          this.say(`🤝 Haven concedes: ${onm}'s pool share halves for four weeks. The ${kindName} holds — bought, honestly, and everyone knows the price.`);
         } else {
           link.tariffRate = Math.max(500, Math.round((link.tariffRate || 1000) * 0.75));
-          this.say(`🤝 Haven concedes: the ${onm} route tariff drops to ${link.tariffRate.toLocaleString()} kcal a week. The ${kindName} holds — bought, honestly. (Trust +8.)`);
+          this.say(`🤝 Haven concedes: the ${onm} route tariff drops to ${link.tariffRate.toLocaleString()} kcal a week. The ${kindName} holds — bought, honestly.`);
         }
-        link.trust = Math.min(100, link.trust + 8);
-        this._linkNote(link, 'crisis', 'Conceded better terms; the league holds.');
+        var _cg = this._trustGain(link, _cgw);
+        this._linkNote(link, 'crisis', 'Conceded better terms; the league holds (trust +' + _cg + ').');
+        this.say(`(Trust +${_cg}.)`);
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'crisis-conceded:' + other); } catch (e) {}
         return 'conceded';
       }
@@ -2430,7 +2510,7 @@
             else if ((links[i].kind === 'covenant' || links[i].kind === 'trade') &&
                      (links[i].a === 'haven' || links[i].b === 'haven')) {
               var g = Math.min(4, Math.max(1, Math.round((magnitude || 0) / 4)));
-              links[i].trust = Math.min(100, links[i].trust + g);
+              this._trustGain(links[i], g);
             }
           }
         }
