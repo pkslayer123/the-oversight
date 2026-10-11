@@ -702,7 +702,27 @@
         } else if (playerAtHaven) {
           this.say(`🪤 ${nm} is back. "Snares were empty. They'll keep."`);
         }
-        try { this.bumpTrust(vid, 1); } catch (e) {}
+        // TRAP TEACHING (structural 2026-10-10): a hunter who knows the wire
+        // can SHOW you — once, and only if you've earned their regard (trust
+        // 15+; strangers don't hand over their craft). Watching real hands
+        // work a real snare teaches the shape of it: recipe L1 (seen — blind
+        // 35% craft, materials at risk). Word of mouth is the canon pre-codex
+        // channel; this is its trapping beat. Fires on the witnessed return,
+        // never silently.
+        try {
+          var _vp = this.vpOf ? this.vpOf(vid) : null;
+          var _rk = ((this.state.codex || {}).recipes || {})['snare'] || {};
+          var _tr = (this.state.village.trust || {})[vid];
+          if (_tr === undefined) _tr = 10;
+          if (playerAtHaven && _vp && _vp.knowsSnare && ((_rk.level || 0) < 1) && !_vp.taughtSnare && _tr >= 15) {
+            _vp.taughtSnare = true;
+            if (this.grantKnowledge) this.grantKnowledge('recipe', 'snare', 1, { type: 'taught', by: nm });
+            this.say(`🪤 ${nm} catches you watching the snares come off the line. "...Want to actually SEE one?" They show you — the loop, the trigger stick, where the run narrows between the roots. "Opossum trails. Check at dawn. Always." Your hands don't know it yet. Your eyes do.`);
+          }
+        } catch (e) {}
+        try { this.bumpTrust(vid, 1); } catch (e) {} // NOTE: the teaching gate
+        // above reads trust BEFORE this +1 — the lesson is earned on prior
+        // regard, not on the bump for this return.
       } else if (purpose === 'visit' || purpose === 'guard') {
         var withLine = '';
         var withId = null;

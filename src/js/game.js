@@ -763,6 +763,11 @@
           survivalProbability: 25 + Math.floor(Math.random() * 21),
           systemAssessment: sysAssess,
           secretFear, languages: langs, occupationId: occ.id || null,
+          // TRAP REACHABILITY (structural 2026-10-10): occupation knowledge
+          // must reach the profile. The hunting guide's knowsSnare was dropped
+          // here, leaving the whole villager-traps system (TRAPS objective,
+          // ranging bonus, teaching beats) dormant — no villager ever qualified.
+          knowsSnare: !!occ.knowsSnare,
           candidate: candidate !== false, pro,
           // APPEARANCE (Steve 2026-10-06): the sprite is generated FROM the
           // person. gender follows the name (nameGender computed above);
@@ -989,6 +994,10 @@
         survivalProbability: 25 + Math.floor(Math.random() * 21),
         systemAssessment: sysAssess,
         secretFear, languages: langs, occupationId: occ.id || null,
+        // TRAP REACHABILITY (structural 2026-10-10): seed-hydrated villagers
+        // keep their occupation's trap knowledge too (same dropped wire as the
+        // generated path above).
+        knowsSnare: !!occ.knowsSnare,
         candidate: false, pro,
         gender: s.gender || (pro === 'she' ? 'f' : pro === 'he' ? 'm' : 'x'),
         skinTone: s.skinTone || this.appearanceFor(origin, parsed.tags).skinTone,
@@ -2731,6 +2740,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.state.scholar.tools = this.state.scholar.tools || [];
         this.state.scholar.tools.push({ recipeId, uses: recipe.uses, name: recipe.name });
         this.say(`You make a ${recipe.name}. ${recipe.description} (${recipe.uses} uses)`);
+        // PRACTICE (structural 2026-10-10): the blind→L2 lesson lived only in
+        // the durable branch above — a trap built blind (35%) never taught the
+        // hands, so hunter-taught trappers were stuck at blind odds forever.
+        // One system: a successful blind craft teaches L2, trap or not.
+        try { if (blind && this.grantKnowledge) this.grantKnowledge('recipe', recipeId, 2, { type: 'discovery' }); } catch (e) {}
       }
       // ACTION CLOCK: crafting = 1 chunk (32 ticks, time + hand work).
       this.tickAction(32);
@@ -7440,11 +7454,17 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         };
       }
       // STRATEGY RECIPES: food preservation and preparation unique to their way
+      // of life — and how they TAKE food, not just how they cook it. A fisher's
+      // weirs, a forager's snares, a scavenger's deadfalls are their food ways
+      // as much as any stew. (TRAP REACHABILITY, structural 2026-10-10: village
+      // codices never carried trap recipes, so studyVillageCodex — 81 studies
+      // in round 5 — could never teach one. Now the strategies that trap,
+      // teach trapping.)
       const strategyRecipes = {
-        fisher: ['smoked_fish', 'fish_stew'],
+        fisher: ['smoked_fish', 'fish_stew', 'minnow_trap', 'fish_weir'],
         farmer: ['root_mash', 'grain_porridge'],
-        forager: ['trail_mix', 'herb_tea'],
-        scavenger: ['scrap_stew', 'can_cookery'],
+        forager: ['trail_mix', 'herb_tea', 'snare'],
+        scavenger: ['scrap_stew', 'can_cookery', 'deadfall'],
       };
       const recipes = strategyRecipes[profile.focus] || strategyRecipes.forager;
       for (const r of recipes) {
@@ -20418,6 +20438,27 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // Failed trials get the "failed BEAUTIFULLY" text beat — not a fanfare.
       let triumphed = false;
       if (opt.id === 'stalk') {
+        // FIELD MANUAL (TRAP REACHABILITY, structural 2026-10-10): the System
+        // issues "field equipment" for the stalk — its cheerful, chewed
+        // pamphlet on small game. A real readable book in the pack (readBook
+        // teaches spring_snare L3): this is the reachable-by-design spawn for
+        // system_manual_traps. The System thinks pamphlets are hunting. Earned:
+        // day-24 trial, a full day-part, −250 kcal. Skipped if you already
+        // know the spring snare or already hold the pamphlet.
+        try {
+          const rk = ((this.state.codex || {}).recipes || {})['spring_snare'] || {};
+          const hasPamphlet = (this.state.scholar.inventory || []).some(i => i && i.bookId === 'system_manual_traps');
+          if ((rk.level || 0) < 1 && !hasPamphlet) {
+            const pam = (this.data.books || []).find(b => b.id === 'system_manual_traps');
+            if (pam) {
+              this.state.scholar.inventory.push({
+                bookId: pam.id, units: 1, name: pam.name, kcalEach: 0,
+                spoilDay: 9999, unit: 'book', prep: 'Read it.', kg: 0.1
+              });
+              say('📺 SYSTEM: "FIELD EQUIPMENT ISSUED." A pamphlet flutters down from nowhere. Cheerful pictograms. One page chewed by something. "REVISION 5. The spring-pole method has been DEEMED SPORTING. The pole does the work. You do the waiting. Waiting is the hard part. We believe in you." (It\'s in your pack — read it.)');
+            }
+          }
+        } catch (e) {}
         if (this.hasAbility('game_sense') || this.hasAbility('tracker') || this.hasAbility('patient_aim')) {
           say('🏹 TRIUMPH: you read the ground like a letter — bent grass, a print, the wind in your face. The kill is clean, quick, and kind. The System replays it eleven times.');
           triumphed = true;
@@ -20668,7 +20709,33 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           if (!t.bookChecked) {
             t.bookChecked = true;
             if (this.data.books.length && Math.random() < 0.30) {
-              const book = this.data.books[Math.floor(Math.random() * this.data.books.length)];
+              // FIELD SHELF (TRAP REACHABILITY, structural 2026-10-10): the
+              // trap/fishing manuals (trappers_handbook, system_manual_traps,
+              // fishers_ledger, basket_weavers_primer) were 4 of 34 on one
+              // uniform shelf — findable only by lottery. A ruin in the wild
+              // was somebody's camp: out here the shelf holds field books.
+              // Books stay rare (30% per ruin, first search); the RIGHT book
+              // is now reachable by going where trappers lived. NOTE: px/py
+              // are WORLD coords (the ruin is a world tile) — mx/my are the
+              // detail-grid position inside it and would read the wrong tiles.
+              const FIELD_BOOK_IDS = ['trappers_handbook', 'system_manual_traps', 'fishers_ledger', 'basket_weavers_primer'];
+              let wild = 0;
+              try {
+                const wpx = this.map.px ?? 4, wpy = this.map.py ?? 4;
+                for (let wdy = -2; wdy <= 2; wdy++) for (let wdx = -2; wdx <= 2; wdx++) {
+                  const wax = wpx + wdx, way = wpy + wdy;
+                  if (wax < 0 || wax > 8 || way < 0 || way > 8) continue;
+                  const wty = (this.tileAt(wax, way) || {}).type;
+                  if (wty === 'forest' || wty === 'grove' || wty === 'water' || wty === 'creek' || wty === 'wetland') wild++;
+                }
+              } catch (e) { wild = 0; }
+              let book;
+              const fieldPool = (this.data.books || []).filter(b => FIELD_BOOK_IDS.indexOf(b.id) !== -1);
+              if (wild >= 3 && fieldPool.length && Math.random() < 0.5) {
+                book = fieldPool[Math.floor(Math.random() * fieldPool.length)];
+              } else {
+                book = this.data.books[Math.floor(Math.random() * this.data.books.length)];
+              }
               this.state.scholar.inventory.push({
                 bookId: book.id, units: 1, name: book.name, kcalEach: 0,
                 spoilDay: 9999, unit: 'book', prep: 'Read it.', kg: 0.5
