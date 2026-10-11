@@ -15843,7 +15843,18 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } catch (e) {}
       const ia = this.npcIntel(a).primary, ib = this.npcIntel(b).primary;
       const oh = (this.data.characterGen || {}).overheard || {};
-      const openers = (oh.openers || {})[ia] || [];
+      const openers = ((oh.openers || {})[ia] || []).slice();
+      // KNOWLEDGE GATING (dialog-gating 2026-10-11): some overheard lines carry
+      // earned knowledge — the System pre-day-7, monster talk before the first
+      // monster. They only enter the pool when the gate passes. Fresh spawn =
+      // nothing earned, so these never fire early.
+      const metMonster = Object.keys((this.state.codex || {}).monsters || {}).length > 0;
+      for (const g of (((oh.gatedOpeners || {})[ia]) || [])) {
+        if (!g || typeof g.text !== 'string') continue;
+        if (g.needs === 'system' && !this.state.systemArrived) continue;
+        if (g.needs === 'monster' && !metMonster) continue;
+        openers.push(g.text);
+      }
       const replies = (oh.replies || {})[ib] || [];
       if (!openers.length || !replies.length) return;
       const op = openers[Math.floor(Math.random() * openers.length)];
@@ -22072,7 +22083,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // day — policy-independent. Assignments aren't the only way villagers
         // work, so the ambient loop carries it too.
         try { this.villagerCuriousExamine(id); } catch (e) {}
-        const first = person.name.split(' ')[0];
+        // KNOWLEDGE GATING (dialog-gating 2026-10-11): ambient narration never
+        // leaks true names — displayName gives the earned name or a descriptor.
+        const first = this.displayName(id);
         const r = Math.random();
         const pers = person.personality || { sharing: 'pragmatic', temperament: 'steady' };
         // PERSONALITY: selfish keeps more (shares 50%), generous shares all, pragmatic shares 80%.
@@ -22148,12 +22161,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             try { if (this.removeVillager) this.removeVillager(id, 'killed'); } catch (e) {}
             try { if (this.seedGossip) this.seedGossip('death', { who: id }, []); } catch (e) {}
             if (present) {
-              this.say(`💀 ${person.name} is gone. The wound was too much. The village is ${v.roster.length} now.`);
+              this.say(`💀 ${this.displayName(id)} is gone. The wound was too much. The village is ${v.roster.length} now.`);
             } else {
               // you weren't there to mourn. They'll tell you when you're back.
               const sch = this.state.scholar;
               sch.awayNews = sch.awayNews || [];
-              if (sch.awayNews.length < 8) sch.awayNews.push(`💀 ${person.name} died while you were gone — a wound that wouldn't close.`);
+              if (sch.awayNews.length < 8) sch.awayNews.push(`💀 ${this.displayName(id)} died while you were gone — a wound that wouldn't close.`);
             }
             try { this.villageEvent('death'); } catch (e) {}
             delete v.health[id];
