@@ -5926,7 +5926,6 @@
         "\"Notice it never intervenes directly? It empowers, it observes, it rewards. It's a gardener, not a guardian. We're being cultivated.\""
       ],
       "monsters": [
-        "\"The monsters aren't random. The headlight-eyed one hunts at night, the huge thing rooting in the underbrush owns the day — that's niche partitioning. Something designed an ecosystem.\"",
         "\"Notice how nothing out there eats the plants we can't identify? Fauna and flora came as a set. This is a terrarium, and we're inside the glass.\"",
         "\"Attack patterns repeat. Exactly. No animal is that consistent — these are running programs, not instincts. Learn the program, beat the monster.\"",
         "\"Predators don't waste energy on display. But these things posture, they announce themselves. That's not hunting — that's theater.\"",
@@ -5934,6 +5933,9 @@
         "\"They never attack the camp directly. Not once. There are rules of engagement here, and something is enforcing them.\"",
         "\"The variety is wrong. Too many apex designs, not enough prey species. This isn't an ecosystem — it's a bestiary. Curated.\"",
         "\"Wounds from different monsters heal at different rates. I've been tracking it. Something in their biology is... tuned. Deliberately.\""
+      ],
+      "monstersGated": [
+        "\"The monsters aren't random. The headlight-eyed one hunts at night, the huge thing rooting in the underbrush owns the day — that's niche partitioning. Something designed an ecosystem.\""
       ],
       "situation": [
         "\"We need to stop thinking like victims and start thinking like contestants. What does the audience want? Give them that, and the System keeps us alive.\"",
@@ -5964,7 +5966,9 @@
         "\"Forget what they are. Learn where they sleep, what they eat, when they're lazy. That's the whole manual.\"",
         "\"Every monster I've seen has a tell before it moves. Watch the shoulders. It's always the shoulders.\"",
         "\"You don't fight the big ones. You avoid the big ones. Fighting is what you do when avoiding failed.\"",
-        "\"Traps don't care how scary it is. A snare works on anything with legs and habits.\"",
+        "\"Traps don't care how scary it is. A snare works on anything with legs and habits.\""
+      ],
+      "monstersGated": [
         "\"The woods are loud before an attack. Birds go quiet. Learn the quiet — it's your early warning.\""
       ],
       "situation": [
@@ -6055,13 +6059,15 @@
       ],
       "monsters": [
         "\"What if the monsters are scared of us too? We're the aliens here. Maybe they're the locals and we're the invasive species.\"",
-        "\"The Hushpuppy doesn't want to kill you — it wants quiet. It's not a predator, it's a librarian with teeth.\"",
         "\"What if we tried feeding one? Not fighting, not fleeing — just leaving food out. See what happens. Worst case, we're out a meal.\"",
         "\"They're beautiful, in a way. Terrifying, but beautiful. Like the world dreamed them up and the dream got loose.\"",
         "\"I name them. Not the System names — my names. It makes them less scary. Names are handles. You can grip a handle.\"",
         "\"What if they're not from here OR there? What if they're from the space between — the static when the world changed channels?\"",
         "\"I draw them. Every one I see. Someday someone will need these drawings. Art outlives the artist, right?\"",
         "\"They move like music. There's rhythm to it. Once you hear the rhythm, you can dance around them.\""
+      ],
+      "monstersGated": [
+        "\"The Hushpuppy doesn't want to kill you — it wants quiet. It's not a predator, it's a librarian with teeth.\""
       ],
       "situation": [
         "\"We should throw a feast. I know — food's short. But a feast says 'we're going to make it,' and right now nobody believes that.\"",

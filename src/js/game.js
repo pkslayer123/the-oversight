@@ -1378,19 +1378,22 @@
         if (!va || !vb) continue;
         used.add(a); used.add(b);
         const ha = va.heritage || 'the scattered', hb = vb.heritage || 'the scattered';
-        const fa = va.name.split(' ')[0], fb = vb.name.split(' ')[0];
         let kind, history;
+        // KNOWLEDGE GATE (dialog rebuild 2026-10-11): history strings are
+        // templates resolved at render time via displayName — baking true
+        // first names here leaked them onto fresh spawns when trust unlocked
+        // the telling (conversation.js renders {a}/{b}).
         if (ha !== hb) {
           kind = 'old_wound';
           const g = grievances[Math.floor(Math.random() * grievances.length)];
           history = [
-            `${fa} and ${fb} don't speak. It's not new.`,
+            `{a} and {b} don't speak. It's not new.`,
             `Their peoples have history — ${ha} and ${hb}. The kind measured in generations, not arguments.`,
             `Something about ${g}. Ask directly and the conversation ends.`,
           ];
         } else {
           kind = 'friction';
-          history = [`${fa} and ${fb} rub each other wrong. Nobody knows why. Maybe nobody needs to.`];
+          history = [`{a} and {b} rub each other wrong. Nobody knows why. Maybe nobody needs to.`];
         }
         conflicts.push({
           a, b, kind, heritageA: ha, heritageB: hb, history,
@@ -1457,8 +1460,10 @@
 
     conflictNote(c, id) {
       if (!c) return null;
-      const other = (this.data.villagers || []).find(x => x.id === (c.a === id ? c.b : c.a));
-      const on = other ? other.name.split(' ')[0] : 'someone';
+      // KNOWLEDGE GATE (dialog rebuild 2026-10-11): was other.name.split(' ')[0]
+      // — a true-name leak on person cards. displayName respects what's earned.
+      const oid = c.a === id ? c.b : c.a;
+      const on = this.displayName(oid);
       if (c.kind === 'old_wound' && c.stage >= 1) return `⚡ old history with ${on} (${c.heritageA} / ${c.heritageB})`;
       return `⚡ tension with ${on} — you don't know why`;
     },
@@ -14094,12 +14099,26 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const { primary, secondary } = this.npcIntel(vid);
       const first = this.displayName(vid);
       topic = ['system', 'monsters', 'situation'].includes(topic) ? topic : 'situation';
+      // KNOWLEDGE GATE (dialog rebuild 2026-10-11): 'system' theories name the
+      // System — pre-day-7 they must not fire even if called directly.
+      if (topic === 'system' && !this.state.systemArrived) topic = 'situation';
       // no-repeat: track said theory lines per villager like conversations do.
       const v = this.state.village;
       v.theoriesSaid = v.theoriesSaid || {};
       const saidKey = vid + ':' + primary + ':' + topic;
       v.theoriesSaid[saidKey] = v.theoriesSaid[saidKey] || [];
-      const pool = ((theories[primary] || {})[topic] || []).filter(l => v.theoriesSaid[saidKey].indexOf(l) === -1);
+      // KNOWLEDGE GATE (dialog rebuild 2026-10-11): monster-specific behavioral
+      // claims (the hushwolf "wants quiet" counter, the headlight-deer night
+      // habit, the birds-quiet telegraph) live in monstersGated and only draw
+      // once the village has a monster codex entry. Generic tactics stay open.
+      const idef = theories[primary] || {};
+      const gatedOk = topic === 'monsters' &&
+        Object.keys((this.state.codex || {}).monsters || {}).length > 0;
+      const basePool = (idef[topic] || []).filter(l => v.theoriesSaid[saidKey].indexOf(l) === -1);
+      const gatedPool = gatedOk
+        ? ((idef.monstersGated || []).filter(l => v.theoriesSaid[saidKey].indexOf(l) === -1))
+        : [];
+      const pool = basePool.concat(gatedPool);
       const line = pool.length
         ? pool[Math.floor(Math.random() * pool.length)]
         : (cg.theorizeAsks || ["\"What's your read? I want to know if I'm crazy.\""])[Math.floor(Math.random() * (cg.theorizeAsks || []).length)] || "\"What's your read?\"";

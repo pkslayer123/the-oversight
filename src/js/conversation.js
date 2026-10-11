@@ -1724,8 +1724,13 @@
       // 5. Contextual small talk — mood, temperament, reputation. Never repeated.
       const pool = [];
       const push = (arr, w) => { for (const x of (arr || [])) for (let i = 0; i < (w || 1); i++) pool.push(x); };
-      push((this.data.characterGen.moodTalk || {})[mood], (mood === 'grieving' || mood === 'scared') ? 3 : 1);
-      push((this.data.characterGen.temperamentTalk || {})[temp], 2);
+      // KNOWLEDGE GATE (dialog rebuild 2026-10-11): pre-day-7, nobody references
+      // the System — it hasn't arrived. Filter System-name lines from the
+      // small-talk pools (e.g. the sardonic "If the System wanted us dead").
+      const sysUp = !!this.state.systemArrived;
+      const eraOk = (arr) => (arr || []).filter(l => sysUp || !/\bSystem\b/.test(String(l)));
+      push(eraOk((this.data.characterGen.moodTalk || {})[mood]), (mood === 'grieving' || mood === 'scared') ? 3 : 1);
+      push(eraOk((this.data.characterGen.temperamentTalk || {})[temp]), 2);
       push(this.repTalkLines(vid), 2);
       // INTELLIGENCE VOICE: analytical people open with questions, practical
       // people open with work, social people open with the group. How someone
@@ -1739,7 +1744,7 @@
         const j = Math.floor(Math.random() * (i + 1));
         const t = allT[i]; allT[i] = allT[j]; allT[j] = t;
       }
-      push(allT.slice(0, 8), 1);
+      push(eraOk(allT.slice(0, 8)), 1);
       if (!pool.length) push(cg.openers || ['"Hey."'], 1);
       // Authored-voiced lines (mood/temperament/intel) already sound like
       // someone — the voice layer only voices the generic pools.
@@ -4451,14 +4456,19 @@
           else this.say(`${this.displayName(other)} has been colder to you lately. You don't know why.`);
         }
         // HISTORY UNFOLDS through trust — slowly, partially, maybe never fully.
+        // KNOWLEDGE GATE (dialog rebuild 2026-10-11): history strings are
+        // templates; {a}/{b} resolve via displayName at render time so no
+        // true name leaks before it's earned. (Pre-rebuild saves may carry
+        // baked-name strings; those pass through — can't unbake reliably.)
         if (cf.known && cf.kind === 'old_wound') {
           const t = (this.state.village.trust || {})[vid] || 0;
+          const fillNames = (s) => String(s).split('{a}').join(this.displayName(cf.a)).split('{b}').join(this.displayName(cf.b));
           if (cf.stage === 0 && t >= 45) {
             cf.stage = 1;
-            this.say(`Late, quiet, ${this.displayName(vid)} tells you: "${cf.history[1]}"`);
+            this.say(`Late, quiet, ${this.displayName(vid)} tells you: "${fillNames(cf.history[1])}"`);
           } else if (cf.stage === 1 && t >= 70) {
             cf.stage = 2;
-            this.say(`${this.displayName(vid)} looks away. "${cf.history[2]}" That's all you get. Maybe that's all there is.`);
+            this.say(`${this.displayName(vid)} looks away. "${fillNames(cf.history[2])}" That's all you get. Maybe that's all there is.`);
           }
         }
       }

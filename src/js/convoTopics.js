@@ -448,7 +448,7 @@
         const cf = (v.conflicts || []).find(x => !x.resolved && (x.a === vid || x.b === vid));
         if (cf) {
           const oid = cf.a === vid ? cf.b : cf.a;
-          if (roster.indexOf(oid) !== -1) return { id: oid, why: 'grievance', hist: cf.history };
+          if (roster.indexOf(oid) !== -1) return { id: oid, why: 'grievance', hist: cf.history, ha: cf.a, hb: cf.b };
         }
       } catch (e) {}
       try {
@@ -473,7 +473,11 @@
       const vp = this.vpOf(vid);
       const temp = this.npcTemper(vid);
       if (pick.why === 'grievance') {
-        const hist = (pick.hist || ['old history'])[0];
+        // KNOWLEDGE GATE (dialog rebuild 2026-10-11): hist entries are {a}/{b}
+        // templates — resolve via displayName, never baked true names.
+        const dn = (id) => id ? this.displayName(id) : 'someone';
+        const fillNames = (s) => String(s).split('{a}').join(dn(pick.ha)).split('{b}').join(dn(pick.hb));
+        const hist = fillNames((pick.hist || ['old history'])[0]);
         return [
           '"' + nm + '?" A muscle moves in their jaw. "' + hist + '"',
           '"' + nm + '. We don\'t... it\'s old. Older than the scattering, even. Some things you carry so long they grow into you."',
