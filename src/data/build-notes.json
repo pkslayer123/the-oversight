@@ -2,6 +2,14 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Three of the Final Draft\u2019s monsters finally fight the way their stories always said they would. The Redactor points at something you love \u2014 your weapon, your footing, even your last turn \u2014 a full round before it redacts it into silence; carry a decoy rattle and it takes the loudest thing instead, or go quiet for two turns and it starves.",
+      "Gavel holds a real trial: it accuses you from your own history, waits a round, then the verdict falls. You can object (costs fame), demand a recess (once), or confess first (smaller verdict \u2014 but everyone remembers). Flank it; frontal attacks hit the sound-block.",
+      "The Focus Group rates your every move out loud \u2014 loved actions hit harder but get answered, hated ones are safe but weak. Pop its three mouth-heads to end it, or just be boring for three rounds and they\u2019ll wander off."
+    ]
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "Three of the Final Draft's monsters fight for real now. The Spool tapes your opening moves and plays them back at you \u2014 feed it something harmless (a wait, a bandage) and its replay is useless. The Chorus Line keeps a 4/4 beat you can hear coming \u2014 dance through the downbeat, move with it, flank it, or break its rhythm with a handful of gravel. And the Terms of Service will try to get you to sign mid-fight \u2014 read the fine print; there's a way out in section zero."
     ]
   },
@@ -108,15 +116,5 @@
       "Fighting abilities land the moment you use them: Brace is up before the counter-swing, and a War Cry can stop the hit that's already coming."
     ],
     "version": "f1cb0e5d-20261010-052413"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Haven's first link with another village is a moment now: the System's coordination layer comes online, and you choose Haven's first gesture \u2014 a gift of food, your speaker's three days, or cold ink. They're watching.",
-      "Village negotiations are played, not rolled: a village that won't take your terms counters with their own price \u2014 accept it, sweeten it with real food, or walk away from the table.",
-      "You can seal an understanding with a village, sealed with a feast \u2014 no tribute, no bowing. Their fire opens to your people: a guest's meal, once a day.",
-      "Diplomacy is knowledge-gated now: villages you've never heard of don't show up as proposals. Travelers' rumors actually reach you."
-    ],
-    "version": "db5a862c-20261009-232417"
   }
 ]
