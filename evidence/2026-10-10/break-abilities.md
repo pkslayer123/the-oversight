@@ -180,3 +180,61 @@ Dead_aim taps now advance the world once (monsters act half as often after
 a dead-aim tap — the old double was the bug); scream costs the copy's
 20 kcal through the ability bar (the old combat button was free); 10
 abilities gained working buttons.
+
+---
+
+## Third run 2026-10-10 (night) — the starvation farm: BROKE + FIXED
+
+### L1. EXPLOIT: second_wind printed 500 kcal/day from nothing (game.js, statusEffects.js, abilities.json)
+`second_wind`'s spite-ration (`s.kcal = Math.max(s.kcal, 500)`) fired on
+EVERY cheated death, including starving to 0 HP overnight: sleep at 0 kcal
+→ the overnight spiral (~13–20 HP/night, engine/calories.js) takes you →
+`maybeCheatDeath()` → 1 HP + 500 kcal → repeat. A true infinite engine in
+the one economy where food is everything. Fix: `maybeCheatDeath(cause)` —
+the ration fires only on violent death; `'starvation'` (overnight caller)
+and `'disease'` (the trembles) get 1 HP and stay hungry. Copy updated
+honestly (description + Refuse action effect + in-game say variant).
+Proof: `scripts/test-abilities-breakit-20261010.js` — 23/23 green × 4
+seeds; `FIX=0` replays the pre-fix shim and the exploit test goes red
+(kcal=500), demonstrating the hole. Violent-death ration, refuses_death
+2×/day, molt single-fire + gear loss, blood_magic 2/daypart cap all hold.
+
+### L2. HONESTY: the XP bar lied (app.js)
+Abilities menu rendered `xp / (level*100)`; the engine needs 10 (L1→L2) /
+25 (L2→L3) — L1 showed 9% at 9/10 real. Now uses the engine thresholds
+(proven by the test's threshold assertions); L3 shows full.
+
+### L3. HONESTY: stale synergy stirrings (app.js, sibling sweep)
+`renderSynergyStirrings` and `_synTeaseSet` checked only `syn.requires` —
+multi-path (`requires_any`) synergies always passed, so a lost leg left a
+stale "something is stirring" tease. Both now path-aware like
+`recomputeActiveSynergies`. Empty-slot copy also fixed: "trials, mentors,
+or the System" → "the System: offers, trials, and service" (mentors never
+grant abilities).
+
+### L4. DEAD CODE (documented, NOT fixed — design call for Steve)
+**17 of 85 abilities have no player grant path** (grant paths are exactly:
+34 occupation background ids + 55 system_offer ids, all slot-checked):
+trial ×7 (trials never built; Trial of Hunger/Blood live only in
+`data/_archive`) — iron_stomach, adrenaline_surge, intimidating_presence,
+gossip_network, peacemaker, evidence_board, trade_of_blows (three with ZERO
+code refs); practice ×5 — stalk, blood_trail, ambush, war_cry, haymaker
+(NPC kits only); 'granted' ×5 in no occupation's list — purify,
+brawler_instinct, silver_tongue, pathfinder, lie_detector (**purify is the
+poison cure**). **Cascade: 20 of 51 synergies undiscoverable** (every path
+has a dead leg, verified by hand). **blood_tracker is discoverable but
+mechanically void** (no modifiers, no flags, zero code reads). The proof
+test characterizes all three dead sets as tripwires. Proposed (Steve
+picks): (a) build the missing trial/practice grants; (b) retype the 17 to
+system_offer; (c) confirm NPC-only and prune.
+
+### Held (attacked, resisted)
+Synergy stacking uncapped (by design — "broken builds welcome"); no
+swap/unequip exists so no slot-swap abuse; blood_magic wound gate;
+death-cheat ordering; Feastburn "burns hotter" wired (arc4burn);
+refuses_death ≈ 2× uses (honest in effect); all 44 modifier targets live.
+
+### Regressions
+test-phoenix-rework 66/66, test-phoenix-gear 42/42, test-xp-attempts 5/5,
+test-synergy-requires-any 15/15. Pre-existing rot (not mine):
+test-synergy-20261007.js calls `Game.synLedger` (doesn't exist).

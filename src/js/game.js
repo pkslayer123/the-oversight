@@ -24231,7 +24231,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (this.villageLost) { return this.status(); } // no home to return to
       if (this.over) { this.returnToVillage(); return this.status(); }
       if (!res.ok || scholar.health <= 0) {
-        if (this.maybeCheatDeath()) {
+        // BREAK-IT abilities 2026-10-10: the overnight spiral is starvation,
+        // not violence -- the second_wind spite-ration must not fire here
+        // (it printed 500 free kcal/day). Cause is named honestly.
+        if (this.maybeCheatDeath('starvation')) {
           this.say('Death knocked. Something else answered.');
         } else {
           // the village is the protagonist: the mantle passes, the story continues.
@@ -33178,7 +33181,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
 
     // maybeCheatDeath: second_wind / phoenix_clause / molt. Called BEFORE death is final.
     // Returns true if death was cheated (caller must not set over).
-    maybeCheatDeath() {
+    // cause: 'starvation' | 'disease' | undefined (violent default). The
+    // second_wind spite-ration fires only on violent death -- see below.
+    maybeCheatDeath(cause) {
       const s = this.state.scholar;
       // BREAK-IT godhood 2026-10-09: a pending phoenix link already holds
       // this death at the threshold. Firing molt/second_wind first burned
@@ -33210,10 +33215,19 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         s.secondWindDay = s.day; s.secondWindUses = swUses + 1;
         const furious = this.hasSynergy('undying_fury') && !!(s.rageActive && s.rageActive.rounds > 0);
         // undying_fury: rage was active (not merely held). Log both as simultaneous.
-        s.health = furious ? this.maxHealth() : 1; s.kcal = Math.max(s.kcal, 500);
+        // SPITE-RATION HONESTY (break-it abilities 2026-10-10): the +500 kcal
+        // is "sheer spite" -- refusing death IN A FIGHT and surging back.
+        // Starving to 0 HP overnight printed 500 kcal/day from nothing
+        // (sleep at 0 kcal -> the spiral takes you -> second_wind -> 500 kcal
+        // -> repeat), a true infinite engine in the one economy where food
+        // is everything. Spite doesn't bake bread: no ration when starvation
+        // or sickness did it. Violent deaths (and unmarked callers) keep it.
+        const noSpite = (cause === 'starvation' || cause === 'disease');
+        s.health = furious ? this.maxHealth() : 1;
+        if (!noSpite) s.kcal = Math.max(s.kcal, 500);
         this.noteAbilityUse('second_wind');
         if (furious) this.noteAbilityUse('rage');
-        this.say(furious ? 'UNDYING FURY: death came for you mid-rage and you LAUGHED. FULL HEALTH. The rage does not end.' : `SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal.${swMax > 1 ? ` ${swMax - swUses - 1} use left today.` : ' Once today.'})`);
+        this.say(furious ? 'UNDYING FURY: death came for you mid-rage and you LAUGHED. FULL HEALTH. The rage does not end.' : (noSpite ? `SECOND WIND: you should be dead. You refuse. (1 HP -- and still starving. Spite doesn't bake bread.${swMax > 1 ? ` ${swMax - swUses - 1} use left today.` : ' Once today.'})` : `SECOND WIND: you should be dead. You refuse. (1 HP, 500 kcal.${swMax > 1 ? ` ${swMax - swUses - 1} use left today.` : ' Once today.'})`));
         return true;
       }
       // PHOENIX (Steve 2026-10-09 rework): no longer a once-per-run Haven

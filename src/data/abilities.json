@@ -487,11 +487,11 @@
         "name": "Refuse",
         "cost": {},
         "automatic": true,
-        "effect": "Once per day, when you would die: you don't. Drop to 1 HP, brought up to at least 500 kcal from sheer spite. Automatic trigger."
+        "effect": "Once per day, when you would die: you don't. Drop to 1 HP; brought up to at least 500 kcal from sheer spite when death came violently — starvation and sickness just leave you at 1 HP, still hungry. Automatic trigger."
       }
     ],
     "name": "Second Wind",
-    "description": "Once per day, when you'd die, you don't. (1 HP, 500 kcal.)",
+    "description": "Once per day, when you'd die, you don't. (1 HP — plus 500 kcal of sheer spite when death came violently. Starvation and sickness just leave you at 1 HP, still hungry.)",
     "flavor": "You were almost gone! Then you WEREN'T! How?! We want to know!",
     "pool": "system",
     "tier": "overpowered",

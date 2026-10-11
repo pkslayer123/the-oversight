@@ -350,7 +350,9 @@
               try {
                 self.seRemove(target, st);
                 self.say('The tremor reaches all the way in and does not come back out. Your hands still first. Then everything else. It never lets go \u2014 it was never going to. (the trembles)');
-                if (self.maybeCheatDeath && !self.maybeCheatDeath()) self.playerDeath('the trembles');
+                // BREAK-IT abilities 2026-10-10: a disease death is not a violent
+                // one -- second_wind's spite-ration (+500 kcal) must not fire.
+                if (self.maybeCheatDeath && !self.maybeCheatDeath('disease')) self.playerDeath('the trembles');
                 else if (!self.maybeCheatDeath) self.playerDeath('the trembles');
               } catch (e) {}
               return;

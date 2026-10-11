@@ -1794,8 +1794,21 @@
         const key = syn.id + (dm.type === 'sustained' ? '_days' : '');
         const n = attempts[key] || 0;
         if (n !== 1 && n !== 2) continue;
+        // PATH-AWARE (break-it abilities 2026-10-10, sibling sweep): same
+        // stale-check class as renderSynergyStirrings -- requires alone let
+        // multi-path synergies style teases for legs no longer held.
         const minLvl = syn.minLevel || 1;
-        const held = (syn.requires || []).every(rid => { try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; } });
+        const synIds = new Set(syns.map(x => x.id));
+        const legHeld = (rid) => {
+          try {
+            if (synIds.has(rid)) return discovered.includes(rid);
+            if (rid.indexOf('tech:') === 0) return !!(((sch.codex || {}).techniques || {})[rid.slice(5)]);
+            if (rid.indexOf('skill:') === 0) return ((((Game.state.codex || {}).skills || {})[rid.slice(6)] || {}).level || 0) >= minLvl;
+            return Game.abilityLevel(rid) >= minLvl;
+          } catch (e) { return false; }
+        };
+        const paths = syn.requires_any || [syn.requires || []];
+        const held = paths.some(p => p.every(legHeld));
         if (!held) continue;
         if (n === 1 && dm.tease1) set.add(dm.tease1);
         if (n === 2 && dm.tease2) set.add(dm.tease2);
@@ -12705,10 +12718,22 @@
         const n = attempts[syn.id + (dm.type === 'sustained' ? '_days' : '')] || 0;
         if (n < 1 || n > 2) continue;
         // requirements held? same check game.js uses for activation.
+        // PATH-AWARE (break-it abilities 2026-10-10): the old check read only
+        // requires -- multi-path synergies (requires_any) always passed, so a
+        // lost leg left a stale "stirring" in the pack. Mirror the activation
+        // gate: any full path held.
         const minLvl = syn.minLevel || 1;
-        const held = (syn.requires || []).every(rid => {
-          try { return Game.abilityLevel(rid) >= minLvl; } catch (e) { return false; }
-        });
+        const synIds = new Set(syns.map(x => x.id));
+        const legHeld = (rid) => {
+          try {
+            if (synIds.has(rid)) return discovered.includes(rid);
+            if (rid.indexOf('tech:') === 0) return !!(((sch.codex || {}).techniques || {})[rid.slice(5)]);
+            if (rid.indexOf('skill:') === 0) return ((((Game.state.codex || {}).skills || {})[rid.slice(6)] || {}).level || 0) >= minLvl;
+            return Game.abilityLevel(rid) >= minLvl;
+          } catch (e) { return false; }
+        };
+        const paths = syn.requires_any || [syn.requires || []];
+        const held = paths.some(p => p.every(legHeld));
         if (!held) continue;
         const tease = n === 1 ? dm.tease1 : dm.tease2;
         const pips = '\u25CF'.repeat(n) + '\u25CB'.repeat(3 - n);
@@ -12746,7 +12771,9 @@
 
   // ABILITIES MENU (Steve 2026-10-07): full loadout below Equipment.
   // 6 slots, each with name, active/passive badge, level/xp, path tags.
-  // Tap for detail. Swap only at camp (not in combat).
+  // Tap for detail. Slots are permanent once filled -- no swap mechanic
+  // exists in canon (the old Swap button was a fake affordance; removed
+  // break-it abilities 2026-10-10).
   function renderAbilitiesSection() {
     try {
       const sch = Game.state.scholar;
@@ -12764,15 +12791,18 @@
       const renderSlot = (ab, idx, isBg) => {
         if (!ab) {
           return `<div style="border:1px dashed #444;border-radius:6px;padding:8px;margin:4px 0;opacity:.5">
-            <p class="small" style="margin:0"><b>Empty slot ${idx + 1}</b> — learn abilities through trials, mentors, or the System.</p>
+            <p class="small" style="margin:0"><b>Empty slot ${idx + 1}</b> — learn abilities from the System: offers, trials, and service.</p>
           </div>`;
         }
         const def = defs.find(d => d.id === (ab.id || ab)) || {};
         const name = ab.name || def.name || ab.id || 'Unknown';
         const level = ab.level || 1;
         const xp = ab.xp || 0;
-        const xpNeed = level * 100; // rough
-        const xpPct = Math.min(100, Math.round((xp / xpNeed) * 100));
+        // HONESTY (break-it abilities 2026-10-10): the bar used level*100 --
+        // L1 showed 9% at 9/10 real. The engine's thresholds are 10 (L1) and
+        // 25 (L2) (game.js gainAbilityXP); L3 is maxed.
+        const xpNeed = level === 1 ? 10 : 25;
+        const xpPct = level >= 3 ? 100 : Math.min(100, Math.round((xp / xpNeed) * 100));
         const isActive = !!(def.actions && def.actions.length);
         const badge = isActive
           ? `<span style="background:#4df3ff22;border:1px solid #4df3ff;border-radius:3px;padding:1px 5px;font-size:10px;color:#4df3ff">ACTIVE</span>`
