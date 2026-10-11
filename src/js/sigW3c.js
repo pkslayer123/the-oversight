@@ -157,6 +157,7 @@
       face.line ? 'In their voice, half-remembered: "' + face.line + '"' : 'It hums something tuneless. ' + face.name + ' used to hum.',
       'The mouth smiles. ' + face.name + '\'s smile was never that even.',
     ];
+    try { game.audioEvent('callbackRing', {}); } catch (e) {} // the dead are calling (break-it audio 2026-10-11)
     game.say(bits[Math.floor(Math.random() * bits.length)]);
   }
 
@@ -262,6 +263,7 @@
       game.say(eyesShut ? hidden : '"IT WILL STEP ' + d0.n.toUpperCase() + '." The afterimages smear toward ' + d0.n + '.');
     }
     m.bufAlt = !m.bufAlt;
+    try { game.audioEvent('bufferStall', {}); } catch (e) {} // frames stutter (break-it audio 2026-10-11)
     try { game.tbRefreshTelegraphUI(); } catch (e) {}
     return true; // the announcement IS the turn (wind-up)
   }
@@ -436,6 +438,7 @@
     var total = Math.max(2, 4 - tier);
     m.adActive = { progress: 0, total: total, skipAt: Math.max(1, total - 1), skipOffered: false };
     adSpawnSponsor(game, m);
+    try { game.audioEvent('adbreakCut', {}); } catch (e) {} // the glyph unfolds: jingle curdles (break-it audio 2026-10-11)
     if (preempted) game.say('The glyph unfolds mid-wind-up — the attack dies unspent, pre-empted by the break. (The ad pauses everything.)');
     game.say('⏸ AD BREAK. A giant glyph unfolds overhead — PROGRESS BAR: ' + adBar(m.adActive) +
       '. During the pause it repositions and heals, and you watch. ' +

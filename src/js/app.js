@@ -2158,6 +2158,11 @@
   //   windup BY DESIGN (turtleSnap is the resolve).
   //   burstDetonate() chargeImpact() lockonTick() lockonHit() lineStrike()
   //   rushHit() diveImpact() ambushSnap()
+  //   REMOVED 2026-10-11 (break-it audio): 9 dead return-wrapper entries —
+  //   ensureAudio/beamCharge/beamFire/deerCall/burstDetonate/lockonHit/
+  //   lineStrike/diveImpact/humStop. Zero external callers (all dispatch goes
+  //   through the internal functions directly: telegraph()/impact()/combatEnd()
+  //   and the deer* wrappers); the internal synths are untouched.
   //   WAVE-2 BESPOKE (Steve 2026-10-06): staticScream() (voice_mimic reveal —
   //   wired: game.js fires it at the reveal-scream declare), serviceRush()
   //   (service_mimic resolve — wired: game.js rush-resolve),
@@ -2217,6 +2222,28 @@
   //   teethTick() — wheel escalate: the Wheel of Teeth counts (Steve 2026-10-08)
   //   mindMoth() — quiet escalate: the room reads the buried one (Steve 2026-10-08)
   //   engineVoices() — riddle declare: mouths almost like someone you know (Steve 2026-10-08)
+  //   WAVE-3 SIGNATURE (break-it audio 2026-10-11): sigW3a.js/sigW3b.js fired
+  //   16 hooks with no registered synth — every signature beat played mute;
+  //   sigW3c.js fired nothing at all. All 19 now registered below:
+  //   redactorPoint()   — the Redactor points: marker squeak, then the bar slams
+  //   gavelVerdict()    — the verdict: wooden crack + hollow courtroom boom
+  //   gavelAccuse()     — the accusation: a jabbing tone that stops mid-sentence
+  //   spoolRecord()     — the reel clicks in; it's keeping what you do now
+  //   spoolReplayStart() — rewind whine: time dragged backward, head clicks in
+  //   spoolReplay()     — replay tick per entry: tape blip with wow
+  //   chorusStumble()   — the missed beat: choked clicks where it should land
+  //   chorusBeat({beat, downbeat}) — woodblock tick, downbeat lower; one bent
+  //   chorusDance()     — three off-kilter plucks, uneven, last one bent
+  //   gravelThrow()     — gritty scatter: irregular transients, dying out
+  //   tosClause()       — paper rustle + flat bureaucratic blip
+  //   tosAccept()       — the stamp lands; a chime curdles (minor 2nd, wrong)
+  //   tosPenalty()      — harsh buzzer: two squares beating, ugly
+  //   tosLoophole()     — sly upward slide, quiet — it found a way out
+  //   tosObject()       — tap + record scratch
+  //   tosRead()         — page turn: soft swish
+  //   callbackRing()    — wrong phone-ring dissolving into a murmur (the dead speak)
+  //   bufferStall()     — digital stutter: the frame chop
+  //   adbreakCut()      — bright jingle stab curdling into static
   //   NOTE: dispatch wiring for these lives in the contests/truth workers'
   //   files, not here — this section only owns the synths.
   const CombatAudio = (() => {
@@ -11004,8 +11031,378 @@
         o.start(t + 0.3); o.stop(t + 1.8);
       });
     }
+    // ============ WAVE-3 SIGNATURE VOICES (break-it audio 2026-10-11) ============
+    // sigW3a.js / sigW3b.js fired these 16 hooks with zero registered synths —
+    // every wave-3 signature beat played mute. sigW3c.js (callback/buffering/
+    // ad_break) fired nothing at all; three hooks were added at its signature
+    // moments and their synths live here too.
+    function redactorPoint() {
+      // THE POINT: a dry marker squeak dragged across the page, then the
+      // redaction bar slams down — a felt-tip shriek cut off by a black thud.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.35), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 8;
+        nf.frequency.setValueAtTime(2600, t);
+        nf.frequency.exponentialRampToValueAtTime(900, t + 0.3); // the drag
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.12, t + 0.05);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.35);
+      }
+      thump(t + 0.32, 0.55); // the bar lands
+    }
+    function gavelVerdict() {
+      // THE VERDICT: a mallet crack — wood, not justiceVerdict's cold
+      // strike — then the room itself booms back, hollow.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.2), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 900;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.4, t + 0.01);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.2);
+      }
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(140, t + 0.02);
+      o.frequency.exponentialRampToValueAtTime(55, t + 0.5);
+      g.gain.setValueAtTime(0.0001, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      o.connect(g); g.connect(sfxBus); o.start(t + 0.02); o.stop(t + 0.95);
+    }
+    function gavelAccuse() {
+      // THE ACCUSATION: a jabbing tone that rises a semitone and STOPS —
+      // the sentence is never finished. You fill it in yourself.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.22].forEach((dt, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(220 * (i ? 1.06 : 1), t + dt);
+        o.frequency.exponentialRampToValueAtTime(233 * (i ? 1.06 : 1), t + dt + 0.16);
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1200;
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.14, t + dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + (i ? 0.1 : 0.2)); // cut short
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + 0.25);
+      });
+    }
+    function spoolRecord() {
+      // RECORDING: the reel clicks in, then the tape whirs — it's keeping
+      // what you do now.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type = 'square'; c.frequency.value = 1800;
+      cg.gain.setValueAtTime(0.0001, t);
+      cg.gain.exponentialRampToValueAtTime(0.1, t + 0.01);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      c.connect(cg); cg.connect(sfxBus); c.start(t); c.stop(t + 0.06);
+      const w = ctx.createOscillator(), wg = ctx.createGain();
+      w.type = 'sawtooth'; w.frequency.value = 90;
+      const wf = ctx.createBiquadFilter(); wf.type = 'lowpass'; wf.frequency.value = 300;
+      wg.gain.setValueAtTime(0.0001, t + 0.08);
+      wg.gain.exponentialRampToValueAtTime(0.06, t + 0.3);
+      wg.gain.setValueAtTime(0.06, t + 0.9);
+      wg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      w.connect(wf); wf.connect(wg); wg.connect(sfxBus);
+      w.start(t + 0.08); w.stop(t + 1.25);
+    }
+    function spoolReplayStart() {
+      // REWIND: the whine drops 1200->300 — time dragged backward — then the
+      // play-head clicks in.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(1200, t);
+      o.frequency.exponentialRampToValueAtTime(300, t + 0.5);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.1, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.6);
+      const c = ctx.createOscillator(), cg = ctx.createGain();
+      c.type = 'square'; c.frequency.value = 1400;
+      cg.gain.setValueAtTime(0.0001, t + 0.52);
+      cg.gain.exponentialRampToValueAtTime(0.09, t + 0.54);
+      cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.58);
+      c.connect(cg); cg.connect(sfxBus); c.start(t + 0.52); c.stop(t + 0.6);
+    }
+    function spoolReplay() {
+      // REPLAY TICK: one entry off the tape — a blip with wow, the pitch
+      // wobbling like the reel is hand-cranked.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(880 * (1 + (Math.random() - 0.5) * 0.04), t);
+      o.frequency.exponentialRampToValueAtTime(840, t + 0.07);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2400;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.09, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+      o.connect(f); f.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + 0.1);
+    }
+    function chorusStumble() {
+      // THE STUMBLE: two choked clicks where the beat should have been — the
+      // rhythm trips and catches itself.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.09].forEach((dt, i) => {
+        const nz = noise(0.05), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'highpass'; nf.frequency.value = 3000;
+        const v = i ? 0.05 : 0.11;
+        ng.gain.setValueAtTime(0.0001, t + dt);
+        ng.gain.exponentialRampToValueAtTime(v, t + dt + 0.008);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.04);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + dt); nz.stop(t + dt + 0.06);
+      });
+    }
+    function chorusBeat(d) {
+      // THE BEAT: a woodblock tick — the downbeat lands lower, with a thump.
+      // One tick in four is bent sharp: the chorus is almost, not quite, together.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const down = !!(d && d.downbeat);
+      const fq = (down ? 990 : 1990) * 1.007; // bent, on purpose
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = fq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(down ? 0.2 : 0.13, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.12);
+      if (down) thump(t, 0.3);
+    }
+    function chorusDance() {
+      // THE DANCE: three off-kilter plucks — uneven timing, the last note
+      // bent flat. Jaunty the way a music box with a loose tooth is jaunty.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [[0, 523.25, 1], [0.19, 659.25, 1], [0.33, 587.33, 0.985]].forEach(([dt, fq, bend]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq * bend;
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.12, t + dt + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.22);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + 0.25);
+      });
+    }
+    function gravelThrow() {
+      // GRAVEL: a gritty scatter — irregular transients dying out, the last
+      // few barely landing.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.07, 0.19, 0.28, 0.41].forEach((dt, i) => {
+        const nz = noise(0.04), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        if (!nz) return;
+        nf.type = 'highpass'; nf.frequency.value = 4200;
+        const v = 0.14 - i * 0.025;
+        ng.gain.setValueAtTime(0.0001, t + dt);
+        ng.gain.exponentialRampToValueAtTime(v, t + dt + 0.006);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.035);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + dt); nz.stop(t + dt + 0.05);
+      });
+    }
+    function tosClause() {
+      // THE CLAUSE: paper rustles, then the flat bureaucratic blip — the
+      // fine print has found you.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.3), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.frequency.value = 1200; nf.Q.value = 1;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.1, t + 0.08);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.32);
+      }
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = 220;
+      g.gain.setValueAtTime(0.0001, t + 0.24);
+      g.gain.exponentialRampToValueAtTime(0.07, t + 0.26);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+      o.connect(g); g.connect(sfxBus); o.start(t + 0.24); o.stop(t + 0.4);
+    }
+    function tosAccept() {
+      // ACCEPTED: the rubber stamp lands — then a chime curdles a minor
+      // second apart. You agreed to something. It knows.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.12), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'lowpass'; nf.frequency.value = 500;
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.4, t + 0.01);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.16);
+      }
+      thump(t + 0.01, 0.4);
+      [660, 698.46].forEach((fq, i) => { // minor 2nd — wrong
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        const st = t + 0.18 + i * 0.12;
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.09, st + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.5);
+        o.connect(g); g.connect(sfxBus); o.start(st); o.stop(st + 0.55);
+      });
+    }
+    function tosPenalty() {
+      // THE PENALTY: a harsh buzzer — two squares a hair apart, beating
+      // against each other. Ugly on purpose.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [140, 147].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = fq;
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.11, t + 0.03);
+        g.gain.setValueAtTime(0.11, t + 0.38);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        o.connect(f); f.connect(g); g.connect(sfxBus);
+        o.start(t); o.stop(t + 0.5);
+      });
+    }
+    function tosLoophole() {
+      // THE LOOPHOLE: a sly upward slide, quiet — it found a way out and it
+      // wants you to know it knows.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(400, t);
+      o.frequency.exponentialRampToValueAtTime(900, t + 0.25);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.07, t + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.35);
+      const b = ctx.createOscillator(), bg = ctx.createGain();
+      b.type = 'sine'; b.frequency.value = 1320;
+      bg.gain.setValueAtTime(0.0001, t + 0.28);
+      bg.gain.exponentialRampToValueAtTime(0.06, t + 0.3);
+      bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      b.connect(bg); bg.connect(sfxBus); b.start(t + 0.28); b.stop(t + 0.45);
+    }
+    function tosObject() {
+      // OBJECTION: a tap on the table, then the record scratches — the
+      // proceedings just skipped.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const tp = ctx.createOscillator(), tg = ctx.createGain();
+      tp.type = 'sine'; tp.frequency.value = 1200;
+      tg.gain.setValueAtTime(0.0001, t);
+      tg.gain.exponentialRampToValueAtTime(0.12, t + 0.008);
+      tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      tp.connect(tg); tg.connect(sfxBus); tp.start(t); tp.stop(t + 0.06);
+      const nz = noise(0.35), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 4;
+        nf.frequency.setValueAtTime(3000, t + 0.06);
+        nf.frequency.exponentialRampToValueAtTime(400, t + 0.36);
+        ng.gain.setValueAtTime(0.0001, t + 0.06);
+        ng.gain.exponentialRampToValueAtTime(0.14, t + 0.12);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.06); nz.stop(t + 0.4);
+      }
+    }
+    function tosRead() {
+      // READING: a soft page turn — the scroll is being perused, by something.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      const nz = noise(0.32), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'bandpass'; nf.Q.value = 2;
+        nf.frequency.setValueAtTime(800, t);
+        nf.frequency.exponentialRampToValueAtTime(2400, t + 0.28);
+        ng.gain.setValueAtTime(0.0001, t);
+        ng.gain.exponentialRampToValueAtTime(0.07, t + 0.12);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t); nz.stop(t + 0.34);
+      }
+    }
+    function callbackRing() {
+      // THE CALLBACK: a wrong phone-ring — two detuned rings, the second
+      // bending down — dissolving into a low murmur. The dead are calling.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [0, 0.45].forEach((dt, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(i ? 445 : 440, t + dt);
+        if (i) o.frequency.exponentialRampToValueAtTime(423, t + dt + 0.35); // bends wrong
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.1, t + dt + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.38);
+        o.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + 0.4);
+      });
+      const m = ctx.createOscillator(), mg = ctx.createGain();
+      m.type = 'sawtooth'; m.frequency.value = 110;
+      const mf = ctx.createBiquadFilter(); mf.type = 'lowpass'; mf.frequency.value = 320;
+      mg.gain.setValueAtTime(0.0001, t + 0.85);
+      mg.gain.exponentialRampToValueAtTime(0.06, t + 1.1);
+      mg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      m.connect(mf); mf.connect(mg); mg.connect(sfxBus);
+      m.start(t + 0.85); m.stop(t + 1.65);
+    }
+    function bufferStall() {
+      // THE STALL: a tone chopped into grains — the world stuttering three
+      // seconds behind itself.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      for (let i = 0; i < 7; i++) {
+        const dt = i * 0.075;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = 660;
+        g.gain.setValueAtTime(0.0001, t + dt);
+        g.gain.exponentialRampToValueAtTime(0.08, t + dt + 0.008);
+        g.gain.setValueAtTime(0.08, t + dt + 0.032);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.038);
+        o.connect(g); g.connect(sfxBus);
+        o.start(t + dt); o.stop(t + dt + 0.045);
+      }
+    }
+    function adbreakCut() {
+      // THE CUT: a too-bright jingle stab — major triad, too loud — curdling
+      // into static. The sell doesn't survive contact with the glyph.
+      if (!ensure()) return;
+      const t = ctx.currentTime;
+      [523.25, 659.25, 783.99].forEach(fq => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.35);
+      });
+      const nz = noise(0.4), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+      if (nz) {
+        nf.type = 'highpass'; nf.frequency.value = 1800;
+        ng.gain.setValueAtTime(0.0001, t + 0.22);
+        ng.gain.exponentialRampToValueAtTime(0.16, t + 0.3);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+        nz.connect(nf); nf.connect(ng); ng.connect(sfxBus);
+        nz.start(t + 0.22); nz.stop(t + 0.65);
+      }
+    }
     return {
-      ensureAudio() { return ensure(); },
       combatStart() { combatStartHit(); heartbeat(72); }, // (Steve 2026-10-06): the opening now lands its own wrong-horn sting, then the heartbeat takes over
       telegraph(d) {
         // urgency = turnsLeft. 2+ = slow dread (80bpm), 1 = frantic (145bpm).
@@ -11044,11 +11441,8 @@
       beamBlocked() { beamBlocked(); },
       deerNotice() { deerCall(0.22); },
       deerDown() { deerCall(0.95, true); },
-      deerCall(i, dying) { deerCall(i, dying); },
       deerAggro() { deerCall(0.85); }, // the bellow: wrong, too deep
       deerSnort() { deerSnort(); }, // pawing, recharging — the animal, not the beam
-      beamCharge(s) { beamCharge(s); },
-      beamFire() { beamFire(); },
       beamSweep(pan, heat) {
         if (pan && typeof pan === 'object') { heat = pan.heat; pan = pan.pan; } // audioEvent passes one data arg
         beamSweep(pan, heat);
@@ -11061,7 +11455,6 @@
       humNotice() { humBuild(2); }, // the grass starts humming — low, unsettled
       humRise(d) { humBuild(d && d.stacks ? d.stacks : 1); },
       humBreak() { humBreak(); },
-      humStop() { humStop(); },
       shout() { shout(); },
       glasswingCircle() { glasswingCircle(); },
       glasswingDive() { glasswingDive(); },
@@ -11109,6 +11502,27 @@
       modRemoval(d) { modRemoval(d); },         // REMOVAL IMMINENT / Deplatform
       modShadow() { modShadow(); },             // SHADOWBAN
       modDown() { modDown(); },                 // deplatformed
+      // WAVE-3 SIGNATURE (break-it audio 2026-10-11): sigW3a/sigW3b fired
+      // these 16 with no synth (all played mute); sigW3c fired nothing.
+      redactorPoint() { redactorPoint(); },     // the Redactor points
+      gavelVerdict() { gavelVerdict(); },       // the verdict lands
+      gavelAccuse() { gavelAccuse(); },         // the accusation, unfinished
+      spoolRecord() { spoolRecord(); },         // the reel starts keeping
+      spoolReplayStart() { spoolReplayStart(); }, // rewind whine
+      spoolReplay() { spoolReplay(); },         // one entry off the tape
+      chorusStumble() { chorusStumble(); },     // the missed beat
+      chorusBeat(d) { chorusBeat(d); },         // woodblock tick (downbeat lower)
+      chorusDance() { chorusDance(); },         // off-kilter plucks
+      gravelThrow() { gravelThrow(); },         // gritty scatter
+      tosClause() { tosClause(); },             // paper + bureaucratic blip
+      tosAccept() { tosAccept(); },             // the stamp; the curdled chime
+      tosPenalty() { tosPenalty(); },           // harsh buzzer
+      tosLoophole() { tosLoophole(); },         // sly upward slide
+      tosObject() { tosObject(); },             // tap + record scratch
+      tosRead() { tosRead(); },                 // page turn
+      callbackRing() { callbackRing(); },       // wrong ring into a murmur
+      bufferStall() { bufferStall(); },         // the frame chop
+      adbreakCut() { adbreakCut(); },           // jingle stab curdling to static
       // WAVE-2 FLYER VOICES (Steve 2026-10-06): the flyer redesign fired
       // these 12 hooks with no synth — every signature beat played mute.
       nevermoreCroak() { nevermoreCroak(); },       // first contact: the crow that has been watching
@@ -11276,13 +11690,9 @@
         else if (pat === 'rush') rushWindup();
         else if (pat === 'single') diveWindup(dur);
       },
-      burstDetonate() { burstDetonate(); },
       chargeImpact() { chargeImpact(); },
       lockonTick(d) { lockonTick(d && d.dur); },
-      lockonHit() { lockonHit(); },
-      lineStrike() { lineStrike(); },
       rushHit() { rushHit(); },
-      diveImpact() { diveImpact(); },
       ambushSnap() { ambushSnap(); },
       // WAVE-2 BESPOKE BEATS (Steve 2026-10-06): missing resolves for siblings
       staticScream() { staticScream(); }, // voice_mimic_radio reveal: the radio SCREAMS
