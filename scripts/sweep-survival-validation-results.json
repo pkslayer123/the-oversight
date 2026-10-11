@@ -1,0 +1,7939 @@
+[
+ {
+  "seed": 1,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 48,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 45,
+  "w": [
+   11,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "schism",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 11,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "monster",
+   "combat",
+   "monster",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "villager combat",
+   "the night",
+   "the night",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 17,
+    "who": "gen_89o21fl",
+    "cause": "monster"
+   },
+   {
+    "day": 18,
+    "who": "gen_5zfu7uu",
+    "cause": "sickness"
+   },
+   {
+    "day": 19,
+    "who": "gen_v0zqxsq",
+    "cause": "monster"
+   },
+   {
+    "day": 19,
+    "who": "gen_aah5u9h",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 24,
+    "who": "gen_bw22zuz",
+    "cause": "the night"
+   },
+   {
+    "day": 26,
+    "who": "emma_larsen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 28,
+    "who": "gen_cf0kbn1",
+    "cause": "combat"
+   },
+   {
+    "day": 31,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 37,
+    "who": "lena_ruiz",
+    "cause": "the night"
+   },
+   {
+    "day": 45,
+    "who": "james_okonkwo",
+    "cause": "the night"
+   },
+   {
+    "day": 48,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 48,
+    "who": "david_kim",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 4,
+  "struck": 6,
+  "fled": 22,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 126,
+  "feasts": 2,
+  "climb": 37,
+  "named": 5,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 2,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 38,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 63,
+  "w": [
+   10,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 10,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "sickness",
+   "monster",
+   "villager combat",
+   "sickness",
+   "monster",
+   "sickness",
+   "the night",
+   "sickness",
+   "sickness",
+   "the night",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 18,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 20,
+    "who": "gen_ddim6vj",
+    "cause": "monster"
+   },
+   {
+    "day": 22,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 24,
+    "who": "gen_i26ipuv",
+    "cause": "sickness"
+   },
+   {
+    "day": 25,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 25,
+    "who": "sofia_chen",
+    "cause": "sickness"
+   },
+   {
+    "day": 26,
+    "who": "gen_kiea0aa",
+    "cause": "the night"
+   },
+   {
+    "day": 26,
+    "who": "david_kim",
+    "cause": "sickness"
+   },
+   {
+    "day": 27,
+    "who": "emma_larsen",
+    "cause": "sickness"
+   },
+   {
+    "day": 37,
+    "who": "gen_vllwa73",
+    "cause": "the night"
+   },
+   {
+    "day": 38,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 3,
+  "struck": 5,
+  "fled": 50,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 135,
+  "feasts": 1,
+  "climb": 47,
+  "named": 5,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 3,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 34,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 41,
+  "w": [
+   8,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 8,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "monster",
+   "the night",
+   "monster",
+   "monster",
+   "monster",
+   "sickness",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 18,
+    "who": "gen_w4umma0",
+    "cause": "monster"
+   },
+   {
+    "day": 18,
+    "who": "gen_w4umma0",
+    "cause": "sickness"
+   },
+   {
+    "day": 19,
+    "who": "gen_j1s4s11",
+    "cause": "monster"
+   },
+   {
+    "day": 19,
+    "who": "sofia_chen",
+    "cause": "the night"
+   },
+   {
+    "day": 28,
+    "who": "gen_0gut59s",
+    "cause": "monster"
+   },
+   {
+    "day": 29,
+    "who": "lena_ruiz",
+    "cause": "monster"
+   },
+   {
+    "day": 31,
+    "who": "james_okonkwo",
+    "cause": "monster"
+   },
+   {
+    "day": 31,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   },
+   {
+    "day": 33,
+    "who": "gen_yay29yi",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "david_kim",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 8,
+  "struck": 10,
+  "fled": 31,
+  "proposed": 2,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 68,
+  "feasts": 3,
+  "climb": 18,
+  "named": 10,
+  "taught": 28,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:2/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 4,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 29,
+  "winDay": null,
+  "stage": 3,
+  "integ": 88,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 42,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "hunger-winter",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "thirst",
+   "monster",
+   "the night",
+   "combat",
+   "sickness",
+   "sickness",
+   "starvation",
+   "the night"
+  ],
+  "deathRecs": [
+   {
+    "day": 11,
+    "who": "gen_shqc4lh",
+    "cause": "combat"
+   },
+   {
+    "day": 13,
+    "who": "marcus_webb",
+    "cause": "thirst"
+   },
+   {
+    "day": 17,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 17,
+    "who": "gen_sdpldis",
+    "cause": "the night"
+   },
+   {
+    "day": 19,
+    "who": "gen_0guzb9v",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "gen_qvm1wby",
+    "cause": "sickness"
+   },
+   {
+    "day": 24,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 26,
+    "who": "gen_btdez3l",
+    "cause": "starvation"
+   },
+   {
+    "day": 27,
+    "who": "james_okonkwo",
+    "cause": "the night"
+   }
+  ],
+  "patrols": 2,
+  "struck": 7,
+  "fled": 9,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 33,
+  "feasts": 1,
+  "climb": 38,
+  "named": 6,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:2/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 5,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 40,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 42,
+  "w": [
+   10,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 2,
+  "waveDay": {
+   "2": 13
+  },
+  "engaged": {
+   "1": 10,
+   "2": 3,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "a wound that wouldn't close",
+   "monster",
+   "monster",
+   "the night",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 13,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "gen_n3kdzmq",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 18,
+    "who": "gen_uobge9u",
+    "cause": "monster"
+   },
+   {
+    "day": 20,
+    "who": "james_okonkwo",
+    "cause": "monster"
+   },
+   {
+    "day": 22,
+    "who": "gen_94mxtx3",
+    "cause": "the night"
+   },
+   {
+    "day": 23,
+    "who": "alien_tick",
+    "cause": "combat"
+   },
+   {
+    "day": 26,
+    "who": "hummice",
+    "cause": "villager combat"
+   },
+   {
+    "day": 28,
+    "who": "gen_8shtrjn",
+    "cause": "combat"
+   },
+   {
+    "day": 30,
+    "who": "gen_uv33qy0",
+    "cause": "combat"
+   },
+   {
+    "day": 30,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 31,
+    "who": "gen_rvbzok0",
+    "cause": "combat"
+   },
+   {
+    "day": 40,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 40,
+    "who": "emma_larsen",
+    "cause": "combat"
+   },
+   {
+    "day": 40,
+    "who": "david_kim",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 1,
+  "struck": 10,
+  "fled": 44,
+  "proposed": 2,
+  "proposedPeer": 0,
+  "counterAccepted": 1,
+  "nationalAnswered": 0,
+  "channels": 86,
+  "feasts": 2,
+  "climb": 12,
+  "named": 1,
+  "taught": 42,
+  "unmet": [
+   "waves[w2:3/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 6,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 2,
+  "table": false,
+  "won": false,
+  "days": 9,
+  "winDay": null,
+  "stage": 1,
+  "integ": 36,
+  "breadth": 25,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "crisesKinds": [
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 4,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 3,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "the thing with headlights for eyes, standing too still",
+   "sickness"
+  ],
+  "deathRecs": [
+   {
+    "day": 6,
+    "who": "gen_dnu6iv1",
+    "cause": "the thing with headlights for eyes, standing too still"
+   },
+   {
+    "day": 6,
+    "who": "gen_dnu6iv1",
+    "cause": "sickness"
+   }
+  ],
+  "patrols": 2,
+  "struck": 0,
+  "fled": 0,
+  "proposed": 3,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 0,
+  "feasts": 0,
+  "climb": 7,
+  "named": 0,
+  "taught": 13,
+  "unmet": [
+   "waves[w1:4/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "crises:1/3",
+   "sentiment:unmet",
+   "feastSurge:unmet",
+   "stage:1/3(integ 36)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 7,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 26,
+  "winDay": null,
+  "stage": 3,
+  "integ": 96,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 39,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "crisesKinds": [
+   "hunger-winter",
+   "breach",
+   "first-grave",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 4,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "monster",
+   "sickness",
+   "the phoenix link",
+   "the phoenix link",
+   "the phoenix link",
+   "the phoenix link",
+   "the phoenix link",
+   "the phoenix link",
+   "the phoenix link",
+   "the phoenix link"
+  ],
+  "deathRecs": [
+   {
+    "day": 13,
+    "who": "lockpick_raccoon",
+    "cause": "villager combat"
+   },
+   {
+    "day": 14,
+    "who": "nevermore",
+    "cause": "combat"
+   },
+   {
+    "day": 14,
+    "who": "gen_ql54jkf",
+    "cause": "monster"
+   },
+   {
+    "day": 16,
+    "who": "gen_zd974zz",
+    "cause": "sickness"
+   },
+   {
+    "day": 17,
+    "who": "sofia_chen",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 18,
+    "who": "gen_wtfchbd",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 19,
+    "who": "gen_0afn5qp",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 20,
+    "who": "gen_63ffzb1",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 21,
+    "who": "james_okonkwo",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 22,
+    "who": "david_kim",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 23,
+    "who": "lena_ruiz",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 24,
+    "who": "emma_larsen",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 25,
+    "who": "marcus_webb",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 26,
+    "who": "gen_8wsxdvj",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 3,
+  "struck": 6,
+  "fled": 7,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 50,
+  "feasts": 0,
+  "climb": 20,
+  "named": 2,
+  "taught": 15,
+  "unmet": [
+   "waves[w1:4/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 8,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 53,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 56,
+  "w": [
+   11,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 5,
+  "crisesKinds": [
+   "breach",
+   "schism",
+   "blood-on-air",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {
+   "2": 46
+  },
+  "engaged": {
+   "1": 11,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "villager combat",
+   "sickness",
+   "the expedition",
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "the expedition",
+   "the phoenix link"
+  ],
+  "deathRecs": [
+   {
+    "day": 22,
+    "who": "gen_o0graap",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "gen_fin3do7",
+    "cause": "combat"
+   },
+   {
+    "day": 33,
+    "who": "gen_k04gnuf",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "gen_0g0l681",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 39,
+    "who": "nightcourt",
+    "cause": "villager combat"
+   },
+   {
+    "day": 44,
+    "who": "sofia_chen",
+    "cause": "sickness"
+   },
+   {
+    "day": 45,
+    "who": "gen_o2fmzzz",
+    "cause": "the expedition"
+   },
+   {
+    "day": 45,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 47,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 48,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 51,
+    "who": "marcus_webb",
+    "cause": "the expedition"
+   },
+   {
+    "day": 53,
+    "who": "james_okonkwo",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 53,
+    "who": "emma_larsen",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 53,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 6,
+  "struck": 0,
+  "fled": 46,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 157,
+  "feasts": 2,
+  "climb": 38,
+  "named": 9,
+  "taught": 20,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 9,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 30,
+  "winDay": null,
+  "stage": 3,
+  "integ": 96,
+  "breadth": 39,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 37,
+  "w": [
+   8,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 8,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "villager combat",
+   "monster",
+   "sickness",
+   "the night",
+   "combat",
+   "combat",
+   "monster",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 14,
+    "who": "lockpick_raccoon",
+    "cause": "villager combat"
+   },
+   {
+    "day": 15,
+    "who": "gen_v5rii6w",
+    "cause": "combat"
+   },
+   {
+    "day": 16,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "emma_larsen",
+    "cause": "monster"
+   },
+   {
+    "day": 23,
+    "who": "marcus_webb",
+    "cause": "sickness"
+   },
+   {
+    "day": 24,
+    "who": "gen_x8ca50a",
+    "cause": "the night"
+   },
+   {
+    "day": 27,
+    "who": "gen_x3jduk9",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "gen_utbqhv2",
+    "cause": "combat"
+   },
+   {
+    "day": 28,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 30,
+    "who": "gen_55nk692",
+    "cause": "starvation"
+   },
+   {
+    "day": 30,
+    "who": "lena_ruiz",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 6,
+  "struck": 0,
+  "fled": 47,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 25,
+  "feasts": 3,
+  "climb": 11,
+  "named": 4,
+  "taught": 29,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:2/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 10,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 35,
+  "winDay": null,
+  "stage": 3,
+  "integ": 94,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 38,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 5,
+  "crisesKinds": [
+   "breach",
+   "hunger-winter",
+   "first-grave",
+   "schism",
+   "blood-on-air"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 9,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "sickness",
+   "sickness",
+   "monster",
+   "the night",
+   "sickness",
+   "sickness",
+   "sickness",
+   "the night",
+   "villager combat",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 8,
+    "who": "marcus_webb",
+    "cause": "sickness"
+   },
+   {
+    "day": 9,
+    "who": "gen_w78tv8l",
+    "cause": "sickness"
+   },
+   {
+    "day": 19,
+    "who": "gen_0pls0sj",
+    "cause": "monster"
+   },
+   {
+    "day": 21,
+    "who": "gen_dzrda9p",
+    "cause": "the night"
+   },
+   {
+    "day": 22,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   },
+   {
+    "day": 23,
+    "who": "gen_0syoojg",
+    "cause": "sickness"
+   },
+   {
+    "day": 23,
+    "who": "gen_sqnkqkd",
+    "cause": "sickness"
+   },
+   {
+    "day": 27,
+    "who": "gen_b5mdza7",
+    "cause": "the night"
+   },
+   {
+    "day": 30,
+    "who": "sunbasker",
+    "cause": "villager combat"
+   },
+   {
+    "day": 34,
+    "who": "sofia_chen",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 3,
+  "struck": 1,
+  "fled": 0,
+  "proposed": 2,
+  "proposedPeer": 0,
+  "counterAccepted": 1,
+  "nationalAnswered": 0,
+  "channels": 26,
+  "feasts": 1,
+  "climb": 4,
+  "named": 4,
+  "taught": 20,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 11,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 60,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 43,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 52,
+  "w": [
+   9,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "crisesKinds": [
+   "schism",
+   "first-grave",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 2,
+  "waveDay": {
+   "2": 17
+  },
+  "engaged": {
+   "1": 9,
+   "2": 2,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "sickness",
+   "villager combat",
+   "combat",
+   "monster",
+   "starvation",
+   "combat",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 29,
+    "who": "emma_larsen",
+    "cause": "sickness"
+   },
+   {
+    "day": 39,
+    "who": "moderator",
+    "cause": "villager combat"
+   },
+   {
+    "day": 40,
+    "who": "gen_9yk03rp",
+    "cause": "combat"
+   },
+   {
+    "day": 41,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 46,
+    "who": "lena_ruiz",
+    "cause": "starvation"
+   },
+   {
+    "day": 49,
+    "who": "giant_mosquito",
+    "cause": "combat"
+   },
+   {
+    "day": 49,
+    "who": "david_kim",
+    "cause": "starvation"
+   },
+   {
+    "day": 58,
+    "who": "gen_d32f6qo",
+    "cause": "starvation"
+   },
+   {
+    "day": 60,
+    "who": "james_okonkwo",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 9,
+  "struck": 4,
+  "fled": 21,
+  "proposed": 9,
+  "proposedPeer": 0,
+  "counterAccepted": 6,
+  "nationalAnswered": 0,
+  "channels": 152,
+  "feasts": 1,
+  "climb": 123,
+  "named": 0,
+  "taught": 17,
+  "unmet": [
+   "waves[w2:2/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 12,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 23,
+  "winDay": null,
+  "stage": 3,
+  "integ": 90,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 37,
+  "w": [
+   8,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 8,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "starvation",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "sickness"
+  ],
+  "deathRecs": [
+   {
+    "day": 16,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 19,
+    "who": "gen_uhrjc7n",
+    "cause": "combat"
+   },
+   {
+    "day": 19,
+    "who": "gen_eneexuq",
+    "cause": "combat"
+   },
+   {
+    "day": 21,
+    "who": "james_okonkwo",
+    "cause": "starvation"
+   },
+   {
+    "day": 22,
+    "who": "gen_y9oa7zd",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 23,
+    "who": "marcus_webb",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 23,
+    "who": "emma_larsen",
+    "cause": "sickness"
+   }
+  ],
+  "patrols": 3,
+  "struck": 5,
+  "fled": 32,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 42,
+  "feasts": 2,
+  "climb": 10,
+  "named": 8,
+  "taught": 22,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 13,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 19,
+  "winDay": null,
+  "stage": 3,
+  "integ": 93,
+  "breadth": 33,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 43,
+  "w": [
+   6,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "hunger-winter",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 6,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "villager combat",
+   "monster",
+   "thirst",
+   "combat",
+   "a wound that wouldn't close",
+   "monster",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 3,
+    "who": "mirrormoth",
+    "cause": "combat"
+   },
+   {
+    "day": 8,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 9,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 10,
+    "who": "gen_n9tzhup",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "speedbump_turtle",
+    "cause": "villager combat"
+   },
+   {
+    "day": 14,
+    "who": "david_kim",
+    "cause": "monster"
+   },
+   {
+    "day": 15,
+    "who": "gen_dgilq1x",
+    "cause": "thirst"
+   },
+   {
+    "day": 16,
+    "who": "gen_jg0h2qi",
+    "cause": "combat"
+   },
+   {
+    "day": 16,
+    "who": "gen_22i7fg0",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 18,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 19,
+    "who": "gen_g1qsi1k",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 3,
+  "struck": 3,
+  "fled": 19,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 20,
+  "feasts": 0,
+  "climb": 8,
+  "named": 5,
+  "taught": 22,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 14,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 27,
+  "winDay": null,
+  "stage": 3,
+  "integ": 95,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 39,
+  "w": [
+   8,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "crisesKinds": [
+   "first-grave",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 8,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "villager combat",
+   "monster",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 7,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 8,
+    "who": "gen_y2mo3qh",
+    "cause": "monster"
+   },
+   {
+    "day": 8,
+    "who": "gen_pal4cey",
+    "cause": "monster"
+   },
+   {
+    "day": 8,
+    "who": "bulldozer",
+    "cause": "villager combat"
+   },
+   {
+    "day": 9,
+    "who": "gen_96xzuef",
+    "cause": "combat"
+   },
+   {
+    "day": 9,
+    "who": "belltoad",
+    "cause": "combat"
+   },
+   {
+    "day": 9,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 14,
+    "who": "david_kim",
+    "cause": "monster"
+   },
+   {
+    "day": 15,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "gen_zjq16f4",
+    "cause": "monster"
+   },
+   {
+    "day": 18,
+    "who": "gen_a8rwujs",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "gen_ruld9cl",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "emma_larsen",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 6,
+  "struck": 8,
+  "fled": 26,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 23,
+  "feasts": 1,
+  "climb": 27,
+  "named": 0,
+  "taught": 6,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "crises:2/3",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 15,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 71,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 52,
+  "w": [
+   8,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "schism",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {
+   "2": 23
+  },
+  "engaged": {
+   "1": 8,
+   "2": 1,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 4,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "the night",
+   "sickness",
+   "monster",
+   "the expedition",
+   "the expedition",
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "starvation",
+   "the night"
+  ],
+  "deathRecs": [
+   {
+    "day": 22,
+    "who": "hummice",
+    "cause": "villager combat"
+   },
+   {
+    "day": 22,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 23,
+    "who": "gen_csfi12r",
+    "cause": "the night"
+   },
+   {
+    "day": 25,
+    "who": "emma_larsen",
+    "cause": "sickness"
+   },
+   {
+    "day": 26,
+    "who": "gen_7e1sf50",
+    "cause": "monster"
+   },
+   {
+    "day": 29,
+    "who": "marcus_webb",
+    "cause": "the expedition"
+   },
+   {
+    "day": 41,
+    "who": "gen_qi880qy",
+    "cause": "the expedition"
+   },
+   {
+    "day": 43,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 50,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 58,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 58,
+    "who": "david_kim",
+    "cause": "starvation"
+   },
+   {
+    "day": 59,
+    "who": "gen_u1p5nhr",
+    "cause": "the night"
+   },
+   {
+    "day": 61,
+    "who": "gen_1xna5jc",
+    "cause": "monster"
+   }
+  ],
+  "patrols": 5,
+  "struck": 6,
+  "fled": 12,
+  "proposed": 9,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 234,
+  "feasts": 1,
+  "climb": 27,
+  "named": 3,
+  "taught": 66,
+  "unmet": [
+   "waves[w2:1/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 16,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 21,
+  "winDay": null,
+  "stage": 3,
+  "integ": 83,
+  "breadth": 36,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 39,
+  "w": [
+   6,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "hunger-winter",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {
+   "2": 12
+  },
+  "engaged": {
+   "1": 6,
+   "2": 1,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "sickness",
+   "a wound that wouldn't close",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 9,
+    "who": "gen_8a4rufa",
+    "cause": "sickness"
+   },
+   {
+    "day": 10,
+    "who": "belltoad",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "belltoad",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "belltoad",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "belltoad",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "gen_p8ek5ar",
+    "cause": "the night"
+   },
+   {
+    "day": 11,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 12,
+    "who": "gen_ya79uz1",
+    "cause": "combat"
+   },
+   {
+    "day": 12,
+    "who": "gen_3yluvpc",
+    "cause": "combat"
+   },
+   {
+    "day": 17,
+    "who": "emma_larsen",
+    "cause": "sickness"
+   },
+   {
+    "day": 18,
+    "who": "james_okonkwo",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 19,
+    "who": "gen_060y3gu",
+    "cause": "combat"
+   },
+   {
+    "day": 19,
+    "who": "lena_ruiz",
+    "cause": "starvation"
+   },
+   {
+    "day": 21,
+    "who": "gen_jcnl8du",
+    "cause": "starvation"
+   },
+   {
+    "day": 21,
+    "who": "rosa_mendez",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 9,
+  "struck": 5,
+  "fled": 19,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 21,
+  "feasts": 1,
+  "climb": 42,
+  "named": 6,
+  "taught": 8,
+  "unmet": [
+   "waves[w2:1/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 17,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 56,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 59,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 57,
+  "w": [
+   11,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "schism",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {
+   "2": 37
+  },
+  "engaged": {
+   "1": 11,
+   "2": 1,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "villager combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 21,
+    "who": "gen_41pocyj",
+    "cause": "monster"
+   },
+   {
+    "day": 23,
+    "who": "gen_k0u94qu",
+    "cause": "the night"
+   },
+   {
+    "day": 23,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 24,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "gen_2euo7o3",
+    "cause": "the night"
+   },
+   {
+    "day": 37,
+    "who": "emma_larsen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 39,
+    "who": "gen_s99q50r",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 40,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 40,
+    "who": "lockpick_raccoon",
+    "cause": "villager combat"
+   },
+   {
+    "day": 41,
+    "who": "gen_0bpq28k",
+    "cause": "combat"
+   },
+   {
+    "day": 44,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 52,
+    "who": "sofia_chen",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 7,
+  "struck": 5,
+  "fled": 25,
+  "proposed": 11,
+  "proposedPeer": 0,
+  "counterAccepted": 8,
+  "nationalAnswered": 0,
+  "channels": 170,
+  "feasts": 1,
+  "climb": 117,
+  "named": 2,
+  "taught": 19,
+  "unmet": [
+   "waves[w2:1/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 18,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 27,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 36,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 40,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 2,
+  "crisesKinds": [
+   "first-grave",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 5,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "the night",
+   "thirst",
+   "combat",
+   "combat",
+   "thirst",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "monster"
+  ],
+  "deathRecs": [
+   {
+    "day": 4,
+    "who": "gen_3zrraln",
+    "cause": "combat"
+   },
+   {
+    "day": 5,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 11,
+    "who": "marcus_webb",
+    "cause": "the night"
+   },
+   {
+    "day": 13,
+    "who": "james_okonkwo",
+    "cause": "thirst"
+   },
+   {
+    "day": 16,
+    "who": "gen_da9f44t",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "nightcourt",
+    "cause": "combat"
+   },
+   {
+    "day": 19,
+    "who": "gen_4q66ntn",
+    "cause": "thirst"
+   },
+   {
+    "day": 20,
+    "who": "gen_vzh5xn9",
+    "cause": "monster"
+   },
+   {
+    "day": 21,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 21,
+    "who": "gen_lzboc1g",
+    "cause": "combat"
+   },
+   {
+    "day": 21,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "david_kim",
+    "cause": "monster"
+   },
+   {
+    "day": 25,
+    "who": "emma_larsen",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 5,
+  "struck": 8,
+  "fled": 41,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 39,
+  "feasts": 0,
+  "climb": 41,
+  "named": 5,
+  "taught": 3,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "crises:2/3",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 19,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 40,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 40,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 58,
+  "w": [
+   6,
+   4,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {
+   "2": 16
+  },
+  "engaged": {
+   "1": 6,
+   "2": 4,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "the night",
+   "villager combat",
+   "monster",
+   "combat",
+   "combat",
+   "monster",
+   "starvation",
+   "the night",
+   "a wound that wouldn't close",
+   "starvation",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 15,
+    "who": "gen_gt8hvxr",
+    "cause": "the night"
+   },
+   {
+    "day": 16,
+    "who": "ducks_in_a_row",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "gen_rzuwjwg",
+    "cause": "monster"
+   },
+   {
+    "day": 17,
+    "who": "gen_se98s6k",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "gen_ucmygew",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "emma_larsen",
+    "cause": "monster"
+   },
+   {
+    "day": 24,
+    "who": "david_kim",
+    "cause": "starvation"
+   },
+   {
+    "day": 25,
+    "who": "sofia_chen",
+    "cause": "the night"
+   },
+   {
+    "day": 29,
+    "who": "gen_1xy4q0s",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 30,
+    "who": "marcus_webb",
+    "cause": "starvation"
+   },
+   {
+    "day": 36,
+    "who": "gen_4t28ycr",
+    "cause": "combat"
+   },
+   {
+    "day": 38,
+    "who": "giant_mosquito",
+    "cause": "combat"
+   },
+   {
+    "day": 38,
+    "who": "james_okonkwo",
+    "cause": "monster"
+   }
+  ],
+  "patrols": 14,
+  "struck": 18,
+  "fled": 21,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 90,
+  "feasts": 2,
+  "climb": 49,
+  "named": 5,
+  "taught": 31,
+  "unmet": [
+   "waves[w2:4/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 20,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 34,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 37,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 9,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "thirst",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "monster",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 14,
+    "who": "emma_larsen",
+    "cause": "thirst"
+   },
+   {
+    "day": 21,
+    "who": "gen_mi6ob5w",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "gen_6hi6cs8",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "gen_sp6yb42",
+    "cause": "combat"
+   },
+   {
+    "day": 25,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 33,
+    "who": "gen_ktlj2jb",
+    "cause": "combat"
+   },
+   {
+    "day": 33,
+    "who": "david_kim",
+    "cause": "monster"
+   },
+   {
+    "day": 34,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "sofia_chen",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 3,
+  "struck": 0,
+  "fled": 65,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 92,
+  "feasts": 2,
+  "climb": 63,
+  "named": 0,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:2/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 21,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 34,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 36,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 47,
+  "w": [
+   5,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "first-grave",
+   "schism",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 5,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "the night",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "sickness"
+  ],
+  "deathRecs": [
+   {
+    "day": 13,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 19,
+    "who": "gen_hlbq3xy",
+    "cause": "the night"
+   },
+   {
+    "day": 20,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "gen_jw1xk6q",
+    "cause": "the night"
+   },
+   {
+    "day": 26,
+    "who": "sofia_chen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 27,
+    "who": "gen_6ton196",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "gen_10u3lwk",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "gen_10u3lwk",
+    "cause": "sickness"
+   },
+   {
+    "day": 28,
+    "who": "gen_puhwdqd",
+    "cause": "combat"
+   },
+   {
+    "day": 30,
+    "who": "emma_larsen",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "david_kim",
+    "cause": "sickness"
+   }
+  ],
+  "patrols": 7,
+  "struck": 5,
+  "fled": 34,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 76,
+  "feasts": 2,
+  "climb": 39,
+  "named": 0,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 22,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 26,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 39,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 36,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "crisesKinds": [
+   "hunger-winter",
+   "first-grave",
+   "schism",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 9,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "starvation",
+   "starvation",
+   "starvation",
+   "starvation",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 8,
+    "who": "ducks_in_a_row",
+    "cause": "villager combat"
+   },
+   {
+    "day": 8,
+    "who": "gen_sr3d8u8",
+    "cause": "starvation"
+   },
+   {
+    "day": 13,
+    "who": "gen_h6o914i",
+    "cause": "starvation"
+   },
+   {
+    "day": 13,
+    "who": "gen_a0wgnnm",
+    "cause": "starvation"
+   },
+   {
+    "day": 13,
+    "who": "marcus_webb",
+    "cause": "starvation"
+   },
+   {
+    "day": 17,
+    "who": "gen_notb3wh",
+    "cause": "monster"
+   },
+   {
+    "day": 18,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 21,
+    "who": "gen_rvrv4d0",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "david_kim",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 25,
+    "who": "sofia_chen",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 3,
+  "struck": 0,
+  "fled": 13,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 35,
+  "feasts": 0,
+  "climb": 31,
+  "named": 0,
+  "taught": 12,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 23,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 40,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 43,
+  "w": [
+   6,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 6,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "villager combat",
+   "sickness",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 19,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "gen_4ljs8bz",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 24,
+    "who": "marcus_webb",
+    "cause": "sickness"
+   },
+   {
+    "day": 27,
+    "who": "emma_larsen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 37,
+    "who": "gen_at3pk63",
+    "cause": "combat"
+   },
+   {
+    "day": 40,
+    "who": "gen_q2qkk70",
+    "cause": "combat"
+   },
+   {
+    "day": 40,
+    "who": "david_kim",
+    "cause": "combat"
+   },
+   {
+    "day": 40,
+    "who": "rosa_mendez",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 6,
+  "struck": 12,
+  "fled": 100,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 112,
+  "feasts": 4,
+  "climb": 50,
+  "named": 7,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 24,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 2,
+  "table": false,
+  "won": false,
+  "days": 10,
+  "winDay": null,
+  "stage": 1,
+  "integ": 26,
+  "breadth": 16,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 9,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "crisesKinds": [
+   "breach",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 4,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 2,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 5,
+    "who": "belltoad",
+    "cause": "combat"
+   },
+   {
+    "day": 5,
+    "who": "gen_s4b1hj4",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "glasswing",
+    "cause": "villager combat"
+   },
+   {
+    "day": 10,
+    "who": "hummice",
+    "cause": "villager combat"
+   },
+   {
+    "day": 10,
+    "who": "gen_ely5xq3",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 4,
+  "struck": 7,
+  "fled": 3,
+  "proposed": 3,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 0,
+  "feasts": 0,
+  "climb": 5,
+  "named": 2,
+  "taught": 3,
+  "unmet": [
+   "waves[w1:4/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "crises:2/3",
+   "sentiment:unmet",
+   "feastSurge:unmet",
+   "stage:1/3(integ 26)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 25,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 16,
+  "winDay": null,
+  "stage": 2,
+  "integ": 77,
+  "breadth": 23,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 23,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 4,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 4,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "monster",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 5,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 5,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 5,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 5,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 14,
+    "who": "emma_larsen",
+    "cause": "starvation"
+   },
+   {
+    "day": 15,
+    "who": "gen_3s6mod2",
+    "cause": "monster"
+   },
+   {
+    "day": 15,
+    "who": "gen_6ezapmq",
+    "cause": "starvation"
+   },
+   {
+    "day": 15,
+    "who": "david_kim",
+    "cause": "starvation"
+   },
+   {
+    "day": 16,
+    "who": "gen_mi3edqs",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 5,
+  "struck": 4,
+  "fled": 0,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 5,
+  "feasts": 0,
+  "climb": 10,
+  "named": 5,
+  "taught": 0,
+  "unmet": [
+   "waves[w1:4/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet",
+   "stage:2/3(integ 77)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 26,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 110,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 73,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 115,
+  "w": [
+   7,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "hunger-winter",
+   "first-grave",
+   "breach",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 2,
+  "waveDay": {
+   "2": 49
+  },
+  "engaged": {
+   "1": 7,
+   "2": 3,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "sickness",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 50,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 53,
+    "who": "gen_ead8l6a",
+    "cause": "sickness"
+   },
+   {
+    "day": 60,
+    "who": "lockpick_raccoon",
+    "cause": "villager combat"
+   },
+   {
+    "day": 64,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 68,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 74,
+    "who": "james_okonkwo",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 105,
+    "who": "gen_2pprcdz",
+    "cause": "combat"
+   },
+   {
+    "day": 109,
+    "who": "sofia_chen",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 13,
+  "struck": 31,
+  "fled": 16,
+  "proposed": 5,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 328,
+  "feasts": 1,
+  "climb": 58,
+  "named": 4,
+  "taught": 24,
+  "unmet": [
+   "waves[w2:3/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 27,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 26,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 36,
+  "w": [
+   11,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 2,
+  "crisesKinds": [
+   "first-grave",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {
+   "2": 14
+  },
+  "engaged": {
+   "1": 11,
+   "2": 1,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "the night",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 9,
+    "who": "emma_larsen",
+    "cause": "monster"
+   },
+   {
+    "day": 10,
+    "who": "gen_s4abji1",
+    "cause": "combat"
+   },
+   {
+    "day": 14,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 15,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "james_okonkwo",
+    "cause": "monster"
+   },
+   {
+    "day": 17,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 18,
+    "who": "gen_ypzcdaq",
+    "cause": "combat"
+   },
+   {
+    "day": 23,
+    "who": "gen_ply86xc",
+    "cause": "combat"
+   },
+   {
+    "day": 23,
+    "who": "sofia_chen",
+    "cause": "starvation"
+   },
+   {
+    "day": 23,
+    "who": "david_kim",
+    "cause": "starvation"
+   },
+   {
+    "day": 25,
+    "who": "marcus_webb",
+    "cause": "the night"
+   },
+   {
+    "day": 26,
+    "who": "gen_ctuvfzv",
+    "cause": "combat"
+   },
+   {
+    "day": 26,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 8,
+  "struck": 6,
+  "fled": 42,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 79,
+  "feasts": 2,
+  "climb": 17,
+  "named": 0,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:1/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "crises:2/3"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 28,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 57,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 44,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 54,
+  "w": [
+   8,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {},
+  "engaged": {
+   "1": 8,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 42,
+    "who": "ducks_in_a_row",
+    "cause": "villager combat"
+   },
+   {
+    "day": 43,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 50,
+    "who": "gen_x9u2lyh",
+    "cause": "monster"
+   },
+   {
+    "day": 52,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 53,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 54,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 8,
+  "struck": 11,
+  "fled": 103,
+  "proposed": 7,
+  "proposedPeer": 0,
+  "counterAccepted": 6,
+  "nationalAnswered": 0,
+  "channels": 119,
+  "feasts": 4,
+  "climb": 106,
+  "named": 1,
+  "taught": 18,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 29,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 63,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 51,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 52,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "the night",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "sickness",
+   "a wound that wouldn't close"
+  ],
+  "deathRecs": [
+   {
+    "day": 21,
+    "who": "gen_03ooeby",
+    "cause": "the night"
+   },
+   {
+    "day": 22,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 23,
+    "who": "gen_fw8epp0",
+    "cause": "combat"
+   },
+   {
+    "day": 23,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "gen_muhecni",
+    "cause": "combat"
+   },
+   {
+    "day": 35,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   },
+   {
+    "day": 38,
+    "who": "emma_larsen",
+    "cause": "sickness"
+   },
+   {
+    "day": 58,
+    "who": "david_kim",
+    "cause": "a wound that wouldn't close"
+   }
+  ],
+  "patrols": 7,
+  "struck": 9,
+  "fled": 23,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 195,
+  "feasts": 2,
+  "climb": 84,
+  "named": 4,
+  "taught": 47,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 30,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 58,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 60,
+  "w": [
+   7,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "schism",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {
+   "2": 35
+  },
+  "engaged": {
+   "1": 7,
+   "2": 1,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "the night",
+   "villager combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "villager combat",
+   "the expedition",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 25,
+    "who": "gen_5hdh0qz",
+    "cause": "the night"
+   },
+   {
+    "day": 26,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 27,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 35,
+    "who": "nevermore",
+    "cause": "combat"
+   },
+   {
+    "day": 35,
+    "who": "nightcourt",
+    "cause": "villager combat"
+   },
+   {
+    "day": 36,
+    "who": "sofia_chen",
+    "cause": "the expedition"
+   },
+   {
+    "day": 38,
+    "who": "gen_eje0asa",
+    "cause": "combat"
+   },
+   {
+    "day": 42,
+    "who": "gen_lqy6e48",
+    "cause": "combat"
+   },
+   {
+    "day": 45,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 45,
+    "who": "mirrormoth",
+    "cause": "combat"
+   },
+   {
+    "day": 45,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 53,
+    "who": "david_kim",
+    "cause": "a wound that wouldn't close"
+   }
+  ],
+  "patrols": 1,
+  "struck": 4,
+  "fled": 70,
+  "proposed": 9,
+  "proposedPeer": 1,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 102,
+  "feasts": 2,
+  "climb": 138,
+  "named": 1,
+  "taught": 37,
+  "unmet": [
+   "waves[w2:1/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 31,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 54,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 54,
+  "w": [
+   9,
+   3,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "schism",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {
+   "2": 40
+  },
+  "engaged": {
+   "1": 9,
+   "2": 3,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 18,
+    "who": "gen_aj1upju",
+    "cause": "combat"
+   },
+   {
+    "day": 21,
+    "who": "sunbasker",
+    "cause": "villager combat"
+   },
+   {
+    "day": 26,
+    "who": "gen_suxexea",
+    "cause": "monster"
+   },
+   {
+    "day": 26,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 27,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 39,
+    "who": "bulldozer",
+    "cause": "villager combat"
+   },
+   {
+    "day": 39,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 40,
+    "who": "gen_qdy5tbp",
+    "cause": "combat"
+   },
+   {
+    "day": 40,
+    "who": "gen_g1sxjcd",
+    "cause": "combat"
+   },
+   {
+    "day": 44,
+    "who": "gen_l1bwc44",
+    "cause": "combat"
+   },
+   {
+    "day": 46,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 48,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 49,
+    "who": "emma_larsen",
+    "cause": "The Heckler"
+   }
+  ],
+  "patrols": 11,
+  "struck": 7,
+  "fled": 33,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 6,
+  "nationalAnswered": 0,
+  "channels": 156,
+  "feasts": 1,
+  "climb": 101,
+  "named": 1,
+  "taught": 16,
+  "unmet": [
+   "waves[w2:3/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 32,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 67,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 46,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 59,
+  "w": [
+   10,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 5,
+  "crisesKinds": [
+   "breach",
+   "hunger-winter",
+   "first-grave",
+   "schism",
+   "blood-on-air"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {
+   "2": 24
+  },
+  "engaged": {
+   "1": 10,
+   "2": 2,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "the night",
+   "combat",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 19,
+    "who": "belltoad",
+    "cause": "villager combat"
+   },
+   {
+    "day": 23,
+    "who": "gen_6kptaye",
+    "cause": "the night"
+   },
+   {
+    "day": 23,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 23,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 24,
+    "who": "hushwolf",
+    "cause": "combat"
+   },
+   {
+    "day": 24,
+    "who": "gen_cgbgrnq",
+    "cause": "the night"
+   },
+   {
+    "day": 30,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 30,
+    "who": "gen_px2ig1q",
+    "cause": "sickness"
+   },
+   {
+    "day": 36,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 44,
+    "who": "gen_ej0jg8r",
+    "cause": "combat"
+   },
+   {
+    "day": 45,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 45,
+    "who": "gen_1m5hg3f",
+    "cause": "combat"
+   },
+   {
+    "day": 67,
+    "who": "memory_projector",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 9,
+  "struck": 18,
+  "fled": 27,
+  "proposed": 7,
+  "proposedPeer": 0,
+  "counterAccepted": 6,
+  "nationalAnswered": 0,
+  "channels": 181,
+  "feasts": 1,
+  "climb": 122,
+  "named": 6,
+  "taught": 36,
+  "unmet": [
+   "waves[w2:2/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 33,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 2,
+  "table": false,
+  "won": false,
+  "days": 11,
+  "winDay": null,
+  "stage": 2,
+  "integ": 69,
+  "breadth": 18,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "crisesKinds": [
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 1,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 3,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "thirst",
+   "sickness"
+  ],
+  "deathRecs": [
+   {
+    "day": 3,
+    "who": "emma_larsen",
+    "cause": "monster"
+   },
+   {
+    "day": 10,
+    "who": "gen_9vznf80",
+    "cause": "the night"
+   },
+   {
+    "day": 11,
+    "who": "james_okonkwo",
+    "cause": "thirst"
+   },
+   {
+    "day": 11,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   }
+  ],
+  "patrols": 2,
+  "struck": 0,
+  "fled": 0,
+  "proposed": 3,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 0,
+  "feasts": 0,
+  "climb": 5,
+  "named": 0,
+  "taught": 10,
+  "unmet": [
+   "waves[w1:1/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "crises:1/3",
+   "feastSurge:unmet",
+   "stage:2/3(integ 69)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 34,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 39,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 43,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "the night",
+   "combat",
+   "monster",
+   "combat",
+   "the phoenix link",
+   "the phoenix link",
+   "the phoenix link",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 22,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 22,
+    "who": "gen_my8ip0l",
+    "cause": "the night"
+   },
+   {
+    "day": 33,
+    "who": "rosa_mendez",
+    "cause": "combat"
+   },
+   {
+    "day": 34,
+    "who": "gen_6ewkqp9",
+    "cause": "monster"
+   },
+   {
+    "day": 39,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 39,
+    "who": "james_okonkwo",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 39,
+    "who": "emma_larsen",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 39,
+    "who": "sofia_chen",
+    "cause": "the phoenix link"
+   },
+   {
+    "day": 39,
+    "who": "gen_wof1a90",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 8,
+  "struck": 6,
+  "fled": 25,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 82,
+  "feasts": 2,
+  "climb": 40,
+  "named": 6,
+  "taught": 22,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 35,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 31,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 31,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 41,
+  "w": [
+   10,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 2,
+  "crisesKinds": [
+   "first-grave",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 2,
+  "waveDay": {},
+  "engaged": {
+   "1": 10,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "combat",
+   "a wound that wouldn't close"
+  ],
+  "deathRecs": [
+   {
+    "day": 19,
+    "who": "gen_ss59k1v",
+    "cause": "combat"
+   },
+   {
+    "day": 19,
+    "who": "sunbasker",
+    "cause": "villager combat"
+   },
+   {
+    "day": 20,
+    "who": "gen_61yhgis",
+    "cause": "combat"
+   },
+   {
+    "day": 25,
+    "who": "gen_t269j82",
+    "cause": "a wound that wouldn't close"
+   }
+  ],
+  "patrols": 3,
+  "struck": 4,
+  "fled": 31,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 7,
+  "nationalAnswered": 0,
+  "channels": 51,
+  "feasts": 2,
+  "climb": 95,
+  "named": 7,
+  "taught": 6,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:2/3",
+   "scale:regional",
+   "crises:2/3",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 36,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 24,
+  "winDay": null,
+  "stage": 3,
+  "integ": 81,
+  "breadth": 25,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 36,
+  "w": [
+   12,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "crisesKinds": [
+   "first-grave",
+   "hunger-winter",
+   "breach",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 12,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "sickness",
+   "monster",
+   "villager combat",
+   "the night",
+   "combat",
+   "combat",
+   "a wound that wouldn't close",
+   "starvation",
+   "the night"
+  ],
+  "deathRecs": [
+   {
+    "day": 8,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 8,
+    "who": "marcus_webb",
+    "cause": "sickness"
+   },
+   {
+    "day": 13,
+    "who": "gen_1dfyp7h",
+    "cause": "sickness"
+   },
+   {
+    "day": 17,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 17,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "gen_yfnmjxl",
+    "cause": "the night"
+   },
+   {
+    "day": 18,
+    "who": "gen_hqj8ze1",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "david_kim",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "gen_s95nc3h",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 24,
+    "who": "james_okonkwo",
+    "cause": "starvation"
+   },
+   {
+    "day": 24,
+    "who": "gen_ymi52mv",
+    "cause": "the night"
+   }
+  ],
+  "patrols": 3,
+  "struck": 0,
+  "fled": 13,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 10,
+  "feasts": 1,
+  "climb": 32,
+  "named": 3,
+  "taught": 28,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 37,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 14,
+  "winDay": null,
+  "stage": 2,
+  "integ": 79,
+  "breadth": 19,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 10,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "hunger-winter",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 3,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 2,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "monster",
+   "monster",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 8,
+    "who": "lockpick_raccoon",
+    "cause": "villager combat"
+   },
+   {
+    "day": 10,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 12,
+    "who": "gen_gh114u2",
+    "cause": "monster"
+   },
+   {
+    "day": 13,
+    "who": "emma_larsen",
+    "cause": "monster"
+   },
+   {
+    "day": 13,
+    "who": "gen_1pxbz3q",
+    "cause": "starvation"
+   },
+   {
+    "day": 13,
+    "who": "gen_z1ac5jt",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 5,
+  "struck": 2,
+  "fled": 1,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 5,
+  "feasts": 0,
+  "climb": 7,
+  "named": 3,
+  "taught": 0,
+  "unmet": [
+   "waves[w1:3/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet",
+   "stage:2/3(integ 79)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 38,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 45,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 43,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 1,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "starvation",
+   "starvation",
+   "villager combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 16,
+    "who": "sunbasker",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "gen_eofmwim",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 22,
+    "who": "gen_x5h3c5z",
+    "cause": "combat"
+   },
+   {
+    "day": 26,
+    "who": "gen_1vlyfsh",
+    "cause": "combat"
+   },
+   {
+    "day": 26,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 26,
+    "who": "emma_larsen",
+    "cause": "combat"
+   },
+   {
+    "day": 26,
+    "who": "gen_ppgm2o1",
+    "cause": "combat"
+   },
+   {
+    "day": 26,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 28,
+    "who": "david_kim",
+    "cause": "starvation"
+   },
+   {
+    "day": 29,
+    "who": "gen_wd4du34",
+    "cause": "starvation"
+   },
+   {
+    "day": 38,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 43,
+    "who": "james_okonkwo",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 7,
+  "struck": 10,
+  "fled": 83,
+  "proposed": 5,
+  "proposedPeer": 1,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 94,
+  "feasts": 4,
+  "climb": 52,
+  "named": 4,
+  "taught": 14,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 39,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 2,
+  "table": false,
+  "won": false,
+  "days": 9,
+  "winDay": null,
+  "stage": 1,
+  "integ": 20,
+  "breadth": 14,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 3,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "crisesKinds": [
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 3,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "sickness",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 5,
+    "who": "gen_mx6crg5",
+    "cause": "sickness"
+   },
+   {
+    "day": 9,
+    "who": "gen_akf5vja",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 3,
+  "struck": 0,
+  "fled": 0,
+  "proposed": 3,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 0,
+  "feasts": 0,
+  "climb": 7,
+  "named": 0,
+  "taught": 0,
+  "unmet": [
+   "waves[w1:3/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "crises:1/3",
+   "sentiment:unmet",
+   "feastSurge:unmet",
+   "stage:1/3(integ 20)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 40,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 11,
+  "winDay": null,
+  "stage": 2,
+  "integ": 52,
+  "breadth": 33,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 7,
+  "w": [
+   4,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "hunger-winter",
+   "first-grave",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 4,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "thirst",
+   "sickness",
+   "villager combat",
+   "sickness",
+   "thirst",
+   "thirst",
+   "the night",
+   "starvation",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 8,
+    "who": "james_okonkwo",
+    "cause": "thirst"
+   },
+   {
+    "day": 8,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   },
+   {
+    "day": 9,
+    "who": "belltoad",
+    "cause": "villager combat"
+   },
+   {
+    "day": 9,
+    "who": "gen_olnbhnq",
+    "cause": "sickness"
+   },
+   {
+    "day": 10,
+    "who": "gen_uf0gns5",
+    "cause": "thirst"
+   },
+   {
+    "day": 10,
+    "who": "marcus_webb",
+    "cause": "thirst"
+   },
+   {
+    "day": 10,
+    "who": "gen_l1vw4fu",
+    "cause": "the night"
+   },
+   {
+    "day": 10,
+    "who": "gen_cbwpjta",
+    "cause": "starvation"
+   },
+   {
+    "day": 11,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 11,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 11,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 11,
+    "who": "hummice",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 2,
+  "struck": 4,
+  "fled": 0,
+  "proposed": 3,
+  "proposedPeer": 0,
+  "counterAccepted": 1,
+  "nationalAnswered": 0,
+  "channels": 0,
+  "feasts": 0,
+  "climb": 5,
+  "named": 0,
+  "taught": 9,
+  "unmet": [
+   "waves[w1:4/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "sentiment:unmet",
+   "feastSurge:unmet",
+   "stage:2/3(integ 52)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 41,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 2,
+  "table": false,
+  "won": false,
+  "days": 33,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 25,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 35,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 1,
+  "crisesKinds": [
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 9,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 14,
+    "who": "ducks_in_a_row",
+    "cause": "villager combat"
+   },
+   {
+    "day": 15,
+    "who": "gen_9kt0ks0",
+    "cause": "combat"
+   },
+   {
+    "day": 15,
+    "who": "gen_axd046i",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "gen_vbzo652",
+    "cause": "the night"
+   },
+   {
+    "day": 21,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 22,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "gen_6wmyrcs",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 32,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 33,
+    "who": "emma_larsen",
+    "cause": "combat"
+   },
+   {
+    "day": 33,
+    "who": "david_kim",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 6,
+  "struck": 14,
+  "fled": 85,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 58,
+  "feasts": 4,
+  "climb": 46,
+  "named": 1,
+  "taught": 6,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:2/3",
+   "scale:regional",
+   "crises:1/3",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 42,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 21,
+  "winDay": null,
+  "stage": 3,
+  "integ": 83,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 42,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "hunger-winter",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 3,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "combat",
+   "villager combat",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 9,
+    "who": "glasswing",
+    "cause": "villager combat"
+   },
+   {
+    "day": 10,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 12,
+    "who": "gen_u56tc5z",
+    "cause": "combat"
+   },
+   {
+    "day": 14,
+    "who": "speedbump_turtle",
+    "cause": "villager combat"
+   },
+   {
+    "day": 17,
+    "who": "gen_pudqqp3",
+    "cause": "sickness"
+   },
+   {
+    "day": 18,
+    "who": "gen_hz57o0l",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "gen_js70lbx",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "gen_7chgk4n",
+    "cause": "combat"
+   },
+   {
+    "day": 21,
+    "who": "david_kim",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 6,
+  "struck": 0,
+  "fled": 40,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 12,
+  "feasts": 2,
+  "climb": 13,
+  "named": 5,
+  "taught": 32,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 43,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 32,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 35,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 39,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 9,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "sickness",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 11,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 11,
+    "who": "ducks_in_a_row",
+    "cause": "villager combat"
+   },
+   {
+    "day": 12,
+    "who": "gen_f9liq5c",
+    "cause": "combat"
+   },
+   {
+    "day": 12,
+    "who": "gen_w8eoq48",
+    "cause": "combat"
+   },
+   {
+    "day": 12,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 13,
+    "who": "gen_krzwra6",
+    "cause": "monster"
+   },
+   {
+    "day": 16,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 23,
+    "who": "gen_5lob6xk",
+    "cause": "combat"
+   },
+   {
+    "day": 25,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 28,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   },
+   {
+    "day": 30,
+    "who": "gen_7xl1zq7",
+    "cause": "combat"
+   },
+   {
+    "day": 30,
+    "who": "rosa_mendez",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 5,
+  "struck": 0,
+  "fled": 97,
+  "proposed": 9,
+  "proposedPeer": 0,
+  "counterAccepted": 7,
+  "nationalAnswered": 0,
+  "channels": 45,
+  "feasts": 1,
+  "climb": 56,
+  "named": 2,
+  "taught": 20,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 44,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 23,
+  "winDay": null,
+  "stage": 3,
+  "integ": 98,
+  "breadth": 22,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 43,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "schism",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 3,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "sickness",
+   "combat",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 15,
+    "who": "gen_y22scza",
+    "cause": "monster"
+   },
+   {
+    "day": 15,
+    "who": "gen_y22scza",
+    "cause": "sickness"
+   },
+   {
+    "day": 18,
+    "who": "gen_hx3ktk2",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "emma_larsen",
+    "cause": "starvation"
+   },
+   {
+    "day": 23,
+    "who": "gen_1e92s2v",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 8,
+  "struck": 5,
+  "fled": 8,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 55,
+  "feasts": 1,
+  "climb": 13,
+  "named": 2,
+  "taught": 0,
+  "unmet": [
+   "waves[w1:3/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 45,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 55,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 43,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 36,
+  "w": [
+   8,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {
+   "2": 32
+  },
+  "engaged": {
+   "1": 8,
+   "2": 1,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "monster",
+   "the night",
+   "combat",
+   "combat",
+   "the night",
+   "villager combat",
+   "villager combat",
+   "villager combat",
+   "the night",
+   "villager combat",
+   "the night"
+  ],
+  "deathRecs": [
+   {
+    "day": 17,
+    "who": "gen_6d42qx5",
+    "cause": "monster"
+   },
+   {
+    "day": 18,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 22,
+    "who": "gen_ebswgja",
+    "cause": "the night"
+   },
+   {
+    "day": 23,
+    "who": "gen_tso9woe",
+    "cause": "combat"
+   },
+   {
+    "day": 23,
+    "who": "gen_io6by4j",
+    "cause": "combat"
+   },
+   {
+    "day": 29,
+    "who": "sofia_chen",
+    "cause": "the night"
+   },
+   {
+    "day": 30,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 31,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 31,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 35,
+    "who": "james_okonkwo",
+    "cause": "the night"
+   },
+   {
+    "day": 38,
+    "who": "bright_idea",
+    "cause": "villager combat"
+   },
+   {
+    "day": 41,
+    "who": "emma_larsen",
+    "cause": "the night"
+   },
+   {
+    "day": 49,
+    "who": "lena_ruiz",
+    "cause": "the night"
+   },
+   {
+    "day": 55,
+    "who": "david_kim",
+    "cause": "combat"
+   },
+   {
+    "day": 55,
+    "who": "gen_6zqj869",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 6,
+  "struck": 4,
+  "fled": 52,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 90,
+  "feasts": 1,
+  "climb": 100,
+  "named": 7,
+  "taught": 53,
+  "unmet": [
+   "waves[w2:1/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 46,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 26,
+  "winDay": null,
+  "stage": 3,
+  "integ": 93,
+  "breadth": 32,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 36,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 2,
+  "crisesKinds": [
+   "breach",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "monster",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "combat",
+   "sickness",
+   "villager combat",
+   "starvation",
+   "contest"
+  ],
+  "deathRecs": [
+   {
+    "day": 10,
+    "who": "gen_bn22axt",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "nevermore",
+    "cause": "combat"
+   },
+   {
+    "day": 11,
+    "who": "gen_ufv93py",
+    "cause": "monster"
+   },
+   {
+    "day": 11,
+    "who": "gen_788hjk0",
+    "cause": "combat"
+   },
+   {
+    "day": 17,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 18,
+    "who": "gen_3r350ml",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "gen_48l93wo",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 19,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 19,
+    "who": "gen_whstb5f",
+    "cause": "starvation"
+   },
+   {
+    "day": 24,
+    "who": "james_okonkwo",
+    "cause": "contest"
+   },
+   {
+    "day": 24,
+    "who": "david_kim",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 5,
+  "struck": 8,
+  "fled": 41,
+  "proposed": 2,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 23,
+  "feasts": 1,
+  "climb": 13,
+  "named": 5,
+  "taught": 8,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "crises:2/3",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 47,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 49,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 44,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": true,
+  "surgeRes": 48,
+  "w": [
+   8,
+   1,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "schism",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {
+   "2": 28
+  },
+  "engaged": {
+   "1": 8,
+   "2": 1,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "the night",
+   "combat",
+   "villager combat",
+   "sickness",
+   "sickness",
+   "the night",
+   "monster",
+   "villager combat",
+   "villager combat",
+   "combat",
+   "the night"
+  ],
+  "deathRecs": [
+   {
+    "day": 17,
+    "who": "gen_xl4mygr",
+    "cause": "monster"
+   },
+   {
+    "day": 22,
+    "who": "gen_sngvak5",
+    "cause": "the night"
+   },
+   {
+    "day": 23,
+    "who": "gen_az2xa3u",
+    "cause": "combat"
+   },
+   {
+    "day": 28,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 29,
+    "who": "marcus_webb",
+    "cause": "sickness"
+   },
+   {
+    "day": 31,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 31,
+    "who": "sofia_chen",
+    "cause": "the night"
+   },
+   {
+    "day": 32,
+    "who": "gen_6udibj9",
+    "cause": "monster"
+   },
+   {
+    "day": 35,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 35,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 36,
+    "who": "gen_injlqu2",
+    "cause": "combat"
+   },
+   {
+    "day": 45,
+    "who": "emma_larsen",
+    "cause": "the night"
+   },
+   {
+    "day": 49,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 49,
+    "who": "david_kim",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 7,
+  "struck": 8,
+  "fled": 34,
+  "proposed": 5,
+  "proposedPeer": 0,
+  "counterAccepted": 0,
+  "nationalAnswered": 0,
+  "channels": 94,
+  "feasts": 2,
+  "climb": 45,
+  "named": 8,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:1/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 48,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 40,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 45,
+  "w": [
+   9,
+   2,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {
+   "2": 21
+  },
+  "engaged": {
+   "1": 9,
+   "2": 2,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 4,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "a wound that wouldn't close",
+   "combat",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 23,
+    "who": "gen_c0b98q9",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 31,
+    "who": "mirror_stag",
+    "cause": "combat"
+   },
+   {
+    "day": 38,
+    "who": "sofia_chen",
+    "cause": "starvation"
+   },
+   {
+    "day": 38,
+    "who": "emma_larsen",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 12,
+  "struck": 14,
+  "fled": 28,
+  "proposed": 8,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 47,
+  "feasts": 1,
+  "climb": 18,
+  "named": 3,
+  "taught": 11,
+  "unmet": [
+   "waves[w2:2/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 49,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 40,
+  "winDay": null,
+  "stage": 3,
+  "integ": 97,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 40,
+  "w": [
+   6,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "hunger-winter",
+   "schism"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 6,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "sickness",
+   "villager combat",
+   "a wound that wouldn't close",
+   "a wound that wouldn't close",
+   "sickness",
+   "monster",
+   "sickness",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 16,
+    "who": "gen_ne3kw9t",
+    "cause": "combat"
+   },
+   {
+    "day": 16,
+    "who": "marcus_webb",
+    "cause": "sickness"
+   },
+   {
+    "day": 18,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 18,
+    "who": "emma_larsen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 28,
+    "who": "gen_nwvcqew",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 29,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   },
+   {
+    "day": 33,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 33,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 39,
+    "who": "gen_noz4qxd",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 10,
+  "struck": 17,
+  "fled": 7,
+  "proposed": 7,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 127,
+  "feasts": 1,
+  "climb": 36,
+  "named": 4,
+  "taught": 10,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 50,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 31,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 27,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 36,
+  "w": [
+   6,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "hunger-winter",
+   "first-grave",
+   "schism",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 6,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "combat",
+   "monster",
+   "combat",
+   "combat",
+   "monster",
+   "villager combat",
+   "combat",
+   "combat",
+   "starvation",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 17,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 18,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 19,
+    "who": "gen_g8rdhna",
+    "cause": "combat"
+   },
+   {
+    "day": 19,
+    "who": "gen_ibo75hq",
+    "cause": "monster"
+   },
+   {
+    "day": 20,
+    "who": "gen_r1tma1u",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "gen_vbyv1bv",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "lena_ruiz",
+    "cause": "monster"
+   },
+   {
+    "day": 26,
+    "who": "speedbump_turtle",
+    "cause": "villager combat"
+   },
+   {
+    "day": 27,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "gen_rzef6py",
+    "cause": "combat"
+   },
+   {
+    "day": 29,
+    "who": "emma_larsen",
+    "cause": "starvation"
+   },
+   {
+    "day": 30,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 8,
+  "struck": 11,
+  "fled": 56,
+  "proposed": 12,
+  "proposedPeer": 0,
+  "counterAccepted": 7,
+  "nationalAnswered": 0,
+  "channels": 62,
+  "feasts": 1,
+  "climb": 60,
+  "named": 0,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 51,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 52,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 37,
+  "w": [
+   8,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 4,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 8,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "monster",
+   "sickness",
+   "sickness",
+   "villager combat",
+   "combat",
+   "combat",
+   "sickness",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 18,
+    "who": "gen_xoc9873",
+    "cause": "combat"
+   },
+   {
+    "day": 18,
+    "who": "gen_3bilkkr",
+    "cause": "combat"
+   },
+   {
+    "day": 20,
+    "who": "gen_1s9x4v1",
+    "cause": "monster"
+   },
+   {
+    "day": 20,
+    "who": "gen_qpjvrr1",
+    "cause": "sickness"
+   },
+   {
+    "day": 26,
+    "who": "marcus_webb",
+    "cause": "sickness"
+   },
+   {
+    "day": 27,
+    "who": "ducks_in_a_row",
+    "cause": "villager combat"
+   },
+   {
+    "day": 28,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 28,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 35,
+    "who": "david_kim",
+    "cause": "sickness"
+   },
+   {
+    "day": 52,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 52,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 52,
+    "who": "emma_larsen",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 6,
+  "struck": 11,
+  "fled": 46,
+  "proposed": 7,
+  "proposedPeer": 0,
+  "counterAccepted": 6,
+  "nationalAnswered": 0,
+  "channels": 110,
+  "feasts": 3,
+  "climb": 112,
+  "named": 4,
+  "taught": 8,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 52,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 44,
+  "winDay": null,
+  "stage": 3,
+  "integ": 93,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 53,
+  "w": [
+   6,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "schism",
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 6,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "Nevermore",
+   "ambush",
+   "a wound that wouldn't close",
+   "the night",
+   "combat",
+   "combat",
+   "Nevermore",
+   "villager combat",
+   "combat",
+   "the night",
+   "the night",
+   "sickness"
+  ],
+  "deathRecs": [
+   {
+    "day": 12,
+    "who": "gen_q2g2qfu",
+    "cause": "Nevermore"
+   },
+   {
+    "day": 13,
+    "who": "sofia_chen",
+    "cause": "ambush"
+   },
+   {
+    "day": 19,
+    "who": "emma_larsen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 19,
+    "who": "gen_yrbph82",
+    "cause": "the night"
+   },
+   {
+    "day": 21,
+    "who": "gen_xr4avhl",
+    "cause": "combat"
+   },
+   {
+    "day": 21,
+    "who": "gen_5wrfwyi",
+    "cause": "combat"
+   },
+   {
+    "day": 23,
+    "who": "gen_txby212",
+    "cause": "Nevermore"
+   },
+   {
+    "day": 27,
+    "who": "hushwolf",
+    "cause": "villager combat"
+   },
+   {
+    "day": 28,
+    "who": "gen_41u23gj",
+    "cause": "combat"
+   },
+   {
+    "day": 37,
+    "who": "lena_ruiz",
+    "cause": "the night"
+   },
+   {
+    "day": 44,
+    "who": "james_okonkwo",
+    "cause": "the night"
+   },
+   {
+    "day": 44,
+    "who": "david_kim",
+    "cause": "sickness"
+   }
+  ],
+  "patrols": 8,
+  "struck": 0,
+  "fled": 11,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 71,
+  "feasts": 2,
+  "climb": 47,
+  "named": 0,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 53,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 28,
+  "winDay": null,
+  "stage": 3,
+  "integ": 95,
+  "breadth": 30,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 37,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 4,
+  "crisesKinds": [
+   "breach",
+   "hunger-winter",
+   "schism",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 9,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "monster",
+   "monster",
+   "monster",
+   "monster",
+   "a wound that wouldn't close",
+   "sickness",
+   "sickness",
+   "combat",
+   "combat",
+   "combat",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 18,
+    "who": "gen_ofke5st",
+    "cause": "monster"
+   },
+   {
+    "day": 18,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 20,
+    "who": "gen_85aznla",
+    "cause": "monster"
+   },
+   {
+    "day": 20,
+    "who": "gen_qjz21oj",
+    "cause": "monster"
+   },
+   {
+    "day": 22,
+    "who": "lena_ruiz",
+    "cause": "monster"
+   },
+   {
+    "day": 22,
+    "who": "emma_larsen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 22,
+    "who": "lena_ruiz",
+    "cause": "sickness"
+   },
+   {
+    "day": 24,
+    "who": "gen_1n3ufhg",
+    "cause": "sickness"
+   },
+   {
+    "day": 25,
+    "who": "gen_u18vew3",
+    "cause": "combat"
+   },
+   {
+    "day": 25,
+    "who": "gen_huaaj3u",
+    "cause": "combat"
+   },
+   {
+    "day": 25,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 27,
+    "who": "david_kim",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 6,
+  "struck": 0,
+  "fled": 18,
+  "proposed": 2,
+  "proposedPeer": 0,
+  "counterAccepted": 1,
+  "nationalAnswered": 0,
+  "channels": 62,
+  "feasts": 1,
+  "climb": 4,
+  "named": 2,
+  "taught": 23,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 54,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 52,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 37,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": true,
+  "surgeRes": 63,
+  "w": [
+   8,
+   4,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "schism",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 2,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {
+   "2": 12
+  },
+  "engaged": {
+   "1": 8,
+   "2": 4,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "monster",
+   "villager combat",
+   "the night",
+   "villager combat",
+   "monster",
+   "sickness",
+   "villager combat",
+   "villager combat",
+   "sickness",
+   "combat",
+   "combat",
+   "villager combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 17,
+    "who": "marcus_webb",
+    "cause": "monster"
+   },
+   {
+    "day": 20,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 20,
+    "who": "gen_fr36dn6",
+    "cause": "the night"
+   },
+   {
+    "day": 21,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 22,
+    "who": "gen_t1m70wu",
+    "cause": "monster"
+   },
+   {
+    "day": 22,
+    "who": "gen_t1m70wu",
+    "cause": "sickness"
+   },
+   {
+    "day": 24,
+    "who": "giant_mosquito",
+    "cause": "villager combat"
+   },
+   {
+    "day": 24,
+    "who": "hummice",
+    "cause": "villager combat"
+   },
+   {
+    "day": 24,
+    "who": "sofia_chen",
+    "cause": "sickness"
+   },
+   {
+    "day": 25,
+    "who": "gen_2wrtwub",
+    "cause": "combat"
+   },
+   {
+    "day": 25,
+    "who": "gen_wbyjimd",
+    "cause": "combat"
+   },
+   {
+    "day": 28,
+    "who": "hummice",
+    "cause": "villager combat"
+   },
+   {
+    "day": 33,
+    "who": "nightlight_catfish",
+    "cause": "villager combat"
+   },
+   {
+    "day": 34,
+    "who": "gen_5elat1b",
+    "cause": "combat"
+   },
+   {
+    "day": 36,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 47,
+    "who": "mirrormoth",
+    "cause": "villager combat"
+   },
+   {
+    "day": 48,
+    "who": "david_kim",
+    "cause": "combat"
+   },
+   {
+    "day": 48,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 10,
+  "struck": 18,
+  "fled": 19,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 113,
+  "feasts": 2,
+  "climb": 76,
+  "named": 4,
+  "taught": 46,
+  "unmet": [
+   "waves[w2:4/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 55,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 1,
+  "table": false,
+  "won": false,
+  "days": 8,
+  "winDay": null,
+  "stage": 1,
+  "integ": 23,
+  "breadth": 11,
+  "sentiment": false,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 6,
+  "w": [
+   3,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 0,
+  "cr": 1,
+  "crisesKinds": [
+   "breach"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 3,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 4,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 8,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 8,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 8,
+    "who": "hummice",
+    "cause": "combat"
+   },
+   {
+    "day": 8,
+    "who": "hummice",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 4,
+  "struck": 6,
+  "fled": 0,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 2,
+  "nationalAnswered": 0,
+  "channels": 0,
+  "feasts": 0,
+  "climb": 6,
+  "named": 2,
+  "taught": 7,
+  "unmet": [
+   "waves[w1:3/5 w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:0/3",
+   "scale:regional",
+   "crises:1/3",
+   "sentiment:unmet",
+   "feastSurge:unmet",
+   "stage:1/3(integ 23)"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 56,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 31,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 38,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 37,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 3,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "combat",
+   "villager combat",
+   "ambush",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "monster",
+   "sickness",
+   "combat",
+   "the night"
+  ],
+  "deathRecs": [
+   {
+    "day": 8,
+    "who": "gen_wle7dzh",
+    "cause": "combat"
+   },
+   {
+    "day": 8,
+    "who": "lockpick_raccoon",
+    "cause": "villager combat"
+   },
+   {
+    "day": 8,
+    "who": "david_kim",
+    "cause": "ambush"
+   },
+   {
+    "day": 9,
+    "who": "gen_bdq83nn",
+    "cause": "combat"
+   },
+   {
+    "day": 9,
+    "who": "belltoad",
+    "cause": "combat"
+   },
+   {
+    "day": 9,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 9,
+    "who": "gen_h9hsy7p",
+    "cause": "combat"
+   },
+   {
+    "day": 10,
+    "who": "gen_dtouygh",
+    "cause": "combat"
+   },
+   {
+    "day": 16,
+    "who": "gen_dsnwlq7",
+    "cause": "monster"
+   },
+   {
+    "day": 21,
+    "who": "james_okonkwo",
+    "cause": "sickness"
+   },
+   {
+    "day": 22,
+    "who": "gen_jkeysdn",
+    "cause": "combat"
+   },
+   {
+    "day": 29,
+    "who": "lena_ruiz",
+    "cause": "the night"
+   },
+   {
+    "day": 29,
+    "who": "sofia_chen",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 3,
+  "struck": 16,
+  "fled": 51,
+  "proposed": 5,
+  "proposedPeer": 0,
+  "counterAccepted": 3,
+  "nationalAnswered": 0,
+  "channels": 60,
+  "feasts": 1,
+  "climb": 39,
+  "named": 6,
+  "taught": 6,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 57,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 34,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 29,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 42,
+  "w": [
+   9,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 2,
+  "cr": 3,
+  "crisesKinds": [
+   "breach",
+   "first-grave",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {},
+  "engaged": {
+   "1": 9,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 1,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "sickness",
+   "combat",
+   "sickness",
+   "villager combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 16,
+    "who": "gen_nvqr95a",
+    "cause": "sickness"
+   },
+   {
+    "day": 17,
+    "who": "sofia_chen",
+    "cause": "combat"
+   },
+   {
+    "day": 17,
+    "who": "gen_8264cjr",
+    "cause": "sickness"
+   },
+   {
+    "day": 18,
+    "who": "hummice",
+    "cause": "villager combat"
+   },
+   {
+    "day": 19,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 28,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 31,
+    "who": "gen_4iqytbk",
+    "cause": "combat"
+   },
+   {
+    "day": 31,
+    "who": "james_okonkwo",
+    "cause": "combat"
+   },
+   {
+    "day": 31,
+    "who": "emma_larsen",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 8,
+  "struck": 6,
+  "fled": 53,
+  "proposed": 10,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 46,
+  "feasts": 2,
+  "climb": 93,
+  "named": 1,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:2/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 58,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 39,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 46,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 5,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 0,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "sickness",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "monster",
+   "the night",
+   "combat"
+  ],
+  "deathRecs": [
+   {
+    "day": 13,
+    "who": "gen_hzqaqu7",
+    "cause": "sickness"
+   },
+   {
+    "day": 15,
+    "who": "gen_0kk8qh2",
+    "cause": "combat"
+   },
+   {
+    "day": 17,
+    "who": "sofia_chen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 18,
+    "who": "gen_d5torvp",
+    "cause": "combat"
+   },
+   {
+    "day": 22,
+    "who": "gen_3gr91u6",
+    "cause": "monster"
+   },
+   {
+    "day": 27,
+    "who": "lena_ruiz",
+    "cause": "the night"
+   },
+   {
+    "day": 37,
+    "who": "david_kim",
+    "cause": "combat"
+   }
+  ],
+  "patrols": 7,
+  "struck": 1,
+  "fled": 15,
+  "proposed": 4,
+  "proposedPeer": 0,
+  "counterAccepted": 4,
+  "nationalAnswered": 0,
+  "channels": 42,
+  "feasts": 4,
+  "climb": 53,
+  "named": 2,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 59,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 49,
+  "winDay": null,
+  "stage": 3,
+  "integ": 100,
+  "breadth": 34,
+  "sentiment": true,
+  "feastArmed": true,
+  "feastUsed": false,
+  "surgeRes": 46,
+  "w": [
+   6,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 6,
+  "cr": 2,
+  "crisesKinds": [
+   "breach",
+   "first-grave"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 1,
+  "waveDay": {},
+  "engaged": {
+   "1": 6,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "combat",
+   "villager combat",
+   "combat",
+   "a wound that wouldn't close",
+   "combat",
+   "combat",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 22,
+    "who": "speedbump_turtle",
+    "cause": "villager combat"
+   },
+   {
+    "day": 23,
+    "who": "gen_1f582xy",
+    "cause": "combat"
+   },
+   {
+    "day": 23,
+    "who": "white_noise_heron",
+    "cause": "villager combat"
+   },
+   {
+    "day": 36,
+    "who": "marcus_webb",
+    "cause": "combat"
+   },
+   {
+    "day": 45,
+    "who": "emma_larsen",
+    "cause": "a wound that wouldn't close"
+   },
+   {
+    "day": 46,
+    "who": "gen_swkkuni",
+    "cause": "combat"
+   },
+   {
+    "day": 46,
+    "who": "lena_ruiz",
+    "cause": "combat"
+   },
+   {
+    "day": 47,
+    "who": "james_okonkwo",
+    "cause": "starvation"
+   },
+   {
+    "day": 47,
+    "who": "david_kim",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 7,
+  "struck": 12,
+  "fled": 39,
+  "proposed": 9,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 105,
+  "feasts": 6,
+  "climb": 132,
+  "named": 2,
+  "taught": 44,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "scale:regional",
+   "crises:2/3",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ },
+ {
+  "seed": 60,
+  "endReason": "village-lost",
+  "ms": 0,
+  "arc": 3,
+  "table": false,
+  "won": false,
+  "days": 20,
+  "winDay": null,
+  "stage": 3,
+  "integ": 85,
+  "breadth": 28,
+  "sentiment": true,
+  "feastArmed": false,
+  "feastUsed": false,
+  "surgeRes": 4,
+  "w": [
+   7,
+   0,
+   0,
+   0,
+   0
+  ],
+  "cx": 1,
+  "cr": 3,
+  "crisesKinds": [
+   "first-grave",
+   "breach",
+   "hunger-winter"
+  ],
+  "rank": "regional",
+  "gate": false,
+  "maxWave": 1,
+  "havenTier": 1,
+  "sq": 0,
+  "waveDay": {},
+  "engaged": {
+   "1": 7,
+   "2": 0,
+   "3": 0,
+   "4": 0,
+   "5": 0
+  },
+  "links": 0,
+  "subLinks": 0,
+  "peerLinks": 0,
+  "deaths": [
+   "villager combat",
+   "monster",
+   "combat",
+   "Choir Toad",
+   "villager combat",
+   "villager combat",
+   "starvation",
+   "starvation",
+   "starvation"
+  ],
+  "deathRecs": [
+   {
+    "day": 13,
+    "who": "speedbump_turtle",
+    "cause": "villager combat"
+   },
+   {
+    "day": 15,
+    "who": "sofia_chen",
+    "cause": "monster"
+   },
+   {
+    "day": 16,
+    "who": "gen_s3jybcj",
+    "cause": "combat"
+   },
+   {
+    "day": 16,
+    "who": "gen_sxmja84",
+    "cause": "Choir Toad"
+   },
+   {
+    "day": 17,
+    "who": "nevermore",
+    "cause": "villager combat"
+   },
+   {
+    "day": 18,
+    "who": "bulldozer",
+    "cause": "villager combat"
+   },
+   {
+    "day": 18,
+    "who": "gen_1uqkdm2",
+    "cause": "starvation"
+   },
+   {
+    "day": 19,
+    "who": "marcus_webb",
+    "cause": "starvation"
+   },
+   {
+    "day": 20,
+    "who": "gen_3smmxxs",
+    "cause": "starvation"
+   }
+  ],
+  "patrols": 7,
+  "struck": 0,
+  "fled": 2,
+  "proposed": 6,
+  "proposedPeer": 0,
+  "counterAccepted": 5,
+  "nationalAnswered": 0,
+  "channels": 5,
+  "feasts": 2,
+  "climb": 17,
+  "named": 0,
+  "taught": 0,
+  "unmet": [
+   "waves[w2:0/5 w3:0/4 w4:0/3 w5:0/2]",
+   "contests:1/3",
+   "scale:regional",
+   "feastSurge:unmet"
+  ],
+  "binding": "scale"
+ }
+]
