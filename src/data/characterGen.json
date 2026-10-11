@@ -3940,6 +3940,14 @@
         "The System is a locked door. I'm collecting keys.",
         "Some people pray to it. I interrogate it. Different strategy, same silence.",
         "When I understand what it wants, I'll decide what I want. Not before."
+      ],
+      "preSystemLines": [
+        "Whatever did this — it had a reason. Reasons can be found. That's what I believe.",
+        "The sky split and nobody wants to talk about WHY. I do. I need to know why.",
+        "Every strange thing that happens, I write down and ask why. Sooner or later the whys run out.",
+        "I'm not angry. I'm curious with teeth.",
+        "You don't get to rearrange the sky and then go quiet. That's not how this works.",
+        "When I understand what it wants, I'll decide what I want. Not before."
       ]
     },
     {
@@ -4428,6 +4436,7 @@
       {
         "id": "q_night",
         "minTrust": 0,
+        "minDay": 2,
         "q": "\"Did you sleep? I kept hearing things out past the treeline.\"",
         "voice": "observant",
         "answers": [
@@ -4918,6 +4927,7 @@
       {
         "id": "q_first_week",
         "minTrust": 10,
+        "minDay": 8,
         "q": "\"What got you through the first week? The very first days.\"",
         "answers": [
           {
@@ -5572,6 +5582,66 @@
         "\"Pain shared is pain halved. That's not science. It's better than science.\"",
         "\"Bodies mend. It's the other stuff — trust, hope — that takes the real work.\"",
         "\"Every person I help is a vote for the world making sense again.\""
+      ],
+      "home": [
+        "\"I rearranged the bunks again last night. Nobody noticed. That's fine — it felt right for an hour.\"",
+        "\"Home's a feeling, not a place. I'm chasing the feeling. Some days I get close.\"",
+        "\"I want a door I can close. Not to keep people out — just to know I could.\"",
+        "\"Every camp I make, I try to make it feel like arriving. It never quite does. Yet.\"",
+        "\"Someone saved me a seat by the fire yesterday without thinking. That's the closest I've felt.\"",
+        "\"Four walls and a roof and I'd make it a home in a week. Watch me.\"",
+        "\"I'm not running from anything. I'm running toward the feeling of arriving.\"",
+        "\"Home isn't a place. It's people who notice when you're quiet. I'm collecting those.\""
+      ],
+      "record": [
+        "\"I wrote down what happened today. All of it. The boring parts too — future scholars will thank me.\"",
+        "\"Paper's scarce, so I write small. History doesn't need big letters.\"",
+        "\"Someone has to be the memory of this place. I've volunteered. No take-backs.\"",
+        "\"I record the arguments too. Especially the arguments. That's the real history.\"",
+        "\"A hundred years from now someone should know we were here and what it cost.\"",
+        "\"Every name, every day, every meal. The boring stuff is the important stuff.\"",
+        "\"My notes are a mess. Future scholars will hate me. They'll still read them.\"",
+        "\"If we don't write it down, it didn't happen. I'm writing it all down.\""
+      ],
+      "answers": [
+        "\"I asked the sky a question this morning. It didn't answer. I'm keeping a list.\"",
+        "\"Everything strange goes in the notebook. Patterns. Dates. Somebody should.\"",
+        "\"The not-knowing is a splinter. I'm getting it out or it'll fester.\"",
+        "\"People think I'm chasing answers. I'm chasing the right questions.\"",
+        "\"Whatever did this — it had a reason. Reasons can be found. That's what I believe.\"",
+        "\"Ignorance got us here. Knowing gets us out. Or it doesn't, but I'd rather know.\"",
+        "\"I interrogate the world instead of praying to it. Different strategy, same silence.\"",
+        "\"Every 'why' I can't answer goes on the list. The list is long. It'll get longer.\""
+      ],
+      "legacy": [
+        "\"Do something worth retelling. That's the whole plan. The rest is logistics.\"",
+        "\"I don't need a statue. I need one good story that outlives me.\"",
+        "\"The people who mattered are the ones still talked about. I'm working on it.\"",
+        "\"Remember me kindly, or remember me loudly. Either works.\"",
+        "\"Someday kids will sit by a fire and hear what I did. I want it to be a good one.\"",
+        "\"Fame is just being remembered by strangers. I'll take it.\"",
+        "\"Everyone gets forgotten eventually. I'm negotiating for later rather than sooner.\"",
+        "\"When I'm gone, I want the story to keep my name in it. That's all.\""
+      ],
+      "joy": [
+        "\"I'm collecting jokes like firewood. We'll need them when it's dark.\"",
+        "\"Someday this will be a story we tell laughing. I'm fast-forwarding to that part.\"",
+        "\"Surviving isn't enough. I want to remember what fun felt like.\"",
+        "\"Watch — I'll get a real laugh out of this camp before the week is out.\"",
+        "\"I want one day where I laugh until it hurts and it's not from nerves.\"",
+        "\"The world took a lot. It's not getting my sense of humor.\"",
+        "\"Joy is a resource. I'm foraging for it. Some days the yield is terrible.\"",
+        "\"I miss laughing without checking over my shoulder first. I'm working on it.\""
+      ],
+      "peace": [
+        "\"Somebody has to be the calm one. I've taken the job. No one else applied.\"",
+        "\"Arguments cost calories. I do the math out loud until people stop.\"",
+        "\"I don't pick sides. I pick the group. Every time.\"",
+        "\"Peace isn't the absence of fighting. It's the presence of dinner.\"",
+        "\"Everyone's allowed a bad day. Nobody's allowed two in a row. My rule.\"",
+        "\"Hold it together. That's my whole philosophy. Hold it together.\"",
+        "\"I've talked down fights before. It's a skill. A tiring one.\"",
+        "\"You two sort it out, or I will, and nobody likes my version.\""
       ]
     },
     "pastFollow": [
@@ -6106,9 +6176,8 @@
   "overheard": {
     "openers": {
       "analytical": [
-        "\"The pattern in the attacks — has anyone else noticed it repeats?\"",
-        "\"If the System wanted us dead we'd be dead. So what does it want instead?\"",
-        "\"The third incident followed the same interval as the first two. That's not weather.\""
+        "\"Hmm. That doesn't add up. Let me think it through out loud.\"",
+        "\"Wait — say that again? I want to check the logic.\""
       ],
       "practical": [
         "\"We need more firewood before dark. Who's with me?\"",
@@ -6122,18 +6191,30 @@
       ],
       "observant": [
         "\"The creek's lower than yesterday. Markedly.\"",
-        "\"Something's been at the pantry. Not an animal — the jars were moved, not broken.\"",
-        "\"The birds went quiet an hour before the last one came. Remember that.\""
+        "\"Something's been at the pantry. Not an animal — the jars were moved, not broken.\""
       ],
       "creative": [
         "\"What if we built a signal fire? Not for rescue — for each other.\"",
-        "\"I say we name the monsters. Everything's less scary with a name.\"",
         "\"We should paint the warning markers. Red means run, yellow means look.\""
       ],
       "steady": [
         "\"One day at a time. We're still here — that counts.\"",
         "\"Breathe. We've handled worse mornings than this.\"",
         "\"We've made it this far. That's not luck, that's us.\""
+      ]
+    },
+    "gatedOpeners": {
+      "_comment": "KNOWLEDGE GATING (dialog-gating 2026-10-11): overheard lines that carry earned knowledge — the System pre-day-7, monster talk before the first monster. overheardDiscussion merges these only when the gate passes. needs: 'system' (systemArrived) | 'monster' (player has a codex.monsters entry).",
+      "analytical": [
+        {"text": "\"The pattern in the attacks — has anyone else noticed it repeats?\"", "needs": "monster"},
+        {"text": "\"If the System wanted us dead we'd be dead. So what does it want instead?\"", "needs": "system"},
+        {"text": "\"The third incident followed the same interval as the first two. That's not weather.\"", "needs": "monster"}
+      ],
+      "observant": [
+        {"text": "\"The birds went quiet an hour before the last one came. Remember that.\"", "needs": "monster"}
+      ],
+      "creative": [
+        {"text": "\"I say we name the monsters. Everything's less scary with a name.\"", "needs": "monster"}
       ]
     },
     "replies": {

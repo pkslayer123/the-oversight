@@ -1376,6 +1376,34 @@
       return { want, know, feel, secret, relationships: [] };
     },
 
+    // convoGoalLines: the era-appropriate lines for a villager's goal.
+    // Worker D 2026-10-11: the 'answers' goal ("make the System explain
+    // itself") is entirely post-arrival vocabulary — every line names the
+    // System. Pre-arrival (day < 7) nobody knows that word, so goal lines
+    // about "the System" are canon violations, not personality. Before the
+    // arrival, the same drive speaks era-neutrally (preSystemLines).
+    convoGoalLines(goal, goalDef) {
+      if (!goalDef) return [];
+      if (goal === 'answers' && !this.state.systemArrived && goalDef.preSystemLines) {
+        return goalDef.preSystemLines;
+      }
+      return goalDef.lines || [];
+    },
+
+    // convoQuestionOk: can this bespoke question be asked right now?
+    // Trust and mood gates were the original filters; minDay adds the time
+    // gate (Worker D 2026-10-11): "what got you through the first week?"
+    // is nonsense on day 3, "did you sleep?" is nonsense on day 1. A
+    // question whose time hasn't come is a precondition bug, not content.
+    convoQuestionOk(q, trust, moodNow) {
+      if (!q) return false;
+      if (trust < (q.minTrust || 0)) return false;
+      if (q.when && q.when !== moodNow) return false;
+      const day = (this.state.scholar || {}).day || 1;
+      if ((q.minDay || 0) > day) return false;
+      return true;
+    },
+
     // convoMatchReactive: does this NPC line ask the player something direct?
     // Returns { id, ...def } or null. Matched lines get contextual answers;
     // unmatched lines flow through the normal choice builder.
@@ -1690,7 +1718,7 @@
       const shareAt = temp === 'withdrawn' ? 60 : temp === 'prickly' ? 50
         : (temp === 'warm' || temp === 'gentle') ? 25 : 35;
       if (goalDef && trust >= shareAt) {
-        const l = this.convoPick(vid, 'goal', goalDef.lines || []);
+        const l = this.convoPick(vid, 'goal', this.convoGoalLines(goal, goalDef));
         if (l) return { line: this.voiceLine(vid, this.fillTalkLine(l, vp)), thread: 'goal' };
       }
       // 5. Contextual small talk — mood, temperament, reputation. Never repeated.
@@ -1812,7 +1840,7 @@
       if (topic === 'goal') {
         const goal = this.npcGoal(vid);
         const goalDef = (this.data.characterGen.goals || []).find(g => g.id === goal);
-        const l = this.convoPick(vid, 'goal', (goalDef && goalDef.lines) || []);
+        const l = this.convoPick(vid, 'goal', this.convoGoalLines(goal, goalDef));
         this.state.village.goalsKnown = this.state.village.goalsKnown || {};
         this.state.village.goalsKnown[vid] = goal;
         this.remember(vid, 'shared_goal', goal || 'unknown');
@@ -3547,10 +3575,14 @@
           const cg2 = (this.data.characterGen || {}).convo || {};
           const prefer = ['q_miss', 'q_regret', 'q_first_memory', 'q_hope', 'q_scared', 'q_trust'];
           const askedAny = this.villageAskedQs();
-          let pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1 && askedAny.indexOf(q.id) === -1);
-          if (!pool.length) pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1);
-          if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1 && askedAny.indexOf(q.id) === -1);
-          if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1);
+          // Time/trust gates apply here too (Worker D 2026-10-11): the
+          // fallback pools used to draw ANY unasked question, including
+          // "the first week?" on day 2.
+          const qok2 = (q) => this.convoQuestionOk(q, (this.state.village.trust || {})[vid] || 10, this.npcMood(vid));
+          let pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1 && askedAny.indexOf(q.id) === -1 && qok2(q));
+          if (!pool.length) pool = (cg2.questions || []).filter(q => prefer.indexOf(q.id) !== -1 && c.askedQs.indexOf(q.id) === -1 && qok2(q));
+          if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1 && askedAny.indexOf(q.id) === -1 && qok2(q));
+          if (!pool.length) pool = (cg2.questions || []).filter(q => c.askedQs.indexOf(q.id) === -1 && qok2(q));
           const qd = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
           // village-wide note at draw time: the next "ask me something real"
           // draws from what's left, even before this one is revealed.
@@ -4206,7 +4238,7 @@
           const trust = (this.state.village.trust || {})[vid] || 10;
           const moodNow = this.npcMood(vid);
           const askedAny = this.villageAskedQs();
-          const qok = (q) => trust >= (q.minTrust || 0) && (!q.when || q.when === moodNow);
+          const qok = (q) => this.convoQuestionOk(q, trust, moodNow);
           // prefer questions nobody has asked the player yet (unique-person
           // law) — fall back to per-villager-unasked when the pool runs dry.
           let cands = (cg.questions || []).filter(q =>

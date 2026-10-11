@@ -3744,6 +3744,16 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           belong: `"I just want to be part of something again."`,
           survive: `"Whatever it takes. I'm not dying out here."`,
           heal: `"Too much is broken. I fix what I can."`,
+          // Worker D 2026-10-11: these six goals existed in characterGen
+          // but askAbout fell through to the generic "I don't know" — a
+          // villager contradicting the goal they just shared. 'answers'
+          // is era-neutral: pre-arrival nobody knows the word "System".
+          home: `"Home's a feeling, not a place. I'm chasing the feeling."`,
+          record: `"If we don't write it down, it didn't happen. I'm writing it all down."`,
+          answers: `"Whatever did this — it had a reason. I'm going to find it."`,
+          legacy: `"Do something worth retelling. That's the whole plan."`,
+          joy: `"Surviving isn't enough. I want to remember what fun felt like."`,
+          peace: `"Somebody has to be the calm one. I've taken the job."`,
         };
         const line = goalLines[goal] || `"I don't know. Getting through today, I guess."`;
         this.say(`${first}: ${line}`);
@@ -14401,9 +14411,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const grief = (v.grief || 0) > 0, cheer = (v.cheer || 0) > 0;
       let line;
       const r = Math.random();
+      // Worker D 2026-10-11: ambientSocial fires at ANY day part, but two
+      // lines said "tonight" — a noon fireside quiet is "today", not
+      // "tonight". The time word follows the actual day part.
+      const tod = this.isNight() ? 'tonight' : 'today';
       if (grief) {
         line = [
-          'The fire is quiet tonight. Nobody\'s talking much.',
+          `The fire is quiet ${tod}. Nobody's talking much.`,
           `${fa} set out an extra bowl before catching themself. Nobody mentioned it.`,
           `Someone is crying, quietly, in one of the bunks. ${fb} goes to sit with them.`,
         ][Math.floor(Math.random() * 3)];
