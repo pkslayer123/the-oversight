@@ -84,22 +84,31 @@ counter-preference targeting, feast-then-fight banking with a no-burn fight
 assessment. Measured on the same 60 seeds × 200d
 (scripts/winrate-iter3.js → scripts/winrate-iter3-results.json).
 
-Result: **0/60 wins, median 41d** — identical to oracle. Ability uses 2×'d
-(2.5/run), 104 practice firings, 24 banked feast patrols, 1 trap set / 2
+Result: **0/60 wins, median 41d** — identical to oracle. Ability uses 2.4×
+(2.9/run), 111 practice firings, 24 banked feast patrols, 1 trap set / 2
 catches, counter-kills still 0% (mechanic dormant). The 15 runs that
-engaged ≥1 deep system survived med 32d vs 42d for the rest. Two instrument
-findings: (1) a loom-every-turn stall (24.8k ability uses in one probe run)
-fixed with per-fight ability budgets before the measured run; (2) oracle's
-80% "feast used" was the fight-start assessment burning 300 banked kcal
-(and the armed surge) just to read the multiplier — v2's no-burn
-assessment gives the honest rate, ~2%.
+engaged ≥1 deep system survived med 32d vs 42d for the rest. Three
+instrument findings: (1) a loom-every-turn stall (24.8k ability uses in one
+probe run) fixed with per-fight ability budgets before the measured run;
+(2) oracle's 80% "feast used" was the fight-start assessment burning 300
+banked kcal (and the armed surge) just to read the multiplier — v2's
+no-burn assessment gives the honest rate, ~2%; (3) the opener missed
+backgroundAbilities (occupation-granted); fixed to scan both lists.
 
-Verdict: the game is the bottleneck, confirmed against a policy that plays
+Cross-check: a concurrent sibling worker independently implemented its own
+oracleV2 and swept the same 60 seeds: also **0/60, median 48d**. Two
+independent systems-engaged implementations, same verdict.
+
+Verdict: the game is the bottleneck, confirmed against policies that play
 the systems. The deep systems change a run's texture, not its destination —
-no policy has reached tier 2 / national / the table in 300 combined runs.
+no policy has reached tier 2 / national / the table in 360 combined runs.
 Binding constraints are upstream: villages die ~day 41 to combat/the night,
 wave-3+ deed bars never fill, scale stalls at regional. Full writeup:
 evidence/2026-10-10/winrate-iter3-oracle-v2.md.
+
+NOTE: untracked sibling files (scripts/policies/oracleV2.js,
+scripts/sweep-oraclev2-*.js/json) were written into this worktree by the
+concurrent worker — not committed here, left for their owner.
 
 ### Independent replication (second worker, same worktree)
 

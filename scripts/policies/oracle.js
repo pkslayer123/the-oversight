@@ -80,7 +80,12 @@ function fireOpener(Game, ctx, f) {
   try {
     if (ctx._openerFired === f) return;
     ctx._openerFired = f;
-    const held = ((Game.state.scholar || {}).abilities || []).map(a => a && (a.id || a)).filter(Boolean);
+    // Background abilities (occupation-granted, e.g. hunting_guide's
+    // patient_aim) are held abilities too — the old scan covered only
+    // s.abilities, which start empty (win-rate iter round 3).
+    const sch = Game.state.scholar || {};
+    const held = ((sch.abilities || []).concat(sch.backgroundAbilities || []))
+      .map(a => a && (a.id || a)).filter(Boolean);
     if (!held.length) return;
     const defs = (Game.data || {}).abilities || [];
     const tgt = monstersOf(f).slice().sort((a, b) => (a.hp || 0) - (b.hp || 0))[0];
@@ -350,4 +355,5 @@ const oracle = {
   contest(Game, ctx) { return false; },
 };
 
-module.exports = { oracle };
+// oracle-v2 (win-rate iter round 3) reuses these internals — exported for it.
+module.exports = { oracle, armUp, fireOpener, assessFight, deedValue, monstersOf, mdefOf };
