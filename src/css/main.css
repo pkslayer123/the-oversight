@@ -147,8 +147,44 @@ h1.title { color: var(--acc); font-size: 28px; letter-spacing: 2px; margin: 24px
      when looking at the map. Scrolls naturally with content. */
   display: flex; justify-content: center; padding: 8px 0;
 }
-.ord-narration { margin: 8px 0; }
+/* LAYOUT STABILITY (dialog-layout 2026-10-11, Steve: "spawns in paragraphs,
+   pushes the screen around" — no layout shift): the narration region has a
+   FIXED height at 390×844. Dialogue, contest, person card and narration lines
+   all render inside it; new lines scroll WITHIN the region, never push the
+   grid, d-pad or status bars. One screen, no shift. */
+.ord-narration {
+  margin: 8px 0;
+  height: 184px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* The box fills its region exactly — swapping dialogue ↔ contest ↔ person
+   card never changes the region's footprint. Speaker stays pinned; the
+   current line scrolls inside; choices and the ▼ stay visible at the bottom. */
+.ord-narration .dialogue-box {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .ord-narration .dialogue-box.narr-box { margin: 0; }
+.ord-narration .dialogue-box .dlg-speaker,
+.ord-narration .dialogue-box .dlg-head,
+.ord-narration .dialogue-box .dlg-choices,
+.ord-narration .dialogue-box .dlg-next,
+.ord-narration .dialogue-box .inline-btns { flex: 0 0 auto; }
+.ord-narration .dialogue-box .dlg-line,
+.ord-narration .dialogue-box .dlg-history {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+/* Person cards are the tallest tenant — they scroll inside the region. */
+.ord-narration .inlinecard { max-height: 100%; overflow-y: auto; }
 .ord-combathead { margin: 4px 0; }
 .ord-actions { margin: 8px 0; }
 /* .ord-bottombar removed (Steve 2026-10-05): D-pad lives in flow below grid */
@@ -1034,8 +1070,19 @@ body.in-combat .ord-log { order: 5.3; }
 .ord-ability { order: 9; }
 /* ACTION FEEDBACK: the result of what you just did, right under the action
    bars — never scroll to read what happened. The engine marks the log at
-   action start; new lines render here. */
-.ord-feedback { order: 9.5; }
+   action start; new lines render here.
+   LAYOUT STABILITY (dialog-layout 2026-10-11): FIXED height — the card used
+   to grow with every action and push the narration region down (Steve:
+   "spawns in paragraphs, pushes the screen around"). Extra lines scroll
+   inside the slot; the slot itself never moves. */
+.ord-feedback {
+  order: 9.5;
+  height: 68px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 .feedbackcard {
   margin: 8px 6px 0; padding: 8px 12px;
   border-left: 3px solid #7fd67f; border-radius: 8px;
@@ -1162,10 +1209,11 @@ body.is-night .cell.c-tent { box-shadow: 0 0 10px 3px rgba(255,190,90,.25); }
   .ord-status { order: 4; }
   .ord-epithet { order: 5; }
   /* COMBAT: narration must be compact — the grid and D-pad need the space.
-     Max 3 lines, scroll internally if longer. (Steve 2026-10-05) */
+     Max 3 lines, scroll internally if longer. (Steve 2026-10-05)
+     (dialog-layout 2026-10-11): shrink the REGION, not the box — the slot
+     stays fixed-height either way, just shorter in combat. */
+  body.in-combat .ord-narration { height: 96px; }
   body.in-combat .ord-narration .dialogue-box.narr-box {
-    max-height: 72px;
-    overflow-y: auto;
     font-size: 13px;
     padding: 6px 8px;
   }

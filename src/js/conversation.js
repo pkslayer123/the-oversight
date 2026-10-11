@@ -956,7 +956,7 @@
       }[o.why] || 'we left it hanging';
       let inner;
       if (ago > 7) {
-        inner = `We never did finish talking about ${label} — that was ${ago} days back. Still on your mind?`;
+        inner = `We never did finish talking about ${label} — that was ${this.pluralize(ago, 'day')} back. Still on your mind?`;
       } else {
         inner = `We never finished talking about ${label} — ${whyLine} last time.`;
       }

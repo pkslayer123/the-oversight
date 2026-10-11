@@ -4512,7 +4512,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const p = (this.data.plants || []).find(x => x.id === pid) || {};
       // BELIEVED NAME (break-it knowledge 2026-10-09 r2): quest text is
       // player-facing — say what the player calls it, not the true name.
-      if (this.plantKnown(pid)) return `${qty} ${this.plantCalledName(pid)}`;
+      // (dialog-layout 2026-10-11): pluralize the plant name — "1 Dandelion"
+      // / "3 Dandelions", with the consonant+y → -ies rule for Blackberry.
+      if (this.plantKnown(pid)) return this.pluralize(qty, this.plantCalledName(pid));
       return `${qty}× ${p.description || 'a plant'}`;
     },
 
@@ -5138,7 +5140,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // wood comes from your harvest, or take from the pile with takeWood.)
         const vv = this.state.village;
         vv.wood = (vv.wood || 0) + wood;
-        this.say(`🪵 ${first} hauls back ${wood} wood. The pile grows. (${vv.wood} logs now.)`);
+        this.say(`🪵 ${first} hauls back ${wood} wood. The pile grows. (${this.pluralize(vv.wood, 'log')} now.)`);
         this.bumpTrust(vid, 1, 'hauled wood for the pile');
       } else if (a.task === 'stone') {
         // STONE (haven growth 2026-10-10): building stone for the palisade.
@@ -6130,9 +6132,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (daysAway > 0) this.state.village.homecomingFireside = true;
         if (daysAway >= 2) {
           const variants = [
-            `You walk back into Haven — ${daysAway} days gone. The fire's still going. Somebody looks up from the work and nods. Back is back.`,
-            `Haven. ${daysAway} days. The palisade looks smaller than you remembered, or you got bigger. Somebody by the fire: "Knew you'd walk back in. You always do."`,
-            `You come home after ${daysAway} days. The smell of the cookfire does something to your chest you don't examine. "You're thinner," someone says. "You're still here," you say.`,
+            `You walk back into Haven — ${this.pluralize(daysAway, 'day')} gone. The fire's still going. Somebody looks up from the work and nods. Back is back.`,
+            `Haven. ${this.pluralize(daysAway, 'day')}. The palisade looks smaller than you remembered, or you got bigger. Somebody by the fire: "Knew you'd walk back in. You always do."`,
+            `You come home after ${this.pluralize(daysAway, 'day')}. The smell of the cookfire does something to your chest you don't examine. "You're thinner," someone says. "You're still here," you say.`,
           ];
           this.say(variants[daysAway % variants.length]);
           homecomingSaid = true;
@@ -6301,7 +6303,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (staged > 0) this.haulTeachingMoment(this.prepStash().slice(-staged), { maxLessons: 2 });
       }
       if (this.won) {
-        this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${entries} Codex entries. The pantry is fuller than when you left.`);
+        this.say(`You walk back into Haven with ${Math.round(brought)} kcal of food and ${this.pluralize(entries, 'Codex entry', 'Codex entries')}. The pantry is fuller than when you left.`);
         this.say(`Mara: "Seven days. Thinner and smarter."`);
         this.say(`Jesse: "Back. That's the whole test, really."`);
         this.say(hasGreens ? `Aki: "You brought something green! I knew it."` : `Aki: "You're back. That's enough."`);
@@ -6316,7 +6318,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       else {
         // (homecomingSaid: the days-away beat above already welcomed you —
         // don't say it twice.)
-        if (!homecomingSaid) this.say(`You walk back into Haven. ${entries} Codex entries. The village is glad to see you.`);
+        if (!homecomingSaid) this.say(`You walk back into Haven. ${this.pluralize(entries, 'Codex entry', 'Codex entries')}. The village is glad to see you.`);
         // milestone (not game over): the Codex is filling and the pantry is secure.
         // Haven will make it — one less thing to fear. Game over is only the
         // table (the village's ending) or the village dying out.
@@ -7591,7 +7593,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // LIVING WORLD: their knowledge is a content unlock. What do they know that you don't?
           const yourPlants = Object.keys(this.state.codex.plants || {});
           const theirNew = Object.keys(prof.plants || {}).filter(pid => !yourPlants.includes(pid)).length;
-          const knowNote = nPlants > 0 ? ` They know ${nPlants} plants${theirNew > 0 ? ` — ${theirNew} you haven't seen` : ''}.` : '';
+          const knowNote = nPlants > 0 ? ` They know ${this.pluralize(nPlants, 'plant')}${theirNew > 0 ? ` — ${theirNew} new to you` : ''}.` : '';
           // DRIFTER: you can read a village at a glance. Lean ones look lean.
           const leanNote = (v.pantryKcal || 0) <= 0 ? ' They look lean — hungry, even. Food would talk here.' : '';
           this.say(`You see smoke on the horizon. ${v.name} — ${v.population} people, ${v.day} day${v.day === 1 ? '' : 's'} in. ${focusWord}, by the look of it.${knowNote}${leanNote} They've been here the whole time.`);
@@ -11101,9 +11103,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // The work happened (kcal + ticks already spent); the water is still risky.
       const mossBoil = n > 0 && !fireHere && this.hasAbility('beard_moss');
       if (fireDied) {
-        this.say(`The fire died under the pot — the water never came to a boil. Still risky. Feed the fire and try again. (-${boilCost} kcal, ${boilTicks} ticks of wasted tending.)`);
+        this.say(`The fire died under the pot — the water never came to a boil. Still risky. Feed the fire and try again. (-${boilCost} kcal, ${this.pluralize(boilTicks, 'tick')} of wasted tending.)`);
       } else {
-        this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal, ${boilTicks} ticks ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
+        this.say(n ? `Boiled ${n}L. Bacteria dead. (-${boilCost} kcal, ${this.pluralize(boilTicks, 'tick')} ${mossBoil ? 'coaxing your moss-tinder hot enough' : 'tending the fire'}.)${s.water.some(b => b.chemical) ? ' (Chemical contamination survives boiling.)' : ''}` : 'No risky water to boil.');
       }
       return null;
     },
@@ -11326,7 +11328,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const fireKcalBefore = s.kcal || 0;
       s.kcal = Math.max(0, fireKcalBefore - kcalCost);
       const fireKcalSpent = Math.round(fireKcalBefore - s.kcal);
-      const fireCostNote = `(-${fireKcalSpent} kcal, ${ticks} ticks.)`;
+      const fireCostNote = `(-${fireKcalSpent} kcal, ${this.pluralize(ticks, 'tick')}.)`;
       this.tickAction(ticks);
       fc.attempts++;
       // FAILURE PITY (Steve 2026-10-07): each failed attempt teaches the hands —
@@ -11402,7 +11404,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // say so — the player should know the sky is part of why the spark died.
       if (this.state.weather === 'rain' && !autoFire) hint += " (The rain isn't helping — wet fuel, worse odds.)";
       // The work happened whether the spark caught or not — name it.
-      this.say(`${hint} (-${fireKcalSpent} kcal, ${ticks} ticks of work, gone either way.)`);
+      this.say(`${hint} (-${fireKcalSpent} kcal, ${this.pluralize(ticks, 'tick')} of work, gone either way.)`);
       return null;
     },
     // feedFire: lay another branch on a live player-made fire (+64 ticks,
@@ -11423,7 +11425,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const feedAdded = Math.round(fuel.burn * (1 + 0.25 * this.modTarget('fire.heat', 0)));
       if (f) f.till += feedAdded;
       this.tickAction(8);
-      const feedNote = `(+${feedAdded} ticks of flame, 8 ticks of tending.)`;
+      const feedNote = `(+${this.pluralize(feedAdded, 'tick')} of flame, 8 ticks of tending.)`;
       this.say(fuel.kind === 'wood'
         ? `You lay another log on. The fire settles in — hours more flame. ${feedNote}`
         : fuel.kind === 'fusion'
@@ -11841,7 +11843,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const add = Math.round(fuel.burn * 0.6 * (1 + 0.25 * feedHeat));
       f.till = Math.min(f.till + add, this._absTick() + (f.burn0 || add) * 2);
       this.tickAction(8);
-      this.say(`You feed the little fire. It takes it — a while more light and warmth. (+${add} ticks of flame, 8 ticks of tending.)`);
+      this.say(`You feed the little fire. It takes it — a while more light and warmth. (+${this.pluralize(add, 'tick')} of flame, 8 ticks of tending.)`);
       return null;
     },
     cookInTent() {
@@ -17137,7 +17139,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       plot.pid = plantId; plot.plantedDay = day; plot.lastTend = day;
       plot.lastHarvest = 0; plot.weeds = 0; plot.dead = false;
       const plant = (this.data.plants || []).find(p => p.id === plantId) || {};
-      this.say(`You sow ${opt.name} — ${opt.growthDays} days to maturity, then a harvest every 3 days as long as you tend it daily. (Seed stock: 2 units. The garden teaches patience; the wild taught hunger.)`);
+      this.say(`You sow ${opt.name} — ${this.pluralize(opt.growthDays, 'day')} to maturity, then a harvest every 3 days as long as you tend it daily. (Seed stock: 2 units. The garden teaches patience; the wild taught hunger.)`);
       // sowing teaches: working seed is knowledge
       try { this.grantKnowledge('plant', plantId, 1, { type: 'experiment', by: null }); } catch (e) {}
       return this.tickAction(16) || this.status();
@@ -34905,6 +34907,20 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       n = Math.round(n || 0);
       if (Math.abs(n) < 1000) return `${n} kcal`;
       return `${(n / 1000).toFixed(1)} Mcal`;
+    },
+    // pluralize (dialog-layout 2026-10-11, Steve: "1 Codex entries" bug):
+    // number-noun agreement in one place. "1 day" / "3 days". Pass an
+    // irregular plural as the 3rd arg ("1 child" / "2 children"). The default
+    // plural adds -s, with the consonant+y → -ies rule ("1 Blackberry" /
+    // "3 Blackberries"). Use this in EVERY user-facing "${n} ${noun}s" —
+    // never hand-roll the ternary again.
+    pluralize(n, singular, plural) {
+      const num = Number(n);
+      let pl = plural;
+      if (!pl) {
+        pl = (/[^aeiou]y$/i.test(singular) ? singular.slice(0, -1) + 'ies' : singular + 's');
+      }
+      return `${n} ${num === 1 ? singular : pl}`;
     },
     status() {
       const s = this.state.scholar;

@@ -2032,7 +2032,7 @@
     if (s.driftDays === 7) this.say(`A week of drifting. You're starting to talk to yourself. Petition somewhere, or build a fire of your own.`);
     if (s.driftDays > 0 && s.driftDays % 10 === 0) {
       try { this.recordTrauma('drift_lonely'); } catch (e) {}
-      this.say(`${s.driftDays} days drifting. The quiet is getting loud.`);
+      this.say(`${this.pluralize(s.driftDays, 'day')} drifting. The quiet is getting loud.`);
     }
   },
   // villageCard: the 🏘️ tile UI reads this. Pure data — the UI renders buttons.
@@ -2072,7 +2072,7 @@
     }
     const card = {
       name: ov.name,
-      sub: `${ov.population || '?'} people · ${ov.day || 0} days in · ${focusWord}${trustWord}${roomWord}`,
+      sub: `${ov.population || '?'} people · ${this.pluralize(ov.day || 0, 'day')} in · ${focusWord}${trustWord}${roomWord}`,
       actions: [],
     };
     if (s.exiled) {
@@ -2255,7 +2255,7 @@
     // outsider status bites: on probation you're the new mouth, and they
     // let you feel it — politely.
     if (s.probation && s.probation.villageId === villageId) {
-      this.say(`You're still the new mouth at ${ov.name} — ${Math.max(0, s.probation.daysLeft)} days of probation left. They're polite. Politeness is a wall with a door in it; you're looking for the door.`);
+      this.say(`You're still the new mouth at ${ov.name} — ${this.pluralize(Math.max(0, s.probation.daysLeft), 'day')} of probation left. They're polite. Politeness is a wall with a door in it; you're looking for the door.`);
     }
     const prof = ov.knowledgeProfile || {};
     const theirCodex = (ov.codex && ov.codex.plants) || {};
@@ -3963,14 +3963,14 @@
     if (this.state.systemArrived) {
       // post-System: the accusation is CONTENT. sysSay + a case-file sheet offer.
       this.sysSay(`🔴 LIVE BREAKING NEWS! A MOOT has been CALLED! ${aname.toUpperCase()} points at YOU — ${this.chargeLine(charge).toUpperCase()}! The gamblers are SCRAMBLING! Your CASE FILE is ready — check it before the fire decides your fate!`);
-      this.say(`${this.capFirst(aname)} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. ${c.mootIn} days until the moot. Use them.`);
+      this.say(`${this.capFirst(aname)} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. ${this.pluralize(c.mootIn, 'day')} until the moot. Use them.`);
       try { this.state.scholar.caseDossierOffer = c.id; } catch (e) {}
     } else {
       // pre-System: diegetic. Tightened say + journal note; the case file
       // waits in the self bar (⚖️ Case file).
-      this.say(`${this.capFirst(aname)} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot — ${c.mootIn} days. Use them.`);
+      this.say(`${this.capFirst(aname)} stands up at the fire, pointing. "This one. ${this.chargeLine(charge)} — and we all know it." Heads turn. There's going to be a moot — ${this.pluralize(c.mootIn, 'day')}. Use them.`);
     }
-    try { this.journalNote && this.journalNote('village', 'trial', `Accused of ${charge} by ${this.displayName(accuser)}. Moot in ${c.mootIn} days.`); } catch (e) {}
+    try { this.journalNote && this.journalNote('village', 'trial', `Accused of ${charge} by ${this.displayName(accuser)}. Moot in ${this.pluralize(c.mootIn, 'day')}.`); } catch (e) {}
     return c;
   },
   // belief polarity: negative = guilty (of the accused), positive = acquit.
@@ -4483,7 +4483,7 @@
           // BANK CAP (break-it food r3 2026-10-08): kcalCap() is the one number.
           s.kcal = Math.min((s.kcal || 0) + meal, this.kcalCap ? this.kcalCap() : 3000);
           this.say(`Village meal at ${ov.name}: +${meal} kcal. ` +
-            (onProb ? `Probation portions — half shares until they vote you in (${Math.max(0, s.probation.daysLeft)} days left).`
+            (onProb ? `Probation portions — half shares until they vote you in (${this.pluralize(Math.max(0, s.probation.daysLeft), 'day')} left).`
                     : `New mouths eat last — earn their trust for full shares. (Trust ${Math.round(ov.trust || 0)}/15.)`));
           return;
         }

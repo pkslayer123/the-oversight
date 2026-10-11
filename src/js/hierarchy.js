@@ -1677,7 +1677,7 @@
         this.say(`📜 The charter of ${tnames.join(', ')} waits for Haven's seal: pooled trade routes, tariff income every week — and no mutual defense, written plainly so nobody can pretend otherwise. SIGN at the table rate, BARGAIN for a better tariff (they'll answer aloud), or WALK from this table for now. ${refuseLine}`);
       } else {
         var nm = this._ovName(pn.primary);
-        this.say(`◈ SYSTEM: "You are not the head of this. That is the point. A realm of ${polity.size} fires — and ${nm} wants Haven's oath. The audience LOVES a binding."`);
+        this.say(`◈ SYSTEM: "You are not the head of this. That is the point. A realm of ${this.pluralize(polity.size, 'fire')} — and ${nm} wants Haven's oath. The audience LOVES a binding."`);
         this.say(`📯 ${nm}'s court summons Haven's speaker. SWEAR the oath of the realm (a gift seals it), SERVE at their court (seven days of your speaker's life), or WALK — break the link and stay a free fire. Refusal is a choice, and it is remembered. ${refuseLine}`);
       }
       try { if (this.journalNote) this.journalNote('village', 'national', 'National beat staged: ' + pn.shape + ' (' + pn.villages.length + ' villages).'); } catch (e) {}
@@ -1952,7 +1952,7 @@
           } else if (held === 0) {
             this.say(`📜 Haven pushes for 1,500 — and every fire at the table says no, aloud. The charter seals at the table rate anyway; they heard you push. (Trust -3 each.)`);
           } else {
-            this.say(`📜 A split table: ${held} of ${trLinks.length} fires accept the 1,500 kcal tariff, the rest hold at 1,000 — said aloud, no hard feelings beyond the honest kind.`);
+            this.say(`📜 A split table: ${held} of ${this.pluralize(trLinks.length, 'fire')} accept the 1,500 kcal tariff, the rest hold at 1,000 — said aloud, no hard feelings beyond the honest kind.`);
           }
         }
       } else {
@@ -2409,7 +2409,7 @@
         this._linkNote(link, 'defense', 'Answered the call: ' + sent.length + ' villagers, 3 days.');
         try { this.stirRegion('aid', 'defense:' + other); } catch (e) {}
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-sent:' + other); } catch (e) {}
-        this.say(`🛡️ Haven answers: ${sent.length} villagers walk out to ${onm}'s treeline for three days. The war-pact holds because it's held. (Trust +${_df}.)`);
+        this.say(`🛡️ Haven answers: ${this.pluralize(sent.length, 'villager')}${sent.length === 1 ? ' walks' : ' walk'} out to ${onm}'s treeline for three days. The war-pact holds because it's held. (Trust +${_df}.)`);
         return 'sent';
       }
       var ls = this._peerLinks('covenant');
@@ -2450,7 +2450,7 @@
         var _fv = this._trustGain(link, 6);
         try { this.stirRegion('aid', 'favor:' + other); } catch (e) {}
         this._linkNote(link, 'favor', 'Sent help as a priced favor (+1,500 kcal repaid).');
-        this.say(`🤝 Haven sends ${sent.length} villagers to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +${_fv}.)`);
+        this.say(`🤝 Haven sends ${this.pluralize(sent.length, 'villager')} to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +${_fv}.)`);
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'favor-sent:' + other); } catch (e) {}
         return 'sent';
       }
@@ -2558,7 +2558,7 @@
       }
       var nm = ov.name || 'them';
       this.state.pendingRaid = { target: vid, fighters: fighters, day: (this.state.scholar || {}).day || 0 };
-      this.say(`⚔️ The war party musters against ${nm}: ${fighters.length} fighters, three days gone, blood on the table. STRIKE and take them by force — the dead don't negotiate. Offer TERMS — yield or bleed. Or WITHDRAW the party before it marches.`);
+      this.say(`⚔️ The war party musters against ${nm}: ${this.pluralize(fighters.length, 'fighter')}, three days gone, blood on the table. STRIKE and take them by force — the dead don't negotiate. Offer TERMS — yield or bleed. Or WITHDRAW the party before it marches.`);
       try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'raid-mustered:' + vid); } catch (e) {}
       return true;
     },

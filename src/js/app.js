@@ -191,7 +191,7 @@
       const x2 = (cx + 14 * Math.cos(a)).toFixed(1), y2 = (cy + 14 * Math.sin(a)).toFixed(1);
       return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#4df3ff" stroke-width="1.5"/>`;
     }).join('');
-    return `<span class="sundial post${glitch}" title="SYSTEM CHRONOMETER — exact. ${ticksLeft} ticks to dawn."><svg viewBox="0 0 44 44" width="38" height="38">`
+    return `<span class="sundial post${glitch}" title="SYSTEM CHRONOMETER — exact. ${Game.pluralize(ticksLeft, 'tick')} to dawn."><svg viewBox="0 0 44 44" width="38" height="38">`
       + `<circle cx="22" cy="22" r="14" fill="rgba(77,243,255,.07)" stroke="#4df3ff" stroke-width="1.3"/>`
       + `<circle cx="22" cy="22" r="10" fill="none" stroke="#4df3ff" stroke-width="0.6" opacity="0.55"/>`
       + partTicks
@@ -1088,7 +1088,7 @@
       return;
     }
     const rows = opts.map(o =>
-      `<div class="sow-row"><b>${esc(o.name)}</b> <span class="small" style="opacity:.7">${esc(o.form)} · ${o.growthDays} days to mature · ${o.units} units in pack</span></div>`
+      `<div class="sow-row"><b>${esc(o.name)}</b> <span class="small" style="opacity:.7">${esc(o.form)} · ${Game.pluralize(o.growthDays, 'day')} to mature · ${Game.pluralize(o.units, 'unit')} in pack</span></div>`
     ).join('');
     openSheet({
       id: 'sow-seeds',
@@ -1857,17 +1857,19 @@
       return `<p class="fb-line">${esc(t)}</p>`;
     }).join('');
   }
+  // LAYOUT STABILITY (dialog-layout 2026-10-11): the feedback slot is ALWAYS
+  // rendered — empty or full — so its fixed CSS height never shifts the
+  // narration region when feedback appears or clears. refreshFeedback keeps
+  // the container and only swaps the inner card.
   function feedbackHTML() {
     const inner = feedbackInner();
-    if (!inner) return '';
-    return `<div id="actionfeedback" class="ord-feedback"><div class="feedbackcard">${inner}</div></div>`;
+    return `<div id="actionfeedback" class="ord-feedback">${inner ? `<div class="feedbackcard">${inner}</div>` : ''}</div>`;
   }
   function refreshFeedback() {
     const fb = document.getElementById('actionfeedback');
-    const inner = feedbackInner();
     if (fb) {
-      if (inner) fb.innerHTML = `<div class="feedbackcard">${inner}</div>`;
-      else fb.innerHTML = '';
+      const inner = feedbackInner();
+      fb.innerHTML = inner ? `<div class="feedbackcard">${inner}</div>` : '';
     }
   }
 
@@ -13438,7 +13440,7 @@
     const craftableRecipes = recipes.filter(r => ((Game.state.codex.recipes || {})[r.id] || {}).level >= 1);
     const bodyHtml = `
         ${(() => { const w = Game.state.scholar.water || []; if (!w.length) return ''; const clean = w.filter(b => b.quality === 'clean').length; const risky = w.filter(b => b.quality === 'risky').length; const hasFilter = (Game.state.scholar.tools || []).some(t => t.recipeId === 'water_filter' && (t.uses || 0) > 0); return `<p class="small" style="margin:8px 0;padding:8px;background:#1a2a3a;border-radius:6px"><b>\uD83D\uDCA7 Water:</b> ${clean}L clean${risky ? `, ${risky}L risky` : ''} (${w.length}kg)${risky && hasFilter ? ` <button class="btn ghost sm" data-filterwater="1">Filter ${risky}L</button>` : ''} <button class="btn ghost sm" data-pourwater="1" title="Pour out 1L, risky first. Water is heavy.">Pour out 1L</button></p>`; })()}
-        <h3 style="margin:12px 0 6px">🎒 Carried <span style="opacity:.6;font-weight:normal;font-size:13px">(${inv.length} items)</span></h3>
+        <h3 style="margin:12px 0 6px">🎒 Carried <span style="opacity:.6;font-weight:normal;font-size:13px">(${Game.pluralize(inv.length, 'item')})</span></h3>
         ${inv.length ? inv.map((i, idx) => {
           // FOOD REALITY: per-item processing buttons + state markers.
           let foodBtns = '';
@@ -14784,7 +14786,7 @@
     let fairShareHtml = '';
     try {
       const fsn = Game.fairShareNote();
-      if (fsn) fairShareHtml = `<p class="small" style="opacity:.65">Fair share is ~${fsn.perPerson} kcal/day each. The pantry holds ~${fsn.daysLeft} days at that pace. Take what you need — people notice what you take.</p>`;
+      if (fsn) fairShareHtml = `<p class="small" style="opacity:.65">Fair share is ~${fsn.perPerson} kcal/day each. The pantry holds ~${Game.pluralize(fsn.daysLeft, 'day')} at that pace. Take what you need — people notice what you take.</p>`;
     } catch (e) {}
     const bodyHtml = `
       <p class="small">Slide to pack. Carrying ${carry.toFixed(1)}/${maxCarry} kg — ${(() => { try { return Game.burden().name; } catch (e) { return 'light'; } })()}.</p>
@@ -15074,7 +15076,7 @@
     return `
       <div class="card"><h3>🏠 HAVEN — ${st.rosterCount} souls</h3>
       <p class="small"><i>${v.atmos}</i></p>
-      <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (${st.pantryDays >= 999 ? 'holding steady — the village feeds itself' : `about ${st.pantryDays} days at this burn`})${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
+      <p class="small">Pantry: ${Game.fmtKcal(st.pantryKcal)} (${st.pantryDays >= 999 ? 'holding steady — the village feeds itself' : `about ${Game.pluralize(st.pantryDays, 'day')} at this burn`})${st.hungryDays ? ' · ⚠ HUNGRY day ' + st.hungryDays : ''}</p>
       <p class="small">💧 Water: ${st.waterClean}L clean / ${st.waterDirty}L dirty</p>
       ${(() => {
         // STORES GATE (Steve 2026-10-04): the pantry and village stash are
@@ -15255,7 +15257,7 @@
                 if (pr0) {
                   const pv0 = (Game.state.otherVillages || []).find(x => x.id === pr0.target);
                   const pnm0 = (pv0 && pv0.name) || 'them';
-                  html += `<div style="margin-top:4px"><p class="small">⚔️ <b>War party mustered against ${esc(pnm0)}:</b> ${(pr0.fighters || []).length} fighters, three days gone, blood on the table.<br><button class="btn sm" data-raid-answer="strike">STRIKE — take them by force</button> <button class="btn sm ghost" data-raid-answer="terms">Offer terms — yield or bleed</button> <button class="btn sm ghost" data-raid-answer="withdraw">Withdraw the party</button></p></div>`;
+                  html += `<div style="margin-top:4px"><p class="small">⚔️ <b>War party mustered against ${esc(pnm0)}:</b> ${Game.pluralize((pr0.fighters || []).length, 'fighter')}, three days gone, blood on the table.<br><button class="btn sm" data-raid-answer="strike">STRIKE — take them by force</button> <button class="btn sm ghost" data-raid-answer="terms">Offer terms — yield or bleed</button> <button class="btn sm ghost" data-raid-answer="withdraw">Withdraw the party</button></p></div>`;
                 }
                 try {
                   const covLinks0 = Game._peerLinks ? Game._peerLinks('covenant') : [];

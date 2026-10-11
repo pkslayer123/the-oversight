@@ -232,7 +232,7 @@
       try {
         this.journalLearn(vid, 'note', `✝ Died day ${d.death.day} — ${d.death.cause}. The book closes here. They got as far as: ${chap.toLowerCase()}.`, { quiet: true });
       } catch (e) {}
-      this.say(`📖 The entry for ${first} is finished. ${d.deeds.length ? `${d.deeds.length} deed${d.deeds.length > 1 ? 's' : ''} recorded. ` : ''}No more pages.`);
+      this.say(`📖 The entry for ${first} is finished. ${d.deeds.length ? `${this.pluralize(d.deeds.length, 'deed')} recorded. ` : ''}No more pages.`);
       return true;
     },
 

@@ -864,11 +864,11 @@
       const t = (this.state.codex || {}).lastJournalTouch;
       const d = day();
       const jn = this.journalName();
-      if (!t) return `${jn} opens on a blank first page. ${d} days in, and no hand has touched it yet — the life is happening faster than the record.`;
+      if (!t) return `${jn} opens on a blank first page. ${this.pluralize(d, 'day')} in, and no hand has touched it yet — the life is happening faster than the record.`;
       const gap = d - (t.day || 0);
       if (gap <= 1) return null;
-      if (gap <= 3) return `A little dusty. ${gap} days since anything was ${t.kind === 'read' ? 'read or ' : ''}written — the ${jn.toLowerCase()} is falling behind the life.`;
-      return `Neglected. ${gap} days since the last entry. The ${jn.toLowerCase()} remembers less than the bearer does — and the bearer is forgetting too.`;
+      if (gap <= 3) return `A little dusty. ${this.pluralize(gap, 'day')} since anything was ${t.kind === 'read' ? 'read or ' : ''}written — the ${jn.toLowerCase()} is falling behind the life.`;
+      return `Neglected. ${this.pluralize(gap, 'day')} since the last entry. The ${jn.toLowerCase()} remembers less than the bearer does — and the bearer is forgetting too.`;
     },
 
     // journalOpening: the journal screen's header — who holds it, who held

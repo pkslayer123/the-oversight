@@ -638,8 +638,8 @@
         if (yf > base + 0.005) yieldNote = ` (Field Dressing — less waste, kept ~${Math.round(yf * 100)}%.)`;
       } catch (e) {}
       this.say(knows
-        ? `Cleaned ${n} carcass${n > 1 ? 'es' : ''} — quick, practiced cuts. Honest portions, ~500 kcal each.${yieldNote} (${8 * n} ticks)`
-        : `You hack at it clumsily — it takes a while and you waste some. But it worked, and your hands learned.${yieldNote} (${8 * n} ticks)`);
+        ? `Cleaned ${this.pluralize(n, 'carcass', 'carcasses')} — quick, practiced cuts. Honest portions, ~500 kcal each.${yieldNote} (${this.pluralize(8 * n, 'tick')})`
+        : `You hack at it clumsily — it takes a while and you waste some. But it worked, and your hands learned.${yieldNote} (${this.pluralize(8 * n, 'tick')})`);
       // AUDIO (Steve 2026-10-06): the butcher's beat — wet work, done.
       try { this.audioEvent('animalButcher'); } catch (e) {}
       this.noteToolUse && this.noteToolUse();
@@ -889,7 +889,7 @@
         });
       }
       this.tickAction(20);
-      this.say(`You pound, mix, and pack — ${totalBars} bars of pemmican. This will keep till spring and beyond. (20 ticks)`);
+      this.say(`You pound, mix, and pack — ${this.pluralize(totalBars, 'bar')} of pemmican. This will keep till spring and beyond. (20 ticks)`);
       try { this.audioEvent('animalButcher'); } catch (e) {}
       return null;
     },
@@ -1846,8 +1846,8 @@
       const ticks = hasBuilder ? 24 : 48;
       this.tickAction(ticks);
       this.say(hasBuilder
-        ? `${builders[0].name} directs the build — raised racks, sealed bins, a bigger cistern. Pantry ${v.pantryCapKcal.toLocaleString()} kcal, water ${v.waterCapL}L. (${ticks} ticks)`
-        : `You lash together raised racks and seal bins with clay. Crude but roomy. Pantry ${v.pantryCapKcal.toLocaleString()} kcal, water ${v.waterCapL}L. (${ticks} ticks)`);
+        ? `${builders[0].name} directs the build — raised racks, sealed bins, a bigger cistern. Pantry ${v.pantryCapKcal.toLocaleString()} kcal, water ${v.waterCapL}L. (${this.pluralize(ticks, 'tick')})`
+        : `You lash together raised racks and seal bins with clay. Crude but roomy. Pantry ${v.pantryCapKcal.toLocaleString()} kcal, water ${v.waterCapL}L. (${this.pluralize(ticks, 'tick')})`);
       return null;
     },
 
@@ -2514,7 +2514,7 @@
         opts.push({
           id: 'cook',
           label: this.knowsTechnique('cook') ? 'Cook it' : 'Cook it (you\'re learning)',
-          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}${cookTicks} ticks${this.nearFire() ? '' : ''} · safe · ~${cookKcal}/portion · keeps ~5d`,
+          detail: `${this.nearFire() ? '' : 'NEEDS FIRE · '}${this.pluralize(cookTicks, 'tick')}${this.nearFire() ? '' : ''} · safe · ~${cookKcal}/portion · keeps ~5d`,
           blocked: !this.nearFire() ? 'needs fire' : null,
         });
         opts.push({
@@ -2593,7 +2593,7 @@
         opts.push({
           id: 'you',
           label: `${verb} yourself`,
-          detail: `${youTicks} ticks · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
+          detail: `${this.pluralize(youTicks, 'tick')} · ${this.knowsTechnique(tech) ? 'you know how' : 'you\'re learning — worse yield'}`,
           // HONESTY (break-it food r4): the old preserver line said 8 ticks —
           // smoking costs 16 (Steve 2026-10-09: "1/8 of a day seems about
           // correct"). These cook/preserver/shell branches are unwired from
@@ -2950,11 +2950,11 @@
         const me = (this.state.codex.monsters || {})[cMeatId];
         if (cIsMonster && me && me.meatDisease) {
           const dz = ((this.data.cooking || {}).monsterDiseases || []).find(d => d.id === me.meatDisease);
-          if (dz) memWarn = ` Last time, the ${dz.name.toLowerCase()} lasted ${dz.days} days. You do it anyway.`;
+          if (dz) memWarn = ` Last time, the ${dz.name.toLowerCase()} lasted ${this.pluralize(dz.days, 'day')}. You do it anyway.`;
         }
       } catch (e) {}
       if (cFoodSafe && r) {
-        this.say(`Cooked ${item.name}: ${r.rawTotal} \u2192 ${r.cookedTotal} kcal, ${this.cookOutcomePhrase(r.outcome, r.cls)}.${fireState === 'died' ? ' The fire died halfway \u2014 it cost you.' : ''}${memWarn} (${cookTime} ticks)`);
+        this.say(`Cooked ${item.name}: ${r.rawTotal} \u2192 ${r.cookedTotal} kcal, ${this.cookOutcomePhrase(r.outcome, r.cls)}.${fireState === 'died' ? ' The fire died halfway \u2014 it cost you.' : ''}${memWarn} (${this.pluralize(cookTime, 'tick')})`);
       } else {
         this.say(`Cooked ${item.name}. Smells like meat. Whether it IS food \u2014 you still don't know. Test it cautiously.${memWarn}`);
       }
@@ -2982,9 +2982,9 @@
       item.spoilDay = this.state.scholar.day + 5;
       if (!knowsP) this.learnTechnique('cook', 'trial');
       if (rP) {
-        this.say(`Cooked ${item.name}: ${rP.rawTotal} \u2192 ${rP.cookedTotal} kcal, ${this.cookOutcomePhrase(outP, clsP)}.${fireP === 'died' ? ' The fire died halfway \u2014 it cost you.' : ''}${outP.riskStays ? ' Still risky inside.' : ' Safe now.'} (${timeP} ticks)`);
+        this.say(`Cooked ${item.name}: ${rP.rawTotal} \u2192 ${rP.cookedTotal} kcal, ${this.cookOutcomePhrase(outP, clsP)}.${fireP === 'died' ? ' The fire died halfway \u2014 it cost you.' : ''}${outP.riskStays ? ' Still risky inside.' : ' Safe now.'} (${this.pluralize(timeP, 'tick')})`);
       } else {
-        this.say(`Cooked ${item.name}. Safe now. (${timeP} ticks)`);
+        this.say(`Cooked ${item.name}. Safe now. (${this.pluralize(timeP, 'tick')})`);
       }
       this.tickAction(timeP);
       return null;

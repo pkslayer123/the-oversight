@@ -419,7 +419,7 @@
         for (const pid of pids) {
           const dmg = Math.min(stats[pid].hp - 1, days[pid] * 15);
           if (dmg > 0) { try { this.hurtVillager(pid, dmg, 'contest'); } catch (e) {} }
-          results[pid] = { outcome: winners.includes(pid) ? 'won' : 'lost', detail: `lasted ${days[pid]}/3 days`, log: [`${stats[pid].name} lasts ${days[pid]} days on nothing.`] };
+          results[pid] = { outcome: winners.includes(pid) ? 'won' : 'lost', detail: `lasted ${days[pid]}/3 days`, log: [`${stats[pid].name} lasts ${this.pluralize(days[pid], 'day')} on nothing.`] };
         }
         return results;
       }
