@@ -402,7 +402,14 @@ function counterPlay(Game, ctx) {
         // to matter (2 plots is a hobby; 4 is a food leg). 6 was tried:
         // the plot-making ate the gardener's tending time.
         while ((Game.gardenPlots ? Game.gardenPlots().length : 0) < 4) {
+          const before = Game.gardenPlots ? Game.gardenPlots().length : 0;
           try { Game.makePlot(); } catch (e) { break; }
+          // PROGRESS GUARD (competence panel 2026-10-10): makePlot() returns
+          // null without throwing when the player isn't on the haven tile
+          // (playerAtHaven is true within 1 node, but makePlot needs the
+          // haven tile itself) — a roaming policy (oracle/winseek patrols)
+          // interrupted mid-return spins this forever. Break on no progress.
+          if ((Game.gardenPlots ? Game.gardenPlots().length : 0) <= before) break;
         }
         if (!hasGardener) {
           const GARDENABLE = new Set(["muscadine","elderberry","blackberry","pawpaw","persimmon","cattail","wild_onion","wood_sorrel","lambs_quarters","chickweed","dandelion","acorn","hickory_nut","walnut"]);

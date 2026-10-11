@@ -85,3 +85,19 @@ run ended `village-lost`.
 - 'summons' counts contestChoose calls during an active summons (responses, not offers).
 - Shard seeds: s1=1–10, s2=11–20, s3=21–30, s4=31–40, s5=41–50, s6=51–60.
 - Measurement only: no game numbers, Wave Ledger, or balance changes touched.
+- `scripts/policies/competent.js` carries a makePlot no-progress guard added by the
+  previous worker (scripts-only, infinite-spin fix); all 6 shards ran without it
+  firing (no shard hung), so it does not affect the measurements.
+
+## Incident note (ghost re-run loop, 2026-10-10 ~03:33–03:38 UTC)
+
+A bash loop from the killed previous worker survived the runtime restart and re-ran
+shards s3→s6 sequentially in this same worktree, overwriting `panel-competence-s3.json`
+at 03:36:02 (same seeds, new base — content legitimately differs from the original
+s3 run, which is measurement-identical-seeds, not an RNG bug). Found via mtime +
+`ps`; killed (PIDs 7105/7740) before it could overwrite s4/s5/s6. s3 was restored
+from git (`git checkout HEAD -- scripts/panel-competence-s3.json`), s4/s5/s6 verified
+intact, analyzer re-run reproduces the committed results byte-identically, and the
+ghost's partial s4 log is at /tmp/panel-s4.log (s3 log at /tmp/panel-s3.log).
+Lesson: on worker restart, check `ps` for surviving loops from the previous session
+before trusting shard files.
