@@ -5468,6 +5468,41 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       return true;
     },
 
+    // HEALER ROUNDS (structural-combat 2026-10-10): wound-stabilization
+    // upstream of death. Once per day, the camp healer treats the single
+    // most-hurt villager (<50 HP): +15 HP, narrated, nothing consumed.
+    // Runs in sleep() before villageLives — stabilization ahead of the
+    // night's wound rolls, not after. No healer -> no treatment (never
+    // phantom medicine). The healer never treats themselves; the dead are
+    // past help. Returns the treated vid, or null.
+    healerRounds() {
+      const s = this.state.scholar || {};
+      if (s.healerRoundsDay === s.day) return null;
+      let healer = null;
+      try { healer = this.campHealerName ? this.campHealerName() : null; } catch (e) {}
+      if (!healer) return null;
+      const v = this.state.village || {};
+      v.health = v.health || {};
+      let worst = null, worstHp = 50;
+      for (const id of (v.roster || [])) {
+        if (id === this.villagerId) continue;
+        const hp = v.health[id];
+        if (hp === undefined || hp <= 0 || hp >= worstHp) continue;
+        worst = id; worstHp = hp;
+      }
+      if (!worst) return null;
+      s.healerRoundsDay = s.day;
+      v.health[worst] = Math.min(100, worstHp + 15);
+      let nm = 'Someone';
+      try { nm = this.displayName ? this.displayName(worst).split(' ')[0] : nm; } catch (e) {}
+      this.say(`🩹 ${healer === 'You' ? 'You make' : healer + ' makes'} rounds — ${nm} gets bound up properly. (${worstHp} → ${v.health[worst]} HP)`);
+      try {
+        const hid = this.campHealerVid ? this.campHealerVid() : null;
+        if (hid && this.villagerGainXP) this.villagerGainXP(hid, 'craft', 1, 'healing');
+      } catch (e) {}
+      return worst;
+    },
+
     // patrol: deal with monster threats. REAL FIGHTS (Steve 2026-10-08 law,
     // break-it 2026-10-09): the old flat outcome table (fightPower+R vs
     // mHp*1.2) resolved villager-vs-monster as RNG — the exact class Steve
@@ -18178,6 +18213,53 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       return false;
     },
 
+    // NIGHT-DANGER TELEGRAPH (structural-combat 2026-10-10): dusk in the wild
+    // gets a legible night-danger beat — once per day, never at Haven, never
+    // mid-fight. Knowledge-gated: only monsters the village has actually
+    // reported are named (via monsterDisplayName — village name, System
+    // name, or unknown descriptor, never a leaked true name). Telegraph
+    // honesty: every claim names a real mechanic —
+    //   - the night cast shifts (creatureWeight: nocturnal x3, diurnal x0.25)
+    //   - tile-entry encounters run hotter at night (checkEncounter x1.5)
+    //   - a lit tent fire is a beacon (+30/45% detection), sealed+dark is a
+    //     smell in the night (-4%) (wandererFindsYou)
+    //   - night_eyes / nocturnal_patterns L2 buy a dodge on entry
+    //   - Haven is safe (the wanderer turns away; isSafeTile)
+    // _lastNightBeatMonsters records the named ids (proof-test hook).
+    nightDangerBeat() {
+      const s = this.state.scholar || {};
+      if (s.nightBeatDay === s.day) return;
+      const px = this.map.px, py = this.map.py;
+      if (this.isSafeTile(px, py)) return;
+      if (this.tbfight && !this.tbfight.over) return;
+      s.nightBeatDay = s.day;
+      let pool = [];
+      try { pool = this.monsterWavePool() || []; } catch (e) { pool = (this.data && this.data.monsters) || []; }
+      const codexM = (this.state.codex && this.state.codex.monsters) || {};
+      const nightCast = pool.filter(m => m && (m.activity === 'nocturnal' || m.activity === 'crepuscular'));
+      const named = [], namedIds = [];
+      for (const mdef of nightCast) {
+        if (named.length >= 2) break;
+        const e = codexM[mdef.id];
+        if (!e || !e.reported) continue; // knowledge gate: faced-and-reported only
+        named.push(this.monsterDisplayName(mdef.id));
+        namedIds.push(mdef.id);
+      }
+      this._lastNightBeatMonsters = namedIds;
+      const castLine = named.length
+        ? `The night shift is out: ${named.join(' and ')}. They own the dark — the cast turns over after sunset, and every step is riskier.`
+        : `Something owns the night out here. You haven't learned its name yet — but the dark gets busier after sunset, and every step is riskier.`;
+      const inTent = !!(s.insideTent);
+      const tentLine = inTent
+        ? ` You're tented. A lit fire is a beacon — light through canvas, smoke on the wind. Sealed and dark, you're just a smell in the night.`
+        : ` A lit fire is a beacon — light through canvas, smoke on the wind. Sealed and dark, you're just a smell in the night.`;
+      let dodgeLine = '';
+      try {
+        if (this.hasAbility && this.hasAbility('night_eyes')) dodgeLine = ' Your night eyes read the dark — sometimes you slip away first.';
+        else if (this.skillKnown && this.skillKnown('nocturnal_patterns', 2)) dodgeLine = ' You read the night\u2019s patterns — sometimes you slip away first.';
+      } catch (e) {}
+      this.say(`🌙 ${castLine}${tentLine}${dodgeLine} Haven's walls end every argument.`);
+    },
     checkEncounter() {
       // RNG, not staged. Monsters spawn in the wild.
       // Villages are safe. Everywhere else? Roll the dice.
@@ -21743,6 +21825,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       try { this.theftNoticeSweep(); } catch (e) {}
       this.ap = 1;
       this.say(`— ${DAY_PARTS[this.dayPart].toUpperCase()} — ${DAY_PART_HINT[DAY_PARTS[this.dayPart]]}`);
+      // NIGHT-DANGER TELEGRAPH (structural-combat 2026-10-10): dusk in the
+      // wild gets a legible, knowledge-gated, honest night-danger beat —
+      // the night cast, the real detection math, the real counterplays.
+      if (this.dayPart === 2) { try { this.nightDangerBeat(); } catch (e) {} }
       // NIGHTFALL: the village reacts. Fear rises in everyone a little, people pull
       // toward the fire, watches get posted. The dark has its own animals —
       // everyone knows it. (Fear is per-NPC, in the existing needs system.)
@@ -24540,6 +24626,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       this.villageMeal();
       // track "home" for the homecoming beat: sleeping at haven resets the away clock.
       try { if (this.playerAtHaven()) scholar.lastHavenDay = scholar.day || 1; } catch (e) {}
+      // HEALER ROUNDS (structural-combat 2026-10-10): the healer treats the
+      // worst-hurt villager before the night's wound rolls — stabilization
+      // upstream of death.
+      try { this.healerRounds(); } catch (e) {}
       this.villageLives();
       this.villageEats();
       // WATER REALITY (Steve 2026-10-08): the hearth boils the day's haul,
@@ -28210,6 +28300,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         } catch (e) {}
       }
       t.hp -= final;
+      // HOPELESS-FLIGHT LEDGER (structural-combat 2026-10-10): per-fighter
+      // damage-taken ledger for the tactical hopeless read
+      // (tbVillagerHopeless). Post-armor, post-brace — what actually landed.
+      if (t.kind === 'villager' && final > 0) t._taken = (t._taken || 0) + final;
       if (t.kind === 'player') {
         this.state.scholar.health = Math.max(0, t.hp);
         if (final > 0) this.noteAbilityUse('chitin_skin');
@@ -28616,6 +28710,30 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // Validated movement is enforced at the step callbacks (tbCanOccupy) —
     // multi-tile movers validate their whole footprint there. (tbMoveFighter
     // removed 2026-10-09: zero callers, contract now lives in the callbacks.)
+    // tbVillagerHopeless(v): is this villager's tactical fight hopeless?
+    // Same trajectory formula as fieldFight (rtd < rtk * 0.6), read from the
+    // fighter's real damage ledgers (_dealt in tbVillagerTurn, _taken in
+    // tbDamage). Needs round >= 2 — a trajectory needs two points. Pure
+    // read, no RNG, no side effects — safe to call from AI and tests.
+    tbVillagerHopeless(v) {
+      const f = this.tbfight;
+      if (!f || (f.round || 1) < 2 || !v || !v.alive || v.fled) return false;
+      const rounds = Math.max(1, (f.round || 2) - 1);
+      const myDpr = (v._dealt || 0) / rounds, theirDpr = (v._taken || 0) / rounds;
+      if (theirDpr <= 0) return false;
+      let mHp = 0;
+      try {
+        for (const o of (f.fighters || [])) {
+          if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && !o.fled) {
+            mHp = Math.max(mHp, o.hp || 0);
+          }
+        }
+      } catch (e) {}
+      if (mHp <= 0) return false;
+      const rtk = mHp / Math.max(0.5, myDpr);   // rounds for the villager to drop the threat
+      const rtd = Math.max(0, v.hp || 0) / theirDpr; // rounds until the villager drops
+      return rtd < rtk * 0.6;
+    },
     tbVillagerTurn(v) {
       const f = this.tbfight;
       // STATUS EFFECTS (Steve 2026-10-07): per-turn ticks (bleed/burn), expiry.
@@ -28633,6 +28751,32 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         v.stunned -= 1;
         this.say(`${v.name} is on the line — the voice won't stop, and they can't hang up. They lose the turn.`);
         return;
+      }
+      // HOPELESS-FLIGHT (structural-combat 2026-10-10): a hopeless fight IS
+      // a purposeful reason to flee (canon) — personality sets the depth,
+      // not the whether. Sealed contest arenas hold everyone (the gate is
+      // shut). The helpful hold one exception: keeping a critical player
+      // alive is a purpose, not purposelessness.
+      // (structural-combat r2 2026-10-10): seal reads BOTH flags — the
+      // contest-arena seal (state.arenaContest, set when the arena fight
+      // starts) and the fight-level noFlee flag. A sealed fight is sealed
+      // no matter which path sealed it.
+      const sealed = !!((this.state || {}).arenaContest) || !!((this.tbfight || {}).noFlee);
+      if (!sealed && this.tbVillagerHopeless(v)) {
+        const hpFrac = (v.hp || 0) / Math.max(1, v.maxHp || 1);
+        const fleeLine = v.ai === 'brave' ? 0.4 : v.ai === 'helpful' ? 0.7 : 0.5;
+        let holdForPlayer = false;
+        if (v.ai === 'helpful' && hpFrac >= 0.25) {
+          try {
+            const p = this.tbFighter('p');
+            holdForPlayer = !!(p && p.alive && (p.hp || 0) / Math.max(1, p.maxHp || 1) < 0.35);
+          } catch (e) {}
+        }
+        if (!holdForPlayer && hpFrac < fleeLine) {
+          v.fled = true;
+          this.say(`${v.name} sees how this ends — and runs while running still works.`);
+          return;
+        }
       }
       const danger = this.tbDangerCells(); // instinct, not knowledge
       // FOOTPRINT (break-it combat 2026-10-09): validate the mover's whole
@@ -28669,6 +28813,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           } catch (e) {}
           this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${this.encTheName(t)}.`);
           const _landed = this.tbDamage(t.key, dmg, v.name);
+          // HOPELESS-FLIGHT LEDGER (structural-combat 2026-10-10): damage
+          // dealt, paired with _taken in tbDamage — tbVillagerHopeless reads
+          // the trajectory from these.
+          v._dealt = (v._dealt || 0) + _landed;
           if (_hmSwung) this.say(`${v.name} puts everything into the swing — HAYMAKER! (${_landed})`);
           // HIGHBEAM: hurting the deer moves them to the front of its list.
           try { const tt = this.tbFighter(t.key); if (tt && this.encUsesFifo(tt)) this.encNoticesPain(tt, v.key); } catch (e) {}

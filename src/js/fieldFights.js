@@ -18,6 +18,7 @@
 //   - aid_allies_from_start: allied aid parties already at the door (opts.allyFromStart) join from round 1 as real combatants — they came to fight, not to watch; foreign allies carry their own names via opts.foreignAllies. (code: fieldFight, comms 2026-10-10)
 //   - smoke_draws_company: the signal fire's attention arrives as real pack members (opts.packBonus) — blow by blow, never a modifier. (code: fieldFight, comms 2026-10-10)
 //   - foreign_ally_fall: a fallen foreign ally lands on the inter-village link via aidAllyDown (trust, gossip, debt forgiven in blood) — not on a villager record. (code: fieldFight, comms 2026-10-10)
+//   - field_medicine: once per fight, when hurt (<60% of max), the villager binds the wound instead of striking — +20 HP, the strike is spent, narrated. The player's "Heal 20 HP, once per day part", honestly translated off-screen (a field fight is the unit of a day's violence). (code: fieldFight, structural-combat 2026-10-10)
 // consumes:
 //   - Scattering.combat.roll
 //   - village health, agency xp, equipment, monsters data
@@ -160,7 +161,7 @@
       // one-shot ability state, reset per fight
       var abAim = false, abAimed = false, abWarCried = false, abScreamed = false,
           abBraced = false, abDebtSettled = false, abStun = 0, abRoundTaken = 0,
-          abLastRoundTaken = 0, abHaymakerRound = false;
+          abLastRoundTaken = 0, abHaymakerRound = false, abMedicated = false;
       var abNight = false;
       try { abNight = this.isNight ? this.isNight() : false; } catch (e) {}
 
@@ -389,11 +390,23 @@
             var lead = null;
             for (var li = 0; li < members.length; li++) { if (members[li].hp > 0) { lead = members[li]; break; } }
             if (!lead) break;
+            // ABILITY — FIELD MEDICINE (first aid): the medic's hands. Once
+            // per fight, when hurt (<60% of max), they stop and bind the
+            // wound INSTEAD of striking — the strike is spent, like the
+            // player's "Heal 20 HP, once per day part" costs their action.
+            // Off-screen a field fight is the honest unit of "per day part".
+            // +20 HP, narrated, never silent. (structural-combat 2026-10-10:
+            // wound-stabilization upstream of death.)
+            if (!abMedicated && vHasAb('field_medicine') && vHp > 0 && vHp < vHpMax * 0.6) {
+              abMedicated = true;
+              var _mh = Math.min(20, vHpMax - vHp);
+              vHp += _mh;
+              rec.log.push('R' + round + ': ' + vName + ' stops mid-fight and binds the wound — field medicine, +' + _mh + ' HP.');
             // ABILITY — PATIENT AIM (take_aim): the patient hunter's call.
             // Full health, fresh monster: spend this turn going still. The
             // next strike is 2.5x and cannot miss — the exposure is the
             // rounds already survived un-aimed.
-            if (!abAimed && vHasAb('patient_aim') && !abAim && vHp >= vHpMax && lead.hp > lead.maxHp * 0.5) {
+            } else if (!abAimed && vHasAb('patient_aim') && !abAim && vHp >= vHpMax && lead.hp > lead.maxHp * 0.5) {
               abAimed = true; abAim = true;
               rec.log.push('R' + round + ': ' + vName + ' goes still. Breath slows. The world narrows to the target. (Take Aim — next shot 2.5x)');
             } else {

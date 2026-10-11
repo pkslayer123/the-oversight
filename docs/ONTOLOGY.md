@@ -584,6 +584,7 @@ Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, re
 - aid_allies_from_start: allied aid parties already at the door (opts.allyFromStart) join from round 1 as real combatants — they came to fight, not to watch; foreign allies carry their own names via opts.foreignAllies. (code: fieldFight, comms 2026-10-10)
 - smoke_draws_company: the signal fire's attention arrives as real pack members (opts.packBonus) — blow by blow, never a modifier. (code: fieldFight, comms 2026-10-10)
 - foreign_ally_fall: a fallen foreign ally lands on the inter-village link via aidAllyDown (trust, gossip, debt forgiven in blood) — not on a villager record. (code: fieldFight, comms 2026-10-10)
+- field_medicine: once per fight, when hurt (<60% of max), the villager binds the wound instead of striking — +20 HP, the strike is spent, narrated. The player's "Heal 20 HP, once per day part", honestly translated off-screen (a field fight is the unit of a day's violence). (code: fieldFight, structural-combat 2026-10-10)
 
 **Consumes:** Scattering.combat.roll, village health, agency xp, equipment, monsters data
 
