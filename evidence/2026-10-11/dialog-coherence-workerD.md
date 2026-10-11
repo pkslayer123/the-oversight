@@ -35,6 +35,32 @@ Canon read first: docs/CANON.md, docs/CONVERSATIONS.md, docs/DIRECTIVES.md, plus
 - **"Remember when" for things that never happened:** no such generator found in conversation paths.
 - **Goal lines for satisfied goals:** goals are persistent drives with no satisfaction mechanic in the codebase — nothing to gate; not a live bug.
 
+## Post-commit verification saga (read before merging)
+- The archive-of-commit check caught a real loss: the marker-based hunk
+  classifier dropped the game.js cheer-line hunk (it carried no "Worker D"
+  marker — the marker sat only on the sibling `tod` hunk), so commit
+  25427a32 shipped the grief fix without the cheer fix. Proof on the archive:
+  36/37. Fixed via amend (9a980e6e). LESSON: verify the COMMITTED tree, not
+  the worktree — and put the marker comment on EVERY hunk, not just the first.
+- Worker A committed onto this branch mid-run (63662b5b, parented on my
+  25427a32). My amend orphaned it; I re-parented it onto 9a980e6e as 74cc9145
+  (same tree/message/author/date — verified the only content delta vs the
+  original is my cheer line). Then found the tree-reuse trap: re-parenting
+  with the old tree silently reverted my cheer fix (A's tree predated it) —
+  restored in 9b26598f. LESSON: never reuse a stale tree when re-parenting;
+  merge the trees.
+- Worker A's tip commit BREAKS `say()` in the node harness: their emission
+  wrapper calls `this.emit(...)`, which is defined nowhere in the tree
+  (HARNESS ERROR: this.emit is not a function, at newGame). Emission plumbing
+  is A's area (out of my scope) — but it blocked MY proof on the merged tip,
+  so the proof script now stubs `Game.emit` when missing (clearly commented;
+  bypassed if A's real emit lands). Coordinator: A's commit needs its emit
+  implementation before this branch merges to master.
+- Final: 37/37 on the tip archive (a04d1d18). Sensitivity: base tree
+  (e4080e54) lacks all four gates (no preSystemLines, no minDay fields, no
+  goalFollow for the 6 goals, no convoGoalLines/convoQuestionOk) — the test's
+  data/unit assertions fail pre-fix by construction.
+
 ## Coordination notes
 - Shared-worktree collision: on starting work I created `dialog-coherence`, but mid-run the worktree's HEAD was on `dialog-layout` (a sibling checked out their branch in the same directory — one worktree = one checkout). My uncommitted changes were intact. I switched back to `dialog-coherence` (clean, same base) and committed ONLY my hunks via the private-index selective-staging recipe: `conversation.js` had 1 foreign hunk (pluralize, left untouched), `game.js` had ~20 foreign hunks (left untouched), `characterGen.json` was all mine. Working tree left exactly as found.
 - Possible overlap with Worker B (knowledge gating): the 'answers' askAbout line and preSystemLines are era-gates (context), not knowledge leaks — no double-claim. If B touches goal 'answers' too, mine is the context half.
