@@ -8,7 +8,8 @@
 //   - sleep()
 //   - eat()
 //   - eatOne(idx)
-//   - hostFeast()
+//   - hostFeast(opts) -> feast report (feast ritual: guest list, real pantry cost, quality formula, broadcast beats, grantFeastBuff contract)
+//   - feastPlan(heads) -> planning data for the feast UI (no mutation)
 //   - spendCombatAction(kind)
 //   - tbFighter(id)
 //   - tbSnakeLineageKey(m) -> 'snake:<root>' | 'body:<key>' (reward de-dupe: one spawn = one body, split-proof)
@@ -23486,59 +23487,244 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       return { ate, gave, drawn: pile.taken };
     },
 
-    // hostFeast(): the player hosts a real feast from the pantry. (pacing
-    // build 2026-10-10, Steve: "Continue all proposed" — the audit found
-    // feastSurge was a combat multiplier with no actual feast behind it, and
-    // the village had no positive social engine.)
-    // Cost: 400 kcal x roster (min 1,500), drawn as REAL pantry items via
+    // hostFeast(opts) + feastPlan(): the feast as a RITUAL (feast-surge
+    // flesh-out 2026-10-10, Steve: "Okay build carefully."). Extends the
+    // player-hosted feast (pacing build 2026-10-10) with a guest list, a
+    // visible menu drawn from real pantry stores, broadcast beats, and the
+    // buff contract with Worker B.
+    //
+    // ARMING DESIGN CALL (documented per brief): the devotion arming
+    // (channelSentiment: 3 abilities at L3 OR surgeResonance>=35 ->
+    // scholar.prog.feastSurge) is PRESERVED and untouched — the feast never
+    // arms by itself; arming stays earned through the keepsake channel. The
+    // feast requires NO arming to host: it is the village's social engine
+    // and stays live for a devotion-poor player. But when a surge IS armed,
+    // the feast becomes its payoff — the ritual consumes the arming
+    // (prog.feastSurge -> false, feastSurgeUsed = true) and the broadcast
+    // says so loudly: "the feast was the weapon." If the player never
+    // feasts, the old feastBurn path spends the arming as before.
+    //
+    // QUALITY FORMULA (documented per brief), 0 poor / 1 fine / 2 legendary:
+    //   score starts at 1 — an honest feast is a fine feast.
+    //   +1 variety:     4+ distinct itemIds served ("a table of stories")
+    //   +1 centerpiece: any cooked/smoked/dried meat served ("the hunter's share")
+    //   +1 heart:       the star guest (highest-trust showed villager) attends
+    //   +1 turnout:     showed/invited >= 0.9 AND invited >= 5 ("everyone came")
+    //   -1 thin:        served kcal per head < 300 ("thin pickings")
+    //   -1 small:       invited < 4 ("a feast of three is a dinner")
+    //   quality = clamp(score, 0, 2), then the LEGEND GATE: a feast of plain
+    //   beans, however joyful, is a FINE feast — legend needs something worth
+    //   singing about (variety >= 4 or a centerpiece) AND witnesses
+    //   (invited >= 4; a feast of three is a dinner, not a legend).
+    //
+    // CONTRACT (Worker B owns the buff; do not drift): on completion calls
+    // Game.grantFeastBuff(feast) with feast = {quality: 0..2, served:
+    // [{itemId, kcal}], guests: [villagerIds who showed, host excluded],
+    // daypart}. Guarded — the ritual must not crash before B lands.
+    //
+    // Cost: 400 kcal x heads (min 1,500), drawn as REAL pantry items via
     // pantryDraw — the pantry gets lighter, honestly. 1/day, at the haven,
-    // costs an evening (48 ticks).
-    // Every attendee gets: a feast_shared memory (remember) + the lifeseed
-    // lived event (the writer drift reads — it was dead before this), trust
-    // through the capped deed path (bumpTrust), and the feast seeds gossip.
-    hostFeast() {
+    // costs an evening (48 ticks). Every refusal says why (no silent actions).
+    feastPlan(heads) {
       const s = this.state.scholar, v = this.state.village;
-      if (this.over) return 'The game is over.';
+      const plan = { ok: false, why: '', cost: 0, have: 0, guests: [], away: [], menu: [], armed: false, day: s.day || 1, daypart: this.dayPart || 0 };
+      if (this.over) { plan.why = 'The game is over.'; return plan; }
       // EXILE (break-it social r11 2026-10-10): the feast draws from the
       // VILLAGE pantry — an exiled player can't open a fire that isn't
-      // theirs and spend the stores of people who walked them out. The
-      // engine used to let an exile standing on the old haven tile burn
-      // 1500+ kcal of village food for +3 trust each.
-      if (s.exiled) return 'Exile means exile. The fire isn\'t yours to open.';
-      if (!this.playerAtHaven || !this.playerAtHaven()) return 'You need to be at the haven to host a feast.';
-      const day = s.day || 1;
-      if (s.feastDay === day) return 'One feast a day. The fire needs to rest too.';
-      const roster = (v.roster || []).filter(id => id !== this.villagerId);
-      const present = roster.filter(id => !(v.away && v.away[id]));
-      if (!present.length) return 'Nobody is here to feast with.';
-      const cost = Math.max(1500, 400 * (present.length + 1));
+      // theirs and spend the stores of people who walked them out.
+      if (s.exiled) { plan.why = 'Exile means exile. The fire isn\'t yours to open.'; return plan; }
+      if (!this.playerAtHaven || !this.playerAtHaven()) { plan.why = 'You need to be at the haven to host a feast.'; return plan; }
+      if (s.feastDay === plan.day) { plan.why = 'One feast a day. The fire needs to rest too.'; return plan; }
+      const me = this.villagerId;
+      const roster = (v.roster || []).filter(id => id !== me);
+      const trust = v.trust || {};
+      const tOf = (vid) => { const t = trust[vid]; return t === undefined ? 10 : t; };
+      const guests = [], away = [];
+      for (const vid of roster) {
+        let name = 'someone';
+        try { name = String(this.displayName(vid)).split(' ')[0]; } catch (e) {}
+        if (v.away && v.away[vid]) { away.push({ vid, name }); continue; }
+        const health = (v.health && v.health[vid] != null) ? v.health[vid] : 100;
+        const tr = tOf(vid);
+        let status = 'here', note = '';
+        if (health < 35) { status = 'sick'; note = 'feverish — will likely stay in their tent'; }
+        else if (tr <= 0) { status = 'hostile'; note = 'won\'t sit at your fire'; }
+        guests.push({ vid, name, status, note });
+      }
+      const invitable = guests.filter(g => g.status !== 'hostile');
+      if (!invitable.length) { plan.why = 'Nobody is here to feast with.'; return plan; }
+      const n = (typeof heads === 'number' && heads > 0) ? Math.floor(heads) : invitable.length;
+      const cost = Math.max(1500, 400 * (n + 1));
       let have = 0;
       try { have = this.pantryKcalLive ? this.pantryKcalLive(v) : 0; } catch (e) {}
-      if (have < cost) return `The pantry holds about ${Math.round(have).toLocaleString()} kcal — a feast for ${present.length + 1} needs ${cost.toLocaleString()}. Not today.`;
+      plan.ok = true; plan.cost = cost; plan.have = Math.round(have);
+      plan.guests = guests; plan.away = away; plan.heads = n;
+      plan.armed = !!(s.prog && s.prog.feastSurge);
+      // MENU PREVIEW: run the same best-fit draw on a COPY of the pantry —
+      // identical sorting, so what you see is what the fire gets. (The copy
+      // is never served; the real draw happens in hostFeast.)
+      try {
+        const copy = (v.pantry || []).map(it => Object.assign({}, it));
+        const drawn = this.pantryDraw({ pantry: copy }, cost, {});
+        const fid = (it) => it.itemId || it.id || it.plantId ||
+          String(it.name || 'food').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'food';
+        plan.menu = (drawn.items || []).map(e => ({
+          name: (e.item && (e.item.name || e.item.itemId || e.item.id)) || 'food',
+          units: e.units || 0,
+          kcal: Math.round((e.effectiveKcal || 0) * (e.units || 0)),
+          itemId: fid(e.item || {}),
+        }));
+        plan.menuShort = !!drawn.shortOfFresh;
+      } catch (e) { plan.menu = []; }
+      return plan;
+    },
+    hostFeast(opts) {
+      opts = opts || {};
+      const plan = this.feastPlan();
+      if (!plan.ok) return { ok: false, why: plan.why };
+      const s = this.state.scholar, v = this.state.village;
+      const day = plan.day;
+      // THE GUEST LIST: invited ∩ present. opts.guests overrides the default
+      // (everyone who isn't hostile). The sick may be invited anyway — they
+      // just won't come, and the report says so honestly.
+      const statusOf = {};
+      plan.guests.forEach(g => { statusOf[g.vid] = g; });
+      let invited = (Array.isArray(opts.guests) && opts.guests.length)
+        ? opts.guests.slice()
+        : plan.guests.filter(g => g.status !== 'hostile').map(g => g.vid);
+      invited = invited.filter(vid => statusOf[vid]);
+      if (!invited.length) return { ok: false, why: 'A feast alone is just dinner. Invite someone.' };
+      const cost = Math.max(1500, 400 * (invited.length + 1));
+      if (plan.have < cost) return { ok: false, why: `The pantry holds about ${plan.have.toLocaleString()} kcal — a feast for ${invited.length + 1} needs ${cost.toLocaleString()}. Not today.` };
+      // INVITED VS SHOWED UP: the distinction is real. The sick stay in
+      // their tents; the hostile won't sit at your fire.
+      const showed = [], skipped = [];
+      for (const vid of invited) {
+        const g = statusOf[vid];
+        if (g.status === 'here') showed.push(vid);
+        else skipped.push({ vid, name: g.name, why: g.status === 'sick' ? 'stayed in their tent, feverish' : 'wouldn\'t sit at your fire' });
+      }
+      if (!showed.length) return { ok: false, why: 'Nobody came — the invited are all abed or unwilling. The fire stays cold.' };
       // the cost is real: draw actual items out of the pantry.
       const drawn = this.pantryDraw(v, cost, {});
       const spent = Math.round(drawn.taken || 0);
       s.feastDay = day;
+      // SERVED: aggregate per itemId — what the feast WAS, honestly. A
+      // turkey feast ≠ a berry feast, and the contract carries the proof.
+      // Pantry items often have no id (just a name) — the slugged name is
+      // the honest identifier then, never "unknown".
+      const fid = (it) => it.itemId || it.id || it.plantId ||
+        String(it.name || 'food').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'food';
+      const servedMap = {}, servedList = [];
+      for (const e of (drawn.items || [])) {
+        const it = e.item || {};
+        const iid = fid(it);
+        const k = Math.round((e.effectiveKcal || 0) * (e.units || 0));
+        servedMap[iid] = (servedMap[iid] || 0) + k;
+        const fs = String(it.foodState || '');
+        servedList.push({
+          name: it.name || iid, units: e.units || 0, kcal: k,
+          meat: it.foodKind === 'meat' && /cook|smok|roast|dri/i.test(fs),
+        });
+      }
+      servedList.sort((a, b) => b.kcal - a.kcal);
+      const served = Object.keys(servedMap).map(itemId => ({ itemId, kcal: servedMap[itemId] }));
+      // QUALITY — the documented formula.
+      const trust = v.trust || {};
+      const tOf = (vid) => { const t = trust[vid]; return t === undefined ? 10 : t; };
+      let star = null, starTrust = -Infinity;
+      for (const vid of showed) { const t = tOf(vid); if (t > starTrust) { starTrust = t; star = vid; } }
+      let score = 1;
+      if (served.length >= 4) score++;                                    // a table of stories
+      if (servedList.some(x => x.meat)) score++;                          // the hunter's share
+      if (star) score++;                                                  // the table has its heart
+      const turnout = showed.length / invited.length;
+      if (turnout >= 0.9 && invited.length >= 5) score++;                 // everyone came
+      if (spent / (showed.length + 1) < 300) score--;                     // thin pickings
+      if (invited.length < 4) score--;                                    // a feast of three is a dinner
+      const quality = Math.max(0, Math.min(2, score));
+      // LEGEND GATE: legend needs something worth singing about (variety or
+      // a centerpiece) AND witnesses (invited >= 4).
+      const storyOnTable = served.length >= 4 || servedList.some(x => x.meat);
+      let qualityGated = (quality === 2 && !storyOnTable) ? 1 : quality;
+      if (qualityGated === 2 && invited.length < 4) qualityGated = 1;
+      const qualityNames = ['a thin, quiet meal', 'a fine feast', 'a LEGENDARY feast'];
+      // TELEVISED: the feast is a show — the System airs it. But only once
+      // the System has arrived; before day 7 there are no cameras, and the
+      // feast is just for the village. (Canon: the show starts with the System.)
+      const televised = !!this.state.systemArrived;
+      const beatLines = [];
+      if (televised) {
+        try {
+          this.broadcastStart('show', { showName: 'THE FEAST', participant: 'together' });
+          const grab = (beat, ctx) => {
+            try { this.broadcastBeat(beat, ctx || {}); } catch (e) {}
+            try {
+              const tk = (this.state.broadcast && this.state.broadcast.ticker) || [];
+              const last = tk[tk.length - 1];
+              if (last) beatLines.push(`${last.voice}: ${last.text}`);
+            } catch (e) {}
+          };
+          grab('feast_declare');
+          if (star) { try { this.broadcastLowerThird(this.displayName(star).split(' ')[0], 'Guest of Honor'); } catch (e) {} }
+          grab('feast_spread');
+          grab(qualityGated === 2 ? 'feast_legendary' : qualityGated === 1 ? 'feast_fine' : 'feast_thin');
+          try { this.broadcastEnd(); } catch (e) {}
+        } catch (e) {}
+      }
+      // DEVOTION PAYOFF (design call, documented above): an armed surge is
+      // spent BY the feast — the ritual is what the devotion lane was for.
+      let surgeSpent = 0;
+      try {
+        if (s.prog && s.prog.feastSurge) {
+          surgeSpent = typeof s.prog.feastSurge === 'number' ? s.prog.feastSurge : 1.5;
+          s.prog.feastSurge = false; s.prog.feastSurgeUsed = true;
+        }
+      } catch (e) {}
       const hostName = (() => { try { return this.displayName(this.villagerId).split(' ')[0]; } catch (e) { return 'you'; } })();
-      for (const vid of present) {
+      const first = (vid) => { try { return this.displayName(vid).split(' ')[0]; } catch (e) { return 'someone'; } };
+      for (const vid of showed) {
         try { this.remember(vid, 'feast', `${hostName} hosted a feast — real food, firelight, laughing.`); } catch (e) {}
         try { if (this.recordLifeseedEvent) this.recordLifeseedEvent(vid, 'feast_shared'); } catch (e) {}
-        try { this.bumpTrust(vid, 3, 'feast'); } catch (e) {}
+        try { this.bumpTrust(vid, 2 + qualityGated, 'feast'); } catch (e) {}
         try { const n = this.npcNeeds(vid); n.hunger = Math.max(0, (n.hunger || 0) - 30); n.social = Math.min(100, (n.social || 0) + 10); } catch (e) {}
       }
       // the feast is communal: everyone who ate together warms to each other.
       try {
-        for (let i = 0; i < present.length; i++) for (let j = i + 1; j < present.length; j++) {
-          if (this.bondAdd) this.bondAdd(present[i], present[j], 1, 'feast');
+        for (let i = 0; i < showed.length; i++) for (let j = i + 1; j < showed.length; j++) {
+          if (this.bondAdd) this.bondAdd(showed[i], showed[j], 1, 'feast');
         }
       } catch (e) {}
-      try { this.seedGossip('feast', { host: this.villagerId }, present); } catch (e) {}
+      try { this.seedGossip('feast', { host: this.villagerId }, showed); } catch (e) {}
+      // THE CONTRACT (Worker B): the feast completes -> the buff.
+      const feast = {
+        quality: qualityGated,
+        served,
+        guests: showed.slice(),
+        daypart: this.dayPart || 0,
+      };
+      let buffGranted = false;
+      try { if (typeof this.grantFeastBuff === 'function') { this.grantFeastBuff(feast); buffGranted = true; } } catch (e) {}
       try { if (this.tickAction) this.tickAction(48); } catch (e) {}
-      const names = present.slice(0, 4).map(id => { try { return this.displayName(id).split(' ')[0]; } catch (e) { return 'someone'; } });
-      const more = present.length > 4 ? ` and ${present.length - 4} more` : '';
-      this.say(`🍖 FEAST — ${hostName} opens the pantry wide. ${names.join(', ')}${more} eat until the fire burns low. Somebody laughs so hard they cry. For one evening, nobody is surviving — they're just together. (−${spent.toLocaleString()} kcal from the pantry)`);
+      const names = showed.slice(0, 4).map(first);
+      const more = showed.length > 4 ? ` and ${showed.length - 4} more` : '';
+      const menuBit = servedList.slice(0, 3).map(x => `${x.units}× ${x.name}`).join(', ');
+      const skippedBit = skipped.length ? ` ${skipped.map(k => `${k.name} ${k.why}`).join('; ')}.` : '';
+      const surgeBit = surgeSpent ? ` The channeled keepsake burns with the feast — the feast was the weapon. (FEAST SURGE ×${surgeSpent} spent)` : '';
+      const tvBit = televised ? ' 📺' : '';
+      this.say(`🍖 FEAST${tvBit} — ${hostName} opens the pantry wide: ${menuBit}. ${names.join(', ')}${more} eat until the fire burns low. Somebody laughs so hard they cry. For one evening, nobody is surviving — they're just together. (−${spent.toLocaleString()} kcal from the pantry)${skippedBit}${surgeBit}`);
       try { this.save(); } catch (e) {}
-      return 'The feast is held.';
+      return {
+        ok: true, why: 'The feast is held.', quality: qualityGated, qualityName: qualityNames[qualityGated],
+        spent, served, servedList, showed, skipped, invited, star, surgeSpent,
+        televised, beats: beatLines, buffGranted, daypart: this.dayPart || 0,
+        // score + factors: the quality math, visible and auditable.
+        score, factors: {
+          variety: served.length, centerpiece: servedList.some(x => x.meat),
+          heart: star ? first(star) : null, turnout, invitedN: invited.length,
+          showedN: showed.length, perHead: Math.round(spent / (showed.length + 1)),
+        },
+      };
     },
     // logSitting(v, vid, part): one sitting at the fire. Company isn't
     // scheduled (Steve 2026-10-08: no big daily communal feast) — but when

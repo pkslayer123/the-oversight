@@ -11436,6 +11436,7 @@
     else if (inlineView.kind === 'inv') renderInvInline(target, inlineView);
     else if (inlineView.kind === 'character') renderCharacterInline(target, inlineView);
     else if (inlineView.kind === 'loot') renderLootInline(target, inlineView);
+    else if (inlineView.kind === 'feast') renderFeastInline(target, inlineView);
     else target.innerHTML = '';
   }
 
@@ -14104,8 +14105,13 @@
     if (pantryBtn) pantryBtn.onclick = () => pantrySheet();
     const cachesBtn = document.getElementById('x-caches');
     if (cachesBtn) cachesBtn.onclick = () => cachesSheet();
-    // FEAST (pacing build 2026-10-10): player-hosted feast from the Haven panel.
-    document.querySelectorAll('[data-feast]').forEach(b => b.onclick = () => { Game.hostFeast(); refresh(); });
+    // FEAST (feast-surge flesh-out 2026-10-10): the button opens the feast
+    // planning screen (guest list, menu preview, honest cost) — the commit
+    // happens there, never silently.
+    document.querySelectorAll('[data-feast]').forEach(b => b.onclick = () => {
+      inlineView = { kind: 'feast', result: null, invited: null, mapKey: inlineMapKey() };
+      refresh();
+    });
     // Village stash buttons (Haven panel). Give = all you carry; Take = 5.
     document.querySelectorAll('[data-stash-give]').forEach(b => b.onclick = () => { Game.donateMaterial(b.dataset.stashGive, 9999); refresh(); });
     document.querySelectorAll('[data-stash-take]').forEach(b => b.onclick = () => { Game.takeMaterial(b.dataset.stashTake, 5); refresh(); });
@@ -14502,6 +14508,89 @@
   }
 
 
+  // FEAST PLANNING (feast-surge flesh-out 2026-10-10): one compact screen —
+  // the guest list as toggle chips (invited vs showed up is real: the sick
+  // stay in their tents), the menu the pantry would serve, the honest cost,
+  // and the commit button. Nothing is silent: every cost is visible before
+  // the fire is lit.
+  function renderFeastInline(slot, view) {
+    let plan = null;
+    try { plan = Game.feastPlan(); } catch (e) {}
+    if (!plan || !plan.ok) {
+      slot.innerHTML = `<div class="inlinecard">${inlineHead('🍖 Feast')}
+        <div class="inline-body"><p class="small">${esc((plan && plan.why) || 'No feast right now.')}</p></div></div>`;
+      wireInlineX(slot);
+      return;
+    }
+    if (!view.invited) view.invited = plan.guests.filter(g => g.status !== 'hostile').map(g => g.vid);
+    // Re-price + re-preview for the actual guest list (the plan priced the default).
+    if (view.invited.length !== plan.heads) {
+      try { plan = Game.feastPlan(view.invited.length); } catch (e) {}
+      if (!plan || !plan.ok) { view.invited = null; refresh(); return; }
+    }
+    // A completed feast -> the report card (quality, served, showed/skipped).
+    if (view.result && view.result.ok) {
+      const r = view.result;
+      const qEmoji = r.quality === 2 ? '🌟' : r.quality === 1 ? '🍖' : '🥣';
+      const servedBit = (r.servedList || []).slice(0, 5).map(x => `${x.units}× ${esc(x.name)}`).join(', ') || 'scraps';
+      const showedBit = (r.showed || []).map(vid => { try { return esc(Game.displayName(vid).split(' ')[0]); } catch (e) { return 'someone'; } }).join(', ');
+      const skippedBit = (r.skipped || []).map(k => `${esc(k.name)} <span style="opacity:.7">(${esc(k.why)})</span>`).join(', ');
+      const beatsBit = (r.beats || []).slice(-3).map(b => `<p class="small" style="opacity:.85">📺 ${esc(b)}</p>`).join('');
+      slot.innerHTML = `<div class="inlinecard">${inlineHead(`${qEmoji} ${esc(r.qualityName)}`)}
+        <div class="inline-body">
+          <p class="small"><b>On the table:</b> ${servedBit} <span style="opacity:.7">(−${(r.spent || 0).toLocaleString()} kcal)</span></p>
+          <p class="small"><b>Showed up:</b> ${showedBit || '—'}</p>
+          ${skippedBit ? `<p class="small"><b>Didn't make it:</b> ${skippedBit}</p>` : ''}
+          ${beatsBit}
+          ${r.buffGranted ? `<p class="small">◈ The System bottled the feeling of this feast.</p>` : ''}
+          ${r.surgeSpent ? `<p class="small">🔥 The channeled keepsake burned with the feast — the feast was the weapon. (×${r.surgeSpent})</p>` : ''}
+        </div></div>`;
+      wireInlineX(slot);
+      return;
+    }
+    const invitedSet = {};
+    view.invited.forEach(id => { invitedSet[id] = true; });
+    const chips = plan.guests.map(g => {
+      if (g.status === 'hostile') return `<button class="btn sm ghost" disabled title="${esc(g.note)}">${esc(g.name)} ✕</button>`;
+      const on = !!invitedSet[g.vid];
+      const mark = g.status === 'sick' ? ' 🤒' : '';
+      return `<button class="btn sm${on ? '' : ' ghost'}" data-fguest="${esc(g.vid)}" title="${esc(g.note || (on ? 'Invited — tap to uninvite' : 'Not invited — tap to invite'))}">${on ? '✓ ' : ''}${esc(g.name)}${mark}</button>`;
+    }).join(' ');
+    const awayBit = plan.away.length ? `<p class="small" style="opacity:.6">Away: ${plan.away.map(a => esc(a.name)).join(', ')}</p>` : '';
+    const menuBit = plan.menu.length
+      ? plan.menu.slice(0, 5).map(m => `${m.units}× ${esc(m.name)} <span style="opacity:.6">(${m.kcal.toLocaleString()} kcal)</span>`).join('<br>')
+      : '<span style="opacity:.6">The shelves are bare.</span>';
+    const afford = plan.have >= plan.cost;
+    slot.innerHTML = `<div class="inlinecard">${inlineHead('🍖 Plan the feast')}
+      <div class="inline-body">
+        ${view.result && !view.result.ok ? `<p class="inline-result">✕ ${esc(view.result.why)}</p>` : ''}
+        <p class="small">Opens the pantry: <b>~${plan.cost.toLocaleString()} kcal</b> of real food, one evening, for ${view.invited.length} guest${view.invited.length === 1 ? '' : 's'} + you. The pantry holds ${plan.have.toLocaleString()} kcal.</p>
+        ${afford ? '' : `<p class="small">⚠️ The pantry can't carry this feast — uninvite guests or come back after a good haul.</p>`}
+        <p class="small"><b>The pantry offers:</b><br>${menuBit}${plan.menuShort ? '<br><span style="opacity:.6">(the pantry runs thin past this)</span>' : ''}</p>
+        <p class="small"><b>Guest list</b> <span style="opacity:.6">(tap to invite / uninvite)</span><br>${chips}</p>
+        ${awayBit}
+        ${plan.armed ? `<p class="small">◈ A channeled keepsake is ARMED — this feast will spend it, loudly. <span style="opacity:.6">(The feast was the weapon.)</span></p>` : ''}
+        <div class="btnrow"><button class="btn"${afford ? '' : ' disabled'} data-ffeast-go>🔥 Light the fire (−${plan.cost.toLocaleString()} kcal)</button></div>
+      </div></div>`;
+    wireInlineX(slot);
+    slot.querySelectorAll('[data-fguest]').forEach(b => b.onclick = () => {
+      const vid = b.dataset.fguest;
+      view.invited = (view.invited || []).filter(id => id !== vid);
+      if (!invitedSet[vid]) view.invited.push(vid);
+      view.result = null;
+      refresh();
+    });
+    const go = slot.querySelector('[data-ffeast-go]');
+    if (go) go.onclick = () => {
+      let rep = null;
+      try { rep = Game.hostFeast({ guests: view.invited }); } catch (e) { rep = { ok: false, why: 'The fire wouldn\'t light.' }; }
+      view.result = rep;
+      if (rep && rep.ok) view.invited = null;
+      refresh();
+    };
+  }
+
+
   // SLEEP: quality depends on where you are: bunk > tent > hall floor > cold ground.
   // sleepHintHTML: sleep quality info only — the button lives in the self bar.
   function sleepHintHTML() {
@@ -14581,7 +14670,7 @@
             awayN = Object.keys(awayMap).filter(id => id !== Game.villagerId).length;
           } catch (e2) {}
           const cost = Math.max(1500, 400 * Math.max(1, rosterN - awayN));
-          return `<button class="btn sm" data-feast title="Open the pantry wide: ${cost.toLocaleString()} kcal, one evening, everyone eats together">🍖 Host a feast (${cost.toLocaleString()} kcal)</button>`;
+          return `<button class="btn sm" data-feast title="Plan the feast: pick the guests, see the menu, then light the fire (${cost.toLocaleString()} kcal, one evening)">🍖 Host a feast (${cost.toLocaleString()} kcal)</button>`;
         } catch (e) { return ''; }
       })()}
       ${sleepHintHTML()}

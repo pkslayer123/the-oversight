@@ -76,7 +76,20 @@
       [PBP, 'A watch party! The snacks are real. The stakes are not. This is the good part of being watched.'],
       [COLOR, 'They share food VOLUNTARILY. No cameras forced this. ...The cameras are here, but still.'],
     ],
-    // REFUSED (break-it shows r2 2026-10-10): the outcome beat for a
+    // FEAST (feast-surge flesh-out 2026-10-10): the comedy engine is aliens
+    // profoundly misunderstanding food-as-joy. Beat names: feast_declare,
+    // feast_spread, feast_fine, feast_legendary, feast_thin — all classify
+    // to this pool (the /feast/ rule in classifyBeat comes first).
+    feast: [
+      [PBP, 'And we are LIVE with a special presentation: {show}! The little ones are putting flavored matter in their mouths ON PURPOSE. For joy. The file says joy.'],
+      [COLOR, 'They cooked it. They did not have to cook it. They cooked it anyway and now they are SHARING it. I need to sit down.'],
+      [PBP, 'Look at that spread. Seventeen systems are watching and every one of them is hungry now. This is a war crime against our nutrient paste.'],
+      [COLOR, 'The centerpiece — they raised it, they caught it, they cooked it, and now they EAT it TOGETHER. The symbolism is doing something to me.'],
+      [PBP, 'Someone is laughing so hard they cannot breathe. The medics are standing by. The medics are also laughing.'],
+      [COLOR, 'They keep giving the best pieces to EACH OTHER. Not the strongest. Each other. Our analysts have given up and joined the audience.'],
+      [PBP, 'A thin table tonight — but they are performing a banquet anyway, and honestly? The pretending is working.'],
+      [COLOR, 'The chat has decided this is the best show. The chat is correct for once. Do not tell the chat I said that.'],
+    ],
     // refused summons/show ('SHOW_REFUSED') used to fall through
     // classifyBeat into the generic pool — the commentators called a
     // defiant no with a shrug, against the "tied to the actual result,
@@ -99,6 +112,9 @@
   // never a random generic line.
   function classifyBeat(beatName) {
     const b = String(beatName || '');
+    // FEAST (feast-surge flesh-out 2026-10-10): feast beats always use the
+    // feast pool — the aliens' food-bafflement is the whole show.
+    if (/feast/i.test(b)) return 'feast';
     if (/deathreel|replay|judging/i.test(b)) return 'deathreel';
     if (/summons/i.test(b)) return 'summons';
     if (/declare|pull/i.test(b)) return 'declare';
@@ -205,6 +221,7 @@
       pull: '😲👏😲',
       summons: '😬👀',
       together: '🍿😊👏',
+      feast: '🍖👏😋🍖',
       refused: '😲🤫👀',
       generic: '👀',
     };
