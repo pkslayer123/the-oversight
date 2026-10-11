@@ -103,7 +103,18 @@
       }
       // Legacy path: old hardcoded abilities without actions arrays.
       if (typeof _origActivateAbility === 'function') {
-        return _origActivateAbility.call(this, id, target);
+        // FEASTED (feast-surge rework, Worker B 2026-10-10): the legacy branch
+        // gets the same feasted-form treatment as useAbility below. The two
+        // paths are exclusive (composite ids route to useAbility first), so
+        // the twist can never double-fire.
+        var _lpre = null;
+        try { _lpre = (typeof this._feastPreHp === 'function') ? this._feastPreHp() : null; } catch (e) {}
+        var _lr = _origActivateAbility.call(this, id, target);
+        try {
+          if (_lr !== false && typeof this.applyFeastedForm === 'function')
+            this.applyFeastedForm(id, null, target, _lpre);
+        } catch (e) {}
+        return _lr;
       }
       this.say('Unknown ability: ' + id);
       return false;
@@ -270,6 +281,11 @@
       var _said = 0;
       var _say = this.say;
       var _self = this;
+      // FEASTED (feast-surge rework, Worker B 2026-10-10): snapshot HP before
+      // the impl so the feasted-form twist can measure what the ability did
+      // (heal_bonus needs the true healed amount).
+      var _feastPre = null;
+      try { _feastPre = (typeof this._feastPreHp === 'function') ? this._feastPreHp() : null; } catch (e) {}
       this.say = function (t) { _said++; return _say.call(_self, t); };
       var result;
       try { result = impl(this, target); }
@@ -291,6 +307,15 @@
         // impl refuses) took L1->L3 in one turn with no cost, no turn spent.
         // A fizzled action is not practice. (brawler loop 2026-10-08)
         try { this.gainAbilityXP(abilityId, 1); } catch (e) {}
+        // FEASTED (feast-surge rework, Worker B 2026-10-10): the feasted
+        // form — the known ability, temporarily evolved. Generic framework:
+        // uplift rode the damage funnels; here the data-driven twist runs.
+        // Only on REAL success (result !== false): a fizzled tap while
+        // feasted is not a feasted form, and marks no combat use.
+        try {
+          if (typeof this.applyFeastedForm === 'function')
+            this.applyFeastedForm(abilityId, actionId, target, _feastPre);
+        } catch (e) {}
       }
       return result !== false;
     },

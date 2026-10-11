@@ -56,6 +56,7 @@ const WRAPS = [
   ['topic2Ask', 'topic2', 1],
   ['hostFeast', 'feast_host', null],
   ['feastBurn', 'feast_burn', null],
+  ['grantFeastBuff', 'feast_grant', null],
   ['offerSystemQuest', 'sq_offer', 0],
   ['checkSystemQuest', 'sq_check', null],
   ['apRollEncounter', 'ap_roll', null],

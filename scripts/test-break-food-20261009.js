@@ -316,9 +316,12 @@ function freshGame() {
     s.kcal = cap2;
     const banked0 = Game.banked();
     ok('H2d setup. banked>0', banked0 >= 300, `banked=${banked0} cap=${cap2}`);
+    // FEAST-SURGE REWORK (2026-10-10, Worker B): the on-strike feastBurn
+    // trigger is retired — Game.feastBurn() is a stub returning 0 that burns
+    // nothing. The bank itself (banked kcal, overnight leak) is unchanged.
     const fb1 = Game.feastBurn();
-    const expectBurn = Math.min(banked0, Game.feastState() === 'gorged' ? 400 : 300);
-    ok('H2d. burn spends exactly the stated amount', fb1 > 0 && s.kcal === cap2 - expectBurn, `fb=${fb1} kcal=${s.kcal} expectBurn=${expectBurn}`);
+    ok('H2d. retired feastBurn burns nothing', fb1 === 0 && s.kcal === cap2, `fb=${fb1} kcal=${s.kcal}`);
+    ok('H2d. bank math intact (war chest still measurable)', Game.banked() === banked0, `banked=${Game.banked()} was ${banked0}`);
     // overnight leak only touches banked
     const b1 = Game.banked();
     const lost = Game.overnightBankBurn();

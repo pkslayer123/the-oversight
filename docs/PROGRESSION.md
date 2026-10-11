@@ -261,6 +261,56 @@ deed gate.
 | `dayFloor` / `wave2DayFloor` | 25 / 8 | calendar floors rise — unlocks can't arrive before the floor no matter the kills | floors drop — reactive kills can unlock waves very early |
 | `counterBonusEnabled` (per wave) | all true | kill-switch for the mastery bonus: false on a wave means counter kills score 1 there | (same dial, per-wave granularity) |
 
+## 13. Feast Surge: the timed buff (Steve, 2026-10-10 — "Okay build carefully")
+
+The old feastBurn (on-strike trigger: burn banked ≥300 kcal for ×1.5) is
+retired — it was near-unreachable (0 real burns in sims) and the surge was a
+combat multiplier with no actual feast behind it. The replacement, in Steve's
+design:
+
+- **TIMED BUFF, not a strike trigger.** The feast grants a buff window that
+  ends at the next dawn. During the window, strikes AND abilities benefit.
+  Visible countdown, honest copy ("feasted until dawn"), expires cleanly.
+- **FEASTED ABILITY VARIANTS — almost evolved forms.** The known ability,
+  temporarily evolved: a GENERIC feasted-form modifier framework (feastBuff.js)
+  — uplift (damage/effect scaling) + one wacky twist where the fiction
+  supports it. Composes with the 6-slot economy and synergies. Never stacks.
+- **The devotion arming is the gate.** `scholar.prog.feastSurge` (channeled via
+  keepsake: mastery lane or devotion lane, unchanged) must be armed or the
+  feast grants no buff — refused honestly. The arming is spent only by real
+  combat use of the buff; a feast that warms no blades costs no devotion.
+- **`feastSurgeUsed` (Arc IV deed-gate requirement) marks only when the buff
+  is actually USED in combat** — a player strike or an ability resolved while
+  feasted. Semantics documented in code, not weakened.
+- **Re-feasting while feasted refreshes** (design call): the window extends to
+  the next dawn and the better quality wins — never stacks, so no
+  double-feast exploit. After combat use the arming is spent, so a post-use
+  re-feast is refused until the keepsake is channeled again.
+- **Persistence clean.** Expiry is an absolute (day, dawn) evaluated lazily —
+  a mid-buff Continue resumes the buff; a post-dawn load has no phantom buff.
+
+**Interface:** the feast event (pantry cost, guest list, broadcast beats)
+calls `Game.grantFeastBuff({quality: 0..2, served: [{itemId, kcal}], guests:
+[ids], daypart})` and gets the granted buff or an honest refusal.
+
+**Levers** (`src/data/feast-surge.json`, calibrated 2026-10-10 — the old 35
+resonance / 300 bank numbers were picked, not calibrated):
+
+| Lever | Default | What turning it does |
+|---|---|---|
+| `qualityUplift` | {0: 1.2, 1: 1.35, 2: 1.5} | the quality lane — the feast's main dial |
+| `surgeDefault` | 1.5 | fallback for truthy non-numeric arming (old saves) |
+| effective mult | qualityUplift × devotion surge | devotion: 1.5 base, 2.25 chosen keepsake, 3.0 wedding ring |
+| `refeast.policy` | "refresh" | "refresh" (window extends, best quality wins) vs "refuse" |
+| `twists` | 4 entries | per-ability feasted twists (heal_bonus, status_extend); default = clean uplift |
+| `feastMinimums` | 1500 kcal / 3 guests | event-side: what counts as a feast (enforced by the feast event, not the grant) |
+
+Measured uplift curve (feast→fight sims, docs/BALANCING.md): ×1.8 → ~1.77×,
+×2.03 → ~1.96×, ×2.25 → ~2.4×, ×3.38 → ~3.5×, ×4.5 → ~4.24× (armor eats a
+flat amount post-mult). A legendary feast + wedding ring nearly one-shots
+wave-1 — intentionally explosive, triply gated (feast cost, rare devotion,
+dawn expiry).
+
 ---
 
 ## [NEEDS-STEVE]

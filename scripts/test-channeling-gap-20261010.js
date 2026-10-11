@@ -174,7 +174,9 @@ function keepsakeIdx(s) {
     ok('no abilities: plain label', Game.channelLabel() === '💛 Channel', Game.channelLabel());
   }
 
-  // ============ 4. surge multiplier honesty at the burn site ============
+  // ============ 4. surge multiplier honesty at the GRANT site ============
+  // (feast-surge rework 2026-10-10, Worker B: the on-strike burn is retired;
+  // the stored surge now feeds the feasted buff via Game.grantFeastBuff.)
   console.log('\n-- 4. surge honesty --');
   {
     const s = freshGame();
@@ -191,29 +193,22 @@ function keepsakeIdx(s) {
     s.day = (s.day || 1) + 1;
     said.length = 0;
     const msg = Game.channelSentiment(idx);
-    const m = msg.match(/surges ×([0-9.]+)/);
-    ok('message states the surge multiplier', !!m, msg.slice(0, 100));
+    const m = msg.match(/devotion ×([0-9.]+)/);
+    ok('message states the surge multiplier', !!m, msg.slice(0, 120));
     ok('stored surge equals the promised multiplier', Math.abs(s.prog.feastSurge - expect) < 0.01, `${s.prog.feastSurge} vs ${expect}`);
-    // burn site applies the stored multiplier
-    s.kcal = 5000; // banked
-    const base = Game.feastBurn ? null : null;
-    // arm via stored number and measure: wrap multiplies base by surge
-    s.prog.feastSurge = 2.0;
-    const r1 = Game.feastBurn();
-    ok('numeric surge consumed', s.prog.feastSurge === false);
-    ok('feastSurgeUsed marked', s.prog.feastSurgeUsed === true);
-    ok('burn applied the stored ×2.0', said.some(t => t.includes('FEAST SURGE ×2')), said.slice(-2).join(' | ').slice(0, 160));
-    void r1; void base;
-  }
-  // legacy `true` still means flat ×1.5 (old saves, existing tests)
-  {
-    const s = freshGame();
-    s.kcal = 5000;
-    s.prog.feastSurge = true;
+    // grant site applies the stored multiplier: q1 (1.35) x surge
     said.length = 0;
-    Game.feastBurn();
-    ok('legacy true -> flat ×1.5 applied', said.some(t => t.includes('FEAST SURGE ×1.5')), said.slice(-2).join(' | ').slice(0, 160));
-    ok('legacy true consumed', s.prog.feastSurge === false && s.prog.feastSurgeUsed === true);
+    const g = Game.grantFeastBuff({ quality: 1, served: [], guests: [], daypart: 1 });
+    const wantMult = Math.round(1.35 * expect * 100) / 100;
+    ok('grant applies the stored surge', g && g.granted && Math.abs(g.mult - wantMult) < 1e-9, `got x${g && g.mult}, want x${wantMult}`);
+    ok('grant line states the true multiplier', said.some(t => t.includes('FEASTED ×' + wantMult)), said.slice(-1).join(' ').slice(0, 160));
+    ok('arming NOT consumed by the grant (no combat use yet)', s.prog.feastSurge === expect && !s.prog.feastSurgeUsed);
+    // legacy `true` still means flat ×1.5 (old saves, existing tests)
+    const s2 = freshGame();
+    s2.prog.feastSurge = true;
+    said.length = 0;
+    const g2 = Game.grantFeastBuff({ quality: 1, served: [], guests: [], daypart: 1 });
+    ok('legacy true -> flat ×1.5 surge at grant', g2 && g2.granted && Math.abs(g2.mult - 2.03) < 1e-9, 'got x' + (g2 && g2.mult));
   }
   // chosen keepsake scales the surge (the message's promise)
   {

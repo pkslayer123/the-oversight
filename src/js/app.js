@@ -252,6 +252,12 @@
         const lpl = (typeof Game.ledgerProgressLine === 'function') ? Game.ledgerProgressLine() : '';
         if (lpl) out.push(`<div class="statrow beat-open" style="opacity:.9">${esc(lpl)}</div>`);
       } catch (e) {}
+      // FEASTED (feast-surge rework, Worker B 2026-10-10): the visible
+      // countdown — honest label: true mult, parts remaining, what it does.
+      try {
+        const fsl = (typeof Game.feastedLine === 'function') ? Game.feastedLine() : '';
+        if (fsl) out.push(`<div class="statrow beat-open" style="opacity:.95">🍖 ${esc(fsl)}</div>`);
+      } catch (e) {}
       const pb = st.pendingBeg;
       if (pb) {
         let vnm = 'their fire';

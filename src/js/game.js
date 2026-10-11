@@ -207,9 +207,9 @@
     async init() {
       if (global.SCATTER_DATA) { this.data = global.SCATTER_DATA; return this.data; }
       const get = f => fetch('src/data/' + f).then(r => r.json());
-      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes, waveLedger] = await Promise.all(
-        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json', 'cooking.json', 'build-notes.json', 'wave-ledger.json'].map(get));
-      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes, waveLedger };
+      const [plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes, waveLedger, feastSurge] = await Promise.all(
+        ['plants.json', 'biomes.json', 'monsters.json', 'villagers.json', 'abilities.json', 'items.json', 'background_survivors.json', 'cell_defs.json', 'animals.json', 'recipes.json', 'books.json', 'relicEnhancements.json', 'locations.json', 'characterGen.json', 'synergies.json', 'knowledge.json', 'nameCultures.json', 'originPicker.json', 'foreignSpeech.json', 'lifeseeds.json', 'arrivalText.json', 'justiceVoice.json', 'alienPlayers.json', 'regions.json', 'dramaEffects.json', 'monsterBehaviors.json', 'contests.json', 'events.json', 'statusEffects.json', 'cooking.json', 'build-notes.json', 'wave-ledger.json', 'feast-surge.json'].map(get));
+      this.data = { plants, biomes, monsters, villagers, abilities, items, background_survivors, cellDefs, animals, recipes, books, relicEnhancements, locations, characterGen, synergies, knowledge, nameCultures, originPicker, foreignSpeech, lifeseeds, arrivalText, justiceVoice, alienPlayers, regions, dramaEffects, monsterBehaviors, contests, events, statusEffects, cooking, buildNotes, waveLedger, feastSurge };
       // Scaffold #4 (Steve 2026-10-07): wire the drama effect registry — data-driven renderer.
       try {
         const D = globalThis.Scattering && globalThis.Scattering.Drama;
@@ -26759,9 +26759,17 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           if (ckMult > 1) { d = Math.round(d * ckMult); this.say(`CLEAN KILL: one shot, and it never knew. ×${ckMult}.`); }
         }
       } catch (e) {}
-      // THE RESERVE: food is humanity's superpower. A full furnace hits harder —
-      // visibly. (feastBurn states the burn itself.)
-      if (this.feastBurn) { const fb = this.feastBurn(); if (fb > 0) d = Math.round(d * fb); }
+      // FEASTED (feast-surge rework, Worker B 2026-10-10): the timed buff
+      // applies its uplift inside tbDamage's player-source hook below, so the
+      // "You STRIKE for N" line states the true uplifted number. Strike-flag
+      // abilities (take_aim, rage, ambush, haymaker, dead_aim, settle_debt)
+      // ride this same strike and are uplifted automatically — feasted forms
+      // compose with the 6-slot economy and synergies multiplicatively.
+      // The retired on-strike feastBurn trigger is gone (food.js: RETIRED).
+      // MIGHT (moved, not removed): the retired progression.js feastBurn
+      // wrapper fed ledger 'might' +2 on every strike — fighting builds
+      // might. The feed follows the strike, not the feast.
+      try { if (this.ledgerAdd) this.ledgerAdd('might', 2); } catch (e) {}
       d = Math.round(d);
       // isHuman is read by the armor block below AND the trauma block after:
       // declare once, up front (TDZ crash 2026-10-05: the armor block read it
@@ -27771,6 +27779,26 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         }
       }
       let final = Math.max(0, Math.round(dmg));
+      // FEASTED (feast-surge rework, Worker B 2026-10-10): the timed buff
+      // uplifts player-sourced damage — strikes and ability damage alike.
+      // Player-sourced = sourceKey 'p' (abilities: 'the naming') or the
+      // strike's ('you', null). Targets are foes only — never the player,
+      // never a villager ally (the gristlefit lash is excluded by the target
+      // check). The strike's "You STRIKE for N" line is composed from
+      // tbDamage's return, so it states the true uplifted number.
+      try {
+        const _fk = t && t.kind;
+        const _ps = sourceKey === 'p' || (sourceLabel === 'you' && (sourceKey == null));
+        if (_ps && (_fk === 'monster' || _fk === 'hostile') && final > 0 &&
+            typeof this.feastedActive === 'function' && this.feastedActive()) {
+          const _fm = typeof this.feastedMult === 'function' ? this.feastedMult() : 1;
+          if (_fm > 1) {
+            final = Math.round(final * _fm);
+            this.say(`FEASTED ×${_fm}: the feast was the weapon.`);
+            if (typeof this.noteFeastedCombatUse === 'function') this.noteFeastedCombatUse();
+          }
+        }
+      } catch (e) {}
       // UNION REP SOLIDARITY (Steve 2026-10-06): while a rep organizes, the
       // picket line hits harder. Applies to monster damage vs the player.
       // PACK-LEADER (Steve 2026-10-06): the leader's packmates hit +2 while

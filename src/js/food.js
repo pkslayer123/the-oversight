@@ -2003,7 +2003,7 @@
     // energy — food in, everything else out. No second pool, no second row.
     // Baseline humans bank ~a day. Skillsets raise the CAP: extra stomachs,
     // furnace guts — the glutton-warrior is a real build. Eat well → hit
-    // harder. The pipeline stays visible: FEASTBURN says what happened.
+    // harder. The pipeline stays visible: the FEASTED buff says what happened.
     // (Endgame payoff: later.)
 
     // bankMult: skillsets that expand the bank. food.bank_mult is the live
@@ -2026,7 +2026,7 @@
       return Math.round(2400 * mult);
     },
 
-    // banked: the stockpile above fed. This is what FEASTBURN spends.
+    // banked: the stockpile above fed. The war chest — the feast draws on it.
     banked() {
       return Math.max(0, Math.round(this.state.scholar.kcal || 0) - this.fullLine());
     },
@@ -2073,24 +2073,22 @@
       return '';
     },
 
-    // FEASTBURN: the visible pipeline. Called when the player unleashes power.
-    // Burns BANKED kcal for a stated damage multiplier. Returns it (0 = no burn).
-    // Quality matters: specialist fuel burns hottest, scraps burn dirty.
+    // FEASTBURN — RETIRED (feast-surge rework, Worker B 2026-10-10).
+    // The old on-strike trigger (burn banked kcal ≥300 for a damage mult) is
+    // replaced by the timed buff: the feast grants FEASTED until dawn via
+    // Game.grantFeastBuff (feastBuff.js), and strikes + ability resolutions
+    // read the feasted multiplier through the tbDamage player-source hook.
+    // This stub stays so old scripts/tests calling Game.feastBurn() get an
+    // honest 0 (no burn) instead of a crash. Do not resurrect the trigger.
     feastBurn() {
-      const s = this.state.scholar;
-      const b = this.banked();
-      if (b < 300) return 0;
-      const gorged = this.feastState() === 'gorged';
-      const burn = Math.min(b, gorged ? 400 : 300);
-      s.kcal = Math.max(0, (s.kcal || 0) - burn);
-      const q = s.kcalQ || 1;
-      let mult = gorged ? 1.75 : 1.5;
-      if (q >= 1.3) mult *= 1.15;
-      else if (q < 0.7) mult *= 0.85;
-      mult = Math.round(mult * 100) / 100;
-      const qnote = q >= 1.3 ? ' Specialist fuel burns hottest.' : q < 0.7 ? ' Scraps burn dirty.' : '';
-      this.say(`FEASTBURN (−${burn} banked, ×${mult}): the feast was the weapon.${qnote}`);
-      return mult;
+      try {
+        if (!this._feastBurnRetiredWarned) {
+          this._feastBurnRetiredWarned = true;
+          if (typeof console !== 'undefined' && console.warn)
+            console.warn('[feastBuff] Game.feastBurn() is retired (feast-surge rework 2026-10-10) — returning 0, no burn.');
+        }
+      } catch (e) {}
+      return 0;
     },
 
     // overnightBankBurn: the war chest leaks 20% overnight — use it or lose

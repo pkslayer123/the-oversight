@@ -77,8 +77,21 @@ function stack(L) { const l = Game.ledger(); for (const k of Object.keys(L)) l[k
     Game.registerDeath({ vid: 'm1', name: 'Beast', kind: 'monster', killerId: Game.villagerId, cause: 'test', mx: 1, my: 1 });
     ok('monster kill -> might', Game.ledger().might >= 3, String(Game.ledger().might));
     const m0 = Game.ledger().might;
+    // FEAST-SURGE REWORK (2026-10-10, Worker B): the on-strike feastBurn
+    // trigger is retired — Game.feastBurn() is a stub returning 0 and feeds
+    // nothing. The ledger 'might' +2 feed moved to the strike path itself:
+    // fighting builds might, with or without a feast.
     try { Game.feastBurn(); } catch (e) {}
-    ok('feastburn -> might', Game.ledger().might >= m0 + 2, `${m0} -> ${Game.ledger().might}`);
+    ok('retired feastBurn feeds no might', Game.ledger().might === m0, `${m0} -> ${Game.ledger().might}`);
+    const mdef = (Game.data.monsters || []).find(m => m.id === 'hushwolf') || {};
+    Game.tbfight = { fighters: [
+      { key: 'p', kind: 'player', name: 'You', hp: 100, maxHp: 100, speed: 6, mx: 4, my: 4, alive: true, fled: false, moveLeft: 0, acted: false },
+      { key: 'm1', kind: 'monster', monsterId: 'hushwolf', mdef, name: 'wolf', hp: 500, maxHp: 500, speed: 3, mx: 5, my: 4, alive: true, fled: false },
+    ], over: false, round: 1, order: ['p', 'm1'], turnIdx: 0 };
+    Game.equippedWeapon = () => ({ range: 1, bonus: 0, name: 'fists', unarmed: true });
+    try { Game.tbPlayerStrike('m1'); } catch (e) {}
+    Game.tbfight = null;
+    ok('player strike -> might', Game.ledger().might >= m0 + 2, `${m0} -> ${Game.ledger().might}`);
     try { Game.intimidate('nobody'); } catch (e) {}
     ok('intimidate -> might', Game.ledger().might >= m0 + 3);
     freshGame();

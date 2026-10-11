@@ -330,16 +330,22 @@
         const RESONANCE_NEED = 35;
         const armSurge = (why) => {
           // HONESTY (gap fix 2026-10-10): the message always promised
-          // ×(1.5×mult) but the burn site applied a flat ×1.5 — a chosen
+          // ×(1.5×mult) but the old burn site applied a flat ×1.5 — a chosen
           // wedding ring overstated its surge 3×. Store the real multiplier;
-          // the feastBurn wrap applies it (true = legacy flat ×1.5).
+          // the feasted buff applies it (true = legacy flat ×1.5).
+          // REWORK (feast-surge 2026-10-10, Worker B): the arming no longer
+          // feeds an on-strike burn. It GATES the feast buff: the next feast
+          // grants FEASTED until dawn (strikes & abilities uplifted by
+          // quality × this devotion multiplier). The arming is spent only by
+          // real combat use of the buff — a feast that warms no blades costs
+          // no devotion.
           s.prog.feastSurge = 1.5 * mult;
           return why;
         };
         if (maxed >= 3) {
-          msg = armSurge(`You hold ${name}. The feast was the weapon — and they are with you. (Next feastburn surges ×${(1.5 * mult).toFixed(1)})`);
+          msg = armSurge(`You hold ${name}. The feast was the weapon — and they are with you. (The next feast grants FEASTED until dawn: strikes & abilities uplifted, devotion ×${(1.5 * mult).toFixed(1)} — richer feasts hit harder.)`);
         } else if (resonance >= RESONANCE_NEED) {
-          msg = armSurge(`You hold ${name}. Your gifts are not mastered — but they are lived-in, worn smooth by use, and they are with you. The feast was the weapon. (Next feastburn surges ×${(1.5 * mult).toFixed(1)})`);
+          msg = armSurge(`You hold ${name}. Your gifts are not mastered — but they are lived-in, worn smooth by use, and they are with you. The feast was the weapon. (The next feast grants FEASTED until dawn: strikes & abilities uplifted, devotion ×${(1.5 * mult).toFixed(1)} — richer feasts hit harder.)`);
         } else if (unmaxed.length) {
           // FOCUSED PRACTICE: the closest-to-complete gift gets the session.
           const needFor = (a) => ((a.level || 1) === 1 ? 10 : 25) - (a.xp || 0);
@@ -617,7 +623,7 @@
           this.progState().tableWaiting = true;
           this.say('The table is being set. They are watching to see who comes to it.');
         } catch (e) {}
-        this.say(`◈ ARC IV — THE INEFFICIENCY. SYSTEM: "ROUNDING ERROR RECLASSIFIED: ANOMALY. Organic consumption yields impossible output. Recalculating. Recalculating." — They finally see it. The thing they laughed at — needing to EAT — is the engine. Their confusion is your weapon now. You fought every draft they threw at you — the calibration fauna, the audience's notes, the Final Draft, the Mirror Draft, the Producers themselves — lived through their Show, weathered the worst together, and built something bigger than a village. One day there will be a table, and humanity will need a case to make. The case is made of deeds, not words — and yours are done. (Feastburn burns hotter from here.)`);
+        this.say(`◈ ARC IV — THE INEFFICIENCY. SYSTEM: "ROUNDING ERROR RECLASSIFIED: ANOMALY. Organic consumption yields impossible output. Recalculating. Recalculating." — They finally see it. The thing they laughed at — needing to EAT — is the engine. Their confusion is your weapon now. You fought every draft they threw at you — the calibration fauna, the audience's notes, the Final Draft, the Mirror Draft, the Producers themselves — lived through their Show, weathered the worst together, and built something bigger than a village. One day there will be a table, and humanity will need a case to make. The case is made of deeds, not words — and yours are done. (Feasted buffs burn hotter from here.)`);
         try { this.state.scholar.arc4burn = 1.25; } catch (e) {}
       }
       try { this.save(); } catch (e) {}
@@ -801,7 +807,9 @@
       if ((pg.flags || {}).comfort && (s.trauma || 0) > 0) s.trauma = Math.max(0, s.trauma - 1);
       // NPC ladder: villagers climb too, and the village notices
       this.npcLadderDaily();
-      // feastSurge consumption is handled at the burn site (food.js wrap below)
+      // feastSurge consumption is handled by the feasted buff's first combat
+      // use (feastBuff.js noteFeastedCombatUse) — a feast that warms no
+      // blades spends no devotion.
     },
     npcLadderDaily() {
       const s = this.state.scholar, pg = this.progState();
@@ -933,47 +941,14 @@
       return r;
     };
 
-    // feastBurn: the surge — a channeled keepsake makes the feast hit harder.
-    // Arc IV makes every burn hotter. Mark feastSurgeUsed for the arc trigger.
-    // HONESTY (Steve 2026-10-08, break-it): the base feastBurn() states its own
-    // multiplier — the wrapper's extra multiplier used to apply SILENTLY
-    // (said x1.5, dealt x2.25 with a surge). Now the total is stated.
-    // HONESTY (gap fix 2026-10-10): feastSurge now carries the promised
-    // multiplier (a number); plain `true` (old saves, tests) = flat ×1.5.
-    const _feastBurn = Game.feastBurn;
-    Game.feastBurn = function () {
-      let mult = 1;
-      let why = '';
-      let armedSurge = null;
-      try {
-        const s = this.state.scholar;
-        const surge = s.prog && s.prog.feastSurge;
-        if (surge) {
-          const sm = typeof surge === 'number' ? surge : 1.5;
-          mult *= sm;
-          armedSurge = sm;
-          why += ` A channeled keepsake feeds the flames (FEAST SURGE ×${sm}).`;
-        }
-        if (s.arc4burn) { mult *= s.arc4burn; why += ' Arc IV burns hotter.'; }
-        if (this.ledgerAdd) this.ledgerAdd('might', 2);
-      } catch (e) {}
-      const r = _feastBurn ? _feastBurn.call(this) : 0;
-      const out = r * mult > 0 ? r * mult : r;
-      // HONESTY (2026-10-10): the surge is spent only by a REAL feastburn.
-      // feastBurn is called on every player strike, but the base burn returns
-      // 0 (silently) when the war chest holds <300 kcal — that strike is no
-      // feastburn, so consuming the surge there wastes it silently AND marks
-      // the feastSurgeUsed deed for nothing. The surge stays armed until fuel
-      // actually burns.
-      if (r > 0 && armedSurge != null) {
-        try {
-          const s = this.state.scholar;
-          s.prog.feastSurge = false; s.prog.feastSurgeUsed = true;
-        } catch (e) {}
-      }
-      if (r > 0 && mult !== 1) this.say(`The burn catches on held feeling.${why} x${Math.round(out * 100) / 100} all told.`);
-      return out;
-    };
+    // feastBurn RETIRED (feast-surge rework, Worker B 2026-10-10): the
+    // on-strike burn trigger is gone. The devotion arming (prog.feastSurge)
+    // now gates Game.grantFeastBuff (feastBuff.js): the feast grants a buff
+    // window until next dawn, and strikes + ability resolutions read the
+    // feasted multiplier via the tbDamage player-source hook. feastSurgeUsed
+    // marks on first real combat use of the buff, not on the burn.
+    // The old wrapper is deleted, not wrapped — nothing calls feastBurn
+    // anymore (food.js keeps a deprecated stub for old scripts).
 
     // lootCorpse: taken keepsakes become bonded sentimental items with a memory
     // of the dead — grief as fuel, handled with care.

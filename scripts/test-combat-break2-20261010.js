@@ -16,9 +16,11 @@
 //      copy ever promised odds (verified: no say() with flee %).
 //
 // HELD (attacks attempted, engine resisted — documented, not fixed):
-//   E1 feastBurn integrity: exactly one burn per tbPlayerStrike; kcal delta
-//      equals the stated burn; multiplier matches computed pipeline.
-//   E2 single feastBurn call site in src (static guard).
+//   E1 FEASTED integrity (feast-surge rework 2026-10-10): exactly one FEASTED
+//      line per strike while feasted; stated mult == applied mult; the buff
+//      burns no banked kcal; the strike line states what landed.
+//   E2 feastBurn trigger retired: zero this.feastBurn() call sites in src
+//      (static guard); the tbDamage feasted hook is present.
 //   E3 dead_aim sibling sweep (f5794463): useAbility('dead_aim.dead_aim_shot')
 //      advances the world exactly once (monster acts once, not twice).
 //   E4 refused ability actions grant no XP (fizzle != practice).
@@ -60,40 +62,47 @@ function ok(cond, name, detail) {
   };
   const abXP = (id) => { const a = (s.abilities || []).find(a => (a.id || a) === id); return a ? (a.xp || 0) : null; };
 
-  // ================= EXPLOIT E1: feastBurn integrity =================
-  console.log('\n[exploit] E1: feastBurn — stated vs actual, exactly once per strike');
+  // ================= EXPLOIT E1: FEASTED integrity =================
+  // (feast-surge rework 2026-10-10, Worker B: the on-strike feastBurn trigger
+  // is retired; the timed buff uplifts via the tbDamage player-source hook.)
+  console.log('\n[exploit] E1: FEASTED — stated vs actual, exactly once per strike, no bank burn');
   {
     const mk = H.synthFight(Game, 'bulldozer', { mhp: 10000, php: 100 });
     const p = Game.tbFighter('p');
     p.mx = 5; p.my = 4; // adjacent to monster at (6,4): range 1 reachable
     p.moveLeft = 0; p.acted = false;
-    // Bank 1000 kcal: fed line is 2400*mult; kcalCap 2400 baseline.
-    s.kcal = 3400; s.kcalQ = 1.0;
-    const bankedBefore = Game.banked();
-    ok(bankedBefore >= 300, 'banked >= 300 (feastBurn fires)', 'banked=' + bankedBefore);
+    s.prog = s.prog || {}; s.prog.feastSurge = 1.5; s.prog.feastSurgeUsed = false;
+    const g = Game.grantFeastBuff({ quality: 1, served: [], guests: [], daypart: 1 });
+    ok(g && g.granted && Math.abs(g.mult - 2.03) < 1e-9, 'buff granted at x2.03 (q1 x devotion 1.5)', 'got x' + (g && g.mult));
     const said = [];
     const _say = Game.say; Game.say = (m) => { said.push(String(m)); };
     const kcalBefore = s.kcal;
+    const mhpBefore = Game.tbFighter(mk).hp;
     Game.equippedWeapon = () => ({ range: 1, bonus: 0, name: 'fists', unarmed: true });
     Game.tbPlayerStrike(mk);
     Game.say = _say;
-    const burns = said.filter(m => m.indexOf('FEASTBURN') === 0);
-    ok(burns.length === 1, 'exactly one FEASTBURN per strike', 'saw ' + burns.length);
-    const stated = burns.length ? parseInt((burns[0].match(/−(\d+) banked/) || [])[1] || '-1', 10) : -1;
-    const actual = kcalBefore - s.kcal;
-    ok(stated > 0 && actual === stated, 'kcal delta == stated burn', 'stated=' + stated + ' actual=' + actual);
-    const statedMult = burns.length ? parseFloat((burns[0].match(/×([0-9.]+)/) || [])[1] || '-1') : -1;
-    // feasting (banked >=300, not gorged): x1.5, q=1.0 -> no quality modifier
-    ok(Math.abs(statedMult - 1.5) < 1e-9, 'stated multiplier = x1.5 (feasting)', 'got x' + statedMult);
+    const fl = said.filter(m => m.indexOf('FEASTED ×') === 0);
+    ok(fl.length === 1, 'exactly one FEASTED line per strike', 'saw ' + fl.length);
+    const statedMult = fl.length ? parseFloat((fl[0].match(/×([0-9.]+)/) || [])[1] || '-1') : -1;
+    ok(Math.abs(statedMult - 2.03) < 1e-9, 'stated multiplier = x2.03', 'got x' + statedMult);
+    ok(s.kcal === kcalBefore, 'the buff burns no banked kcal (timed window, not a burn)', `kcal ${kcalBefore} -> ${s.kcal}`);
+    const strikeLine = said.find(m => m.indexOf('You STRIKE') === 0) || '';
+    const shown = parseInt((strikeLine.match(/for (\d+)/) || [])[1] || '-1', 10);
+    const dealt = mhpBefore - Game.tbFighter(mk).hp;
+    ok(shown === dealt, 'strike line states what LANDED (uplifted)', `line=${shown} dealt=${dealt}`);
   }
 
-  // ================= EXPLOIT E2: single feastBurn call site =================
-  console.log('\n[exploit] E2: feastBurn has exactly one engine call site');
+
+  // ================= EXPLOIT E2: feastBurn trigger retired =================
+  // (feast-surge rework 2026-10-10, Worker B: the on-strike burn is gone;
+  // the static guard now pins the retirement — zero call sites.)
+  console.log('\n[exploit] E2: this.feastBurn() has zero engine call sites (trigger retired)');
   {
     const fs = require('fs'), path = require('path');
     const src = fs.readFileSync(path.join(H.ROOT, 'src/js/game.js'), 'utf8');
     const sites = (src.match(/this\.feastBurn\(\)/g) || []).length;
-    ok(sites === 1, 'this.feastBurn() called once in game.js (tbPlayerStrike)', 'saw ' + sites);
+    ok(sites === 0, 'this.feastBurn() called nowhere in game.js (timed buff replaced it)', 'saw ' + sites);
+    ok(src.indexOf('feastedActive()') >= 0, 'tbDamage carries the feasted player-source hook');
   }
 
   // ================= EXPLOIT E3: dead_aim single turn advance =================

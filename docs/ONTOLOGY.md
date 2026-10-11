@@ -547,6 +547,23 @@ Examine action + observation memory + recognition. Looking closely at a plant is
 
 **Consumes:** state.codex.observations, state.codex.plants (plantKnown), Game.data.plants (description, taxon, seasons, tileAffinity, lookalikeNote), state.map cell species (plantSpecies/bushSpecies/tree per tile)
 
+### feastSurge (`feastBuff.js`)
+Feast Surge — the TIMED BUFF (Worker B, 2026-10-10, Steve: "Okay build carefully"). Replaces the retired on-strike feastBurn trigger: a feast grants a buff window that decays at the next dawn. During the window, strikes AND ability resolutions read the feasted multiplier. The devotion arming (scholar.prog.feastSurge) is the gate — the buff only grants when armed.
+
+**Provides:** grantFeastBuff(feast), feastedActive(), feastedBuffState(), feastedMult(), feastedForm(abilityId, actionId), applyFeastedForm(abilityId, actionId, target, preHp), noteFeastedCombatUse(), clearFeastBuff(expired), feastedLine(), feastSurgeCfg()
+
+**Rules:**
+- devotion_gate: the buff grants ONLY when scholar.prog.feastSurge is armed (code: grantFeastBuff)
+- timed_not_trigger: the buff is a window until next dawn, never an on-strike burn (code: grantFeastBuff, feastedActive)
+- no_double_stack: re-feasting while feasted REFRESHES (better quality wins, expiry extends) — never stacks (code: grantFeastBuff)
+- honest_use_marking: feastSurgeUsed marks ONLY on real combat use (strike or ability while feasted, inCombat); a feast that warms no blades spends no devotion (code: noteFeastedCombatUse)
+- clean_expiry: expiry is lazy-evaluated against absolute (untilDay, untilPart) — save/load mid-buff is clean, no phantom buffs (code: feastedActive)
+- generic_forms: feasted ability variants are data-driven (feast-surge.json twists) through generic handlers — never hand-written per-ability mechanics (code: applyFeastedForm)
+- telegraph_honesty: every buff label states the true effective multiplier (code: grantFeastBuff, feastedLine, tbDamage hook in game.js)
+- arc4_hotter: Arc IV's arc4burn multiplies the granted buff and is stated in the grant line (code: grantFeastBuff)
+
+**Consumes:** state.scholar (feastBuff, prog.feastSurge, prog.feastSurgeUsed, day, health), dayPart, inCombat, tbFighter, addHealth, say, save, Game.data.feastSurge (src/data/feast-surge.json)
+
 ### field-fights (`fieldFights.js`)
 Off-screen blow-by-blow fights for villager-vs-monster meetings. Real rounds, real stats, the monster's real attack data — never an outcome table. (Steve 2026-10-08: "It should be a fight. A hard one.")
 

@@ -71,7 +71,18 @@ Steve's rule: NO second pool. The kcal bar IS the bank — one energy economy, c
 - **One pool, one cap**: `kcalCap = 2400 × metabolicMult × bankMult`. Baseline human banks ~a day (2400). The "fed" line is `2400 × metabolicMult`; kcal above it is **banked** — the war chest.
 - **Skillsets expand the bank**: `food.bank_mult` (new) — **Deep Reserves** (System body-horror, ×5 → 12,000 kcal war chest); `food.eat_target_mult` (Extra Stomach, legacy, ×2) stacks → ×10 = 24,000. The glutton-warrior is a real build: the trade is you must EAT that much to fill it.
 - **Fill**: **Eat** fills the bar to cap. Past "fed", the message says so ("Past full — the bank takes it"). Pool quality (`kcalQ`, weighted average of meal quality — raw 0.5, safe raw 0.7, cooked 1.0, preserved 1.1, specialist-made 1.3) is tracked for the burn.
-- **Burn**: **FEASTBURN** — player attacks with ≥300 banked auto-burn 300 (400 when gorged, i.e. ≥75% of max bank) for ×1.5 (×1.75 gorged) damage, stated every time: "the feast was the weapon." Specialist fuel burns hottest (×1.15), scraps burn dirty (×0.85).
+- **Burn**: **FEASTED** — the timed buff (rework 2026-10-10, Worker B; Steve: "Okay build carefully"). The old on-strike FEASTBURN trigger (burn banked ≥300 kcal for ×1.5) is retired — it was near-unreachable (0 real burns in sims). Now: a feast (Worker A's event: pantry cost, guests, broadcast beats) calls `Game.grantFeastBuff({quality 0..2, served, guests, daypart})`. The buff grants ONLY when the devotion is armed (`scholar.prog.feastSurge`, channeled via keepsake) and lasts until the next dawn — visible countdown ("FEASTED ×2.03 — strikes & abilities uplifted · until dawn (3 parts left)"). During the window, strikes AND ability resolutions read the feasted multiplier through the tbDamage player-source hook (the "You STRIKE for N" line states the true uplifted number). Effective mult = quality uplift × devotion surge: q0 1.2 / q1 1.35 / q2 1.5 × surge (1.5 base, 2.25 chosen keepsake, 3.0 wedding ring). Re-feasting while feasted REFRESHES (better quality wins, window extends) — never stacks. `feastSurgeUsed` (Arc IV deed gate) marks only on real combat use; a feast that warms no blades spends no devotion. Feasted ability variants: the known ability temporarily evolved — a GENERIC framework (feastBuff.js), uplift + data-driven twists (`src/data/feast-surge.json`, only where fiction supports: field_medicine +50% heal, war_cry/scream_cheese +1 round stun, pocket_sand +1 round blind; default = clean uplift). Composes with the 6-slot economy and synergies multiplicatively.
+- **Feast-surge calibration** (2026-10-10, feast→fight sims, 30 fights/config × 2 seeds, 200-hp bulldozer, fists):
+
+  | Buff | Nominal mult | Measured uplift | Strikes-to-kill (vs 23.9 base) |
+  |---|---|---|---|
+  | q0 × devotion 1.5 | ×1.8 | 1.75–1.79× | 13.5 |
+  | q1 × devotion 1.5 | ×2.03 | 1.93–1.99× | 12.2 |
+  | q2 × devotion 1.5 | ×2.25 | 2.19–2.63× | 11.2 |
+  | q2 × chosen 2.25 | ×3.38 | 3.16–3.80× | 6.5 |
+  | q2 × wedding ring 3.0 | ×4.5 | 4.24× | 6.0 |
+
+  Measured runs slightly under nominal (monster armor eats a flat amount after the mult — honest). The top end is intentionally explosive but triply gated: a legendary feast (pantry cost), a rare devotion multiplier, and a dawn expiry. Levers: `src/data/feast-surge.json` (qualityUplift, surgeDefault, refeast policy, twists, feastMinimums).
 - **Decay**: −20%/night on the banked portion only. The body pool below "fed" is untouched. Use it or lose it.
 - **UI**: no RESERVE row. The FOOD bar shows `kcal/cap`, glows gold past the fed line, carries the GORGED tag. No Feast button — Eat is the ritual.
 - **Migration**: old `reserveKcal` folds into the bar once via `migrateReserve()` in `status()`.
