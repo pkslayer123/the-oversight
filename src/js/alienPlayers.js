@@ -435,7 +435,11 @@
       // We use a synthetic "monster" wrapper for combat compatibility,
       // but the fighter kind is 'hostile' not 'monster'
       try {
-        this.state.alienEncounter = { pid: pid, fighter: fighter };
+        // Only the pid persists: the fighter itself rides the tbfight
+        // snapshot in syncRun (and goes stale the moment the fight advances).
+        // Storing it here too duplicated it in every mid-fight alien save and
+        // nothing ever read the copy (break-it persistence 2026-10-11 r10).
+        this.state.alienEncounter = { pid: pid };
         this.say('👤 A figure steps out of the treeline. Human-shaped. But something\'s wrong.');
         this.say('They move like someone who\'s done this before. Many times. On many worlds.');
         this.apCombatIntro(pid);

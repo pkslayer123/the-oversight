@@ -6567,6 +6567,33 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         }
         if (cx && !cx.recipes) cx.recipes = {};
       } catch (e) {}
+      // ALIEN CODEX RE-GATE (break-it persistence 2026-10-11 r10): saves
+      // written before 2026-10-10 carry codex.aliens entries whose name was
+      // stored UNGATED (apCodexEntry used to write p.name outright - "the
+      // human persona's name, safe pre-reveal"). The codex renderer prints
+      // entry.name verbatim, so Continuing such a save showed the true
+      // persona name with no reveal ever happening - a knowledge leak that
+      // only exists because of the load boundary. Re-run the entry builder
+      // for every stored persona: it derives every field from the current
+      // knowledge truth (ap.known), so revealed personas keep their names
+      // and unrevealed ones read as strangers. Idempotent by construction.
+      try {
+        const cxa = this.state && this.state.codex && this.state.codex.aliens;
+        if (cxa && typeof this.apCodexEntry === 'function') {
+          for (const cpid of Object.keys(cxa)) {
+            try { this.apCodexEntry(cpid); } catch (e2) {}
+          }
+        }
+      } catch (e) {}
+      // DEAD FIGHTER PAYLOAD (break-it persistence 2026-10-11 r10): older
+      // saves stored the whole fighter object inside state.alienEncounter.
+      // Only the pid was ever read - the copy was a stale fight-start
+      // duplicate riding every save (apStartEncounter no longer writes it).
+      // Drop it at the load boundary; subsequent saves are clean.
+      try {
+        const ae0 = this.state && this.state.alienEncounter;
+        if (ae0 && ae0.fighter) delete ae0.fighter;
+      } catch (e) {}
       const r = s.run;
       this.map = r.map; this.dayPart = r.dayPart; this.location = r.location;
       this.departed = r.departed; this.log = r.log || [];
