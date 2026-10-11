@@ -944,12 +944,14 @@
     Game.feastBurn = function () {
       let mult = 1;
       let why = '';
+      let armedSurge = null;
       try {
         const s = this.state.scholar;
         const surge = s.prog && s.prog.feastSurge;
         if (surge) {
           const sm = typeof surge === 'number' ? surge : 1.5;
-          mult *= sm; s.prog.feastSurge = false; s.prog.feastSurgeUsed = true;
+          mult *= sm;
+          armedSurge = sm;
           why += ` A channeled keepsake feeds the flames (FEAST SURGE ×${sm}).`;
         }
         if (s.arc4burn) { mult *= s.arc4burn; why += ' Arc IV burns hotter.'; }
@@ -957,6 +959,18 @@
       } catch (e) {}
       const r = _feastBurn ? _feastBurn.call(this) : 0;
       const out = r * mult > 0 ? r * mult : r;
+      // HONESTY (2026-10-10): the surge is spent only by a REAL feastburn.
+      // feastBurn is called on every player strike, but the base burn returns
+      // 0 (silently) when the war chest holds <300 kcal — that strike is no
+      // feastburn, so consuming the surge there wastes it silently AND marks
+      // the feastSurgeUsed deed for nothing. The surge stays armed until fuel
+      // actually burns.
+      if (r > 0 && armedSurge != null) {
+        try {
+          const s = this.state.scholar;
+          s.prog.feastSurge = false; s.prog.feastSurgeUsed = true;
+        } catch (e) {}
+      }
       if (r > 0 && mult !== 1) this.say(`The burn catches on held feeling.${why} x${Math.round(out * 100) / 100} all told.`);
       return out;
     };
