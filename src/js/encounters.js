@@ -209,32 +209,43 @@
   // define it; do not add a second one.
 
   // ================= 5. INLINE ACTION FEEDBACK =================
-  // The no-scroll-up pattern. The app marks the log at action start
-  // (feedbackMark); every say() after the mark lands in fbLines, which the
-  // UI renders in the feedback card directly under the action bars.
+  // The no-scroll-up pattern. The app marks the stream at action start
+  // (feedbackMark); every say() after the mark is tagged 'feedback', which
+  // the UI renders in the feedback card directly under the action bars.
+  // ONE TEXT STREAM (Steve 2026-10-11): a marked say() lands on the
+  // feedback surface ONLY — it is NOT also written to narration. One
+  // emission, one surface: the green narration box no longer echoes the
+  // orange feedback card's text.
   // feedback(text) is the explicit path — use it for action results.
-  var _origSay = G.say;
   G.say = function (msg) {
-    try { this.state.logSeq = (this.state.logSeq || 0) + 1; } catch (e) {}
-    var r = _origSay.call(this, msg);
-    try {
-      if (this.state.fbMark != null && this.state.logSeq > this.state.fbMark) {
-        var buf = this.state.fbLines = this.state.fbLines || [];
-        buf.push(msg);
-        while (buf.length > 4) buf.shift();
-      }
-    } catch (e) {}
-    return r;
+    // Mark check: the mark is the stream length at mark time; any emission
+    // from that point on is feedback (mirrors the old logSeq increment-then-
+    // compare: the first say() after the mark is already feedback).
+    var feedbackMode = false;
+    try { feedbackMode = (this.state.fbMarkIdx != null && (this.log || []).length >= this.state.fbMarkIdx); } catch (e) {}
+    return this.emit(msg, feedbackMode ? 'feedback' : 'narration');
   };
   G.feedbackMark = function () {
-    try { this.state.fbMark = this.state.logSeq || 0; this.state.fbLines = []; } catch (e) {}
+    try { this.state.fbMarkIdx = (this.log || []).length; } catch (e) {}
   };
   G.feedbackLines = function () {
-    try { return (this.state.fbLines || []).slice(-4); } catch (e) { return []; }
+    // The orange card's feed: feedback-surface lines since the mark, last 4.
+    try {
+      var idx = (this.state && this.state.fbMarkIdx != null) ? this.state.fbMarkIdx : 0;
+      var out = [];
+      var log = this.log || [];
+      for (var i = idx; i < log.length; i++) {
+        var e = log[i];
+        var s = (e && typeof e === 'object') ? (e.surface || 'narration') : 'narration';
+        if (s !== 'feedback') continue;
+        out.push(e);
+        if (out.length > 4) out.shift();
+      }
+      return out;
+    } catch (e) { return []; }
   };
   G.feedback = function (msg) {
-    try { if (this.state.fbMark == null) this.state.fbMark = (this.state.logSeq || 0); } catch (e) {}
-    this.say(msg);
+    this.emit(msg, 'feedback');
   };
 
   // ================= 6. PREY TUNING =================

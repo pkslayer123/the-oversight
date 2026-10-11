@@ -50,7 +50,9 @@ const ok = (name, cond, extra) => {
   ok('stolen item is honestly gone (not duped, not returned)',
     !m.stolen && Game.state.scholar.inventory.length === invBefore,
     `stolen=${JSON.stringify(m.stolen)} inv=${Game.state.scholar.inventory.length}/${invBefore}`);
-  const gapSaid = Game.log.some(x => typeof x === 'string' && x.includes('gap in the treeline'));
+  // ONE TEXT STREAM (2026-10-11): log lines are String objects carrying a
+  // surface tag — String(x) recovers the text for the typeof-string guard.
+  const gapSaid = Game.log.some(x => String(x).includes('gap in the treeline'));
   ok('escape narrated honestly (gap in the treeline)', gapSaid);
   void stolenName;
 

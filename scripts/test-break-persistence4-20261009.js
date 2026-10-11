@@ -330,7 +330,9 @@ async function childMain() {
   check('T1.3 Game props identical after load (excl. log)', propDiffs.length === 0,
     propDiffs.length ? propDiffs.slice(0, 10).join(' | ') : 'all survive');
   check('T1.4 log truncated to last 40 by design, order kept',
-    gB.log.length === 40 && gB.log[0] === 'log line 10' && gB.log[39] === 'log line 49',
+    // ONE TEXT STREAM (2026-10-11): log lines are String objects with a
+    // surface tag — String() recovers the text for strict comparison.
+    gB.log.length === 40 && String(gB.log[0]) === 'log line 10' && String(gB.log[39]) === 'log line 49',
     'len=' + gB.log.length);
   // mid-fight specifics
   const f = Game.tbfight;

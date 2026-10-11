@@ -48,6 +48,8 @@
 //   - syncMonsterAlias() (scholar.monster mirrors the player-tile monster for unmigrated consumers)
 //   - spawnWorldMonster(mdef, tx, ty, opts) -> monster
 //   - removeWorldMonster(m)
+//   - emit(text, surface) -> the one text stream: each line pushed once with a surface tag (narration|feedback|toast|bubble|dialogue|contest|person); say() = emit(text,'narration')
+//   - normalizeLogEntries(arr) -> lift legacy bare-string log entries to tagged entries
 //   - nearestWorldMonster(tx, ty) -> monster | null
 //   - worldMonsterCap() -> int (3 base, 5 arrived, 8 deep, +1 night)
 //   - maintainWorldMonsters(), wanderWorldMonsters(), villagerMonsterTick(), worldTick() (living-world step on tile entry)
@@ -170,6 +172,30 @@
     'A doorframe with no door. The threshold is worn smooth by feet that aren\'t coming back.',
     'Foundation stone, mossy on the north side. Whatever stood here was proud of itself once.',
   ];
+
+  // ONE TEXT STREAM — line factory (Steve 2026-10-11).
+  // A stream line is a String object carrying its surface tag: .surface,
+  // .text, .t. String ops keep working for the hundreds of existing
+  // Game.log readers (indexOf, regex .test, String(l), template literals —
+  // all coerce via the primitive), while .surface routes the line to
+  // exactly one surface. toJSON keeps saves JSON-safe (named props on a
+  // String object would otherwise be dropped by JSON.stringify).
+  const LOG_SURFACES = ['narration', 'feedback', 'toast', 'bubble', 'dialogue', 'contest', 'person'];
+  function makeLogEntry(text, surface, t) {
+    const e = new String(text);
+    e.text = text;
+    e.surface = LOG_SURFACES.indexOf(surface) >= 0 ? surface : 'narration';
+    e.t = (typeof t === 'number') ? t : Date.now();
+    e.toJSON = function () { return { text: this.text, surface: this.surface, t: this.t }; };
+    return e;
+  }
+  // logText(e): the primitive text of any log entry shape — String-object
+  // line, legacy bare string, or plain {text} object.
+  function logText(e) {
+    if (e == null) return '';
+    if (typeof e === 'object' && 'text' in e) return e.text;
+    return String(e);
+  }
 
   const Game = {
     data: null, state: null, map: null,
@@ -6596,7 +6622,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } catch (e) {}
       const r = s.run;
       this.map = r.map; this.dayPart = r.dayPart; this.location = r.location;
-      this.departed = r.departed; this.log = r.log || [];
+      this.departed = r.departed;
+      // ONE TEXT STREAM (2026-10-11): pre-stream saves stored bare strings.
+      this.log = this.normalizeLogEntries(r.log);
       this.homeRegion = r.homeRegion; this.villagerId = r.villagerId;
       this.encounterDone = r.encounterDone; this.wanderer = r.wanderer || null;
       // PENDING ENCOUNTER (break-it camps-2 2026-10-08): restore the "face it"
@@ -33980,19 +34008,49 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // Kept as a no-op shim so any stale caller doesn't crash.
       return null;
     },
-    say(msg) {
-      // DEDUP (Steve 2026-10-05): never say the exact same thing twice in a row.
-      // Pack monsters declaring the same attack were spamming the log 4×.
-      // This is a safety net — the per-attack dedup in sayTelegraphOnce is primary.
+    // ONE TEXT STREAM (Steve 2026-10-11): Game.log is the single text
+    // stream. Every emitted line is pushed EXACTLY ONCE and carries a
+    // surface tag — narration | feedback | toast | bubble | dialogue |
+    // contest | person. Renderers consume ONLY their own surface. (The
+    // green narration box and the orange feedback card were rendering the
+    // SAME line: say() dual-wrote to Game.log AND the feedback buffer, and
+    // narrationBoxHTML preferred feedback lines. Structural, fixed here.)
+    //   say()      -> 'narration' (ambient/world narration, green box)
+    //   feedback() -> 'feedback'  (action results, orange card; encounters.js)
+    //   toast()    -> 'toast'     (top-screen fading toasts; app.js)
+    // emit(text, surface) is the single write path — everything routes here.
+    emit(text, surface) {
+      let msg = text;
       // OBJECT GUARD (Steve 2026-10-06): never push [object Object] to the log.
-      if (msg && typeof msg === 'object') {
+      // (A String-object line passes through: String(msg) recovers its text.)
+      if (msg && typeof msg === 'object' && !(msg instanceof String)) {
         msg = msg.text || msg.desc || msg.msg || msg.message || String(msg);
       }
       msg = String(msg == null ? '' : msg);
       if (!msg) return;
       const log = this.log;
-      if (log.length > 0 && log[log.length - 1] === msg) return;
-      log.push(msg); if (log.length > 40) log.shift();
+      // DEDUP (Steve 2026-10-05): never say the exact same thing twice in a row.
+      // Pack monsters declaring the same attack were spamming the log 4×.
+      // This is a safety net — the per-attack dedup in sayTelegraphOnce is primary.
+      const last = log.length > 0 ? log[log.length - 1] : null;
+      if (last != null && logText(last) === msg) return;
+      log.push(makeLogEntry(msg, surface, Date.now()));
+      if (log.length > 40) log.shift();
+    },
+    // normalizeLogEntries: lift ANY stored shape to tagged String-object
+    // lines — legacy bare strings (pre-stream saves), plain {text,surface}
+    // objects (JSON round-trips), or already-tagged lines.
+    normalizeLogEntries(arr) {
+      return (arr || []).map(e => {
+        if (e instanceof String) return e;
+        const t = (e && typeof e === 'object') ? e.text : e;
+        const s = (e && typeof e === 'object') ? e.surface : null;
+        const tm = (e && typeof e === 'object' && typeof e.t === 'number') ? e.t : 0;
+        return makeLogEntry(String(t == null ? '' : t), s, tm);
+      }).filter(e => String(e).length > 0);
+    },
+    say(msg) {
+      this.emit(msg, 'narration');
     },
     // pickFresh(pool, key): cycle through narration lines without repeating
     // until every line has been used once. Repeating the same horror line

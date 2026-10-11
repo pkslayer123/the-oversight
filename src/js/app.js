@@ -1758,23 +1758,32 @@
   function refresh() { expeditionScreen(); }
 
   // ACTION FEEDBACK: every action's result renders right under the action
-  // bars — never scroll to read what just happened. The engine marks the log
-  // at action start (Game.feedbackMark); every say() after the mark lands in
-  // the feedback card. Wrap every action invocation with actAndRefresh.
+  // bars — never scroll to read what just happened. The engine marks the
+  // stream at action start (Game.feedbackMark); every say() after the mark
+  // is tagged 'feedback' and lands in the feedback card. Wrap every action
+  // invocation with actAndRefresh.
   //
   // APP-SIDE FALLBACK (Steve 2026-10-07): the engine currently exposes no
   // feedbackMark/feedbackLines, which silently no-ops the feedback card and
   // every actAndRefresh call. The mark is purely presentation — a bookmark
-  // into Game.log, which the engine still maintains via say() — so app.js
-  // keeps its own. If the engine ever defines these, the engine wins: no
-  // clobber, no logic change, presentation only.
+  // into the text stream, which the engine still maintains via say() — so
+  // app.js keeps its own. If the engine ever defines these, the engine wins:
+  // no clobber, no logic change, presentation only.
+  // ONE TEXT STREAM (2026-10-11): the fallback reads the same tagged
+  // stream — feedback surface only, never narration.
   let _fbMarkIdx = 0;
   if (typeof Game !== 'undefined' && Game) {
     if (typeof Game.feedbackMark !== 'function') {
       Game.feedbackMark = function() { try { _fbMarkIdx = (Game.log || []).length; } catch (e) {} };
     }
     if (typeof Game.feedbackLines !== 'function') {
-      Game.feedbackLines = function() { try { return (Game.log || []).slice(_fbMarkIdx); } catch (e) { return []; } };
+      Game.feedbackLines = function() {
+        try {
+          return (Game.log || []).slice(_fbMarkIdx).filter(
+            e => ((e && typeof e === 'object' ? e.surface : null) || 'narration') === 'feedback'
+          ).slice(-4);
+        } catch (e) { return []; }
+      };
     }
   }
   function actAndRefresh(fn) {
@@ -1835,13 +1844,17 @@
     try { lines = (Game.feedbackLines && Game.feedbackLines()) || []; } catch (e) {}
     if (!lines.length) return '';
     const teases = _synTeaseSet();
+    // ONE TEXT STREAM (2026-10-11): entries carry {text, surface}; legacy
+    // bare strings still render.
+    const textOf = l => (l && typeof l === 'object') ? (l.text || '') : String(l == null ? '' : l);
     return lines.map(l => {
-      if (_isSynTeaseLine(l, teases)) {
+      const t = textOf(l);
+      if (_isSynTeaseLine(t, teases)) {
         // IN-THE-MOMENT TEASE: distinct styled block, right under the action
         // bars — the shiver you felt using those two abilities together.
-        return `<p class="fb-line fb-syntease" style="border-left:3px solid #b48cff;padding:6px 8px;background:rgba(150,100,255,.09);border-radius:6px;font-style:italic;margin:6px 0">🌀 ${esc(l)}</p>`;
+        return `<p class="fb-line fb-syntease" style="border-left:3px solid #b48cff;padding:6px 8px;background:rgba(150,100,255,.09);border-radius:6px;font-style:italic;margin:6px 0">🌀 ${esc(t)}</p>`;
       }
-      return `<p class="fb-line">${esc(l)}</p>`;
+      return `<p class="fb-line">${esc(t)}</p>`;
     }).join('');
   }
   function feedbackHTML() {
@@ -12307,18 +12320,31 @@
           setTimeout(() => { try { b.remove(); } catch (e) {} }, 5000);
         } catch (e) {}
       };
-      // Game.toast: ambient narration goes to toast, not the log
+      // Game.toast: ambient events go to the toast surface, not narration
       if (typeof Game !== 'undefined' && Game) {
         Game.toast = function(msg, important) {
           if (window.showToast) window.showToast(msg, important);
-          // Also log it (history), but don't show in narration box
-          try { this.log.push(String(msg)); if (this.log.length > 40) this.log.shift(); } catch (e) {}
+          // ONE TEXT STREAM (2026-10-11): toasts are their own surface —
+          // kept as history, never echoing into the narration box.
+          try {
+            if (typeof this.emit === 'function') this.emit(msg, 'toast');
+            else { this.log.push(String(msg)); if (this.log.length > 40) this.log.shift(); }
+          } catch (e) {}
         };
       }
     }
-    const lastNarr = (Game.log && Game.log.length) ? Game.log[Game.log.length - 1] : '';
-    const fb = feedbackInner();
-    const text = fb || lastNarr;
+    // ONE TEXT STREAM (2026-10-11): the narration box consumes ONLY the
+    // narration surface — never feedback lines. (The old `fb || lastNarr`
+    // echoed the orange feedback card's text in the green box: Steve
+    // 2026-10-11, same text in two stacked panels.)
+    const _stream = Game.log || [];
+    let lastNarr = '';
+    for (let i = _stream.length - 1; i >= 0; i--) {
+      const e = _stream[i];
+      const s = (e && typeof e === 'object') ? (e.surface || 'narration') : 'narration';
+      if (s === 'narration') { lastNarr = (e && typeof e === 'object') ? (e.text || '') : String(e); break; }
+    }
+    const text = lastNarr;
     if (!text) return '';
     // Strip HTML, show as plain narration (</p> boundaries become spaces
     // so adjacent feedback lines don't glue: "slams through!A woman..." fix
