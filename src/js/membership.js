@@ -822,9 +822,29 @@
             this.say(`${names.join(', ')} walk${names.length === 1 ? 's' : ''} back in — ${kindWord} at ${tonm}, days served. Still ours; membership never needed presence.`);
             if ((p.repayKcal || 0) > 0) {
               try {
-                var v = this.state.village || {}; v.pantry = v.pantry || [];
-                v.pantry.push({ name: 'Favor repaid — ' + tonm, kcalEach: Math.round(p.repayKcal), units: 1, spoilDay: day + 21 });
-                this.say(`🤝 The favor comes home with them: ${Math.round(p.repayKcal).toLocaleString()} kcal repaid, real food, into the pantry.`);
+                // PRICED FAVOR, HONESTLY PRICED (break-it regional
+                // 2026-10-10): the repayment used to mint from thin air —
+                // same class as the subordinate-tribute fix. It comes from
+                // the payer's own stores now; a bare pot repays bare, aloud.
+                var _repayWant = Math.round(p.repayKcal);
+                var _repayGot = _repayWant;
+                try {
+                  var _pov = (this._otherVillage && p.to) ? this._otherVillage(p.to) : null;
+                  if (_pov) {
+                    var _phave = Math.max(0, Math.round(_pov.pantryKcal || 0));
+                    _repayGot = Math.min(_repayWant, _phave);
+                    _pov.pantryKcal = _phave - _repayGot;
+                  }
+                } catch (e4a) {}
+                if (_repayGot > 0) {
+                  var v = this.state.village || {}; v.pantry = v.pantry || [];
+                  v.pantry.push({ name: 'Favor repaid — ' + tonm, kcalEach: _repayGot, units: 1, spoilDay: day + 21 });
+                }
+                if (_repayGot >= _repayWant) {
+                  this.say(`🤝 The favor comes home with them: ${_repayGot.toLocaleString()} kcal repaid, real food, into the pantry.`);
+                } else {
+                  this.say(`🤝 The favor comes home with them — but ${tonm}'s pot is nearly bare: ${_repayGot.toLocaleString()} of ${_repayWant.toLocaleString()} kcal repaid. A priced favor, honestly short. They'll remember it.`);
+                }
               } catch (e4) {}
             }
             try { if (this.ledgerAdd) this.ledgerAdd('membership', 'party-return:' + (p.kind || '?')); } catch (e5) {}

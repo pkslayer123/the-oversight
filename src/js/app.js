@@ -14657,7 +14657,7 @@
                   // (15%/week), pendingTradeCall (12%/week), and
                   // pendingCovenantCrisis fired and could never be answered.
                   // Same class as the proposeLink gap.
-                  if (l.pendingDefense) h += `<br>🔥 <b>${esc(nm)}'s treeline is burning — they call the covenant.</b><br><button class="btn sm" data-defense="${l.id}" data-how="send">🛡️ Send two villagers (3 days)</button> <button class="btn sm ghost" data-defense="${l.id}" data-how="refuse">Refuse aloud (trust −10)</button>`;
+                  if (l.pendingDefense) h += `<br>🔥 <b>${esc(nm)}'s treeline is burning — they call the covenant.</b><br><button class="btn sm" data-defense="${l.id}" data-how="send">🛡️ Send villagers (3 days)</button> <button class="btn sm ghost" data-defense="${l.id}" data-how="refuse">Refuse aloud (trust −10)</button>`;
                   if (l.pendingTradeCall) h += `<br>📯 <b>${esc(nm)} asks for help — hands, not tariff.</b><br><button class="btn sm" data-tradecall="${l.id}" data-how="send">🤝 Send help (priced favor)</button> <button class="btn sm ghost" data-tradecall="${l.id}" data-how="refuse">Refuse aloud (−4 trust)</button>`;
                   if (l.pendingCovenantCrisis) h += `<br>⚡ <b>${esc(nm)} challenges the ${l.kind === 'covenant' ? 'covenant' : 'charter'} — concede, hold, or release.</b><br><button class="btn sm" data-crisis="${l.id}" data-how="concede">Concede (better terms)</button> <button class="btn sm ghost" data-crisis="${l.id}" data-how="hold">Hold the line</button> <button class="btn sm ghost" data-crisis="${l.id}" data-how="release">Release with honor</button>`;
                   // REGIONAL DAWN (2026-10-09): the first link stages a

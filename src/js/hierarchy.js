@@ -68,6 +68,7 @@
 //   - debts_survive_the_break: re-linking a broken pair inherits the latest broken link's outstanding arrears — break to wipe the debt is an exploit the engine refuses, and says so. (code: hierarchy.js)
 //   - the_table_burns_the_books: bidForPrimacy's flip clears old arrears (the new primary writes the books) and SAYS so — silent forgiveness was an exploit-shaped honesty hole. (code: hierarchy.js)
 //   - tribute_is_real_food: when our subordinate pays, the kcal arrive as a real spoil-dated pantry item — "the pantry grows" is engine, not copy. (code: hierarchy.js)
+//   - their_fields_pay: a subordinate's tribute is debited from THEIR pantry — a starving fire can't pay 4,000 kcal/week from nothing. Shortfalls are said aloud, cost trust, and accrue arrears (sibling of league_pool_is_real_food's thin-air fix). The System's x1.25 national routing still applies to what actually arrives, and the arrival line names the true amount. (code: hierarchy.js)
 //   - the_moment_survives: a pending accord killed by a broken first link is said aloud and restaged on the next link (accordUnanswered) — the Regional Dawn moment is never lost silently. (code: hierarchy.js)
 //   - scale_is_a_ladder: scaleRank() returns village/regional/national/global from the nationalLive/globalLive/networkLive flags — global implies national implies regional, never a skip. Read it defensively; it never throws. (code: hierarchy.js)
 //   - national_is_a_polity: a polity is one primary with >=3 active subordinates (four fires is a realm; two is a pact). Haven reaches national SIX ways (docs/SCALE.md, Steve 2026-10-10): LEAD (primary of >=3), BELONG (valued subordinate: trust >=60, arrears 0, link >=21 days to a primary whose realm holds >=4 villages), COVENANT (league of >=4 fires with no primary — mutual defense + shared pool, council votes played), TRADE (trade league of >=4 fires — pooled routes, tariff income, no mutual defense), CONQUEST (a led realm where every subordinate was taken by force — raid-to-subjugate, tribute under duress), or REFUSE (a played, permanent refusal of the scale). All are deed-reactive and take seasons — no calendar path. (code: hierarchy.js)
@@ -735,17 +736,43 @@
                   // NATIONAL ROUTES TRIBUTE (2026-10-10): the governance
                   // layer's logistics route the harvest — x1.25, and the
                   // arrival line says the true amount.
+                  // THEIR FIELDS PAY (break-it regional 2026-10-10): the old
+                  // code minted the full tribute from nothing — a starving
+                  // subordinate paid 4,000+ kcal/week forever while its own
+                  // pantry never moved. Same class as the covenant pool's
+                  // thin-air pour (fixed the same day): every fire pours
+                  // from its own stores. The sub's pantry is debited for
+                  // the owed amount; the System's logistics layer still
+                  // routes it at x1.25 national (the arrival line names the
+                  // true post-route amount). A shortfall is said aloud,
+                  // costs trust, and accrues arrears — like the pool's
+                  // short pours.
                   try {
                     var _v = self.state.village || {}; _v.pantry = _v.pantry || [];
                     var _day = (self.state.scholar || {}).day || 0;
                     var _mult = 1;
                     try { if (self.state.nationalLive) _mult = 1.25; } catch (e) {}
-                    var _amt = Math.round(link.tributeKcalPerWeek * _mult);
-                    _v.pantry.push({ name: 'Tribute grain from ' + self._ovName(link.subordinate), kcalEach: _amt, units: 1, spoilDay: _day + 21 });
+                    var _want = link.tributeKcalPerWeek;
+                    var _sov = self._otherVillage(link.subordinate);
+                    var _have = Math.max(0, Math.round((_sov && _sov.pantryKcal) || 0));
+                    var _give = Math.min(_want, _have);
+                    if (_sov) _sov.pantryKcal = _have - _give;
+                    var _amt = Math.round(_give * _mult);
+                    if (_amt > 0) {
+                      _v.pantry.push({ name: 'Tribute grain from ' + self._ovName(link.subordinate), kcalEach: _amt, units: 1, spoilDay: _day + 21 });
+                    }
+                    if (_give >= _want) {
+                      self._linkNote(link, 'tribute', self._ovName(link.subordinate) + ' paid. The pantry grows.');
+                      var _said = (typeof _amt === 'number' && isFinite(_amt)) ? _amt : _want;
+                      if (R() < 0.35) self.say(`🌾 Tribute from ${self._ovName(link.subordinate)} arrives — ${_said.toLocaleString()} kcal of grain into the pantry. Their fields, our fire.`);
+                    } else {
+                      var _short = _want - _give;
+                      link.arrears = (link.arrears || 0) + _short;
+                      link.trust = Math.max(0, link.trust - 4);
+                      self._linkNote(link, 'tribute', self._ovName(link.subordinate) + ' paid thin: ' + _give.toLocaleString() + ' of ' + _want.toLocaleString() + ' kcal. Arrears +' + _short.toLocaleString() + '.');
+                      self.say(`🌾 ${self._ovName(link.subordinate)}'s tribute comes up thin — ${_give.toLocaleString()} of ${_want.toLocaleString()} kcal. Their fields are as empty as the wagons look. The shortfall rides as arrears (+${_short.toLocaleString()} kcal), and they feel the shame. (Trust -4.)`);
+                    }
                   } catch (e) {}
-                  self._linkNote(link, 'tribute', self._ovName(link.subordinate) + ' paid. The pantry grows.');
-                  var _said = (typeof _amt === 'number' && isFinite(_amt)) ? _amt : link.tributeKcalPerWeek;
-                  if (R() < 0.35) self.say(`🌾 Tribute from ${self._ovName(link.subordinate)} arrives — ${_said.toLocaleString()} kcal of grain into the pantry. Their fields, our fire.`);
                 } else {
                   link.arrears += link.tributeKcalPerWeek;
                   link.trust = Math.max(0, link.trust - 4);
@@ -914,6 +941,20 @@
       link.status = 'broken';
       link.pendingDemand = null; // demands die with the link (break-it 2026-10-10)
       link.pendingDefense = null; link.pendingTradeCall = null; link.pendingCovenantCrisis = null;
+      // THE MOMENT SURVIVES (break-it regional 2026-10-10): a pending first
+      // accord died WITH the link's object while state.pendingAccord kept
+      // pointing at the corpse — and the accord buttons only render for
+      // ACTIVE links, so answerAccord's dead-link branch could never fire
+      // from the UI. The Regional Dawn moment was lost silently: the exact
+      // failure the restage was built to prevent. Break it aloud HERE
+      // instead — the gesture dies unmade, said plainly, and the next link
+      // restages it via accordUnanswered.
+      if (this.state.pendingAccord && this.state.pendingAccord.linkId === link.id) {
+        this.state.pendingAccord = null;
+        this.state.accordUnanswered = true;
+        this._linkNote(link, 'accord', 'The first gesture died unmade with the link.');
+        this.say(`The first gesture dies unmade — the link with ${this._ovName(this._linkOther(link, HOME))} is gone before Haven ever came to their fire. They'll remember the silence longer than any gift. The next fire gets the gesture instead.`);
+      }
       var other = this._linkOther(link, HOME);
       var weAreSub = link.subordinate === HOME;
       var isPeer = (link.kind === 'covenant' || link.kind === 'trade');
@@ -2031,8 +2072,11 @@
     // _sendAwayParty: the multi-person version of the representative loan.
     // vids walk out for `days` days — real absence: awayMembers() shows them,
     // _musterAway won't re-draft them, and awayPartiesReturnTick says the
-    // return aloud. kind: 'raid' | 'defense' | 'trade'. opts.repayKcal is
-    // delivered to the pantry on return (the trade favor's "repaid after").
+    // return aloud. kind: 'raid' | 'defense' | 'trade'. `to` is a VILLAGE ID
+    // (the return tick resolves it via _ovName — passing a display name
+    // renders "at them"). opts.repayKcal is delivered to the pantry on
+    // return (the trade favor's "repaid after"), debited from the payer's
+    // own stores.
     _sendAwayParty(vids, days, to, kind, opts) {
       var m = null;
       try { m = this.mshipState(); } catch (e) { return; }
@@ -2086,7 +2130,7 @@
           this.say(`There's no one to send — Haven's bench is empty. The covenant notices the empty bench. (Trust -4.)`);
           return 'empty';
         }
-        this._sendAwayParty(sent, 3, onm, 'defense');
+        this._sendAwayParty(sent, 3, other, 'defense');
         link.trust = Math.min(100, link.trust + 8);
         this._linkNote(link, 'defense', 'Answered the call: ' + sent.length + ' villagers, 3 days.');
         try { if (this.ledgerAdd) this.ledgerAdd('hierarchy', 'defense-sent:' + other); } catch (e) {}
@@ -2127,7 +2171,7 @@
         // landed in the pantry INSTANTLY while the copy promised "repaid
         // after". The party walks out for real now; the repayment arrives
         // with them, on return, via the away-parties return tick.
-        this._sendAwayParty(sent, 3, onm, 'trade', { repayKcal: 1500 });
+        this._sendAwayParty(sent, 3, other, 'trade', { repayKcal: 1500 });
         link.trust = Math.min(100, link.trust + 6);
         this._linkNote(link, 'favor', 'Sent help as a priced favor (+1,500 kcal repaid).');
         this.say(`🤝 Haven sends ${sent.length} villagers to ${onm} — not an obligation, a favor, priced: 1,500 kcal repaid after. The charter has no swords, but Haven has hands. (Trust +6.)`);
@@ -2272,7 +2316,7 @@
       // gone three days" was copy the engine never ran, and state.raidWounds
       // the same ("wounded for a week" never kept anyone home). Both now ride
       // the away-party mechanism: real absence, announced returns.
-      this._sendAwayParty(pr.fighters, 3, nm, 'raid');
+      this._sendAwayParty(pr.fighters, 3, pr.target, 'raid');
       var dead = [], wounded = [];
       for (var i = 0; i < pr.fighters.length; i++) {
         var r = R();

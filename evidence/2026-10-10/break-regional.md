@@ -36,3 +36,74 @@ Fix: generosity +8 now needs opinion 5+ (courtship started — join is +5); cold
 
 ## Dead-code note
 `_formLink`/`_stageCounter` intentionally stay out of `provides` (internal, underscore-prefixed).
+
+---
+
+# Break-it: regional & hierarchy — 2026-10-10, run 2 (21:00 CDT)
+
+Canon correction: the run-1 note "no dedicated regional/hierarchy canon doc" is
+stale — **docs/SCALE.md** (written 2026-10-10) is the ladder canon and was read
+first. No design invented.
+
+## Verdict: BROKE 3, FIXED 3 (+1 sibling sweep)
+
+### A. EXPLOIT — subordinate tribute minted from thin air (FIXED)
+`linkTick`'s primary-side branch pushed full `tributeKcalPerWeek` (×1.25
+national) into Haven's pantry without debiting the subordinate's
+`pantryKcal`. A 500-kcal village "paid" 4,000/week forever — infinite faucet
+gated only by a trust roll. Sibling of the covenant thin-air pour fixed
+earlier today; the tribute path wasn't.
+Fix (`hierarchy.js`): debit their pantry for the owed (pre-mult) amount;
+×1.25 still routes what actually arrives, arrival line names the true amount;
+shortfalls said aloud, trust −4, arrears accrue. New ontology rule
+`their_fields_pay`.
+Proof `scripts/test-break-regional-20261010.js` §A/A2: before 500→500 /
+Haven +4,000 (minted); after 500→0 / +500 + shortfall aloud; fat sub
+50,000→46,000 / +4,000 exactly.
+
+### B. SOFTLOCK — Regional Dawn restage unreachable from the UI (FIXED)
+`breakLink()` never cleared `state.pendingAccord`, and accord buttons render
+only for ACTIVE links — so `answerAccord`'s dead-link branch (the "moment
+survives" restage) was UI-unreachable; `pendingAccord` pointed at a dead link
+forever, next link never restaged. The exact silent loss the mechanism was
+built to prevent.
+Fix (`hierarchy.js` `breakLink`): clear the accord, set `accordUnanswered`,
+say "dies unmade" aloud; next `_formLink` restages via the existing path.
+Proof §B: before — stuck, no restage; after — cleared/flagged/said, second
+link restages on the new link.
+
+### C. HONESTY — defense button over-promised (FIXED)
+"Send two villagers (3 days)" while `_musterAway(2)` can return 1.
+Fix (`app.js`): "Send villagers (3 days)". Proof §C.
+
+### D. SIBLING SWEEP — trade-favor repayment minted + "at them" copy bug (FIXED)
+`awayPartiesReturnTick` pushed the 1,500 kcal priced favor from thin air;
+`_sendAwayParty` got display NAMES while the tick resolves `to` via
+`_ovName(id)` — every return read "the favor at **them**".
+Fix: pass village IDs (3 call sites), debit payer's pantry in the tick
+(`membership.js`), shorts aloud. Proof §D: payer 200→0, Haven +200, named
+"Stonebridge". Old saves degrade gracefully.
+
+## Held
+Dead-code: all 55 provides reachable (module in index.html; every verb has
+UI/engine callers — initial `[]`s were a grep lookbehind bug). Tribute
+idempotency/partials/arrears-inheritance/books-burn-aloud; negotiation
+gating (no pending-counter/raid softlocks); weekly table; raid-farming
+priced by real registerDeath rolls; all five national beats re-validate
+before the court sits; realm loss clears national/global aloud;
+`kingdomEndingEligible` subordinate-only; save/load weekly guards
+idempotent; guest meals hold. Tariff income left minting — trade routes
+*create* value by fiction (documented judgment call).
+
+## Regressions
+New proof 20/20 ×3 seeds (11/222/3333). scale-break-r4 ALL PASS,
+bal-scale-ladder 18/18, hierarchy-break 35/35, drifter-national-gaps ALL
+PASS, ontology 62/62. Pre-existing (identical on pristine): national-shapes
+3× wave-5-gate, regional-audit V4g, hierarchy-20261007 stale harness.
+
+## For Steve
+Design consequence of fix A: conquered subs (7,000/wk duress) drain their
+15–25k pantries in ~3 weeks, then pay thin until trust collapses — "feeding
+a coalition is exponentially harder" made real. Lower duress tribute or sub
+pantry regen if conquest should sustain longer — tuning call, not a bug.
+No [needs-eyes].
