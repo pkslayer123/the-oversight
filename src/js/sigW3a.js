@@ -669,10 +669,17 @@
       var g = sigLiveGavelTrial(this);
       if (!g) { say(this, 'No trial is in session. (The Gavel isn\'t accusing anyone.)'); return false; }
       if (g.sigG.trial.objected) { say(this, 'You already objected this trial. (One objection per trial — procedure.)'); return false; }
+      // CATCH 1 (r15): the -3 cost floored at 0, so a broke player got permanent
+      // verdict-halving for free. Fame is the price of law — no fame, no objection.
+      var vw = 0;
+      try { vw = this.havenViewership ? this.havenViewership() : 0; } catch (e3) {}
+      if (vw < 3) {
+        say(this, 'You rise to object — but the gallery is empty. No one is watching, and the Gavel does not perform for an empty room. (OBJECT needs 3 viewership — fame is the price of law.)');
+        return false;
+      }
       p.acted = true; p.moveLeft = 0;
       g.sigG.trial.objected = true;
-      var cur = 0;
-      try { cur = this.havenViewership ? this.havenViewership() : 0; } catch (e3) {}
+      var cur = vw;
       try { this.state.village.viewership = Math.max(0, cur - 3); } catch (e4) {}
       say(this, 'You OBJECT — cite precedent. "SUSTAINED," the Gavel rumbles, annoyed. The audience groans at the procedure. (-3 viewership — fame is the price of law. The verdict lands softer.)');
       sigNoteVerb(this, 'object');
@@ -928,7 +935,10 @@
           if (r && f && !f.over) {
             sigNoteVerb(this, 'strike');
             var t2 = this.tbFighter(targetKey);
-            f.sigLastStrike = { target: targetKey, dmg: Math.max(0, hpBefore - (t2 ? t2.hp : hpBefore)), round: f.round };
+            // CATCH 2 (r15): seq-gate the strike record so the spool attributes
+            // ONLY the player's own strikes (ally/DoT damage isn't the player's swing).
+            f.sigStrikeSeq = (f.sigStrikeSeq || 0) + 1;
+            f.sigLastStrike = { target: targetKey, dmg: Math.max(0, hpBefore - (t2 ? t2.hp : hpBefore)), round: f.round, seq: f.sigStrikeSeq };
           }
         } catch (e5) {}
         return r;

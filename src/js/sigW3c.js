@@ -301,10 +301,14 @@
     // The sync window was the player's intervening turn — it lapses now.
     if (m.bufSynced) m.bufSynced = false;
     // Track the player's net movement across the turn boundary: this is the
-    // heading Buffering reads.
+    // heading Buffering reads. Cold-start (r15): if the player acted before
+    // the monster's first turn (won initiative), _bufPrevPos is unset — seed
+    // it from the fight-start baseline so a turn-1 move reads as a heading,
+    // not "perfectly still".
     var dx = 0, dy = 0;
     if (p) {
       var prev = p._bufPrevPos;
+      if (!prev && f.bufBasePos) prev = { mx: f.bufBasePos.mx, my: f.bufBasePos.my };
       if (prev) { dx = p.mx - prev.mx; dy = p.my - prev.my; }
       p._bufPrevPos = { mx: p.mx, my: p.my };
     }
@@ -723,6 +727,25 @@
     Object.assign(G, playerActions);
     Object.assign(G, menuSurface);
     G.sigW3cFieldRound = sigW3cFieldRound;
+    // CATCH 3 (r15): the afterimage provider. Canon: "On the grid it shows
+    // 2-3 afterimage frames; the faintest frame is the real present." The
+    // hook writes m.bufEchoes but no renderer read it — now app.js does.
+    // Returns [{x, y, faint}] — echoes bright, the present faintest.
+    G.bufAfterimageCells = function () {
+      var out = [];
+      try {
+        var f = this.tbfight;
+        if (!f || f.over) return out;
+        var m = liveMonster(this, 'buffering');
+        if (!m || !m.alive || m.fled) return out;
+        var echoes = m.bufEchoes || [];
+        for (var j = 0; j < echoes.length; j++) {
+          out.push({ x: echoes[j].x, y: echoes[j].y, faint: false, mid: 'buffering' });
+        }
+        out.push({ x: m.mx, y: m.my, faint: true, mid: 'buffering' });
+      } catch (e) {}
+      return out;
+    };
     // Strike intercept: the mirage fools open eyes; closed eyes find the
     // faintest frame; averted gaze can't aim. Chain-safe wrapper.
     var _sigStrike0 = G.tbPlayerStrike;

@@ -135,8 +135,29 @@
           var s0 = null;
           try { s0 = game.state.scholar; } catch (err) {}
           var preMoved = !!(s0 && (p.mx !== s0.mx || p.my !== s0.my));
+          // CATCH 2b (r15): a turn-1 HEAL was misfiled as WAIT. Detect it
+          // from the fight-start baseline (f.spBasePhp). Priority: strike >
+          // heal > move > wait > act.
+          var preHeal = 0;
+          try {
+            if (f.spBasePhp != null) preHeal = Math.max(0, p.hp - f.spBasePhp);
+          } catch (errH) {}
+          // CATCH 2 (r15): seq-gate the retroactive strike too.
+          var preStrikeDmg = 0;
+          try {
+            var lst0 = f.sigLastStrike;
+            if (lst0 && lst0.target === m.key && lst0.dmg > 0 && preDmg > 0) {
+              if (lst0.seq != null) {
+                preStrikeDmg = lst0.dmg;
+                m.spAttrSeq = lst0.seq;
+              } else {
+                preStrikeDmg = preDmg;
+              }
+            }
+          } catch (errS) {}
           var e0 = null;
-          if (preDmg > 0) e0 = { kind: 'strike', dmg: preDmg };
+          if (preStrikeDmg > 0) e0 = { kind: 'strike', dmg: preStrikeDmg };
+          else if (preHeal > 0) e0 = { kind: 'heal', amt: preHeal };
           else if (preMoved) e0 = { kind: 'move', dx: Math.sign(p.mx - s0.mx), dy: Math.sign(p.my - s0.my) };
           else if (p.acted && p.moveLeft <= 0) e0 = { kind: 'wait' };
           else if (p.acted) e0 = { kind: 'act', label: 'GESTURE' };
@@ -152,8 +173,26 @@
           var dmg = Math.max(0, snap.mhp - m.hp);
           var heal = Math.max(0, p.hp - snap.php);
           var moved = (p.mx !== snap.px || p.my !== snap.py);
+          // CATCH 2 (r15): attribute strike damage ONLY from the player's own
+          // strike (f.sigLastStrike, seq-gated). HP loss from allies/DoTs is
+          // NOT the player's swing — the lens watches YOU. Without seq info
+          // (legacy), fall back to the HP delta.
+          var myStrikeDmg = 0;
+          try {
+            var lst = f.sigLastStrike;
+            if (lst && lst.target === m.key && lst.dmg > 0) {
+              if (lst.seq != null && (m.spAttrSeq || 0) != null) {
+                if (lst.seq > (m.spAttrSeq || 0)) {
+                  myStrikeDmg = lst.dmg;
+                  m.spAttrSeq = lst.seq;
+                }
+              } else if (dmg > 0) {
+                myStrikeDmg = dmg; // legacy: no seq, trust the delta
+              }
+            }
+          } catch (eAttr) {}
           var entry;
-          if (dmg > 0) entry = { kind: 'strike', dmg: dmg };
+          if (myStrikeDmg > 0) entry = { kind: 'strike', dmg: myStrikeDmg };
           else if (heal > 0) entry = { kind: 'heal', amt: heal };
           else if (moved) entry = { kind: 'move', dx: Math.sign(p.mx - snap.px), dy: Math.sign(p.my - snap.py) };
           // WAIT DETECTION: tbPlayerWait spends the act AND zeroes movement.
@@ -544,6 +583,7 @@
       if (p.acted) { this.say('Already acted this turn.'); return false; }
       if (!liveMonsters(this, 'chorus_line').length) { this.say('Nothing here keeps a beat.'); return false; }
       p.acted = true;
+      p.moveLeft = 0; // "dancing is all you do this turn" — no reposition while untouchable (CATCH 4, r15)
       // DANCE TOKEN (not a round stamp): protects the next monster phase
       // regardless of turn order. Each chorus monster consumes it once.
       p.clDanceToken = (p.clDanceToken || 0) + 1;
@@ -791,4 +831,25 @@
       return total;
     },
   });
+  // CATCH 2b/cold-start (r15): capture baselines at fight start. spBasePhp
+  // lets the spool's retroactive first-turn record detect a turn-1 HEAL
+  // (heals were misfiled as WAIT). bufBasePos seeds the buffering's heading
+  // baseline so a turn-1 move isn't read as "no heading".
+  var _sigW3bStartCombat = G.startCombat;
+  if (typeof _sigW3bStartCombat === 'function') {
+    G.startCombat = function () {
+      var out = _sigW3bStartCombat.apply(this, arguments);
+      try {
+        var f = this.tbfight;
+        if (f && !f.over) {
+          var p = this.tbFighter('p');
+          if (p) {
+            f.spBasePhp = p.hp;
+            f.bufBasePos = { mx: p.mx, my: p.my };
+          }
+        }
+      } catch (e) {}
+      return out;
+    };
+  }
 })(typeof window !== 'undefined' ? window : global);

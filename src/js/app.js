@@ -15250,6 +15250,13 @@
     let _gwDive = null, _sbHeat = null;
     try { _gwDive = (typeof Game.gwDiveShadow === 'function') ? Game.gwDiveShadow() : null; } catch (e) { _gwDive = null; }
     try { _sbHeat = (typeof Game.sbHeatKeys === 'function') ? Game.sbHeatKeys() : null; } catch (e) { _sbHeat = null; }
+    // BUFFERING AFTERIMAGES (r15 CATCH 3): the hook writes m.bufEchoes but no
+    // renderer read it — canon promises "2-3 afterimage frames; the faintest
+    // frame is the real present." Game.bufAfterimageCells() (sigW3c) returns
+    // [{x,y,faint}] — echoes bright, the present faintest. GUARDED: absent = nothing.
+    // Ungated (the frames are physically there); counterplay stays codex-gated.
+    let _bufAfter = [];
+    try { _bufAfter = (typeof Game.bufAfterimageCells === 'function') ? (Game.bufAfterimageCells() || []) : []; } catch (e) { _bufAfter = []; }
     let html = '';
     for (let cy = 0; cy < 9; cy++) {
       html += '<div class="drow">';
@@ -15426,7 +15433,10 @@
               } catch (e) {}
               // Humanoids get the special ambiguous treatment; others get their SVG
               const _hspr = humanoidSpriteHtml(_mid);
-              g = `<span data-ent="creature:${esc(_hkey)}">${_hspr || _mspr || esc(mf.emoji || '👹')}</span>`;
+              // BUFFERING FAINTEST FRAME (r15 CATCH 3): the real present is the
+              // faintest frame — dim the token so the bright echoes read as past.
+              const _bufDim = (_mid === 'buffering') ? ' style="opacity:.45"' : '';
+              g = `<span data-ent="creature:${esc(_hkey)}"${_bufDim}>${_hspr || _mspr || esc(mf.emoji || '👹')}</span>`;
               cls += ' creature';
               drawn = true; break;
             }
@@ -15638,6 +15648,14 @@
         }
         if ((_tg.swarmSrc || []).some(s => _k === (s.x + ',' + s.y))) {
           g += `<span class="swarmRing" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;color:#e8e8f2;text-shadow:0 0 6px rgba(0,0,0,.9);pointer-events:none">◎</span>`;
+        }
+        // BUFFERING AFTERIMAGE GHOSTS (r15 CATCH 3): bright echo frames trail
+        // the dimmed present. Inline styles keep this in app.js (no CSS touch).
+        if (_bufAfter.length) {
+          const _echo = _bufAfter.find(c => !c.faint && _k === (c.x + ',' + c.y));
+          if (_echo) {
+            g += `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;opacity:.85;text-shadow:0 0 8px rgba(180,220,255,.9);pointer-events:none">⏳</span>`;
+          }
         }
         // GLASSWING TRAP SHADOW: the target tile darkens with turns
         // (faint → darker → almost black); splash tiles get a light mark.
