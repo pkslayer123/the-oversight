@@ -873,6 +873,7 @@ Character progression. XP, levels, abilities.
 **Consumes:** scholar.xp, scholar.abilities
 
 
+
 ### safety-nets (`safetynets.js`)
 Earned early-game survival safety nets — three played systems, not flat relief. (1) System aid quests (days 7-21): the System offers struggling villages played quests (fetch / treat / learn) with real costs and real failure; help is sometimes bizarrely wrong (canon: alien, out of touch). (2) Crisis relief: when a crisis (sickness cascade, raid aftermath, storm aftermath, hunger winter) hits, a villager-driven relief path opens — triage tents, rationing votes, emergency hunts — each with honest costs, finite per crisis. (3) Neighbor-village aid flows: struggling villages can REQUEST aid (food/medicine/hands) and richer neighbors can OFFER it; real deliveries, trust/reputation both ways, ingratitude remembered. Anti-farm: trigger-gated + cooldowns + finite neighbor pantries + bounded quest count.
 
@@ -905,7 +906,25 @@ Wave-3 batch-B signature combat mechanics (Steve 2026-10-10): Spool (records you
 - counterplay_real: boring replays, dancing, gravel, reading, and the loophole all resolve through real fight state, never flags that lie (code: tbTosInvokeLoophole)
 
 **Consumes:** say, tbDamage, addHealth, audioEvent, hasStatus, applyStatus, hasItem, consumeItem, tbFighter, tbIsPlayerTurn, tbAfterPlayerAction, tbEndCheck
->>>>>>> b7d14cd2 (sig-w3b: wave-3 batch-B signature mechanics (spool/chorus_line/terms_of_service) + proofs (BEFORE red / AFTER green x3 seeds) + evidence/2026-10-10/sig-w3b-spool-chorus-tos.md; regressions green (wave3-5 211/211, monsters r14 116/116); ontology 58/58)
+
+### signature-wave3a (`sigW3a.js`)
+Wave-3 batch-A signature combat mechanics (Steve 2026-10-10): The Redactor (point-then-redact cycle with decoy/quiet counterplay), Gavel (trial with mid-trial motions + frontal sound-block shield), The Focus Group (audible visible ratings, damageable mouth-head parts, marking eye-heads, boredom walkout). Hooks register into MonsterBehaviorHooks; player verbs are tracked via light wraps; damage modifiers route through one tbDamage wrap. Telegraph honesty: every telegraph states the real next effect.
+
+**Provides:** sigRedactor(game, m), sigGavel(game, m), sigFocusGroup(game, m), sigFocusEye(game, m), tbPlayerDodge(), tbPlayerGavelObject(), tbPlayerGavelRecess(), tbPlayerGavelConfess(), sigCombatButtonsHTML(mons, p), sigCombatAct(act), sigFieldMonster(mdef, member, ctx, opts, rec)
+
+**Rules:**
+- point_before_redact: the redactor's handles point at a named target a full round before the redaction lands; the point is narrated + phase-badged, never silent. (code: sigRedactor)
+- loudest_first: a carried decoy (items.json decoy:true) is redacted before anything else, and is destroyed doing it. (code: sigRedactorChooseTarget)
+- quiet_starves: two consecutive player turns with no aggressive verb starve the redactor (its attacks weaken); a third starves it out of the fight. (code: sigOnPlayerTurnStart)
+- trial_procedure: the gavel accuses (consuming its turn), waits a full round, then the verdict falls; object/recess/confess are real mid-trial motions with real costs (fame / the action / the record). (code: sigGavel)
+- frontal_shield: strikes from the gavel's facing arc hit the sound-block (x0.35); flanking bypasses — position matters. (code: sigOffenseMods)
+- ratings_honest: the focus group's loved/hated slate is announced every round and pinned in the combat menu; loved is buffed-and-answered, hated is safe-but-suppressed. (code: sigFocusGroup)
+- mouths_first: mouth-head parts are the damageable core — popping all three kills the group; eye-heads only mark and cannot be struck down. (code: sigDamageWrap)
+- boredom_walks: three consecutive boring player turns and the group loses interest and leaves; rage locks the walkout off. (code: sigOnPlayerTurnStart)
+- offscreen_real: villager field fights run the same signatures through sigFieldMonster — villagers face the real fight, not a summary. (code: sigFieldMonster)
+
+**Consumes:** Game.tbfight, Game.say, Game.tbFighter, Game.tbDamage, Game.tbIsPlayerTurn, Game.tbBeginTurn, Game.tbEndCheck, Game.tbRefreshTelegraphUI, Game.encSetPhase, Game.encUsesFifo, Game.equippedWeapon, Game.progState, Game.havenViewership, Game.bumpTrust, Game.recordMoment, Game.useAbility, Scattering.combat
+
 
 ### sprites (`sprites.js`)
 Custom SVG sprite registry for the visual identity law.

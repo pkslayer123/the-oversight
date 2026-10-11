@@ -3108,4 +3108,15 @@
   "kg": 0.05,
   "findable": true
  }
+,
+ {
+  "baseEffect": "The Redactor redacts the loudest thing first: it takes this instead of your weapon, your footing, your last turn. Single use.",
+  "class": "tool",
+  "decoy": true,
+  "findable": true,
+  "flavor": "A tin can full of pebbles on a stick. Loud on purpose \u2014 the loudest thing you own.",
+  "id": "decoy_rattle",
+  "kg": 0.3,
+  "name": "Tin-Can Rattle"
+ }
 ]

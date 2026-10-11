@@ -629,5 +629,14 @@
     "2": "Materials: 2 hide + vine. Cure the hides (scrape, dry, work them soft), cut panels, lace with vine or sinew. The curing is the armor — raw hide rots, cured hide stops teeth.",
     "3": "You can make it. Work the hide until it's supple or it cracks at the first bend. Double the chest, single the limbs. Heavy, hot, and worth every ounce when something big decides you're food."
   }
+},
+{
+  "description": "a tin can of pebbles on a stick. loud on purpose \u2014 bait for the thing that redacts.",
+  "durable": true,
+  "id": "decoy_rattle",
+  "kg": 0.3,
+  "knowledgeLevels": {"1": "You have seen a rattle. A can, some stones, a stick.", "2": "Materials: stick + vine. Tie the can to the stick so it swings and clatters.", "3": "You can make one. The point is the noise \u2014 the Redactor redacts the loudest thing first, so you give it something loud to take."},
+  "materials": {"stick": 1, "vine": 1},
+  "name": "Tin-Can Rattle"
 }
 ]

@@ -276,6 +276,38 @@
       "fleeAt": 0,
       "preTurnHooks": [],
       "preferredRange": 1
+    },
+    "redactor": {
+      "aggroRange": 5,
+      "archetype": "censor",
+      "fleeAt": 0.2,
+      "notes": "Point-then-redact: the handles point at a named target a full round before the redaction lands (sigW3a.js). Redacts the loudest thing first \u2014 a carried decoy absorbs it. Two quiet turns starve it.",
+      "preTurnHooks": ["sigRedactor"],
+      "preferredRange": 4
+    },
+    "gavel": {
+      "aggroRange": 6,
+      "archetype": "judge",
+      "fleeAt": 0,
+      "notes": "Trial procedure: accuses from the player's logged moments (a full round of warning), then the verdict falls (sigW3a.js). Object/recess/confess are real motions. Frontal strikes hit the sound-block.",
+      "preTurnHooks": ["sigGavel"],
+      "preferredRange": 3
+    },
+    "focus_group": {
+      "aggroRange": 6,
+      "archetype": "audience",
+      "fleeAt": 0,
+      "notes": "Audible ratings every round: loved is buffed-and-answered, hated is safe-but-suppressed (sigW3a.js). Mouth-head parts pop; eye-heads mark. Three boring rounds and it leaves.",
+      "preTurnHooks": ["sigFocusGroup"],
+      "preferredRange": 3
+    },
+    "focus_group_eye": {
+      "aggroRange": 6,
+      "archetype": "watcher",
+      "fleeAt": 0,
+      "notes": "Synthetic sub-fighter spawned by the focus group lead (sigW3a.js). Marks the player's most-used rated verb; consumes its turn. Cannot be struck down.",
+      "preTurnHooks": ["sigFocusEye"],
+      "preferredRange": 3
     }
   }
 }

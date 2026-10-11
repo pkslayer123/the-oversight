@@ -14812,6 +14812,7 @@
       ${canScream ? `<button class="self-btn" id="c-scream" ${p.acted ? 'disabled' : ''}>🧀 Scream</button>` : ''}
       ${hasWell ? `<button class="self-btn" id="c-well" ${p.acted ? 'disabled' : ''} title="Gravity well — hold monsters within 3 tiles for 2 turns (one use)">🕳 Well</button>` : ''}
       ${flippable ? `<button class="self-btn" id="c-flip" ${p.acted ? 'disabled' : ''} title="Flip the turtle — strength check. Upside down: no armor, can't snap, 3 turns. Fail and it snaps you.">🐢 Flip</button>` : ''}
+      ${(Game.sigCombatButtonsHTML ? Game.sigCombatButtonsHTML(mons, p) : '')}
       <button class="self-btn" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢 Shout</button>
       <button class="self-btn" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖 Offer</button>
       ${Game.sigW3bCombatButtons ? Game.sigW3bCombatButtons() : ''}
@@ -14948,6 +14949,13 @@
         targets: adj.map(m => ({ key: m.key, cx: m.mx, cy: m.my, label: m.name })),
         onPick: (t) => { Game.tbPlayerStrike(t.key); rerender(); },
       });
+    });
+    // SIGNATURE MECHANICS (sigW3a.js, wave-3 batch A 2026-10-10): bespoke
+    // mid-fight choices (gavel trial motions, focus-group dodge) surface as
+    // menu buttons. Shared hook point for ALL signature batches — later
+    // batches reuse it, no further app.js edits needed.
+    document.querySelectorAll('[data-sig-act]').forEach(b => {
+      b.onclick = () => { try { Game.sigCombatAct(b.dataset.sigAct); } catch (e) {} rerender(); };
     });
   }
 

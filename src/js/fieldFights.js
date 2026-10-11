@@ -295,6 +295,16 @@
             // every live pack member acts — pack hunters hunt as a pack
             for (var mi = 0; mi < members.length; mi++) {
               if (members[mi].hp <= 0 || !vAlive) continue;
+              // SIGNATURE MECHANICS (sigW3a.js, wave 3 batch A 2026-10-10):
+              // the monster's real signature runs off-screen too — villagers
+              // face the same fight. Consumes the member's action when it
+              // returns true (its narration lands in rec.log).
+              var _sigCtx = { vHp: vHp, wb: wb };
+              var _sigDone = false;
+              try { if (this.sigFieldMonster) _sigDone = !!this.sigFieldMonster(mdef, members[mi], _sigCtx, { vid: vid, vName: vName, mName: mName, round: round, RR: RR, lroll: lroll }, rec); } catch (e) {}
+              vHp = _sigCtx.vHp; wb = _sigCtx.wb;
+              if (vHp <= 0) vAlive = false;
+              if (_sigDone) continue;
               var d = lroll(dmgRange);
               // HIGHBEAM (verbatim behavior): the antlers thrash anyone
               // adjacent IN ADDITION to the beam. Closing in has a price.
