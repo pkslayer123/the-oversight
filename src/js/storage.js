@@ -1297,12 +1297,21 @@
                 { quiet: true, field: 'stash_skim' });
               if (d) d.theft = { kind: 'stash', label: `${n}× ${MAT_DEFS[mat].name}`, day: day(), witness: 'you' };
             } catch (e) {}
+            // BREAK-IT (social r1 2026-10-10): the old this.observe('stole')
+            // below was a full no-op ('stole' has no AX entry — and mustn't:
+            // observe() is player-centric, the actor here is an NPC). A
+            // witnessed skim travels as subject-targeted gossip: the
+            // ROBBER's rep moves, never the player's, and gossip moves REP
+            // only (canon), never trust.
+            try { this.seedGossip('stash_skim', { who: robber, honest: -12, generous: -8 }, [this.villagerId], true); } catch (e2) {}
             this.say('The stash count is off — and this time you know exactly where it went.');
           } else {
             this.stashLog('take', MAT_DEFS[mat].name, n, null); // vid null = someone
             this.say(`The stash count is off. ${n} ${matName(mat, n)} missing. Nobody saw anything. Everybody suspects something.`);
+            // Unseen: no attribution exists, so no gossip is seeded — pinning
+            // it on the player (observe's default subject) would be a lie.
+            // The stashLog + the line above carry the fiction.
           }
-          this.observe('stole');
         }
       }
       // CACHES: moved to daily roll in endDay (Steve 2026-10-07) — the per-batch

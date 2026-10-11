@@ -13104,6 +13104,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         hoard: { generous: -6, honest: -2 },
         share_knowledge: { generous: 3, competent: 3 },
         deal: { generous: 2, honest: -2, competent: 2 },
+        // BREAK-IT (social r1 2026-10-10): observe('trade') (betrayal.js
+        // trader cart, x3) and observe('bribe_fight') (justice.js fight
+        // bribe) had NO table entry — observe() returned before the witness
+        // loop, so both were full no-ops while call-site comments promised
+        // social consequences ("a villager who scams YOU faces the village").
+        trade: { honest: 2, competent: 2 },
+        bribe_fight: { generous: 4, brave: 2 },
         appeal: { honest: 2, competent: 1 },
         comfort: { generous: 4, honest: 2 },
         amends: { honest: 5 },
@@ -13388,8 +13395,15 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
               const k = keys[Math.floor(Math.random() * keys.length)];
               dims[k] = Math.round(dims[k] * 1.6 + (Math.random() < 0.25 ? -Math.sign(dims[k] || 1) * 5 : 0));
             }
-            if (Math.random() < 0.3) {
-              this.say(`You catch fragments by the fire — ${this.displayName(teller)} telling ${this.displayName(listener)} about you. The story's getting bigger than what happened.`);
+            if (Math.random() < 0.3 && teller !== this.villagerId) {
+              // BREAK-IT (social r1 2026-10-10): the old line always said
+              // "about you" — wrong for subject-targeted gossip (a rumor
+              // about the stash-skimmer isn't about the player), and when
+              // the player was the teller it read "you telling X about you".
+              // (subject is declared below; compute the attribution inline.)
+              const fragSubject = dims.who || this.villagerId;
+              const aboutWho = (fragSubject === this.villagerId) ? 'you' : this.displayName(fragSubject);
+              this.say(`You catch fragments by the fire — ${this.displayName(teller)} telling ${this.displayName(listener)} about ${aboutWho}. The story's getting bigger than what happened.`);
             }
           }
           // Apply reputation to the SUBJECT of the gossip, not the listener.
@@ -21930,7 +21944,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // 75-89: loyal, 90-100: devoted
     trustBand(vid) {
       const v = this.state.village;
-      const cur = (v.trust || {})[vid] === undefined ? 15 : v.trust[vid];
+      // BREAK-IT (social r1 2026-10-10): unset used to default to 15 here
+      // while every trust reader in the engine defaults to 10 — an unknown
+      // villager read 'distrustful' on the band while reading 10/hostile
+      // everywhere else. One default: 10.
+      const cur = (v.trust || {})[vid] === undefined ? 10 : v.trust[vid];
       if (cur >= 90) return 'devoted';
       if (cur >= 75) return 'loyal';
       if (cur >= 50) return 'friendly';
@@ -21938,18 +21956,14 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (cur >= 11) return 'distrustful';
       return 'hostile';
     },
-
-    // trustBandDesc: what can you expect at this band?
-    trustBandDesc(band) {
-      const descs = {
-        hostile: "Will work against you. May steal. Won't help.",
-        distrustful: "Won't share. Watches you. Minimal cooperation.",
-        wary: "Cautious cooperation. Fair trades, shares gossip. Won't take risks for you.",
-        friendly: "Shares food. Helps with work. Trusts your judgment.",
-        loyal: "Takes risks for you. Defends you. Shares secrets.",
-        devoted: "Would die for you. This is rare and precious."
-      };
-      return descs[band] || descs.wary;
+    // trustTone: the short display phrase for the person card and the people
+    // journal. BREAK-IT (social r1 2026-10-10): trustBand (Steve's 2026-10-07
+    // 6-band canon) was fully built and never called — both UI surfaces ran
+    // their own ad-hoc 3-band ternary ('Guarded.'/'Warming up.'/'Trusts you.')
+    // that disagreed with the canonical bands. One banding, one tone.
+    trustTone(vid) {
+      const band = (typeof this.trustBand === 'function') ? this.trustBand(vid) : 'wary';
+      return ({ hostile: 'Hostile.', distrustful: 'Distrustful.', wary: 'Wary.', friendly: 'Friendly.', loyal: 'Loyal.', devoted: 'Devoted.' })[band] || 'Wary.';
     },
 
     // TRUST NUANCE (Steve 2026-10-07): not everyone trusts equally.
@@ -23185,8 +23199,17 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       let yes = 0, no = 0;
       for (const voter of voters) {
         if (voter === vid) continue;
-        const t = ((v.trust || {})[vid] == null ? 15 : v.trust[vid]);
-        if (t < 35) yes++; else no++;
+        // BREAK-IT (social r1 2026-10-10): the old loop read v.trust[vid] —
+        // the ACCUSED's trust of the player — inside the per-voter loop, so
+        // every voter computed the same t and the announced hand count was
+        // unanimous by construction, while the fiction claimed individual
+        // hands ("Hands: 7 for exile, 0 against"). The engine has no
+        // NPC->NPC trust matrix; the honest per-pair number is
+        // pairAffinity(voter, accused): friends stand by them, the hostile
+        // and the indifferent vote them out after a 12-day drain pattern.
+        let aff = 0;
+        try { aff = (typeof this.pairAffinity === 'function') ? this.pairAffinity(voter, vid) : 0; } catch (e) {}
+        if (aff < 10) yes++; else no++;
       }
       const total = yes + no;
       this.say(`The village gathers. No fire-show, no System — just people, tired. "We've carried ${isP ? 'you' : nm} long enough," someone says. "All in favor of asking them to leave?"`);

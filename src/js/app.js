@@ -11464,7 +11464,10 @@
     const comm = Game.commLevel(villagerId);
     let infoHtml;
     if (sys) {
-      const tone = trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.';
+      // BREAK-IT (social r1 2026-10-10): the ad-hoc 3-band ternary disagreed
+      // with the canonical 6 trust bands (Steve 2026-10-07). One banding.
+      const tone = (typeof Game.trustTone === 'function') ? Game.trustTone(villagerId)
+        : (trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.');
       const hb = health >= 70 ? '\uD83D\uDFE2' : health >= 40 ? '\uD83D\uDFE1' : '\uD83D\uDD34';
       infoHtml = `<p class="small">${esc(vp.formerOccupation || '')}${vp.homeRegion ? ' · ' + esc(vp.homeRegion) : ''}</p>
         <p class="small">${hb} Health ${health}/100 · ${tone}</p>
@@ -12229,7 +12232,10 @@
       // NUMBERS DON'T LEAK (break-it social r5 2026-10-09): the person panel
       // and the people journal read trust as qualitative bands — the assign
       // panel showed the raw Trust: N/100. One convention everywhere.
-      const tone = trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.';
+      // BREAK-IT (social r1 2026-10-10): wired to the canonical 6 bands
+      // (Game.trustTone) instead of the ad-hoc 3-band ternary.
+      const tone = (typeof Game.trustTone === 'function') ? Game.trustTone(villagerId)
+        : (trust < 30 ? 'Guarded.' : trust < 60 ? 'Warming up.' : 'Trusts you.');
       body += `<p class="small" style="opacity:.6">${tone}</p>`;
     }
     if (trust < 20) body += `<p class="small" style="color:#e88">"I don't take orders from strangers." (Need 20+ trust.)</p>`;
