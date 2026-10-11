@@ -297,7 +297,7 @@ function diplomacyRoad(Game, ctx) {
       } catch (e) {}
     }
     // Pay tribute on subordinate links: +3 trust/week, no arrears. The
-    // BELONG road needs trust >= 60, no arrears, 21+ days.
+    // BELONG road needs trust >= 50, no arrears, 14+ days (r4 tuning).
     try {
       const links = Game.hierarchyState ? Game.hierarchyState() : [];
       for (const l of links) {

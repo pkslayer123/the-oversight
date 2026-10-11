@@ -12,7 +12,7 @@ national 0/60, feast 13/60**.
 | 2 | policy-competence panel | 4 policies × 60 seeds (competent/progress-r4/winseek/oracle); oracle = winseek + win-probability assessment + arm-up/openers + aid-when-struggling | 0/60 all | 45/46/32/41 | 54/54/37/42 | 1/1/0/0 | 0/60 all | 15% (oracle, honest post-fix) |
 | 3 | oracle-v2 systems-engaged | oracle + greedy deep-systems play: in-fight abilities, daily ability practice, traplines, counter-preference targeting, feast-then-fight banking (scripts/policies/oracle-v2.js; scripts only); 200d cap | 0/60 | 41 | 43/60 | 0/60 | 0/60 | 2% (1/60; oracle's 80% was the assessment burning the surge) |
 | 3-rep | oracleV2 independent replication | second implementation (scripts/policies/oracleV2.js): blow-by-blow ability ladder (all held kits), counter probing, traps/crafting, feast-then-fight, quest completion (harness-side only); 200d cap | 0/60 | 48 | 46/60 | 0/60 | 0/60 | 0/60 (honest) |
-| 4 | scale on-ramp tuning (BELONG bar) | hierarchy.js polityOf BELONG gate: link age 21d→14d, trust 60→50 (arrears-0 + 4-village realm kept; kingdomEndingEligible 70/21 untouched; other five roads + wave-ledger untouched); docs/SCALE.md + ONTOLOGY.md updated; unified driver scripts/winrate-iter4.js (day loop verbatim from iter3) + vest-event tracker; 120d cap per Steve's protocol | 0/60 winseek, 0/60 oracle-v2 (0/120; sibling oracleV2 replication also 0/60) | 32 / 41 | 36/60 / 44/60 | 0/60 both | 0/60 both | 0/60 winseek, 2/60 oracle-v2 |
+| 4b | scale on-ramp: winseek + oracle-v2 measurement | unified driver scripts/winrate-iter4.js (day loop verbatim from iter3) + vest-event tracker; 120 runs × 120d cap per Steve's protocol; exploit audit (deed-priced trust, boundary proof green ×3) | 0/60 winseek, 0/60 oracle-v2 (0/120) | 32 / 41 | 36/60 / 44/60 | 0/60 both | 0/60 both | 0/60 winseek, 2/60 oracle-v2 |
 | 4 | scale on-ramp tune | BELONG bar in hierarchy.js `polityOf()`: trust ≥60→50, link age 21d→14d (arrears-0 + realm-4 kept; other roads + Wave Ledger untouched); oracleV2, 60 seeds 1–60 × **120d cap** (DAY-CAP PROTOCOL) | 0/60 | 50 | 47/60 | 0/60 | 0/60 | 0/60 |
 
 \* Not re-swept this round (diagnostic round; numbers are the validation
@@ -178,3 +178,38 @@ is the recommended first lever, then combat death share (~51%). Full writeup:
 evidence/2026-10-10/winrate-iter3-oraclev2.md. (Note: this worker briefly
 duplicated the round-3 table row; consolidated to the 3-rep row above. The
 other worker's `scripts/policies/oracle.js` export change is theirs.)
+
+### Independent replication + deeper diagnosis (second worker, same worktree) — winseek + oracle-v2 measurement
+
+Change: BELONG bar 21d/60 → 14d/50 (hierarchy.js `polityOf` gate only;
+arrears-0 + 4-village realm kept; `kingdomEndingEligible` 70/21 untouched;
+six roads' structure, regional, and wave-ledger untouched). Measurement: unified driver `scripts/winrate-iter4.js` (POLICY=winseek /
+oracle-v2; day loop + utilization verbatim from iter3; adds vest-event
+tracking + winDay + binding-blocker decomposition), 60 seeds × 120d,
+`Game.doAction('wait')` per part. Analyzer `scripts/analyze-iter4.js`.
+**Result: 0/120 wins, 0/120 national+** (winseek: 0/60, med 32d, max 73d;
+oracle-v2: 0/60, med 41d, max 78d; binding blocker `scale` 120/120; vest
+events 0). Sibling oracleV2 replication on the same tuned code: 0/60, med
+50d, 60/60 regional (their files, not committed here).
+
+Diagnosis (one level deeper): the bar is no longer binding — **link
+fragility is**. Probe `scripts/probe-linkstates-20261010.js` re-ran the 8
+winseek runs that held links: subordinate links form at trust 30 and
+**58/58 broken links broke via 'succession'** — the catch-up sim kills the
+other village's designated speaker regularly; each death is trust −15 and
+snaps any link under trust 20 (`theirLeaderDied` → `successionCrisis`). A
+fresh link dies on the first speaker death (30−15=15 < 20). Reaching trust 50
+needs ~7 weeks of perfect tribute with no deaths — structurally
+near-impossible. Observed lifecycle: form → snap → re-form churn. Even a
+met realm-4 (seed 55, village_3) didn't vest — succession killed the links
+first. Recommended round-5 lever: the succession snap mechanics, not the bar.
+Full writeup: evidence/2026-10-10/winrate-iter4-scale-onramp.md.
+
+Process notes: (1) inline `VAR="1-60"` env prefixes get mangled by
+backgrounded exec (literal quotes preserved → NaN seed → 1-row sweep); use
+the tool's `env` parameter for background runs and always verify the
+driver's seed-count header before a long sweep. (2) `muse.write` content is
+literal — a `\\d` regex in the write body lands as double-backslash in the
+file and never matches; write `\d`. (3) A concurrent sibling worker shares
+this worktree (their `scripts/sweep-r4-scale-*` files are untracked and NOT
+committed here — left for their owner).
