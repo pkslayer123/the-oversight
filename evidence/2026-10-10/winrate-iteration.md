@@ -51,3 +51,24 @@ So the honest surge is currently near-unreachable in this policy; the old
 metric was masking that. Levers: lower the 300 threshold, make feasts bank
 more, teach the policy to feast-then-fight, or accept the surge as a
 late-game engine piece. Full writeup: evidence/2026-10-10/winrate-iter1-feast.md.
+
+| 2 | policy-competence panel | measurement only: 4 policies x 60 seeds x 200d (240 runs) + oracle bound | 0/240* | 32-46 | 37-54/60 | 0-1/60 | 0/60 | oracle arms 78%/uses 80% |
+
+## Round 2 notes (2026-10-10, worker winrate-iter) — the competence panel
+
+**Oracle bound: the GAME is the bottleneck — with a caveat.** All four policies won
+0/60 (competent, progress-r4, winseek, hand-tuned oracle). Oracle bought +10d median
+survival (41 vs 32) and max 109d, but never reached t2, national scale, or the endgame.
+Only 2/240 runs survived the 200-day cap at all.
+
+**Caveat:** NO policy used the deep systems — abilities ~0 uses/run, synergy
+discoveries <1/run, counter-kill rate 0.0% everywhere, crafts/traps 0 across all 240
+runs. The oracle added fight assessment, arm-up openers, and aid-acceptance but never
+touched abilities, traps, counters, or synergies. So "game is the bottleneck" is proven
+only against policies that fight with basics. Round 3 tests whether a systems-engaged
+policy (oracle-v2) changes the verdict. Full panel: evidence/2026-10-10/policy-competence-panel.md.
+
+Other findings: winseek survives WORSE than competent (median 32d vs 45d) — it chases
+objectives and dies; competent turtles. ~60% of deaths are combat (player + villager).
+"The night" kills 11-18%. Feasts are the only deep system touched (winseek arms 80%,
+uses 15%; oracle arms 78%, uses 80%).
