@@ -281,6 +281,55 @@
         const cryBtn = (() => { try { const abs = Game.aidCryAbilities ? (Game.aidCryAbilities() || []) : []; return abs.length ? ` <button class="btn sm ghost" data-beat="aid:cry:${abs[0].id || abs[0]}">Ability cry (${esc(abs[0].name || abs[0].id || abs[0])})</button>` : ''; } catch (e) { return ''; } })();
         out.push(`<div class="statrow beat-open">🚨 <b>${esc(ac.name || 'A crisis')}</b> at the door — call for help: <button class="btn sm" data-beat="aid:runner">Send a runner</button> <button class="btn sm ghost" data-beat="aid:signal">Light the signal fire</button> <button class="btn sm ghost" data-beat="aid:system">System relay</button>${cryBtn}</div>`);
       }
+      // SAFETY NETS (2026-10-10): System aid quests, crisis relief, and
+      // neighbor aid flows — every open beat gets its honest answer buttons.
+      // (pendingSystemFavor was engine-only: the System asked, the player had
+      // no buttons. Same reachability class as the parity beats above.)
+      const paq = st.pendingAidQuest;
+      if (paq) {
+        out.push(`<div class="statrow beat-open">📡 <b>The System offers aid:</b> ${esc(paq.title)} — ${esc(paq.needText)}. <button class="btn sm" data-beat="aq:accept">Take the quest</button> <button class="btn sm ghost" data-beat="aq:refuse">Refuse</button></div>`);
+      }
+      const aaq = st.activeAidQuest;
+      if (aaq) {
+        const daysLeft = Math.max(0, (aaq.deadlineDay || 1) - (Game.state.scholar.day || 1));
+        const handBtn = aaq.kind === 'fetch' ? ` <button class="btn sm" data-beat="aq:handin">Hand over ${esc(aaq.needText)}</button>` : '';
+        out.push(`<div class="statrow beat-open">📡 <b>Aid quest:</b> ${esc(aaq.title)} — ${esc(aaq.needText)} (${daysLeft}d left).${handBtn} <button class="btn sm ghost" data-beat="aq:abandon">Abandon</button></div>`);
+      }
+      const rel = st.relief;
+      if (rel) {
+        const used = rel.used || {};
+        const sickN = Object.keys((Game.state.village || {}).sick || {}).length;
+        const triageBtn = !used.triage ? ` <button class="btn sm" data-beat="rel:triage" title="800 kcal from the pantry; the sick mend 2 days sooner">⛺ Triage tents (800 kcal)</button>` : '';
+        const rationsBtn = !used.rations ? ` <button class="btn sm ghost" data-beat="rel:rations" title="Half rations, 3 days, everyone — mood to strained">🗳️ Rationing vote</button>` : '';
+        const huntBtn = !used.hunt ? ` <button class="btn sm ghost" data-beat="rel:hunt" title="Two hunters, real meat, real risk">🏹 Emergency hunt</button>` : '';
+        const kindName = { sickness: 'the fever', raid: 'the raid\'s aftermath', storm: 'the storm\'s aftermath', hunger: 'the empty bins' }[rel.kind] || 'the crisis';
+        out.push(`<div class="statrow beat-open">🛟 <b>${esc(rel.speaker || 'Someone')}</b> proposes relief for ${kindName}:${triageBtn}${rationsBtn}${huntBtn} <button class="btn sm ghost" data-beat="rel:dismiss">Endure it plain</button></div>`);
+      }
+      const pao = st.pendingAidOffer;
+      if (pao) {
+        let vnm = 'their fire';
+        try { const v = Game._otherVillage ? Game._otherVillage(pao.villageId) : null; if (v && v.name) vnm = v.name; } catch (e) {}
+        out.push(`<div class="statrow beat-open">🎁 <b>${esc(pao.face || 'Someone')}</b> of ${esc(vnm)} offers ${esc(pao.kind)} (~${(pao.amount || 0).toLocaleString()} kcal, no tribute). <button class="btn sm" data-beat="aidoffer:accept">Accept</button> <button class="btn sm ghost" data-beat="aidoffer:refuse">Refuse (pride)</button></div>`);
+      }
+      const pab = st.pendingAidBeg;
+      if (pab) {
+        let vnm = 'their fire';
+        try { const v = Game._otherVillage ? Game._otherVillage(pab.villageId) : null; if (v && v.name) vnm = v.name; } catch (e) {}
+        out.push(`<div class="statrow beat-open">🥣 <b>${esc(pab.face || 'Someone')}</b> of ${esc(vnm)} begs food (~${(pab.amount || 0).toLocaleString()} kcal). <button class="btn sm" data-beat="aidbeg:give">Give it</button> <button class="btn sm ghost" data-beat="aidbeg:refuse">Refuse</button></div>`);
+      }
+      const psf = st.pendingSystemFavor;
+      if (psf) {
+        out.push(`<div class="statrow beat-open">🔔 <b>The System collects its favor:</b> ${(psf.demandKcal || 1500).toLocaleString()} kcal of tribute. <button class="btn sm" data-beat="fav:pay">Pay it</button> <button class="btn sm ghost" data-beat="fav:refuse">Refuse</button></div>`);
+      }
+      const aidOut = (st.aidOut || []).concat(st.aidInbound || []);
+      if (aidOut.length) {
+        const bits = aidOut.map(r => {
+          let vnm = 'their fire';
+          try { const v = Game._otherVillage ? Game._otherVillage(r.villageId) : null; if (v && v.name) vnm = v.name; } catch (e) {}
+          return `${esc(r.kind)} ${r.partsLeft != null && r.sentDay == null ? 'ask' : 'aid'}: ${esc(vnm)} (${r.partsLeft || 0} parts out)`;
+        }).join(' · ');
+        out.push(`<div class="statrow beat-open" style="opacity:.75">🏃 Aid on the road — ${bits}</div>`);
+      }
       // SWITCHBOARD (parity 2026-10-10): the office arrives with the regional
       // game — the appointment was engine-only. Name who holds the words.
       if (st.pendingSwitchboard) {
@@ -14050,6 +14099,25 @@
         if (spec[1] === 'cry') Game.callForHelp('cry', { abilityId: spec[2] });
         else Game.callForHelp(spec[1]);
       }
+      // SAFETY NETS (2026-10-10): aid quests, relief, neighbor aid flows,
+      // and the System favor collection — all engine, now all answerable.
+      else if (kind === 'aq') {
+        if (spec[1] === 'accept' || spec[1] === 'refuse') Game.answerAidQuest(spec[1]);
+        else if (spec[1] === 'handin') Game.handInAidQuest();
+        else if (spec[1] === 'abandon') Game.abandonAidQuest();
+      }
+      else if (kind === 'rel') {
+        Game.answerRelief(spec[1]);
+      }
+      else if (kind === 'aidoffer') {
+        Game.answerAidOffer(spec[1]);
+      }
+      else if (kind === 'aidbeg') {
+        Game.answerAidBeg(spec[1]);
+      }
+      else if (kind === 'fav') {
+        Game.answerSystemFavor(spec[1] === 'pay' ? 'pay' : 'refuse');
+      }
       else if (kind === 'sw') {
         if (spec[1] === 'appoint') Game.appointSwitchboard(spec[2]);
         else if (spec[1] === 'log') Game.switchboardLog();
@@ -14067,6 +14135,8 @@
     document.querySelectorAll('[data-link-pay]').forEach(b => b.onclick = () => { Game.payTribute(b.dataset.linkPay); refresh(); });
     // AID DEBT (parity 2026-10-10): repayable aloud — was engine-only.
     document.querySelectorAll('[data-link-repay]').forEach(b => b.onclick = () => { Game.repayAidDebt(b.dataset.linkRepay); refresh(); });
+    // SAFETY NETS (2026-10-10): request aid from a linked village.
+    document.querySelectorAll('[data-aidreq]').forEach(b => b.onclick = () => { const p = b.dataset.aidreq.split(':'); Game.requestAid(p[0], p[1]); refresh(); });
     // Hierarchy: propose a link (drifter loop 2026-10-08 — was engine-only).
     document.querySelectorAll('[data-link-propose-sub]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposeSub, { asSubordinate: true, tributeKcalPerWeek: 4000 }); refresh(); });
     document.querySelectorAll('[data-link-propose-prim]').forEach(b => b.onclick = () => { Game.proposeLink(b.dataset.linkProposePrim, { asSubordinate: false, tributeKcalPerWeek: 4000 }); refresh(); });
@@ -14527,6 +14597,17 @@
                   // fields — repayable aloud via repayAidDebt (was
                   // engine-only). Partial payment honored.
                   if ((l.aidDebtKcal || 0) > 0) h += ` <button class="btn sm" data-link-repay="${l.id}">Repay aid debt (${l.aidDebtKcal.toLocaleString()} kcal)</button>`;
+                  // SAFETY NETS (2026-10-10): request aid — knowledge-gated
+                  // (aidKnown), only while genuinely struggling, one ask per
+                  // village per week. aidRequestable owns the gates.
+                  try {
+                    const rq = Game.aidRequestable && Game.aidRequestable(l.id);
+                    if (rq && rq.kinds && rq.kinds.length) {
+                      h += `<br>🆘 <b>Ask ${esc(nm)} for aid:</b> ` + rq.kinds.map(k =>
+                        `<button class="btn sm ghost" data-aidreq="${l.id}:${k}">${k === 'food' ? '🍲 Food' : k === 'medicine' ? '💊 Medicine' : '🤝 Hands'}</button>`
+                      ).join(' ');
+                    }
+                  } catch (e) {}
                   // BREAK-IT (social r2 2026-10-08): renegotiateLink /
                   // bidForPrimacy / breakLink were engine-only — a
                   // subordinate could never climb or break away (same class

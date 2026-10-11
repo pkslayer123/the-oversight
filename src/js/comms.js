@@ -560,6 +560,9 @@
       while (ov.aidFaces.length < 3) {
         var nm = 'Someone';
         try { nm = this.genNameForOrigin('village', true); } catch (e) {}
+        // genNameForOrigin returns {name, cultureId} — unwrap (safety-nets
+        // 2026-10-10: the raw object printed as "[object Object]" in beats).
+        if (nm && typeof nm === 'object') nm = nm.name || 'Someone';
         ov.aidFaces.push({ id: 'aidface_' + villageId + '_' + ov.aidFaces.length, name: nm });
       }
       return ov.aidFaces[0];
