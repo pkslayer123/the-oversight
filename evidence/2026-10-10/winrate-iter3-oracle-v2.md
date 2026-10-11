@@ -34,6 +34,15 @@ Driver: `scripts/winrate-iter3.js` (60 seeds × 200d, villagerTurn-corrected
 day loop, panel-identical instrumentation + v2 counters). Results:
 `scripts/winrate-iter3-results.json`. Analyzer: `scripts/analyze-iter3.js`.
 
+DAY-CAP PROTOCOL (Steve 2026-10-10): sims are cut from 200d to 120d — the
+design target is ~day 100 and the tail past ~120 is mostly dead runs burning
+compute. Round 3 ran at **200d** (all 60 seeds complete before the change;
+rounds 1–2 were also 200d). All future rounds: 120d. The sweep ran on base
+61fcde99, before cb3f922b (contests resolve-time eligibility + prize
+idempotency); the 0/60 verdict is driven by combat/night deaths upstream of
+contests and is robust to that change, but strictly the numbers are
+pre-change.
+
 Three instrument bugs found and fixed (all before/during the measured runs):
 - **Loom-stall**: loom/bellow fired every turn = perpetual monster
   hesitation with the turn counter advancing — a multi-day stalemate that

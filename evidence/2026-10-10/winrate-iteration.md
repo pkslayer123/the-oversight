@@ -10,8 +10,8 @@ national 0/60, feast 13/60**.
 | 0 | baseline | — | 0/60 | 34 | 40/60 | 0/60 | 0/60 | 13/60 |
 | 1 | feast-surge regression | dry-burn consumption fix (progression.js: surge spent only by a real feastburn, r>0) + diagnosis | 0/60* | 34* | 40/60* | 0/60* | 0/60* | see notes |
 | 2 | policy-competence panel | 4 policies × 60 seeds (competent/progress-r4/winseek/oracle); oracle = winseek + win-probability assessment + arm-up/openers + aid-when-struggling | 0/60 all | 45/46/32/41 | 54/54/37/42 | 1/1/0/0 | 0/60 all | 15% (oracle, honest post-fix) |
-| 3 | oracle-v2 systems-engaged | oracle + greedy deep-systems play: in-fight abilities, daily ability practice, traplines, counter-preference targeting, feast-then-fight banking (scripts/policies/oracle-v2.js; scripts only) | 0/60 | 41 | 43/60 | 0/60 | 0/60 | 2% (1/60; oracle's 80% was the assessment burning the surge) |
-| 3-rep | oracleV2 independent replication | second implementation (scripts/policies/oracleV2.js): blow-by-blow ability ladder (all held kits), counter probing, traps/crafting, feast-then-fight, quest completion (harness-side only) | 0/60 | 48 | 46/60 | 0/60 | 0/60 | 0/60 (honest) |
+| 3 | oracle-v2 systems-engaged | oracle + greedy deep-systems play: in-fight abilities, daily ability practice, traplines, counter-preference targeting, feast-then-fight banking (scripts/policies/oracle-v2.js; scripts only); 200d cap | 0/60 | 41 | 43/60 | 0/60 | 0/60 | 2% (1/60; oracle's 80% was the assessment burning the surge) |
+| 3-rep | oracleV2 independent replication | second implementation (scripts/policies/oracleV2.js): blow-by-blow ability ladder (all held kits), counter probing, traps/crafting, feast-then-fight, quest completion (harness-side only); 200d cap | 0/60 | 48 | 46/60 | 0/60 | 0/60 | 0/60 (honest) |
 
 \* Not re-swept this round (diagnostic round; numbers are the validation
 baseline). The fix makes `feastSurgeUsed` honest: it now requires an actual
