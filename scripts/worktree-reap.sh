@@ -75,7 +75,9 @@ for t in data["trees"]:
             t["status"] = "gone"
             removed.append(f"branch {branch} (tree already removed) was merged — deleted.")
         else:
-            t["note"] = f"{t.get('note', '')} [still unmerged; branch kept]".strip()
+            note = t.get('note', '')
+            if '[still unmerged; branch kept]' not in note:
+                t['note'] = f"{note} [still unmerged; branch kept]".strip()
         continue
     if not os.path.isdir(path):
         t["status"] = "gone"
