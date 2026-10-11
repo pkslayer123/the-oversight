@@ -99,6 +99,40 @@ telegraph honesty is law — every cue describes what the mechanic actually does
   clauses and the §0 TERMINATION loophole surfaces; cite it and the Scroll
   dismisses itself, no blood.
 
+### Signature mechanics (Wave 3, batch C)
+
+Three more wave-3 monsters got their signature mechanics built properly
+(2026-10-10; telegraph honesty is law — every cue describes what the mechanic
+actually does):
+
+- **The Callback** — it wears the face of an ACTUAL dead villager from the
+  run's history (picked from corpse records, never a living villager — or "a
+  stranger" if none have died) and speaks in their voice using things they
+  actually said. It borrows their signature moves, telegraphed by whose face
+  it wears ("the face shifts — you recognize the stance"). Counterplay is
+  real and poignant: hold a FUNERAL mid-fight — speak to it as the person and
+  say goodbye properly — and it loses coherence (non-violent resolution,
+  earned); or NAME IT as not-them ("you are NOT them") to strip its borrowed
+  moves and wound it.
+- **Buffering** — it exists 3 seconds in the past. Its telegraphs ANNOUNCE
+  the future truthfully ("IT WILL STEP LEFT" — and then it steps left). On
+  the grid it shows 2–3 afterimage frames; the faintest frame is the real
+  present. Strikes at bright afterimages MISS (you're hitting where it was);
+  strikes at the faintest frame HIT. Counterplay: stand perfectly still — it
+  aims at your predicted future position, so no movement makes it whiff; or
+  CLOSE YOUR EYES (blind yourself for a round, then swing at the present —
+  guaranteed hit on the faintest frame, but you can't see other telegraphs
+  that round).
+- **Ad Break** — periodically it PAUSES the fight for an ad: a visible
+  progress bar (the bar is the telegraph). During the pause it repositions
+  and heals while you watch. When the bar fills, a SKIP AD beat appears as a
+  real combat choice — it arrives sooner if the audience likes you
+  (broadcast favor/viewership shortens the ad). Or LOOK AWAY (the ad's power
+  is that you WATCH — looking away halves its heal and slows the bar, but
+  you fight blind that round); or kill the SPONSOR-CREATURE riding the glyph
+  (a small 40-HP add — kill it and the bar jumps forward). Patience is a
+  valid strategy: wait for the skip beat.
+
 
 ### Signature mechanics (Wave 3, batch A)
 
