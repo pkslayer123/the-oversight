@@ -11125,7 +11125,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       }
       // ACTION CLOCK: friction fire is a 32-tick chunk of real work. Without
       // moss-tinder you shred dry grass on the spot first (+16 ticks).
-      s.kcal = Math.max(0, (s.kcal || 0) - kcalCost);
+      // COST HONESTY (survivalist loop 2026-10-10, r6): 70 kcal + 32/48
+      // ticks is the biggest single-action price in the game — and neither
+      // the success nor the failure copy named it. Name actuals (clamped).
+      const fireKcalBefore = s.kcal || 0;
+      s.kcal = Math.max(0, fireKcalBefore - kcalCost);
+      const fireKcalSpent = Math.round(fireKcalBefore - s.kcal);
+      const fireCostNote = `(-${fireKcalSpent} kcal, ${ticks} ticks.)`;
       this.tickAction(ticks);
       fc.attempts++;
       // FAILURE PITY (Steve 2026-10-07): each failed attempt teaches the hands —
@@ -11171,6 +11177,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           ? 'The beard-moss tinder takes the first real spark. You feed it twigs — fire. Yours.'
           : 'The tinder catches. A real flame, breathing. You feed it twigs — fire. Yours.';
         if (fireNote) msg = fireNote + ' ' + msg;
+        msg += ' ' + fireCostNote;
         if (fc.successes >= 3 && !fc.knack) {
           fc.knack = true;
           this.state.codex = this.state.codex || {};
@@ -11199,7 +11206,8 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // HONEST FAILURE (survivalist loop 2026-10-08): if the rain took its cut,
       // say so — the player should know the sky is part of why the spark died.
       if (this.state.weather === 'rain' && !autoFire) hint += " (The rain isn't helping — wet fuel, worse odds.)";
-      this.say(hint);
+      // The work happened whether the spark caught or not — name it.
+      this.say(`${hint} (-${fireKcalSpent} kcal, ${ticks} ticks of work, gone either way.)`);
       return null;
     },
     // feedFire: lay another branch on a live player-made fire (+64 ticks,
@@ -11214,13 +11222,18 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       this.spendFireFuel(fuel);
       const f = (this.state.fires || []).find(f => f.tx === this.map.px && f.ty === this.map.py && f.cx === cx && f.cy === cy);
       // fire.heat (break-it abilities 2026-10-09): +25% burn per heat point.
-      if (f) f.till += Math.round(fuel.burn * (1 + 0.25 * this.modTarget('fire.heat', 0)));
+      // COST HONESTY (survivalist loop 2026-10-10, r6): feeding is 8 ticks
+      // of real tending and buys a named amount of flame — "a while more"
+      // said neither. Name both.
+      const feedAdded = Math.round(fuel.burn * (1 + 0.25 * this.modTarget('fire.heat', 0)));
+      if (f) f.till += feedAdded;
       this.tickAction(8);
+      const feedNote = `(+${feedAdded} ticks of flame, 8 ticks of tending.)`;
       this.say(fuel.kind === 'wood'
-        ? 'You lay another log on. The fire settles in — hours more flame.'
+        ? `You lay another log on. The fire settles in — hours more flame. ${feedNote}`
         : fuel.kind === 'fusion'
-        ? `Nothing else to burn. You feed the ${fuel.def ? fuel.def.name.toLowerCase() : 'fusion pellet'} to the fire. It burns... enthusiastically. Hours and hours of flame.`
-        : 'You feed it another branch. The fire takes it — a while more flame.');
+        ? `Nothing else to burn. You feed the ${fuel.def ? fuel.def.name.toLowerCase() : 'fusion pellet'} to the fire. It burns... enthusiastically. Hours and hours of flame. ${feedNote}`
+        : `You feed it another branch. The fire takes it — a while more flame. ${feedNote}`);
       return null;
     },
     // pitchTent: deploy a packed tent on clear ground. 48 ticks + 50 kcal of
@@ -11597,7 +11610,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const fuel = this.fireFuel();
       if (!fuel) { this.say('You need fuel — gather fallen branches, or cut a log.'); return null; }
       // Small fire, sheltered work: 16 ticks + 30 kcal. It will never be a bonfire.
-      s.kcal = Math.max(0, (s.kcal || 0) - 30);
+      // COST HONESTY (survivalist loop 2026-10-10, r6): same class as
+      // makeFire — name actuals (clamped), not the silent charge.
+      const tentKcalBefore = s.kcal || 0;
+      s.kcal = Math.max(0, tentKcalBefore - 30);
+      const tentKcalSpent = Math.round(tentKcalBefore - s.kcal);
       this.tickAction(16);
       this.spendFireFuel(fuel);
       const ins = s.insideTent;
@@ -11607,7 +11624,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const burn = Math.round(fuel.burn * 0.6 * (1 + 0.25 * tentHeat));
       const now = this._absTick();
       (this.state.fires = this.state.fires || []).push({ tx: ins.tx, ty: ins.ty, cx: ins.cx, cy: ins.cy, till: now + burn, burn0: burn, inside: true, lastTax: now });
-      this.say('A small fire catches in the fire pan. It throws dancing light on the canvas — and no rain in the world can touch it in here.');
+      this.say(`A small fire catches in the fire pan. It throws dancing light on the canvas — and no rain in the world can touch it in here. (-${tentKcalSpent} kcal, 16 ticks.)`);
       this.discover('firecraft');
       return null;
     },
@@ -11623,11 +11640,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       this.spendFireFuel(fuel);
       // Small fire, small capacity: it can't hold a bonfire's worth of fuel.
       // fire.heat (break-it abilities 2026-10-09): +25% burn per heat point.
+      // COST HONESTY (survivalist loop 2026-10-10, r6): same class as
+      // feedFire — name the 8 ticks and the flame bought.
       const feedHeat = this.modTarget('fire.heat', 0);
       const add = Math.round(fuel.burn * 0.6 * (1 + 0.25 * feedHeat));
       f.till = Math.min(f.till + add, this._absTick() + (f.burn0 || add) * 2);
       this.tickAction(8);
-      this.say('You feed the little fire. It takes it — a while more light and warmth.');
+      this.say(`You feed the little fire. It takes it — a while more light and warmth. (+${add} ticks of flame, 8 ticks of tending.)`);
       return null;
     },
     cookInTent() {
