@@ -152,7 +152,7 @@ function withRand(seq, fn) { let i = 0; Math.random = () => (i < seq.length ? se
     t.type = 'creek';
     Game.setNet(); say();
     const net = t.nets[0];
-    ok('net set with 12 uses', net && net.uses === 12, `uses=${net && net.uses}`);
+    ok('net set with 16 uses (depletion rebalance 2026-10-10)', net && net.uses === 16, `uses=${net && net.uses}`);
     // barren of fish: no catch even with a rigged roll
     t.wildlife = { raccoon: 3 };
     withRand([0.01], () => Game.checkNets());

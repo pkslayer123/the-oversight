@@ -76,7 +76,7 @@ function dress(s) { return Game.useAbility('field_dressing', 'dress_game'); }
   console.log('== D1. ROTTEN CARCASS (spoilage bypass) ==');
   {
     const s = freshGame();
-    mkCarcass(s, 'white_tailed_deer', 4000, -1); // rotten
+    mkCarcass(s, 'white_tailed_deer', 4000, -30) /* rotten for any spoilage bonus */; // rotten
     const k0 = s.kcal;
     const r = dress(s);
     const kGain = s.kcal - k0;
@@ -137,6 +137,11 @@ function dress(s) { return Game.useAbility('field_dressing', 'dress_game'); }
   console.log('== D4. NO-KNIFE PATH (the ability\'s value) ==');
   {
     const s = freshGame(); // no knife in inventory
+    // roster lottery: some backgrounds start with a cutting tool — strip them
+    // so the "no knife" precondition holds on every seed.
+    const isCut = i => /knife|machete|sharpened|blade/i.test(String(i.name || '') + ' ' + String(i.recipeId || ''));
+    s.inventory = (s.inventory || []).filter(i => !isCut(i));
+    s.tools = (s.tools || []).filter(i => !isCut(i));
     const hasKnife = Game.hasCuttingTool();
     mkCarcass(s, 'cottontail_rabbit', 1200, 2);
     const k0 = s.kcal;

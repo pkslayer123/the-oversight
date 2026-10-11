@@ -85,8 +85,12 @@ const grantAbility = (Game, id, level) => {
       caught = (s.inventory || []).find(i => i.foodKind === 'meat' && i.foodState === 'carcass');
       sayText();
     }
-    const expected = Math.round((rabbit.calories || 0) * mult);
-    check('E1 trap catch gross = base*mult (single bake)', !!caught && caught.hiddenKcal === expected,
+    // trap catch is species-honest now: the carcass keeps the animal's real
+    // gross (hunter break-it 2026-10-10, commit 77d43999 — hunt.meat_yield
+    // moved to the cleaning as waste reduction, butcherYieldFrac). The old
+    // pin asserted the pre-fix energy printer (gross = base*mult at the kill).
+    const expected = Math.round(rabbit.calories || 0);
+    check('E1 trap catch gross = species-honest base (no kill inflation)', !!caught && caught.hiddenKcal === expected,
       `gross=${caught && caught.hiddenKcal} expected=${expected}`);
     // clean + cook never exceed the gross
     if (caught) {
@@ -151,9 +155,12 @@ const grantAbility = (Game, id, level) => {
     const parkedOk = !s.animal && parked && parked.id === aid;
     check('E3 animal parked on leave tile, not in pocket', parkedOk,
       `s.animal=${!!s.animal} parked=${parked && parked.id}`);
-    // walk back — it should be restored, and the population must NOT double-count
+    // walk back — it should be restored, and the population must NOT double-count.
+    // force=true: a fallen tree may honestly refuse the return leg (blockage),
+    // which would veto the continuity check without testing anything. The
+    // engine's refusal is correct; the test wants the park/restore path.
     const wlBefore = (tile(Game, px0, py0).wildlife || {}).cottontail_rabbit || 0;
-    if (parkedOk) { try { Game.travelTo(px0, py0); } catch (e) {} sayText(); }
+    if (parkedOk) { try { Game.travelTo(px0, py0, true); } catch (e) {} sayText(); }
     const restored = s.animal && s.animal.id === aid;
     const wlAfter = (tile(Game, px0, py0).wildlife || {}).cottontail_rabbit || 0;
     check('E3 animal restored on return', restored, `restored=${!!restored}`);

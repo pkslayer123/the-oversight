@@ -2838,6 +2838,16 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // promise. Only skip traps whose setDay is in the future (defensive).
           if (trap.setDay > this.state.scholar.day) continue;
           const recipe = this.data.recipes.find(r => r.id === trap.recipeId);
+          // STALE SAVE (hunter break-it 2026-10-10): a tile trap whose recipe
+          // no longer exists (renamed or removed since the save) must not
+          // crash the dawn check — checkTraps is the one endDay call with no
+          // try/catch wrapper, so a throw here bricks every dawn. The trap
+          // rotted past use; clear it honestly, once, and move on.
+          if (!recipe) {
+            this.say(`An old trap ${dirPhrase(x, y)} has rotted past use — the weave gave out, the stakes with it. You clear the remains away.`);
+            t.traps = t.traps.filter(x => x !== trap);
+            continue;
+          }
           // USES BACKFILL (hunter break-it 2026-10-09): nets got a pre-fix
           // backfill (uses=12); traps never did. A trap with uses undefined
           // went NaN on the first catch (undefined - 1), and NaN <= 0 is
@@ -3075,9 +3085,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // gross.
           const _fm = this.allModifiers();
           const fishRare = S.modifiers.resolve(0, 'fishing.rare_chance', _fm, {});
-          // DEPLETION 2026-10-10: 0.35 → 0.6 — fishing is a build now. The
-          // creek's real stock (bigger now, faster-breeding) is the limit,
-          // not the odds.
+          // TRAP REBALANCE 2026-10-10: the depletion pass briefly raised this to
+          // 0.6, but the sibling trap rebalance settled the net at 0.35 with
+          // the 1-3 haul — fishing is a strong supplement (feeds 2-3), not a
+          // solo pillar (pinned in scripts/test-depletion-20261010.js). The
+          // creek's real stock is still the limit, not the odds.
           if (Math.random() < 0.35 + fishRare) {
             // GILL NET HAUL (balance 2026-10-10): a real net doesn't take one
             // fish a night. A successful night hauls 1-3 fish (60/30/10) —
@@ -11918,13 +11930,21 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // DEPLETION 2026-10-10: the skilled fisher works the spot, not just
         // the bite — fishWise (known water) sometimes doubles up. Two real
         // fish, two real decrements: species-honesty preserved.
+        // STALE-STOCK FIX (hunter playtest 2026-10-10 r3): the bonus MUST
+        // re-read the live stock after the first decrement — the pre-fix
+        // code picked from the stale pre-catch list, so on a nearly-fished
+        // creek it decremented an already-deleted species (NaN in wildlife)
+        // while conjuring a real second carcass. No stock, no second fish.
         let bonusKcal = 0;
-        if (known && fishHere.length && Math.random() < 0.3) {
-          const fid2 = fishHere[Math.floor(Math.random() * fishHere.length)];
-          _wl[fid2]--; if (_wl[fid2] <= 0) delete _wl[fid2];
-          const adef2 = (this.data.animals || []).find(a => a.id === fid2) || { id: fid2, name: 'fish', calories: 200 };
-          bonusKcal = Math.round((adef2.calories || 200) * yieldMult);
-          s.inventory.push(this.foodCarcass(adef2, bonusKcal, s.day, 'fished'));
+        if (known && Math.random() < 0.3) {
+          const fishHere2 = FISH_IDS.filter(id => (_wl[id] || 0) > 0);
+          if (fishHere2.length) {
+            const fid2 = fishHere2[Math.floor(Math.random() * fishHere2.length)];
+            _wl[fid2]--; if (_wl[fid2] <= 0) delete _wl[fid2];
+            const adef2 = (this.data.animals || []).find(a => a.id === fid2) || { id: fid2, name: 'fish', calories: 200 };
+            bonusKcal = Math.round((adef2.calories || 200) * yieldMult);
+            s.inventory.push(this.foodCarcass(adef2, bonusKcal, s.day, 'fished'));
+          }
         }
         // a body in hand teaches you what it was — same as a trap/net catch.
         try { if (this.encIdentifyAnimal) this.encIdentifyAnimal(fid); } catch (e) {}

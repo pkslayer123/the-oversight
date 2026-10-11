@@ -453,12 +453,23 @@
     // species' real gross; skill raises the cleaning yield toward it, capped
     // at 0.95. Shared by carcassToMeat, the kill-line footer, and the
     // delegation label — one number everywhere, no copy drift.
-    butcherYieldFrac(how) {
+    // FAT-AWARE (hunter break-it 2026-10-10): ~20% of a fat animal's gross
+    // lives in the separable fat (canon BEAR.md) — carved OUT of the gross,
+    // not added on top. The meat ceiling for bear/boar/javelina is 0.75, so
+    // meat + fat never exceeds 0.95 of the species-honest gross — the same
+    // energy-creation class as the 3.3x kill-inflation bug (a 30,000-kcal
+    // bear was paying 28,500 meat + 6,000 fat = 115% of gross).
+    butcherYieldFrac(how, animalId) {
       const base = this.knowsTechnique('clean') ? 0.40 : 0.30;
       const target = (how === 'netted' || how === 'fished') ? 'fishing.yield' : 'hunt.meat_yield';
       let y = 1;
       try { y = this.modTarget(target, 1); } catch (e) {}
-      return Math.min(0.95, base * y);
+      let cap = 0.95;
+      try {
+        const ad = animalId && (this.data.animals || []).find(a => a.id === animalId);
+        if (ad && (ad.butcher || {}).fat > 0) cap = 0.75;
+      } catch (e) {}
+      return Math.min(cap, base * y);
     },
 
     carcassToMeat(inv, i, knows) {
@@ -466,12 +477,13 @@
       const gross = it.hiddenKcal || 0;
       const got = [];
       // yield: known 40%, blind-messy 30% — raised toward the gross by skill
-      // (butcherYieldFrac), never above it.
+      // (butcherYieldFrac), never above it. Fat-aware: the helper caps meat
+      // at 0.75 for fat animals so meat + separated fat <= 0.95 of gross.
       // PORTION LAW (Steve 2026-10-09, bear rework): no 30k-kcal slabs.
       // Portions cap at ~500 kcal — a 2000-kcal day takes four 500s. Big
       // game becomes many honest pieces, not one lump. (Engine-wide: deer,
       // elk, moose, bison all chunk the same way.)
-      const yfrac = this.butcherYieldFrac(it.how);
+      const yfrac = this.butcherYieldFrac(it.how, (it.plantId || '').replace(/^meat_/, ''));
       const net = Math.round(gross * yfrac);
       const units = Math.max(1, Math.round(net / 500));
       const per = Math.round(net / units);
@@ -619,7 +631,9 @@
       // so the bigger haul is explained, not mysterious.
       let yieldNote = '';
       try {
-        const yf = this.butcherYieldFrac(firstHow);
+        const firstIt = (targets.length && inv[targets[0]]) || {};
+        const firstAid = (firstIt.plantId || '').replace(/^meat_/, '');
+        const yf = this.butcherYieldFrac(firstHow, firstAid);
         const base = knows ? 0.40 : 0.30;
         if (yf > base + 0.005) yieldNote = ` (Field Dressing — less waste, kept ~${Math.round(yf * 100)}%.)`;
       } catch (e) {}
@@ -1048,7 +1062,18 @@
       if (task === 'butcher') {
         if (it.foodState !== 'carcass') { this.say('That\'s already cleaned.'); return null; }
         const gross = it.hiddenKcal || 0;
-        const yfrac = 0.40 + 0.04 * spec.skill; // 44/48/52% — better hands, more meat
+        // FAT-AWARE (hunter break-it 2026-10-10): the specialist separates
+        // the same 20%-of-gross fat as self-clean — meat is capped at 0.75
+        // for fat animals so meat + fat never exceeds the gross. Hard cap
+        // 0.95 regardless of future skill growth (same ceiling as
+        // butcherYieldFrac).
+        let _specCap = 0.95;
+        try {
+          const _aid = (it.plantId || '').replace(/^meat_/, '');
+          const _ad = (this.data.animals || []).find(a => a.id === _aid);
+          if (_ad && (_ad.butcher || {}).fat > 0) _specCap = 0.75;
+        } catch (e) {}
+        const yfrac = Math.min(_specCap, 0.40 + 0.04 * spec.skill); // 44/48/52% — better hands, more meat
         // PORTION LAW (Steve 2026-10-09, bear rework): same chunking as
         // self-clean — no 30k slabs from anyone's knife.
         const net2 = Math.round(gross * yfrac);
@@ -2528,9 +2553,17 @@
         const gross = it.hiddenKcal || 0;
         // YIELD HONESTY (hunter break-it 2026-10-10): the label must promise
         // the same fraction the knife delivers (butcherYieldFrac) — the old
-        // flat 40/30% lied once skill entered the picture.
-        const youKcal = Math.round(gross * this.butcherYieldFrac(it.how));
-        const specKcal = spec ? Math.round(gross * (0.40 + 0.04 * spec.skill)) : 0;
+        // flat 40/30% lied once skill entered the picture. FAT-AWARE: fat
+        // animals cap meat at 0.75 (fat carved out of the gross) — the label
+        // and the knife agree, like the engine.
+        const _wAid = (it.plantId || '').replace(/^meat_/, '');
+        let _wCap = 0.95;
+        try {
+          const _wAd = (this.data.animals || []).find(a => a.id === _wAid);
+          if (_wAd && (_wAd.butcher || {}).fat > 0) _wCap = 0.75;
+        } catch (e) {}
+        const youKcal = Math.round(gross * this.butcherYieldFrac(it.how, _wAid));
+        const specKcal = spec ? Math.round(gross * Math.min(_wCap, 0.40 + 0.04 * spec.skill)) : 0;
         opts.push({
           id: 'you',
           label: `${verb} yourself`,

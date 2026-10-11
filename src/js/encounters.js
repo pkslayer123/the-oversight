@@ -741,13 +741,21 @@
     // YIELD HONESTY (hunter break-it 2026-10-10): the footer must promise the
     // same fraction the knife delivers — skill raises it toward the gross
     // (butcherYieldFrac), so read the shared helper, not a flat constant.
-    try { if (typeof this.butcherYieldFrac === 'function') frac = this.butcherYieldFrac('hunted'); } catch (e) {}
+    // FAT-AWARE: fat animals (bear/boar/javelina) cap meat at 0.75 — ~20% of
+    // the gross lives in the separable fat, carved out, not added on top.
+    var fatSlabs = 0;
+    try {
+      var _fad = animal && (this.data.animals || []).find(function (x) { return x.id === animal.id; });
+      fatSlabs = (_fad && _fad.butcher && _fad.butcher.fat) || 0;
+    } catch (e) {}
+    try { if (typeof this.butcherYieldFrac === 'function') frac = this.butcherYieldFrac('hunted', animal && animal.id); } catch (e) {}
     // PORTION LAW (Steve 2026-10-09, bear rework): portions are honest —
     // ~500 kcal each, so big game becomes many pieces, never one slab.
     var net = Math.round((kcal || 0) * frac);
     var units = Math.max(1, Math.round(net / 500));
     var per = Math.round(net / units);
     var line = 'Cleans to ~' + per + ' kcal × ' + units + ' raw portions' +
+      (fatSlabs ? ' + ' + fatSlabs + ' slabs of raw fat (render it over fire)' : '') +
       (knowsClean ? ' (you know the cuts)' : ' (your hands are learning — technique keeps more)') +
       '. Raw is a gamble — about 1-in-3 sickens you: fever by nightfall, logged as disease. Herbal Remedy cures it (plant knowledge, once a day) — no remedy, no cure.' +
       (vec ? ' ' + vec : '') +

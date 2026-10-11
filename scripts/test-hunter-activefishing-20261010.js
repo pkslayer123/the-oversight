@@ -76,30 +76,53 @@ const stockTotal = (t) => ['creek_chub', 'bluegill'].reduce((n, id) => n + ((t.w
   const sayText = () => { const t = said.join(' '); said = []; return t; };
 
   // ============ E13: active fishing on FISHLESS water ============
+  // LIVING-WORLD NOTE (hunter playtest 2026-10-10 r3): 200 casts is ~12 days,
+  // and simEcology migrates wildlife between adjacent tiles (10%/species/
+  // day) — a creek chub can honestly swim in from next door mid-probe (seen
+  // seed 99, cast 193). The tile doesn't STAY fishless, so "zero catches"
+  // is the wrong invariant. The real pin: per cast, every carcass came from
+  // pre-cast stock — fish() never conjures from empty water. (The stale-list
+  // bonus double-up that DID conjure is fixed in game.js fish().)
   {
     gotoTile(Game, 4, 4);
     setTile(Game, 4, 4, 'creek', {}); // fishless — nets would say "fished out"
     s.inventory = [];
     Game.state.codex = Game.state.codex || {}; Game.state.codex.fishWise = true; // known
-    let totalKcal = 0, catches = 0, fishedOutSaid = false;
+    let totalKcal = 0, catches = 0, fishedOutSaid = false, conjured = 0;
     for (let i = 0; i < 200; i++) {
       sustain(Game);
       s.inventory = s.inventory.filter(x => x.itemId === 'fishing_line');
+      const beforeC = fishedCarcasses(Game).length;
+      const beforeS = stockTotal(tile(Game, 4, 4));
       Game.fish(); const txt = sayText();
-      if (/fished out/i.test(txt)) fishedOutSaid = true;
-      for (const c of fishedCarcasses(Game)) { catches++; totalKcal += (c.hiddenKcal || 0); }
+      const newC = fishedCarcasses(Game).length - beforeC;
+      if (newC > 0) {
+        catches += newC;
+        for (const c of fishedCarcasses(Game).slice(-newC)) totalKcal += (c.hiddenKcal || 0);
+        if (newC > beforeS) conjured += (newC - beforeS);
+      }
+      if (beforeS === 0 && /fished out/i.test(txt)) fishedOutSaid = true;
     }
-    check('E13 no conjured fish from fishless creek', totalKcal === 0 && catches === 0,
-      `catches=${catches} totalKcal=${totalKcal} (expect 0/0)`);
+    check('E13 no conjured fish from empty water', conjured === 0,
+      `conjured=${conjured} of ${catches} catches (migrated-in fish are honest)`);
     check('E13 fishless water says fished out', fishedOutSaid, 'honest quiet like the net');
   }
 
   // ============ E13b: per-catch honesty on stocked water ============
+  // ISOLATION (hunter playtest 2026-10-10 r3): E13b measures CATCH
+  // ACCOUNTING (each carcass == exactly 1 stock decrement), not the living
+  // world. fish() burns 32 ticks and the depletion ecology sims wildlife at
+  // every dawn (simEcology) while villagers work the same water — both move
+  // the stock between the before/after snapshots and make exact equality
+  // unmeasurable. Freeze time for the probe; the ecology's honesty is
+  // covered by the ecology suites, not this pin.
   {
     gotoTile(Game, 2, 2);
     setTile(Game, 2, 2, 'creek', { creek_chub: 30, bluegill: 30 });
     s.inventory = [];
     Game.state.codex.fishWise = true;
+    const _tick = Game.tickAction;
+    Game.tickAction = () => undefined; // frozen clock: measure the catch, not the day
     let maxGross = 0, catches = 0, badSpecies = 0, badDelta = 0;
     for (let i = 0; i < 60 && stockTotal(tile(Game, 2, 2)) > 0; i++) {
       sustain(Game);
@@ -122,6 +145,7 @@ const stockTotal = (t) => ['creek_chub', 'bluegill'].reduce((n, id) => n + ((t.w
     check('E13b per-catch gross <= 260 (200-chub x 1.3 line)', maxGross <= 260, `maxGross=${maxGross}`);
     check('E13b catches are real species', catches > 0 && badSpecies === 0, `generic=${badSpecies} of ${catches}`);
     check('E13b each catch decrements stock by exactly 1', catches > 0 && badDelta === 0, `mismatches=${badDelta}`);
+    Game.tickAction = _tick; // clock back on
   }
 
   // ============ E14: chase to winded at the edge, walk up, strike ============
