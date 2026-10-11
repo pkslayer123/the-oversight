@@ -74,6 +74,31 @@ Bands (anchored — see Implementation): damage 20-70, HP 240-420, pierce
 0-0.25. Wave-3 monsters are a mid-build fight (4-6 rounds at ~64
 dmg/round); godhood builds stomp them — correctly.
 
+### Signature mechanics (Wave 3, batch B)
+
+Three wave-3 monsters got their signature mechanics built properly (2026-10-10;
+telegraph honesty is law — every cue describes what the mechanic actually does):
+
+- **Spool** — RECORD first: it harmlessly watches and tapes your first 3 turns
+  (strikes, heals, moves, waits — classified from what you actually did). Then
+  REPLAY: the reels visibly show what's loaded, and the tape plays your turns
+  back AT you — your strike comes back as a strike, your heal comes back as a
+  heal. Feed it heals and waits during the record phase and the replay is
+  medicine and silence. Examine the reel to read exact numbers.
+- **Chorus Line** — a visible 4/4 beat with an audio cue; beats 1–3 count down
+  (the line faces a direction, re-aiming until beat 3, then frozen — it can't
+  turn fast) and the downbeat kicks everything in front of it. Move on the beat
+  and the kick catches air; dance and you're untouchable (but dancing is your
+  whole turn); attack from the flank where the kick isn't aimed; throw gravel
+  to break the count for a round. Deafness hides the beat count but not the kick.
+- **The Terms of Service** — mid-fight it adds legible glowing clauses. Each is
+  a real choice: OBJECT now at a small cost (an item, kcal, HP) or ACCEPT and
+  pay a bigger cost rounds later; ignored clauses auto-accept as the scroll
+  unrolls toward you. Reading the fine print is the defense — read three
+  clauses and the §0 TERMINATION loophole surfaces; cite it and the Scroll
+  dismisses itself, no blood.
+
+
 ## Wave 4: The Mirror Draft (4 wave-3 LEDGER points + scaleRank >= 'regional')
 
 Steve 2026-10-10: identity is "The Mirror Draft" (not "The Audience

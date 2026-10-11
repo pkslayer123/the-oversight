@@ -14814,6 +14814,7 @@
       ${flippable ? `<button class="self-btn" id="c-flip" ${p.acted ? 'disabled' : ''} title="Flip the turtle — strength check. Upside down: no armor, can't snap, 3 turns. Fail and it snaps you.">🐢 Flip</button>` : ''}
       <button class="self-btn" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢 Shout</button>
       <button class="self-btn" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖 Offer</button>
+      ${Game.sigW3bCombatButtons ? Game.sigW3bCombatButtons() : ''}
       <button class="self-btn" id="c-wait" title="Hold still — forfeit the rest of the turn">⏸ Wait</button>
     </div>
     <div class="actions" id="c-talkrow" style="display:none"></div>`;
@@ -14897,6 +14898,13 @@
       });
     });
     on('c-offer', () => { Game.tbPlayerOfferFood(); rerender(); });
+    // SIGNATURE MECHANICS (sigW3b, Steve 2026-10-10): wave-3 batch-B player
+    // actions (examine reel / dance / throw gravel / read-object-accept-
+    // invoke §0). Buttons are rendered by Game.sigW3bCombatButtons() above;
+    // this wires them exactly like the combat buttons above it.
+    document.querySelectorAll('[data-sigw3b]').forEach(b => {
+      b.onclick = () => { try { Game[b.dataset.sigw3b](); } catch (e) {} rerender(); };
+    });
     // TALK: words are actions too. Pick who, then how.
     const showTalkRow = (targetKey) => {
       const row = document.getElementById('c-talkrow');

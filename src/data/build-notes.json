@@ -2,6 +2,12 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Three of the Final Draft's monsters fight for real now. The Spool tapes your opening moves and plays them back at you \u2014 feed it something harmless (a wait, a bandage) and its replay is useless. The Chorus Line keeps a 4/4 beat you can hear coming \u2014 dance through the downbeat, move with it, flank it, or break its rhythm with a handful of gravel. And the Terms of Service will try to get you to sign mid-fight \u2014 read the fine print; there's a way out in section zero."
+    ]
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "Alien players stay dead now. Kill one and they're gone for good \u2014 no more running into the same hunter weeks later sending you packages from beyond the grave. The feed marks the moment with a silence, then the betting resumes.",
       "They've also stopped gloating about kills they didn't make: beat one in a fight and they react like someone who lost, and a dead hunter gives no post-fight speech."
     ]
@@ -112,15 +118,5 @@
       "Diplomacy is knowledge-gated now: villages you've never heard of don't show up as proposals. Travelers' rumors actually reach you."
     ],
     "version": "db5a862c-20261009-232417"
-  },
-  {
-    "date": "2026-10-09",
-    "notes": [
-      "Corruption: a dark mirror to trust. What you do in the dark changes what you are \u2014 and people can feel it, even when they can't name it.",
-      "You can butcher the dead for meat now \u2014 and eat it. The first time will haunt you. It gets easier. That's the horror.",
-      "In a healthy village, discovered cannibalism means exile. In a starving or corrupted one, the rules change \u2014 and fear becomes its own currency.",
-      "Rare dark pasts: sometimes you wake as one of the village's hidden dark ones, with a history that explains it."
-    ],
-    "version": "c69c1beb-20261009-171111"
   }
 ]

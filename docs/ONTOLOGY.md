@@ -872,6 +872,7 @@ Character progression. XP, levels, abilities.
 
 **Consumes:** scholar.xp, scholar.abilities
 
+
 ### safety-nets (`safetynets.js`)
 Earned early-game survival safety nets — three played systems, not flat relief. (1) System aid quests (days 7-21): the System offers struggling villages played quests (fetch / treat / learn) with real costs and real failure; help is sometimes bizarrely wrong (canon: alien, out of touch). (2) Crisis relief: when a crisis (sickness cascade, raid aftermath, storm aftermath, hunger winter) hits, a villager-driven relief path opens — triage tents, rationing votes, emergency hunts — each with honest costs, finite per crisis. (3) Neighbor-village aid flows: struggling villages can REQUEST aid (food/medicine/hands) and richer neighbors can OFFER it; real deliveries, trust/reputation both ways, ingratitude remembered. Anti-farm: trigger-gated + cooldowns + finite neighbor pantries + bounded quest count.
 
@@ -890,6 +891,21 @@ Earned early-game survival safety nets — three played systems, not flat relief
 - antifarm_triggers_cooldowns_caps: quests bounded (3/run), requests per-village 7-day cooldown + global struggling gate (the trigger costs more than the reward), offers 5-day cooldown, neighbor pantries finite (code: offerAidQuest, requestAid, safetyNetsDayTick)
 
 **Consumes:** say(), sysSay(), stockPantry(), pantryKcalLive(), _removePantryKcal(), linkWith(), _otherVillage(), villageLinks(), aidPartsFor(), aidFaceFor(), journalNote(), leadShift(), hurtVillager(), displayName(), vpOf(), getPerson(), tickAction(), playerAtHaven(), pantryInReach(), hasAbility(), abilitySlots(), endDay(), advancePart(), villageSicknessTick(), resolveAidCrisis(), resolveStormFront(), fireCrisis(), villagerMealDay(), villageMeal(), aidCrisis(), state.pendingAidQuest, state.activeAidQuest, state.aidQuestLedger, state.relief, state.aidOut, state.aidInbound, state.aidLedger, state.aidKnown, state.pendingAidOffer, state.pendingAidBeg, state.aidHands
+
+
+### sig-w3b (`sigW3b.js`)
+Wave-3 batch-B signature combat mechanics (Steve 2026-10-10): Spool (records your first 3 turns, then replays them back at you — feed it heals and waits), Chorus Line (a visible 4/4 beat; the downbeat kicks — dance through it, move on the beat, flank it, or break the count with gravel; deafness hides the count but not the kick), Terms of Service (legible mid-fight clauses — object now at a small cost, accept and pay bigger later, or read enough to find the §0 loophole and dismiss it). Hooks interleave with the monster's normal attack — the generic encounter interpreter still runs.
+
+**Provides:** spoolWatch(game, m), chorusBeat(game, m), tosClauses(game, m), tbSpoolExamineReel(), tbChorusDance(), tbChorusThrowGravel(), tbTosRead(), tbTosObject(), tbTosAccept(), tbTosInvokeLoophole(), sigW3bCombatButtons(), sigW3bFieldMonster(mdef, rec, ctx)
+
+**Rules:**
+- telegraph_honesty: every cue and say line describes what the mechanic actually does — the reel preview, the beat count, and the clause text ARE the mechanic, not flavor (code: spoolWatch)
+- interleave: hooks add the signature layer around the generic interpreter — spool's replay and the chorus count own their turns outright (their telegraphs promise exactly that: harmless watching, then the replay; the count, then the kick); the ToS clause-writing alternates with the normal Clause attack (code: tosClauses)
+- no_silent: every signature event narrates via say() — nothing happens quietly (code: tosClauses)
+- counterplay_real: boring replays, dancing, gravel, reading, and the loophole all resolve through real fight state, never flags that lie (code: tbTosInvokeLoophole)
+
+**Consumes:** say, tbDamage, addHealth, audioEvent, hasStatus, applyStatus, hasItem, consumeItem, tbFighter, tbIsPlayerTurn, tbAfterPlayerAction, tbEndCheck
+>>>>>>> b7d14cd2 (sig-w3b: wave-3 batch-B signature mechanics (spool/chorus_line/terms_of_service) + proofs (BEFORE red / AFTER green x3 seeds) + evidence/2026-10-10/sig-w3b-spool-chorus-tos.md; regressions green (wave3-5 211/211, monsters r14 116/116); ontology 58/58)
 
 ### sprites (`sprites.js`)
 Custom SVG sprite registry for the visual identity law.

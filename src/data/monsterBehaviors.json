@@ -23,6 +23,16 @@
       "preTurnHooks": [],
       "preferredRange": 2
     },
+    "chorus_line": {
+      "aggroRange": 6,
+      "archetype": "dancer",
+      "fleeAt": 0,
+      "notes": "Wave-3 signature (sigW3b, Steve 2026-10-10): visible 4/4 beat; the downbeat kicks where the line is facing. Dance, move on the beat, flank it, or break the count with gravel.",
+      "preTurnHooks": [
+        "chorusBeat"
+      ],
+      "preferredRange": 3
+    },
     "ducks_in_a_row": {
       "aggroRange": 5,
       "archetype": "snake",
@@ -81,7 +91,7 @@
       "aggroRange": 6,
       "archetype": "territorial",
       "fleeAt": 0,
-      "notes": "Eviction Wall (party-splitter 2026-10-10): against 3+ fighters it rezones the ground — a telegraphed wall through the cluster, service entrance left open.",
+      "notes": "Eviction Wall (party-splitter 2026-10-10): against 3+ fighters it rezones the ground \u2014 a telegraphed wall through the cluster, service entrance left open.",
       "preTurnHooks": [
         "landlordEviction"
       ],
@@ -181,6 +191,16 @@
       ],
       "preferredRange": 1
     },
+    "spool": {
+      "aggroRange": 5,
+      "archetype": "mimic",
+      "fleeAt": 0,
+      "notes": "Wave-3 signature (sigW3b, Steve 2026-10-10): RECORDS the player\u2019s first 3 turns (harmless), then REPLAYS them back. Feed it heals and waits.",
+      "preTurnHooks": [
+        "spoolWatch"
+      ],
+      "preferredRange": 3
+    },
     "statickite": {
       "aggroRange": 8,
       "archetype": "kite",
@@ -194,6 +214,16 @@
       "fleeAt": 0,
       "preTurnHooks": [],
       "preferredRange": 2
+    },
+    "terms_of_service": {
+      "aggroRange": 6,
+      "archetype": "bureaucrat",
+      "fleeAt": 0,
+      "notes": "Wave-3 signature (sigW3b, Steve 2026-10-10): adds legible clauses mid-fight; object now, accept later, or read 3 and invoke the \u00a70 loophole.",
+      "preTurnHooks": [
+        "tosClauses"
+      ],
+      "preferredRange": 3
     },
     "understudy": {
       "aggroRange": 6,

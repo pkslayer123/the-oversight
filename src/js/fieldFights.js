@@ -303,6 +303,19 @@
               var total = d + thrash;
               // ABILITY — HAYMAKER windup: the big swing leaves them open.
               if (abHaymakerRound) total += 2;
+              // SIGNATURE MECHANICS (sigW3b, Steve 2026-10-10): wave-3 batch-B
+              // signature layer (spool/chorus_line/terms_of_service) in
+              // villager field fights — the same hook path as the tactical
+              // engine. The module owns all state on rec.sigW3b.
+              try {
+                if (typeof this.sigW3bFieldMonster === 'function') {
+                  var _sig = this.sigW3bFieldMonster(mdef, rec, {
+                    total: total, round: round, rr: RR, lroll: lroll,
+                    vName: vName, mName: mName
+                  });
+                  if (typeof _sig === 'number') total = _sig;
+                }
+              } catch (e) {}
               // PARTY-UP: the pack splits its attention — the ally who rushed
               // in is exposed (no armor) and draws some of the hits.
               var hittingAlly = allyIn && allyHp > 0 && RR() < 0.4;

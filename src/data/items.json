@@ -3098,5 +3098,14 @@
   },
   "kg": 1.8,
   "findable": true
+ },
+ {
+  "id": "gravel",
+  "name": "Handful of gravel",
+  "class": "tool",
+  "flavor": "Pocket gravel. Arrhythmic, graceless, perfect.",
+  "baseEffect": "Throw it to break a rhythm (disrupts the chorus line\u2019s count for a round)",
+  "kg": 0.05,
+  "findable": true
  }
 ]
