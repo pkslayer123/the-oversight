@@ -26018,7 +26018,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const pathCost = path.reduce((s, [tx, ty]) => s + this.tbTerrainCost(tx, ty), 0);
       if (pathCost > p.moveLeft) { this.say(`Too far — ${p.moveLeft} squares left.`); return false; }
       for (const o of f.fighters) {
-        if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && o.mx === cx && o.my === cy) {
+        if ((o.kind === 'monster' || o.kind === 'hostile') && o.alive && !o.fled && o.mx === cx && o.my === cy) {
           // ARTICLE COMPOSITION (Steve 2026-10-08): named monsters carry
           // "The" ("The Static Kite") — naive "a " prefixing produced
           // "a The Static Kite". encSubject already composes the article

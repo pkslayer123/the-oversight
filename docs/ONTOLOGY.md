@@ -872,8 +872,6 @@ Character progression. XP, levels, abilities.
 
 **Consumes:** scholar.xp, scholar.abilities
 
-
-
 ### safety-nets (`safetynets.js`)
 Earned early-game survival safety nets — three played systems, not flat relief. (1) System aid quests (days 7-21): the System offers struggling villages played quests (fetch / treat / learn) with real costs and real failure; help is sometimes bizarrely wrong (canon: alien, out of touch). (2) Crisis relief: when a crisis (sickness cascade, raid aftermath, storm aftermath, hunger winter) hits, a villager-driven relief path opens — triage tents, rationing votes, emergency hunts — each with honest costs, finite per crisis. (3) Neighbor-village aid flows: struggling villages can REQUEST aid (food/medicine/hands) and richer neighbors can OFFER it; real deliveries, trust/reputation both ways, ingratitude remembered. Anti-farm: trigger-gated + cooldowns + finite neighbor pantries + bounded quest count.
 
@@ -893,20 +891,6 @@ Earned early-game survival safety nets — three played systems, not flat relief
 
 **Consumes:** say(), sysSay(), stockPantry(), pantryKcalLive(), _removePantryKcal(), linkWith(), _otherVillage(), villageLinks(), aidPartsFor(), aidFaceFor(), journalNote(), leadShift(), hurtVillager(), displayName(), vpOf(), getPerson(), tickAction(), playerAtHaven(), pantryInReach(), hasAbility(), abilitySlots(), endDay(), advancePart(), villageSicknessTick(), resolveAidCrisis(), resolveStormFront(), fireCrisis(), villagerMealDay(), villageMeal(), aidCrisis(), state.pendingAidQuest, state.activeAidQuest, state.aidQuestLedger, state.relief, state.aidOut, state.aidInbound, state.aidLedger, state.aidKnown, state.pendingAidOffer, state.pendingAidBeg, state.aidHands
 
-
-### sig-w3b (`sigW3b.js`)
-Wave-3 batch-B signature combat mechanics (Steve 2026-10-10): Spool (records your first 3 turns, then replays them back at you — feed it heals and waits), Chorus Line (a visible 4/4 beat; the downbeat kicks — dance through it, move on the beat, flank it, or break the count with gravel; deafness hides the count but not the kick), Terms of Service (legible mid-fight clauses — object now at a small cost, accept and pay bigger later, or read enough to find the §0 loophole and dismiss it). Hooks interleave with the monster's normal attack — the generic encounter interpreter still runs.
-
-**Provides:** spoolWatch(game, m), chorusBeat(game, m), tosClauses(game, m), tbSpoolExamineReel(), tbChorusDance(), tbChorusThrowGravel(), tbTosRead(), tbTosObject(), tbTosAccept(), tbTosInvokeLoophole(), sigW3bCombatButtons(), sigW3bFieldMonster(mdef, rec, ctx)
-
-**Rules:**
-- telegraph_honesty: every cue and say line describes what the mechanic actually does — the reel preview, the beat count, and the clause text ARE the mechanic, not flavor (code: spoolWatch)
-- interleave: hooks add the signature layer around the generic interpreter — spool's replay and the chorus count own their turns outright (their telegraphs promise exactly that: harmless watching, then the replay; the count, then the kick); the ToS clause-writing alternates with the normal Clause attack (code: tosClauses)
-- no_silent: every signature event narrates via say() — nothing happens quietly (code: tosClauses)
-- counterplay_real: boring replays, dancing, gravel, reading, and the loophole all resolve through real fight state, never flags that lie (code: tbTosInvokeLoophole)
-
-**Consumes:** say, tbDamage, addHealth, audioEvent, hasStatus, applyStatus, hasItem, consumeItem, tbFighter, tbIsPlayerTurn, tbAfterPlayerAction, tbEndCheck
-
 ### signature-wave3a (`sigW3a.js`)
 Wave-3 batch-A signature combat mechanics (Steve 2026-10-10): The Redactor (point-then-redact cycle with decoy/quiet counterplay), Gavel (trial with mid-trial motions + frontal sound-block shield), The Focus Group (audible visible ratings, damageable mouth-head parts, marking eye-heads, boredom walkout). Hooks register into MonsterBehaviorHooks; player verbs are tracked via light wraps; damage modifiers route through one tbDamage wrap. Telegraph honesty: every telegraph states the real next effect.
 
@@ -925,6 +909,31 @@ Wave-3 batch-A signature combat mechanics (Steve 2026-10-10): The Redactor (poin
 
 **Consumes:** Game.tbfight, Game.say, Game.tbFighter, Game.tbDamage, Game.tbIsPlayerTurn, Game.tbBeginTurn, Game.tbEndCheck, Game.tbRefreshTelegraphUI, Game.encSetPhase, Game.encUsesFifo, Game.equippedWeapon, Game.progState, Game.havenViewership, Game.bumpTrust, Game.recordMoment, Game.useAbility, Scattering.combat
 
+### sig-w3b (`sigW3b.js`)
+Wave-3 batch-B signature combat mechanics (Steve 2026-10-10): Spool (records your first 3 turns, then replays them back at you — feed it heals and waits), Chorus Line (a visible 4/4 beat; the downbeat kicks — dance through it, move on the beat, flank it, or break the count with gravel; deafness hides the count but not the kick), Terms of Service (legible mid-fight clauses — object now at a small cost, accept and pay bigger later, or read enough to find the §0 loophole and dismiss it). Hooks interleave with the monster's normal attack — the generic encounter interpreter still runs.
+
+**Provides:** spoolWatch(game, m), chorusBeat(game, m), tosClauses(game, m), tbSpoolExamineReel(), tbChorusDance(), tbChorusThrowGravel(), tbTosRead(), tbTosObject(), tbTosAccept(), tbTosInvokeLoophole(), sigW3bCombatButtons(), sigW3bFieldMonster(mdef, rec, ctx)
+
+**Rules:**
+- telegraph_honesty: every cue and say line describes what the mechanic actually does — the reel preview, the beat count, and the clause text ARE the mechanic, not flavor (code: spoolWatch)
+- interleave: hooks add the signature layer around the generic interpreter — spool's replay and the chorus count own their turns outright (their telegraphs promise exactly that: harmless watching, then the replay; the count, then the kick); the ToS clause-writing alternates with the normal Clause attack (code: tosClauses)
+- no_silent: every signature event narrates via say() — nothing happens quietly (code: tosClauses)
+- counterplay_real: boring replays, dancing, gravel, reading, and the loophole all resolve through real fight state, never flags that lie (code: tbTosInvokeLoophole)
+
+**Consumes:** say, tbDamage, addHealth, audioEvent, hasStatus, applyStatus, hasItem, consumeItem, tbFighter, tbIsPlayerTurn, tbAfterPlayerAction, tbEndCheck
+
+### sig-w3c (`sigW3c.js`)
+Wave 3 batch C signature combat mechanics (Steve 2026-10-10). THE CALLBACK wears a dead villager's face (funeral / name-it counterplay, borrowed moves). BUFFERING exists 3 seconds in the past (honest future-telegraphs, afterimage frames, pre-dodge or stand still). AD BREAK pauses the fight for a sponsored ad (progress bar, skip beat scaled by audience favor, look away, killable sponsor-creature).
+
+**Provides:** cbHook (registered as MonsterBehaviorHooks.cbFace), bufHook (registered as MonsterBehaviorHooks.bufMirage), adHook (registered as MonsterBehaviorHooks.adBreak), sponsorClingHook (registered as MonsterBehaviorHooks.sponsorCling), Game.tbPlayerFuneral(), Game.tbPlayerNameIt(), Game.tbPlayerCloseEyes(), Game.tbPlayerSkipAd(), Game.tbPlayerLookAway(), Game.sigW3cCombatButtons(mons, p), Game.sigW3cWireCombat(on, rerender), Game.sigW3cFieldRound(mdef, vid, round, rec, sigFx, ctx)
+
+**Rules:**
+- telegraph_honesty: every signature announcement describes exactly what the hook executes next (code: bufAnnounce -> bufExecutePending, adBar).
+- face_never_living: the Callback's face is picked from corpse records only, excluding current roster members (code: sigPickFace).
+- no_silent_actions: every signature beat narrates through game.say, including misses and refusals (code: all hooks and tbPlayer* actions).
+- signature_interleaves: hooks add the signature layer; the generic encounter interpreter still runs on off-beats (code: hooks return false when not consuming).
+
+**Consumes:** tbFighter, tbIsPlayerTurn, tbAfterPlayerAction, tbDamage, tbEndCheck, tbRefreshTelegraphUI, encSubject, corpses, convLineLog, havenViewership, say
 
 ### sprites (`sprites.js`)
 Custom SVG sprite registry for the visual identity law.

@@ -308,6 +308,34 @@
       "notes": "Synthetic sub-fighter spawned by the focus group lead (sigW3a.js). Marks the player's most-used rated verb; consumes its turn. Cannot be struck down.",
       "preTurnHooks": ["sigFocusEye"],
       "preferredRange": 3
+    },
+    "callback": {
+      "aggroRange": 5,
+      "archetype": "mimic",
+      "fleeAt": 0,
+      "preTurnHooks": ["cbFace"],
+      "preferredRange": 2
+    },
+    "buffering": {
+      "aggroRange": 6,
+      "archetype": "drifter",
+      "fleeAt": 0,
+      "preTurnHooks": ["bufMirage"],
+      "preferredRange": 3
+    },
+    "ad_break": {
+      "aggroRange": 5,
+      "archetype": "stager",
+      "fleeAt": 0,
+      "preTurnHooks": ["adBreak"],
+      "preferredRange": 3
+    },
+    "ad_sponsor": {
+      "aggroRange": 0,
+      "archetype": "rider",
+      "fleeAt": 1,
+      "preTurnHooks": ["sponsorCling"],
+      "preferredRange": 0
     }
   }
 }

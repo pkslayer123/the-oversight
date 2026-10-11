@@ -14813,6 +14813,7 @@
       ${hasWell ? `<button class="self-btn" id="c-well" ${p.acted ? 'disabled' : ''} title="Gravity well — hold monsters within 3 tiles for 2 turns (one use)">🕳 Well</button>` : ''}
       ${flippable ? `<button class="self-btn" id="c-flip" ${p.acted ? 'disabled' : ''} title="Flip the turtle — strength check. Upside down: no armor, can't snap, 3 turns. Fail and it snaps you.">🐢 Flip</button>` : ''}
       ${(Game.sigCombatButtonsHTML ? Game.sigCombatButtonsHTML(mons, p) : '')}
+      ${Game.sigW3cCombatButtons ? Game.sigW3cCombatButtons(mons, p) : ''}
       <button class="self-btn" id="c-shout" ${p.acted ? 'disabled' : ''} title="Bellow — scatter noise-fearing monsters (2/fight)">📢 Shout</button>
       <button class="self-btn" id="c-offer" ${p.acted ? 'disabled' : ''} title="Offer food — buy off the curious thief">🍖 Offer</button>
       ${Game.sigW3bCombatButtons ? Game.sigW3bCombatButtons() : ''}
@@ -14906,6 +14907,10 @@
     document.querySelectorAll('[data-sigw3b]').forEach(b => {
       b.onclick = () => { try { Game[b.dataset.sigw3b](); } catch (e) {} rerender(); };
     });
+    // SIG W3C (wave 3 batch C, 2026-10-10): signature combat actions —
+    // funeral / name-it (callback), close eyes (buffering), skip ad /
+    // look away (ad break). Buttons + wiring live in src/js/sigW3c.js.
+    if (Game.sigW3cWireCombat) Game.sigW3cWireCombat(on, rerender);
     // TALK: words are actions too. Pick who, then how.
     const showTalkRow = (targetKey) => {
       const row = document.getElementById('c-talkrow');

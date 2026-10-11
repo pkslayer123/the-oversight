@@ -287,6 +287,13 @@
           abStun--; mStunnedThisRound = true;
           rec.log.push('R' + round + ': the ' + mName + ' hesitates — ' + vName + ' bought a breath.');
         }
+        // SIGNATURE MECHANICS, WAVE 3 BATCH C (sigW3c 2026-10-10): the same
+        // hook path as the tactical engine (MonsterBehaviorHooks), translated
+        // to the abstract round model. sigFx carries per-round effects the
+        // branches below apply at their marked points.
+        var sigFx = { mSkip: false, vMiss: false, mDmgBonus: 0 };
+        try { if (this.sigW3cFieldRound) this.sigW3cFieldRound(mdef, vid, round, rec, sigFx, { RR: RR, lroll: lroll, vName: vName, mName: mName, members: members }); } catch (e) {}
+        if (sigFx.mSkip) mStunnedThisRound = true;
         var mInit = mSpeed + RR() * 2, vInit = 3 + RR() * 2;
         var mFirst = mInit >= vInit;
         var acted = [mFirst ? 'm' : 'v', mFirst ? 'v' : 'm'];
@@ -311,6 +318,9 @@
               var thrash = 0;
               if (mdef.id === 'gallowdeer') thrash = lroll([10, 16]);
               var total = d + thrash;
+              // SIG W3C (2026-10-10): signature bonus damage (callback borrowed
+              // swing, buffering predicted strike) — blow by blow, not a table.
+              if (sigFx.mDmgBonus) total += sigFx.mDmgBonus;
               // ABILITY — HAYMAKER windup: the big swing leaves them open.
               if (abHaymakerRound) total += 2;
               // SIGNATURE MECHANICS (sigW3b, Steve 2026-10-10): wave-3 batch-B
@@ -389,6 +399,9 @@
             } else {
               var vd = lroll([4 + wb, 8 + wb]); // tactical formula, verbatim
               var abNote = '';
+              // SIG W3C (2026-10-10): buffering mirage — the strike lands on
+              // the brightest frame (where it was), not the faintest (where it is).
+              if (sigFx.vMiss && RR() < 0.5) { vd = 0; abNote += ' (bright frame — mirage miss)'; }
               if (abAim) { vd = Math.round(vd * 2.5); abAim = false; abNote += ' (aimed 2.5x)'; }
               // ABILITY — HAYMAKER: the windup is the telegraph; the landing
               // is the punctuation.
