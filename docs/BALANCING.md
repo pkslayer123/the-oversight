@@ -31,6 +31,14 @@ Everything rooted in reality, everything balanced. This is how we evaluate chang
 - **Wounds**: Occasional, not crippling.
 - **Note**: villageLives food is a *visible bonus*, not the core economy. The 92% abstract provision is the base.
 
+### Combat & Attrition (2026-10-10)
+Measured: competent policy, 40 seeds, 200-day cap. Median survival 32→43 days; early (d1–30) deaths/run 11.53→10.17 (-12%).
+- **Wave-1 duels are fair, not free**: solo hushwolf [12,17] vs 100-HP player — win 10/10 but lose ~37 HP (desperate, traumatic). At 67 HP: 2/10 survive. "Every animal might kill you" intact. Solo pack 2→1 (parties still face 4).
+- **Monster bands** (31 trimmed ~15–20%): wave-1 hushwolf [12,17], bulldozer [18,25]; wave-2 bright_idea [26,41]; wave-3 gavel [37,55] (top-shave only — late stays hard).
+- **Sleep heals**: hall +30, bunk +44, tent +33, fireside +24, ground +16. Net vs ~-18/night attrition: +12/night (was +1). ~3 nights to recover from a mauling; costs a day + full food/water.
+- **Attrition**: hydration burn ~55/day; dehydration -12; starvation cap -20 (spiral from deficit); cold night -15; tent smoke -8; villager sick 1+sev*2-healer/night; wound events -15..-28; famine -4/day (+3 recovery when fed).
+- **Feel**: 38/40 runs still end village-lost. No HP inflation; villagers die from real situations (wounds, sickness, combat), not flat scaling.
+
 ### Food Reality (2026-10-04)
 The foraging loop was "grab unlimited free food." Now food is a system to learn:
 - **Recognition is gated**: unknown plants aren't food (0 kcal, uneaten, uncounted) until identified. Nuts need shelling (net 75% of gross). The codex is survival, not completion.

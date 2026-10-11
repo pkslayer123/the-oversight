@@ -13,8 +13,8 @@
     "attack": {
       "name": "China-Shop Charge",
       "damage": [
-        20,
-        28
+        18,
+        25
       ],
       "telegraph": "Lowers its head, paws the earth. Dust rises. It is not going around the tree. It has never gone around anything.",
       "pattern": {
@@ -129,8 +129,8 @@
     "attack": {
       "name": "Silent Rush",
       "damage": [
-        14,
-        20
+        12,
+        17
       ],
       "telegraph": "No telegraph you can hear. Watch the birds \u2014 when they go quiet, the pack is already moving.",
       "pattern": {
@@ -152,7 +152,7 @@
     ],
     "behavior": "pack",
     "tactics": {
-      "packSpawn": { "solo": 2, "party": 4 },
+      "packSpawn": { "solo": 1, "party": 4 },
       "packTactics": { "flank": 2, "flankCap": 6, "focusIsolated": true }
     },
     "codexStages": {
@@ -234,8 +234,8 @@
     "attack": {
       "name": "Ocular Discharge",
       "damage": [
-        22,
-        32
+        20,
+        30
       ],
       "telegraph": "It freezes. Like a deer in headlights. Light gathers behind its eyes. It is not frozen. It is aiming.",
       "pattern": {
@@ -546,8 +546,8 @@
     "attack": {
       "name": "Disassemble",
       "damage": [
-        12,
-        18
+        11,
+        16
       ],
       "telegraph": "It sits up. Its hands move too fast to follow. Something you own is suddenly in its hands.",
       "pattern": {
@@ -645,8 +645,8 @@
     "attack": {
       "name": "Spearfish Strike",
       "damage": [
-        16,
-        24
+        14,
+        22
       ],
       "telegraph": "The heron is gone. No \u2014 it's there. It was always there. You just couldn't see it until it moved.",
       "pattern": {
@@ -856,8 +856,8 @@
     "attack": {
       "name": "Snap Decision",
       "damage": [
-        20,
-        30
+        18,
+        26
       ],
       "telegraph": "It doesn't move. It hasn't moved in an hour. Its head is suddenly somewhere else.",
       "pattern": {
@@ -959,8 +959,8 @@
     "attack": {
       "name": "Lure and Grasp",
       "damage": [
-        12,
-        20
+        11,
+        18
       ],
       "telegraph": "A soft green glow under the water. Pretty. That's the problem \u2014 it's pretty.",
       "pattern": {
@@ -1060,8 +1060,8 @@
     "attack": {
       "name": "Distress Call",
       "damage": [
-        22,
-        34
+        19,
+        30
       ],
       "telegraph": "Somewhere in the dark, a voice you know is calling your name. Crying. It sounds exactly like them. It is not them. The sound is coming from everywhere now.",
       "pattern": {
@@ -1164,8 +1164,8 @@
     "attack": {
       "name": "Confrontation",
       "damage": [
-        28,
-        42
+        24,
+        37
       ],
       "telegraph": "It turns its face toward you. The face is a mirror. You see yourself \u2014 tired, dirty, afraid. It starts walking. Not running. Walking. That's worse.",
       "pattern": {
@@ -1275,8 +1275,8 @@
     "attack": {
       "name": "Scored Assessment",
       "damage": [
-        25,
-        39
+        22,
+        34
       ],
       "telegraph": "It hovers, projecting a grid over the ground. A calm voice: 'DODGE EFFICIENCY CURRENTLY AT 41%. BELOW TARGET. COMMENCING CORRECTIVE ACTION IN THREE. TWO.' The line it is about to fire is already drawn on the dirt.",
       "pattern": {
@@ -1378,8 +1378,8 @@
     "attack": {
       "name": "Eureka",
       "damage": [
-        31,
-        48
+        26,
+        41
       ],
       "telegraph": "It sits perfectly still, glowing brighter and brighter. A beautiful idea, taking shape. You can feel the brilliance building. That's when you realize: ideas this bright are never safe to stand next to.",
       "pattern": {
@@ -1489,8 +1489,8 @@
     "attack": {
       "name": "Home Movies",
       "damage": [
-        22,
-        36
+        19,
+        31
       ],
       "telegraph": "It unfolds a screen of light between the trees. And there \u2014 impossibly \u2014 is home. Your street. Your kitchen. Someone you miss, laughing. You take a step closer without deciding to. The light has edges. The edges are sharp.",
       "pattern": {
@@ -1591,8 +1591,8 @@
     "attack": {
       "name": "The Pitch",
       "damage": [
-        20,
-        31
+        18,
+        28
       ],
       "telegraph": "No telegraph. That's the point. A phone is ringing in the trees \u2014 for you, specifically. Then the ringing STOPS. It's already moving.",
       "pattern": {
@@ -1989,8 +1989,8 @@
     "attack": {
       "name": "Your Move",
       "damage": [
-        20,
-        28
+        18,
+        25
       ],
       "telegraph": "It goes still. It is doing the thing you do before you do it.",
       "pattern": {
@@ -2082,8 +2082,8 @@
     "attack": {
       "name": "Eviction Notice",
       "damage": [
-        25,
-        36
+        22,
+        32
       ],
       "telegraph": "It hammers another sign into the dirt. The sign has your name on it. It always had your name on it.",
       "pattern": {
@@ -2181,8 +2181,8 @@
     "attack": {
       "name": "You Call That A Swing?",
       "damage": [
-        17,
-        25
+        15,
+        22
       ],
       "telegraph": "It leans in, grinning. \"Oh, this ought to be good.\"",
       "pattern": {
@@ -2277,8 +2277,8 @@
     "attack": {
       "name": "Flash Photography",
       "damage": [
-        17,
-        25
+        15,
+        22
       ],
       "telegraph": "The lens steadies. You hear the shutter think about it.",
       "pattern": {
@@ -2373,8 +2373,8 @@
     "attack": {
       "name": "Grievance Filed",
       "damage": [
-        20,
-        28
+        18,
+        25
       ],
       "telegraph": "It licks the pencil. \"Let's put this one in writing.\"",
       "pattern": {
@@ -2469,8 +2469,8 @@
     "attack": {
       "name": "Removal Notice",
       "damage": [
-        17,
-        25
+        15,
+        22
       ],
       "telegraph": "It raises the banhammer. A calm voice: 'YOUR CONTENT HAS BEEN FLAGGED. REMOVAL IMMINENT.' The air around it goes the color of a bruised screen.",
       "pattern": {
@@ -2571,8 +2571,8 @@
     "attack": {
       "name": "The Unkind Cut",
       "damage": [
-        14,
-        22
+        13,
+        20
       ],
       "telegraph": "Its shadow detaches from the branch-shadow and slides across the ground toward you \u2014 a straight black lane, growing. The bird hasn't moved. The shadow has.",
       "pattern": {
@@ -2785,8 +2785,8 @@
     "attack": {
       "name": "The Broadcast",
       "damage": [
-        17,
-        25
+        15,
+        22
       ],
       "telegraph": "The kite stops dead in the sky. It's framing the shot.",
       "pattern": {
@@ -2892,8 +2892,8 @@
     "attack": {
       "name": "The Drink",
       "damage": [
-        14,
-        22
+        12,
+        19
       ],
       "telegraph": "The whine climbs an octave and steadies \u2014 it\u2019s lining up the dive.",
       "pattern": {
@@ -3087,8 +3087,8 @@
     "attack": {
       "name": "Redact",
       "damage": [
-        35,
-        55
+        32,
+        50
       ],
       "telegraph": "Its white edge-handles grab toward you \u2014 pointing. Whatever it points at goes quiet. The handles ARE the telegraph.",
       "pattern": {
@@ -3185,8 +3185,8 @@
     "attack": {
       "name": "Verdict",
       "damage": [
-        40,
-        60
+        37,
+        55
       ],
       "telegraph": "It raises the gavel-head high. The sound-block swings forward as a shield. It names your crime first \u2014 a full round before the verdict falls.",
       "pattern": {
@@ -3283,8 +3283,8 @@
     "attack": {
       "name": "Deliberation",
       "damage": [
-        30,
-        45
+        28,
+        42
       ],
       "telegraph": "The murmur rises \u2014 you can HEAR them deliberating. They're about to love your dodge and hate your strike. The ratings are honest and visible.",
       "pattern": {
@@ -3381,8 +3381,8 @@
     "attack": {
       "name": "Replay",
       "damage": [
-        35,
-        50
+        32,
+        46
       ],
       "telegraph": "RECORD first \u2014 harmless, it watches. Then REPLAY: the reels on its back spin, and the spinning reel SHOWS what's loaded. Watch the reel, not the tape.",
       "pattern": {
@@ -3480,8 +3480,8 @@
     "attack": {
       "name": "Downbeat",
       "damage": [
-        30,
-        48
+        28,
+        44
       ],
       "telegraph": "The music starts \u2014 an actual audio cue, 4/4, and you can feel the downbeat coming. The downbeat is the kick. Deafness breaks the telegraph but not the beat.",
       "pattern": {
@@ -3582,8 +3582,8 @@
     "attack": {
       "name": "Clause",
       "damage": [
-        25,
-        40
+        24,
+        38
       ],
       "telegraph": "The text on the scroll GLOWS before a clause activates \u2014 the glow runs along the words like a fuse. The telegraph is literally legible. Reading is the defense.",
       "pattern": {
@@ -3680,8 +3680,8 @@
     "attack": {
       "name": "Encore",
       "damage": [
-        30,
-        50
+        28,
+        46
       ],
       "telegraph": "It speaks \u2014 in their voice, saying things they said. The face is too symmetrical. The eyes don't track. The wrongness is the telegraph.",
       "pattern": {
@@ -3777,8 +3777,8 @@
     "attack": {
       "name": "Catch Up",
       "damage": [
-        40,
-        60
+        37,
+        55
       ],
       "telegraph": "Its telegraphs describe the FUTURE \u2014 'it will step left.' Afterimages trail it; the faintest frame is the real present. You must pre-dodge \u2014 or stop predicting entirely.",
       "pattern": {
@@ -3875,8 +3875,8 @@
     "attack": {
       "name": "Sponsored Pause",
       "damage": [
-        20,
-        35
+        19,
+        33
       ],
       "telegraph": "A giant floating AD glyph with a PROGRESS BAR \u2014 the bar is the telegraph. During the pause it repositions and heals, and you watch. After the bar fills, a 'skip ad' beat appears: skip faster if the audience likes you. Or look away \u2014 the ad's power is that you WATCH.",
       "pattern": {

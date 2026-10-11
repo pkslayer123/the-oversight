@@ -51,16 +51,19 @@
   }
 
   // HYDRATION REALITY (Steve 2026-10-08): the day drinks too — heat and work.
-  // Night 35 + day 15 base; clear (sunny) days sweat 1.5x, cold days 0.75x;
+  // Night 30 + day 12 base; clear (sunny) days sweat 1.5x, cold days 0.75x;
   // exertion costs ~1 per 32-tick batch (a full active day: -16). A hard sunny
-  // day runs ~70+ hydration (~1.5L); an idle cold day ~45.
+  // day runs ~60+ hydration (~1.3L); an idle cold day ~40.
+  // SURVIVAL-ATTRITION (2026-10-10): burn was 35+15 — the policy couldn't keep
+  // up (overnight dehydration was the #1 attrition killer, -15/day on top of
+  // the crisis half-heal). One drink (+50) now covers ~a day of quiet living.
   function hydrationBurn(scholar, opts) {
     opts = opts || {};
-    let dayBurn = 15;
+    let dayBurn = 12;
     if (opts.weather === 'clear') dayBurn = Math.round(dayBurn * 1.5);
     else if (opts.weather === 'cold') dayBurn = Math.round(dayBurn * 0.75);
     const exert = Math.floor(((opts.dayTicks) || 0) / 32);
-    return 35 + dayBurn + exert;
+    return 30 + dayBurn + exert;
   }
 
   // Apply one day's metabolic reality. Returns {ok, warnings[]}.
@@ -73,7 +76,7 @@
     scholar.hydration -= hydrationBurn(scholar, opts);
     if (scholar.kcal < 0) {
       const deficit = -scholar.kcal;
-      scholar.health -= Math.min(25, 2 + deficit / 150);
+      scholar.health -= Math.min(20, 2 + deficit / 180);
       scholar.energy = Math.max(0, scholar.energy - 25);
       warnings.push('STARVING: health and energy falling. The spiral has started.');
     } else if (scholar.kcal < STARVATION_THRESHOLD) {
@@ -81,7 +84,7 @@
     }
     if (scholar.hydration <= 0) {
       scholar.hydration = 0;
-      scholar.health -= 15;
+      scholar.health -= 12;
       scholar.energy = Math.max(0, scholar.energy - 30);
       warnings.push('DEHYDRATED: find and treat water today.');
     }

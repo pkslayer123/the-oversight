@@ -15686,7 +15686,14 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       }
       return {
         quality: q,
-        heal: { bunk: 35, tent: 25, hall: 20, fireside: 18, ground: 12 }[q] || 12,
+        // SURVIVAL-ATTRITION (2026-10-10): heal ladder raised.
+        // Measured overnight attrition averaged -18 HP/night vs hall +20 —
+        // the player treaded water (+2/night net) and entered fights at ~63
+        // HP, which fed the 76%-lethal fight rate. A safe night's sleep must
+        // substantially restore: hall +30 vs -18 attrition = +12/night net,
+        // ~3 nights to recover from a wolf mauling. The ladder order is
+        // unchanged; crisis/cold/nightmare still bite first.
+        heal: { bunk: 44, tent: 33, hall: 30, fireside: 24, ground: 16 }[q] || 16,
         name: { bunk: 'a bunk', tent: 'a tent', hall: 'the hall floor', fireside: 'your fireside', ground: 'the cold ground' }[q] || 'the ground',
         note: { bunk: 'Best rest. Deep sleep, real healing.', tent: 'Sheltered. Decent rest.', hall: 'By the fire. Good enough.', fireside: 'Warm by your own fire. Better than cold ground.', ground: 'Exposed. You\'ll wake stiff.' }[q] || '',
         warn,
@@ -15792,7 +15799,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       let crisisHeal = prev.heal;
       if (exposed) {
         const fireDied = prev.quality === 'fireside';
-        s.health = Math.max(1, Math.round(s.health || 0) - 18);
+        // SURVIVAL-ATTRITION (2026-10-10): -18 -> -15. The cold still takes
+        // its cut and still denies healing — it just stops two-shotting a
+        // player who misjudged one fire.
+        s.health = Math.max(1, Math.round(s.health || 0) - 15);
         s.energy = 60;
         rested = 'stiff and half-frozen';
         exposureNote = fireDied
@@ -15827,7 +15837,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         const ins = s.insideTent;
         if (ins && typeof this.tentFireLit === 'function' && this.tentFireLit() &&
             !this.tentVentOpenAt(ins.tx, ins.ty, ins.cx, ins.cy)) {
-          s.health = Math.max(1, Math.round(s.health || 0) - 10);
+          // SURVIVAL-ATTRITION (2026-10-10): -10 -> -8. The lesson still
+          // lands (half-rest + headache); the number stops stacking into a
+          // death spiral with a cold night on top of it.
+          s.health = Math.max(1, Math.round(s.health || 0) - 8);
           s.energy = Math.min(s.energy || 0, 50);
           rested = 'coughing, head full of smoke';
           exposureNote += ' You sealed the flap with the fire lit and breathed smoke all night — headache, raw throat, no real rest. (Vent the tent or let the fire die before you sleep.)';
@@ -19143,7 +19156,6 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } else if (id === 'field_medicine') {
         const key = `${s.day}-${this.dayPart}`;
         if (s.fieldMedDayPart === key) { this.say('Already used field medicine this day part.'); return false; }
-        s.fieldMedDayPart = key;
         const heal = 20;
         // COST: healing burns calories. No free lunch.
         // (Blood Magic: -10 HP → +500 kcal. The heal cost alone only BOUNDS the
@@ -19154,6 +19166,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // sustainable, the body refuses past 50 wound.)
         const healCost = 100;
         if ((s.kcal || 0) < healCost) { this.say(`Too hungry to heal — need ${healCost} kcal.`); return false; }
+        // GATE AFTER THE FOOD CHECK (survival-attrition 2026-10-10): the old
+        // order set fieldMedDayPart BEFORE the kcal check, so a refused
+        // (too-hungry) attempt consumed the day part's use — same class as
+        // the break-it r3 "refused tap never eats the turn" rule. A refusal
+        // for lack of food doesn't spend the dose.
+        s.fieldMedDayPart = key;
         const effMax = this.maxHealth();
         const actual = Math.max(0, Math.min(heal, effMax - (s.health || 0)));
         s.kcal -= healCost;
@@ -21728,10 +21746,13 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
             }
           } catch (e) {}
         } else if (r < 0.5) {
-          // wounded: health bars. -20 to -35 per bad day.
+          // wounded: health bars. -15 to -28 per bad day.
+          // SURVIVAL-ATTRITION (2026-10-10): was -20 to -35 — a single bad
+          // roll plus a sick day killed villagers who never saw a fight.
+          // Wounds still hurt and still stack; they stop one-shotting the unlucky.
           v.health = v.health || {};
           const curH = v.health[id] !== undefined ? v.health[id] : 100;
-          const dmg = 20 + Math.floor(Math.random() * 16);
+          const dmg = 15 + Math.floor(Math.random() * 14);
           // leech: when an ally is hurt near you, you take half. They owe you. (They know it.)
           let dmgTaken = dmg;
           if (this.hasAbility('leech') && this.isSafeTile(this.map.px, this.map.py)) {
@@ -23518,16 +23539,19 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       v.burnHistory = (v.burnHistory || []).concat([honestNet]).slice(-7);
       // keep pantryKcal in sync (derived, not source of truth)
       v.pantryKcal = (v.pantry || []).reduce((t, i) => t + (i.kcalEach || 0) * (i.units || 1), 0);
-      // FAMINE: the slow kind. -5 health/day when the pantry is bare; people
-      // fade. Health recovers +2/day when nobody's starving. (Per-person
+      // FAMINE: the slow kind. -4 health/day when the pantry is bare; people
+      // fade. Health recovers +3/day when nobody's starving. (Per-person
       // shortfall is handled in villagerMealDay: -8 and a hungry night.)
+      // SURVIVAL-ATTRITION (2026-10-10): was -5/+2. The famine clock still
+      // kills a bare pantry (the SCATTERING is untouched); people just fade
+      // a day slower and come back a day faster.
       v.health = v.health || {};
       const famine = (v.pantry || []).length === 0;
       if (famine) {
         for (const rid of (v.roster || [])) {
           if (rid === this.villagerId) continue;
           const cur = v.health[rid] !== undefined ? v.health[rid] : 100;
-          v.health[rid] = Math.max(0, cur - 5);
+          v.health[rid] = Math.max(0, cur - 4);
           if (v.health[rid] <= 0) {
             // DEAD IS DEAD (2026-10-08): starvation deaths route through the
             // real death pipeline — corpse, gossip, dead mark.
@@ -23547,7 +23571,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } else if (!anyStarving) {
         for (const rid of (v.roster || [])) {
           if (v.health[rid] !== undefined && v.health[rid] < 100 && v.health[rid] > 0) {
-            v.health[rid] = Math.min(100, v.health[rid] + 2);
+            v.health[rid] = Math.min(100, v.health[rid] + 3);
           }
         }
       }
@@ -23792,7 +23816,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       for (const vid of Object.keys(v.sick)) {
         const s = v.sick[vid];
         s.daysLeft -= 1;
-        const sickDmg = Math.max(1, 2 + (s.severity || 1) * 2 - (healerHere ? 1 : 0));
+        // SURVIVAL-ATTRITION (2026-10-10): 2+sev*2 -> 1+sev*2 (sev1: 4->3,
+        // sev2: 6->5, healer still -1). Sickness should degrade and threaten,
+        // not finish off a villager who was merely unlucky on the water roll.
+        const sickDmg = Math.max(1, 1 + (s.severity || 1) * 2 - (healerHere ? 1 : 0));
         try { this.hurtVillager(vid, sickDmg, 'sickness'); } catch (e) {}
         // DEAD IS DEAD (2026-10-08): hurtVillager now routes lethal sickness
         // through the real death pipeline. Clean up the sick record — no
