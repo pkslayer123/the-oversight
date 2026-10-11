@@ -59,8 +59,22 @@ Accelerants that landed between the sweeps:
   more encounters per run, so the flee-everything regime (post wave-1 bar)
   covers a larger share of each run's lifetime.
 
-Flee-reason breakdown (8 fresh seeds, instrumented, post-fix code — flee
-logic itself untouched by the fix): PENDING — run in flight, will amend.
+Flee-reason breakdown (3 fresh seeds x 80d, instrumented, post-fix code —
+flee logic itself untouched by the fix):
+- seed 21: arm d20, 2 post-arm strikes, flee[bad 1 / filled 31 / known 0],
+  died d65, surge still armed
+- seed 22: arm d17, 0 post-arm strikes, flee[bad 1 / filled 53 / known 0],
+  died d48, surge still armed
+- seed 23: arm d18, 0 post-arm strikes, flee[bad 1 / filled 2 / known 0],
+  died d19
+
+**fledFilled dominates completely** (the policy's flee-once-bar-filled check
+runs before flee-once-known, so repeats count as filled). Once the wave-1
+deed bar (5 distinct) is filled — accelerated by 5f6f06ce feeding villager
+field fights into wavesFaced — every all-wave-1 fight is fled on turn 1:
+no strike, no consumption. The surge arms (devotion lane, ~day 12-27) right
+as this regime takes hold. maxBanked = 0 in all runs: the war chest never
+holds a single kcal above the full line, so no real feastburn ever fires.
 
 Net: the policy rationally stops fighting exactly when the surge is armed,
 because there is nothing left worth fighting (deed bars filled, monsters
@@ -98,14 +112,18 @@ Regressions (all on the fixed code):
 ## 4. Recommendation for Steve (lever-turn — not taken)
 
 With the honest fix, the winseek "used" metric will read ~0/60, because a
-real feastburn needs a 300+ war chest the policy never builds. The old 35%
-was masking this: the surge pipeline (bank -> burn -> surge) is
-near-unreachable in current play, for players as well as the policy, unless
-they hold deep_reserves/war_chest. Candidate levers, his call:
+real feastburn needs a 300+ war chest the policy never builds (maxBanked = 0
+in every instrumented run). The old 35% was masking this: the surge pipeline
+(bank -> burn -> surge) is near-unreachable in current play, for players as
+well as the policy, unless they hold deep_reserves/war_chest. Candidate
+levers, his call:
 1. Lower the feastburn banked threshold (300) so ordinary feasts can fuel it.
 2. Make feasts bank more (feast -> war chest, not just the body pool).
 3. Teach the winseek policy (and surface to players) a feast-then-fight
-   rhythm: host feast, then patrol while banked.
+   rhythm: host feast, then patrol while banked. Harness-side variant: once
+   the surge is armed, the policy should deliberately take one real fight
+   (a single strike) instead of fleeing everything — currently the
+   flee-once-bar-filled logic guarantees the surge is never cashed.
 4. Accept the surge as a late-game engine piece gated behind bank-expanding
    skillsets — but then the Arc IV deed gate's feastSurgeUsed is much harder
    than the current numbers suggest, and the win-rate loop should stop

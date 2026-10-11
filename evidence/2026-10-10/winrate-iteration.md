@@ -25,12 +25,14 @@ sentiment taught 45 -> 55) because the rebalance keeps villages alive longer
 often. "Used" = at least one player strike while armed (feastBurn is called
 on every strike; the wrap marked feastSurgeUsed unconditionally). Post-
 rebalance the policy strikes less after arming: median fled 9 -> 25.5 while
-struck stayed 6. Mechanism: longer runs -> more encounters -> wave-1 deed
-bar (5 distinct) fills and monsters become known -> the policy's flee-once-
-known / flee-once-bar-filled triggers fire on turn 1 -> no strikes -> surge
-stays armed (49 end-armed vs 36). Accelerants: 5f6f06ce (villager field
-fights now feed wavesFaced, so bars/known-sets fill faster) and the live
-doAction('wait') day loop (more villager agency -> more villager fights).
+struck stayed 6. Flee-reason instrumentation (3 seeds x 80d) shows
+**fledFilled dominates** (31/53/2 vs bad 1, known 0): once the wave-1 deed
+bar (5 distinct) fills, every all-wave-1 fight is fled on turn 1 — no
+strike, no consumption, surge stays armed (49 end-armed vs 36). Accelerants:
+5f6f06ce (villager field fights now feed wavesFaced, which is what the
+flee-once-bar-filled check reads) and the live doAction('wait') day loop
+(more villager agency -> more villager fights), on top of longer survival
+itself (24 -> 34d -> more encounters per run).
 
 Adjacent genuine bug found and fixed: the surge was consumed (silently, no
 narration, no damage) by ANY strike, even with an empty war chest where the
