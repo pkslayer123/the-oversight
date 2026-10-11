@@ -61,10 +61,11 @@
     // monsterCounterKnown(monsterId): THE CONVENTION for the parallel
     // signature-mechanics loop (2026-10-10). The mastery bonus fires only when
     // BOTH hold: the player/village has discovered the counter
-    // (state.monsterCounters[id] === true — set by the signature-mechanics
-    // workers when the counter is discovered in play) AND the monster def
-    // carries a `counter` field describing it. Verified 2026-10-10: NO monster
-    // def has counter data yet — the bonus is DORMANT. A kill never scores
+    // (state.monsterCounters[id] === true — set by Game.discoverMonsterCounter
+    // when the trick is PERFORMED in combat, or TAUGHT at Haven via the
+    // askAbout 'beasttricks' topic; 2026-10-10, structural Worker C) AND the
+    // monster def carries a `counter` field describing it. Wave 1-2 defs all
+    // carry counter data (2026-10-10) — the bonus is LIVE. A kill never scores
     // less than pointsPerKill; nothing is ever punished for not knowing.
     monsterCounterKnown(monsterId) {
       try {

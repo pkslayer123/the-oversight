@@ -12083,6 +12083,10 @@
     ];
     if (tellActive) topics.push(['tellbeast', '\u{1F441}\uFE0F "You saw something out there..."', '']);
     if (namingActive) topics.push(['namebeast', '\u{1F4A1} "What are we calling that thing?"', '']);
+    // MONSTER COUNTERS (2026-10-10): the village teaches tricks — offer the
+    // topic only when there's actually a trick to learn (counterTeachable).
+    const trickTeachable = Game.counterTeachable ? Game.counterTeachable() : null;
+    if (trickTeachable) topics.push(['beasttricks', '\u{1F43E} "Any tricks for the beasts?"', '']);
     const btns = topics.map(([tid, label, extra]) =>
       `<button class="btn sm ghost" data-topic="${tid}">${label}${extra}</button>`).join('') +
       ` <button class="btn sm ghost" data-act="back">\u2190 Back</button>`;
@@ -12100,7 +12104,7 @@
     slot.querySelectorAll('[data-topic]').forEach(b => {
       b.onclick = () => {
         const r = Game.askAbout(villagerId, b.dataset.topic);
-        const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing', namebeast: 'what to call the beast', tellbeast: 'what you saw out there' };
+        const labels = { goal: 'what they want', gossip: 'what they\u2019ve heard', village: 'how everyone\u2019s doing', namebeast: 'what to call the beast', tellbeast: 'what you saw out there', beasttricks: 'beast tricks' };
         view.result = r ? `You asked about ${labels[b.dataset.topic] || 'it'}.` : null;
         view.naming = r && r.naming ? r.naming : null;
         refresh();
@@ -16453,7 +16457,17 @@
           }
           attacks = `<p class="small">You've seen it attack ${m.attacksSeen.length}×${coach}</p>`;
         }
-        return `<div class="card codex"><h3>${esc(name)}</h3>${m.villageName ? `<p class="small" style="opacity:.7">named by the village</p>` : `<p class="small" style="opacity:.7">not yet named — the village is arguing about it</p>`}<p>${esc(stageText)}</p>${attacks}</div>`;
+        // MONSTER COUNTERS (2026-10-10): the trick, once learned — or the
+        // carcass-hint at slain stage (the kill taught you something). If
+        // you don't know, it doesn't show: the reveal stays gated on
+        // discovery (monsterCounterKnown), the hint on the slain stage.
+        let counterHtml = '';
+        if (md.counter) {
+          const cKnown = Game.monsterCounterKnown ? Game.monsterCounterKnown(id) : false;
+          if (cKnown) counterHtml = `<p class="small">💡 <b>Counter — ${esc(md.counter.trick)}:</b> ${esc(md.counter.reveal)}</p>`;
+          else if (m.stage === 'slain') counterHtml = `<p class="small" style="opacity:.7">🔍 <i>Counter hint:</i> ${esc(md.counter.hint)}</p>`;
+        }
+        return `<div class="card codex"><h3>${esc(name)}</h3>${m.villageName ? `<p class="small" style="opacity:.7">named by the village</p>` : `<p class="small" style="opacity:.7">not yet named — the village is arguing about it</p>`}<p>${esc(stageText)}</p>${attacks}${counterHtml}</div>`;
       }).join('') : ''}
       ${Object.entries(Game.state.codex.animals || {}).length ? '<h1 class="title" style="font-size:18px">ANIMALS</h1><p class="small"><i>what the land runs on — named only once learned. (break-it 2026-10-08: animal codex entries had no readable surface.)</i></p>' + Object.entries(Game.state.codex.animals).map(([aid, e]) => {
         const ad = (Game.data.animals || []).find(x => x.id === aid) || {};

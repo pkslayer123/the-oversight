@@ -220,6 +220,35 @@ as any death — "unkillable means unkillable." `maybeCheatDeath()` is the
 single death choke point; no bypass exists. A random villager burns in the
 ash-death; the villager pool is the cap.
 
+## Monster counters (waves 1–2, 2026-10-10)
+
+Steve 2026-10-06: "I loved undertale — reward players for learning and
+thinking outside the box." Every wave 1–2 monster def carries a `counter`
+field: the lateral trick that trivializes its fight (a move you make, not a
+stat you stack). Waves 3–5 are deliberately counter-less for now — the
+signature-mechanics workers own that space (their counterplay is already
+engine-real; wiring it to the ledger convention is their call).
+
+Discovery channels (all reachable):
+1. **Perform the trick** — the Undertale moment. `counter.kind` names a player
+   behavior the combat engine observes (14 kinds: shout, offer_food, wait,
+   move_windup, move_x2, approach, sidestep, keep_distance, strike_lead,
+   strike_windup, strike_recovery, strike_first, strike_nonhead,
+   fresh_weapon). `checkMonsterCounter(mid, ev)` fires from the action
+   handlers (strike/wait/move/shout/offer-food/round-end); doing the trick
+   mid-fight discovers it immediately, with a beat.
+2. **Told at Haven** — `recordWaveKill` tracks `state.villageSlain[type]`;
+   2+ village slain of a type unlocks the askAbout 'beasttricks' topic —
+   villager experiences count (Steve 2026-10-10).
+3. **Codex hint** — slaying a type surfaces `counter.hint` in the Monster
+   Codex BEASTS section; the full `counter.reveal` stays gated on discovery.
+
+Effect: `Game.discoverMonsterCounter(mid, via)` sets `state.monsterCounters[id]`,
+completing the `monsterCounterKnown()` convention (waveLedger.js) — counter-
+known kills score 2 ledger points instead of 1 (perTypeCap 2, never less than
+1 for the unknowing). Tests: `scripts/test-structural-counters-20261011.js`
+(51 checks × 3 seeds).
+
 ## Implementation
 
 - `wave` field on each monster in `src/data/monsters.json` (schema allows it;

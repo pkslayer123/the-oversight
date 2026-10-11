@@ -70,13 +70,15 @@ const ok = (name, cond, detail) => {
   ok('no counter knowledge -> 1 point', Game.waveLedgerPoints(1) === 1, 'got ' + Game.waveLedgerPoints(1));
   resetLedger();
   Game.state.monsterCounters = { gallowdeer: true };
+  // gallowdeer genuinely carries a counter field now (structural counters
+  // 2026-10-10) — lift it for the "no field" case, then restore the real one.
+  const mdef = (Game.data.monsters || []).find(m => m.id === 'gallowdeer');
+  const savedCounter = mdef && mdef.counter;
+  if (mdef) delete mdef.counter;
   Game.recordWaveKill('gallowdeer');
   ok('counter-known but no mdef.counter field -> still 1 (never punished)',
     Game.waveLedgerPoints(1) === 1, 'got ' + Game.waveLedgerPoints(1));
-  // test-only mutation: inject a counter field on the def
-  const mdef = (Game.data.monsters || []).find(m => m.id === 'gallowdeer');
-  const hadCounter = mdef && mdef.counter;
-  if (mdef) mdef.counter = { id: 'test_counter', text: 'test-only' };
+  if (mdef) mdef.counter = savedCounter;
   resetLedger();
   Game.state.monsterCounters = { gallowdeer: true };
   const add4 = Game.scoreLedgerKill('gallowdeer');
@@ -86,7 +88,6 @@ const ok = (name, cond, detail) => {
   const add4b = Game.scoreLedgerKill('gallowdeer');
   ok('counter bonus respects per-type cap (capped at 2)', add4b === 0 && Game.waveLedgerPoints(1) === 2,
     'add=' + add4b + ' pts=' + Game.waveLedgerPoints(1));
-  if (mdef && !hadCounter) delete mdef.counter;
   Game.state.monsterCounters = {};
 
   // ---- 5. engagements score NOTHING; endgame feed untouched ----

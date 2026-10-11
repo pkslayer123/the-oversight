@@ -1,6 +1,12 @@
 [
   {
     "id": "bulldozer",
+    "counter": {
+      "kind": "sidestep",
+      "trick": "Step OFF the lane",
+      "hint": "It never turns. The charge is a straight-line promise.",
+      "reveal": "When it lowers its head, step OFF the lane \u2014 sideways, not back. It can't turn and it never goes around. You'll learn this the moment you stop trying to outrun it."
+    },
     "activity": "diurnal",
     "name": "Bulldozer",
     "biomes": [
@@ -116,6 +122,12 @@
   },
   {
     "id": "hushwolf",
+    "counter": {
+      "kind": "strike_lead",
+      "trick": "Wound the lead",
+      "hint": "The pack has a lead \u2014 first in, last to leave. The others watch it.",
+      "reveal": "Wound the lead and the pack breaks. Hit the FIRST wolf \u2014 the one that came in first \u2014 and the coordination dies. They fear fire, but breaking the lead is free."
+    },
     "activity": "nocturnal",
     "name": "Hushpuppy",
     "scentHunter": true,
@@ -222,6 +234,12 @@
   },
   {
     "id": "gallowdeer",
+    "counter": {
+      "kind": "move_windup",
+      "trick": "MOVE, don't stare",
+      "hint": "The freeze is the whole tell. It is not frozen. It is aiming.",
+      "reveal": "When it goes still, the beam is coming \u2014 MOVE, don't stare at the light. Anything beats standing there: the freeze means it is already aiming."
+    },
     "activity": "nocturnal",
     "name": "Highbeam Deer",
     "biomes": [
@@ -327,6 +345,12 @@
   },
   {
     "id": "mirrormoth",
+    "counter": {
+      "kind": "strike_windup",
+      "trick": "Hit it while it folds",
+      "hint": "The flash only fires forward. It has to face you.",
+      "reveal": "The Wing Flash only fires FORWARD \u2014 it must face you. Circle while it folds its wings and hit it before the wings open. It can't flash what's behind it."
+    },
     "activity": "nocturnal",
     "name": "Flashbulb Moth",
     "biomes": [
@@ -430,6 +454,12 @@
   },
   {
     "id": "belltoad",
+    "counter": {
+      "kind": "shout",
+      "trick": "Break the chorus",
+      "hint": "The pack croaks as one. The coordination IS sound.",
+      "reveal": "The Resonant Croak needs the chorus \u2014 every throat in range joins. SHOUT and the note dies mid-croak. The hum needs the choir; scatter the choir."
+    },
     "activity": "crepuscular",
     "name": "Choir Toad",
     "biomes": [
@@ -534,6 +564,12 @@
   },
   {
     "id": "lockpick_raccoon",
+    "counter": {
+      "kind": "offer_food",
+      "trick": "Buy it off",
+      "hint": "It cannot resist food. The hands want what the hands want.",
+      "reveal": "It steals FIRST and fights second \u2014 but it CANNOT resist food. OFFER FOOD in the fight: it drops your things mid-scamper for the meal. A bribe is cheaper than a chase."
+    },
     "activity": "nocturnal",
     "name": "Lockpick",
     "biomes": [
@@ -632,6 +668,12 @@
   },
   {
     "id": "white_noise_heron",
+    "counter": {
+      "kind": "sidestep",
+      "trick": "Step off the line",
+      "hint": "It strikes where you were, not where you are.",
+      "reveal": "When it unfolds, SIDESTEP \u2014 it commits to the line and can't correct. Watch the water, not the bird: it strikes where you were standing, never where you are."
+    },
     "activity": "crepuscular",
     "name": "White Noise",
     "biomes": [
@@ -740,6 +782,12 @@
   },
   {
     "id": "hummice",
+    "counter": {
+      "kind": "shout",
+      "trick": "Bellow at the choir",
+      "hint": "The swarm's coordination IS sound. The hum stacks.",
+      "reveal": "The Swarm Hum stacks while you stand in it \u2014 but the hum needs the choir. SHOUT and the bellow scatters it. Raw noise, no words, all lungs."
+    },
     "activity": "nocturnal",
     "name": "Hummice",
     "biomes": [
@@ -843,6 +891,13 @@
   },
   {
     "id": "speedbump_turtle",
+    "counter": {
+      "kind": "keep_distance",
+      "tiles": 2,
+      "trick": "Never stand next to it",
+      "hint": "It can't chase. The snap is fast but the legs are slow.",
+      "reveal": "Don't step next to it \u2014 it can't chase, so just walk around. Keep two squares away and it's furniture. When it seals up, wait it out."
+    },
     "activity": "diurnal",
     "name": "Speedbump",
     "biomes": [
@@ -946,6 +1001,13 @@
   },
   {
     "id": "nightlight_catfish",
+    "counter": {
+      "kind": "keep_distance",
+      "tiles": 2,
+      "trick": "Never wade in",
+      "hint": "The glow is a mouth. It won't chase you.",
+      "reveal": "The glow is a mouth \u2014 it waits for you to come close. Never wade in. Strike the light from two squares out and it's just a fish with a lamp."
+    },
     "activity": "nocturnal",
     "name": "Nightlight",
     "biomes": [
@@ -1047,6 +1109,12 @@
   },
   {
     "id": "voice_mimic_radio",
+    "counter": {
+      "kind": "approach",
+      "trick": "Walk toward the voice",
+      "hint": "The first cry is always someone you know. The second is static.",
+      "reveal": "The voice is bait \u2014 it wants you to come closer. So do it: move TOWARD the cry once and the mimic drops the voice, exposed. Call its bluff. It has nothing once you stop running from the sound."
+    },
     "wave": 2,
     "name": "Static",
     "activity": "nocturnal",
@@ -1151,6 +1219,12 @@
   },
   {
     "id": "mirror_stag",
+    "counter": {
+      "kind": "sidestep",
+      "trick": "Sidestep the charge",
+      "hint": "It can't turn mid-charge. The mirror faces forward.",
+      "reveal": "Break line of sight during the mirror beat and the charge dies unspent \u2014 or sidestep: it can't turn mid-charge. Don't look at the reflection. Look at its feet \u2014 they tell you where it's going."
+    },
     "wave": 2,
     "name": "Grief Counselor",
     "activity": "diurnal",
@@ -1262,6 +1336,12 @@
   },
   {
     "id": "review_drone",
+    "counter": {
+      "kind": "move_x2",
+      "trick": "Dodge unpredictably",
+      "hint": "It scores your dodges. Patterns are what it grades.",
+      "reveal": "It grades your dodges aloud \u2014 so stop giving it the same dodge twice. Move two rounds running, never the same way, and its lock breaks. Unpredictability is the only passing grade."
+    },
     "wave": 2,
     "name": "Performance Review",
     "activity": "diurnal",
@@ -1365,6 +1445,13 @@
   },
   {
     "id": "bright_idea",
+    "counter": {
+      "kind": "keep_distance",
+      "tiles": 3,
+      "trick": "Be three tiles out",
+      "hint": "The bloom is the timer. Two beats, then white.",
+      "reveal": "The bloom is the timer: two beats of brightening, then white. Be three tiles out or behind cover when it flares. The ember beat after is safe \u2014 walk in and finish it while it glows itself out."
+    },
     "wave": 2,
     "name": "Inspiration",
     "activity": "nocturnal",
@@ -1476,6 +1563,12 @@
   },
   {
     "id": "memory_projector",
+    "counter": {
+      "kind": "move_windup",
+      "trick": "Keep moving during the spell",
+      "hint": "The beam needs your eyes. The picture holds you still.",
+      "reveal": "The Home Movies beam needs your EYES \u2014 keep moving during the SPELL beat and the picture can't hold you. The screen burns brightest just before it fires: that's your two-turn warning."
+    },
     "wave": 2,
     "name": "Nostalgia",
     "activity": "crepuscular",
@@ -1578,6 +1671,12 @@
   },
   {
     "id": "warranty_caller",
+    "counter": {
+      "kind": "move_x2",
+      "trick": "Never stand still",
+      "hint": "It can only dial a stationary target. The RING is the telegraph.",
+      "reveal": "The RING is the telegraph \u2014 the pitch itself gives no warning. Move two or more tiles from where you stood when it dialed and the call drops. It can only dial a stationary target. Never stand still."
+    },
     "wave": 2,
     "name": "Extended Warranty",
     "activity": "both",
@@ -1677,6 +1776,12 @@
   },
   {
     "id": "ducks_in_a_row",
+    "counter": {
+      "kind": "strike_nonhead",
+      "trick": "Break the line",
+      "hint": "The head drives. The line is one animal \u2014 until it isn't.",
+      "reveal": "The line is one animal, but only while it's whole. Strike a duck that ISN'T the head and the line splits \u2014 both halves hunt on their own and the formation dies. Break the line, then thin the pieces."
+    },
     "activity": "diurnal",
     "name": "ducks in a row",
     "unknown": "a line of ducks, walking in perfect formation. In the dark. That is not normal duck behavior.",
@@ -1788,6 +1893,12 @@
   },
   {
     "id": "glasswing",
+    "counter": {
+      "kind": "move_windup",
+      "trick": "Move when the shadow grows",
+      "hint": "The shadow moves first. The bug follows it.",
+      "reveal": "Watch the shadow, not the bug \u2014 when it grows, the dive is coming. MOVE while it falls and it lands on dirt. A missed dive grounds it: that's your window."
+    },
     "activity": "diurnal",
     "name": "Glasswing Darter",
     "biomes": [
@@ -1881,6 +1992,12 @@
   },
   {
     "id": "sunbasker",
+    "counter": {
+      "kind": "strike_windup",
+      "trick": "Never let it finish basking",
+      "hint": "The gold is a charge. Interrupt it.",
+      "reveal": "Its scales go molten gold as it charges \u2014 hit it while it basks and the charge dies unspent. Don't let it finish. Every uninterrupted turn is a loaded bite."
+    },
     "activity": "diurnal",
     "name": "Sunbasker",
     "biomes": [
@@ -1979,6 +2096,12 @@
   },
   {
     "id": "understudy",
+    "counter": {
+      "kind": "fresh_weapon",
+      "trick": "Hit it with something it's never seen",
+      "hint": "It only knows what you have SHOWN it.",
+      "reveal": "It copies what it sees \u2014 strike with a weapon it has NEVER seen and the copy falls apart. The familiar is what kills you. Switch weapons mid-fight and it's back to guessing."
+    },
     "wave": 2,
     "name": "The Understudy",
     "activity": "nocturnal",
@@ -2071,6 +2194,12 @@
   },
   {
     "id": "landlord",
+    "counter": {
+      "kind": "move_x2",
+      "trick": "Never end on leased ground",
+      "hint": "The ground is the weapon, not the landlord. Rent comes due every round.",
+      "reveal": "Rent comes due every round you end on leased ground \u2014 keep moving and the ledger starves. Each ADDENDUM raises the rent and heals it. Never end two rounds on the same dirt."
+    },
     "wave": 2,
     "spawnWeight": 3,
     "name": "The Landlord",
@@ -2171,6 +2300,12 @@
   },
   {
     "id": "heckler",
+    "counter": {
+      "kind": "wait",
+      "trick": "WAIT to answer back",
+      "hint": "SHAME is the damage, not the swing.",
+      "reveal": "SHAME is the damage, not the swing \u2014 WAIT to answer back and clear it before the HEADLINER pile-on. The words demand a response. Give them one, on your terms."
+    },
     "wave": 2,
     "name": "The Heckler",
     "activity": "nocturnal",
@@ -2267,6 +2402,12 @@
   },
   {
     "id": "paparazzo",
+    "counter": {
+      "kind": "move_windup",
+      "trick": "Break line of sight before the fourth shot",
+      "hint": "Four shots is the whole fight. The model starves without the fourth.",
+      "reveal": "Four shots is the whole fight \u2014 break line of sight before the fourth and the model starves. The EXCLUSIVE cannot be dodged, only prevented: move while the lens steadies."
+    },
     "wave": 2,
     "name": "The Paparazzo",
     "activity": "nocturnal",
@@ -2363,6 +2504,12 @@
   },
   {
     "id": "union_rep",
+    "counter": {
+      "kind": "strike_first",
+      "trick": "Kill the rep first",
+      "hint": "It does not fight, it organizes. The picket line is the damage.",
+      "reveal": "It does not fight, it ORGANIZES \u2014 kill the rep before WALKOUT or the stomp lands as one. First blood on the rep, every time. Every ally it rallies hits +3 harder."
+    },
     "wave": 2,
     "name": "The Union Rep",
     "activity": "diurnal",
@@ -2456,6 +2603,12 @@
   },
   {
     "id": "moderator",
+    "counter": {
+      "kind": "wait",
+      "trick": "Wait \u2014 silence is a verb it can't moderate",
+      "hint": "It mutes the verb you lean on. The algorithm cannot moderate silence.",
+      "reveal": "It mutes the verb you lean on \u2014 strike or move, whichever you use more. But silence is a verb the algorithm cannot moderate: WAIT and its attention slides off your habits."
+    },
     "wave": 2,
     "name": "The Moderator",
     "activity": "nocturnal",
@@ -2558,6 +2711,12 @@
   },
   {
     "id": "nevermore",
+    "counter": {
+      "kind": "sidestep",
+      "trick": "Step OFF the strafing lane",
+      "hint": "The shadow detaches first. The lane is already chosen.",
+      "reveal": "The shadow detaches from the branch-shadow and slides \u2014 a straight black lane. Step OFF it, not along it: it can't turn mid-run. It always lands after a run, hit or miss. Punish the landing."
+    },
     "activity": "crepuscular",
     "name": "Nevermore",
     "biomes": [
@@ -2668,6 +2827,12 @@
   },
   {
     "id": "nightcourt",
+    "counter": {
+      "kind": "move_x2",
+      "trick": "Dodge twice",
+      "hint": "The dive re-aims at where you moved. Once isn't enough.",
+      "reveal": "No sound is the tell \u2014 watch the ground-shadow. A missed dive comes again instantly at your NEW position: dodge TWICE. Then it's exhausted, and the sky is yours."
+    },
     "activity": "nocturnal",
     "name": "Night Court",
     "biomes": [
@@ -2772,6 +2937,12 @@
   },
   {
     "id": "statickite",
+    "counter": {
+      "kind": "move_windup",
+      "trick": "Leave the marked square",
+      "hint": "The mark is generous \u2014 two full beats. The dip is the melee window.",
+      "reveal": "The mark is generous \u2014 two full beats to leave the square. When it dips to transmit it's at melee height and takes +50%: that's the only window. Leave the square, then punish the dip."
+    },
     "activity": "both",
     "name": "The Static Kite",
     "biomes": [
@@ -2879,6 +3050,12 @@
   },
   {
     "id": "giant_mosquito",
+    "counter": {
+      "kind": "strike_recovery",
+      "trick": "Hit it after it drinks",
+      "hint": "After it drinks it's heavy and slow. The whine steadies before the dive.",
+      "reveal": "It only drinks adjacent \u2014 keep your distance during the dive. After it drinks it's HEAVY and SLOW: that's when you hit it. Smoke and fire ruin its whole plan."
+    },
     "activity": "crepuscular",
     "name": "mosquito",
     "systemDesignation": "Culicidae gigas (field expedient)",
@@ -2977,6 +3154,13 @@
   },
   {
     "id": "alien_tick",
+    "counter": {
+      "kind": "keep_distance",
+      "tiles": 2,
+      "trick": "Keep two squares away",
+      "hint": "It can't chase. The questing legs are the tell.",
+      "reveal": "Keep 2+ squares away and it's harmless \u2014 it can't chase. Don't walk up to it. Latched: burn it off with fire, or let it feed full and drop on its own."
+    },
     "activity": "both",
     "name": "tick",
     "systemDesignation": "Ixodida enormis (field expedient)",

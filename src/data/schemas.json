@@ -163,6 +163,7 @@
    },
    "armor": "number?",
    "pierce": "number?",
+   "counter": "object?",
    "resistances": "object?",
    "terraform": "string?",
    "terraformDesc": "string?",

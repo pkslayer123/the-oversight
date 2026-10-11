@@ -3864,6 +3864,24 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.monsterNewsCheck(mid);
         return { ok: true };
       }
+      if (topic === 'beasttricks') {
+        // MONSTER COUNTERS (2026-10-10): the village learns together. Once
+        // the village has slain 2+ of a beast type, someone at the fire knows
+        // the trick — ask, and they teach you (villager experiences count —
+        // Steve 2026-10-10). Gated by counterTeachable(); the UI only offers
+        // the topic when there's actually a trick to learn.
+        const teachable = this.counterTeachable ? this.counterTeachable() : null;
+        if (!teachable) {
+          this.say(`${first} shrugs. "The beasts? We kill them or they kill us. Nobody's figured out anything clever yet."`);
+          return { ok: true, none: true };
+        }
+        const tmdef = (this.data.monsters || []).find(m => m.id === teachable) || {};
+        const tctr = tmdef.counter || {};
+        this.say(`${first} leans in, voice low. "Here's what we figured out about ${this.monsterDisplayName(teachable)}. ${tctr.trick || 'There is a trick'}. ${tctr.reveal || ''}"`);
+        this.discoverMonsterCounter(teachable, 'taught');
+        this.socialTick(vid);
+        return { ok: true, taught: teachable };
+      }
       if (topic === 'namebeast') {
         // The naming argument, up close. The player weighs in — backing a
         // name counts double. Social play, not a menu.
@@ -24859,6 +24877,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       const wave = mdef.wave || 1;
       this.state.waveKills = this.state.waveKills || {};
       this.state.waveKills[wave] = (this.state.waveKills[wave] || 0) + 1;
+      // MONSTER COUNTERS (2026-10-10): the village learns together. Every
+      // kill — player TB kill or villager field-fight kill — feeds the
+      // village's per-type slain count; 2+ slain unlocks the askAbout
+      // 'beasttricks' teaching channel (villager experiences count).
+      this.state.villageSlain = this.state.villageSlain || {};
+      this.state.villageSlain[monsterId] = (this.state.villageSlain[monsterId] || 0) + 1;
       // WAVE LEDGER (Steve 2026-10-10): kills also score the ledger — the
       // only thing that unlocks waves now. Defensive: scoring never breaks
       // the kill path (the deed feed and beats must survive a ledger bug).
@@ -25556,6 +25580,112 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         c.patterns[atk.name] = this.tbPatternDesc(atk.pattern, m.mdef);
         this.say(`📖 Codex: ${atk.name} — ${c.patterns[atk.name]}. You won't forget this.`);
       }
+      // MONSTER COUNTERS (structural 2026-10-10, Worker C): the attack
+      // discharged and you lived — the recovery window opens. strike_recovery
+      // tricks (mosquito after it drinks, kite on the dip) key off this.
+      m._counterDischarged = true;
+    },
+
+    // === MONSTER COUNTERS (structural 2026-10-10, Worker C) ===
+    // Steve 2026-10-06: "I loved undertale — reward players for learning and
+    // thinking outside the box." Every wave 1-2 monster def carries a
+    // `counter` field: the lateral trick that trivializes its fight (a move
+    // you make, not a stat you stack). Discovering the trick sets
+    // state.monsterCounters[id] — the HALF of the monsterCounterKnown
+    // convention (waveLedger.js) that no signature-mechanics worker had ever
+    // set. Once known, kills score the ledger's counter bonus (2 pts instead
+    // of 1, perTypeCap 2) — counter-kills visibly accelerate wave unlocks.
+    //
+    // DISCOVERY CHANNELS (all reachable, all real):
+    //  1. PERFORM THE TRICK — the Undertale moment. Each counter.kind names a
+    //     player behavior the combat engine already observes (wait, shout,
+    //     offer food, sidestep a telegraph lane, wound the lead, strike
+    //     during windup, ...). checkMonsterCounter fires from the action
+    //     handlers below; doing the trick mid-fight discovers it immediately.
+    //  2. TOLD AT HAVEN — the village learns together. recordWaveKill tracks
+    //     state.villageSlain[type]; once the village has slain 2+ of a type,
+    //     the askAbout 'beasttricks' topic lets a villager teach you the
+    //     trick in conversation (villager experiences count — Steve 2026-10-10).
+    //  3. THE CODEX HINT — slaying a monster surfaces its counter.hint in the
+    //     Monster Codex BEASTS section (the carcass taught you). The full
+    //     reveal stays gated on discovery (channels 1-2). If you don't know,
+    //     it doesn't show.
+    discoverMonsterCounter(mid, via) {
+      try {
+        const mdef = (this.data.monsters || []).find(m => m.id === mid);
+        if (!mdef || !mdef.counter) return false;
+        this.state.monsterCounters = this.state.monsterCounters || {};
+        if (this.state.monsterCounters[mid]) return false;
+        this.state.monsterCounters[mid] = true;
+        const c = mdef.counter;
+        const viaLine = via === 'taught' ? 'Someone at the haven knew the trick.'
+          : 'You did the thing — and it worked.';
+        this.say(`💡 COUNTER LEARNED — ${this.monsterDisplayName(mid)}: ${c.trick}. ${c.reveal} (${viaLine})`);
+        try { if (this.journalNote) this.journalNote('monsters', mid, `Counter: ${c.trick} — ${c.reveal}`); } catch (e) {}
+        return true;
+      } catch (e) { return false; }
+    },
+    // checkMonsterCounter(mid, ev): did the player's action just perform this
+    // beast's trick? ev.type is the action (wait/shout/offer_food/strike/move/
+    // move_x2/round_end); the rest carries what the engine observed. Kinds
+    // are data-driven from mdef.counter.kind — no per-monster code branches.
+    checkMonsterCounter(mid, ev) {
+      try {
+        const f = this.tbfight;
+        if (!f || f.over || !ev) return false;
+        const mdef = (this.data.monsters || []).find(m => m.id === mid);
+        const ctr = mdef && mdef.counter;
+        if (!ctr) return false;
+        if ((this.state.monsterCounters || {})[mid]) return false; // known already
+        const p = this.tbFighter('p');
+        if (!p || !p.alive) return false;
+        let hit = false;
+        switch (ctr.kind) {
+          case 'shout': hit = ev.type === 'shout'; break;
+          case 'offer_food': hit = ev.type === 'offer_food'; break;
+          case 'wait': hit = ev.type === 'wait'; break;
+          case 'move_windup': hit = ev.type === 'move' && !!ev.windup; break;
+          case 'move_x2': hit = ev.type === 'move_x2'; break;
+          case 'approach': hit = ev.type === 'move' && !!ev.windup && !!ev.closer; break;
+          case 'sidestep': hit = ev.type === 'move' && !!ev.wasInLane && !ev.inLane; break;
+          case 'keep_distance': hit = ev.type === 'round_end' && ev.dist >= (ctr.tiles || 3); break;
+          case 'strike_lead': hit = ev.type === 'strike' && this.counterIsLead(ev.target); break;
+          case 'strike_windup': hit = ev.type === 'strike' && !!ev.windup; break;
+          case 'strike_recovery': hit = ev.type === 'strike' && !ev.windup && !!(ev.target && ev.target._counterDischarged); break;
+          case 'strike_first': hit = ev.type === 'strike' && !!ev.firstStrike; break;
+          case 'strike_nonhead': hit = ev.type === 'strike' && ((ev.target && ev.target.segmentIndex) | 0) > 0; break;
+          case 'fresh_weapon': hit = ev.type === 'strike' && !!ev.freshWeapon; break;
+        }
+        if (!hit) return false;
+        return this.discoverMonsterCounter(mid, ev.via || 'trick');
+      } catch (e) { return false; }
+    },
+    // counterIsLead(t): the lead of a pack is the first-spawned fighter of
+    // its type (encounter comment: "first-spawned is the lead").
+    counterIsLead(t) {
+      try {
+        const f = this.tbfight;
+        if (!f || !t || t.kind !== 'monster') return false;
+        const mid = (t.mdef || {}).id;
+        const same = f.fighters.filter(x => x.kind === 'monster' && x.alive && !x.fled && ((x.mdef || {}).id === mid));
+        if (!same.length) return false;
+        let lead = same[0], li = f.fighters.indexOf(lead);
+        for (const x of same) { const xi = f.fighters.indexOf(x); if (xi < li) { lead = x; li = xi; } }
+        return t === lead;
+      } catch (e) { return false; }
+    },
+    // counterTeachable(): a beast type the village has slain 2+ of, whose
+    // trick you don't know yet. The askAbout 'beasttricks' topic gate.
+    counterTeachable() {
+      try {
+        const slain = this.state.villageSlain || {};
+        const known = this.state.monsterCounters || {};
+        for (const mdef of (this.data.monsters || [])) {
+          if (!mdef.counter || known[mdef.id]) continue;
+          if ((slain[mdef.id] || 0) >= 2) return mdef.id;
+        }
+        return null;
+      } catch (e) { return null; }
     },
 
     // === SWEEPING BEAM (Highbeam Deer) ===
@@ -26382,6 +26512,17 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // path tile by tile so the beam tracks your actual movement, not just
       // where you land. TERRAFORM: movement is deducted per tile here —
       // difficult ground eats 2 per tile (priced up front above).
+      // MONSTER COUNTERS (2026-10-10): snapshot telegraph lanes + position
+      // BEFORE the move — sidestep/approach/windup tricks are about the move.
+      let _ctrSnap = null;
+      try {
+        _ctrSnap = { px: p.mx, py: p.my, lanes: {} };
+        for (const m of f.fighters) {
+          if (m.kind !== 'monster' || !m.alive || m.fled || !m.telegraph) continue;
+          const cells = m.telegraph.cells;
+          if (Array.isArray(cells)) _ctrSnap.lanes[m.key] = new Set(cells.map(c => c.cx + ',' + c.cy));
+        }
+      } catch (e) {}
       for (const [tx, ty] of path) {
         p.moveLeft -= this.tbTerrainCost(tx, ty);
         p.mx = tx; p.my = ty;
@@ -26390,6 +26531,36 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.tbBeamActionTick();
         if (!this.tbfight || this.tbfight.over) return true;
       }
+      // MONSTER COUNTERS (2026-10-10): the move itself can be the trick —
+      // sidestepping a lane, moving during a windup, dodging twice in a row.
+      try {
+        const p1 = this.tbFighter('p');
+        if (_ctrSnap && p1 && (p1.mx !== _ctrSnap.px || p1.my !== _ctrSnap.py)) {
+          for (const m of f.fighters) {
+            if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+            const lane = _ctrSnap.lanes[m.key];
+            const wasIn = lane ? lane.has(_ctrSnap.px + ',' + _ctrSnap.py) : false;
+            let inLane = false;
+            if (m.telegraph && Array.isArray(m.telegraph.cells)) {
+              inLane = m.telegraph.cells.some(c => c.cx === p1.mx && c.cy === p1.my);
+            }
+            const d0 = Math.max(Math.abs(m.mx - _ctrSnap.px), Math.abs(m.my - _ctrSnap.py));
+            const d1 = Math.max(Math.abs(m.mx - p1.mx), Math.abs(m.my - p1.my));
+            this.checkMonsterCounter((m.mdef || {}).id, {
+              type: 'move', windup: !!m.telegraph, wasInLane: wasIn, inLane,
+              closer: d1 < d0, via: 'trick' });
+          }
+          // move_x2: moved on two consecutive rounds (review_drone, nightcourt,
+          // warranty_caller, landlord — never the same dodge twice).
+          if (f._counterLastMoveRound === f.round - 1) {
+            for (const m of f.fighters) {
+              if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+              this.checkMonsterCounter((m.mdef || {}).id, { type: 'move_x2', via: 'trick' });
+            }
+          }
+          f._counterLastMoveRound = f.round;
+        }
+      } catch (e) {}
       const [lx, ly] = path[path.length - 1];
       const [px2, py2] = path.length >= 2 ? path[path.length - 2] : [p.mx, p.my];
       this.state.scholar.facing = { x: Math.sign(lx - px2) || 0, y: Math.sign(ly - py2) || 1 };
@@ -26963,6 +27134,18 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (wasCrit) this.drama('critHit', t.mx, t.my, shown);
         else if (!isHuman) this.drama('hit', t.mx, t.my, { color: '#ffd54a' });
       } catch (e) {}
+      // MONSTER COUNTERS (2026-10-10): the strike itself can be the trick —
+      // wounding the lead, interrupting a windup, first blood on the rep,
+      // hitting what it hasn't seen. Evaluated BEFORE the understudy's
+      // usSeen recording below, so fresh_weapon reads honestly.
+      try {
+        const wname = (w && w.name) || 'strike';
+        const firstStrike = ((this.tbfight || {})._counterStrikes | 0) === 0;
+        this.checkMonsterCounter((t.mdef || {}).id, {
+          type: 'strike', target: t, windup: !!(t && t.telegraph),
+          firstStrike, freshWeapon: !(t.usSeen && t.usSeen[wname]), via: 'trick' });
+        this.tbfight._counterStrikes = (this.tbfight._counterStrikes | 0) + 1;
+      } catch (e) {}
       // UNDERSTUDY (Steve 2026-10-06): it watches you fight and learns. Record
       // the weapon + damage for any watching understudy in this fight.
       // (Records what LANDED — the heckler's words and the shell affect the
@@ -27216,6 +27399,14 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       } else {
         this.say('You hold still, watching.');
       }
+      // MONSTER COUNTERS (2026-10-10): waiting is the trick for some beasts
+      // (heckler: answer back; moderator: silence it can't moderate).
+      try {
+        for (const m of ((this.tbfight || {}).fighters || [])) {
+          if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+          this.checkMonsterCounter((m.mdef || {}).id, { type: 'wait', windup: !!m.telegraph, via: 'trick' });
+        }
+      } catch (e) {}
       this.tbAfterPlayerAction();
       return true;
     },
@@ -27258,6 +27449,17 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // tbAdvance only checks after AI turns, so check here too. Otherwise
       // killing the final foe soft-locks the fight on your turn forever.
       if (this.tbEndCheck()) return;
+      // MONSTER COUNTERS (2026-10-10): keeping your distance is the trick
+      // for some beasts (turtle, catfish, tick, bright_idea) — checked when
+      // your action phase ends, before the world moves.
+      try {
+        const pc = this.tbFighter('p');
+        if (pc && pc.alive) for (const m of ((this.tbfight || {}).fighters || [])) {
+          if (m.kind !== 'monster' || !m.alive || m.fled) continue;
+          const d = Math.max(Math.abs(m.mx - pc.mx), Math.abs(m.my - pc.my));
+          this.checkMonsterCounter((m.mdef || {}).id, { type: 'round_end', dist: d, via: 'trick' });
+        }
+      } catch (e) {}
       // ACTION ECONOMY (Steve): the turn ends when you're out of actions —
       // no end-turn ceremony. Spend moves + the acted action and it advances
       // on its own. (Wait forfeits the rest via tbPlayerWait.)
@@ -29667,6 +29869,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (m.telegraph) m.telegraph = null;
         m.encCooldown = Math.max(m.encCooldown || 0, 1);
         m.startled = true;
+        // MONSTER COUNTERS (2026-10-10): the bellow IS the trick for beasts
+        // whose coordination is sound (hummice, belltoad).
+        try { this.checkMonsterCounter((m.mdef || {}).id, { type: 'shout', via: 'trick' }); } catch (e) {}
         if (this.encUsesFifo(m)) this.encSetPhase(m, 'quiet');
         const dx = Math.sign(m.mx - p.mx), dy = Math.sign(m.my - p.my);
         const detail = this.genDetail(this.map.px, this.map.py);
@@ -29716,6 +29921,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         this.say(`You toss ${fname} — and those too-many fingers snatch it mid-air. It stuffs its cheeks and bolts. Your pack survives. This time.`);
       }
       m.fled = true;
+      // MONSTER COUNTERS (2026-10-10): the bribe IS the trick — it cannot
+      // resist food. Doing it teaches you that.
+      try { this.checkMonsterCounter((m.mdef || {}).id, { type: 'offer_food', via: 'trick' }); } catch (e) {}
       this.audioEvent('lockpickChitter');
       this.tbStyle(10, 'bought off the thief');
       this.tbRefreshTelegraphUI();

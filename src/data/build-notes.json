@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-10-11",
+    "version": "pending-ship",
+    "notes": [
+      "Every beast now has a trick \u2014 a lateral counter you learn by doing, not by grinding stats. Sidestep the bulldozer's lane, wound the hushwolf lead, shout down the belltoad chorus, buy off the lockpick with food. Pull it off mid-fight and the codex records it for good.",
+      "The village learns together: once Haven has killed enough of one kind of beast, asking around teaches you its trick. And every carcass leaves a hint in the Monster Codex \u2014 the kill teaches, even when brute force won.",
+      "Known tricks pay: killing a beast whose counter you've learned counts double toward opening the next wave."
+    ]
+  },
+  {
     "date": "2026-10-10",
     "notes": [
       "Fat game butchers honestly now: bears, boars and javelinas yield their meat plus slabs of separable fat (render it over a fire) \u2014 the same animal, nothing conjured from thin air.",
@@ -110,20 +119,5 @@
       "The bear is a proper fight now. It mauls you every time you swing at close range \u2014 a spear's reach still halves it, but a knife up close is answered in full, every time. And if the bear puts you down, you stay down: no more walking away from 0 health."
     ],
     "version": "pending-ship"
-  },
-  {
-    "date": "2026-10-10",
-    "notes": [
-      "Issue Challenge dares have real stakes now: if it comes to blows, the village holds you both to the terms \u2014 witnessed, to yield. Winner takes respect, loser takes humility. Break the terms with a killing and the village names you oathbreaker."
-    ],
-    "version": "pending-ship"
-  },
-  {
-    "date": "2026-10-10",
-    "notes": [
-      "A delivered ratings stunt really moves the ratings now: when you give the galaxy its moment, the numbers tick up for real \u2014 and the System won't drag you back on camera off the same slump twice.",
-      "Watching the village's shows together pays what it promises: the good-snacks watch party brings the village closer exactly once, no hidden double-counting."
-    ],
-    "version": "f1cb0e5d-20261010-052413"
   }
 ]
