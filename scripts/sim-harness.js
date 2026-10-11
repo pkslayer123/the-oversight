@@ -84,16 +84,11 @@ function applySimOpt(Game) {
       inCombat: !!this.tbfight, pendingEncounter: !!this.pendingEncounter,
     };
   };
-  // STUB save(): sims never load saves. Keep syncRun() (cheap run metadata
-  // + mid-fight snapshot bookkeeping) but skip S.state.save's full-state
-  // JSON.stringify (~2% of sim wall). Always returns true: every game-code
-  // caller is a bare this.save() — only app.js (browser, never loaded in
-  // sims) reads the save-status return.
-  Game.save = function () {
-    if (this.over) return;
-    try { this.syncRun(); } catch (e) {}
-    return true;
-  };
+  // SAVE STUB REMOVED (2026-10-10): the stub assumed "sims never load
+  // saves", but proof tests legitimately exercise save/load in the harness
+  // (e.g. test-feast-buff.js G10). The ~2% stringify cost is not worth
+  // breaking save/load semantics — correctness over speed. Real Game.save
+  // is kept; only status() stays slimmed above.
 }
 
 function manifest(seed, mode) {
