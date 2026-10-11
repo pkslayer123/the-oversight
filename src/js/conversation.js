@@ -2582,7 +2582,10 @@
       // Answering their question comes first — it's rude to ignore it.
       if (c.pendingQ) {
         const region = (this.homeRegion || (this.state.scholar || {}).homeRegion) || 'far from here';
-        for (const a of c.pendingQ.answers) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: String(a.label).replaceAll('{region}', region), temper: (a && a.temper) || 'neutral' });
+        // DEFENSIVE (socialite 2026-10-10): a pending question without an
+        // answers array must not crash the choice builder — malformed beats
+        // shouldn't kill the conversation UI (mirrors the || [] guard below).
+        for (const a of (c.pendingQ.answers || [])) choices.push({ id: 'ans:' + c.pendingQ.id + ':' + a.id, label: String(a.label).replaceAll('{region}', region), temper: (a && a.temper) || 'neutral' });
         // HONEST OPT-OUT (Steve 2026-10-08, revised per his corrections):
         // every bespoke question guarantees "I'd rather not say." Honesty
         // is always AVAILABLE — but honest words have WEIGHT (Principle 3).
@@ -3328,12 +3331,36 @@
       c.heldAskDodges = 0;
     },
 
+    // convoDropUnspoken(vid, choiceId): ONE-BEAT TURNS (Steve 2026-10-05) —
+    // unspoken held beats die when the player moves on (anything but the
+    // 'goon' continuer). The wind-down can't be dodged: it stays queued.
+    // Shared choke point: the base turn handler AND the early-return
+    // wrappers (dlg:subject in convo-beats.js, betrayal: in betrayal.js)
+    // must all run it, or queued beats never die on those paths and a
+    // stuck heldAsk defeats the winddown gate (socialite 2026-10-10).
+    convoDropUnspoken(vid, choiceId) {
+      const c = this.convoGet(vid);
+      if (!c || choiceId === 'goon' || !c.heldBeats || !c.heldBeats.length) return;
+      c.heldBeats = c.heldBeats.filter(h => h.winddown);
+      if (!c.heldBeats.length) { c.heldAsk = false; c.winddownQueued = false; }
+      // STUCK-HELDASK (socialite 2026-10-10): the filter discards a queued-
+      // but-unrevealed QUESTION beat when the player moves on — but heldAsk
+      // stayed true whenever any beat survived (e.g. the winddown beat).
+      // The winddown gate (!c.heldAsk) then blocked FOREVER: budget spent,
+      // goodbye queued, conversation never winding down (measured: 79 recap
+      // taps, budget 3, no winddown — the ask beat was long gone but its
+      // flag wasn't). The flag tracks the BEAT, not the turn: no ask beat
+      // queued, no heldAsk.
+      else if (!c.heldBeats.some(h => h.ask)) { c.heldAsk = false; }
+    },
+
     convoTurn(vid, choiceId) {
       const c = this.convoGet(vid);
       if (!c.active) return null;
       // Old saves / mid-run convos predate heldBeats (one-beat-turns):
       // lazy-init so a dodged question can't crash the turn.
       if (!c.heldBeats) c.heldBeats = [];
+      this.convoDropUnspoken(vid, choiceId);
       const cg = (this.data.characterGen || {}).convo || {};
       const temp = this.npcTemper(vid);
       const mood = this.npcMood(vid);
@@ -3345,15 +3372,6 @@
       // extraLine: a follow-up beat after an answer — Q -> A -> follow-up,
       // so answering doesn't dead-end the moment.
       let answeredReactive = false, answeredGeneric = false, extraQ = null, extraLine = null;
-
-      // ONE-BEAT TURNS (Steve 2026-10-05): a choice yields exactly one new
-      // THEM beat. Unspoken held beats die when the player moves on — like
-      // a real conversation, the moment passes. The wind-down can't be
-      // dodged: it stays queued until the continuer reveals it.
-      if (choiceId !== 'goon' && c.heldBeats && c.heldBeats.length) {
-        c.heldBeats = c.heldBeats.filter(h => h.winddown);
-        if (!c.heldBeats.length) { c.heldAsk = false; c.winddownQueued = false; }
-      }
 
       if (choiceId === 'leave') {
         return this.endConvo(vid, 'left');

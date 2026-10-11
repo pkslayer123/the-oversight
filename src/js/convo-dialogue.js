@@ -134,6 +134,11 @@
     }
 
     // Dialogue responses — handle here, then delegate.
+    // UNSPOOKEN BEATS (socialite 2026-10-10): every dlg: branch below
+    // early-returns without reaching the base turn handler — run the shared
+    // choke point first, or queued beats (ask, winddown) never die on
+    // dialogue choices and a stuck heldAsk defeats the winddown gate.
+    try { if (typeof this.convoDropUnspoken === 'function') this.convoDropUnspoken(vid, choiceId); } catch (e) {}
     if (choiceId && choiceId.indexOf('dlg:') === 0) {
       const dlg = choiceId.slice(4);
 

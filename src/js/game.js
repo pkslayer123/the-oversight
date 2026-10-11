@@ -3941,7 +3941,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       this.remember(vid, 'comforted', 'sat with them when scared');
       this.observe('comfort', { target: vid, noTrust: true }); // trust moved via resolver (break-it social r2)
       this.notePlaystyle('social');
-      try { this.checkPromises('heal', vid); } catch (e) {}
+      // WORDS-KEEP (socialite 2026-10-10): comfort is words and presence, not
+      // a deed — the keep pays through the 40 talk cap (see checkPromises).
+      try { this.checkPromises('heal', vid, { words: true }); } catch (e) {}
       this.socialTick(vid);
       this.save();
       return { ok: true };
@@ -4305,7 +4307,7 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     // kept a dozen 'belong' promises (+15 each) and one handoff kept every
     // 'feed' promise. Communal acts (fights, tasks) pass no vid and keep the
     // broadcast behavior — the whole village saw you.
-    checkPromises(kind, vid) {
+    checkPromises(kind, vid, opts) {
       const v = this.state.village;
       const entries = Object.entries(v.promises || {});
       const targets = vid ? entries.filter(([id]) => id === vid) : entries;
@@ -4320,8 +4322,18 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // KEEPING is a real act, not words: talk:false (no 40 cap), but
           // still progressive — devotion isn't a grind. Routes through the
           // one resolver like every other gain.
+          // BREAK-IT (socialite 2026-10-10): comfort() kept 'heal' promises
+          // as a REAL act (+15 talk:false, uncapped) — but comfort is words
+          // and presence, not a deed (r2), and words only go so far. The
+          // r10 'social' fix gated words-keeps behind real conversations;
+          // the same class lived here: promise -> comfort cycled trust
+          // 10->100 in 19 ticks with zero food (measured). A words-ish keep
+          // (opts.words) pays through the 40 talk cap like every other word;
+          // only real deeds (food, healing, fighting, work, travel, a real
+          // conversation) keep past it.
+          const wordsKeep = !!(opts && opts.words);
           if (typeof this.resolveConsequence === 'function') {
-            this.resolveConsequence(pid, { trust: 15, talk: false, temper: 'kind', name: 'promise:kept' });
+            this.resolveConsequence(pid, { trust: 15, talk: wordsKeep, temper: 'kind', name: 'promise:kept' });
           } else {
             const t = v.trust || (v.trust = {});
             t[pid] = Math.min(100, (t[pid] || 10) + 15);

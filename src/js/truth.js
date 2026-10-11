@@ -1792,6 +1792,10 @@
       // reaches convo-dialogue.js's choke-point wrapper. A confrontation
       // is substantive engagement — mark it here.
       try { this.convoMarkSubstantive(vid, choiceId); } catch (e) {}
+      // UNSPOOKEN BEATS (socialite 2026-10-10): this early return also
+      // skips the base turn handler's held-beat filter — run the shared
+      // choke point or queued beats never die here either.
+      try { if (typeof this.convoDropUnspoken === 'function') this.convoDropUnspoken(vid, choiceId); } catch (e) {}
       const r = this.confrontDoubt(vid, doubtId);
       const youSaid = '"I need to ask you something."';
       c.transcript.push({ who: 'you', text: youSaid });

@@ -407,6 +407,11 @@
         // reaches convo-dialogue.js's choke-point wrapper — changing the
         // subject is real engagement, so mark it here.
         try { this.convoMarkSubstantive(vid, choiceId); } catch (e) {}
+        // UNSPOOKEN BEATS (socialite 2026-10-10): this early return also
+        // skips the base turn handler's held-beat filter — run the shared
+        // choke point or queued beats (ask, winddown) never die on a subject
+        // change, and a stuck heldAsk defeats the winddown gate.
+        try { if (typeof this.convoDropUnspoken === 'function') this.convoDropUnspoken(vid, choiceId); } catch (e) {}
         const fromTopic = c.thread || (c.lastBeat && c.lastBeat.topic) || 'small';
         c.transcript.push({ who: 'you', text: '"Can I ask you something else?"' });
         const bridge = this.bridgeLine(vid, fromTopic);

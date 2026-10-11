@@ -1154,11 +1154,14 @@
   // BREAK-IT (social 2026-10-08): the wrapper dropped the vid parameter —
   // per-villager fulfillment (checkPromises('social', vid)) silently fell
   // back to the village-wide sweep. Forward it.
+  // WORDS-KEEP (socialite 2026-10-10): forward opts too — comfort's
+  // {words:true} keep must reach the resolver or the 40 talk cap is dropped
+  // by this wrapper and words farm past it again.
   const origCheckPromises = Game.checkPromises;
-  if (origCheckPromises) Game.checkPromises = function (kind, vid) {
+  if (origCheckPromises) Game.checkPromises = function (kind, vid, opts) {
     const before = {};
     for (const [vid, p] of Object.entries((this.state.village.promises || {}))) before[vid] = p.kept;
-    const r = origCheckPromises.call(this, kind, vid);
+    const r = origCheckPromises.call(this, kind, vid, opts);
     try {
       for (const [vid, p] of Object.entries((this.state.village.promises || {}))) {
         if (before[vid] !== p.kept) {

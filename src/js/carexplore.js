@@ -234,7 +234,12 @@
       this.say(`Just you and ${first}. You press ${taken > 1 ? taken + ' portions of' : 'some'} ${takenName} into their hands. No one sees. That matters, somehow.`);
     }
 
-    try { this.checkPromises('food', vid); } catch (e) {}
+    // STINGY GIFTS DON'T KEEP VOWS (socialite 2026-10-10): a bite that the
+    // engine itself calls insulting ("That's... it?", stingy_gift memory,
+    // deed zeroed) must not count as keeping "nobody goes hungry on my
+    // watch" — the fiction said "I won't forget this" while the promise
+    // system said "you kept your word. That meant everything." Incoherent.
+    if (note !== 'stingy') { try { this.checkPromises('food', vid); } catch (e) {} }
     this.socialTick(vid);
     this.tickAction(1); // a handoff is quick — the food is the real cost
     this.save();
@@ -349,7 +354,9 @@
     this.remember(vid, 'comforted', `via ${approach} when ${mood}`);
     this.observe('comfort', { target: vid, noTrust: true });
     this.notePlaystyle('social');
-    try { this.checkPromises('heal', vid); } catch (e) {}
+    // WORDS-KEEP (socialite 2026-10-10): comfort is words and presence, not a
+    // deed — the keep pays through the 40 talk cap (see checkPromises).
+    try { this.checkPromises('heal', vid, { words: true }); } catch (e) {}
     this.socialTick(vid);
     this.tickAction(1);
     this.save();
