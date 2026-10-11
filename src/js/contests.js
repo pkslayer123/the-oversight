@@ -65,6 +65,7 @@
 //   - countdown_days: 1 (code: fireContest)
 //   - unavoidable: true — contests interrupt, cannot be skipped (code: contestInterruption, Steve 2026-10-05)
 //   - recast_dead: countdown outlives contestant → each missing contestant recast from living eligible, or cancelled if no one is left (code: resolveContest, Steve 2026-10-06)
+//   - recast_eligibility: eligibility is re-checked at the GRAB against the same bar as the cast (code: resolveContest, break-it contests r14 2026-10-10) — the keep-path used to check isMember() only, so a contestant mauled overnight (gravely wounded) or gone from Haven kept their slot and got televised. The newly ineligible get the recast treatment with the honest r12 off-the-board reason said out loud. Player bar unchanged (battered scholar IS eligible)
 //   - multi_take: contest.participants count is REAL — the System takes that many people at once (more taken = more FEARED); pc.participants[] carried fire->resolve->interruption (code: fireContest, resolveContest, contestInterruption, Steve 2026-10-06)
 //   - others_fates: villagers taken alongside the player get their own off-screen contests — rolled at the player's sequence end, can win/lose/die (code: _contestResolveOthers, _contestEnd, _contestDie, _contestRefuse, Steve 2026-10-06)
 //   - bespoke_death_lines: every contest kills in its own voice — the generic fallback is placeholder text, not doctrine (code: _contestDeathLine, Steve 2026-10-05); price/impress/exchange/auction lines added 2026-10-06
@@ -86,6 +87,7 @@
 //   - template_prize: every playable WIN choice carries prize:true — winners get the alien-loot prize path (templates were missing it, bespoke always had it; tithe/confession/generic stragglers fixed break-it 2026-10-08; moot 'Walk out'->MOOT_JUDGE win fixed break-it 2026-10-09) (code: contestPlayable, contestChoose, Steve 2026-10-06)
 //   - arena_reentry_guard: while the contest modal is suspended for a real arena fight, contestChoose drops all input ({arena:true}) and _contestArena refuses a second start — a double-tap race used to re-fire startCombat (clobbering state.arenaContest mid-fight) and re-grant grantWeapon choices (code: contestChoose, _contestArena, break-it 2026-10-09)
 //   - winner_share_pantryadd: a villager's watched win puts the winner's share through pantryAdd — the pantry cap is real, pantryKcal stays in sync; a full pantry gets the honest "eaten on the spot" line, never a silent overfill (code: _contestEnd, break-it 2026-10-09)
+//   - prize_idempotent: the prize (villager share or player alien loot) fires once per (ac, participant) — ac._prizeGranted; a re-entrant _contestEnd on one ac re-granted the prize. Sibling: _contestResolveOthers resolves once per ac (ac._othersResolved) — no re-rolled fates, no re-granted co-winner shares (code: _contestEnd, _contestResolveOthers, break-it contests r14 2026-10-10)
 //   - hardened_real: the hardened variant is mechanically real, not a paper tiger. What was announced ("It's worse now") is what's played AND resolved: the scaled contest (not the pool base) is used at every end path (_cxScaledContest), so hardened risk reaches the engine in watched verdicts and the name resolves as "Hardened X"; phase damage is x1.25 at the contestChoose choke point; arena beasts run one wave hotter; hardened prize rolls are hotter (code: _cxScaledContest, contestChoose, _contestArena, _contestEnd, break-it 2026-10-09)
 //   - prize_table: a player win rolls a real contest prize table, not a guaranteed drop — 60% chance of alien loot (75% hardened), loot tier capped at 3, tier 4 only at a low rate (25%) for extreme-risk wins at wave 4. The old {chance:1, tier:wave} mapped monster wave straight onto loot tier (the forbidden wave->tier conflation) and handed a guaranteed apex item per wave-4 win vs 12% off an actual apex kill (code: _contestEnd, break-it 2026-10-09)
 //   - watch_coaching_all: veteran watchers (codex level 2+) get a 📚 coaching line on the last watch beat for all 16 knowledge-gated contests — tithe/riddle first, siege/maw/oath/beastmaster/confession/honey/secrets added, then quiet/guest/vigil, then sorting/witness/cache/longodds (code: _contestWatchBeat, Steve 2026-10-06)
@@ -1658,12 +1660,24 @@
     // Villager liveness uses the same bar as eligibility: dead or severed
     // villagers can't be televised (Steve 2026-10-06 — was roster.includes,
     // which let the dead stay cast).
-    const { eligible } = this.contestEligible();
+    // RECAST ELIGIBILITY (break-it contests r14 2026-10-10): the countdown
+    // is a promise, not a snapshot. The keep-path used to check isMember()
+    // only (roster + alive + not severed) — a contestant mauled overnight
+    // (hp<=20, gravely wounded) or gone from Haven kept their slot and got
+    // televised, while the eligibility panel (break-it r12) lists exactly
+    // those people as OFF THE BOARD. Eligibility is re-checked at the grab,
+    // against the same bar as the cast: the fresh eligible set. The newly
+    // ineligible get the recast treatment (recast from the living eligible,
+    // or cancelled), with the honest reason said out loud. Player bar is
+    // unchanged — a battered scholar IS eligible (contestEligible: health>0).
+    const { eligible, ineligible } = this.contestEligible();
     const finalIds = [];
     const takenSet = new Set();
     for (const who of ids) {
-      const alive = who === 'player' ? playerAlive : this.isMember(who);
-      if (alive) { finalIds.push(who); takenSet.add(who); continue; }
+      const stillCastable = who === 'player'
+        ? playerAlive
+        : (eligible || []).some(e => e.id === who);
+      if (stillCastable) { finalIds.push(who); takenSet.add(who); continue; }
       const candidates = (eligible || []).filter(e => !takenSet.has(e.id) && (e.id !== 'player' || playerAlive));
       const goneName = who === 'player' ? 'You' : this.displayName(who);
       if (!candidates.length) {
@@ -1682,7 +1696,13 @@
       let rr = Math.random() * totalW, ri = 0;
       for (; ri < candidates.length - 1; ri++) { rr -= weights[ri]; if (rr <= 0) break; }
       const recast = candidates[ri];
-      this.sysSay(`📺 The System was going to take ${goneName}. ${who === 'player' ? 'You are' : goneName + ' is'} gone. The show must go on — it takes ${recast.id === 'player' ? 'YOU' : recast.name} instead.`);
+      // The r12 eligibility panel names every exclusion — say it, don't
+      // hide it behind "gone". ('dead', 'gravely wounded', 'too young',
+      // 'too old', 'away from Haven', 'unaccounted for', 'severed from the
+      // village', 'not a member in good standing' all read after "is".)
+      const whyOut = who === 'player' ? 'gone'
+        : (((ineligible || []).find(e => e.id === who) || {}).reason || 'gone');
+      this.sysSay(`📺 The System was going to take ${goneName}. ${who === 'player' ? 'You are' : goneName + ' is'} ${whyOut}. The show must go on — it takes ${recast.id === 'player' ? 'YOU' : recast.name} instead.`);
       finalIds.push(recast.id);
       takenSet.add(recast.id);
     }
@@ -4014,6 +4034,18 @@
     // contest-end path stopped it, so it thumped forever after the show.
     try { this.audioEvent('heartbeatStop'); } catch (e) {}
     if (outcome === 'won') {
+      // PRIZE IDEMPOTENCY (break-it contests r14 2026-10-10): _contestEnd
+      // can be re-entered on the same ac — the multi-take verdict restores
+      // state.activeContest per contestant, so a dup participant or any
+      // re-entrant terminal would re-run the whole 'won' branch and GRANT
+      // THE PRIZE TWICE (proved: two winner's-share pantry adds on one ac).
+      // Notability/gossip/favor are event records, but the prize is a grant:
+      // it fires once per (ac, participant). Same class as the _heldCounted
+      // guard (r12) one level down the stack — event records stay loud,
+      // grants stay single.
+      ac._prizeGranted = ac._prizeGranted || {};
+      const _grantKey = ac.participant || 'player';
+      const _grantPrize = !!(prize && !ac._prizeGranted[_grantKey]);
       // DRAMA (Steve 2026-10-07): winning is a TV moment — confetti + hero card
       try {
         let integ = 0;
@@ -4042,7 +4074,7 @@
         // WINNER'S SHARE (break-it contests r12 2026-10-10): one helper for
         // every villager-win path — the watch verdict here, multi-take
         // co-winners in _contestResolveOthers.
-        if (prize) this._cxWinnerShare(pname);
+        if (_grantPrize) { ac._prizeGranted[_grantKey] = true; this._cxWinnerShare(pname); }
       } else {
         this.sysSay(`📺 ${contest.name} — YOU WIN. The crowd is a weather system.`);
         this.addNotability('player', 'contestWin');
@@ -4053,7 +4085,8 @@
         // shake loose a fan care package (rate-limited inside).
         try { if (this.apAdjustFavor) this.apAdjustFavor(4, 'won ' + contest.name + ' on camera', this._cxFanLane(contest)); } catch (e) {}
         try { if (this.apCarePackage) this.apCarePackage(); } catch (e) {}
-        if (prize) {
+        if (_grantPrize) {
+          ac._prizeGranted[_grantKey] = true;
           try {
             // CONTEST PRIZE TABLE (break-it contest 2026-10-09): high risk /
             // high reward, but tier 4 stays gated. The old call mapped
@@ -4827,6 +4860,12 @@
   // die, and the village feels it. No knowledge for watching from the
   // inside: you had your own arena to survive.
   G._contestResolveOthers = function(ac) {
+    // RE-ENTRY IDEMPOTENCY (break-it contests r14 2026-10-10): sibling of
+    // the _contestEnd prize guard — the terminals are mutually exclusive,
+    // but a re-entrant call on one ac would re-roll every co-taken fate AND
+    // re-grant every co-winner's share. One resolution per contest.
+    if (!ac || ac._othersResolved) return;
+    ac._othersResolved = true;
     const others = (ac.others || []).filter(id => id !== 'player');
     if (!others.length) return;
     const contest = this._cxScaledContest(ac);
