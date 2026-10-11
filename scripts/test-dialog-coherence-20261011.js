@@ -73,6 +73,19 @@ for (const f of files) { eval(fs.readFileSync(path.join(ROOT, f), 'utf8')); }
 delete global.window; // sync headless path from here on
 const Game = globalThis.Scattering.Game;
 
+// EMISSION STUB (Worker D 2026-10-11): emission plumbing is Worker A's area
+// and mid-flight — their say() wrapper routes through this.emit(), which has
+// no implementation in the node harness (HARNESS ERROR: this.emit is not a
+// function). Coherence assertions exercise the line GENERATORS, not the
+// plumbing, so stub the surface when it's missing. If A's real emit lands,
+// this never fires.
+if (typeof Game.emit !== 'function') {
+  Game.emit = function (msg) {
+    try { (this.log = this.log || []).push(String(msg)); } catch (e) {}
+    return msg;
+  };
+}
+
 let pass = 0, fail = 0;
 function ok(name, cond, extra) {
   if (cond) { pass++; console.log(`PASS: ${name}`); }
