@@ -12,6 +12,8 @@ national 0/60, feast 13/60**.
 | 2 | policy-competence panel | 4 policies × 60 seeds (competent/progress-r4/winseek/oracle); oracle = winseek + win-probability assessment + arm-up/openers + aid-when-struggling | 0/60 all | 45/46/32/41 | 54/54/37/42 | 1/1/0/0 | 0/60 all | 15% (oracle, honest post-fix) |
 | 3 | oracle-v2 systems-engaged | oracle + greedy deep-systems play: in-fight abilities, daily ability practice, traplines, counter-preference targeting, feast-then-fight banking (scripts/policies/oracle-v2.js; scripts only); 200d cap | 0/60 | 41 | 43/60 | 0/60 | 0/60 | 2% (1/60; oracle's 80% was the assessment burning the surge) |
 | 3-rep | oracleV2 independent replication | second implementation (scripts/policies/oracleV2.js): blow-by-blow ability ladder (all held kits), counter probing, traps/crafting, feast-then-fight, quest completion (harness-side only); 200d cap | 0/60 | 48 | 46/60 | 0/60 | 0/60 | 0/60 (honest) |
+| 4 | scale on-ramp tuning (BELONG bar) | hierarchy.js polityOf BELONG gate: link age 21d→14d, trust 60→50 (arrears-0 + 4-village realm kept; kingdomEndingEligible 70/21 untouched; other five roads + wave-ledger untouched); docs/SCALE.md + ONTOLOGY.md updated; unified driver scripts/winrate-iter4.js (day loop verbatim from iter3) + vest-event tracker; 120d cap per Steve's protocol | 0/60 winseek, 0/60 oracle-v2 (0/120; sibling oracleV2 replication also 0/60) | 32 / 41 | 36/60 / 44/60 | 0/60 both | 0/60 both | 0/60 winseek, 2/60 oracle-v2 |
+| 4 | scale on-ramp tune | BELONG bar in hierarchy.js `polityOf()`: trust ≥60→50, link age 21d→14d (arrears-0 + realm-4 kept; other roads + Wave Ledger untouched); oracleV2, 60 seeds 1–60 × **120d cap** (DAY-CAP PROTOCOL) | 0/60 | 50 | 47/60 | 0/60 | 0/60 | 0/60 |
 
 \* Not re-swept this round (diagnostic round; numbers are the validation
 baseline). The fix makes `feastSurgeUsed` honest: it now requires an actual
@@ -109,6 +111,51 @@ evidence/2026-10-10/winrate-iter3-oracle-v2.md.
 NOTE: untracked sibling files (scripts/policies/oracleV2.js,
 scripts/sweep-oraclev2-*.js/json) were written into this worktree by the
 concurrent worker — not committed here, left for their owner.
+
+## Round 4 notes (2026-10-10, worker winrate-r4) — scale on-ramp tune
+
+**The on-ramp did NOT move: 0/60 wins, 0/60 national, 0/60 table** (oracleV2,
+same 60 seeds, 120d cap per the DAY-CAP PROTOCOL). Median survival 50d,
+tier1 47/60, wave2 35/60, wave3 0/60, regional 60/60 — no national by any of
+the six roads (nationalShape 0/60, nationalAnswered 0/60), endReason
+village-lost 60/60.
+
+The change: BELONG good-standing bar in `hierarchy.js` `polityOf()` —
+trust ≥60 → **50**, link age 21d → **14d**. Arrears-0 and the 4-village realm
+requirement kept (the "earned" parts); other five roads and Wave Ledger bars
+untouched. Design call (figure-it-out-yourself, Steve can overrule): 14 days
+is still two weeks of upkeep/tribute/deeds — a real waiting cost, not a
+day-trip — and trust 50 is +20 above the fresh-link 30, so courting still
+earns it.
+
+A 60-seed daily vesting probe shows the tuned bar IS reachable but vesting
+never happened: 7/60 runs reached trust ≥50 on a subordinate link, 12/60 had
+a link aged ≥14d, arrears ≈ never blocked — but **foreign realms never
+reached 4 fires (0/60)**, so `_belongPolity()` vested 0/60 days. The
+constraint moved one layer deeper: the bar's precondition. The foreign sim's
+math: one action/week at 30%/wk → pair at ~3.3 wk, then ~5.1 wk/grow × 2
+grows ≈ **95 days to a 4-realm vs median run life 50d** (the code comment
+claimed ~2 months — it is really ~3). Worse, Haven's own diplomacy starves
+the sim: linked villages are excluded from its candidate pool, and the
+policy proposes ~7 links/run. LEAD is policy-unreachable too (oracleV2 never
+forms Haven-primary links: max 0/12 probed). Combat remains the upstream tax:
+53% of 605 deaths (player combat 184 + villager combat 136 + the night 113).
+
+Exploit check: no degenerate path — fresh links still start at trust 30
+(+20 via deeds), arrears still block, the realm-4 gate held 60/60 (it is
+what blocked every run). Proof test scripts/test-scale-onramp-20261010.js:
+vests at exactly 14d/trust 50, NOT at 13d / trust 49 / arrears>0 / 3-fire
+realm; green ×3 seeds (11, 222, 3333). Regressions: test-scale-ladder-20261010
+ALL GREEN; test-hierarchy.js 40 passed + 2 pre-existing fails (identical on
+pristine HEAD — tribute engine); test-hierarchy-20261007.js pre-existing
+harness error (identical on pristine HEAD).
+
+Recommended round-5 lever (design decision, not taken): the foreign-realm
+cadence, not the BELONG bar — e.g. faster pair formation, grows off the pair,
+or letting Haven-linked villages stay in the sim's candidacy. Canon-adjacent
+(Steve: "take seasons"; SCALE.md documents ~day-80 reachability), so it needs
+his call. Second: combat death share (~53%). Full writeup:
+evidence/2026-10-10/winrate-iter4-scale.md.
 
 ### Independent replication (second worker, same worktree)
 

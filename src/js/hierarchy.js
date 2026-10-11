@@ -71,7 +71,7 @@
 //   - their_fields_pay: a subordinate's tribute is debited from THEIR pantry — a starving fire can't pay 4,000 kcal/week from nothing. Shortfalls are said aloud, cost trust, and accrue arrears (sibling of league_pool_is_real_food's thin-air fix). The System's x1.25 national routing still applies to what actually arrives, and the arrival line names the true amount. (code: hierarchy.js)
 //   - the_moment_survives: a pending accord killed by a broken first link is said aloud and restaged on the next link (accordUnanswered) — the Regional Dawn moment is never lost silently. (code: hierarchy.js)
 //   - scale_is_a_ladder: scaleRank() returns village/regional/national/global from the nationalLive/globalLive/networkLive flags — global implies national implies regional, never a skip. Read it defensively; it never throws. (code: hierarchy.js)
-//   - national_is_a_polity: a polity is one primary with >=3 active subordinates (four fires is a realm; two is a pact). Haven reaches national SIX ways (docs/SCALE.md, Steve 2026-10-10): LEAD (primary of >=3), BELONG (valued subordinate: trust >=60, arrears 0, link >=21 days to a primary whose realm holds >=4 villages), COVENANT (league of >=4 fires with no primary — mutual defense + shared pool, council votes played), TRADE (trade league of >=4 fires — pooled routes, tariff income, no mutual defense), CONQUEST (a led realm where every subordinate was taken by force — raid-to-subjugate, tribute under duress), or REFUSE (a played, permanent refusal of the scale). All are deed-reactive and take seasons — no calendar path. (code: hierarchy.js)
+//   - national_is_a_polity: a polity is one primary with >=3 active subordinates (four fires is a realm; two is a pact). Haven reaches national SIX ways (docs/SCALE.md, Steve 2026-10-10): LEAD (primary of >=3), BELONG (valued subordinate: trust >=50, arrears 0, link >=14 days to a primary whose realm holds >=4 villages), COVENANT (league of >=4 fires with no primary — mutual defense + shared pool, council votes played), TRADE (trade league of >=4 fires — pooled routes, tariff income, no mutual defense), CONQUEST (a led realm where every subordinate was taken by force — raid-to-subjugate, tribute under duress), or REFUSE (a played, permanent refusal of the scale). All are deed-reactive and take seasons — no calendar path. (code: hierarchy.js)
 //   - the_court_is_played: national and global transitions stage played beats with real-cost choices (feast/host/cold; swear/serve/walk; champion/feast/decline; the founding council's pact/pool; the charter's sign/bargain; the iron court's yoke/mercy/release). Walking away from the Binding refuses the scale's shape; the court dies aloud if the realm dissolves mid-beat. Every national beat also offers REFUSE — the scale itself can be refused, permanently and aloud. (code: hierarchy.js)
 //   - national_is_a_live_state: national/global are live, not titles — when the realm dissolves (no qualifying polity, no pending beat) nationalLive and globalLive clear, the pending global summons dies, and every loss is said aloud. The oath's trust is proportional to the kcal sealed (like the feast-court and accord gift) — a 0-kcal oath buys token trust, never the full +12. (code: hierarchy.js)
 //   - peers_have_no_primary: covenant/trade links are peer links (kind, a/b fields) — no primary, no subordinate. Primacy bids, tribute demands, and vassal succession don't apply; crises are covenant-style (concede/hold/release), and any member can trigger one. (code: hierarchy.js)
@@ -1191,8 +1191,8 @@
     // primary with >=3 active subordinates — four fires under one head is a
     // realm; two is a pact. Haven reaches it two ways (docs/SCALE.md):
     //   LEAD — Haven is primary of >=3 active subordinates (the built realm).
-    //   BELONG — Haven is a subordinate in good standing (trust >=60, no
-    //     arrears, link >=21 days — the valued-subordinate bar) to a primary
+    //   BELONG — Haven is a subordinate in good standing (trust >=50, no
+    //     arrears, link >=14 days — the valued-subordinate bar) to a primary
     //     whose realm holds >=4 villages.
     // Both are deed-reactive (links formed, trust earned, tribute paid) and
     // take seasons. Note: the BELONG polity is queried as
@@ -1219,7 +1219,7 @@
       l = this.linkWith(id);
       if (!l || l.status !== 'active' || l.subordinate !== HOME) return null;
       var day = (this.state.scholar || {}).day || 0;
-      var good = l.trust >= 60 && (l.arrears || 0) === 0 && (day - (l.day || 0)) >= 21;
+      var good = l.trust >= 50 && (l.arrears || 0) === 0 && (day - (l.day || 0)) >= 14;
       if (!good) return null;
       var fp = null;
       var fps = this.foreignPolities();
