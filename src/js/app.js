@@ -361,7 +361,9 @@
   // Not in the moment-to-moment action row; they live below with status.
   // This frees the main action area for combat.
   function lowerMenuHTML(st) {
-    if (st.inCombat || Game.state.over) return '';
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): Game.state.over was
+    // a phantom — read here but never written anywhere. st.over is the live flag.
+    if (st.inCombat || st.over) return '';
     const sleepDot = st.energy < 30 ? '<span class="dot"></span>'
       : (st.isNight ? '<span class="dot soft"></span>' : '');
     return `<div class="lowermenu">` +
@@ -1039,7 +1041,9 @@
   // nearbyActionItems: the 9 cells around you, deduped action labels. Single source.
   function nearbyActionItems() {
     const items = [];
-    if (Game.state.over) return items;
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): Game.state.over was
+    // a phantom — read but never written. Game.over is the live flag.
+    if (Game.over) return items;
     if (Game.tbfight) return items;
     const px = Game.state.scholar.mx ?? 4, py = Game.state.scholar.my ?? 4;
     const seen = new Set();
@@ -1095,7 +1099,8 @@
   // by standing here — no popups, no flashing, peripheral vision only.
   // Cycles as you move; each render is just still text. Ignorable by design.
   function perceiveHTML() {
-    if (Game.state.over || Game.tbfight) return '';
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom flag -> live Game.over.
+    if (Game.over || Game.tbfight) return '';
     let hints = [];
     try { hints = (Game.perceptionHints && Game.perceptionHints()) || []; }
     catch (e) { hints = []; }
@@ -1152,7 +1157,8 @@
   // statsHTML: your human stats, compact. Tap to expand for passives.
   // Not a chore list — just who you're becoming.
   function statsHTML(st) {
-    if (st.inCombat || Game.state.over) return '';
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom Game.state.over -> live st.over.
+    if (st.inCombat || st.over) return '';
     const stats = (Game.state.scholar || {}).stats || { str: 5, end: 5, per: 5, agi: 5, pre: 5 };
     const passives = (Game.state.scholar || {}).passives || {};
     const names = { str: 'STR', end: 'END', per: 'PER', agi: 'AGI', pre: 'PRE' };
@@ -15709,7 +15715,8 @@
   // This is one line: where you are, where home is, where you're going,
   // what's nearby. Tap to expand the full map.
   function compassHTML(st) {
-    if (st.inCombat || Game.state.over) return '';
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom Game.state.over -> live st.over.
+    if (st.inCombat || st.over) return '';
     const px = st.px ?? 4, py = st.py ?? 4;
     const dirArrow = (dx, dy) => {
       const sx = Math.sign(dx), sy = Math.sign(dy);

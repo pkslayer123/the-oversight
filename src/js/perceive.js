@@ -51,7 +51,8 @@
   // leave this function — app.js renders them verbatim (escaped).
   Game.perceptionHints = function () {
     const hints = [];
-    if (this.state.over || this.tbfight) return [];
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom -> live this.over.
+    if (this.over || this.tbfight) return [];
     const s = this.state.scholar || {};
     const px = s.mx ?? 4, py = s.my ?? 4;
     const observant = isObservant();

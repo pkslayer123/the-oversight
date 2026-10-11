@@ -152,14 +152,17 @@
     // scholar (health<=0) is a corpse, not a contestant — but an
     // exhausted, battered scholar IS eligible. The System is not kind.
     const s = this.state.scholar;
-    if (!this.state.over && (s.health || 0) > 0 && !s.exiled) {
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): this.state.over was
+    // a phantom — read but never written, so a dead run's scholar stayed
+    // contest-eligible. this.over is the live flag.
+    if (!this.over && (s.health || 0) > 0 && !s.exiled) {
       const notes = [];
       const nota = this.notability('player');
       if (nota.length) notes.push(...nota);
       eligible.push({ id: 'player', name: 'You', notability: nota, notes });
     } else {
       ineligible.push({ id: 'player', name: 'You',
-        reason: this.state.over || (s.health || 0) <= 0 ? 'dead — the mantle has passed' : 'exiled — cut off from the village' });
+        reason: this.over || (s.health || 0) <= 0 ? 'dead — the mantle has passed' : 'exiled — cut off from the village' });
     }
 
     // Villagers: check each — alive, a member in good standing, of
@@ -363,7 +366,8 @@
       // corpse. Not castable: the slot falls through to normal scheduling
       // (contest/show), unconsumed — the show goes on without you.
       const s = this.state.scholar || {};
-      const playerCastable = !this.state.over && (s.health || 0) > 0 && !s.exiled;
+      // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom -> live this.over.
+      const playerCastable = !this.over && (s.health || 0) > 0 && !s.exiled;
       if (playerCastable) {
         this.state.showBudget.used++;
         return { id: '__summons' };
@@ -527,7 +531,8 @@
   G.showEligible = function() {
     const eligible = [];
     const s = this.state.scholar || {};
-    if (!this.state.over && (s.health || 0) > 0 && !s.exiled) {
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom -> live this.over.
+    if (!this.over && (s.health || 0) > 0 && !s.exiled) {
       eligible.push({ id: 'player', name: 'You', notability: this.notability('player') });
     }
     const roster = (this.state.village.roster || []);
@@ -950,7 +955,8 @@
     // the tick gate above — direct/debug callers must not summon a corpse or
     // an exile either. Said out loud, never a silent void.
     const s0 = this.state.scholar || {};
-    if (this.state.over || (s0.health || 0) <= 0 || s0.exiled) {
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom -> live this.over.
+    if (this.over || (s0.health || 0) <= 0 || s0.exiled) {
       this.sysSay(`📺 The System looks for its star... and finds no one fit for the cameras. The summons dies in the green room.`);
       return null;
     }
@@ -1647,7 +1653,8 @@
     if (pc.participant && !ids.includes(pc.participant)) ids = [pc.participant];
     const s = this.state.scholar;
     const roster = (this.state.village.roster || []);
-    const playerAlive = !this.state.over && (s.health || 0) > 0 && !s.exiled;
+    // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): phantom -> live this.over.
+    const playerAlive = !this.over && (s.health || 0) > 0 && !s.exiled;
     // Villager liveness uses the same bar as eligibility: dead or severed
     // villagers can't be televised (Steve 2026-10-06 — was roster.includes,
     // which let the dead stay cast).

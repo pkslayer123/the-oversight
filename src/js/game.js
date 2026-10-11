@@ -33804,7 +33804,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // knowledge.
         try { this.phoenixBroadcast(false, bearerVid, coercedVid, coercedWit, { coerced: true, victimName: 'you' }); } catch (e) {}
         try { this.playerDeath('the phoenix link'); } catch (e) {}
-        if (this.state.over) return;
+        // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): this.state.over
+        // was a phantom — read but never written. this.over is the live flag.
+        if (this.over) return;
         // Applied AFTER succession: the office trust-transfer would
         // otherwise overwrite the collapse (break-it 2026-10-09).
         try {
@@ -33825,7 +33827,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       this.say(`🤲 You step into the link. "${bName} -- live." The fire takes you instead. Both bodies explode -- yours, and the death that was waiting for ${bName}. Your gear lies in your ashes -- it belongs to the village now, and the village will remember what anyone does with it.`);
       try { delete (this.state.village.dyingLinks || {})[bearer]; } catch (e) {}
       try { this.playerDeath('the phoenix link (given)'); } catch (e) {}
-      if (this.state.over) return;
+      // OVER-FLAG HONESTY (break-it travel r11 2026-10-10): this.state.over
+      // was a phantom — read but never written. this.over is the live flag.
+      if (this.over) return;
       // The village honors the sacrifice; the saved one owes a life-debt.
       // (If the bearer inherited the mantle, the debt is owed to the village --
       // they can't owe it to themselves.)
