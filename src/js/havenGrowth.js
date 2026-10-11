@@ -38,10 +38,15 @@
 // shows a progress meter, so the path is unmissable. Deed-gating was
 // rejected. Knowledge NEVER gates anything.
 //
-// Tiers (thresholds tuned from measured stockpile sims, 2026-10-10 — a
-// thriving village banks ~+23 wood/day at 2 wood-duty; the starting pantry
-// holds ~47k kcal, so the food bars mean "still thriving", not "hoarded"):
-//   16 — The Longhouse: food 8,000 + wood 200. Hearth stretches meals 10%,
+// Tiers (thresholds retuned 2026-10-10, survival-food pass — the 200-wood
+// tier-1 bar assumed a "2 wood-duty" village banking +23/day that the
+// competent policy never fields: measured peak wood p10=11/med=13/p75=15
+// under maintenance staffing, so the tier-1 wood bar sits at the
+// maintenance floor (12). The food bars mean "still thriving", not
+// "hoarded": the starting pantry holds ~47k kcal of long-spoil staples, a
+// 3-4 week buffer while strangers learn the land; 8,000 = the buffer is
+// healthy. Tiers 2-3 keep stretch bars for villages that staff toward them.)
+//   16 — The Longhouse: food 8,000 + wood 12. Hearth stretches meals 10%,
 //        pantry capacity +25%.
 //   20 — The Palisade: food 14,000 + wood 350 + stone 60. Raiders take wall
 //        damage; the watch holds at night (sleep is never interrupted).
@@ -65,14 +70,26 @@
       tier: 1, name: 'The Longhouse', cap: 16,
       req: [
         { key: 'food', label: 'food stored', req: 8000 },
-        { key: 'wood', label: 'wood', req: 200 },
+        // WOOD BAR (survival-food 2026-10-10): was 200, tuned for a phantom
+        // "2 wood-duty" village that banks +23/day. Measured (40 seeds,
+        // competent policy, villagerTurn-corrected): the village staffs wood
+        // duty for hearth maintenance only (policy: pile < 8), so the pile
+        // equilibrates at (8 + one duty yield) — peak wood p10=11, med=13,
+        // p75=15 with the R(5,9) yield. No yield/burn number can reach 200
+        // under that staffing; the bar must sit at the maintenance floor.
+        // 12 = the pile is kept full (starts at 10, must be maintained up).
+        // The MEANING of tier 1 is the food bar (8,000 = the buffer is
+        // healthy); the wood bar is the "the pile isn't empty" check. Tiers
+        // 2-3 (350/500 wood, stone, preserved) remain stretch goals for a
+        // village that staffs toward them — out of scope for this pass.
+        { key: 'wood', label: 'wood', req: 12 },
       ],
       effects: [
         'Population cap 16 — four more mouths under the roof.',
         'Longhouse hearth: village meals stretch 10% further (less food burned daily).',
         'Pantry capacity +25% — room for the bigger village.',
       ],
-      sysDangle: '"The audience has SPOKEN. They want a LONGHOUSE. Stockpile 8,000 kcal of food and 200 wood and we raise it ON CAMERA. Sixteen mouths, one roof — the ratings write themselves. Try not to starve twice as fast."',
+      sysDangle: '"The audience has SPOKEN. They want a LONGHOUSE. Stockpile 8,000 kcal of food and 12 wood and we raise it ON CAMERA. Sixteen mouths, one roof — the ratings write themselves. Try not to starve twice as fast."',
       upSys: '"LONGHOUSE: RAISED. Sixteen souls, one roof. The hearth is bigger, the meals stretch further, the pantry holds more. The audience wept. We did not. We do not weep. ...We logged it as weeping."',
       upBeat: 'Three days of raising beams, and the longhouse stands — a real roof, a real hearth, room to grow. Someone carves the date into the center post. The village feels bigger already.',
     },

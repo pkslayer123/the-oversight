@@ -20,7 +20,7 @@ Everything rooted in reality, everything balanced. This is how we evaluate chang
 ### Win/Loss
 - **Greedy bot win rate**: 60–80% (optimal play should usually win; humans will be 30–50%).
 - **Avg win days**: 12–18.
-- **Pantry start**: ~94,000 kcal as real items (beans, rice, soup, meat, peanuts — ~4 days at full need). NOTE (2026-10-04): doc previously said 2,000; the "real food" redesign made it 94k. With ~92% village self-provision this is ~2 months of buffer — the pantry-pressure half of the game is currently absent. Steve call whether to shrink it.
+- **Pantry start**: ~47,250 kcal as real items (dried beans, rice, canned soup, dried meat, peanuts — long-spoil staples). CORRECTED 2026-10-10 (was 94k in this doc, stale): measured day-0 pantry is 47,250 kcal across 40 seeds. At the real early deficit (~3.5k/day with strangers who don't know the land) that's a 3–4 week buffer while the village learns — a neglectful village is in crisis by week two; a learning village stretches it. The scarcity comes fast, by design.
 - **Win** (as coded): Codex 10+ AND Pantry 8,000+. NOTE: pantry half is trivially satisfied from the start (94k >> 8k) — the win is effectively codex-only until the starting pantry is rebalanced.
 - **Loss**: 3 hungry days (pantry empty) OR scholar death.
 - **Greedy bot win rate, measured 2026-10-04**: ~20% pre-fix; ~2-8% after honest tree yields (oak→acorns, hickory→nuts — trees no longer a species slot machine for codex entries). The bot doesn't identify strategically; human path to 10 entries via plant/bush cells is intact. If the win-rate target matters, the lever is codex acquisition, not tree honesty.
@@ -38,6 +38,25 @@ The foraging loop was "grab unlimited free food." Now food is a system to learn:
 - **Prey flees**: graze → wary → bolt, plus a reaction roll on the strike (tracker/hunter/night help). Weapon range is real (bow 5, spear 2, melee 1) — stalking, not statues.
 - **Pantry**: 120,000 kcal / 40L water caps, expandable ×1.5/+20L per tier (materials + labor; builders halve cost). Ingredients (carcasses, unknown hauls) store free of cap — the pantry is where specialists transform them.
 - **Balance check**: scholar 2,200/day intact. A day-1 ignorant player eating raw unknown berries gets sick; a knowledgeable player with fire, knife, and a butcher friend eats well. First turkey = project, tenth = routine. Village haul target 400–800 unchanged — processing multiplies what the haul is *worth*.
+
+### Haven Tiers (2026-10-10, survival-food pass)
+
+Resource thresholds for the 12→24 population ladder. Tiers unlock on stockpiles only — never deeds, calendar, or knowledge.
+
+- **Tier 1 — The Longhouse** (pop cap 16): food 8,000 kcal + wood 12. Hearth stretches meals 10%, pantry capacity +25%.
+- **Tier 2 — The Palisade** (pop cap 20): food 14,000 + wood 350 + stone 60. Raiders take wall damage; safe sleep.
+- **Tier 3 — The Granary** (pop cap 24): food 20,000 + wood 500 + preserved 2,000 kcal. Spoilage slows (+3d fresh, +14d preserved); famine buffer 3→5 days.
+
+**Why tier 1's wood bar is 12, not 200** (5-question evaluation):
+1. **Real-world anchor**: a village woodpile for the hearth + timber to start. The old 200 assumed a "2 wood-duty" village banking +23/day — a staffing level the competent policy never fields.
+2. **What breaks if wrong**: 200 = unreachable (measured 1/40 seeds); 12 = reachable but not trivial (starts at 10, must be maintained up; 34/40 reach, median day 12).
+3. **What the sim says**: 40 seeds × competent policy (villagerTurn-corrected) × 200 days. Baseline: tier-1 reach 1/40, peak wood p10=11/med=13/p75=15 (the policy staffs wood duty for hearth maintenance only — pile < 8 — so the pile equilibrates at 8 + one duty yield). After (wood bar 12, wood duty R(5,9)): 34/40 reach tier 1, median day 12. The 6 misses are early combat deaths (4, out of scope) or genuinely non-thriving villages (2, working as designed — tier 1 is a thriving check).
+4. **What it feels like**: tier 1 fires in weeks 1–3 when the village has its act together (healthy buffer + full woodpile). The longhouse rises before the System arrives (day 7) — the village thrives on its own, then the System raises the stakes.
+5. **Does it respect the fiction**: villagers work (they staff the wood duty); the System announces exact bars; the wood bar is the "the pile isn't empty" check while the food bar (8,000 = buffer healthy) carries the meaning.
+
+**Wood duty yield**: R(3,6) → R(5,9) per part. R(3,6) was unrealistically low (3–6 small logs for 4 hours of axe work); R(5,9) is still conservative but game-balanced against the 6L/wood boil burn. The village must still staff wood duty to keep the hearth going — the fuel economy is intact.
+
+**Tiers 2–3 are stretch goals** (out of scope for this pass): the competent policy never staffs stone duty or preserves food, so 350/500 wood, 60 stone, and 2,000 preserved remain unreachable. Breaking the palisade vicious cycle needs a village that staffs toward the announced bars — a policy/behavior question for Steve.
 
 ### The Bank — food is humanity's superpower (2026-10-04, refined: no separate pool)
 Steve's rule: NO second pool. The kcal bar IS the bank — one energy economy, conservation of energy. Digesting organic matter grants mana reserves other species can't match:

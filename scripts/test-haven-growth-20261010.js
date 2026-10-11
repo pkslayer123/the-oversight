@@ -76,14 +76,15 @@ function setStores(v, { food, wood, stone, preserved }) {
   ok(Game.havenTier() === 0, 'starts at tier 0');
   ok(Game.havenPopCap() === 12, 'starts at cap 12');
   ok(Game.housingCap() >= 12, 'housingCap sane at start');
-  // partial stores: no tier
-  setStores(v, { food: 8000, wood: 199 });
+  // partial stores: no tier (survival-food 2026-10-10: tier-1 wood bar 200→12,
+  // retuned to the maintenance floor the competent policy actually sustains)
+  setStores(v, { food: 8000, wood: 11 });
   Game.havenGrowthDaily();
-  ok(Game.havenTier() === 0, 'tier 1 does NOT fire at wood 199/200 (no early trigger)');
+  ok(Game.havenTier() === 0, 'tier 1 does NOT fire at wood 11/12 (no early trigger)');
   // hit the bar exactly
-  setStores(v, { food: 8000, wood: 200 });
+  setStores(v, { food: 8000, wood: 12 });
   Game.havenGrowthDaily();
-  ok(Game.havenTier() === 1, 'tier 1 fires at food 8000 + wood 200');
+  ok(Game.havenTier() === 1, 'tier 1 fires at food 8000 + wood 12');
   ok(Game.havenPopCap() === 16, 'cap is 16 after Longhouse');
   ok(Game.housingCap() >= 16, 'housingCap respects tier-1 ladder');
   ok(Game.growthStatus().housing >= 16, 'growthStatus (intake path) sees cap 16');
@@ -91,7 +92,7 @@ function setStores(v, { food, wood, stone, preserved }) {
     'tier-up beat narrated (no silent tier)');
   // stores NOT consumed
   const st1 = Game.havenStores();
-  ok(st1.wood >= 200 && st1.food >= 8000, 'tier-up does not eat the stockpile', JSON.stringify(st1));
+  ok(st1.wood >= 12 && st1.food >= 8000, 'tier-up does not eat the stockpile', JSON.stringify(st1));
 
   // tier 2
   setStores(v, { food: 14000, wood: 350, stone: 59 });
@@ -145,14 +146,14 @@ function setStores(v, { food, wood, stone, preserved }) {
   said.length = 0;
   Game.havenGrowthDaily();
   const dangle = said.find(s => s.includes('◈ SYSTEM:'));
-  ok(!!dangle && /Longhouse/i.test(dangle) && /8,000/.test(dangle) && /200 wood/.test(dangle),
+  ok(!!dangle && /Longhouse/i.test(dangle) && /8,000/.test(dangle) && /12 wood/.test(dangle),
     'System dangles tier 1 with exact numbers', (dangle || '').slice(0, 120));
   // announced once
   said.length = 0;
   Game.havenGrowthDaily();
   ok(!said.some(s => s.includes('◈ SYSTEM:') && /Longhouse/i.test(s)), 'bar announced once, not every day');
   // next bar dangled at tier-up
-  setStores(v, { food: 8000, wood: 200 });
+  setStores(v, { food: 8000, wood: 12 });
   said.length = 0;
   Game.havenGrowthDaily();
   ok(said.some(s => s.includes('◈ SYSTEM:') && /Palisade/i.test(s) && /60 stone/.test(s)),

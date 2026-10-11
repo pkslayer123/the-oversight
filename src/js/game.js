@@ -5030,7 +5030,16 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         }
         this.bumpTrust(vid, 2, 'brought back meat from the hunt');
       } else if (a.task === 'wood') {
-        const wood = Math.max(2, Math.round(R(3, 6) * eff));
+        // WOOD YIELD (survival-food 2026-10-10): R(3,6) was unrealistically
+        // low — 3-6 small logs (6-12kg) for a 4-hour part of axe work. A fit
+        // adult cuts far more; R(5,9) is still conservative (10-18kg) but
+        // game-balanced against the 6L/wood boil burn. BALANCING.md Q1: the
+        // anchor is a morning's axe work, not a lumber operation. Q2: too
+        // high = the hearth economy (boil 6L/wood) goes trivial; R(5,9) keeps
+        // the village staffing wood duty for the fire. The tier-1 bar (14)
+        // sits at the maintenance ceiling: reachable on a good haul, not
+        // day-1 trivial.
+        const wood = Math.max(2, Math.round(R(5, 9) * eff));
         // VILLAGE WOODPILE (Steve 2026-10-08): village work stocks the village
         // pile — the hearth boils creek water at 6L/wood. (Your own construction
         // wood comes from your harvest, or take from the pile with takeWood.)
