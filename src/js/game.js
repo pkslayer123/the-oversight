@@ -6456,6 +6456,24 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       // expedition either.
       if (!s || !s.run || !s.scholar || !s.run.map) return false;
       this.state = s;
+      // BROADCAST FRAME (break-it shows r3 2026-10-10): a mid-show save keeps
+      // state.broadcast live (the modal restores from activeContest's stored
+      // phases), but the TV-frame CSS class is DOM-only — broadcastStart set
+      // it, the page reload cleared it. The LIVE bug and ticker restore from
+      // state while the grid treatment vanishes: the frame is half-on, and
+      // entry/exit are supposed to be ALWAYS explicit. Re-apply it when the
+      // show modal is coming back. A live broadcast with NO modal is a
+      // phantom (the two clear together in every end path, so this is a
+      // corrupted/legacy save) — drop it rather than frame a bare grid.
+      try {
+        const bc = this.state.broadcast;
+        if (bc && bc.live) {
+          if (!this.state.activeContest) { this.state.broadcast = null; }
+          else if (typeof document !== 'undefined' && document.body) {
+            document.body.classList.add('broadcasting');
+          }
+        }
+      } catch (e) {}
       // RECIPE KNOWLEDGE MIGRATION (2026-10-09): codex.recipes was briefly an
       // array — named props don't survive JSON.stringify, so old saves load
       // with recipe knowledge silently wiped. Copy any named props over and
