@@ -37,7 +37,9 @@ Haven alone. No mechanics change. `scaleRank()` → `'village'`.
   - **BELONG** — Haven is a subordinate **in good standing** to a primary whose realm
     holds ≥4 villages: link trust ≥ 50, arrears 0, link age ≥ 14 days (the
     valued-subordinate bar, two notches below `kingdomEndingEligible`'s 70; tuned
-    2026-10-10, r4: 21d→14d, 60→50 — see evidence/2026-10-10/winrate-iter4-scale-onramp.md). Steve's
+    2026-10-10, r4: 21d→14d, 60→50 — see evidence/2026-10-10/winrate-iter4-scale.md
+    (oracleV2 replication) and evidence/2026-10-10/winrate-iter4-scale-onramp.md
+    (winseek + oracle-v2 measurement; exploit audit). Steve's
     standing rule: you may NOT end the game at the top — joining another kingdom is a
     legitimate earned outcome, and this is its doorway.
   - **COVENANT** — Haven holds covenant links with ≥3 other villages: a league with
