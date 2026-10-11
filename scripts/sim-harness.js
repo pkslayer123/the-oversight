@@ -38,6 +38,64 @@ function gitCommit() {
   } catch (e) { return 'unknown'; }
 }
 
+// SIM-OPT (2026-10-10): harness-level process optimizations for sims.
+// SIMOPT=0 disables all of them. Game balance, policy decisions, and sim
+// semantics are untouched — only UI-only recomputation is slimmed.
+// Honesty proof: scripts/test-simopt-trajectory-20261010.js asserts
+// identical per-day trajectory hashes ON vs OFF, plus the tent-shred
+// scenario still converging.
+const SIMOPT = process.env.SIMOPT !== '0';
+
+// quietLog(fn): run fn (may be async) with console.log silenced, restored
+// afterwards. Game code's only console.log calls are the two [SLEEP]
+// diagnostics, which fire every simulated night — pure noise in sweeps.
+// Sweep scripts' own progress logging happens between seeds, OUTSIDE this
+// wrapper, so it keeps working. console.warn / console.error are untouched.
+async function quietLog(fn) {
+  const orig = console.log;
+  console.log = function () {};
+  try { return await fn(); } finally { console.log = orig; }
+}
+
+// applySimOpt(Game): slim the two UI-only hot spots for sims. Called from
+// loadGame when SIMOPT is on.
+function applySimOpt(Game) {
+  // SLIM status(): the full status() builds a ~60-field UI object on every
+  // call, and both advancePart and sleep end in `this.save(); return
+  // this.status();` — so it runs ~4x per simulated day (~10% of sim wall,
+  // plus kcalCap/feastState/packCapacity recomputation it drags in).
+  // Policies never read status() returns (verified 2026-10-10: no game-code
+  // consumer reads fields off it; sim drivers discard the returns).
+  // Only three calls have side effects, and all three are kept:
+  //   migrateReserve(), migrateLumps() — one-time save migrations;
+  //   validateInsideTent() — the tent-shred choke (must keep working).
+  // The full builder survives as Game._fullStatus for any script that needs
+  // real UI fields in a sim context.
+  const fullStatus = Game.status;
+  Game._fullStatus = fullStatus;
+  Game.status = function () {
+    const s = this.state.scholar;
+    if (this.migrateReserve) this.migrateReserve();
+    if (this.migrateLumps) this.migrateLumps();
+    try { this.validateInsideTent(); } catch (e) {}
+    return {
+      day: s && s.day, dayPart: this.dayPart,
+      over: !!this.over, won: !!this.won,
+      inCombat: !!this.tbfight, pendingEncounter: !!this.pendingEncounter,
+    };
+  };
+  // STUB save(): sims never load saves. Keep syncRun() (cheap run metadata
+  // + mid-fight snapshot bookkeeping) but skip S.state.save's full-state
+  // JSON.stringify (~2% of sim wall). Always returns true: every game-code
+  // caller is a bare this.save() — only app.js (browser, never loaded in
+  // sims) reads the save-status return.
+  Game.save = function () {
+    if (this.over) return;
+    try { this.syncRun(); } catch (e) {}
+    return true;
+  };
+}
+
 function manifest(seed, mode) {
   return {
     seed: seed,
@@ -81,6 +139,8 @@ async function loadGame(opts) {
   Game.sysSay = function () {};
   Game.audioEvent = function () {};
   if (Game.drama === undefined) Game.drama = function () {};
+
+  if (SIMOPT) applySimOpt(Game);
 
   await Game.init();
   return { Game, manifest: manifest(seed, mode), loadFails };
@@ -158,6 +218,8 @@ async function runDays(Game, policy, opts) {
   if (policy.setup) { try { await policy.setup(Game, ctx); } catch (e) { ctx.notes.push('setup: ' + e.message); } }
 
   let day;
+  // SIM-OPT: silence the [SLEEP] diagnostics during the day loop only.
+  await quietLog(async () => {
   for (day = 1; day <= days; day++) {
     for (let p = 0; p < 3; p++) {
       if (policy.upkeep) { try { policy.upkeep(Game, ctx); } catch (e) {} }
@@ -182,6 +244,7 @@ async function runDays(Game, policy, opts) {
     }
     if (pop() === 0) break;
   }
+  }); // end quietLog day loop
 
   // Deaths also come from the telemetry stream; keep a compact list here.
   try {
@@ -295,4 +358,4 @@ function driveContests(Game, policy, ctx) {
   }
 }
 
-module.exports = { mulberry32, loadGame, setupGame, runDays, manifest, driveFights, driveContests, ROOT };
+module.exports = { mulberry32, loadGame, setupGame, runDays, manifest, driveFights, driveContests, quietLog, ROOT };

@@ -5,7 +5,9 @@
 # own OUT file. Then merge with scripts/merge-winseek.js.
 set -u
 cd "$(dirname "$0")/.."
-N_SHARDS=${1:-6}
+# Shard count defaults to the machine's core count (2026-10-10: the old
+# hardcoded 6 oversubscribed the 2-core sim box). Still overridable via $1.
+N_SHARDS=${1:-$(nproc)}
 PER_SHARD=${2:-10}
 DAYS=${3:-200}
 OUTDIR="scripts/winseek-shards"

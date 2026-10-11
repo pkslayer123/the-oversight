@@ -12740,6 +12740,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
       if (this.over) return;
       const hx = v.px ?? 4, hy = v.py ?? 4;
       const night = this.isNight();
+      // SIM-OPT (2026-10-10): travelingWith() hoisted out of the per-villager
+      // loop — loop-invariant (objAwayStep/objMaybeDepart only set v.away;
+      // npcSetInside only touches v.npcInside/v.positions; nothing here
+      // mutates party state).
+      const withYouAll = this.travelingWith();
       for (const rid of (v.roster || [])) {
         if (rid === this.villagerId) continue;
         if (this.isEngaged(rid)) continue; // talking to you — stays put
@@ -12748,8 +12753,10 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (vp && vp.dead) continue;
         const node = this.npcNode(rid);
         const atHaven = (node.nx === hx && node.ny === hy);
-        const temp = this.npcTemper(rid);
-        const goal = this.npcGoal(rid);
+        // SIM-OPT (2026-10-10): the old `const temp = this.npcTemper(rid)` and
+        // `const goal = this.npcGoal(rid)` here were dead — never read below
+        // (each a linear .find() scan per villager per part). Removed; the
+        // door block below does its own single npcTemper read (t2).
         const away = (v.away || {})[rid];
 
         // AWAY NPCs: check if they come back.
@@ -12813,7 +12820,9 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // two per day-part, temperament-led.
         if (atHaven && !this.isEngaged(rid)) {
           try {
-            const withYou = this.travelingWith();
+            // SIM-OPT (2026-10-10): hoisted — travelingWith() is loop-invariant
+            // here (nothing in the loop mutates party state).
+            const withYou = withYouAll;
             if (!withYou.includes(rid)) {
               const insideNow = this.npcInside(rid);
               const t2 = this.npcTemper(rid);

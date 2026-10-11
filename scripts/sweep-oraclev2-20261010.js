@@ -15,112 +15,28 @@
 //
 // Usage: SEEDS="1-10" OUT=scripts/sweep-oraclev2-s1.json node scripts/sweep-oraclev2-20261010.js
 //   (6 shards x 10 seeds = 60 runs; merge with scripts/merge-oraclev2.js)
+//
+// ADAPTIVE SEEDS (2026-10-10): ADAPTIVE=1 (default) enables sequential
+// stopping — minimum 20 seeds, then every 5 seeds the exact Clopper-Pearson
+// 95% win-rate interval is checked; the run stops early when the interval
+// excludes the 15% decision threshold. Seeds run 1..N in order, so a stopped
+// run is a strict prefix of the full set and rounds stay comparable.
+// ADAPTIVE=0 restores the full fixed seed list. The stopping decision is
+// written to OUT + '.adaptive.json'. Env: ADAPTIVE_MIN (20), ADAPTIVE_STEP
+// (5), ADAPTIVE_THRESHOLD (0.15).
+// UTIL_LEVEL (2026-10-10): 'full' (default — this round analyzes utilization),
+// 'light' (cheap aggregate counters only), 'off' (no method wraps).
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
-const { loadGame, setupGame, driveFights, driveContests } = require('./sim-harness');
+const { loadGame, setupGame, driveFights, driveContests, quietLog } = require('./sim-harness');
+const { instrument } = require('./util-instrument');
+const { AdaptiveStopper } = require('./adaptive-seeds');
 const { oracleV2 } = require('./policies/oracleV2');
 
 const POLICIES = { oraclev2: oracleV2 };
 const POLICY_ORDER = ['oraclev2'];
-
-// ---------- utilization instrumentation (wraps only; game code untouched) ---
-function instrument(Game, ctx) {
-  const U = ctx.util = {
-    abilityUses: 0, abilityPlayer: 0, abilityVillager: 0,
-    synergyDiscoveries: 0, kills: 0, counterKills: 0,
-    crafts: 0, craftsOk: 0, trapsSet: 0, trapCatches: 0,
-    feasts: 0, feastsOk: 0, aidCries: 0,
-    aidOffers: 0, aidAccepted: 0, aidHanded: 0, reliefSpent: 0,
-    summonsSeen: 0, summonsStunt: 0, summonsPhone: 0, summonsRefuse: 0,
-    systemQuests: 0,
-  };
-  const wrap = (name, fn) => {
-    const o = Game[name];
-    if (typeof o !== 'function') return false;
-    Game[name] = function () { return fn.call(this, o, Array.prototype.slice.call(arguments)); };
-    return true;
-  };
-  // player/villager split for ability uses: flag the villager phase.
-  const vt = Game.villagerTurn;
-  if (typeof vt === 'function') {
-    Game.villagerTurn = function () {
-      Game._utilVillagerPhase = true;
-      try { return vt.apply(this, arguments); }
-      finally { Game._utilVillagerPhase = false; }
-    };
-  }
-  wrap('useAbility', function (orig, a) {
-    U.abilityUses++;
-    if (Game._utilVillagerPhase) U.abilityVillager++; else U.abilityPlayer++;
-    return orig.apply(this, a);
-  });
-  wrap('checkSynergyDiscovery', function (orig, a) {
-    const before = (((Game.state || {}).scholar || {}).synergies || []).length;
-    const r = orig.apply(this, a);
-    const after = (((Game.state || {}).scholar || {}).synergies || []).length;
-    if (after > before) U.synergyDiscoveries += (after - before);
-    return r;
-  });
-  wrap('recordWaveKill', function (orig, a) {
-    const mid = a[0];
-    let known = false;
-    try { known = !!Game.monsterCounterKnown(mid); } catch (e) {}
-    const r = orig.apply(this, a);
-    U.kills++;
-    if (known) U.counterKills++;
-    return r;
-  });
-  wrap('craft', function (orig, a) {
-    U.crafts++;
-    const r = orig.apply(this, a);
-    if (r) U.craftsOk++;
-    return r;
-  });
-  wrap('setTrap', function (orig, a) { U.trapsSet++; return orig.apply(this, a); });
-  wrap('foodCarcass', function (orig, a) {
-    if (a[3] === 'trapped') U.trapCatches++;
-    return orig.apply(this, a);
-  });
-  wrap('hostFeast', function (orig, a) {
-    U.feasts++;
-    const r = orig.apply(this, a);
-    if (typeof r === 'string' && r.indexOf('held') >= 0) U.feastsOk++;
-    return r;
-  });
-  wrap('aidCry', function (orig, a) { U.aidCries++; return orig.apply(this, a); });
-  wrap('offerAidQuest', function (orig, a) { U.aidOffers++; return orig.apply(this, a); });
-  wrap('answerAidQuest', function (orig, a) {
-    const r = orig.apply(this, a);
-    if (a[0] === 'accept' && r && r !== 'refused') U.aidAccepted++;
-    return r;
-  });
-  wrap('handInAidQuest', function (orig, a) {
-    const r = orig.apply(this, a);
-    if (r && r !== 'short') U.aidHanded++; // 'short' is an honest refusal, not a hand-in
-    return r;
-  });
-  wrap('answerRelief', function (orig, a) {
-    const r = orig.apply(this, a);
-    if (r && ['used', 'noneed', 'short', null].indexOf(r) < 0) U.reliefSpent++;
-    return r;
-  });
-  wrap('contestChoose', function (orig, a) {
-    try {
-      const ac = Game.state.activeContest;
-      if (ac && ac.kind === 'summons') {
-        U.summonsSeen++;
-        const idx = a[0] | 0;
-        if (idx === 0) U.summonsStunt++;
-        else if (idx === 1) U.summonsPhone++;
-        else U.summonsRefuse++;
-      }
-    } catch (e) {}
-    return orig.apply(this, a);
-  });
-  return U;
-}
 
 function engagedByWave(Game) {
   const out = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -324,6 +240,17 @@ function parseSeeds(s) {
   const t0 = Date.now();
   let runN = 0;
   const totalRuns = seeds.length * policies.length;
+  // ADAPTIVE (2026-10-10): sequential stopping on the win-rate decision
+  // threshold. Seeds run in order; the stopper only evaluates at minN and
+  // every step after, so a stopped run is a prefix of the full seed set.
+  const adaptive = process.env.ADAPTIVE !== '0';
+  const stopper = new AdaptiveStopper({
+    threshold: parseFloat(process.env.ADAPTIVE_THRESHOLD || '0.15'),
+    minN: parseInt(process.env.ADAPTIVE_MIN || '20', 10),
+    step: parseInt(process.env.ADAPTIVE_STEP || '5', 10),
+  });
+  let wins = 0;
+  let adaptiveStopped = false;
   for (const seed of seeds) {
     for (const pid of policies) {
       try {
@@ -334,7 +261,9 @@ function parseSeeds(s) {
         const { p, waveDay } = wrapPolicy(POLICIES[pid]);
         const ctx = { policyId: pid, notes: [] };
         instrument(Game, ctx);
-        const result = await runOne(Game, p, days, waveDay, ctx);
+        // SIM-OPT: silence the [SLEEP] diagnostics during the run only —
+        // progress logging between seeds is outside quietLog and keeps working.
+        const result = await quietLog(() => runOne(Game, p, days, waveDay, ctx));
         const end = snapshot(Game, ctx);
         end.waveDay = waveDay;
         end.engaged = engagedByWave(Game);
@@ -374,14 +303,37 @@ function parseSeeds(s) {
         runN++;
         const el = ((Date.now() - t0) / 1000).toFixed(0);
         const u = end.util;
+        if (end.won) wins++;
         console.log(`[${runN}/${totalRuns} ${el}s] s${seed} ${pid}: ${result.endReason} d${end.day} won=${end.won} w[${end.w.join('/')}]+cx${end.cx} ${end.rank} uw${end.maxWave} t${end.havenTier} | v2ab:${end.v2AbilFired}/${end.v2AbilRefused} held:${end.heldAbilities}(L3:${end.heldAbilitiesL3}) syn:${end.synergies} kill:${u.kills}/${u.counterKills} craft:${u.craftsOk}/${u.crafts} trap:${u.trapCatches}/${u.trapsSet} feast:${u.feastsOk}/${u.feasts}${end.feastArmed ? 'A' : ''}${end.feastUsed ? 'U' : ''} aq:${u.aidAccepted}/${u.aidHanded}${end.aidShort ? ' short:' + end.aidShort : ''} sum:${u.summonsSeen} sq:${u.systemQuests}`);
+        // ADAPTIVE: sequential stopping — seeds stay ordered, so a stopped
+        // run is a prefix of the full set and rounds remain comparable.
+        if (adaptive) {
+          const why = stopper.check(runN, wins);
+          if (why) {
+            adaptiveStopped = true;
+            console.log(`ADAPTIVE STOP at seed ${seed} (${runN} runs, ${wins} wins): ${why} — 95% CI excludes the ${(stopper.threshold * 100).toFixed(0)}% threshold`);
+            break;
+          }
+        }
       } catch (e) {
         rows.push({ seed, policy: pid, endReason: 'ERROR', error: String(e && e.message || e).slice(0, 300) });
         runN++;
         console.log(`[${runN}/${totalRuns}] s${seed} ${pid}: ERROR ${String(e && e.message || e).slice(0, 120)}`);
       }
     }
+    if (adaptiveStopped) break;
   }
   fs.writeFileSync(OUT, JSON.stringify(rows, null, 1));
   console.log('wrote ' + OUT + ' (' + rows.length + ' rows)');
+  // ADAPTIVE: the stopping decision goes in a sidecar file (OUT format
+  // unchanged — merge scripts still see a plain rows array).
+  if (adaptive) {
+    const meta = stopper.report(seeds.length, wins, {
+      policy: policies.join(','), days,
+      note: 'seeds ran in order 1..N; a stopped run is a prefix of the full set',
+    });
+    const metaPath = OUT + '.adaptive.json';
+    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 1));
+    console.log(`adaptive: ${meta.stopped ? 'STOPPED (' + meta.reason + ')' : 'ran all seeds'} — ${meta.seedsRun}/${meta.seedsPlanned} seeds, ${meta.wins} wins, 95% CI [${meta.ci95.join(', ')}] → ${metaPath}`);
+  }
 })();
