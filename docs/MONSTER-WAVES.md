@@ -99,6 +99,32 @@ telegraph honesty is law — every cue describes what the mechanic actually does
   clauses and the §0 TERMINATION loophole surfaces; cite it and the Scroll
   dismisses itself, no blood.
 
+### Signature mechanics (Wave 3, batch A)
+
+The Redactor: every cycle its edge-handles POINT at a visible target a full
+round before the REDACT. It rotates across your equipped weapon (disabled
+for 2 rounds), your last turn (undone and narrated — wounds healed, never
+resurrected), and your footing (shoved, interior tiles only). It redacts the
+LOUDEST thing first — a carried decoy rattle (craftable: stick + vine) is
+always taken instead and destroyed. Two consecutive quiet turns starve it
+(damage halved); a third and it flees.
+
+Gavel: holds a trial from your actual event log. It ACCUSES (names the
+freshest logged moment), waits a full round, then the VERDICT falls. Mid-
+trial you may OBJECT (costs 3 viewership, verdict halved), DEMAND RECESS
+(delays one round, once per trial), or CONFESS FIRST (smaller verdict, but
+the confession is logged and trust drops — later gavels will cite it).
+Frontal strikes hit the sound-block shield for reduced damage; flanking
+bypasses it — position matters.
+
+The Focus Group: 5-7 floating heads. The lead carries 3 mouth-parts (each
+about a third of its health); pop all three and the group comes apart.
+Every round the murmur audibly rates your actions LOVED or HATED — loved
+strikes hit harder but get answered, hated strikes are suppressed but safe,
+and dodging is a real action with its own rating. Eye-heads only watch:
+they mark your most-used verb and can't be struck down. Be deliberately
+boring for three rounds and they lose interest and leave.
+
 ### Signature mechanics (Wave 3, batch C)
 
 Three more wave-3 monsters got their signature mechanics built properly
@@ -133,32 +159,6 @@ actually does):
   (a small 40-HP add — kill it and the bar jumps forward). Patience is a
   valid strategy: wait for the skip beat.
 
-
-### Signature mechanics (Wave 3, batch A)
-
-The Redactor: every cycle its edge-handles POINT at a visible target a full
-round before the REDACT. It rotates across your equipped weapon (disabled
-for 2 rounds), your last turn (undone and narrated — wounds healed, never
-resurrected), and your footing (shoved, interior tiles only). It redacts the
-LOUDEST thing first — a carried decoy rattle (craftable: stick + vine) is
-always taken instead and destroyed. Two consecutive quiet turns starve it
-(damage halved); a third and it flees.
-
-Gavel: holds a trial from your actual event log. It ACCUSES (names the
-freshest logged moment), waits a full round, then the VERDICT falls. Mid-
-trial you may OBJECT (costs 3 viewership, verdict halved), DEMAND RECESS
-(delays one round, once per trial), or CONFESS FIRST (smaller verdict, but
-the confession is logged and trust drops — later gavels will cite it).
-Frontal strikes hit the sound-block shield for reduced damage; flanking
-bypasses it — position matters.
-
-The Focus Group: 5-7 floating heads. The lead carries 3 mouth-parts (each
-about a third of its health); pop all three and the group comes apart.
-Every round the murmur audibly rates your actions LOVED or HATED — loved
-strikes hit harder but get answered, hated strikes are suppressed but safe,
-and dodging is a real action with its own rating. Eye-heads only watch:
-they mark your most-used verb and can't be struck down. Be deliberately
-boring for three rounds and they lose interest and leave.
 
 ## Wave 4: The Mirror Draft (4 wave-3 LEDGER points + scaleRank >= 'regional') (wave3 batch A: evidence note, MONSTER-WAVES block, build-notes entry)
 

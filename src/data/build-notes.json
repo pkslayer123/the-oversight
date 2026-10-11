@@ -2,6 +2,14 @@
   {
     "date": "2026-10-10",
     "notes": [
+      "Three more wave-3 monsters fight the way their stories always said they would. The Callback wears the face of someone your village lost \u2014 it speaks in their voice, using things they actually said, and fights with their moves. Hold a funeral for them mid-fight \u2014 say goodbye properly \u2014 and it lets go. Or look it in its too-symmetrical eyes and tell it what it isn't.",
+      "Buffering lives three seconds in the past: it tells you exactly what it will do next, and it means it. Its afterimages are the lie \u2014 the faintest frame is where it really is. Stand perfectly still and it swings at where you were going to be. Or close your eyes and swing at where it IS.",
+      "The Ad Break pauses the whole fight for a sponsored message \u2014 a real progress bar, and it heals while you watch. Wait for the skip button (it comes sooner if the audience loves you), look away and starve it of attention, or pop the little sponsor-creature riding the glyph to fast-forward."
+    ]
+  },
+  {
+    "date": "2026-10-10",
+    "notes": [
       "Three of the Final Draft\u2019s monsters finally fight the way their stories always said they would. The Redactor points at something you love \u2014 your weapon, your footing, even your last turn \u2014 a full round before it redacts it into silence; carry a decoy rattle and it takes the loudest thing instead, or go quiet for two turns and it starves.",
       "Gavel holds a real trial: it accuses you from your own history, waits a round, then the verdict falls. You can object (costs fame), demand a recess (once), or confess first (smaller verdict \u2014 but everyone remembers). Flank it; frontal attacks hit the sound-block.",
       "The Focus Group rates your every move out loud \u2014 loved actions hit harder but get answered, hated ones are safe but weak. Pop its three mouth-heads to end it, or just be boring for three rounds and they\u2019ll wander off."
@@ -105,15 +113,6 @@
     "notes": [
       "A delivered ratings stunt really moves the ratings now: when you give the galaxy its moment, the numbers tick up for real \u2014 and the System won't drag you back on camera off the same slump twice.",
       "Watching the village's shows together pays what it promises: the good-snacks watch party brings the village closer exactly once, no hidden double-counting."
-    ],
-    "version": "f1cb0e5d-20261010-052413"
-  },
-  {
-    "date": "2026-10-10",
-    "notes": [
-      "Issue Challenge is a real dare now: call someone out in front of everyone. The village hears it \u2014 the bold respect the nerve, some call it showing off. The bout comes when hands are thrown. Once a day.",
-      "End It Before It Starts actually ends it: your reputation walks in first and the dispute dies on the spot \u2014 but they will remember the look, and not fondly. Once a day.",
-      "Fighting abilities land the moment you use them: Brace is up before the counter-swing, and a War Cry can stop the hit that's already coming."
     ],
     "version": "f1cb0e5d-20261010-052413"
   }
