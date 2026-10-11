@@ -25561,7 +25561,12 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         if (Math.max(Math.abs(o.mx - m.mx), Math.abs(o.my - m.my)) > 1) continue;
         const d = S.combat.roll([8, 14]);
         const who = o.kind === 'player' ? 'you' : o.name;
-        this.say(`It can't move — but a foreleg lashes out and catches ${who}. The breather isn't free up close. (${d})`);
+        // HONESTY (break-it combat r3 2026-10-10, sibling of the villager-
+        // haymaker fix): the old line announced the pre-mitigation roll —
+        // armor, brace, or a dodge made the parenthetical a lie, and a dodge
+        // read "(12)" next to "it misses clean". tbDamage narrates what
+        // landed itself; the fiction line carries no number now.
+        this.say(`It can't move — but a foreleg lashes out and catches ${who}. The breather isn't free up close.`);
         this.tbDamage(o.key, d, m.name + "'s paw", m.key);
         hit = true;
         if (f.over) return true;
@@ -25789,8 +25794,11 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
         // via monsterNoun like the 7040 call site; never "The the ...".
         let mn = m.name;
         try { mn = this.monsterNoun(m.monsterId); } catch (e) {}
-        if (/^something\b/i.test(mn)) this.say(`Something thrashes its antlers at ${who} — getting close has a price. (${d})`);
-        else this.say(`The ${mn} thrashes its antlers at ${who} — getting close has a price. (${d})`);
+        // HONESTY (break-it combat r3 2026-10-10, sibling of the villager-
+        // haymaker fix): same class — the pre-mitigation roll was announced
+        // before armor/dodge had their say. tbDamage narrates the landing.
+        if (/^something\b/i.test(mn)) this.say(`Something thrashes its antlers at ${who} — getting close has a price.`);
+        else this.say(`The ${mn} thrashes its antlers at ${who} — getting close has a price.`);
         this.tbDamage(o.key, d, mn + "'s antlers", m.key);
         hit = true;
         if (f.over) return true;
@@ -28126,17 +28134,22 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
           // puts their whole body into every third swing — same rhythm as
           // the player's haymaker (round-counted, telegraphed, honestly
           // announced when it lands).
+          // HONESTY (break-it combat r3 2026-10-10): the old line announced
+          // the pre-mitigation swing — vs armor/bunker the parenthetical
+          // contradicted tbDamage's own "hits X for Y" two lines later
+          // (announced 12, landed 2 on a bunkered turtle). Same convention
+          // as the player strike line (break-it combat r8 2026-10-09): state
+          // the number that LANDED, announced after tbDamage returns it.
+          let _hmSwung = false;
           try {
             if (a.type === 'strike' && v.villagerId && this.npcHasAbility && this.npcHasAbility(v.villagerId, 'haymaker')) {
               v._haymakerSwings = (v._haymakerSwings || 0) + 1;
-              if (v._haymakerSwings % 3 === 0) {
-                dmg = Math.round(dmg * 2);
-                this.say(`${v.name} puts everything into the swing — HAYMAKER! (${dmg})`);
-              }
+              if (v._haymakerSwings % 3 === 0) { dmg = Math.round(dmg * 2); _hmSwung = true; }
             }
           } catch (e) {}
           this.say(`${v.name} ${a.type === 'strike' ? 'strikes' : 'harries'} the ${this.encTheName(t)}.`);
-          this.tbDamage(t.key, dmg, v.name);
+          const _landed = this.tbDamage(t.key, dmg, v.name);
+          if (_hmSwung) this.say(`${v.name} puts everything into the swing — HAYMAKER! (${_landed})`);
           // HIGHBEAM: hurting the deer moves them to the front of its list.
           try { const tt = this.tbFighter(t.key); if (tt && this.encUsesFifo(tt)) this.encNoticesPain(tt, v.key); } catch (e) {}
         }
