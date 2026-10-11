@@ -20350,6 +20350,18 @@ this.journalNote && this.journalNote('village', 'person', `${tname} taught me ${
     },
     doAction(kind, opts) {
       if (this.over) return null;
+      // MID-FIGHT (explorer break-it 2026-10-10): forage and wait are
+      // time-costing verbs — tickAction no-ops in tbfight, so a mid-fight
+      // forage granted free hauls + free villager turns + free ability XP
+      // while the fight stood frozen, and a mid-fight wait granted free
+      // villager turns with the calm line suppressed. Drink keeps its
+      // deliberate combat path (spendCombatAction); rest keeps its own
+      // refusal below. Same class as the clearBlockage/beginPathWalk/
+      // travelTo combat guards: refuse, loudly.
+      if (kind !== 'drink' && kind !== 'rest' && this.inCombat && this.inCombat()) {
+        this.say('Not mid-fight — finish it first.');
+        return null;
+      }
       const scholar = this.state.scholar;
       let msg = '';
       // DRAMA (Steve 2026-10-07): every action gets a visual beat — the game feels alive.
